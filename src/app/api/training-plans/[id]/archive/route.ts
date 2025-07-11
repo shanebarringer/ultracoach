@@ -72,7 +72,7 @@ export async function PATCH(
           user_id: recipientId,
           title: `Training Plan ${archived ? 'Archived' : 'Restored'}`,
           message: `${actorName} has ${action} the training plan "${plan.name}".`,
-          type: archived ? 'warning' : 'info',
+          type: 'workout', // changed from 'warning'/'info' to 'workout' to match allowed types
           category: 'training_plan',
           data: {
             action: 'view_training_plans',

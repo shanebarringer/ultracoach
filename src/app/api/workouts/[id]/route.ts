@@ -105,7 +105,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               user_id: coach.id,
               title: 'Workout Completed',
               message: `${runner.full_name} completed their ${workoutType}${distance} workout.`,
-              type: 'success',
+              type: 'workout', // changed from 'success' to 'workout'
               category: 'workout',
               data: {
                 action: 'view_workouts',

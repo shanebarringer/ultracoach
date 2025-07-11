@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     
     const { data: trainingPlans, error: plansError } = await supabaseAdmin
       .from('training_plans')
-      .select('id, coach_id')
+      .select('id, coach_id, runner_id')
       .in('id', trainingPlanIds)
 
     if (plansError) {
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
                 user_id: runner.id,
                 title: 'New Weekly Training Plan',
                 message: `${coachName} has created ${workoutCount} new workouts for your training plan.`,
-                type: 'success',
+                type: 'workout', // changed from 'success' to 'workout'
                 category: 'training_plan',
                 data: {
                   action: 'view_workouts',
