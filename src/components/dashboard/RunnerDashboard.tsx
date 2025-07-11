@@ -50,29 +50,35 @@ export default function RunnerDashboard() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Welcome back, {session?.user?.name}!
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900">Active Training Plans</h3>
-            <p className="text-2xl font-bold text-blue-600">{trainingPlans.length}</p>
+    <div className="space-y-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Runner Dashboard
+          </h2>
+          <p className="text-gray-600">Welcome back, {session?.user?.name}!</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">Active Training Plans</h3>
+            <p className="text-3xl font-bold text-blue-600">{trainingPlans.length}</p>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-900">Upcoming Workouts</h3>
-            <p className="text-2xl font-bold text-green-600">{upcomingWorkouts.length}</p>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+            <h3 className="text-sm font-medium text-green-900 mb-2">Upcoming Workouts</h3>
+            <p className="text-3xl font-bold text-green-600">{upcomingWorkouts.length}</p>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-purple-900">This Week</h3>
-            <p className="text-2xl font-bold text-purple-600">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
+            <h3 className="text-sm font-medium text-purple-900 mb-2">This Week</h3>
+            <p className="text-3xl font-bold text-purple-600">
               {upcomingWorkouts.filter(w => {
                 const workoutDate = new Date(w.date)
                 const today = new Date()
@@ -84,9 +90,9 @@ export default function RunnerDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Training Plans</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-6">Training Plans</h3>
           {trainingPlans.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 mb-4">No training plans yet.</p>
