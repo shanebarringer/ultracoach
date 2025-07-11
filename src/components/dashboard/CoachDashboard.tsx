@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
@@ -91,9 +92,12 @@ export default function CoachDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Training Plans</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
-              Create New Plan
-            </button>
+            <Link 
+              href="/training-plans"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+            >
+              Manage Plans
+            </Link>
           </div>
           {trainingPlans.length === 0 ? (
             <div className="text-center py-8">

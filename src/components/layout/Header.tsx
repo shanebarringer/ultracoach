@@ -41,6 +41,12 @@ export default function Header() {
                   </Link>
                 )}
                 <Link
+                  href="/workouts"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Workouts
+                </Link>
+                <Link
                   href="/chat"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
@@ -123,6 +129,12 @@ export default function Header() {
                     Training Plans
                   </Link>
                 )}
+                <Link
+                  href="/workouts"
+                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
+                >
+                  Workouts
+                </Link>
                 <Link
                   href="/chat"
                   className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
