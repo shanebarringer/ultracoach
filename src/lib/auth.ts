@@ -2,6 +2,9 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { supabaseAdmin } from './supabase'
 import bcrypt from 'bcrypt'
+import { Logger } from 'tslog'
+
+const logger = new Logger({ name: 'auth' })
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,54 +16,34 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log('🔐 Starting authentication for:', credentials?.email)
-          
           if (!credentials?.email || !credentials?.password) {
-            console.log('❌ Missing credentials')
             return null
           }
-
           // Check if user exists in Supabase
           const { data: user, error } = await supabaseAdmin
             .from('users')
             .select('*')
             .eq('email', credentials.email)
             .single()
-
           if (error) {
-            console.log('❌ Database error:', error)
             return null
           }
-
           if (!user) {
-            console.log('❌ User not found')
             return null
           }
-
-          console.log('✅ User found:', { id: user.id, email: user.email })
-
           // Check password hash
           const isValidPassword = await bcrypt.compare(credentials.password, user.password_hash || '')
-          console.log('🔑 Password validation:', { 
-            isValidPassword, 
-            hasHash: !!user.password_hash,
-            hashPreview: user.password_hash?.substring(0, 10) + '...'
-          })
-
           if (!isValidPassword) {
-            console.log('❌ Invalid password')
             return null
           }
-
-          console.log('✅ Authentication successful')
           return {
             id: user.id,
             email: user.email,
             name: user.full_name,
             role: user.role
           }
-        } catch (error) {
-          console.error('💥 Auth error:', error)
+        } catch (err) {
+          logger.error('Auth error', { error: err instanceof Error ? err.message : err })
           return null
         }
       }

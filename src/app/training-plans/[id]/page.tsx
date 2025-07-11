@@ -23,6 +23,7 @@ export default function TrainingPlanDetailPage() {
   const [showAddWorkout, setShowAddWorkout] = useState(false)
   const [showLogWorkout, setShowLogWorkout] = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchTrainingPlanDetails = useCallback(async () => {
     if (!session?.user?.id || !planId) return
@@ -74,6 +75,27 @@ export default function TrainingPlanDetailPage() {
     setShowLogWorkout(true)
   }
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this training plan? This action cannot be undone.')) return;
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/training-plans/${planId}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        router.push('/training-plans')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to delete training plan')
+      }
+    } catch (error) {
+      console.error('Error deleting training plan:', error)
+      alert('Failed to delete training plan')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -111,15 +133,24 @@ export default function TrainingPlanDetailPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-blue-600 hover:text-blue-700 mb-4"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Training Plans
-          </button>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-blue-600 hover:text-blue-700"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Training Plans
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Plan'}
+            </button>
+          </div>
           
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">{trainingPlan.title}</h1>

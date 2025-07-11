@@ -31,6 +31,7 @@ export interface TrainingPlan {
   target_race_distance: string
   created_at: string
   updated_at: string
+  archived: boolean // Added for archive/delete UI
 }
 
 export interface Workout {
