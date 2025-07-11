@@ -7,7 +7,6 @@ import { useEffect, useState, useCallback } from 'react'
 import Layout from '@/components/layout/Layout'
 import ConversationList from '@/components/chat/ConversationList'
 import ChatWindow from '@/components/chat/ChatWindow'
-import { supabase } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
 
 export default function ChatUserPage() {
@@ -24,19 +23,16 @@ export default function ChatUserPage() {
     if (!userId) return
 
     try {
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error || !user) {
-        console.error('Error fetching recipient:', error)
+      const response = await fetch(`/api/users/${userId}`)
+      
+      if (!response.ok) {
+        console.error('Error fetching recipient:', response.statusText)
         router.push('/chat')
         return
       }
 
-      setRecipient(user)
+      const data = await response.json()
+      setRecipient(data.user)
     } catch (error) {
       console.error('Error fetching recipient:', error)
       router.push('/chat')

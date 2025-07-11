@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
+import TypingIndicator from './TypingIndicator'
 import { supabase } from '@/lib/supabase'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { useTypingStatus } from '@/hooks/useTypingStatus'
 import type { Message, User } from '@/lib/supabase'
 
 interface MessageWithUser extends Message {
@@ -22,17 +24,28 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const [messages, setMessages] = useState<MessageWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  
+  // Typing status
+  const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
 
   const markMessagesAsRead = useCallback(async () => {
     if (!session?.user?.id) return
 
     try {
-      await supabase
-        .from('messages')
-        .update({ read: true })
-        .eq('sender_id', recipientId)
-        .eq('recipient_id', session.user.id)
-        .eq('read', false)
+      const response = await fetch('/api/messages/mark-read', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senderId: recipientId,
+          recipientId: session.user.id
+        }),
+      })
+
+      if (!response.ok) {
+        console.error('Error marking messages as read:', response.statusText)
+      }
     } catch (error) {
       console.error('Error marking messages as read:', error)
     }
@@ -42,24 +55,21 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
     if (!session?.user?.id) return
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:sender_id(*)
-        `)
-        .or(`
-          and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),
-          and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})
-        `)
-        .order('created_at', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching messages:', error)
+      const response = await fetch(`/api/messages?recipientId=${recipientId}`)
+      
+      if (!response.ok) {
+        console.error('Error fetching messages:', response.statusText)
         return
       }
 
-      setMessages(data || [])
+      const data = await response.json()
+      console.log('💬 ChatWindow: Fetched messages:', data.messages?.length || 0, 'messages')
+      
+      if (data.messages?.length > 0) {
+        console.log('💬 ChatWindow: First message structure:', data.messages[0])
+      }
+      
+      setMessages(data.messages || [])
 
       // Mark messages as read
       await markMessagesAsRead()
@@ -75,20 +85,23 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
     setSending(true)
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert([
-          {
-            content,
-            sender_id: session.user.id,
-            recipient_id: recipientId,
-            read: false
-          }
-        ])
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          recipientId
+        }),
+      })
 
-      if (error) {
-        console.error('Error sending message:', error)
+      if (!response.ok) {
+        console.error('Error sending message:', response.statusText)
         alert('Failed to send message. Please try again.')
+      } else {
+        // Refresh messages to ensure UI is updated
+        fetchMessages()
       }
     } catch (error) {
       console.error('Error sending message:', error)
@@ -100,22 +113,34 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
   useEffect(() => {
     fetchMessages()
+    
+    // Polling fallback - refresh messages every 3 seconds if real-time fails
+    const pollInterval = setInterval(() => {
+      fetchMessages()
+    }, 3000)
+
+    return () => clearInterval(pollInterval)
   }, [fetchMessages])
 
-  // Real-time updates for new messages
+  // Real-time updates for new messages - simplified filter
   useSupabaseRealtime({
     table: 'messages',
-    filter: `or(and(sender_id.eq.${session?.user?.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session?.user?.id}))`,
     onInsert: (payload) => {
       const newMessage = payload.new as Message
       
+      // Only process messages relevant to this conversation
+      const isRelevantMessage = 
+        (newMessage.sender_id === session?.user?.id && newMessage.recipient_id === recipientId) ||
+        (newMessage.sender_id === recipientId && newMessage.recipient_id === session?.user?.id)
+      
+      if (!isRelevantMessage) return
+
+      console.log('💬 Real-time: New message received:', newMessage)
+      
       // Fetch the sender info for the new message
-      supabase
-        .from('users')
-        .select('*')
-        .eq('id', newMessage.sender_id)
-        .single()
-        .then(({ data: sender }) => {
+      fetch(`/api/users/${newMessage.sender_id}`)
+        .then(response => response.json())
+        .then(({ user: sender }) => {
           if (sender) {
             const messageWithUser: MessageWithUser = {
               ...newMessage,
@@ -127,6 +152,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
               const exists = prev.some(msg => msg.id === newMessage.id)
               if (exists) return prev
               
+              console.log('💬 Real-time: Adding new message to state')
               return [...prev, messageWithUser]
             })
 
@@ -136,9 +162,21 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             }
           }
         })
+        .catch(error => {
+          console.error('Error fetching sender info:', error)
+        })
     },
     onUpdate: (payload) => {
       const updatedMessage = payload.new as Message
+      
+      // Only process messages relevant to this conversation
+      const isRelevantMessage = 
+        (updatedMessage.sender_id === session?.user?.id && updatedMessage.recipient_id === recipientId) ||
+        (updatedMessage.sender_id === recipientId && updatedMessage.recipient_id === session?.user?.id)
+      
+      if (!isRelevantMessage) return
+
+      console.log('💬 Real-time: Message updated:', updatedMessage)
       setMessages(prev => 
         prev.map(msg => 
           msg.id === updatedMessage.id 
@@ -156,6 +194,15 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       </div>
     )
   }
+
+  // Debug logging
+  console.log('💬 ChatWindow Debug:', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    sending,
+    recipientId,
+    messagesCount: messages.length
+  })
 
   return (
     <div className="flex flex-col h-full">
@@ -177,15 +224,27 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       </div>
 
       {/* Messages */}
-      <MessageList 
-        messages={messages} 
-        currentUserId={session?.user?.id || ''} 
-      />
+      <div className="flex-1 flex flex-col">
+        <MessageList 
+          messages={messages} 
+          currentUserId={session?.user?.id || ''} 
+        />
+        
+        {/* Typing Indicator */}
+        <div className="px-4">
+          <TypingIndicator 
+            isTyping={isRecipientTyping} 
+            userName={recipient.full_name} 
+          />
+        </div>
+      </div>
 
       {/* Message Input */}
       <MessageInput 
         onSendMessage={sendMessage} 
-        disabled={sending}
+        onStartTyping={startTyping}
+        onStopTyping={stopTyping}
+        disabled={sending || !session?.user?.id}
       />
     </div>
   )

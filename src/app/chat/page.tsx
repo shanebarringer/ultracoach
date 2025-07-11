@@ -2,13 +2,15 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Layout from '@/components/layout/Layout'
 import ConversationList from '@/components/chat/ConversationList'
+import NewMessageModal from '@/components/chat/NewMessageModal'
 
 export default function ChatPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [showNewMessage, setShowNewMessage] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -40,8 +42,19 @@ export default function ChatPage() {
           {/* Conversations Sidebar */}
           <div className="w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <div className="flex justify-between items-center mb-2">
+                <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
+                <button
+                  onClick={() => setShowNewMessage(true)}
+                  className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  title="New Message"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">
                 {session.user.role === 'coach' 
                   ? 'Chat with your runners'
                   : 'Chat with your coach'
@@ -64,6 +77,11 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
+
+        <NewMessageModal
+          isOpen={showNewMessage}
+          onClose={() => setShowNewMessage(false)}
+        />
       </div>
     </Layout>
   )

@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('💬 API GET: Session user:', session.user.id, 'role:', session.user.role)
+
     const { searchParams } = new URL(request.url)
     const recipientId = searchParams.get('recipientId')
 
@@ -19,25 +21,47 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch messages between the current user and the recipient
-    const { data: messages, error } = await supabaseAdmin
+    const { data: rawMessages, error: messagesError } = await supabaseAdmin
       .from('messages')
-      .select(`
-        *,
-        sender:sender_id(*),
-        recipient:recipient_id(*)
-      `)
-      .or(`
-        and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),
-        and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})
-      `)
+      .select('*')
+      .or(`and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})`)
       .order('created_at', { ascending: true })
 
-    if (error) {
-      console.error('Error fetching messages:', error)
+    if (messagesError) {
+      console.error('Error fetching messages:', messagesError)
       return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
     }
 
-    return NextResponse.json({ messages: messages || [] })
+    // Fetch user data for all unique sender/recipient IDs
+    const userIds = new Set<string>()
+    rawMessages?.forEach(msg => {
+      userIds.add(msg.sender_id)
+      userIds.add(msg.recipient_id)
+    })
+
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .in('id', Array.from(userIds))
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError)
+      return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
+    }
+
+    // Create user lookup map
+    const userMap = new Map()
+    users?.forEach(user => userMap.set(user.id, user))
+
+    // Join messages with user data
+    const messages = rawMessages?.map(msg => ({
+      ...msg,
+      sender: userMap.get(msg.sender_id),
+      recipient: userMap.get(msg.recipient_id)
+    })) || []
+
+    console.log('💬 API: Fetched messages with users:', JSON.stringify(messages, null, 2))
+    return NextResponse.json({ messages })
   } catch (error) {
     console.error('API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import type { Message, User } from '@/lib/supabase'
 
@@ -26,78 +25,17 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
     if (!session?.user?.id) return
 
     try {
-      // Get all users that have had conversations with the current user
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:sender_id(*),
-          recipient:recipient_id(*)
-        `)
-        .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching conversations:', error)
+      const response = await fetch('/api/conversations')
+      
+      if (!response.ok) {
+        console.error('Error fetching conversations:', response.statusText)
         return
       }
 
-      // Group messages by conversation partner
-      const conversationMap = new Map<string, ConversationWithUser>()
-
-      messages?.forEach((message: Message & { sender: User; recipient: User }) => {
-        const isCurrentUserSender = message.sender_id === session.user.id
-        const conversationPartner = isCurrentUserSender ? message.recipient : message.sender
-        const partnerId = conversationPartner.id
-
-        if (!conversationMap.has(partnerId)) {
-          conversationMap.set(partnerId, {
-            user: conversationPartner,
-            lastMessage: message,
-            unreadCount: 0
-          })
-        }
-
-        const conversation = conversationMap.get(partnerId)!
-        
-        // Update last message if this message is more recent
-        if (!conversation.lastMessage || 
-            new Date(message.created_at) > new Date(conversation.lastMessage.created_at)) {
-          conversation.lastMessage = message
-        }
-
-        // Count unread messages (messages sent to current user that are unread)
-        if (!isCurrentUserSender && !message.read) {
-          conversation.unreadCount++
-        }
-      })
-
-      // If no conversations exist, get all users for potential conversations
-      if (conversationMap.size === 0) {
-        const { data: users, error: usersError } = await supabase
-          .from('users')
-          .select('*')
-          .neq('id', session.user.id)
-
-        if (!usersError && users) {
-          users.forEach(user => {
-            conversationMap.set(user.id, {
-              user,
-              unreadCount: 0
-            })
-          })
-        }
-      }
-
-      const conversationsList = Array.from(conversationMap.values())
-        .sort((a, b) => {
-          if (!a.lastMessage && !b.lastMessage) return 0
-          if (!a.lastMessage) return 1
-          if (!b.lastMessage) return -1
-          return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
-        })
-
-      setConversations(conversationsList)
+      const data = await response.json()
+      console.log('💬 ConversationList: Fetched', data.conversations?.length || 0, 'conversations')
+      
+      setConversations(data.conversations || [])
     } catch (error) {
       console.error('Error fetching conversations:', error)
     } finally {
@@ -107,9 +45,16 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
 
   useEffect(() => {
     fetchConversations()
+    
+    // Polling fallback - refresh conversations every 5 seconds
+    const pollInterval = setInterval(() => {
+      fetchConversations()
+    }, 5000)
+
+    return () => clearInterval(pollInterval)
   }, [fetchConversations])
 
-  // Real-time updates for new messages
+  // Real-time updates for new messages (with error handling)
   useSupabaseRealtime({
     table: 'messages',
     onInsert: () => {

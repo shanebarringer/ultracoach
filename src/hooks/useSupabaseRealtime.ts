@@ -25,63 +25,90 @@ export function useSupabaseRealtime({
   const channelRef = useRef<RealtimeChannel | null>(null)
 
   useEffect(() => {
-    // Create a unique channel name
-    const channelName = `realtime-${table}-${filter || 'all'}-${Date.now()}`
+    // Check if real-time is available
+    if (!supabase.realtime) {
+      console.warn('🚫 Supabase real-time not available')
+      return
+    }
+
+    // Create a stable channel name  
+    const channelName = `realtime-${table}-${filter || 'all'}`
     
     let channel = supabase.channel(channelName)
 
-    // Set up the subscription
-    if (filter) {
-      channel = channel.on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table,
-          filter
-        },
-        (payload) => {
-          switch (payload.eventType) {
-            case 'INSERT':
-              onInsert?.(payload)
-              break
-            case 'UPDATE':
-              onUpdate?.(payload)
-              break
-            case 'DELETE':
-              onDelete?.(payload)
-              break
+    // Set up the subscription with error handling
+    try {
+      if (filter) {
+        channel = channel.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table,
+            filter
+          },
+          (payload) => {
+            try {
+              switch (payload.eventType) {
+                case 'INSERT':
+                  onInsert?.(payload)
+                  break
+                case 'UPDATE':
+                  onUpdate?.(payload)
+                  break
+                case 'DELETE':
+                  onDelete?.(payload)
+                  break
+              }
+            } catch (error) {
+              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+            }
           }
-        }
-      )
-    } else {
-      channel = channel.on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table
-        },
-        (payload) => {
-          switch (payload.eventType) {
-            case 'INSERT':
-              onInsert?.(payload)
-              break
-            case 'UPDATE':
-              onUpdate?.(payload)
-              break
-            case 'DELETE':
-              onDelete?.(payload)
-              break
+        )
+      } else {
+        channel = channel.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table
+          },
+          (payload) => {
+            try {
+              switch (payload.eventType) {
+                case 'INSERT':
+                  onInsert?.(payload)
+                  break
+                case 'UPDATE':
+                  onUpdate?.(payload)
+                  break
+                case 'DELETE':
+                  onDelete?.(payload)
+                  break
+              }
+            } catch (error) {
+              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+            }
           }
-        }
-      )
+        )
+      }
+    } catch (error) {
+      console.error(`Error setting up real-time subscription for ${table}:`, error)
+      return
     }
 
     // Subscribe to the channel
-    channel.subscribe((status) => {
+    channel.subscribe((status, err) => {
+      console.log(`📡 Realtime ${table} subscription status:`, status)
       if (status === 'SUBSCRIBED') {
-        console.log(`Subscribed to ${table} realtime updates`)
+        console.log(`✅ Successfully subscribed to ${table} realtime updates`)
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error(`❌ Error subscribing to ${table} realtime updates:`, err)
+        // Don't throw error, just log it
+      } else if (status === 'TIMED_OUT') {
+        console.warn(`⏰ Subscription to ${table} timed out, retrying...`)
+      } else if (status === 'CLOSED') {
+        console.warn(`🔒 Subscription to ${table} was closed`)
       }
     })
 

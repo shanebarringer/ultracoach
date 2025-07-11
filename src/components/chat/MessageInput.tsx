@@ -5,9 +5,11 @@ import { useState } from 'react'
 interface MessageInputProps {
   onSendMessage: (content: string) => void
   disabled?: boolean
+  onStartTyping?: () => void
+  onStopTyping?: () => void
 }
 
-export default function MessageInput({ onSendMessage, disabled = false }: MessageInputProps) {
+export default function MessageInput({ onSendMessage, disabled = false, onStartTyping, onStopTyping }: MessageInputProps) {
   const [message, setMessage] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -15,6 +17,7 @@ export default function MessageInput({ onSendMessage, disabled = false }: Messag
     if (message.trim() && !disabled) {
       onSendMessage(message.trim())
       setMessage('')
+      onStopTyping?.()
     }
   }
 
@@ -30,8 +33,16 @@ export default function MessageInput({ onSendMessage, disabled = false }: Messag
       <div className="flex-1">
         <textarea
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value)
+            if (e.target.value.trim() && !disabled) {
+              onStartTyping?.()
+            } else {
+              onStopTyping?.()
+            }
+          }}
           onKeyPress={handleKeyPress}
+          onBlur={() => onStopTyping?.()}
           placeholder="Type your message..."
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
           rows={1}
