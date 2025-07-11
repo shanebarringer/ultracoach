@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Logger } from 'tslog'
+
+const logger = new Logger({ name: 'typing-api' })
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Error fetching typing status:', error)
+      logger.error('Error fetching typing status:', error)
       return NextResponse.json({ error: 'Failed to fetch typing status' }, { status: 500 })
     }
 
@@ -39,34 +42,22 @@ export async function GET(request: NextRequest) {
       isTyping: typingStatus?.is_typing && isRecent || false 
     })
   } catch (error) {
-    console.error('API error:', error)
+    logger.error('API error in GET /typing:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('⌨️ API: Received typing status request')
-    
     const session = await getServerSession(authOptions)
-    
     if (!session?.user) {
-      console.log('❌ API: No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    console.log('✅ API: Session found for user:', session.user.id)
-
     const { recipientId, isTyping } = await request.json()
-    console.log('⌨️ API: Request data:', { recipientId, isTyping, userId: session.user.id })
-
     if (!recipientId) {
-      console.log('❌ API: Missing recipient ID')
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
-
     // Update or insert typing status
-    console.log('💾 API: Upserting typing status to database...')
     const { error } = await supabaseAdmin
       .from('typing_status')
       .upsert({
@@ -75,16 +66,13 @@ export async function POST(request: NextRequest) {
         is_typing: isTyping,
         last_updated: new Date().toISOString()
       })
-
     if (error) {
-      console.error('❌ API: Database error updating typing status:', error)
+      logger.error('Failed to update typing status')
       return NextResponse.json({ error: 'Failed to update typing status' }, { status: 500 })
     }
-
-    console.log('✅ API: Typing status updated successfully')
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('💥 API: Unexpected error:', error)
+  } catch {
+    logger.error('API error in POST /typing')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

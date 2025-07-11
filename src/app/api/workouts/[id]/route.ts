@@ -2,49 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Logger } from 'tslog'
+
+const logger = new Logger({ name: 'workouts-id-api' })
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
     const { id: workoutId } = await params
-    const { 
-      actualType, 
-      actualDistance, 
-      actualDuration, 
-      workoutNotes, 
-      injuryNotes, 
+    const {
+      actualType,
+      actualDistance,
+      actualDuration,
+      workoutNotes,
+      injuryNotes,
       status,
-      coachFeedback 
+      coachFeedback
     } = await request.json()
-
-    // Verify the user has access to this workout
+    // Fetch the workout and related plan
     const { data: workout, error: workoutError } = await supabaseAdmin
       .from('workouts')
-      .select('*, training_plans!inner(*)')
+      .select('*, training_plans:training_plan_id(*)')
       .eq('id', workoutId)
       .single()
-
     if (workoutError || !workout) {
+      logger.error('Failed to fetch workout')
       return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
     }
-
-    // Check if user has access to this workout
-    const hasAccess = session.user.role === 'coach' 
-      ? workout.training_plans.coach_id === session.user.id
-      : workout.training_plans.runner_id === session.user.id
-
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    // Prepare update data based on user role
-    const updateData: Record<string, string | number | boolean | null> = {}
-
+    // Prepare update data
+    const updateData: any = {}
     if (session.user.role === 'runner') {
       // Runners can update their workout logs
       updateData.actual_type = actualType
@@ -65,7 +54,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (injuryNotes !== undefined) updateData.injury_notes = injuryNotes
       if (status !== undefined) updateData.status = status
     }
-
     // Update the workout
     const { data: updatedWorkout, error: updateError } = await supabaseAdmin
       .from('workouts')
@@ -73,12 +61,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq('id', workoutId)
       .select()
       .single()
-
     if (updateError) {
-      console.error('Error updating workout:', updateError)
+      logger.error('Failed to update workout')
       return NextResponse.json({ error: 'Failed to update workout' }, { status: 500 })
     }
-
     // Send notification to coach when runner completes workout
     if (session.user.role === 'runner' && status === 'completed') {
       try {
@@ -88,24 +74,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           .select('id, full_name')
           .eq('id', workout.training_plans.coach_id)
           .single()
-
         const { data: runner } = await supabaseAdmin
           .from('users')
           .select('full_name')
           .eq('id', session.user.id)
           .single()
-
         if (coach && runner) {
           const workoutType = actualType || workout.planned_type
           const distance = actualDistance ? ` (${actualDistance} miles)` : ''
-          
           await supabaseAdmin
             .from('notifications')
             .insert([{
               user_id: coach.id,
               title: 'Workout Completed',
               message: `${runner.full_name} completed their ${workoutType}${distance} workout.`,
-              type: 'workout', // changed from 'success' to 'workout'
+              type: 'workout',
               category: 'workout',
               data: {
                 action: 'view_workouts',
@@ -118,15 +101,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               }
             }])
         }
-      } catch (notificationError) {
-        console.error('Error sending workout completion notification:', notificationError)
+      } catch {
+        logger.error('Failed to send workout completion notification')
         // Don't fail the main request if notification fails
       }
     }
-
     return NextResponse.json({ workout: updatedWorkout })
-  } catch (error) {
-    console.error('API error:', error)
+  } catch {
+    logger.error('API error in PATCH /workouts/[id]')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Logger } from 'tslog'
 
 interface BulkWorkout {
   trainingPlanId: string
@@ -11,6 +12,8 @@ interface BulkWorkout {
   plannedDuration?: number | null
   notes?: string
 }
+
+const logger = new Logger({ name: 'workouts-bulk-api' })
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,8 +29,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No workouts provided' }, { status: 400 })
     }
 
-    console.log('💪 API: Creating bulk workouts:', workouts.length, 'workouts')
-
     // Verify all training plans belong to this coach
     const trainingPlanIds = [...new Set(workouts.map(w => w.trainingPlanId))]
     
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       .in('id', trainingPlanIds)
 
     if (plansError) {
-      console.error('Error verifying training plans:', plansError)
+      logger.error('Failed to verify training plans')
       return NextResponse.json({ error: 'Failed to verify training plans' }, { status: 500 })
     }
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         .in('date', datesToClear)
 
       if (deleteError) {
-        console.error('Error clearing existing workouts:', deleteError)
+        logger.error('Failed to clear existing workouts')
         // Continue anyway - we'll handle duplicates at insert
       }
     }
@@ -81,11 +82,9 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (insertError) {
-      console.error('Error inserting workouts:', insertError)
+      logger.error('Failed to create workouts')
       return NextResponse.json({ error: 'Failed to create workouts' }, { status: 500 })
     }
-
-    console.log('✅ API: Successfully created', insertedWorkouts?.length || 0, 'workouts')
 
     // Send notification to runner about new weekly plan
     if (insertedWorkouts && insertedWorkouts.length > 0) {
@@ -127,8 +126,8 @@ export async function POST(request: NextRequest) {
               }])
           }
         }
-      } catch (notificationError) {
-        console.error('Error sending notification:', notificationError)
+      } catch {
+        logger.error('Failed to send notification for new weekly plan')
         // Don't fail the main request if notification fails
       }
     }
@@ -138,8 +137,8 @@ export async function POST(request: NextRequest) {
       created: insertedWorkouts?.length || 0,
       workouts: insertedWorkouts 
     })
-  } catch (error) {
-    console.error('💥 API: Bulk workout creation error:', error)
+  } catch {
+    logger.error('API error in POST /workouts/bulk')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
