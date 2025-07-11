@@ -41,6 +41,14 @@ export default function Header() {
                     Training Plans
                   </Link>
                 )}
+                {session.user.role === 'coach' && (
+                  <Link
+                    href="/runners"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Runners
+                  </Link>
+                )}
                 <Link
                   href="/workouts"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -129,6 +137,14 @@ export default function Header() {
                     className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
                   >
                     Training Plans
+                  </Link>
+                )}
+                {session.user.role === 'coach' && (
+                  <Link
+                    href="/runners"
+                    className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
+                  >
+                    Runners
                   </Link>
                 )}
                 <Link
