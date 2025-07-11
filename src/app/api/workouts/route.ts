@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Fetch workouts based on user role
+    let query = supabaseAdmin
+      .from('workouts')
+      .select('*, training_plans!inner(*)')
+
+    if (session.user.role === 'coach') {
+      query = query.eq('training_plans.coach_id', session.user.id)
+    } else {
+      query = query.eq('training_plans.runner_id', session.user.id)
+    }
+
+    const { data: workouts, error } = await query.order('date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching workouts:', error)
+      return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
+    }
+
+    return NextResponse.json({ workouts: workouts || [] })
+  } catch (error) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the coach owns this training plan
-    const { data: plan, error: planError } = await supabase
+    const { data: plan, error: planError } = await supabaseAdmin
       .from('training_plans')
       .select('*')
       .eq('id', trainingPlanId)
@@ -39,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the workout
-    const { data: workout, error: workoutError } = await supabase
+    const { data: workout, error: workoutError } = await supabaseAdmin
       .from('workouts')
       .insert([
         {

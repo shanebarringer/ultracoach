@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     } = await request.json()
 
     // Verify the user has access to this workout
-    const { data: workout, error: workoutError } = await supabase
+    const { data: workout, error: workoutError } = await supabaseAdmin
       .from('workouts')
       .select('*, training_plans!inner(*)')
       .eq('id', workoutId)
@@ -67,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Update the workout
-    const { data: updatedWorkout, error: updateError } = await supabase
+    const { data: updatedWorkout, error: updateError } = await supabaseAdmin
       .from('workouts')
       .update(updateData)
       .eq('id', workoutId)

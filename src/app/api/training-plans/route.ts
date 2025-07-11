@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
+    console.log('🔍 Training plans GET - Session:', { 
+      hasSession: !!session, 
+      userId: session?.user?.id, 
+      userRole: session?.user?.role 
+    })
+    
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const query = supabase.from('training_plans')
-
     if (session.user.role === 'coach') {
-      const { data, error } = await query
+      console.log('📋 Fetching training plans for coach:', session.user.id)
+      
+      const { data, error } = await supabaseAdmin
+        .from('training_plans')
         .select('*, runners:runner_id(*)')
         .eq('coach_id', session.user.id)
         .order('created_at', { ascending: false })
+      
+      console.log('📋 Query result:', { 
+        dataCount: data?.length || 0, 
+        error, 
+        sampleData: data?.[0] 
+      })
       
       if (error) {
         console.error('Error fetching training plans:', error)
@@ -26,7 +39,8 @@ export async function GET() {
       
       return NextResponse.json({ trainingPlans: data || [] })
     } else {
-      const { data, error } = await query
+      const { data, error } = await supabaseAdmin
+        .from('training_plans')
         .select('*, coaches:coach_id(*)')
         .eq('runner_id', session.user.id)
         .order('created_at', { ascending: false })
@@ -59,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the runner by email
-    const { data: runner, error: runnerError } = await supabase
+    const { data: runner, error: runnerError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('email', runnerEmail)
@@ -71,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the training plan
-    const { data: trainingPlan, error: planError } = await supabase
+    const { data: trainingPlan, error: planError } = await supabaseAdmin
       .from('training_plans')
       .insert([
         {

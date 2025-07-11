@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch messages between the current user and the recipient
-    const { data: messages, error } = await supabase
+    const { data: messages, error } = await supabaseAdmin
       .from('messages')
       .select(`
         *,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the recipient exists
-    const { data: recipient, error: recipientError } = await supabase
+    const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('id', recipientId)
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the message
-    const { data: message, error: messageError } = await supabase
+    const { data: message, error: messageError } = await supabaseAdmin
       .from('messages')
       .insert([
         {
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update message read status (only for messages sent to the current user)
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('messages')
       .update({ read })
       .in('id', messageIds)
