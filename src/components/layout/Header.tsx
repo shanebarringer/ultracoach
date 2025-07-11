@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
+import NotificationBell from '@/components/common/NotificationBell'
 
 export default function Header() {
   const { data: session } = useSession()
@@ -52,6 +53,7 @@ export default function Header() {
                 >
                   Messages
                 </Link>
+                <NotificationBell />
                 <div className="relative">
                   <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
