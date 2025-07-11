@@ -18,9 +18,12 @@ export function useTypingStatus(recipientId: string) {
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
   const sendTypingTimeoutRef = useRef<NodeJS.Timeout>()
 
-  // Send typing status to server
+  // Send typing status to server (disabled until typing_status table is created)
   const sendTypingStatus = useCallback(async (typing: boolean) => {
     if (!session?.user?.id || !recipientId) return
+
+    // Temporarily disabled - uncomment when typing_status table is created
+    return
 
     console.log('⌨️ Sending typing status:', { typing, recipientId })
 

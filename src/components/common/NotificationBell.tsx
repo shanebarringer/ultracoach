@@ -1,11 +1,103 @@
 'use client'
 
-import { useState } from 'react'
-import { useNotifications } from '@/contexts/NotificationContext'
+import { useState, useEffect, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
+
+interface Notification {
+  id: string
+  title: string
+  message: string
+  type: string
+  category: string
+  data?: any
+  read: boolean
+  created_at: string
+}
 
 export default function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const { data: session } = useSession()
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const fetchNotifications = useCallback(async () => {
+    if (!session?.user?.id) return
+
+    try {
+      const response = await fetch('/api/notifications?limit=20')
+      if (response.ok) {
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+        setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }, [session?.user?.id])
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchNotifications()
+      
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [session?.user?.id, fetchNotifications])
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds: [notificationId],
+          read: true
+        }),
+      })
+
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => 
+            n.id === notificationId ? { ...n, read: true } : n
+          )
+        )
+        setUnreadCount(prev => Math.max(0, prev - 1))
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
+    if (unreadIds.length === 0) return
+
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds: unreadIds,
+          read: true
+        }),
+      })
+
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => ({ ...n, read: true }))
+        )
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+    }
+  }
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -21,10 +113,19 @@ export default function NotificationBell() {
     }
   }
 
-  const handleNotificationClick = (notificationId: string, read: boolean) => {
-    if (!read) {
-      markAsRead(notificationId)
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification.id)
     }
+    
+    // Handle notification actions
+    if (notification.data?.action === 'view_workouts') {
+      window.location.href = '/workouts'
+    } else if (notification.category === 'message') {
+      window.location.href = '/chat'
+    }
+    
+    setIsOpen(false)
   }
 
   const getNotificationIcon = (type: string) => {
@@ -37,7 +138,9 @@ export default function NotificationBell() {
             </svg>
           </div>
         )
+      case 'success':
       case 'workout':
+      case 'training_plan':
         return (
           <div className="bg-green-100 p-2 rounded-full">
             <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,13 +218,13 @@ export default function NotificationBell() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      onClick={() => handleNotificationClick(notification.id, notification.read)}
+                      onClick={() => handleNotificationClick(notification)}
                       className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
                         !notification.read ? 'bg-blue-50' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-3">
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification.category || notification.type)}
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <h4 className={`text-sm font-medium ${
@@ -139,6 +242,11 @@ export default function NotificationBell() {
                           <p className="text-xs text-gray-500 mt-2">
                             {formatTime(notification.created_at)}
                           </p>
+                          {notification.data?.action && (
+                            <p className="text-xs text-blue-600 mt-1 font-medium">
+                              Click to view →
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

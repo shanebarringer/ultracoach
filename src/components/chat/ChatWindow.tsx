@@ -205,7 +205,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   })
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Chat Header */}
       <div className="flex items-center px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center space-x-3">
@@ -224,7 +224,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       </div>
 
       {/* Messages */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <MessageList 
           messages={messages} 
           currentUserId={session?.user?.id || ''} 

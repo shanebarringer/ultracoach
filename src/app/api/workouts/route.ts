@@ -3,13 +3,18 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const runnerId = searchParams.get('runnerId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     // Fetch workouts based on user role
     let query = supabaseAdmin
@@ -18,8 +23,21 @@ export async function GET() {
 
     if (session.user.role === 'coach') {
       query = query.eq('training_plans.coach_id', session.user.id)
+      
+      // If specific runner requested, filter by runner
+      if (runnerId) {
+        query = query.eq('training_plans.runner_id', runnerId)
+      }
     } else {
       query = query.eq('training_plans.runner_id', session.user.id)
+    }
+
+    // Apply date filters if provided
+    if (startDate) {
+      query = query.gte('date', startDate)
+    }
+    if (endDate) {
+      query = query.lte('date', endDate)
     }
 
     const { data: workouts, error } = await query.order('date', { ascending: false })

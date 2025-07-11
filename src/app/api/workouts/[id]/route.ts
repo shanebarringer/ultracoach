@@ -79,6 +79,51 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Failed to update workout' }, { status: 500 })
     }
 
+    // Send notification to coach when runner completes workout
+    if (session.user.role === 'runner' && status === 'completed') {
+      try {
+        // Get coach and runner info
+        const { data: coach } = await supabaseAdmin
+          .from('users')
+          .select('id, full_name')
+          .eq('id', workout.training_plans.coach_id)
+          .single()
+
+        const { data: runner } = await supabaseAdmin
+          .from('users')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single()
+
+        if (coach && runner) {
+          const workoutType = actualType || workout.planned_type
+          const distance = actualDistance ? ` (${actualDistance} miles)` : ''
+          
+          await supabaseAdmin
+            .from('notifications')
+            .insert([{
+              user_id: coach.id,
+              title: 'Workout Completed',
+              message: `${runner.full_name} completed their ${workoutType}${distance} workout.`,
+              type: 'success',
+              category: 'workout',
+              data: {
+                action: 'view_workouts',
+                workoutId: workoutId,
+                runnerId: session.user.id,
+                runnerName: runner.full_name,
+                workoutType,
+                actualDistance,
+                actualDuration
+              }
+            }])
+        }
+      } catch (notificationError) {
+        console.error('Error sending workout completion notification:', notificationError)
+        // Don't fail the main request if notification fails
+      }
+    }
+
     return NextResponse.json({ workout: updatedWorkout })
   } catch (error) {
     console.error('API error:', error)

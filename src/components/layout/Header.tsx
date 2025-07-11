@@ -49,6 +49,14 @@ export default function Header() {
                     Runners
                   </Link>
                 )}
+                {session.user.role === 'coach' && (
+                  <Link
+                    href="/weekly-planner"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Weekly Planner
+                  </Link>
+                )}
                 <Link
                   href="/workouts"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -145,6 +153,14 @@ export default function Header() {
                     className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
                   >
                     Runners
+                  </Link>
+                )}
+                {session.user.role === 'coach' && (
+                  <Link
+                    href="/weekly-planner"
+                    className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
+                  >
+                    Weekly Planner
                   </Link>
                 )}
                 <Link
