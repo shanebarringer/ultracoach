@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
-import { supabase } from '@/lib/supabase'
 import type { TrainingPlan, User } from '@/lib/supabase'
 
 type TrainingPlanWithUsers = TrainingPlan & { runners?: User; coaches?: User }
@@ -22,35 +21,21 @@ export default function TrainingPlansPage() {
     if (!session?.user?.id) return
 
     try {
-      const query = supabase.from('training_plans')
-
-      let result
-      if (session.user.role === 'coach') {
-        result = await query
-          .select('*, runners:runner_id(*)')
-          .eq('coach_id', session.user.id)
-          .order('created_at', { ascending: false })
-      } else {
-        result = await query
-          .select('*, coaches:coach_id(*)')
-          .eq('runner_id', session.user.id)
-          .order('created_at', { ascending: false })
-      }
-
-      const { data, error } = result
-
-      if (error) {
-        console.error('Error fetching training plans:', error)
+      const response = await fetch('/api/training-plans')
+      
+      if (!response.ok) {
+        console.error('Failed to fetch training plans:', response.statusText)
         return
       }
 
-      setTrainingPlans(data || [])
+      const data = await response.json()
+      setTrainingPlans(data.trainingPlans || [])
     } catch (error) {
       console.error('Error fetching training plans:', error)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id, session?.user?.role])
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (status === 'loading') return

@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
@@ -17,34 +16,32 @@ export default function CoachDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const { data: plans, error: plansError } = await supabase
-        .from('training_plans')
-        .select('*, runners:runner_id(*)')
-        .eq('coach_id', session?.user?.id)
-        .order('created_at', { ascending: false })
+      // Fetch training plans via API
+      const plansResponse = await fetch('/api/training-plans')
+      if (plansResponse.ok) {
+        const plansData = await plansResponse.json()
+        const plans = plansData.trainingPlans || []
+        setTrainingPlans(plans)
 
-      if (plansError) throw plansError
+        // Extract unique runners from training plans
+        const uniqueRunners = plans.reduce((acc: User[], plan: TrainingPlanWithRunner) => {
+          if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
+            acc.push(plan.runners)
+          }
+          return acc
+        }, [])
+        setRunners(uniqueRunners)
+      }
 
-      const { data: workouts, error: workoutsError } = await supabase
-        .from('workouts')
-        .select('*, training_plans!inner(*)')
-        .eq('training_plans.coach_id', session?.user?.id)
-        .eq('status', 'completed')
-        .order('updated_at', { ascending: false })
-        .limit(5)
-
-      if (workoutsError) throw workoutsError
-
-      const uniqueRunners = plans?.reduce((acc: User[], plan: TrainingPlanWithRunner) => {
-        if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
-          acc.push(plan.runners)
-        }
-        return acc
-      }, []) || []
-
-      setTrainingPlans(plans || [])
-      setRunners(uniqueRunners)
-      setRecentWorkouts(workouts || [])
+      // Fetch recent completed workouts via API
+      const workoutsResponse = await fetch('/api/workouts')
+      if (workoutsResponse.ok) {
+        const workoutsData = await workoutsResponse.json()
+        const recentWorkouts = (workoutsData.workouts || [])
+          .filter((w: Workout) => w.status === 'completed')
+          .slice(0, 5)
+        setRecentWorkouts(recentWorkouts)
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {

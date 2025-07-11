@@ -7,7 +7,6 @@ import { useParams } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
-import { supabase } from '@/lib/supabase'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
 type TrainingPlanWithUsers = TrainingPlan & { runners?: User; coaches?: User }
@@ -29,52 +28,26 @@ export default function TrainingPlanDetailPage() {
     if (!session?.user?.id || !planId) return
 
     try {
-      // Fetch training plan details
-      const planQuery = supabase.from('training_plans')
-
-      let planResult
-      if (session.user.role === 'coach') {
-        planResult = await planQuery
-          .select('*, runners:runner_id(*)')
-          .eq('id', planId)
-          .eq('coach_id', session.user.id)
-          .single()
-      } else {
-        planResult = await planQuery
-          .select('*, coaches:coach_id(*)')
-          .eq('id', planId)
-          .eq('runner_id', session.user.id)
-          .single()
-      }
-
-      const { data: plan, error: planError } = planResult
-
-      if (planError) {
-        console.error('Error fetching training plan:', planError)
-        router.push('/training-plans')
+      const response = await fetch(`/api/training-plans/${planId}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          router.push('/training-plans')
+          return
+        }
+        console.error('Failed to fetch training plan:', response.statusText)
         return
       }
 
-      setTrainingPlan(plan)
-
-      // Fetch workouts for this training plan
-      const { data: workoutData, error: workoutError } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('training_plan_id', planId)
-        .order('date', { ascending: true })
-
-      if (workoutError) {
-        console.error('Error fetching workouts:', workoutError)
-      } else {
-        setWorkouts(workoutData || [])
-      }
+      const data = await response.json()
+      setTrainingPlan(data.trainingPlan)
+      setWorkouts(data.workouts || [])
     } catch (error) {
       console.error('Error fetching training plan details:', error)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id, session?.user?.role, planId, router])
+  }, [session?.user?.id, planId, router])
 
   useEffect(() => {
     if (status === 'loading') return

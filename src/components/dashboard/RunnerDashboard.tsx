@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
 
 export default function RunnerDashboard() {
@@ -13,27 +12,23 @@ export default function RunnerDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const { data: plans, error: plansError } = await supabase
-        .from('training_plans')
-        .select('*')
-        .eq('runner_id', session?.user?.id)
-        .order('created_at', { ascending: false })
+      // Fetch training plans via API
+      const plansResponse = await fetch('/api/training-plans')
+      if (plansResponse.ok) {
+        const plansData = await plansResponse.json()
+        setTrainingPlans(plansData.trainingPlans || [])
+      }
 
-      if (plansError) throw plansError
-
-      const { data: workouts, error: workoutsError } = await supabase
-        .from('workouts')
-        .select('*, training_plans!inner(*)')
-        .eq('training_plans.runner_id', session?.user?.id)
-        .eq('status', 'planned')
-        .gte('date', new Date().toISOString().split('T')[0])
-        .order('date', { ascending: true })
-        .limit(5)
-
-      if (workoutsError) throw workoutsError
-
-      setTrainingPlans(plans || [])
-      setUpcomingWorkouts(workouts || [])
+      // Fetch upcoming workouts via API
+      const workoutsResponse = await fetch('/api/workouts')
+      if (workoutsResponse.ok) {
+        const workoutsData = await workoutsResponse.json()
+        // Filter for planned workouts that are upcoming
+        const upcomingWorkouts = (workoutsData.workouts || [])
+          .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
+          .slice(0, 5)
+        setUpcomingWorkouts(upcomingWorkouts)
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {

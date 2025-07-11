@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
-import { supabase } from '@/lib/supabase'
 import type { Workout } from '@/lib/supabase'
 
 export default function WorkoutsPage() {
@@ -21,30 +20,21 @@ export default function WorkoutsPage() {
     if (!session?.user?.id) return
 
     try {
-      let query = supabase
-        .from('workouts')
-        .select('*, training_plans!inner(*)')
-
-      if (session.user.role === 'coach') {
-        query = query.eq('training_plans.coach_id', session.user.id)
-      } else {
-        query = query.eq('training_plans.runner_id', session.user.id)
-      }
-
-      const { data, error } = await query.order('date', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching workouts:', error)
+      const response = await fetch('/api/workouts')
+      
+      if (!response.ok) {
+        console.error('Failed to fetch workouts:', response.statusText)
         return
       }
 
-      setWorkouts(data || [])
+      const data = await response.json()
+      setWorkouts(data.workouts || [])
     } catch (error) {
       console.error('Error fetching workouts:', error)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id, session?.user?.role])
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (status === 'loading') return
