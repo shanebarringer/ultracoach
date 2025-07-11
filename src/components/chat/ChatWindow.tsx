@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import TypingIndicator from './TypingIndicator'
-import { supabase } from '@/lib/supabase'
+// import { supabase } from '@/lib/supabase' // No longer used
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import type { Message, User } from '@/lib/supabase'
@@ -44,10 +44,10 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       })
 
       if (!response.ok) {
-        console.error('Error marking messages as read:', response.statusText)
+        // console.error('Error marking messages as read:', response.statusText)
       }
-    } catch (error) {
-      console.error('Error marking messages as read:', error)
+    } catch {
+      // Error intentionally ignored
     }
   }, [session?.user?.id, recipientId])
 
@@ -58,23 +58,17 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       const response = await fetch(`/api/messages?recipientId=${recipientId}`)
       
       if (!response.ok) {
-        console.error('Error fetching messages:', response.statusText)
+        // console.error('Error fetching messages:', response.statusText)
         return
       }
 
       const data = await response.json()
-      console.log('💬 ChatWindow: Fetched messages:', data.messages?.length || 0, 'messages')
-      
-      if (data.messages?.length > 0) {
-        console.log('💬 ChatWindow: First message structure:', data.messages[0])
-      }
-      
       setMessages(data.messages || [])
 
       // Mark messages as read
       await markMessagesAsRead()
-    } catch (error) {
-      console.error('Error fetching messages:', error)
+    } catch {
+      // Error intentionally ignored
     } finally {
       setLoading(false)
     }
@@ -97,14 +91,12 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       })
 
       if (!response.ok) {
-        console.error('Error sending message:', response.statusText)
+        // console.error('Error sending message:', response.statusText)
         alert('Failed to send message. Please try again.')
       } else {
-        // Refresh messages to ensure UI is updated
         fetchMessages()
       }
-    } catch (error) {
-      console.error('Error sending message:', error)
+    } catch {
       alert('Failed to send message. Please try again.')
     } finally {
       setSending(false)
@@ -135,8 +127,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       
       if (!isRelevantMessage) return
 
-      console.log('💬 Real-time: New message received:', newMessage)
-      
       // Fetch the sender info for the new message
       fetch(`/api/users/${newMessage.sender_id}`)
         .then(response => response.json())
@@ -152,7 +142,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
               const exists = prev.some(msg => msg.id === newMessage.id)
               if (exists) return prev
               
-              console.log('💬 Real-time: Adding new message to state')
               return [...prev, messageWithUser]
             })
 
@@ -162,8 +151,8 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             }
           }
         })
-        .catch(error => {
-          console.error('Error fetching sender info:', error)
+        .catch(() => {
+          // Error intentionally ignored
         })
     },
     onUpdate: (payload) => {
@@ -176,7 +165,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       
       if (!isRelevantMessage) return
 
-      console.log('💬 Real-time: Message updated:', updatedMessage)
       setMessages(prev => 
         prev.map(msg => 
           msg.id === updatedMessage.id 
@@ -194,15 +182,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       </div>
     )
   }
-
-  // Debug logging
-  console.log('💬 ChatWindow Debug:', {
-    hasSession: !!session,
-    userId: session?.user?.id,
-    sending,
-    recipientId,
-    messagesCount: messages.length
-  })
 
   return (
     <div className="flex flex-col h-full min-h-0">
