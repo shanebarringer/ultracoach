@@ -41,11 +41,18 @@ run_sql() {
     fi
 }
 
-# Check for required environment variables
+# Check for required environment variables and build DATABASE_URL if needed
 if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_DB_URL" ]; then
-    echo "⚠️  DATABASE_URL not set. Make sure you're connected to your Supabase project."
-    echo "   You can set it with: export DATABASE_URL='your-supabase-connection-string'"
-    echo "   Or use: supabase link --project-ref your-project-ref"
+    if [ -n "$DATABASE_PASSWORD" ]; then
+        # Build DATABASE_URL from environment variables
+        DATABASE_URL="postgresql://postgres.ccnbzjpccmlribljugve:${DATABASE_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+        echo "✅ Built DATABASE_URL from environment variables"
+    else
+        echo "⚠️  DATABASE_URL not set. You can:"
+        echo "   1. Set DATABASE_PASSWORD in your .env.local file"
+        echo "   2. Set DATABASE_URL directly: export DATABASE_URL='your-connection-string'"
+        echo "   3. Use: supabase link --project-ref your-project-ref"
+    fi
 fi
 
 echo ""

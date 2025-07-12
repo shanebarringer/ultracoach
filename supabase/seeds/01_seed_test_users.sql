@@ -18,15 +18,18 @@ DECLARE
     runner10_id UUID := gen_random_uuid();
     
     -- Pre-computed password hash for 'password123'
-    password_hash TEXT := '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+    password_hash TEXT := '$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO';
 BEGIN
 
-    -- Insert coaches
+    -- Insert coaches (update password hash if user already exists)
     INSERT INTO users (id, email, full_name, role, password_hash, created_at) VALUES
     (coach1_id, 'coach1@ultracoach.dev', 'Sarah Mountain', 'coach', password_hash, NOW()),
-    (coach2_id, 'coach2@ultracoach.dev', 'Mike Trailblazer', 'coach', password_hash, NOW());
+    (coach2_id, 'coach2@ultracoach.dev', 'Mike Trailblazer', 'coach', password_hash, NOW())
+    ON CONFLICT (email) DO UPDATE SET 
+        password_hash = EXCLUDED.password_hash,
+        updated_at = NOW();
 
-    -- Insert runners  
+    -- Insert runners (update password hash if user already exists)
     INSERT INTO users (id, email, full_name, role, password_hash, created_at) VALUES
     (runner1_id, 'runner1@ultracoach.dev', 'Alex Speedster', 'runner', password_hash, NOW()),
     (runner2_id, 'runner2@ultracoach.dev', 'Jordan Endurance', 'runner', password_hash, NOW()),
@@ -37,7 +40,10 @@ BEGIN
     (runner7_id, 'runner7@ultracoach.dev', 'Avery Pacesetter', 'runner', password_hash, NOW()),
     (runner8_id, 'runner8@ultracoach.dev', 'Phoenix Ultramarathoner', 'runner', password_hash, NOW()),
     (runner9_id, 'runner9@ultracoach.dev', 'Sage Mountaineer', 'runner', password_hash, NOW()),
-    (runner10_id, 'runner10@ultracoach.dev', 'River Flowstate', 'runner', password_hash, NOW());
+    (runner10_id, 'runner10@ultracoach.dev', 'River Flowstate', 'runner', password_hash, NOW())
+    ON CONFLICT (email) DO UPDATE SET 
+        password_hash = EXCLUDED.password_hash,
+        updated_at = NOW();
 
     -- Create some training plans to connect coaches and runners
     INSERT INTO training_plans (id, title, description, coach_id, runner_id, archived, created_at) VALUES
@@ -56,51 +62,14 @@ BEGIN
     (gen_random_uuid(), 'Sage - Multi-stage Racing', 'Preparing for stage races', coach2_id, runner9_id, false, NOW()),
     (gen_random_uuid(), 'River - Recovery & Comeback', 'Returning from injury', coach2_id, runner10_id, false, NOW());
 
-    -- Create some sample workouts for a few training plans
-    INSERT INTO workouts (id, training_plan_id, date, planned_type, planned_distance, planned_duration, description, status, created_at)
-    SELECT 
-        gen_random_uuid(),
-        tp.id,
-        CURRENT_DATE + (INTERVAL '1 day' * generate_series(1, 7)),
-        CASE (generate_series(1, 7) % 7)
-            WHEN 1 THEN 'Easy Run'
-            WHEN 2 THEN 'Tempo Run' 
-            WHEN 3 THEN 'Easy Run'
-            WHEN 4 THEN 'Intervals'
-            WHEN 5 THEN 'Easy Run'
-            WHEN 6 THEN 'Long Run'
-            WHEN 0 THEN 'Rest Day'
-        END,
-        CASE (generate_series(1, 7) % 7)
-            WHEN 1 THEN 6
-            WHEN 2 THEN 8
-            WHEN 3 THEN 5
-            WHEN 4 THEN 7
-            WHEN 5 THEN 4
-            WHEN 6 THEN 15
-            WHEN 0 THEN NULL
-        END,
-        CASE (generate_series(1, 7) % 7)
-            WHEN 1 THEN 50
-            WHEN 2 THEN 60
-            WHEN 3 THEN 40
-            WHEN 4 THEN 55
-            WHEN 5 THEN 35
-            WHEN 6 THEN 120
-            WHEN 0 THEN NULL
-        END,
-        CASE (generate_series(1, 7) % 7)
-            WHEN 1 THEN 'Comfortable aerobic pace'
-            WHEN 2 THEN 'Comfortably hard effort'
-            WHEN 3 THEN 'Easy recovery pace'
-            WHEN 4 THEN '5 x 1K at 5K pace with 90s recovery'
-            WHEN 5 THEN 'Easy shakeout run'
-            WHEN 6 THEN 'Long steady effort, practice nutrition'
-            WHEN 0 THEN 'Complete rest or gentle stretching'
-        END,
-        'planned',
-        NOW()
-    FROM training_plans tp
-    WHERE tp.runner_id IN (runner1_id, runner6_id); -- Just create workouts for 2 plans to start
+    -- Create some simple sample workouts for first two training plans
+    INSERT INTO workouts (id, training_plan_id, date, planned_type, planned_distance, planned_duration, workout_notes, status, created_at) VALUES
+    -- Alex's workouts
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 6, 50, 'Comfortable aerobic pace', 'planned', NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 2, 'Tempo Run', 8, 60, 'Comfortably hard effort', 'planned', NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 3, 'Easy Run', 5, 40, 'Easy recovery pace', 'planned', NOW()),
+    -- Riley's workouts  
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 4, 35, 'Trail running fundamentals', 'planned', NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 2, 'Long Run', 12, 90, 'Build endurance on trails', 'planned', NOW());
 
 END $$;

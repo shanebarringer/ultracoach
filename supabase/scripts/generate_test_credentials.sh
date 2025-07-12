@@ -7,11 +7,11 @@ set -e
 echo "🔐 Generating test user credentials..."
 
 # Create credentials directory if it doesn't exist
-mkdir -p "credentials"
+mkdir -p "temp/credentials"
 
 # Get timestamp for file
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-CREDS_FILE="credentials/test_users_${TIMESTAMP}.txt"
+CREDS_FILE="temp/credentials/test_users_${TIMESTAMP}.txt"
 
 # Create credentials file
 cat > "$CREDS_FILE" << 'EOF'
@@ -68,18 +68,18 @@ You can test different user roles and coach-runner relationships:
 
 ## Security Note
 This file contains test credentials and should never be committed to version control.
-The .gitignore file should exclude credentials/ directory.
+The .gitignore file should exclude temp/credentials/ directory.
 
 Generated: $(date)
 EOF
 
 # Create symlink to latest credentials
-ln -sf "test_users_${TIMESTAMP}.txt" "credentials/latest.txt"
+ln -sf "test_users_${TIMESTAMP}.txt" "temp/credentials/latest.txt"
 
 echo "✅ Test credentials generated!"
 echo ""
 echo "📁 File: $CREDS_FILE"
-echo "🔗 Latest: credentials/latest.txt"
+echo "🔗 Latest: temp/credentials/latest.txt"
 echo ""
 echo "👥 Created accounts:"
 echo "   • 2 coaches (coach1@ultracoach.dev, coach2@ultracoach.dev)"
