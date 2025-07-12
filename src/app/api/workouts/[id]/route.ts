@@ -33,7 +33,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
     }
     // Prepare update data
-    const updateData: any = {}
+    const updateData: Partial<{
+      actual_type: string
+      actual_distance: number
+      actual_duration: number
+      workout_notes: string
+      injury_notes: string
+      status: string
+      coach_feedback: string
+    }> = {}
     if (session.user.role === 'runner') {
       // Runners can update their workout logs
       updateData.actual_type = actualType

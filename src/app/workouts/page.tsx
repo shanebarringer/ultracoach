@@ -28,7 +28,7 @@ export default function WorkoutsPage() {
     }
   }, [session, status, router])
 
-  const handleLogWorkout = (workout: Workout) => {
+  const handleLogWorkout = (workout: any) => {
     setUiState(prev => ({ ...prev, selectedWorkout: workout }))
     setShowLogWorkout(true)
   }
@@ -65,7 +65,6 @@ export default function WorkoutsPage() {
         </div>
       </Layout>
     )
-  }
 
   if (!session) {
     return null
@@ -137,7 +136,7 @@ export default function WorkoutsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {workout.actual_type || workout.planned_type}
+                        {workout.type}
                       </h3>
                       <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>
                         {workout.status}
@@ -151,9 +150,9 @@ export default function WorkoutsPage() {
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Planned</h4>
                         <p className="text-sm text-gray-600">
-                          {workout.planned_distance && `${workout.planned_distance} miles`}
-                          {workout.planned_duration && ` • ${workout.planned_duration} min`}
-                          {!workout.planned_distance && !workout.planned_duration && 'No specific targets'}
+                          {workout.distance && `${workout.distance} miles`}
+                          {workout.duration && ` • ${workout.duration} min`}
+                          {!workout.distance && !workout.duration && 'No specific targets'}
                         </p>
                       </div>
                       
@@ -161,34 +160,22 @@ export default function WorkoutsPage() {
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-1">Actual</h4>
                           <p className="text-sm text-gray-600">
-                            {workout.actual_distance && `${workout.actual_distance} miles`}
-                            {workout.actual_duration && ` • ${workout.actual_duration} min`}
-                            {!workout.actual_distance && !workout.actual_duration && 'No data logged'}
+                            {workout.distance && `${workout.distance} miles`}
+                            {workout.duration && ` • ${workout.duration} min`}
+                            {!workout.distance && !workout.duration && 'No data logged'}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {workout.workout_notes && (
+                    {workout.notes && (
                       <div className="mb-3">
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
-                        <p className="text-sm text-gray-600">{workout.workout_notes}</p>
+                        <p className="text-sm text-gray-600">{workout.notes}</p>
                       </div>
                     )}
 
-                    {workout.injury_notes && (
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Injury Notes</h4>
-                        <p className="text-sm text-red-600">{workout.injury_notes}</p>
-                      </div>
-                    )}
 
-                    {workout.coach_feedback && (
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Coach Feedback</h4>
-                        <p className="text-sm text-gray-600">{workout.coach_feedback}</p>
-                      </div>
-                    )}
                   </div>
                   
                   <div className="flex gap-2 ml-4">
@@ -220,7 +207,7 @@ export default function WorkoutsPage() {
             isOpen={showLogWorkout}
             onClose={() => setShowLogWorkout(false)}
             onSuccess={handleLogWorkoutSuccess}
-            workout={uiState.selectedWorkout}
+            workout={uiState.selectedWorkout as any}
           />
         )}
       </div>
