@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test credentials and sensitive data
+credentials/
+supabase/credentials/
+test-users.txt
+*.credentials.txt

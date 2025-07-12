@@ -59,7 +59,23 @@ run_sql "$SUPABASE_DIR/seeds/03_seed_plan_templates.sql" "Plan templates"
 run_sql "$SUPABASE_DIR/seeds/04_seed_template_phases.sql" "Template phases"
 
 echo ""
-echo "🏃 Step 3: Adding Sample Races (optional)..."
+echo "👥 Step 3: Creating Test Users (optional)..."
+read -p "Create test users (2 coaches, 10 runners)? (y/N): " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    run_sql "$SUPABASE_DIR/seeds/01_seed_test_users.sql" "Test users and training plans"
+    # Generate credentials file
+    if [ -f "$SUPABASE_DIR/scripts/generate_test_credentials.sh" ]; then
+        cd "$SUPABASE_DIR" && ./scripts/generate_test_credentials.sh
+        cd - > /dev/null
+    fi
+    echo "  ✅ Test users created and credentials generated"
+else
+    echo "  ⏭️  Skipped test users"
+fi
+
+echo ""
+echo "🏃 Step 4: Adding Sample Races (optional)..."
 read -p "Add sample races for development? (y/N): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -78,6 +94,9 @@ echo "   • Enhanced training_plans and workouts tables"
 echo "   • 10 standard training phases"
 echo "   • 15+ training plan templates"
 echo "   • Full RLS security policies"
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "   • Test users: 2 coaches, 10 runners with training plans"
+fi
 echo ""
 echo "🔧 Next steps:"
 echo "   • Update your application to use the new schema"
