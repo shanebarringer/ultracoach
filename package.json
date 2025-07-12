@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:setup": "./supabase/scripts/setup_with_env.sh",
+    "db:seed": "./supabase/scripts/seed_database.sh",
+    "db:reset": "./supabase/scripts/reset_database.sh",
+    "db:fix-passwords": "./supabase/scripts/fix_test_passwords.sh",
+    "db:backup": "./supabase/scripts/backup_user_data.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.5",

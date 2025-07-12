@@ -27,11 +27,30 @@ npm run lint
 
 ## Database Setup
 
-**Set up enhanced training system:**
+**Rails-style database commands (recommended):**
 ```bash
+# Complete setup with schema, seeds, and test users
+npm run db:setup
+
+# Reset database (drop + recreate + seed)
+npm run db:reset
+
+# Seed database with sample data only
+npm run db:seed
+
+# Fix test user password hashes
+npm run db:fix-passwords
+
+# Backup user data before major changes
+npm run db:backup
+```
+
+**Direct script execution:**
+```bash
+# Set up enhanced training system
 ./supabase/scripts/setup_with_env.sh
 ```
-This script loads environment variables from `.env.local` and sets up the complete training system including test users.
+These scripts load environment variables from `.env.local` automatically.
 
 **Manual database operations:**
 ```bash
@@ -53,10 +72,10 @@ supabase link --project-ref ccnbzjpccmlribljugve
 
 **Troubleshooting login issues:**
 ```bash
-# If test users can't login, fix password hashes:
-source .env.local && PGPASSWORD="$DATABASE_PASSWORD" psql -h aws-0-us-east-2.pooler.supabase.com -U postgres.ccnbzjpccmlribljugve -d postgres -f supabase/temp/fix_passwords.sql
+# Quick fix for test user login issues
+npm run db:fix-passwords
 
-# Or run the password fix script:
+# Or run the script directly:
 ./supabase/scripts/fix_test_passwords.sh
 ```
 
