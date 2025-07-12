@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from '@/components/providers/SessionProvider'
-import { NotificationProvider } from '@/contexts/NotificationContext'
+import { JotaiProvider } from '@/providers/JotaiProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +30,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider session={null}>
-          <NotificationProvider>
+          <JotaiProvider>
             {children}
-          </NotificationProvider>
+          </JotaiProvider>
         </SessionProvider>
       </body>
     </html>

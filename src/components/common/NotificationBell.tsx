@@ -1,103 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
-
-interface Notification {
-  id: string
-  title: string
-  message: string
-  type: string
-  category: string
-  data?: any
-  read: boolean
-  created_at: string
-}
+import { useState } from 'react'
+import { useNotifications } from '@/hooks/useNotifications'
 
 export default function NotificationBell() {
-  const { data: session } = useSession()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
-  const fetchNotifications = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/notifications?limit=20')
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-        setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
-  }, [session?.user?.id])
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchNotifications()
-      
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [session?.user?.id, fetchNotifications])
-
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notificationIds: [notificationId],
-          read: true
-        }),
-      })
-
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(n => 
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        )
-        setUnreadCount(prev => Math.max(0, prev - 1))
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error)
-    }
-  }
-
-  const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
-    if (unreadIds.length === 0) return
-
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notificationIds: unreadIds,
-          read: true
-        }),
-      })
-
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(n => ({ ...n, read: true }))
-        )
-        setUnreadCount(0)
-      }
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error)
-    }
-  }
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -118,10 +27,10 @@ export default function NotificationBell() {
       markAsRead(notification.id)
     }
     
-    // Handle notification actions
-    if (notification.data?.action === 'view_workouts') {
+    // Handle notification actions based on type
+    if (notification.type === 'workout') {
       window.location.href = '/workouts'
-    } else if (notification.category === 'message') {
+    } else if (notification.type === 'message') {
       window.location.href = '/chat'
     }
     
@@ -224,7 +133,7 @@ export default function NotificationBell() {
                       }`}
                     >
                       <div className="flex items-start space-x-3">
-                        {getNotificationIcon(notification.category || notification.type)}
+                        {getNotificationIcon(notification.type)}
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <h4 className={`text-sm font-medium ${
@@ -237,16 +146,14 @@ export default function NotificationBell() {
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mt-1">
-                            {notification.message}
+                            {notification.content}
                           </p>
                           <p className="text-xs text-gray-500 mt-2">
                             {formatTime(notification.created_at)}
                           </p>
-                          {notification.data?.action && (
-                            <p className="text-xs text-blue-600 mt-1 font-medium">
-                              Click to view →
-                            </p>
-                          )}
+                          <p className="text-xs text-blue-600 mt-1 font-medium">
+                            Click to view →
+                          </p>
                         </div>
                       </div>
                     </div>

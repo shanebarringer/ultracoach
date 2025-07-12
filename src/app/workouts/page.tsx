@@ -1,40 +1,23 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useAtom } from 'jotai'
 import Layout from '@/components/layout/Layout'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
-import type { Workout } from '@/lib/supabase'
+import { useWorkouts } from '@/hooks/useWorkouts'
+import { uiStateAtom, loadingStatesAtom, filteredWorkoutsAtom } from '@/lib/atoms'
+import type { Workout } from '@/lib/atoms'
 
 export default function WorkoutsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [loading, setLoading] = useState(true)
+  useWorkouts() // Initialize workouts data
+  const [uiState, setUiState] = useAtom(uiStateAtom)
+  const [loadingStates] = useAtom(loadingStatesAtom)
+  const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
   const [showLogWorkout, setShowLogWorkout] = useState(false)
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
-  const [filter, setFilter] = useState<'all' | 'planned' | 'completed' | 'skipped'>('all')
-
-  const fetchWorkouts = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/workouts')
-      
-      if (!response.ok) {
-        console.error('Failed to fetch workouts:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setWorkouts(data.workouts || [])
-    } catch (error) {
-      console.error('Error fetching workouts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -43,18 +26,15 @@ export default function WorkoutsPage() {
       router.push('/auth/signin')
       return
     }
-
-    fetchWorkouts()
-  }, [session, status, router, fetchWorkouts])
+  }, [session, status, router])
 
   const handleLogWorkout = (workout: Workout) => {
-    setSelectedWorkout(workout)
+    setUiState(prev => ({ ...prev, selectedWorkout: workout }))
     setShowLogWorkout(true)
   }
 
   const handleLogWorkoutSuccess = () => {
-    fetchWorkouts()
-    setSelectedWorkout(null)
+    setUiState(prev => ({ ...prev, selectedWorkout: null }))
   }
 
   const formatDate = (dateString: string) => {
@@ -76,10 +56,6 @@ export default function WorkoutsPage() {
     }
   }
 
-  const filteredWorkouts = workouts.filter(workout => {
-    if (filter === 'all') return true
-    return workout.status === filter
-  })
 
   if (status === 'loading') {
     return (
@@ -122,9 +98,9 @@ export default function WorkoutsPage() {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setFilter(tab.key as typeof filter)}
+                  onClick={() => setUiState(prev => ({ ...prev, workoutFilter: tab.key as 'all' | 'planned' | 'completed' | 'skipped' }))}
                   className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
-                    filter === tab.key
+                    uiState.workoutFilter === tab.key
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -136,7 +112,7 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        {loading ? (
+        {loadingStates.workouts ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
@@ -147,9 +123,9 @@ export default function WorkoutsPage() {
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No workouts found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filter === 'all' 
+              {uiState.workoutFilter === 'all' 
                 ? 'No workouts have been created yet.'
-                : `No ${filter} workouts found.`
+                : `No ${uiState.workoutFilter} workouts found.`
               }
             </p>
           </div>
@@ -239,12 +215,12 @@ export default function WorkoutsPage() {
           </div>
         )}
 
-        {selectedWorkout && (
+        {uiState.selectedWorkout && (
           <WorkoutLogModal
             isOpen={showLogWorkout}
             onClose={() => setShowLogWorkout(false)}
             onSuccess={handleLogWorkoutSuccess}
-            workout={selectedWorkout}
+            workout={uiState.selectedWorkout}
           />
         )}
       </div>
