@@ -24,6 +24,27 @@ fi
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUPABASE_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$SUPABASE_DIR")"
+
+# Load environment variables from .env.local if it exists
+if [ -f "$PROJECT_ROOT/.env.local" ]; then
+    echo "📄 Loading environment variables from .env.local..."
+    export $(grep -v '^#' "$PROJECT_ROOT/.env.local" | xargs)
+fi
+
+# Check for required environment variables and build DATABASE_URL if needed
+if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_DB_URL" ]; then
+    if [ -n "$DATABASE_PASSWORD" ]; then
+        # Build DATABASE_URL from environment variables
+        DATABASE_URL="postgresql://postgres.ccnbzjpccmlribljugve:${DATABASE_PASSWORD}@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+        echo "✅ Built DATABASE_URL from environment variables"
+    else
+        echo "⚠️  DATABASE_URL not set. You can:"
+        echo "   1. Set DATABASE_PASSWORD in your .env.local file"
+        echo "   2. Set DATABASE_URL directly: export DATABASE_URL='your-connection-string'"
+        echo "   3. Use: supabase link --project-ref your-project-ref"
+    fi
+fi
 
 # Function to run SQL file
 run_sql() {
