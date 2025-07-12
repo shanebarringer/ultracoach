@@ -4,25 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
+**Install dependencies:**
+```bash
+pnpm install
+```
+**Note**: This project uses pnpm instead of npm for better performance, disk efficiency, and stricter dependency management.
+
 **Start development server:**
 ```bash
-npm run dev
+pnpm run dev
+# or use the shorter alias:
+pnpm dev
 ```
 The dev server uses Turbopack for faster builds and runs on http://localhost:3000
 
 **Build for production:**
 ```bash
-npm run build
+pnpm run build
+# or: pnpm build
 ```
 
 **Start production server:**
 ```bash
-npm start
+pnpm run start
+# or: pnpm start
 ```
 
 **Run linting:**
 ```bash
-npm run lint
+pnpm run lint
+# or: pnpm lint
 ```
 
 ## Database Setup
@@ -30,19 +41,19 @@ npm run lint
 **Rails-style database commands (recommended):**
 ```bash
 # Complete setup with schema, seeds, and test users
-npm run db:setup
+pnpm run db:setup
 
 # Reset database (drop + recreate + seed)
-npm run db:reset
+pnpm run db:reset
 
 # Seed database with sample data only
-npm run db:seed
+pnpm run db:seed
 
 # Fix test user password hashes
-npm run db:fix-passwords
+pnpm run db:fix-passwords
 
 # Backup user data before major changes
-npm run db:backup
+pnpm run db:backup
 ```
 
 **Direct script execution:**
@@ -73,7 +84,7 @@ supabase link --project-ref ccnbzjpccmlribljugve
 **Troubleshooting login issues:**
 ```bash
 # Quick fix for test user login issues
-npm run db:fix-passwords
+pnpm run db:fix-passwords
 
 # Or run the script directly:
 ./supabase/scripts/fix_test_passwords.sh
@@ -84,6 +95,7 @@ npm run db:fix-passwords
 This is a Next.js 15 application using the App Router with the following structure:
 
 - **Framework**: Next.js 15.3.5 with App Router
+- **Package Manager**: pnpm (migrated from npm for better performance)
 - **Database**: Supabase with PostgreSQL
 - **Authentication**: NextAuth.js with custom credentials provider
 - **Styling**: Tailwind CSS v4

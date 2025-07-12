@@ -2,14 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useSupabaseRealtime } from './useSupabaseRealtime'
-
-interface TypingStatus {
-  user_id: string
-  recipient_id: string
-  is_typing: boolean
-  last_updated: string
-}
 
 export function useTypingStatus(recipientId: string) {
   const { data: session } = useSession()

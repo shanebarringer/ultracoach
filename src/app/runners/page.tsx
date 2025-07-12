@@ -79,7 +79,7 @@ export default function RunnersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Runners</h1>
-          <p className="text-gray-600">Manage and track your runners' progress</p>
+          <p className="text-gray-600">Manage and track your runners&apos; progress</p>
         </div>
 
         {loading ? (
@@ -97,7 +97,7 @@ export default function RunnersPage() {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No runners yet</h3>
-            <p className="text-gray-500 mb-6">You haven't created any training plans for runners yet.</p>
+            <p className="text-gray-500 mb-6">You haven&apos;t created any training plans for runners yet.</p>
             <Link
               href="/training-plans"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
