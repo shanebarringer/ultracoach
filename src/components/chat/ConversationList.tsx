@@ -1,69 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
-import type { Message, User } from '@/lib/supabase'
-
-interface ConversationWithUser {
-  user: User
-  lastMessage?: Message
-  unreadCount: number
-}
+import { useConversations } from '@/hooks/useConversations'
 
 interface ConversationListProps {
   selectedUserId?: string
 }
 
 export default function ConversationList({ selectedUserId }: ConversationListProps) {
-  const { data: session } = useSession()
-  const [conversations, setConversations] = useState<ConversationWithUser[]>([])
-  const [loading, setLoading] = useState(true)
+  const { conversations, loading } = useConversations()
 
-  const fetchConversations = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/conversations')
-      
-      if (!response.ok) {
-        console.error('Error fetching conversations:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      console.log('💬 ConversationList: Fetched', data.conversations?.length || 0, 'conversations')
-      
-      setConversations(data.conversations || [])
-    } catch (error) {
-      console.error('Error fetching conversations:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id])
-
-  useEffect(() => {
-    fetchConversations()
-    
-    // Polling fallback - refresh conversations every 5 seconds
-    const pollInterval = setInterval(() => {
-      fetchConversations()
-    }, 5000)
-
-    return () => clearInterval(pollInterval)
-  }, [fetchConversations])
-
-  // Real-time updates for new messages (with error handling)
-  useSupabaseRealtime({
-    table: 'messages',
-    onInsert: () => {
-      fetchConversations()
-    },
-    onUpdate: () => {
-      fetchConversations()
-    }
-  })
 
   const formatLastMessageTime = (dateString: string) => {
     const date = new Date(dateString)

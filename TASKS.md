@@ -3,7 +3,7 @@
 ## 📋 Current Status
 - **Active Milestone**: Milestone 2 - Frontend Enhancements
 - **Last Updated**: 2025-01-13
-- **Next Priority**: Complete Jotai migration for remaining components
+- **Next Priority**: Chat system migration or dashboard components migration
 
 ## 🎯 Milestone Overview
 
@@ -305,11 +305,11 @@
 ## 📊 Progress Tracking
 
 ### Milestone 1: ✅ 100% Complete (37/37 tasks)
-### Milestone 2: 🔄 0% Complete (0/24 tasks)
+### Milestone 2: 🔄 16.7% Complete (4/24 tasks)
 ### Milestone 3: 📅 0% Complete (0/19 tasks) 
 ### Milestone 4: 📅 0% Complete (0/18 tasks)
 
-**Overall Project Progress: 37.8% Complete (37/98 total tasks)**
+**Overall Project Progress: 41.8% Complete (41/98 total tasks)**
 
 ---
 

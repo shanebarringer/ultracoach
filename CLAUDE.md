@@ -17,8 +17,8 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ### Current Status (Updated: 2025-01-13)
 - **Active Milestone**: Milestone 2 - Frontend Enhancements
-- **Completion**: 37.8% (37/98 total tasks)
-- **Next Priority**: Complete Jotai migration for remaining components
+- **Completion**: 41.8% (41/98 total tasks)
+- **Next Priority**: Chat system migration or dashboard components migration
 
 ## 🏗️ Architecture & Technology
 
@@ -89,10 +89,10 @@ pnpm lint
 - **20+ real races**: Western States, Leadville, UTMB, etc.
 - **Plan sequencing**: 50K → 50M → 100K → 100M progression support
 
-### State Management (✅ PARTIALLY COMPLETE)
+### State Management (🔄 IN PROGRESS)
 - **Jotai Migration**: Replaced React Context with atomic state management
-- **Completed**: Notifications, workouts page, core atom foundation
-- **Remaining**: Training plans, chat system, dashboard components, forms
+- **Completed**: Notifications, workouts page, training plans page, core atom foundation
+- **Remaining**: Chat system, dashboard components, form components
 - **Key File**: `src/lib/atoms.ts` - Contains all state atoms
 
 ### Test Data System (✅ COMPLETED)
@@ -153,7 +153,9 @@ pnpm lint
 - **Migrated Components**:
   - ✅ Notification system (`useNotifications` hook)
   - ✅ Workouts page (complete Jotai migration)
+  - ✅ Training plans page (`useTrainingPlans` hook)
   - ✅ NotificationBell component
+  - ✅ TrainingPlanCard component
 - **Performance**: Granular reactivity, components only re-render when their atoms change
 
 #### Project Infrastructure
@@ -165,17 +167,18 @@ pnpm lint
 ### 🔄 Current Focus: Milestone 2 - Frontend Enhancements
 
 **Next Priority Tasks:**
-1. Complete Jotai migration for remaining components (training plans, chat, dashboard)
-2. Update training plan UI for enhanced features (race targeting, goal types)
-3. Implement plan template selection wizard
-4. Add phase progression visualization
+1. Complete Jotai migration for remaining components (chat system, dashboard components)
+2. Migrate form components (CreateTrainingPlanModal, WorkoutLogModal)
+3. Update training plan UI for enhanced features (race targeting, goal types)
+4. Implement plan template selection wizard
 
 ### 🎯 Key Success Metrics Achieved
-- ✅ Zero React Context for global state (Jotai migration in progress)
+- ✅ Zero React Context for global state (notifications, workouts, training plans migrated)
 - ✅ Professional coaching database schema with race-centric planning
 - ✅ Real-time updates with Supabase integration
 - ✅ Complete test data environment for development
 - ✅ Organized project structure with proper documentation
+- ✅ Comprehensive project management documentation (PLANNING.md, TASKS.md)
 
 ## 🚨 Critical Reminders
 
@@ -204,7 +207,7 @@ pnpm lint
 - **Database**: `./supabase/scripts/` for all database operations
 - **State**: `src/lib/atoms.ts` for all Jotai state definitions
 - **Auth**: Test users login with `password123`
-- **PR**: #1 contains enhanced training system (ready for review)
+- **PRs**: #1 (enhanced training system), #5 (training plans Jotai migration)
 
 ## 🎯 Development Philosophy
 

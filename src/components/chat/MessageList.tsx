@@ -1,11 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { Message, User } from '@/lib/supabase'
-
-interface MessageWithUser extends Message {
-  sender: User
-}
+import type { MessageWithUser } from '@/lib/atoms'
 
 interface MessageListProps {
   messages: MessageWithUser[]
