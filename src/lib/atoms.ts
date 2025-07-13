@@ -90,8 +90,8 @@ export const messagesAtom = atom<MessageWithUser[]>([])
 export const conversationsAtom = atom<ConversationWithUser[]>([])
 export const currentConversationIdAtom = atom<string | null>(null)
 
-// UI state atoms
-export const loadingStatesAtom = atomWithStorage('loadingStates', {
+// UI state atoms - Don't persist loading states to avoid stuck spinners
+export const loadingStatesAtom = atom({
   workouts: false,
   trainingPlans: false,
   notifications: false,

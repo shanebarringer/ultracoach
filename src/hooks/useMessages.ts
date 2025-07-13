@@ -120,6 +120,25 @@ export function useMessages(recipientId?: string) {
     const targetId = targetRecipientId || recipientId
     if (!session?.user?.id || !targetId) return false
 
+    // Create optimistic message to show immediately
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      content,
+      sender_id: session.user.id,
+      recipient_id: targetId,
+      created_at: new Date().toISOString(),
+      read_at: null,
+      sender: {
+        id: session.user.id,
+        full_name: session.user.name || 'You',
+        email: session.user.email || '',
+        role: 'coach' // Will be corrected when real message arrives
+      }
+    }
+
+    // Add optimistic message immediately
+    setMessages(prev => [...prev, optimisticMessage])
+
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
@@ -133,17 +152,31 @@ export function useMessages(recipientId?: string) {
       })
 
       if (!response.ok) {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
         console.error('Error sending message:', response.statusText)
         return false
       }
 
-      // Real-time will handle adding the message to state
+      const result = await response.json()
+      
+      // Replace optimistic message with real message
+      if (result.message) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id 
+            ? { ...result.message, sender: optimisticMessage.sender }
+            : msg
+        ))
+      }
+
       return true
     } catch (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
       console.error('Error sending message:', error)
       return false
     }
-  }, [session?.user?.id, recipientId])
+  }, [session?.user?.id, recipientId, setMessages])
 
   // Real-time updates for messages with error handling
   useSupabaseRealtime({
@@ -173,6 +206,21 @@ export function useMessages(recipientId?: string) {
                 // Check if message already exists to avoid duplicates
                 const exists = prev.some(msg => msg.id === newMessage.id)
                 if (exists) return prev
+                
+                // Check if this is replacing an optimistic message
+                const optimisticIndex = prev.findIndex(msg => 
+                  msg.id.startsWith('temp-') && 
+                  msg.sender_id === newMessage.sender_id &&
+                  msg.recipient_id === newMessage.recipient_id &&
+                  msg.content === newMessage.content
+                )
+                
+                if (optimisticIndex >= 0) {
+                  // Replace optimistic message with real one
+                  return prev.map((msg, index) => 
+                    index === optimisticIndex ? messageWithUser : msg
+                  )
+                }
                 
                 return [...prev, messageWithUser]
               })
@@ -217,8 +265,12 @@ export function useMessages(recipientId?: string) {
   // Fetch messages when recipientId changes and set up polling fallback
   useEffect(() => {
     if (recipientId) {
-      // Reset loading state when switching conversations (only if different recipient)
-      if (chatUiState.currentRecipientId !== recipientId) {
+      // Only trigger initial load if we haven't loaded this conversation before
+      // or if the conversation has changed
+      const needsInitialLoad = !chatUiState.hasInitiallyLoadedMessages || 
+                               chatUiState.currentRecipientId !== recipientId
+      
+      if (needsInitialLoad) {
         setChatUiState(prev => ({ 
           ...prev, 
           hasInitiallyLoadedMessages: false,
@@ -237,7 +289,7 @@ export function useMessages(recipientId?: string) {
 
       return () => clearInterval(pollInterval)
     }
-  }, [recipientId, fetchMessages, chatUiState.currentRecipientId, setChatUiState])
+  }, [recipientId, fetchMessages, chatUiState.currentRecipientId, chatUiState.hasInitiallyLoadedMessages, setChatUiState])
 
   // Get messages for current conversation
   const conversationMessages = messages.filter(message => {
