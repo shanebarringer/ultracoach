@@ -16,6 +16,7 @@
     "db:backup": "./supabase/scripts/backup_user_data.sh"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.11",
     "@heroui/theme": "^2.4.17",
     "@supabase/supabase-js": "^2.50.5",

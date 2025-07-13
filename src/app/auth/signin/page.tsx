@@ -5,16 +5,33 @@ import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+import { Button, Input } from '@heroui/react'
+
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  const validate = () => {
+    const newErrors = { email: '', password: '' }
+    if (!email) {
+      newErrors.email = 'Email is required.'
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Email address is invalid.'
+    }
+    if (!password) {
+      newErrors.password = 'Password is required.'
+    }
+    setErrors(newErrors)
+    return !newErrors.email && !newErrors.password
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    if (!validate()) return
+
     setLoading(true)
 
     try {
@@ -25,7 +42,7 @@ export default function SignIn() {
       })
 
       if (result?.error) {
-        setError('Invalid credentials')
+        setErrors({ ...errors, email: 'Invalid credentials' })
       } else {
         const session = await getSession()
         if (session?.user.role === 'coach') {
@@ -35,7 +52,7 @@ export default function SignIn() {
         }
       }
     } catch {
-      setError('An error occurred. Please try again.')
+      setErrors({ ...errors, email: 'An error occurred. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -56,54 +73,44 @@ export default function SignIn() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+          <div className="space-y-4">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Email address"
+              autoComplete="email"
+              required
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              isInvalid={!!errors.email}
+              errorMessage={errors.email}
+            />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              autoComplete="current-password"
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              isInvalid={!!errors.password}
+              errorMessage={errors.password}
+            />
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
+              color="primary"
+              className="w-full"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

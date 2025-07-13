@@ -9,7 +9,7 @@ import {
   loadingStatesAtom,
   chatUiStateAtom
 } from '@/lib/atoms'
-import type { Message } from '@/lib/atoms'
+import type { Message } from '@/lib/supabase'
 
 export function useConversations() {
   const { data: session } = useSession()
@@ -66,7 +66,10 @@ export function useConversations() {
         ? message.recipient_id 
         : message.sender_id
 
-      const existingConvIndex = prev.findIndex(conv => conv.user.id === otherUserId)
+      const existingConvIndex = prev.findIndex(conv => {
+        const otherUser = conv.user1.id === session.user.id ? conv.user2 : conv.user1;
+        return otherUser.id === otherUserId;
+      })
       
       if (existingConvIndex >= 0) {
         // Update existing conversation
@@ -75,7 +78,7 @@ export function useConversations() {
         
         updatedConversations[existingConvIndex] = {
           ...existingConv,
-          lastMessage: message,
+          last_message_at: message.created_at,
           unreadCount: message.sender_id !== session.user.id 
             ? existingConv.unreadCount + 1 
             : existingConv.unreadCount
@@ -109,11 +112,12 @@ export function useConversations() {
       if (response.ok) {
         // Update local conversation state
         setConversations(prev => 
-          prev.map(conv => 
-            conv.user.id === userId 
+          prev.map(conv => {
+            const otherUser = conv.user1.id === session.user.id ? conv.user2 : conv.user1;
+            return otherUser.id === userId 
               ? { ...conv, unreadCount: 0 }
               : conv
-          )
+          })
         )
       }
     } catch (error) {
@@ -177,7 +181,7 @@ export function useConversations() {
   })
 
   const getConversationByUserId = useCallback((userId: string) => {
-    return conversations.find(conv => conv.user.id === userId)
+    return conversations.find(conv => conv.user1.id === userId || conv.user2.id === userId)
   }, [conversations])
 
   const totalUnreadCount = conversations.reduce((total, conv) => total + conv.unreadCount, 0)

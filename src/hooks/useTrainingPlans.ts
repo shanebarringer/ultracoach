@@ -4,7 +4,7 @@ import { useAtom, useSetAtom } from 'jotai'
 import { useSession } from 'next-auth/react'
 import { useCallback, useEffect } from 'react'
 import { trainingPlansAtom, loadingStatesAtom } from '@/lib/atoms'
-import type { TrainingPlan } from '@/lib/atoms'
+import type { TrainingPlan } from '@/lib/supabase'
 
 export function useTrainingPlans() {
   const { data: session } = useSession()
@@ -134,10 +134,8 @@ export function useTrainingPlans() {
   }, [setTrainingPlans])
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchTrainingPlans()
-    }
-  }, [session?.user?.id, fetchTrainingPlans])
+    fetchTrainingPlans()
+  }, [fetchTrainingPlans])
 
   return {
     trainingPlans,

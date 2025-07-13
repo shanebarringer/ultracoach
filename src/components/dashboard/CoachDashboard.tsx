@@ -1,59 +1,17 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+import { useDashboardData } from '@/hooks/useDashboardData'
+import type { TrainingPlan, User } from '@/lib/supabase'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
 export default function CoachDashboard() {
   const { data: session } = useSession()
-  const [trainingPlans, setTrainingPlans] = useState<TrainingPlanWithRunner[]>([])
-  const [runners, setRunners] = useState<User[]>([])
-  const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([])
-  const [loading, setLoading] = useState(true)
+  const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
 
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // Fetch training plans via API
-      const plansResponse = await fetch('/api/training-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        const plans = plansData.trainingPlans || []
-        setTrainingPlans(plans)
-
-        // Extract unique runners from training plans
-        const uniqueRunners = plans.reduce((acc: User[], plan: TrainingPlanWithRunner) => {
-          if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
-            acc.push(plan.runners)
-          }
-          return acc
-        }, [])
-        setRunners(uniqueRunners)
-      }
-
-      // Fetch recent completed workouts via API
-      const workoutsResponse = await fetch('/api/workouts')
-      if (workoutsResponse.ok) {
-        const workoutsData = await workoutsResponse.json()
-        const recentWorkouts = (workoutsData.workouts || [])
-          .filter((w: Workout) => w.status === 'completed')
-          .slice(0, 5)
-        setRecentWorkouts(recentWorkouts)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchDashboardData()
-    }
-  }, [session, fetchDashboardData])
+  const typedTrainingPlans = trainingPlans as TrainingPlanWithRunner[]
 
   if (loading) {
     return (
@@ -102,7 +60,7 @@ export default function CoachDashboard() {
               Manage Plans
             </Link>
           </div>
-          {trainingPlans.length === 0 ? (
+          {typedTrainingPlans.length === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +72,7 @@ export default function CoachDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {trainingPlans.map((plan) => (
+              {typedTrainingPlans.map((plan) => (
                 <div key={plan.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <h4 className="font-semibold text-gray-900 mb-2">{plan.title}</h4>
                   <p className="text-sm text-gray-600 mb-3">{plan.description}</p>

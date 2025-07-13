@@ -21,6 +21,8 @@ interface WeeklyPlannerCalendarProps {
   onWeekUpdate: () => void
 }
 
+import { Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
+
 const WORKOUT_TYPES = [
   'Rest Day',
   'Easy Run',
@@ -240,13 +242,13 @@ export default function WeeklyPlannerCalendar({
           </h3>
           
           {hasChanges && (
-            <button
+            <Button
+              color="success"
               onClick={saveWeekPlan}
               disabled={saving}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Week Plan'}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -256,9 +258,7 @@ export default function WeeklyPlannerCalendar({
           {weekWorkouts.map((day, index) => (
             <div
               key={day.date.toISOString()}
-              className={`border rounded-lg p-4 ${
-                isToday(day.date) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-              }`}
+              className={`border rounded-lg p-4 ${isToday(day.date) ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
             >
               {/* Day Header */}
               <div className="mb-3">
@@ -272,75 +272,64 @@ export default function WeeklyPlannerCalendar({
 
               {/* Workout Form */}
               <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Workout Type
-                  </label>
-                  <select
-                    value={day.workout?.type || ''}
-                    onChange={(e) => updateDayWorkout(index, 'type', e.target.value)}
-                    className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">No workout</option>
-                    {WORKOUT_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  label="Workout Type"
+                  selectedKeys={day.workout?.type ? [day.workout.type] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedType = Array.from(keys).join('');
+                    updateDayWorkout(index, 'type', selectedType);
+                  }}
+                  placeholder="No workout"
+                  items={WORKOUT_TYPES.map(type => ({ id: type, name: type }))}
+                >
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  )}
+                </Select>
 
                 {day.workout && day.workout.type && day.workout.type !== 'Rest Day' && (
                   <>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Distance (miles)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={day.workout.distance || ''}
-                        onChange={(e) => updateDayWorkout(index, 'distance', e.target.value)}
-                        className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="e.g., 5.5"
-                      />
-                    </div>
+                    <Input
+                      type="number"
+                      label="Distance (miles)"
+                      step="0.1"
+                      min="0"
+                      value={day.workout.distance?.toString() || ''}
+                      onChange={(e) => updateDayWorkout(index, 'distance', e.target.value)}
+                      placeholder="e.g., 5.5"
+                    />
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Duration (min)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={day.workout.duration || ''}
-                        onChange={(e) => updateDayWorkout(index, 'duration', e.target.value)}
-                        className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="e.g., 60"
-                      />
-                    </div>
+                    <Input
+                      type="number"
+                      label="Duration (min)"
+                      min="0"
+                      value={day.workout.duration?.toString() || ''}
+                      onChange={(e) => updateDayWorkout(index, 'duration', e.target.value)}
+                      placeholder="e.g., 60"
+                    />
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Notes
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={day.workout.notes || ''}
-                        onChange={(e) => updateDayWorkout(index, 'notes', e.target.value)}
-                        className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="Instructions..."
-                      />
-                    </div>
+                    <Textarea
+                      label="Notes"
+                      rows={2}
+                      value={day.workout.notes || ''}
+                      onChange={(e) => updateDayWorkout(index, 'notes', e.target.value)}
+                      placeholder="Instructions..."
+                    />
                   </>
                 )}
 
                 {day.workout && (
-                  <button
+                  <Button
+                    variant="light"
+                    color="danger"
+                    size="sm"
+                    className="w-full"
                     onClick={() => clearDayWorkout(index)}
-                    className="w-full text-xs text-red-600 hover:text-red-800"
                   >
                     Clear
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

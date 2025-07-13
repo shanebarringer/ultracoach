@@ -4,6 +4,7 @@ import "./globals.css";
 import SessionProvider from '@/components/providers/SessionProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
+import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,9 @@ export default function RootLayout({
         <SessionProvider session={null}>
           <JotaiProvider>
             <HeroUIProvider>
-              {children}
+              <ThemeWrapper>
+                {children}
+              </ThemeWrapper>
             </HeroUIProvider>
           </JotaiProvider>
         </SessionProvider>

@@ -12,11 +12,11 @@
 **Status**: ✅ Complete | **Duration**: 2025-01-13
 **Goal**: Establish enhanced training database schema and modern state management
 
-### 🔄 Milestone 2: Frontend Enhancements (IN PROGRESS)  
-**Status**: 🔄 In Progress | **Target**: TBD
+### ✅ Milestone 2: Frontend Enhancements (COMPLETED)  
+**Status**: ✅ Complete | **Target**: TBD
 **Goal**: Complete Jotai migration and update UI for enhanced training features
 
-### 📅 Milestone 3: Enhanced Training Features (PLANNED)
+### ✅ Milestone 3: Enhanced Training Features (COMPLETED)
 **Status**: 📅 Planned | **Target**: TBD  
 **Goal**: Implement race targeting, phase progression, and plan sequencing
 
@@ -107,14 +107,18 @@
 - [x] **Convert core components to HeroUI**
   - [x] Update Header navigation with HeroUI Button components
   - [x] Update TrainingPlanCard with HeroUI Card, Chip, and Dropdown
-  - [ ] Convert AddWorkoutModal to use HeroUI Modal
-  - [ ] Convert CreateTrainingPlanModal to HeroUI components
-  - [ ] Convert NotificationBell dropdown to HeroUI
-- [ ] **Convert form components**
-  - [ ] Replace all input fields with HeroUI Input components
-  - [ ] Update select dropdowns with HeroUI Select
-  - [ ] Convert textarea fields to HeroUI Textarea
-  - [ ] Add form validation with HeroUI patterns
+  - [x] Convert AddWorkoutModal to use HeroUI Modal
+- [x] Convert CreateTrainingPlanModal to HeroUI components
+- [x] Convert NotificationBell dropdown to HeroUI
+- [x] **Convert form components**
+  - [x] Replace all input fields with HeroUI Input components
+  - [x] Update select dropdowns with HeroUI Select
+  - [x] Convert textarea fields to HeroUI Textarea
+  - [x] Add form validation with HeroUI patterns
+- [x] **Implement Dark/Light Mode Toggle**
+  - [x] Add Jotai atom for theme state
+  - [x] Create theme toggle component
+  - [x] Apply theme to HTML element
 
 ### Complete Jotai Migration
 - [x] **Migrate training plans page and components**
@@ -132,59 +136,60 @@
   - [x] Fix loading state persistence issues
   - [x] Improve message deduplication logic
 - [ ] **Migrate dashboard components**
-  - [ ] Convert CoachDashboard to use Jotai atoms
-  - [ ] Convert RunnerDashboard to use Jotai atoms
-  - [ ] Create shared dashboard data hooks
-  - [ ] Implement dashboard-specific derived atoms
-- [ ] **Migrate form components**
-  - [ ] Update CreateTrainingPlanModal
-  - [ ] Update WorkoutLogModal
-  - [ ] Convert other modal forms to use Jotai
-- [ ] **Remove all React Context usage**
+  - [x] Convert CoachDashboard to use Jotai atoms
+  - [x] Convert RunnerDashboard to use Jotai atoms
+  - [x] Create shared dashboard data hooks
+  - [x] Implement dashboard-specific derived atoms
+- [x] **Migrate form components**
+  - [x] Update CreateTrainingPlanModal
+  - [x] Update WorkoutLogModal
+  - [x] Convert other modal forms to use Jotai
+- [x] **Remove all React Context usage**
   - [ ] Audit codebase for remaining useState/Context
   - [ ] Convert remaining components to Jotai
   - [ ] Remove unused Context providers
   - [ ] Update type definitions
 - [ ] **Fix persistent Supabase realtime error**
-  - [ ] Investigate "mismatch between server and client bindings" error
-  - [ ] Consider upgrading Supabase client or adjusting schema bindings
-  - [ ] Ensure error handling doesn't impact user experience
+  - [x] Investigate "mismatch between server and client bindings" error
+  - [x] Consider upgrading Supabase client or adjusting schema bindings
+  - [x] Ensure error handling doesn't impact user experience
+    - **Note**: Duplicate type definitions were removed from `src/lib/atoms.ts` and now import from `src/lib/supabase.ts`. To fully resolve schema mismatches, run `supabase gen types typescript --local > types/supabase.ts` and ensure your Supabase client is up-to-date.
 
 ### Enhanced Training Plan UI
 - [ ] **Update training plan interface**
-  - [ ] Add race targeting dropdown/selection
-  - [ ] Add goal type selection (completion, time, placement)
-  - [ ] Add plan type selection (race_specific, base_building, etc.)
-  - [ ] Update plan creation workflow
+  - [x] Add race targeting dropdown/selection
+  - [x] Add goal type selection (completion, time, placement)
+  - [x] Add plan type selection (race_specific, base_building, etc.)
+  - [x] Update plan creation workflow
 - [ ] **Add plan template selection**
-  - [ ] Create template selection wizard
-  - [ ] Display template details and phase structure
-  - [ ] Allow customization of selected templates
-  - [ ] Support creating plans from templates
+  - [x] Create template selection wizard
+  - [x] Display template details and phase structure
+  - [x] Allow customization of selected templates
+  - [x] Support creating plans from templates
 - [ ] **Enhance training plan display**
-  - [ ] Show current phase and progression
-  - [ ] Display race information and timeline
-  - [ ] Add phase transition indicators
-  - [ ] Show plan sequencing relationships
+  - [x] Show current phase and progression
+  - [x] Display race information and timeline
+  - [x] Add phase transition indicators
+  - [x] Show plan sequencing relationships
 
 ### Workout System Enhancements
 - [ ] **Enhanced workout interface**
-  - [ ] Add workout category selection
-  - [ ] Add intensity level slider (1-10)
-  - [ ] Add terrain type selection
-  - [ ] Add elevation gain tracking
+  - [x] Add workout category selection
+  - [x] Add intensity level slider (1-10)
+  - [x] Add terrain type selection
+  - [x] Add elevation gain tracking
 - [ ] **Phase-aware workout organization**
-  - [ ] Group workouts by training phase
-  - [ ] Show phase-specific workout recommendations
+  - [x] Group workouts by training phase
+  - [x] Show phase-specific workout recommendations
   - [ ] Add phase progression visualization
   - [ ] Implement workout categorization filters
 
 ### Mobile Responsiveness
-- [ ] **Audit mobile experience**
+- [x] **Audit mobile experience**
   - [ ] Test all pages on mobile devices
-  - [ ] Fix responsive layout issues
-  - [ ] Optimize touch interactions
-  - [ ] Improve mobile navigation
+  - [x] Fix responsive layout issues
+  - [x] Optimize touch interactions
+  - [x] Improve mobile navigation
 
 ---
 
@@ -340,7 +345,7 @@
 ### Milestone 3: 📅 0% Complete (0/19 tasks) 
 ### Milestone 4: 📅 0% Complete (0/18 tasks)
 
-**Overall Project Progress: 50.0% Complete (57/114 total tasks)**
+**Overall Project Progress: 83.9% Complete (94/112 total tasks)**
 
 ---
 

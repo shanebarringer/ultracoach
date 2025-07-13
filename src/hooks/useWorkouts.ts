@@ -4,7 +4,7 @@ import { useAtom, useSetAtom } from 'jotai'
 import { useSession } from 'next-auth/react'
 import { useCallback, useEffect } from 'react'
 import { workoutsAtom, loadingStatesAtom } from '@/lib/atoms'
-import type { Workout } from '@/lib/atoms'
+import type { Workout } from '@/lib/supabase'
 
 export function useWorkouts() {
   const { data: session } = useSession()

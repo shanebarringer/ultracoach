@@ -67,35 +67,35 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
         <div className="divide-y divide-gray-200">
           {conversations.map((conversation) => (
             <Link
-              key={conversation.user.id}
-              href={`/chat/${conversation.user.id}`}
+              key={conversation.user2.id}
+              href={`/chat/${conversation.user2.id}`}
               className={`block hover:bg-gray-50 transition-colors ${
-                selectedUserId === conversation.user.id ? 'bg-blue-50' : ''
+                selectedUserId === conversation.user2.id ? 'bg-blue-50' : ''
               }`}
             >
               <div className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {conversation.user.full_name.charAt(0).toUpperCase()}
+                      {conversation.user2.full_name.charAt(0).toUpperCase()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                       <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {conversation.user.full_name}
+                        {conversation.user2.full_name}
                       </h3>
-                      {conversation.lastMessage && (
+                      {conversation.last_message_at && (
                         <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                          {formatLastMessageTime(conversation.lastMessage.created_at)}
+                          {formatLastMessageTime(conversation.last_message_at)}
                         </span>
                       )}
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <p className="text-sm text-gray-600 truncate">
-                        {conversation.lastMessage
-                          ? truncateMessage(conversation.lastMessage.content)
-                          : `Start a conversation with ${conversation.user.full_name}`
+                        {conversation.last_message_at
+                          ? truncateMessage(conversation.last_message_at)
+                          : `Start a conversation with ${conversation.user2.full_name}`
                         }
                       </p>
                       {conversation.unreadCount > 0 && (
@@ -105,7 +105,7 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
                       )}
                     </div>
                     <div className="text-xs text-gray-500 mt-1 capitalize">
-                      {conversation.user.role}
+                      {conversation.user2.role}
                     </div>
                   </div>
                 </div>

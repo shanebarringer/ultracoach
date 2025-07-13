@@ -1,46 +1,12 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useEffect, useState, useCallback } from 'react'
-import type { TrainingPlan, Workout } from '@/lib/supabase'
+import { useDashboardData } from '@/hooks/useDashboardData'
+
 
 export default function RunnerDashboard() {
   const { data: session } = useSession()
-  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([])
-  const [upcomingWorkouts, setUpcomingWorkouts] = useState<Workout[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // Fetch training plans via API
-      const plansResponse = await fetch('/api/training-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        setTrainingPlans(plansData.trainingPlans || [])
-      }
-
-      // Fetch upcoming workouts via API
-      const workoutsResponse = await fetch('/api/workouts')
-      if (workoutsResponse.ok) {
-        const workoutsData = await workoutsResponse.json()
-        // Filter for planned workouts that are upcoming
-        const upcomingWorkouts = (workoutsData.workouts || [])
-          .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
-          .slice(0, 5)
-        setUpcomingWorkouts(upcomingWorkouts)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchDashboardData()
-    }
-  }, [session, fetchDashboardData])
+  const { trainingPlans, upcomingWorkouts, loading } = useDashboardData()
 
   if (loading) {
     return (

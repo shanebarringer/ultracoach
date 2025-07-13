@@ -2,10 +2,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
 import { useTrainingPlans } from '@/hooks/useTrainingPlans'
-import type { TrainingPlan, User } from '@/lib/atoms'
+import type { TrainingPlan, User, Race } from '@/lib/supabase'
 
 interface TrainingPlanCardProps {
-  plan: TrainingPlan & { runners?: User; coaches?: User }
+  plan: TrainingPlan & { runners?: User; coaches?: User; race?: Race }
   userRole: 'runner' | 'coach'
   onArchiveChange?: () => void
 }
@@ -114,27 +114,34 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
         </div>
       </CardHeader>
 
-      {/* Enhanced training plan info - TODO: Implement with enhanced schema */}
-      {/* <div className="grid grid-cols-2 gap-4 mb-4">
-        {plan.race_id && (
-          <div>
-            <div className="text-xs text-gray-500">Target Race</div>
-            <div className="text-sm font-medium text-gray-900">
-              Race Information
-            </div>
-          </div>
-        )}
-        {plan.goal_type && (
-          <div>
-            <div className="text-xs text-gray-500">Goal Type</div>
-            <div className="text-sm font-medium text-gray-900">
-              {plan.goal_type}
-            </div>
-          </div>
-        )}
-      </div> */}
-
       <CardBody>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {plan.race && (
+            <div>
+              <div className="text-xs text-gray-500">Target Race</div>
+              <div className="text-sm font-medium text-gray-900">
+                {plan.race.name} ({new Date(plan.race.date).toLocaleDateString()})
+              </div>
+            </div>
+          )}
+          {plan.goal_type && (
+            <div>
+              <div className="text-xs text-gray-500">Goal Type</div>
+              <div className="text-sm font-medium text-gray-900 capitalize">
+                {plan.goal_type.replace('_', ' ')}
+              </div>
+            </div>
+          )}
+          {plan.plan_type && (
+            <div>
+              <div className="text-xs text-gray-500">Plan Type</div>
+              <div className="text-sm font-medium text-gray-900 capitalize">
+                {plan.plan_type.replace('_', ' ')}
+              </div>
+            </div>
+          )}
+        </div>
+
         {userRole === 'coach' && plan.runners && (
           <div>
             <div className="text-tiny text-foreground-400">Runner</div>

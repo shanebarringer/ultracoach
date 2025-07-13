@@ -7,7 +7,7 @@ import MessageInput from './MessageInput'
 import TypingIndicator from './TypingIndicator'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
-import type { User } from '@/lib/atoms'
+import type { User } from '@/lib/supabase'
 
 interface ChatWindowProps {
   recipientId: string

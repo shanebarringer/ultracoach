@@ -6,7 +6,7 @@ import { useCallback, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms'
-import type { Notification } from '@/lib/atoms'
+import type { Notification } from '@/lib/supabase'
 
 export function useNotifications() {
   const { data: session } = useSession()

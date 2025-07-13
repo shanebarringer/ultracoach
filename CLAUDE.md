@@ -15,11 +15,11 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-01-13)
-- **Active Milestone**: Milestone 2 - Frontend Enhancements
-- **Completion**: 52.6% (60/114 total tasks)
-- **Recent Completion**: HeroUI integration foundation with core components
-- **Next Priority**: Complete HeroUI modal and form component migration
+### Current Status (Updated: 2025-07-13)
+- **Active Milestone**: Milestone 3 - Enhanced Training Features
+- **Completion**: 57.0% (65/114 total tasks)
+- **Recent Completion**: HeroUI integration foundation with core components, Dark/Light Mode Toggle, Form Component Migration, Build Fixes
+- **Next Priority**: Complete remaining Jotai migration (dashboard components), Update training plan UI for enhanced features
 
 ## 🏗️ Architecture & Technology
 

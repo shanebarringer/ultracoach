@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+import { Button, Input, Select, SelectItem } from '@heroui/react'
+
 export default function SignUp() {
   const [formData, setFormData] = useState({
     email: '',
@@ -11,13 +13,33 @@ export default function SignUp() {
     fullName: '',
     role: 'runner' as 'runner' | 'coach'
   })
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  const validate = () => {
+    const newErrors = { email: '', password: '', fullName: '' }
+    if (!formData.fullName) {
+      newErrors.fullName = 'Full name is required.'
+    }
+    if (!formData.email) {
+      newErrors.email = 'Email is required.'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email address is invalid.'
+    }
+    if (!formData.password) {
+      newErrors.password = 'Password is required.'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters.'
+    }
+    setErrors(newErrors)
+    return !newErrors.email && !newErrors.password && !newErrors.fullName
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    if (!validate()) return
+
     setLoading(true)
 
     try {
@@ -33,10 +55,10 @@ export default function SignUp() {
         router.push('/auth/signin?message=Account created successfully')
       } else {
         const data = await response.json()
-        setError(data.error || 'An error occurred')
+        setErrors({ ...errors, email: data.error || 'An error occurred' })
       }
     } catch {
-      setError('An error occurred. Please try again.')
+      setErrors({ ...errors, email: 'An error occurred. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -64,85 +86,70 @@ export default function SignUp() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
           <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={handleChange}
-              />
-            </div>
+            <Input
+              id="fullName"
+              name="fullName"
+              type="text"
+              label="Full Name"
+              required
+              placeholder="Enter your full name"
+              value={formData.fullName}
+              onChange={handleChange}
+              isInvalid={!!errors.fullName}
+              errorMessage={errors.fullName}
+            />
             
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Email Address"
+              required
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              isInvalid={!!errors.email}
+              errorMessage={errors.email}
+            />
             
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              required
+              placeholder="Create a password"
+              value={formData.password}
+              onChange={handleChange}
+              isInvalid={!!errors.password}
+              errorMessage={errors.password}
+            />
             
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                I am a...
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="runner">Runner</option>
-                <option value="coach">Coach</option>
-              </select>
-            </div>
+            <Select
+              id="role"
+              name="role"
+              label="I am a..."
+              selectedKeys={[formData.role]}
+              onSelectionChange={(keys) => {
+                const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                setFormData(prev => ({ ...prev, role: selectedRole }))
+              }}
+            >
+              <SelectItem key="runner">Runner</SelectItem>
+              <SelectItem key="coach">Coach</SelectItem>
+            </Select>
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
+              color="primary"
+              className="w-full"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create account'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

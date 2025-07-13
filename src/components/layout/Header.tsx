@@ -3,217 +3,215 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { Button } from '@heroui/react'
+import { Button, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem } from '@heroui/react'
 import NotificationBell from '@/components/common/NotificationBell'
+import { useAtom } from 'jotai'
+import { themeModeAtom } from '@/lib/atoms'
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
+
+function ThemeToggle() {
+  const [themeMode, setThemeMode] = useAtom(themeModeAtom)
+
+  const toggleTheme = () => {
+    setThemeMode(themeMode === 'light' ? 'dark' : 'light')
+  }
+
+  return (
+    <Button isIconOnly variant="light" onClick={toggleTheme} aria-label="Toggle theme">
+      {themeMode === 'light' ? (
+        <SunIcon className="h-5 w-5" />
+      ) : (
+        <MoonIcon className="h-5 w-5" />
+      )}
+    </Button>
+  )
+}
 
 export default function Header() {
   const { data: session } = useSession()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
   }
 
   return (
-    <header className="bg-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-blue-600">
-              UltraCoach
-            </Link>
-          </div>
+    <Navbar onMenuOpenChange={setIsMenuOpen} isMenuOpen={isMenuOpen}>
+      <NavbarContent>
+        <NavbarMenuToggle aria-label={isMenuOpen ? "Close menu" : "Open menu"} className="md:hidden" />
+        <NavbarBrand>
+          <Link href="/" className="font-bold text-inherit text-2xl">
+            UltraCoach
+          </Link>
+        </NavbarBrand>
+      </NavbarContent>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {session ? (
-              <>
-                <Link
-                  href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Dashboard
+      <NavbarContent className="hidden md:flex gap-4" justify="center">
+        {session ? (
+          <>
+            <NavbarItem>
+              <Link href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}>
+                Dashboard
+              </Link>
+            </NavbarItem>
+            {session.user.role === 'coach' && (
+              <NavbarItem>
+                <Link href="/training-plans">
+                  Training Plans
                 </Link>
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/training-plans"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Training Plans
-                  </Link>
-                )}
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/runners"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Runners
-                  </Link>
-                )}
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/weekly-planner"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Weekly Planner
-                  </Link>
-                )}
-                <Link
-                  href="/workouts"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Workouts
+              </NavbarItem>
+            )}
+            {session.user.role === 'coach' && (
+              <NavbarItem>
+                <Link href="/runners">
+                  Runners
                 </Link>
-                <Link
-                  href="/chat"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Messages
+              </NavbarItem>
+            )}
+            {session.user.role === 'coach' && (
+              <NavbarItem>
+                <Link href="/weekly-planner">
+                  Weekly Planner
                 </Link>
-                <NotificationBell />
-                <div className="relative">
+              </NavbarItem>
+            )}
+            <NavbarItem>
+              <Link href="/workouts">
+                Workouts
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
+              <Link href="/chat">
+                Messages
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
+              <NotificationBell />
+            </NavbarItem>
+            <NavbarItem>
+              <ThemeToggle />
+            </NavbarItem>
+            <NavbarItem className="relative">
+              <Button
+                variant="light"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {session.user.name}
+              </Button>
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </Link>
                   <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                    onClick={handleSignOut}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    {session.user.name}
+                    Sign Out
                   </button>
-                  {isMobileMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                      <Link
-                        href="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Profile
-                      </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/signin"
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign In
-                </Link>
-                <Button
-                  as={Link}
-                  href="/auth/signup"
-                  color="primary"
-                  size="sm"
-                >
-                  Sign Up
-                </Button>
-              </>
-            )}
-          </nav>
+              )}
+            </NavbarItem>
+          </>
+        ) : (
+          <>
+            <NavbarItem>
+              <Link href="/auth/signin">
+                Sign In
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
+              <Button
+                as={Link}
+                href="/auth/signup"
+                color="primary"
+                size="sm"
+              >
+                Sign Up
+              </Button>
+            </NavbarItem>
+          </>
+        )}
+      </NavbarContent>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              isIconOnly
-              variant="light"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            {session ? (
-              <>
-                <Link
-                  href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}
-                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Dashboard
+      <NavbarMenu>
+        {session ? (
+          <>
+            <NavbarMenuItem>
+              <Link href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'} onClick={() => setIsMenuOpen(false)}>
+                Dashboard
+              </Link>
+            </NavbarMenuItem>
+            {session.user.role === 'coach' && (
+              <NavbarMenuItem>
+                <Link href="/training-plans" onClick={() => setIsMenuOpen(false)}>
+                  Training Plans
                 </Link>
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/training-plans"
-                    className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                  >
-                    Training Plans
-                  </Link>
-                )}
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/runners"
-                    className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                  >
-                    Runners
-                  </Link>
-                )}
-                {session.user.role === 'coach' && (
-                  <Link
-                    href="/weekly-planner"
-                    className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                  >
-                    Weekly Planner
-                  </Link>
-                )}
-                <Link
-                  href="/workouts"
-                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Workouts
-                </Link>
-                <Link
-                  href="/chat"
-                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Messages
-                </Link>
-                <Link
-                  href="/profile"
-                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="block w-full text-left text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/signin"
-                  className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-base font-medium"
-                >
-                  Sign In
-                </Link>
-                <Button
-                  as={Link}
-                  href="/auth/signup"
-                  color="primary"
-                  size="md"
-                  className="w-full justify-start"
-                >
-                  Sign Up
-                </Button>
-              </>
+              </NavbarMenuItem>
             )}
-          </div>
-        </div>
-      )}
-    </header>
+            {session.user.role === 'coach' && (
+              <NavbarMenuItem>
+                <Link href="/runners" onClick={() => setIsMenuOpen(false)}>
+                  Runners
+                </Link>
+              </NavbarMenuItem>
+            )}
+            {session.user.role === 'coach' && (
+              <NavbarMenuItem>
+                <Link href="/weekly-planner" onClick={() => setIsMenuOpen(false)}>
+                  Weekly Planner
+                </Link>
+              </NavbarMenuItem>
+            )}
+            <NavbarMenuItem>
+              <Link href="/workouts" onClick={() => setIsMenuOpen(false)}>
+                Workouts
+              </Link>
+            </NavbarMenuItem>
+            <NavbarMenuItem>
+              <Link href="/chat" onClick={() => setIsMenuOpen(false)}>
+                Messages
+              </Link>
+            </NavbarMenuItem>
+            <NavbarMenuItem>
+              <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
+                Profile
+              </Link>
+            </NavbarMenuItem>
+            <NavbarMenuItem>
+              <Button
+                onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
+                className="w-full text-left"
+                variant="light"
+              >
+                Sign Out
+              </Button>
+            </NavbarMenuItem>
+          </>
+        ) : (
+          <>
+            <NavbarMenuItem>
+              <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
+                Sign In
+              </Link>
+            </NavbarMenuItem>
+            <NavbarMenuItem>
+              <Button
+                as={Link}
+                href="/auth/signup"
+                color="primary"
+                className="w-full"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign Up
+              </Button>
+            </NavbarMenuItem>
+          </>
+        )}
+      </NavbarMenu>
+    </Navbar>
   )
 }

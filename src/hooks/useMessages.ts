@@ -10,7 +10,7 @@ import {
   loadingStatesAtom,
   chatUiStateAtom
 } from '@/lib/atoms'
-import type { MessageWithUser, Message } from '@/lib/atoms'
+import type { MessageWithUser, Message } from '@/lib/supabase'
 
 export function useMessages(recipientId?: string) {
   const { data: session } = useSession()
@@ -52,7 +52,6 @@ export function useMessages(recipientId?: string) {
         const newMessages = fetchedMessages.filter((m: MessageWithUser) => !existingIds.has(m.id))
         return [...prev, ...newMessages]
       })
-
       // Mark messages as read - call directly to avoid circular dependency
       if (targetId) {
         try {
@@ -133,9 +132,10 @@ export function useMessages(recipientId?: string) {
         id: session.user.id,
         full_name: session.user.name || 'You',
         email: session.user.email || '',
-        role: 'coach', // Will be corrected when real message arrives
-        created_at: new Date().toISOString()
-      }
+        role: session.user.role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
     }
 
     // Add optimistic message immediately

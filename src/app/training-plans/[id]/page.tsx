@@ -5,11 +5,12 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
+import Link from 'next/link'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
-import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+import type { TrainingPlan, User, Workout, Race, PlanPhase } from '@/lib/supabase'
 
-type TrainingPlanWithUsers = TrainingPlan & { runners?: User; coaches?: User }
+type TrainingPlanWithUsers = TrainingPlan & { runners?: User; coaches?: User; race?: Race; plan_phases?: PlanPhase[]; previous_plan?: TrainingPlan; next_plan?: TrainingPlan }
 
 export default function TrainingPlanDetailPage() {
   const { data: session, status } = useSession()
@@ -43,6 +44,36 @@ export default function TrainingPlanDetailPage() {
       const data = await response.json()
       setTrainingPlan(data.trainingPlan)
       setWorkouts(data.workouts || [])
+
+      // Fetch plan phases
+      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`)
+      if (phasesResponse.ok) {
+        const phasesData = await phasesResponse.json()
+        setTrainingPlan(prev => ({ ...prev!, plan_phases: phasesData.plan_phases || [] }))
+      } else {
+        console.error('Failed to fetch plan phases:', phasesResponse.statusText)
+      }
+
+      // Fetch previous and next plans if they exist
+      if (data.trainingPlan.previous_plan_id) {
+        const prevPlanResponse = await fetch(`/api/training-plans/${data.trainingPlan.previous_plan_id}`)
+        if (prevPlanResponse.ok) {
+          const prevPlanData = await prevPlanResponse.json()
+          setTrainingPlan(prev => ({ ...prev!, previous_plan: prevPlanData.trainingPlan }))
+        } else {
+          console.error('Failed to fetch previous plan:', prevPlanResponse.statusText)
+        }
+      }
+
+      if (data.trainingPlan.next_plan_id) {
+        const nextPlanResponse = await fetch(`/api/training-plans/${data.trainingPlan.next_plan_id}`)
+        if (nextPlanResponse.ok) {
+          const nextPlanData = await nextPlanResponse.json()
+          setTrainingPlan(prev => ({ ...prev!, next_plan: nextPlanData.trainingPlan }))
+        } else {
+          console.error('Failed to fetch next plan:', nextPlanResponse.statusText)
+        }
+      }
     } catch (error) {
       console.error('Error fetching training plan details:', error)
     } finally {
@@ -104,6 +135,78 @@ export default function TrainingPlanDetailPage() {
     })
   }
 
+  const calculateCurrentPhase = useCallback(() => {
+    if (!trainingPlan?.start_date || !trainingPlan.plan_phases || trainingPlan.plan_phases.length === 0) {
+      return null
+    }
+
+    const startDate = new Date(trainingPlan.start_date)
+    const today = new Date()
+    let totalWeeks = 0
+
+    for (const phase of trainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
+      const phaseEndDate = new Date(startDate)
+      phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
+
+      if (today >= startDate && today <= phaseEndDate) {
+        return phase
+      }
+      totalWeeks += phase.duration_weeks
+    }
+    return null
+  }, [trainingPlan])
+
+  const currentPhase = calculateCurrentPhase()
+
+  const groupWorkoutsByPhase = useCallback(() => {
+    if (!trainingPlan?.plan_phases || trainingPlan.plan_phases.length === 0 || !trainingPlan.start_date) {
+      return { grouped: {}, ungrouped: workouts }
+    }
+
+    const grouped: Record<string, Workout[]> = {}
+    const phaseDates: Record<string, { start: Date; end: Date }> = {}
+    const planStartDate = new Date(trainingPlan.start_date)
+    let currentWeekOffset = 0
+
+    trainingPlan.plan_phases.sort((a, b) => a.order - b.order).forEach(phase => {
+      const phaseStartDate = new Date(planStartDate)
+      phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
+      const phaseEndDate = new Date(phaseStartDate)
+      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 to keep it within the week
+
+      phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
+      grouped[phase.id] = []
+      currentWeekOffset += phase.duration_weeks
+    })
+
+    const ungrouped: Workout[] = []
+
+    workouts.forEach(workout => {
+      const workoutDate = new Date(workout.date)
+      let foundPhase = false
+      for (const phaseId in phaseDates) {
+        const { start, end } = phaseDates[phaseId]
+        if (workoutDate >= start && workoutDate <= end) {
+          grouped[phaseId].push(workout)
+          foundPhase = true
+          break
+        }
+      }
+      if (!foundPhase) {
+        ungrouped.push(workout)
+      }
+    })
+
+    // Sort workouts within each group by date
+    for (const phaseId in grouped) {
+      grouped[phaseId].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    }
+
+    return { grouped, ungrouped }
+  }, [trainingPlan, workouts])
+
+  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = groupWorkoutsByPhase()
+
   const getWorkoutStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -152,6 +255,79 @@ export default function TrainingPlanDetailPage() {
             </button>
           </div>
           
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Training Phases</h2>
+            {trainingPlan.plan_phases && trainingPlan.plan_phases.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trainingPlan.plan_phases.sort((a, b) => a.order - b.order).map(phase => (
+                  <div key={phase.id} className="border border-gray-200 rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900">{phase.phase_name}</h3>
+                    <p className="text-sm text-gray-600">Duration: {phase.duration_weeks} weeks</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No training phases defined for this plan.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Training Phases</h2>
+            {trainingPlan.plan_phases && trainingPlan.plan_phases.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trainingPlan.plan_phases.sort((a, b) => a.order - b.order).map(phase => (
+                  <div 
+                    key={phase.id} 
+                    className={`border rounded-lg p-4 ${currentPhase?.id === phase.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  >
+                    <h3 className="font-medium text-gray-900">{phase.phase_name}</h3>
+                    <p className="text-sm text-gray-600">Duration: {phase.duration_weeks} weeks</p>
+                    {currentPhase?.id === phase.id && (
+                      <span className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Current Phase
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No training phases defined for this plan.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Plan Sequencing Navigation */}
+          {(trainingPlan.previous_plan || trainingPlan.next_plan) && (
+            <div className="bg-white rounded-lg shadow p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Plan Sequence</h2>
+              <div className="flex justify-between items-center">
+                {trainingPlan.previous_plan ? (
+                  <Link href={`/training-plans/${trainingPlan.previous_plan.id}`} className="flex items-center text-blue-600 hover:text-blue-700">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    {trainingPlan.previous_plan.title}
+                  </Link>
+                ) : (
+                  <div />
+                )}
+                {trainingPlan.next_plan ? (
+                  <Link href={`/training-plans/${trainingPlan.next_plan.id}`} className="flex items-center text-blue-600 hover:text-blue-700">
+                    {trainingPlan.next_plan.title}
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">{trainingPlan.title}</h1>
             
@@ -165,17 +341,25 @@ export default function TrainingPlanDetailPage() {
                 <p className="text-blue-700">{formatDate(trainingPlan.created_at)}</p>
               </div>
               
-              {trainingPlan.target_race_date && (
+              {trainingPlan.race && (
                 <div className="bg-green-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-green-900">Target Race</h3>
-                  <p className="text-green-700">{formatDate(trainingPlan.target_race_date)}</p>
+                  <p className="text-green-700">{trainingPlan.race.name}</p>
+                  <p className="text-green-700 text-sm">{formatDate(trainingPlan.race.date)}</p>
                 </div>
               )}
-              
-              {trainingPlan.target_race_distance && (
+
+              {trainingPlan.goal_type && (
                 <div className="bg-purple-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-purple-900">Distance</h3>
-                  <p className="text-purple-700">{trainingPlan.target_race_distance}</p>
+                  <h3 className="font-semibold text-purple-900">Goal Type</h3>
+                  <p className="text-purple-700 capitalize">{trainingPlan.goal_type.replace('_', ' ')}</p>
+                </div>
+              )}
+
+              {trainingPlan.plan_type && (
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-yellow-900">Plan Type</h3>
+                  <p className="text-yellow-700 capitalize">{trainingPlan.plan_type.replace('_', ' ')}</p>
                 </div>
               )}
 
@@ -210,7 +394,7 @@ export default function TrainingPlanDetailPage() {
           {workouts.length === 0 ? (
             <div className="text-center py-12">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 012-2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No workouts yet</h3>
               <p className="mt-1 text-sm text-gray-500">
@@ -221,75 +405,162 @@ export default function TrainingPlanDetailPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {workouts.map((workout) => (
-                <div key={workout.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium text-gray-900">{workout.planned_type}</h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>
-                          {workout.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{formatDate(workout.date)}</p>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Planned:</span>
-                          <span className="ml-2">
-                            {workout.planned_distance && `${workout.planned_distance} miles`}
-                            {workout.planned_duration && ` • ${workout.planned_duration} min`}
-                          </span>
-                        </div>
-                        
-                        {workout.status === 'completed' && (
-                          <div>
-                            <span className="text-gray-500">Actual:</span>
-                            <span className="ml-2">
-                              {workout.actual_distance && `${workout.actual_distance} miles`}
-                              {workout.actual_duration && ` • ${workout.actual_duration} min`}
-                            </span>
+            <div className="space-y-8">
+              {trainingPlan?.plan_phases?.sort((a, b) => a.order - b.order).map(phase => (
+                <div key={phase.id}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{phase.phase_name}</h3>
+                  {workoutsByPhase[phase.id] && workoutsByPhase[phase.id].length > 0 ? (
+                    <div className="space-y-4">
+                      {workoutsByPhase[phase.id].map((workout) => (
+                        <div key={workout.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-medium text-gray-900">{workout.planned_type}</h3>
+                                <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>
+                                  {workout.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">{formatDate(workout.date)}</p>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <span className="text-gray-500">Planned:</span>
+                                  <span className="ml-2">
+                                    {workout.planned_distance && `${workout.planned_distance} miles`}
+                                    {workout.planned_duration && ` • ${workout.planned_duration} min`}
+                                  </span>
+                                </div>
+                                
+                                {workout.status === 'completed' && (
+                                  <div>
+                                    <span className="text-gray-500">Actual:</span>
+                                    <span className="ml-2">
+                                      {workout.actual_distance && `${workout.actual_distance} miles`}
+                                      {workout.actual_duration && ` • ${workout.actual_duration} min`}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {workout.workout_notes && (
+                                <div className="mt-2">
+                                  <span className="text-gray-500 text-sm">Notes:</span>
+                                  <p className="text-sm text-gray-700 mt-1">{workout.workout_notes}</p>
+                                </div>
+                              )}
+
+                              {workout.coach_feedback && (
+                                <div className="mt-2">
+                                  <span className="text-gray-500 text-sm">Coach Feedback:</span>
+                                  <p className="text-sm text-gray-700 mt-1">{workout.coach_feedback}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2 mt-4">
+                              {session.user.role === 'runner' && workout.status === 'planned' && (
+                                <button
+                                  onClick={() => handleLogWorkout(workout)}
+                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                                >
+                                  Log Workout
+                                </button>
+                              )}
+                              {session.user.role === 'runner' && workout.status === 'completed' && (
+                                <button
+                                  onClick={() => handleLogWorkout(workout)}
+                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                >
+                                  Edit Log
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-
-                      {workout.workout_notes && (
-                        <div className="mt-2">
-                          <span className="text-gray-500 text-sm">Notes:</span>
-                          <p className="text-sm text-gray-700 mt-1">{workout.workout_notes}</p>
                         </div>
-                      )}
-
-                      {workout.coach_feedback && (
-                        <div className="mt-2">
-                          <span className="text-gray-500 text-sm">Coach Feedback:</span>
-                          <p className="text-sm text-gray-700 mt-1">{workout.coach_feedback}</p>
-                        </div>
-                      )}
+                      ))}
                     </div>
-                    
-                    <div className="flex gap-2 mt-4">
-                      {session.user.role === 'runner' && workout.status === 'planned' && (
-                        <button
-                          onClick={() => handleLogWorkout(workout)}
-                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                        >
-                          Log Workout
-                        </button>
-                      )}
-                      {session.user.role === 'runner' && workout.status === 'completed' && (
-                        <button
-                          onClick={() => handleLogWorkout(workout)}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                        >
-                          Edit Log
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  ) : (
+                    <div className="text-gray-500 text-sm">No workouts planned for this phase.</div>
+                  )}
                 </div>
               ))}
+
+              {ungroupedWorkouts.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Workouts</h3>
+                  <div className="space-y-4">
+                    {ungroupedWorkouts.map((workout) => (
+                      <div key={workout.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-medium text-gray-900">{workout.planned_type}</h3>
+                              <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>
+                                {workout.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{formatDate(workout.date)}</p>
+                            
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Planned:</span>
+                                <span className="ml-2">
+                                  {workout.planned_distance && `${workout.planned_distance} miles`}
+                                  {workout.planned_duration && ` • ${workout.planned_duration} min`}
+                                </span>
+                              </div>
+                              
+                              {workout.status === 'completed' && (
+                                <div>
+                                  <span className="text-gray-500">Actual:</span>
+                                  <span className="ml-2">
+                                    {workout.actual_distance && `${workout.actual_distance} miles`}
+                                    {workout.actual_duration && ` • ${workout.actual_duration} min`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {workout.workout_notes && (
+                              <div className="mt-2">
+                                <span className="text-gray-500 text-sm">Notes:</span>
+                                <p className="text-sm text-gray-700 mt-1">{workout.workout_notes}</p>
+                              </div>
+                            )}
+
+                            {workout.coach_feedback && (
+                              <div className="mt-2">
+                                <span className="text-gray-500 text-sm">Coach Feedback:</span>
+                                <p className="text-sm text-gray-700 mt-1">{workout.coach_feedback}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2 mt-4">
+                            {session.user.role === 'runner' && workout.status === 'planned' && (
+                              <button
+                                onClick={() => handleLogWorkout(workout)}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                              >
+                                Log Workout
+                              </button>
+                            )}
+                            {session.user.role === 'runner' && workout.status === 'completed' && (
+                              <button
+                                onClick={() => handleLogWorkout(workout)}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                              >
+                                Edit Log
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
