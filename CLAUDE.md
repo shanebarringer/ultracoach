@@ -178,6 +178,9 @@ pnpm lint
 - ✅ Optimized loading states (no more constant loading spinners)
 - ✅ Fixed NextAuth compatibility issues with Next.js 15
 - ✅ Resolved scroll anchoring issues for contained chat scrolling
+- ✅ Implemented optimistic message updates for instant sender feedback
+- ✅ Enhanced Supabase realtime error handling for schema mismatches
+- ✅ Improved message deduplication logic for real-time updates
 
 **Next Priority Tasks:**
 1. Complete Jotai migration for remaining components (dashboard components, form components)
@@ -213,6 +216,8 @@ pnpm lint
 2. **Test build**: `pnpm build`
 3. **Update documentation** if architecture changes
 4. **Mark tasks complete** in TASKS.md
+5. **Update project docs** (CLAUDE.md, PLANNING.md, TASKS.md) to reflect changes
+6. **Commit docs changes** separately or with feature changes
 
 ## 🔗 Quick Reference Links
 
