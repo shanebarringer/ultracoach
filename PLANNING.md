@@ -144,10 +144,11 @@ activeTrainingPlansAtom: Computed active plans
 - Elevation gain and weather condition tracking
 
 ### Real-time Communication
-- Coach-runner chat with typing indicators
+- Coach-runner chat with typing indicators and smart auto-scroll
 - Notification system for workout updates
-- Real-time plan and workout synchronization
+- Real-time plan and workout synchronization with error resilience
 - Status indicators and message delivery confirmation
+- Enhanced UX with optimized loading states and contained scrolling
 
 ## 🔄 Development Workflow
 
@@ -212,7 +213,7 @@ pnpm dev
 ### Current Development Status (Updated 2025-01-13)
 - **Project Progress**: 45.9% complete (45/98 tasks)
 - **Active Milestone**: Milestone 2 - Frontend Enhancements
-- **Recent Completions**: Chat system Jotai migration, enhanced error handling, realtime resilience
+- **Recent Completions**: Complete chat system migration with UX enhancements, NextAuth fixes, smart auto-scroll
 - **Next Priorities**: Dashboard components migration, form components migration
 
 ### Database Operations
@@ -242,18 +243,18 @@ npx tsc --noEmit
 ## 🎯 Success Metrics
 
 ### Technical Goals
-- 🔄 Zero React Context for global state (notifications, workouts, training plans, chat system migrated)
+- 🔄 Zero React Context for global state (notifications, workouts, training plans, chat system with UX enhancements migrated)
 - ✅ Comprehensive database schema for professional coaching
-- ✅ Real-time updates with sub-second latency and error resilience
+- ✅ Real-time updates with sub-second latency, error resilience, and graceful fallbacks
 - 🔄 Full TypeScript coverage with strict mode
 - 🔄 Component library with consistent design system
 
 ### User Experience Goals
 - Intuitive race targeting and goal setting
 - Clear phase progression visualization
-- Seamless coach-runner communication
+- Seamless coach-runner communication with smart auto-scroll and optimized loading
 - Mobile-responsive training plan management
-- Fast, performant state updates
+- Fast, performant state updates with granular reactivity
 
 ### Business Goals
 - Support for multiple race distances and types
