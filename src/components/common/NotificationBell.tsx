@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useNotifications } from '@/hooks/useNotifications'
+import type { Notification } from '@/lib/atoms'
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
@@ -146,7 +147,7 @@ export default function NotificationBell() {
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mt-1">
-                            {notification.content}
+                            {notification.message}
                           </p>
                           <p className="text-xs text-gray-500 mt-2">
                             {formatTime(notification.created_at)}

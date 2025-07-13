@@ -2,21 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useSupabaseRealtime } from './useSupabaseRealtime'
-
-interface TypingStatus {
-  user_id: string
-  recipient_id: string
-  is_typing: boolean
-  last_updated: string
-}
 
 export function useTypingStatus(recipientId: string) {
   const { data: session } = useSession()
   const [isRecipientTyping, setIsRecipientTyping] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
-  const sendTypingTimeoutRef = useRef<NodeJS.Timeout>()
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const sendTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Send typing status to server (disabled until typing_status table is created)
   const sendTypingStatus = useCallback(async (typing: boolean) => {
@@ -49,6 +41,18 @@ export function useTypingStatus(recipientId: string) {
     }
   }, [session?.user?.id, recipientId])
 
+  // Stop typing indicator
+  const stopTyping = useCallback(() => {
+    if (!isTyping) return
+
+    setIsTyping(false)
+    sendTypingStatus(false)
+
+    if (sendTypingTimeoutRef.current) {
+      clearTimeout(sendTypingTimeoutRef.current)
+    }
+  }, [isTyping, sendTypingStatus])
+
   // Start typing indicator
   const startTyping = useCallback(() => {
     console.log('⌨️ Start typing called, current isTyping:', isTyping)
@@ -66,19 +70,7 @@ export function useTypingStatus(recipientId: string) {
     sendTypingTimeoutRef.current = setTimeout(() => {
       stopTyping()
     }, 3000)
-  }, [isTyping, sendTypingStatus])
-
-  // Stop typing indicator
-  const stopTyping = useCallback(() => {
-    if (!isTyping) return
-
-    setIsTyping(false)
-    sendTypingStatus(false)
-
-    if (sendTypingTimeoutRef.current) {
-      clearTimeout(sendTypingTimeoutRef.current)
-    }
-  }, [isTyping, sendTypingStatus])
+  }, [isTyping, sendTypingStatus, stopTyping])
 
   // Polling-based typing status check (fallback since real-time has issues)
   useEffect(() => {

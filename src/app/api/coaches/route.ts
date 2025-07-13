@@ -22,8 +22,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch coaches' }, { status: 500 })
     }
     // Extract unique coaches
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uniqueCoaches = trainingPlans?.reduce((acc: any[], plan: any) => {
-      if (plan.coaches && !acc.find(c => c.id === plan.coaches.id)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (plan.coaches && !acc.find((c: any) => c.id === plan.coaches.id)) {
         acc.push(plan.coaches)
       }
       return acc

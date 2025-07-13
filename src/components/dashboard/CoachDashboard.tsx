@@ -47,7 +47,7 @@ export default function CoachDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [])
 
   useEffect(() => {
     if (session?.user?.id) {
