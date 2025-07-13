@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 import { useSession } from 'next-auth/react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { 
   messagesAtom, 
@@ -16,6 +16,7 @@ export function useMessages(recipientId?: string) {
   const [messages, setMessages] = useAtom(messagesAtom)
   const [currentConversationId, setCurrentConversationId] = useAtom(currentConversationIdAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false)
   
   // Set current conversation when recipientId changes
   useEffect(() => {
@@ -24,11 +25,14 @@ export function useMessages(recipientId?: string) {
     }
   }, [recipientId, currentConversationId, setCurrentConversationId])
 
-  const fetchMessages = useCallback(async (targetRecipientId?: string) => {
+  const fetchMessages = useCallback(async (targetRecipientId?: string, isInitialLoad = false) => {
     const targetId = targetRecipientId || recipientId
     if (!session?.user?.id || !targetId) return
 
-    setLoadingStates(prev => ({ ...prev, messages: true }))
+    // Only show loading spinner on initial load, not on background updates
+    if (isInitialLoad) {
+      setLoadingStates(prev => ({ ...prev, messages: true }))
+    }
 
     try {
       const response = await fetch(`/api/messages?recipientId=${targetId}`)
@@ -69,12 +73,19 @@ export function useMessages(recipientId?: string) {
           console.error('Error marking messages as read:', error)
         }
       }
+      // Mark as initially loaded once we've successfully fetched messages
+      if (isInitialLoad) {
+        setHasInitiallyLoaded(true)
+      }
     } catch (error) {
       console.error('Error fetching messages:', error)
     } finally {
-      setLoadingStates(prev => ({ ...prev, messages: false }))
+      // Only turn off loading if this was an initial load
+      if (isInitialLoad) {
+        setLoadingStates(prev => ({ ...prev, messages: false }))
+      }
     }
-  }, [session?.user?.id, recipientId, setMessages, setLoadingStates])
+  }, [session?.user?.id, recipientId, setMessages, setLoadingStates, setHasInitiallyLoaded])
 
   const markMessagesAsRead = useCallback(async (targetRecipientId?: string) => {
     const targetId = targetRecipientId || recipientId
@@ -201,17 +212,21 @@ export function useMessages(recipientId?: string) {
   // Fetch messages when recipientId changes and set up polling fallback
   useEffect(() => {
     if (recipientId) {
-      fetchMessages(recipientId)
+      // Reset loading state when switching conversations
+      setHasInitiallyLoaded(false)
       
-      // Polling fallback - refresh messages every 5 seconds
+      // Initial load with loading spinner
+      fetchMessages(recipientId, true)
+      
+      // Polling fallback - refresh messages every 5 seconds (background updates)
       // This ensures chat works even if real-time fails
       const pollInterval = setInterval(() => {
-        fetchMessages(recipientId)
+        fetchMessages(recipientId, false) // Background update, no loading spinner
       }, 5000)
 
       return () => clearInterval(pollInterval)
     }
-  }, [recipientId, fetchMessages])
+  }, [recipientId, fetchMessages, setHasInitiallyLoaded])
 
   // Get messages for current conversation
   const conversationMessages = messages.filter(message => {
@@ -226,7 +241,7 @@ export function useMessages(recipientId?: string) {
   return {
     messages: conversationMessages,
     allMessages: messages,
-    loading: loadingStates.messages,
+    loading: loadingStates.messages && !hasInitiallyLoaded, // Only show loading if we haven't loaded initially
     sendMessage,
     fetchMessages,
     markMessagesAsRead
