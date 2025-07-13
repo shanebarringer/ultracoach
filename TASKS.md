@@ -99,11 +99,11 @@
   - [x] Create useTrainingPlans hook with CRUD operations
   - [x] Update TrainingPlanCard component
   - [x] Implement filtered plans with derived atoms
-- [ ] **Migrate chat system components**
-  - [ ] Convert ChatWindow to use Jotai atoms
-  - [ ] Create useMessages and useConversations hooks
-  - [ ] Update ConversationList component
-  - [ ] Migrate typing status to Jotai atoms
+- [x] **Migrate chat system components**
+  - [x] Convert ChatWindow to use Jotai atoms
+  - [x] Create useMessages and useConversations hooks
+  - [x] Update ConversationList component
+  - [x] Migrate typing status to Jotai atoms
 - [ ] **Migrate dashboard components**
   - [ ] Convert CoachDashboard to use Jotai atoms
   - [ ] Convert RunnerDashboard to use Jotai atoms
@@ -305,11 +305,11 @@
 ## 📊 Progress Tracking
 
 ### Milestone 1: ✅ 100% Complete (37/37 tasks)
-### Milestone 2: 🔄 16.7% Complete (4/24 tasks)
+### Milestone 2: 🔄 33.3% Complete (8/24 tasks)
 ### Milestone 3: 📅 0% Complete (0/19 tasks) 
 ### Milestone 4: 📅 0% Complete (0/18 tasks)
 
-**Overall Project Progress: 41.8% Complete (41/98 total tasks)**
+**Overall Project Progress: 45.9% Complete (45/98 total tasks)**
 
 ---
 
