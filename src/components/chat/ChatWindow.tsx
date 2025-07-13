@@ -1,18 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import TypingIndicator from './TypingIndicator'
-// import { supabase } from '@/lib/supabase' // No longer used
-import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
-import type { Message, User } from '@/lib/supabase'
-
-interface MessageWithUser extends Message {
-  sender: User
-}
+import type { User } from '@/lib/atoms'
 
 interface ChatWindowProps {
   recipientId: string
@@ -21,159 +16,29 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) {
   const { data: session } = useSession()
-  const [messages, setMessages] = useState<MessageWithUser[]>([])
-  const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   
-  // Typing status
+  // Use Jotai hooks for state management
+  const { messages, loading, sendMessage } = useMessages(recipientId)
   const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
 
-  const markMessagesAsRead = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/messages/mark-read', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          senderId: recipientId,
-          recipientId: session.user.id
-        }),
-      })
-
-      if (!response.ok) {
-        // console.error('Error marking messages as read:', response.statusText)
-      }
-    } catch {
-      // Error intentionally ignored
-    }
-  }, [session?.user?.id, recipientId])
-
-  const fetchMessages = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch(`/api/messages?recipientId=${recipientId}`)
-      
-      if (!response.ok) {
-        // console.error('Error fetching messages:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setMessages(data.messages || [])
-
-      // Mark messages as read
-      await markMessagesAsRead()
-    } catch {
-      // Error intentionally ignored
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id, recipientId, markMessagesAsRead])
-
-  const sendMessage = async (content: string) => {
+  const handleSendMessage = useCallback(async (content: string) => {
     if (!session?.user?.id || sending) return
 
     setSending(true)
     try {
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content,
-          recipientId
-        }),
-      })
-
-      if (!response.ok) {
-        // console.error('Error sending message:', response.statusText)
+      const success = await sendMessage(content)
+      if (!success) {
         alert('Failed to send message. Please try again.')
-      } else {
-        fetchMessages()
       }
-    } catch {
+    } catch (error) {
+      console.error('Error sending message:', error)
       alert('Failed to send message. Please try again.')
     } finally {
       setSending(false)
     }
-  }
+  }, [session?.user?.id, sending, sendMessage])
 
-  useEffect(() => {
-    fetchMessages()
-    
-    // Polling fallback - refresh messages every 3 seconds if real-time fails
-    const pollInterval = setInterval(() => {
-      fetchMessages()
-    }, 3000)
-
-    return () => clearInterval(pollInterval)
-  }, [fetchMessages])
-
-  // Real-time updates for new messages - simplified filter
-  useSupabaseRealtime({
-    table: 'messages',
-    onInsert: (payload) => {
-      const newMessage = payload.new as Message
-      
-      // Only process messages relevant to this conversation
-      const isRelevantMessage = 
-        (newMessage.sender_id === session?.user?.id && newMessage.recipient_id === recipientId) ||
-        (newMessage.sender_id === recipientId && newMessage.recipient_id === session?.user?.id)
-      
-      if (!isRelevantMessage) return
-
-      // Fetch the sender info for the new message
-      fetch(`/api/users/${newMessage.sender_id}`)
-        .then(response => response.json())
-        .then(({ user: sender }) => {
-          if (sender) {
-            const messageWithUser: MessageWithUser = {
-              ...newMessage,
-              sender
-            }
-            
-            setMessages(prev => {
-              // Check if message already exists to avoid duplicates
-              const exists = prev.some(msg => msg.id === newMessage.id)
-              if (exists) return prev
-              
-              return [...prev, messageWithUser]
-            })
-
-            // Mark message as read if it's from the other user
-            if (newMessage.sender_id === recipientId) {
-              markMessagesAsRead()
-            }
-          }
-        })
-        .catch(() => {
-          // Error intentionally ignored
-        })
-    },
-    onUpdate: (payload) => {
-      const updatedMessage = payload.new as Message
-      
-      // Only process messages relevant to this conversation
-      const isRelevantMessage = 
-        (updatedMessage.sender_id === session?.user?.id && updatedMessage.recipient_id === recipientId) ||
-        (updatedMessage.sender_id === recipientId && updatedMessage.recipient_id === session?.user?.id)
-      
-      if (!isRelevantMessage) return
-
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === updatedMessage.id 
-            ? { ...msg, ...updatedMessage }
-            : msg
-        )
-      )
-    }
-  })
 
   if (loading) {
     return (
@@ -220,7 +85,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
       {/* Message Input */}
       <MessageInput 
-        onSendMessage={sendMessage} 
+        onSendMessage={handleSendMessage} 
         onStartTyping={startTyping}
         onStopTyping={stopTyping}
         disabled={sending || !session?.user?.id}

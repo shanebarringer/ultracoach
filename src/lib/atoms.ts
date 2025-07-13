@@ -53,8 +53,14 @@ export interface Message {
   id: string
   conversation_id: string
   sender_id: string
+  recipient_id: string
   content: string
+  read: boolean
   created_at: string
+}
+
+export interface MessageWithUser extends Message {
+  sender: User
 }
 
 export interface Conversation {
@@ -65,6 +71,12 @@ export interface Conversation {
   updated_at: string
 }
 
+export interface ConversationWithUser {
+  user: User
+  lastMessage?: Message
+  unreadCount: number
+}
+
 // Core application atoms
 export const notificationsAtom = atom<Notification[]>([])
 export const unreadNotificationsCountAtom = atom<number>(0)
@@ -73,16 +85,25 @@ export const workoutsAtom = atom<Workout[]>([])
 export const trainingPlansAtom = atom<TrainingPlan[]>([])
 export const runnersAtom = atom<User[]>([])
 
-export const messagesAtom = atom<Message[]>([])
-export const conversationsAtom = atom<Conversation[]>([])
+// Chat atoms
+export const messagesAtom = atom<MessageWithUser[]>([])
+export const conversationsAtom = atom<ConversationWithUser[]>([])
+export const currentConversationIdAtom = atom<string | null>(null)
 
-// UI state atoms
-export const loadingStatesAtom = atomWithStorage('loadingStates', {
+// UI state atoms - Don't persist loading states to avoid stuck spinners
+export const loadingStatesAtom = atom({
   workouts: false,
   trainingPlans: false,
   notifications: false,
   messages: false,
+  conversations: false,
   runners: false,
+})
+
+export const chatUiStateAtom = atom({
+  hasInitiallyLoadedMessages: false,
+  hasInitiallyLoadedConversations: false,
+  currentRecipientId: null as string | null,
 })
 
 export const uiStateAtom = atom({
@@ -131,8 +152,27 @@ export const filteredTrainingPlansAtom = atom((get) => {
 })
 
 // Typing status atoms
-export const typingStatusAtom = atom({
-  isTyping: false,
-  isRecipientTyping: false,
-  conversationId: null as string | null,
+export const typingStatusAtom = atom<Record<string, {
+  isTyping: boolean
+  isRecipientTyping: boolean
+  lastTypingUpdate: number
+}>>({})
+
+// Derived chat atoms
+export const currentConversationMessagesAtom = atom((get) => {
+  const messages = get(messagesAtom)
+  const currentConversationId = get(currentConversationIdAtom)
+  
+  if (!currentConversationId) return []
+  
+  return messages.filter(message => {
+    const senderId = message.sender_id
+    const recipientId = message.recipient_id
+    return senderId === currentConversationId || recipientId === currentConversationId
+  })
+})
+
+export const totalUnreadMessagesAtom = atom((get) => {
+  const conversations = get(conversationsAtom)
+  return conversations.reduce((total, conv) => total + conv.unreadCount, 0)
 })

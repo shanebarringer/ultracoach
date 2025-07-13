@@ -1,14 +1,24 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAtom } from 'jotai'
+import { useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { typingStatusAtom } from '@/lib/atoms'
 
 export function useTypingStatus(recipientId: string) {
   const { data: session } = useSession()
-  const [isRecipientTyping, setIsRecipientTyping] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  const [typingStatuses, setTypingStatuses] = useAtom(typingStatusAtom)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const sendTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Get typing status for this specific conversation
+  const conversationStatus = typingStatuses[recipientId] || {
+    isTyping: false,
+    isRecipientTyping: false,
+    lastTypingUpdate: 0
+  }
+
+  const { isTyping, isRecipientTyping } = conversationStatus
 
   // Send typing status to server (disabled until typing_status table is created)
   const sendTypingStatus = useCallback(async (typing: boolean) => {
@@ -45,20 +55,36 @@ export function useTypingStatus(recipientId: string) {
   const stopTyping = useCallback(() => {
     if (!isTyping) return
 
-    setIsTyping(false)
+    setTypingStatuses(prev => ({
+      ...prev,
+      [recipientId]: {
+        ...prev[recipientId],
+        isTyping: false,
+        lastTypingUpdate: Date.now()
+      }
+    }))
+    
     sendTypingStatus(false)
 
     if (sendTypingTimeoutRef.current) {
       clearTimeout(sendTypingTimeoutRef.current)
     }
-  }, [isTyping, sendTypingStatus])
+  }, [isTyping, recipientId, setTypingStatuses, sendTypingStatus])
 
   // Start typing indicator
   const startTyping = useCallback(() => {
     console.log('⌨️ Start typing called, current isTyping:', isTyping)
     if (isTyping) return
 
-    setIsTyping(true)
+    setTypingStatuses(prev => ({
+      ...prev,
+      [recipientId]: {
+        ...prev[recipientId],
+        isTyping: true,
+        lastTypingUpdate: Date.now()
+      }
+    }))
+    
     sendTypingStatus(true)
 
     // Clear any existing timeout
@@ -70,7 +96,7 @@ export function useTypingStatus(recipientId: string) {
     sendTypingTimeoutRef.current = setTimeout(() => {
       stopTyping()
     }, 3000)
-  }, [isTyping, sendTypingStatus, stopTyping])
+  }, [isTyping, recipientId, setTypingStatuses, sendTypingStatus, stopTyping])
 
   // Polling-based typing status check (fallback since real-time has issues)
   useEffect(() => {
@@ -82,7 +108,14 @@ export function useTypingStatus(recipientId: string) {
         if (response.ok) {
           const data = await response.json()
           if (data.isTyping !== isRecipientTyping) {
-            setIsRecipientTyping(data.isTyping)
+            setTypingStatuses(prev => ({
+              ...prev,
+              [recipientId]: {
+                ...prev[recipientId],
+                isRecipientTyping: data.isTyping,
+                lastTypingUpdate: Date.now()
+              }
+            }))
             
             // Auto-clear after 5 seconds
             if (data.isTyping) {
@@ -90,7 +123,14 @@ export function useTypingStatus(recipientId: string) {
                 clearTimeout(typingTimeoutRef.current)
               }
               typingTimeoutRef.current = setTimeout(() => {
-                setIsRecipientTyping(false)
+                setTypingStatuses(prev => ({
+                  ...prev,
+                  [recipientId]: {
+                    ...prev[recipientId],
+                    isRecipientTyping: false,
+                    lastTypingUpdate: Date.now()
+                  }
+                }))
               }, 5000)
             }
           }
@@ -103,7 +143,7 @@ export function useTypingStatus(recipientId: string) {
     // Check typing status every 1 second
     const pollInterval = setInterval(checkTypingStatus, 1000)
     return () => clearInterval(pollInterval)
-  }, [session?.user?.id, recipientId, isRecipientTyping])
+  }, [session?.user?.id, recipientId, isRecipientTyping, setTypingStatuses])
 
   // Cleanup on unmount
   useEffect(() => {
