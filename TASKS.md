@@ -156,29 +156,29 @@
     - **Note**: Duplicate type definitions were removed from `src/lib/atoms.ts` and now import from `src/lib/supabase.ts`. To fully resolve schema mismatches, run `supabase gen types typescript --local > types/supabase.ts` and ensure your Supabase client is up-to-date.
 
 ### Enhanced Training Plan UI
-- [ ] **Update training plan interface**
+- [x] **Update training plan interface**
   - [x] Add race targeting dropdown/selection
   - [x] Add goal type selection (completion, time, placement)
   - [x] Add plan type selection (race_specific, base_building, etc.)
   - [x] Update plan creation workflow
-- [ ] **Add plan template selection**
+- [x] **Add plan template selection**
   - [x] Create template selection wizard
   - [x] Display template details and phase structure
   - [x] Allow customization of selected templates
   - [x] Support creating plans from templates
-- [ ] **Enhance training plan display**
+- [x] **Enhance training plan display**
   - [x] Show current phase and progression
   - [x] Display race information and timeline
   - [x] Add phase transition indicators
   - [x] Show plan sequencing relationships
 
 ### Workout System Enhancements
-- [ ] **Enhanced workout interface**
+- [x] **Enhanced workout interface**
   - [x] Add workout category selection
   - [x] Add intensity level slider (1-10)
   - [x] Add terrain type selection
   - [x] Add elevation gain tracking
-- [ ] **Phase-aware workout organization**
+- [x] **Phase-aware workout organization**
   - [x] Group workouts by training phase
   - [x] Show phase-specific workout recommendations
   - [ ] Add phase progression visualization
