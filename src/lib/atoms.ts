@@ -100,6 +100,11 @@ export const loadingStatesAtom = atomWithStorage('loadingStates', {
   runners: false,
 })
 
+export const chatUiStateAtom = atom({
+  hasInitiallyLoadedMessages: false,
+  currentRecipientId: null as string | null,
+})
+
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,
   showLogWorkout: false,
