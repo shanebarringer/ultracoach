@@ -12,6 +12,9 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [isUserScrolling, setIsUserScrolling] = useState(false)
+  const [lastMessageCount, setLastMessageCount] = useState(0)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -20,29 +23,63 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   const handleScroll = useCallback(() => {
     const container = containerRef.current
     if (container) {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50
       setShowScrollButton(!isNearBottom && messages.length > 0)
+      
+      // If user scrolls up significantly, they are actively browsing
+      if (!isNearBottom) {
+        setIsUserScrolling(true)
+        
+        // Clear existing timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current)
+        }
+        
+        // Reset user scrolling state after 3 seconds of no scrolling
+        scrollTimeoutRef.current = setTimeout(() => {
+          setIsUserScrolling(false)
+        }, 3000)
+      } else {
+        setIsUserScrolling(false)
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current)
+        }
+      }
     }
   }, [messages.length])
 
   useEffect(() => {
-    // Only auto-scroll if user is near bottom or this is the first message
     const container = containerRef.current
-    if (container) {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-      const isFirstLoad = messages.length <= 1
+    if (container && messages.length > 0) {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50
+      const isInitialLoad = lastMessageCount === 0 && messages.length > 0
+      const isNewMessage = messages.length > lastMessageCount
+      const lastMessage = messages[messages.length - 1]
+      const isMyMessage = lastMessage && lastMessage.sender_id === currentUserId
       
-      if (isNearBottom || isFirstLoad) {
+      // Auto-scroll only in these cases:
+      // 1. Initial load of messages
+      // 2. User is near bottom and a new message arrives
+      // 3. User sends a message (always scroll for own messages)
+      if (isInitialLoad || (isNewMessage && (isNearBottom || isMyMessage) && !isUserScrolling)) {
         scrollToBottom()
       }
+      
+      setLastMessageCount(messages.length)
     }
-  }, [messages])
+  }, [messages, currentUserId, lastMessageCount, isUserScrolling])
 
   useEffect(() => {
     const container = containerRef.current
     if (container) {
       container.addEventListener('scroll', handleScroll)
-      return () => container.removeEventListener('scroll', handleScroll)
+      return () => {
+        container.removeEventListener('scroll', handleScroll)
+        // Cleanup timeout on unmount
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current)
+        }
+      }
     }
   }, [messages.length, handleScroll])
 
