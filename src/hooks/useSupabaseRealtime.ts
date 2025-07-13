@@ -97,14 +97,23 @@ export function useSupabaseRealtime({
       return
     }
 
-    // Subscribe to the channel
+    // Subscribe to the channel with enhanced error handling
     channel.subscribe((status, err) => {
       console.log(`📡 Realtime ${table} subscription status:`, status)
       if (status === 'SUBSCRIBED') {
         console.log(`✅ Successfully subscribed to ${table} realtime updates`)
       } else if (status === 'CHANNEL_ERROR') {
         console.error(`❌ Error subscribing to ${table} realtime updates:`, err)
-        // Don't throw error, just log it
+        
+        // Handle schema mismatch errors gracefully
+        if (err && err.message && err.message.includes('mismatch between server and client bindings')) {
+          console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
+          // The component will still work, just without real-time updates
+          return
+        }
+        
+        // For other errors, also continue gracefully
+        console.warn(`⚠️ Real-time updates disabled for ${table}, components will still function`)
       } else if (status === 'TIMED_OUT') {
         console.warn(`⏰ Subscription to ${table} timed out, retrying...`)
       } else if (status === 'CLOSED') {

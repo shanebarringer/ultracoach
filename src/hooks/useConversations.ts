@@ -105,40 +105,56 @@ export function useConversations() {
     }
   }, [session?.user?.id, setConversations])
 
-  // Fetch conversations on mount and when session changes
+  // Fetch conversations on mount and when session changes, with polling fallback
   useEffect(() => {
     if (session?.user?.id) {
       fetchConversations()
+      
+      // Polling fallback - refresh conversations every 10 seconds
+      // This ensures conversation list stays updated even if real-time fails
+      const pollInterval = setInterval(() => {
+        fetchConversations()
+      }, 10000)
+
+      return () => clearInterval(pollInterval)
     }
   }, [session?.user?.id, fetchConversations])
 
-  // Real-time updates for messages (which affect conversations)
+  // Real-time updates for messages (which affect conversations) with error handling
   useSupabaseRealtime({
     table: 'messages',
     onInsert: (payload) => {
-      const newMessage = payload.new as Message
-      
-      // Only process messages relevant to current user
-      const isRelevantMessage = 
-        newMessage.sender_id === session?.user?.id || 
-        newMessage.recipient_id === session?.user?.id
-      
-      if (isRelevantMessage) {
-        // Refresh conversations to get updated unread counts and last messages
-        fetchConversations()
+      try {
+        const newMessage = payload.new as Message
+        
+        // Only process messages relevant to current user
+        const isRelevantMessage = 
+          newMessage.sender_id === session?.user?.id || 
+          newMessage.recipient_id === session?.user?.id
+        
+        if (isRelevantMessage) {
+          // Refresh conversations to get updated unread counts and last messages
+          fetchConversations()
+        }
+      } catch (error) {
+        console.error('Error processing realtime conversation insert:', error)
       }
     },
     onUpdate: (payload) => {
-      const updatedMessage = payload.new as Message
-      
-      // Only process messages relevant to current user
-      const isRelevantMessage = 
-        updatedMessage.sender_id === session?.user?.id || 
-        updatedMessage.recipient_id === session?.user?.id
-      
-      if (isRelevantMessage) {
-        // Refresh conversations to get updated read status
-        fetchConversations()
+      try {
+        const updatedMessage = payload.new as Message
+        
+        // Only process messages relevant to current user
+        const isRelevantMessage = 
+          updatedMessage.sender_id === session?.user?.id || 
+          updatedMessage.recipient_id === session?.user?.id
+        
+        if (isRelevantMessage) {
+          // Refresh conversations to get updated read status
+          fetchConversations()
+        }
+      } catch (error) {
+        console.error('Error processing realtime conversation update:', error)
       }
     }
   })

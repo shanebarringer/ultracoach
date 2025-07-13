@@ -129,71 +129,87 @@ export function useMessages(recipientId?: string) {
     }
   }, [session?.user?.id, recipientId])
 
-  // Real-time updates for messages
+  // Real-time updates for messages with error handling
   useSupabaseRealtime({
     table: 'messages',
     onInsert: (payload) => {
-      const newMessage = payload.new as Message
-      
-      // Only process messages relevant to current user
-      const isRelevantMessage = 
-        newMessage.sender_id === session?.user?.id || 
-        newMessage.recipient_id === session?.user?.id
-      
-      if (!isRelevantMessage) return
+      try {
+        const newMessage = payload.new as Message
+        
+        // Only process messages relevant to current user
+        const isRelevantMessage = 
+          newMessage.sender_id === session?.user?.id || 
+          newMessage.recipient_id === session?.user?.id
+        
+        if (!isRelevantMessage) return
 
-      // Fetch the sender info for the new message
-      fetch(`/api/users/${newMessage.sender_id}`)
-        .then(response => response.json())
-        .then(({ user: sender }) => {
-          if (sender) {
-            const messageWithUser: MessageWithUser = {
-              ...newMessage,
-              sender
-            }
-            
-            setMessages(prev => {
-              // Check if message already exists to avoid duplicates
-              const exists = prev.some(msg => msg.id === newMessage.id)
-              if (exists) return prev
+        // Fetch the sender info for the new message
+        fetch(`/api/users/${newMessage.sender_id}`)
+          .then(response => response.json())
+          .then(({ user: sender }) => {
+            if (sender) {
+              const messageWithUser: MessageWithUser = {
+                ...newMessage,
+                sender
+              }
               
-              return [...prev, messageWithUser]
-            })
+              setMessages(prev => {
+                // Check if message already exists to avoid duplicates
+                const exists = prev.some(msg => msg.id === newMessage.id)
+                if (exists) return prev
+                
+                return [...prev, messageWithUser]
+              })
 
-            // Mark message as read if it's from the other user and we're in their conversation
-            if (newMessage.sender_id === currentConversationId && newMessage.recipient_id === session?.user?.id) {
-              markMessagesAsRead(newMessage.sender_id)
+              // Mark message as read if it's from the other user and we're in their conversation
+              if (newMessage.sender_id === currentConversationId && newMessage.recipient_id === session?.user?.id) {
+                markMessagesAsRead(newMessage.sender_id)
+              }
             }
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching sender info:', error)
-        })
+          })
+          .catch((error) => {
+            console.error('Error fetching sender info:', error)
+          })
+      } catch (error) {
+        console.error('Error processing realtime message insert:', error)
+      }
     },
     onUpdate: (payload) => {
-      const updatedMessage = payload.new as Message
-      
-      // Only process messages relevant to current user
-      const isRelevantMessage = 
-        updatedMessage.sender_id === session?.user?.id || 
-        updatedMessage.recipient_id === session?.user?.id
-      
-      if (!isRelevantMessage) return
+      try {
+        const updatedMessage = payload.new as Message
+        
+        // Only process messages relevant to current user
+        const isRelevantMessage = 
+          updatedMessage.sender_id === session?.user?.id || 
+          updatedMessage.recipient_id === session?.user?.id
+        
+        if (!isRelevantMessage) return
 
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === updatedMessage.id 
-            ? { ...msg, ...updatedMessage }
-            : msg
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === updatedMessage.id 
+              ? { ...msg, ...updatedMessage }
+              : msg
+          )
         )
-      )
+      } catch (error) {
+        console.error('Error processing realtime message update:', error)
+      }
     }
   })
 
-  // Fetch messages when recipientId changes
+  // Fetch messages when recipientId changes and set up polling fallback
   useEffect(() => {
     if (recipientId) {
       fetchMessages(recipientId)
+      
+      // Polling fallback - refresh messages every 5 seconds
+      // This ensures chat works even if real-time fails
+      const pollInterval = setInterval(() => {
+        fetchMessages(recipientId)
+      }, 5000)
+
+      return () => clearInterval(pollInterval)
     }
   }, [recipientId, fetchMessages])
 
