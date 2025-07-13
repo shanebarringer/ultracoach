@@ -34,7 +34,7 @@ export default function RunnerDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [])
 
   useEffect(() => {
     if (session?.user?.id) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { Message, User } from '@/lib/supabase'
 
 interface MessageWithUser extends Message {
@@ -21,13 +21,13 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const container = containerRef.current
     if (container) {
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
       setShowScrollButton(!isNearBottom && messages.length > 0)
     }
-  }
+  }, [messages.length])
 
   useEffect(() => {
     // Only auto-scroll if user is near bottom or this is the first message
@@ -48,7 +48,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
       container.addEventListener('scroll', handleScroll)
       return () => container.removeEventListener('scroll', handleScroll)
     }
-  }, [messages.length])
+  }, [messages.length, handleScroll])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)

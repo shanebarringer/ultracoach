@@ -8,7 +8,7 @@ import Layout from '@/components/layout/Layout'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { uiStateAtom, loadingStatesAtom, filteredWorkoutsAtom } from '@/lib/atoms'
-import type { Workout } from '@/lib/atoms'
+import type { Workout } from '@/lib/supabase'
 
 export default function WorkoutsPage() {
   const { data: session, status } = useSession()
@@ -27,11 +27,6 @@ export default function WorkoutsPage() {
       return
     }
   }, [session, status, router])
-
-  const handleLogWorkout = (workout: any) => {
-    setUiState(prev => ({ ...prev, selectedWorkout: workout }))
-    setShowLogWorkout(true)
-  }
 
   const handleLogWorkoutSuccess = () => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -65,6 +60,7 @@ export default function WorkoutsPage() {
         </div>
       </Layout>
     )
+  }
 
   if (!session) {
     return null
@@ -136,64 +132,38 @@ export default function WorkoutsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {workout.type}
+                        {workout.status === 'completed' ? workout.actual_type : workout.planned_type}
                       </h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>
-                        {workout.status}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {formatDate(workout.date)}
-                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}>{workout.status}</span>
+                      <span className="text-sm text-gray-500">{formatDate(workout.date)}</span>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Planned</h4>
                         <p className="text-sm text-gray-600">
-                          {workout.distance && `${workout.distance} miles`}
-                          {workout.duration && ` • ${workout.duration} min`}
-                          {!workout.distance && !workout.duration && 'No specific targets'}
+                          {workout.planned_distance && `${workout.planned_distance} miles`}
+                          {workout.planned_duration && ` • ${workout.planned_duration} min`}
+                          {!workout.planned_distance && !workout.planned_duration && 'No specific targets'}
                         </p>
                       </div>
-                      
                       {workout.status === 'completed' && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-1">Actual</h4>
                           <p className="text-sm text-gray-600">
-                            {workout.distance && `${workout.distance} miles`}
-                            {workout.duration && ` • ${workout.duration} min`}
-                            {!workout.distance && !workout.duration && 'No data logged'}
+                            {workout.actual_distance && `${workout.actual_distance} miles`}
+                            {workout.actual_duration && ` • ${workout.actual_duration} min`}
+                            {!workout.actual_distance && !workout.actual_duration && 'No data logged'}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {workout.notes && (
+                    {workout.workout_notes && (
                       <div className="mb-3">
                         <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
-                        <p className="text-sm text-gray-600">{workout.notes}</p>
+                        <p className="text-sm text-gray-600">{workout.workout_notes}</p>
                       </div>
-                    )}
-
-
-                  </div>
-                  
-                  <div className="flex gap-2 ml-4">
-                    {session.user.role === 'runner' && workout.status === 'planned' && (
-                      <button
-                        onClick={() => handleLogWorkout(workout)}
-                        className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                      >
-                        Log Workout
-                      </button>
-                    )}
-                    {session.user.role === 'runner' && workout.status === 'completed' && (
-                      <button
-                        onClick={() => handleLogWorkout(workout)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                      >
-                        Edit Log
-                      </button>
                     )}
                   </div>
                 </div>
@@ -201,16 +171,15 @@ export default function WorkoutsPage() {
             ))}
           </div>
         )}
-
-        {uiState.selectedWorkout && (
-          <WorkoutLogModal
-            isOpen={showLogWorkout}
-            onClose={() => setShowLogWorkout(false)}
-            onSuccess={handleLogWorkoutSuccess}
-            workout={uiState.selectedWorkout as any}
-          />
-        )}
       </div>
+      {uiState.selectedWorkout && (
+        <WorkoutLogModal
+          isOpen={showLogWorkout}
+          onClose={() => setShowLogWorkout(false)}
+          onSuccess={handleLogWorkoutSuccess}
+          workout={uiState.selectedWorkout as Workout}
+        />
+      )}
     </Layout>
   )
 }

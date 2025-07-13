@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@/lib/supabase'
@@ -17,13 +17,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (isOpen && session?.user) {
-      fetchAvailableUsers()
-    }
-  }, [isOpen, session?.user])
-
-  const fetchAvailableUsers = async () => {
+  const fetchAvailableUsers = useCallback(async () => {
     if (!session?.user) return
 
     try {
@@ -46,7 +40,13 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     } finally {
       setLoading(false)
     }
-  }
+  }, [session?.user])
+
+  useEffect(() => {
+    if (isOpen && session?.user) {
+      fetchAvailableUsers()
+    }
+  }, [isOpen, session?.user, fetchAvailableUsers])
 
   const handleStartConversation = (userId: string) => {
     onClose()

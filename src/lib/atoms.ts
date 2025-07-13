@@ -7,7 +7,7 @@ export interface Notification {
   user_id: string
   type: 'workout' | 'message' | 'comment'
   title: string
-  content: string
+  message: string // was 'content', now matches supabase
   read: boolean
   created_at: string
 }
@@ -16,12 +16,16 @@ export interface Workout {
   id: string
   training_plan_id: string
   date: string
-  type: string
-  distance?: number
-  duration?: number
-  description?: string
+  planned_distance: number
+  planned_duration: number
+  planned_type: string
+  actual_distance?: number
+  actual_duration?: number
+  actual_type?: string
+  injury_notes?: string
+  workout_notes?: string
+  coach_feedback?: string
   status: 'planned' | 'completed' | 'skipped'
-  notes?: string
   created_at: string
   updated_at: string
 }
