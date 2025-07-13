@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import Layout from '@/components/layout/Layout'
+import DashboardLayout from '@/components/layout/DashboardLayout'
 import RunnerDashboard from '@/components/dashboard/RunnerDashboard'
 
 export default function RunnerDashboardPage() {
@@ -26,11 +26,11 @@ export default function RunnerDashboardPage() {
 
   if (status === 'loading') {
     return (
-      <Layout>
+      <DashboardLayout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      </Layout>
+      </DashboardLayout>
     )
   }
 
@@ -39,10 +39,8 @@ export default function RunnerDashboardPage() {
   }
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <RunnerDashboard />
-      </div>
-    </Layout>
+    <DashboardLayout>
+      <RunnerDashboard />
+    </DashboardLayout>
   )
 }

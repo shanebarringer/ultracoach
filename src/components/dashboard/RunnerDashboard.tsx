@@ -1,147 +1,75 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useEffect, useState, useCallback } from 'react'
-import type { TrainingPlan, Workout } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import type { User } from '@/lib/supabase'
+import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
+import ProgressVisualization from '@/components/dashboard/ProgressVisualization'
+
+// Function to get the start of the current week (Monday)
+const getWeekStart = (date: Date) => {
+  const day = date.getDay()
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+  return new Date(date.setDate(diff))
+}
 
 export default function RunnerDashboard() {
   const { data: session } = useSession()
-  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([])
-  const [upcomingWorkouts, setUpcomingWorkouts] = useState<Workout[]>([])
+  const [weekStart, setWeekStart] = useState(getWeekStart(new Date()))
   const [loading, setLoading] = useState(true)
 
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // Fetch training plans via API
-      const plansResponse = await fetch('/api/training-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        setTrainingPlans(plansData.trainingPlans || [])
-      }
-
-      // Fetch upcoming workouts via API
-      const workoutsResponse = await fetch('/api/workouts')
-      if (workoutsResponse.ok) {
-        const workoutsData = await workoutsResponse.json()
-        // Filter for planned workouts that are upcoming
-        const upcomingWorkouts = (workoutsData.workouts || [])
-          .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
-          .slice(0, 5)
-        setUpcomingWorkouts(upcomingWorkouts)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id])
+  const handleWeekChange = (direction: 'next' | 'prev') => {
+    setWeekStart(prev => {
+      const newDate = new Date(prev)
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
+      return newDate
+    })
+  }
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchDashboardData()
+    if (session?.user) {
+      setLoading(false)
     }
-  }, [session, fetchDashboardData])
+  }, [session])
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Runner Dashboard
-          </h2>
-          <p className="text-gray-600">Welcome back, {session?.user?.name}!</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
-            <h3 className="text-sm font-medium text-blue-900 mb-2">Active Training Plans</h3>
-            <p className="text-3xl font-bold text-blue-600">{trainingPlans.length}</p>
-          </div>
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-            <h3 className="text-sm font-medium text-green-900 mb-2">Upcoming Workouts</h3>
-            <p className="text-3xl font-bold text-green-600">{upcomingWorkouts.length}</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
-            <h3 className="text-sm font-medium text-purple-900 mb-2">This Week</h3>
-            <p className="text-3xl font-bold text-purple-600">
-              {upcomingWorkouts.filter(w => {
-                const workoutDate = new Date(w.date)
-                const today = new Date()
-                const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-                return workoutDate >= today && workoutDate <= weekFromToday
-              }).length}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Training Plans</h3>
-          {trainingPlans.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No training plans yet.</p>
-              <p className="text-sm text-gray-400">Ask your coach to create a training plan for you.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {trainingPlans.map((plan) => (
-                <div key={plan.id} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900">{plan.title}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
-                  {plan.target_race_date && (
-                    <p className="text-sm text-blue-600 mt-2">
-                      Target Race: {new Date(plan.target_race_date).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {session?.user && (
+            <WeeklyPlannerCalendar 
+              runner={session.user as User} 
+              weekStart={weekStart} 
+            />
           )}
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Workouts</h3>
-          {upcomingWorkouts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No upcoming workouts scheduled.</p>
+        <div className="space-y-8">
+          <ProgressVisualization />
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Week Navigation</h3>
+            <div className="flex justify-between items-center">
+              <button onClick={() => handleWeekChange('prev')} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">
+                &larr; Previous
+              </button>
+              <p className="text-center font-medium">
+                {weekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+              </p>
+              <button onClick={() => handleWeekChange('next')} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">
+                Next &rarr;
+              </button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {upcomingWorkouts.map((workout) => (
-                <div key={workout.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium text-gray-900">{workout.planned_type}</h4>
-                      <p className="text-sm text-gray-600">
-                        {new Date(workout.date).toLocaleDateString()}
-                      </p>
-                      {workout.planned_distance && (
-                        <p className="text-sm text-gray-600">
-                          Distance: {workout.planned_distance} miles
-                        </p>
-                      )}
-                    </div>
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                      Planned
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
+

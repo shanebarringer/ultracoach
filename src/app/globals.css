@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  --background: #f3f4f6;
+  --foreground: #1f2937;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #10b981;
+  --secondary-foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,43 +16,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
   font-weight: 400;
 }
 
-/* Ensure better text contrast and readability */
-h1, h2, h3, h4, h5, h6 {
-  color: #111827;
-  font-weight: 600;
-}
-
-p, div, span {
-  color: #374151;
-}
-
-/* Override any light text classes */
-.text-gray-900 {
-  color: #111827 !important;
-}
-
-.text-gray-800 {
-  color: #1f2937 !important;
-}
-
-.text-gray-700 {
-  color: #374151 !important;
-}
-
-.text-gray-600 {
-  color: #4b5563 !important;
+.dashboard-bg {
+  background-image: linear-gradient(rgba(243, 244, 246, 0.9), rgba(243, 244, 246, 0.9)), url('/mountain-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
