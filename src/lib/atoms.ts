@@ -117,6 +117,19 @@ export const activeTrainingPlansAtom = atom((get) => {
   return showArchived ? plans : plans.filter(p => !p.archived)
 })
 
+export const filteredTrainingPlansAtom = atom((get) => {
+  const plans = get(trainingPlansAtom)
+  const uiState = get(uiStateAtom)
+  
+  // Filter by archived status
+  const filtered = uiState.showArchived ? plans : plans.filter(p => !p.archived)
+  
+  // Add additional filters here as needed
+  // Could filter by plan type, status, etc.
+  
+  return filtered
+})
+
 // Typing status atoms
 export const typingStatusAtom = atom({
   isTyping: false,

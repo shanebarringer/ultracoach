@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import type { TrainingPlan, User } from '@/lib/supabase'
+import { useTrainingPlans } from '@/hooks/useTrainingPlans'
+import type { TrainingPlan, User } from '@/lib/atoms'
 
 interface TrainingPlanCardProps {
   plan: TrainingPlan & { runners?: User; coaches?: User }
@@ -12,6 +13,7 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
   const [isArchiving, setIsArchiving] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlans()
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -24,23 +26,9 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
   const handleArchiveToggle = async () => {
     setIsArchiving(true)
     try {
-      const response = await fetch(`/api/training-plans/${plan.id}/archive`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          archived: !plan.archived
-        }),
-      })
-
-      if (response.ok) {
-        onArchiveChange?.()
-        setShowMenu(false)
-      } else {
-        const errorData = await response.json()
-        alert(errorData.error || 'Failed to update training plan')
-      }
+      await archiveTrainingPlan(plan.id)
+      onArchiveChange?.()
+      setShowMenu(false)
     } catch (error) {
       console.error('Error toggling archive status:', error)
       alert('Failed to update training plan')
@@ -53,16 +41,9 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
     if (!window.confirm('Are you sure you want to delete this training plan? This action cannot be undone.')) return;
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/training-plans/${plan.id}`, {
-        method: 'DELETE',
-      })
-      if (response.ok) {
-        onArchiveChange?.()
-        setShowMenu(false)
-      } else {
-        const errorData = await response.json()
-        alert(errorData.error || 'Failed to delete training plan')
-      }
+      await deleteTrainingPlan(plan.id)
+      onArchiveChange?.()
+      setShowMenu(false)
     } catch (error) {
       console.error('Error deleting training plan:', error)
       alert('Failed to delete training plan')
@@ -141,24 +122,25 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        {plan.target_race_date && (
+      {/* Enhanced training plan info - TODO: Implement with enhanced schema */}
+      {/* <div className="grid grid-cols-2 gap-4 mb-4">
+        {plan.race_id && (
           <div>
             <div className="text-xs text-gray-500">Target Race</div>
             <div className="text-sm font-medium text-gray-900">
-              {formatDate(plan.target_race_date)}
+              Race Information
             </div>
           </div>
         )}
-        {plan.target_race_distance && (
+        {plan.goal_type && (
           <div>
-            <div className="text-xs text-gray-500">Distance</div>
+            <div className="text-xs text-gray-500">Goal Type</div>
             <div className="text-sm font-medium text-gray-900">
-              {plan.target_race_distance}
+              {plan.goal_type}
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       <div className="mb-4">
         {userRole === 'coach' && plan.runners && (

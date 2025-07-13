@@ -1,127 +1,222 @@
-# CLAUDE.md
+# CLAUDE.md - UltraCoach Project Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with the UltraCoach project. It ensures consistency, context, and proper workflow across all development sessions.
 
-## Development Commands
+## 🔄 Session Workflow (IMPORTANT)
 
-**Install dependencies:**
+**At the start of EVERY new conversation:**
+1. **Read PLANNING.md** to understand project vision, architecture, and technical context
+2. **Check TASKS.md** to see current milestone, pending tasks, and priorities  
+3. **Review this file** for project-specific guidance and context
+4. **Mark completed tasks** in TASKS.md immediately upon completion
+5. **Add newly discovered tasks** to TASKS.md when found during development
+
+## 📊 Project Overview
+
+UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
+
+### Current Status (Updated: 2025-01-13)
+- **Active Milestone**: Milestone 2 - Frontend Enhancements
+- **Completion**: 37.8% (37/98 total tasks)
+- **Next Priority**: Complete Jotai migration for remaining components
+
+## 🏗️ Architecture & Technology
+
+### Core Stack
+- **Frontend**: Next.js 15.3.5 with App Router, React 19, TypeScript
+- **Styling**: Tailwind CSS v4 with component-based design
+- **State**: Jotai atomic state management (migrated from React Context)
+- **Database**: Supabase PostgreSQL with enhanced training schema
+- **Auth**: NextAuth.js with Supabase integration
+- **Package Manager**: pnpm (better performance than npm)
+
+### Key Directories
+```
+src/
+├── app/                 # Next.js app router pages
+├── components/          # React components
+├── lib/                 # Core utilities and configurations
+│   ├── atoms.ts         # Jotai state atoms (CRITICAL)
+│   ├── auth.ts          # NextAuth configuration
+│   └── supabase.ts      # Supabase client
+├── hooks/               # Custom React hooks (Jotai-based)
+└── providers/           # Minimal providers (mostly JotaiProvider)
+
+supabase/
+├── migrations/v2_enhanced_training/  # Enhanced schema
+├── seeds/                            # Templates and test data
+└── scripts/                          # Database management
+```
+
+## 💻 Development Commands
+
+### Essential Commands
 ```bash
+# Install dependencies
 pnpm install
-```
-**Note**: This project uses pnpm instead of npm for better performance, disk efficiency, and stricter dependency management.
 
-**Start development server:**
-```bash
-pnpm run dev
-# or use the shorter alias:
+# Start development server
 pnpm dev
-```
-The dev server uses Turbopack for faster builds and runs on http://localhost:3000
 
-**Build for production:**
+# Build for production  
+pnpm build
+
+# Run linting
+pnpm lint
+```
+
+### Database Operations
 ```bash
-pnpm run build
-# or: pnpm build
+# Complete setup (first time)
+./supabase/scripts/setup_enhanced_training.sh
+
+# Seed test data
+./supabase/scripts/seed_database.sh
+
+# Backup before changes (ALWAYS run before schema changes)
+./supabase/scripts/backup_user_data.sh
+
+# Reset database (development only)
+./supabase/scripts/reset_database.sh
 ```
 
-**Start production server:**
-```bash
-pnpm run start
-# or: pnpm start
-```
+## 🎯 Key Features & Context
 
-**Run linting:**
-```bash
-pnpm run lint
-# or: pnpm lint
-```
+### Enhanced Training System (✅ COMPLETED)
+- **5 new tables**: races, training_phases, plan_phases, plan_templates, template_phases
+- **Enhanced existing tables**: training_plans and workouts with race targeting
+- **15+ training templates**: 50K to 100M for all skill levels
+- **20+ real races**: Western States, Leadville, UTMB, etc.
+- **Plan sequencing**: 50K → 50M → 100K → 100M progression support
 
-## Database Setup
+### State Management (✅ PARTIALLY COMPLETE)
+- **Jotai Migration**: Replaced React Context with atomic state management
+- **Completed**: Notifications, workouts page, core atom foundation
+- **Remaining**: Training plans, chat system, dashboard components, forms
+- **Key File**: `src/lib/atoms.ts` - Contains all state atoms
 
-**Rails-style database commands (recommended):**
-```bash
-# Complete setup with schema, seeds, and test users
-pnpm run db:setup
+### Test Data System (✅ COMPLETED)
+- **Test Users**: 2 coaches, 10 runners with realistic relationships
+- **Credentials**: All test accounts use password `password123`
+- **Access**: `credentials/latest.txt` (gitignored) for login details
 
-# Reset database (drop + recreate + seed)
-pnpm run db:reset
+## 🔧 Important Development Guidelines
 
-# Seed database with sample data only
-pnpm run db:seed
+### State Management (CRITICAL)
+- **NO React Context** for global state - use Jotai atoms only
+- **NO useState** for shared state - use Jotai atoms
+- **Pattern**: Create hooks that use Jotai atoms (see `useNotifications`, `useWorkouts`)
+- **Derived State**: Use derived atoms for computed/filtered data
+- **File**: All atoms live in `src/lib/atoms.ts`
 
-# Fix test user password hashes
-pnpm run db:fix-passwords
+### Database Schema
+- **Enhanced Schema**: 5 new tables for professional training features
+- **RLS Security**: All tables have Row Level Security policies
+- **Test Data**: Available via seeding scripts with realistic relationships
 
-# Backup user data before major changes
-pnpm run db:backup
-```
+### Code Quality
+- **TypeScript**: Strict mode enabled, full type coverage required
+- **ESLint**: Next.js config with additional rules
+- **Imports**: Use `@/` path aliases for clean imports
+- **No console.log**: Use `tslog` for structured logging
 
-**Direct script execution:**
-```bash
-# Set up enhanced training system
-./supabase/scripts/setup_with_env.sh
-```
-These scripts load environment variables from `.env.local` automatically.
+### Security
+- **No credentials in code**: Use environment variables
+- **Test data only**: Test credentials excluded from git
+- **RLS policies**: Database access controlled by user roles
 
-**Manual database operations:**
-```bash
-# Install Supabase CLI (if not installed)
-brew install supabase/tap/supabase
+## 📋 Session Summary (What We've Accomplished)
 
-# Login to Supabase
-supabase login --token YOUR_TOKEN
+### ✅ Milestone 1: Database & State Foundation (COMPLETED)
 
-# Link to project
-supabase link --project-ref ccnbzjpccmlribljugve
-```
+#### Enhanced Training Database System
+- **New Schema**: Created 5 new tables for race-centric training with proper periodization
+  - `races`: Target races with distance, terrain, elevation data
+  - `training_phases`: Standard phases (Base, Build, Peak, Taper, Recovery)
+  - `plan_phases`: Training plan phase progression tracking
+  - `plan_templates`: Reusable templates for 50K-100M distances
+  - `template_phases`: Phase structure definitions
+- **Enhanced Existing**: Added race targeting, goal types, phase tracking to training_plans and workouts
+- **Management System**: Complete database management with organized scripts, interactive setup, backup utilities
 
-**Test Users:**
-- **Coaches:** coach1@ultracoach.dev, coach2@ultracoach.dev
-- **Runners:** runner1-10@ultracoach.dev
-- **Password:** password123
-- **Credentials:** Available in `supabase/temp/credentials/latest.txt`
+#### Comprehensive Seed Data
+- **Training Templates**: 15+ pre-built templates for all ultra distances and skill levels
+- **Real Race Data**: 20+ actual 2025 ultra races (Western States, Leadville, UTMB, etc.)
+- **Test Users**: 2 coaches + 10 runners with realistic names and relationships
+- **Sample Plans**: Pre-created training plans for each coach-runner pair
+- **Credential System**: Secure test credential generation with gitignore protection
 
-**Troubleshooting login issues:**
-```bash
-# Quick fix for test user login issues
-pnpm run db:fix-passwords
+#### Jotai State Management Migration
+- **Atomic Architecture**: Replaced React Context with Jotai atomic state management
+- **Core Atoms**: notifications, workouts, training plans, UI state, loading states
+- **Derived Atoms**: Computed filtered workouts, unread notifications, active plans
+- **Migrated Components**:
+  - ✅ Notification system (`useNotifications` hook)
+  - ✅ Workouts page (complete Jotai migration)
+  - ✅ NotificationBell component
+- **Performance**: Granular reactivity, components only re-render when their atoms change
 
-# Or run the script directly:
-./supabase/scripts/fix_test_passwords.sh
-```
+#### Project Infrastructure
+- **Database Scripts**: Interactive setup, seeding, reset, backup utilities
+- **Directory Organization**: Structured migrations, seeds, scripts directories
+- **Version Control**: Feature branch workflow with comprehensive PR #1
+- **Documentation**: Complete setup guides and troubleshooting documentation
 
-## Architecture
+### 🔄 Current Focus: Milestone 2 - Frontend Enhancements
 
-This is a Next.js 15 application using the App Router with the following structure:
+**Next Priority Tasks:**
+1. Complete Jotai migration for remaining components (training plans, chat, dashboard)
+2. Update training plan UI for enhanced features (race targeting, goal types)
+3. Implement plan template selection wizard
+4. Add phase progression visualization
 
-- **Framework**: Next.js 15.3.5 with App Router
-- **Package Manager**: pnpm (migrated from npm for better performance)
-- **Database**: Supabase with PostgreSQL
-- **Authentication**: NextAuth.js with custom credentials provider
-- **Styling**: Tailwind CSS v4
-- **State Management**: Jotai (migrated from React Context)
-- **TypeScript**: Full TypeScript support with strict mode
-- **Fonts**: Uses Geist Sans and Geist Mono fonts via `next/font/google`
-- **Path aliases**: `@/*` maps to `./src/*`
+### 🎯 Key Success Metrics Achieved
+- ✅ Zero React Context for global state (Jotai migration in progress)
+- ✅ Professional coaching database schema with race-centric planning
+- ✅ Real-time updates with Supabase integration
+- ✅ Complete test data environment for development
+- ✅ Organized project structure with proper documentation
 
-### Key Files
+## 🚨 Critical Reminders
 
-**Frontend:**
-- `src/app/layout.tsx` - Root layout with font configuration
-- `src/lib/auth.ts` - NextAuth configuration with Supabase integration
-- `src/lib/supabase.ts` - Supabase client configuration
-- `src/lib/atoms.ts` - Jotai state atoms
-- `next.config.ts` - Next.js configuration
-- `tsconfig.json` - TypeScript configuration with path aliases
+### Before Starting Work
+1. **ALWAYS check TASKS.md** for current priorities
+2. **Read PLANNING.md** if new to project context
+3. **Backup database** before any schema changes
+4. **Use test credentials** from `credentials/latest.txt`
 
-**Database:**
-- `supabase/migrations/` - Database schema migrations
-- `supabase/seeds/` - Test data and sample content
-- `supabase/scripts/` - Database setup and management scripts
-- `.env.local` - Environment variables (includes DATABASE_PASSWORD)
+### During Development
+1. **Update TASKS.md** immediately when completing tasks
+2. **Add new tasks** when discovered during development
+3. **Follow Jotai patterns** - no React Context for global state
+4. **Test with realistic data** using provided test accounts
 
-**Auth & Users:**
-- Uses NextAuth.js with custom credentials provider
-- User data stored in `public.users` table
-- Password hashing with bcrypt
-- Coach-runner relationships via training plans
+### Before Committing
+1. **Run linting**: `pnpm lint`
+2. **Test build**: `pnpm build`
+3. **Update documentation** if architecture changes
+4. **Mark tasks complete** in TASKS.md
+
+## 🔗 Quick Reference Links
+
+- **Planning**: See PLANNING.md for vision, architecture, tech stack
+- **Tasks**: See TASKS.md for milestones, priorities, and progress tracking
+- **Database**: `./supabase/scripts/` for all database operations
+- **State**: `src/lib/atoms.ts` for all Jotai state definitions
+- **Auth**: Test users login with `password123`
+- **PR**: #1 contains enhanced training system (ready for review)
+
+## 🎯 Development Philosophy
+
+UltraCoach aims to be a professional-grade ultramarathon coaching platform. Every feature should support:
+- **Race-centric planning** with specific target events
+- **Proper periodization** following sports science principles  
+- **Coach-runner relationships** with clear communication
+- **Performance tracking** with meaningful metrics
+- **User experience** that's intuitive for both coaches and athletes
+
+The codebase should be maintainable, performant, and scalable to support growing usage while maintaining the high-quality user experience expected in professional coaching tools.
+
+---
+
+*This file is updated at the end of each development session. Always check PLANNING.md and TASKS.md at the start of new conversations for current context and priorities.*
