@@ -6,7 +6,8 @@ import { useCallback, useEffect } from 'react'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { 
   conversationsAtom,
-  loadingStatesAtom
+  loadingStatesAtom,
+  chatUiStateAtom
 } from '@/lib/atoms'
 import type { Message } from '@/lib/atoms'
 
@@ -14,11 +15,15 @@ export function useConversations() {
   const { data: session } = useSession()
   const [conversations, setConversations] = useAtom(conversationsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
+  const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
 
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (isInitialLoad = false) => {
     if (!session?.user?.id) return
 
-    setLoadingStates(prev => ({ ...prev, conversations: true }))
+    // Only show loading spinner on initial load, not on background updates
+    if (isInitialLoad) {
+      setLoadingStates(prev => ({ ...prev, conversations: true }))
+    }
 
     try {
       const response = await fetch('/api/conversations')
@@ -34,12 +39,23 @@ export function useConversations() {
       console.log('💬 useConversations: Fetched', fetchedConversations.length, 'conversations')
       
       setConversations(fetchedConversations)
+      
+      // Mark as initially loaded once we've successfully fetched conversations
+      if (isInitialLoad) {
+        setChatUiState(prev => ({ 
+          ...prev, 
+          hasInitiallyLoadedConversations: true
+        }))
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error)
     } finally {
-      setLoadingStates(prev => ({ ...prev, conversations: false }))
+      // Only turn off loading if this was an initial load
+      if (isInitialLoad) {
+        setLoadingStates(prev => ({ ...prev, conversations: false }))
+      }
     }
-  }, [session?.user?.id, setConversations, setLoadingStates])
+  }, [session?.user?.id, setConversations, setLoadingStates, setChatUiState])
 
   const updateConversationFromMessage = useCallback((message: Message) => {
     if (!session?.user?.id) return
@@ -108,12 +124,13 @@ export function useConversations() {
   // Fetch conversations on mount and when session changes, with polling fallback
   useEffect(() => {
     if (session?.user?.id) {
-      fetchConversations()
+      // Initial load with loading spinner
+      fetchConversations(true)
       
-      // Polling fallback - refresh conversations every 10 seconds
+      // Polling fallback - refresh conversations every 10 seconds (background updates)
       // This ensures conversation list stays updated even if real-time fails
       const pollInterval = setInterval(() => {
-        fetchConversations()
+        fetchConversations(false) // Background update, no loading spinner
       }, 10000)
 
       return () => clearInterval(pollInterval)
@@ -133,8 +150,8 @@ export function useConversations() {
           newMessage.recipient_id === session?.user?.id
         
         if (isRelevantMessage) {
-          // Refresh conversations to get updated unread counts and last messages
-          fetchConversations()
+          // Refresh conversations to get updated unread counts and last messages (background update)
+          fetchConversations(false)
         }
       } catch (error) {
         console.error('Error processing realtime conversation insert:', error)
@@ -150,8 +167,8 @@ export function useConversations() {
           updatedMessage.recipient_id === session?.user?.id
         
         if (isRelevantMessage) {
-          // Refresh conversations to get updated read status
-          fetchConversations()
+          // Refresh conversations to get updated read status (background update)
+          fetchConversations(false)
         }
       } catch (error) {
         console.error('Error processing realtime conversation update:', error)
@@ -167,7 +184,7 @@ export function useConversations() {
 
   return {
     conversations,
-    loading: loadingStates.conversations,
+    loading: loadingStates.conversations && !chatUiState.hasInitiallyLoadedConversations, // Only show loading if we haven't loaded initially
     totalUnreadCount,
     fetchConversations,
     markConversationAsRead,

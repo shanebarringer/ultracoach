@@ -102,6 +102,7 @@ export const loadingStatesAtom = atomWithStorage('loadingStates', {
 
 export const chatUiStateAtom = atom({
   hasInitiallyLoadedMessages: false,
+  hasInitiallyLoadedConversations: false,
   currentRecipientId: null as string | null,
 })
 
