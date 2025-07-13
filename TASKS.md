@@ -122,6 +122,10 @@
   - [ ] Convert remaining components to Jotai
   - [ ] Remove unused Context providers
   - [ ] Update type definitions
+- [ ] **Fix persistent Supabase realtime error**
+  - [ ] Investigate "mismatch between server and client bindings" error
+  - [ ] Consider upgrading Supabase client or adjusting schema bindings
+  - [ ] Ensure error handling doesn't impact user experience
 
 ### Enhanced Training Plan UI
 - [ ] **Update training plan interface**
