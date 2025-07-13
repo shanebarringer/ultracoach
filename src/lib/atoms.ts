@@ -1,5 +1,4 @@
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
 
 // Types
 export interface Notification {

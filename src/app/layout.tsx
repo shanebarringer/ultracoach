@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from '@/components/providers/SessionProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
+import { HeroUIProvider } from '@/providers/HeroUIProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default function RootLayout({
       >
         <SessionProvider session={null}>
           <JotaiProvider>
-            {children}
+            <HeroUIProvider>
+              {children}
+            </HeroUIProvider>
           </JotaiProvider>
         </SessionProvider>
       </body>

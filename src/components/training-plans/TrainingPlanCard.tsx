@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
+import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
 import { useTrainingPlans } from '@/hooks/useTrainingPlans'
 import type { TrainingPlan, User } from '@/lib/atoms'
 
@@ -11,7 +12,6 @@ interface TrainingPlanCardProps {
 
 export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardProps) {
   const [isArchiving, setIsArchiving] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlans()
 
@@ -28,7 +28,6 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
     try {
       await archiveTrainingPlan(plan.id)
       onArchiveChange?.()
-      setShowMenu(false)
     } catch (error) {
       console.error('Error toggling archive status:', error)
       alert('Failed to update training plan')
@@ -43,7 +42,6 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
     try {
       await deleteTrainingPlan(plan.id)
       onArchiveChange?.()
-      setShowMenu(false)
     } catch (error) {
       console.error('Error deleting training plan:', error)
       alert('Failed to delete training plan')
@@ -53,74 +51,68 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow ${
-      plan.archived ? 'opacity-60' : ''
-    }`}>
-      <div className="flex justify-between items-start mb-4">
+    <Card 
+      className={`hover:shadow-lg transition-shadow ${plan.archived ? 'opacity-60' : ''}`}
+      isPressable={false}
+    >
+      <CardHeader className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-gray-900">{plan.title}</h3>
+            <h3 className="text-lg font-semibold">{plan.title}</h3>
             {plan.archived && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              <Chip size="sm" variant="flat" color="default">
                 Archived
-              </span>
+              </Chip>
             )}
           </div>
-          <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
+          <p className="text-small text-foreground-500 mt-1">{plan.description}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-right">
-            <div className="text-xs text-gray-500">Created</div>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-tiny text-foreground-400">Created</div>
+            <div className="text-small font-medium">
               {formatDate(plan.created_at)}
             </div>
           </div>
           
           {/* Action Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
-              </svg>
-            </button>
-            
-            {showMenu && (
-              <>
-                <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setShowMenu(false)}
-                ></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-20">
-                  <div className="py-1">
-                    <button
-                      onClick={handleArchiveToggle}
-                      disabled={isArchiving || isDeleting}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                    >
-                      {isArchiving 
-                        ? 'Updating...'
-                        : plan.archived 
-                          ? 'Restore Plan' 
-                          : 'Archive Plan'
-                      }
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      {isDeleting ? 'Deleting...' : 'Delete Plan'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                isIconOnly
+                variant="light"
+                size="sm"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
+                </svg>
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu>
+              <DropdownItem
+                key="archive"
+                onClick={handleArchiveToggle}
+                isDisabled={isArchiving || isDeleting}
+              >
+                {isArchiving 
+                  ? 'Updating...'
+                  : plan.archived 
+                    ? 'Restore Plan' 
+                    : 'Archive Plan'
+                }
+              </DropdownItem>
+              <DropdownItem
+                key="delete"
+                color="danger"
+                onClick={handleDelete}
+                isDisabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Plan'}
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         </div>
-      </div>
+      </CardHeader>
 
       {/* Enhanced training plan info - TODO: Implement with enhanced schema */}
       {/* <div className="grid grid-cols-2 gap-4 mb-4">
@@ -142,42 +134,45 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
         )}
       </div> */}
 
-      <div className="mb-4">
+      <CardBody>
         {userRole === 'coach' && plan.runners && (
           <div>
-            <div className="text-xs text-gray-500">Runner</div>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-tiny text-foreground-400">Runner</div>
+            <div className="text-small font-medium">
               {plan.runners.full_name}
             </div>
           </div>
         )}
         {userRole === 'runner' && plan.coaches && (
           <div>
-            <div className="text-xs text-gray-500">Coach</div>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-tiny text-foreground-400">Coach</div>
+            <div className="text-small font-medium">
               {plan.coaches.full_name}
             </div>
           </div>
         )}
-      </div>
+      </CardBody>
 
-      <div className="flex justify-between items-center">
+      <CardFooter className="flex justify-between items-center">
         <div className="flex space-x-2">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            plan.archived 
-              ? 'bg-gray-100 text-gray-800' 
-              : 'bg-blue-100 text-blue-800'
-          }`}>
+          <Chip 
+            size="sm" 
+            variant="flat"
+            color={plan.archived ? 'default' : 'primary'}
+          >
             {plan.archived ? 'Archived' : 'Active'}
-          </span>
+          </Chip>
         </div>
-        <Link
+        <Button
+          as={Link}
           href={`/training-plans/${plan.id}`}
-          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          variant="light"
+          color="primary"
+          size="sm"
         >
           View Details →
-        </Link>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }

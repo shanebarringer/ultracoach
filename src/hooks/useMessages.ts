@@ -121,18 +121,20 @@ export function useMessages(recipientId?: string) {
     if (!session?.user?.id || !targetId) return false
 
     // Create optimistic message to show immediately
-    const optimisticMessage = {
+    const optimisticMessage: MessageWithUser = {
       id: `temp-${Date.now()}`, // Temporary ID
+      conversation_id: '', // Will be set by server
       content,
       sender_id: session.user.id,
       recipient_id: targetId,
+      read: false,
       created_at: new Date().toISOString(),
-      read_at: null,
       sender: {
         id: session.user.id,
         full_name: session.user.name || 'You',
         email: session.user.email || '',
-        role: 'coach' // Will be corrected when real message arrives
+        role: 'coach', // Will be corrected when real message arrives
+        created_at: new Date().toISOString()
       }
     }
 
@@ -176,7 +178,7 @@ export function useMessages(recipientId?: string) {
       console.error('Error sending message:', error)
       return false
     }
-  }, [session?.user?.id, recipientId, setMessages])
+  }, [session?.user?.id, session?.user?.name, session?.user?.email, recipientId, setMessages])
 
   // Real-time updates for messages with error handling
   useSupabaseRealtime({
