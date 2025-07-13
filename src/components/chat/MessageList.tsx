@@ -9,7 +9,6 @@ interface MessageListProps {
 }
 
 export default function MessageList({ messages, currentUserId }: MessageListProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [isUserScrolling, setIsUserScrolling] = useState(false)
@@ -17,7 +16,16 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = containerRef.current
+    if (container) {
+      // Use requestAnimationFrame for better timing and scrollTop to avoid page-level scrolling
+      requestAnimationFrame(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        })
+      })
+    }
   }
 
   const handleScroll = useCallback(() => {
@@ -59,10 +67,11 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
       
       // Auto-scroll only in these cases:
       // 1. Initial load of messages
-      // 2. User is near bottom and a new message arrives
+      // 2. User is near bottom and a new message arrives (and not actively scrolling)
       // 3. User sends a message (always scroll for own messages)
       if (isInitialLoad || (isNewMessage && (isNearBottom || isMyMessage) && !isUserScrolling)) {
-        scrollToBottom()
+        // Small delay to ensure DOM has updated
+        setTimeout(() => scrollToBottom(), 50)
       }
       
       setLastMessageCount(messages.length)
@@ -232,7 +241,6 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Scroll to bottom button */}
