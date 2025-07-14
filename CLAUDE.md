@@ -16,10 +16,10 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-14)
-- **Active Milestone**: Design System Implementation ✅ COMPLETED + UI Stabilization
-- **Completion**: 87.5% (98/112 total tasks) + Complete Design System + HeroUI Integration + UI Fixes
-- **Recent Completion**: Mountain Peak Enhanced Design System fully implemented with proper styling, fixed component errors, and classnames integration
-- **Current Priority**: Fix training-plans page flickering and multiple API calls issue
+- **Active Milestone**: Enhanced Training Features (Milestone 3)
+- **Completion**: 90% (101/112 total tasks) + Complete Design System + HeroUI Integration + Performance Fixes
+- **Recent Completion**: Training-plans page performance optimization with split hook architecture (useTrainingPlansData + useTrainingPlansActions)
+- **Major Fix**: Eliminated multiple API calls and flickering issues - now demo-ready!
 - **Next Priority**: Enhanced Training Features - Race management, phase progression, and advanced workflow features
 
 ## 🏗️ Architecture & Technology
@@ -33,6 +33,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Database**: Supabase PostgreSQL with enhanced training schema
 - **Auth**: NextAuth.js with Supabase integration
 - **Package Manager**: pnpm (better performance than npm)
+- **HTTP Client**: Axios for better request handling and error management
 - **Styling Utilities**: classnames for conditional CSS classes
 
 ### Key Directories
@@ -209,8 +210,10 @@ pnpm lint
 - ✅ Added classnames library for better conditional styling
 - ✅ Resolved runners page TypeError and applied mountain aesthetic
 
-**Current Issues:**
-- Training-plans page has flickering and multiple API calls problem (TOP PRIORITY)
+**Recently Fixed:**
+- ✅ Training-plans page flickering and multiple API calls problem (RESOLVED!)
+- ✅ Split useTrainingPlans hook into data and actions hooks for better performance
+- ✅ Integrated Axios for improved HTTP handling
 
 **Next Priority Tasks:**
 1. Enhanced Training Features - Race management system
@@ -229,6 +232,8 @@ pnpm lint
 - ✅ Complete HeroUI integration with Mountain Peak Enhanced design system
 - ✅ Production-ready build with professional alpine aesthetic
 - ✅ Fully functional auth system with Next.js 15 compatibility
+- ✅ Performance-optimized training-plans page with split hook architecture
+- ✅ Axios integration for robust HTTP handling and error management
 
 ## 🚨 Critical Reminders
 

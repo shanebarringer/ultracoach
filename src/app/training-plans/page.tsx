@@ -7,6 +7,7 @@ import Layout from '@/components/layout/Layout'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
 import { uiStateAtom, loadingStatesAtom, filteredTrainingPlansAtom } from '@/lib/atoms'
+import { useTrainingPlansData } from '@/hooks/useTrainingPlansData'
 
 export default function TrainingPlansPage() {
   const { data: session, status } = useSession()
@@ -15,7 +16,8 @@ export default function TrainingPlansPage() {
   const [filteredPlans] = useAtom(filteredTrainingPlansAtom)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  // Removed useEffect that was calling fetchTrainingPlans
+  // Initialize the hook to fetch training plans
+  useTrainingPlansData()
 
   const handleCreateSuccess = () => {
     // Training plans will be automatically updated via the hook

@@ -1,6 +1,5 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { 
   Card, 
@@ -16,7 +15,6 @@ import {
   ArrowTrendingUpIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  ClockIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -34,7 +32,7 @@ interface MetricCardProps {
     value: number
     direction: 'up' | 'down' | 'neutral'
   }
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'default'
 }
 
 function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primary' }: MetricCardProps) {
@@ -120,7 +118,6 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primar
 }
 
 export default function CoachDashboard() {
-  const { data: session } = useSession()
   const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
 
   const typedTrainingPlans = trainingPlans as TrainingPlanWithRunner[]
@@ -145,7 +142,7 @@ export default function CoachDashboard() {
             Summit Dashboard
           </h1>
           <p className="text-foreground-600">
-            Track your athletes' ascent to peak performance
+            Track your athletes&apos; ascent to peak performance
           </p>
         </div>
         

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Progress } from '@heroui/react'
 import { CalendarIcon, MapPinIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
-import { useTrainingPlans } from '@/hooks/useTrainingPlans'
+import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
 import type { TrainingPlan, User, Race } from '@/lib/supabase'
 
 interface TrainingPlanCardProps {
@@ -14,7 +14,7 @@ interface TrainingPlanCardProps {
 export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardProps) {
   const [isArchiving, setIsArchiving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlans()
+  const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
   const getStatusColor = (archived: boolean) => {
     return archived ? 'default' : 'primary'

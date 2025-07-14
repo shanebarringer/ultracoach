@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
 
 // Core application atoms
@@ -58,7 +59,7 @@ export const chatUiStateAtom = atom({
   currentRecipientId: null as string | null,
 })
 
-export const themeModeAtom = atom<'light' | 'dark'>('light')
+export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme', 'dark')
 
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,

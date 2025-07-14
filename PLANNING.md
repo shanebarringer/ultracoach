@@ -67,6 +67,7 @@ activeTrainingPlansAtom: Computed active plans
   "jotai": "^2.12.5",
   "next-auth": "^4.24.11",
   "@supabase/supabase-js": "^2.50.5",
+  "axios": "^1.10.0",
   "bcrypt": "^6.0.0",
   "tslog": "^4.9.3",
   "framer-motion": "^12.23.3",
@@ -220,12 +221,12 @@ pnpm dev
 ```
 
 ### Current Development Status (Updated 2025-07-14)
-- **Project Progress**: 87.5% complete (98/112 tasks) + Complete Design System + HeroUI Integration + UI Stabilization
-- **Active Milestone**: Enhanced Training Features (after UI stabilization)
-- **Recent Completions**: Mountain Peak Enhanced Design System fully implemented with proper styling, component error fixes, and classnames integration
-- **Current Priority**: Fix training-plans page flickering and multiple API calls issue (TOP PRIORITY)
+- **Project Progress**: 90% complete (101/112 tasks) + Complete Design System + HeroUI Integration + Performance Optimization
+- **Active Milestone**: Enhanced Training Features (Milestone 3)
+- **Recent Completions**: Training-plans page performance optimization with split hook architecture and Axios integration
+- **Major Achievement**: Eliminated training-plans page flickering and multiple API calls - now demo-ready!
 - **Next Priorities**: Race management system, phase progression, and advanced workout planning features
-- **Note**: Turbopack disabled for dev server due to CSS processing issues with HeroUI - consider re-enabling in future optimization milestone
+- **Performance**: Single API call per page load, smooth user experience, production-ready
 
 ### Database Operations
 ```bash

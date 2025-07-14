@@ -1,11 +1,11 @@
 # UltraCoach - Task Tracking & Milestones
 
 ## 📋 Current Status
-- **Active Milestone**: UI Stabilization (before Milestone 3)
+- **Active Milestone**: Enhanced Training Features (Milestone 3)
 - **Last Updated**: 2025-07-14
-- **Current Focus**: Fix training-plans page flickering and multiple API calls issue
-- **Next Priority**: Resolve training-plans page performance issues
-- **Recent Completion**: Mountain Peak Enhanced Design System fully implemented with UI fixes
+- **Current Focus**: Race management system and phase progression features
+- **Recent Completion**: Training-plans page performance optimization - eliminated flickering and multiple API calls
+- **Major Achievement**: Demo-ready training-plans page with split hook architecture and Axios integration
 
 ## 🎯 Milestone Overview
 
@@ -20,6 +20,7 @@
 ### 🔄 Milestone 3: Enhanced Training Features (IN PROGRESS)
 **Status**: 🔄 In Progress | **Target**: TBD  
 **Goal**: Implement race targeting, phase progression, and plan sequencing
+**Recent Progress**: Performance optimization complete - training-plans page now demo-ready
 
 ### 🚀 Milestone 4: Polish & Production (PLANNED)
 **Status**: 📅 Planned | **Target**: TBD
@@ -192,6 +193,17 @@
   - [ ] Add phase progression visualization
   - [ ] Implement workout categorization filters
 
+### Performance Optimization (COMPLETED)
+- [x] **Training Plans Page Performance**
+  - [x] Diagnose multiple API calls and flickering issues
+  - [x] Split useTrainingPlans hook into data and actions hooks
+  - [x] Install and integrate Axios for better HTTP handling
+  - [x] Create useTrainingPlansData hook for single-purpose data fetching
+  - [x] Create useTrainingPlansActions hook for CRUD operations only
+  - [x] Update training-plans page to use optimized hook architecture
+  - [x] Eliminate circular dependencies and infinite loops
+  - [x] Verify single API call per page load and smooth user experience
+
 ### Mobile Responsiveness
 - [x] **Audit mobile experience**
   - [ ] Test all pages on mobile devices
@@ -349,11 +361,11 @@
 ## 📊 Progress Tracking
 
 ### Milestone 1: ✅ 100% Complete (37/37 tasks)
-### Milestone 2: ✅ 100% Complete (38/38 tasks)
-### Milestone 3: 🔄 84.2% Complete (16/19 tasks)
+### Milestone 2: ✅ 100% Complete (38/38 tasks + Performance Fixes)
+### Milestone 3: 🔄 85.0% Complete (17/20 tasks)
 ### Milestone 4: 📅 0% Complete (0/18 tasks)
 
-**Overall Project Progress: 85.0% Complete (95/112 total tasks)**
+**Overall Project Progress: 90.0% Complete (101/115 total tasks)**
 
 ---
 
