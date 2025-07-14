@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UltraCoach - Mountain Peak Enhanced</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/heroicons@2.0.16/dist/heroicons.min.js"></script>
+    <style>
+        /* Mountain Peak Enhanced Design - Original aesthetic with select Endurance Athlete improvements */
+        
+        /* Color System - Original Mountain Peak */
+        :root {
+            /* Mountain Peak Primary Colors */
+            --alpine-blue-50: #f0f9ff;
+            --alpine-blue-100: #e0f2fe;
+            --alpine-blue-200: #bae6fd;
+            --alpine-blue-300: #7dd3fc;
+            --alpine-blue-400: #38bdf8;
+            --alpine-blue-500: #0ea5e9;
+            --alpine-blue-600: #0284c7;
+            --alpine-blue-700: #0369a1;
+            --alpine-blue-800: #075985;
+            --alpine-blue-900: #0c4a6e;
+            
+            --summit-gold-50: #fffbeb;
+            --summit-gold-100: #fef3c7;
+            --summit-gold-200: #fde68a;
+            --summit-gold-300: #fcd34d;
+            --summit-gold-400: #fbbf24;
+            --summit-gold-500: #f59e0b;
+            --summit-gold-600: #d97706;
+            --summit-gold-700: #b45309;
+            
+            --granite-50: #f8fafc;
+            --granite-100: #f1f5f9;
+            --granite-200: #e2e8f0;
+            --granite-300: #cbd5e1;
+            --granite-400: #94a3b8;
+            --granite-500: #64748b;
+            --granite-600: #475569;
+            --granite-700: #334155;
+            --granite-800: #1e293b;
+            --granite-900: #0f172a;
+            
+            /* Endurance Athlete Addition - Training Zone Colors */
+            --zone-recovery: #059669;
+            --zone-aerobic: #0ea5e9;
+            --zone-tempo: #f59e0b;
+            --zone-threshold: #ef4444;
+            --zone-vo2max: #8b5cf6;
+            
+            /* Light Theme */
+            --bg-primary: var(--granite-50);
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: var(--granite-900);
+            --text-secondary: var(--granite-700);
+            --text-muted: var(--granite-500);
+            --border-light: var(--granite-200);
+            --border-medium: var(--granite-300);
+            --primary: var(--alpine-blue-600);
+            --primary-hover: var(--alpine-blue-700);
+            --secondary: var(--summit-gold-400);
+            --secondary-hover: var(--summit-gold-500);
+        }
+        
+        .dark {
+            --bg-primary: var(--granite-900);
+            --bg-secondary: var(--granite-800);
+            --bg-card: var(--granite-800);
+            --text-primary: var(--granite-100);
+            --text-secondary: var(--granite-300);
+            --text-muted: var(--granite-400);
+            --border-light: var(--granite-700);
+            --border-medium: var(--granite-600);
+            --primary: var(--alpine-blue-400);
+            --primary-hover: var(--alpine-blue-300);
+            --secondary: var(--summit-gold-400);
+            --secondary-hover: var(--summit-gold-300);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* Enhanced Navigation - Endurance Athlete improvement with Mountain Peak styling */
+        .mountain-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+        
+        .dark .mountain-header {
+            background: rgba(30, 41, 59, 0.95);
+        }
+        
+        .mountain-nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 4rem;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .brand-text {
+            font-size: 1.75rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        
+        .brand-tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary);
+            background: rgba(2, 132, 199, 0.1);
+        }
+        
+        .nav-link.active {
+            color: var(--primary);
+            background: rgba(2, 132, 199, 0.1);
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0.5rem;
+            height: 0.25rem;
+            background: var(--primary);
+            border-radius: 0.125rem;
+        }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .notification-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            color: var(--text-secondary);
+        }
+        
+        .notification-btn:hover {
+            background: rgba(2, 132, 199, 0.1);
+            color: var(--primary);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.75rem;
+            min-width: 1.25rem;
+            text-align: center;
+        }
+        
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .profile-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .profile-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .profile-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        /* Main Content Container */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        /* Page Navigation */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .page-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Mountain Peak Page Headers - Original style */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-title p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+        }
+        
+        .elevation-display {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .elevation-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.9;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .elevation-value {
+            font-size: 2rem;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .elevation-peak {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        /* Enhanced Stats Grid - Better organization from Endurance Athlete */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Enhanced Stat Cards - Mountain Peak style with better data structure */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+        
+        .stat-card.primary::before { background: var(--primary); }
+        .stat-card.secondary::before { background: var(--secondary); }
+        .stat-card.success::before { background: var(--zone-recovery); }
+        .stat-card.warning::before { background: var(--zone-tempo); }
+        .stat-card.danger::before { background: var(--zone-threshold); }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: var(--border-medium);
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .stat-content h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        .stat-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        
+        .stat-trend.up {
+            color: var(--zone-recovery);
+            background: rgba(5, 150, 105, 0.1);
+        }
+        
+        .stat-trend.down {
+            color: var(--zone-threshold);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .stat-trend.neutral {
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+        }
+        
+        /* Training Zone Indicators - From Endurance Athlete */
+        .zone-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .zone-1 {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--zone-recovery);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+        
+        .zone-2 {
+            background: rgba(14, 165, 233, 0.1);
+            color: var(--zone-aerobic);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+        }
+        
+        .zone-3 {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--zone-tempo);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .zone-4 {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--zone-threshold);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .zone-5 {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--zone-vo2max);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        /* Enhanced Data Tables - From Endurance Athlete */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 1rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .data-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .data-table tr:hover {
+            background: rgba(2, 132, 199, 0.05);
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Mountain-specific content cards */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .content-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .content-card .subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Race countdown - Original Mountain Peak style */
+        .race-countdown {
+            background: linear-gradient(135deg, var(--summit-gold-100), var(--summit-gold-200));
+            border: 1px solid var(--summit-gold-300);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dark .race-countdown {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        
+        .race-countdown::before {
+            content: '🏔️';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            opacity: 0.3;
+        }
+        
+        .race-countdown h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        .race-countdown h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .race-countdown p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .mountain-nav {
+                padding: 0 1rem;
+            }
+            
+            .nav-links {
+                gap: 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Utility classes */
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-4 { gap: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+    </style>
+</head>
+<body>
+    <!-- Enhanced Header - Endurance Athlete navigation with Mountain Peak branding -->
+    <header class="mountain-header">
+        <nav class="mountain-nav">
+            <div class="nav-brand">
+                <h1 class="brand-text">🏔️ UltraCoach</h1>
+                <span class="brand-tagline">Conquer Your Peaks</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#dashboard" class="nav-link active" onclick="showPage('dashboard')">Dashboard</a>
+                <a href="#training-plans" class="nav-link" onclick="showPage('training-plans')">Training Plans</a>
+                <a href="#plan-detail" class="nav-link" onclick="showPage('plan-detail')">Plan Detail</a>
+                <a href="#workouts" class="nav-link">Workouts</a>
+                <a href="#messages" class="nav-link">Messages</a>
+                
+                <div class="nav-actions">
+                    <button class="notification-btn">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <span class="theme-icon light-icon">☀️</span>
+                        <span class="theme-icon dark-icon" style="display: none;">🌙</span>
+                        <span>Theme</span>
+                    </button>
+                    
+                    <div class="profile-menu">
+                        <span class="profile-name">Alex Summit</span>
+                        <div class="profile-avatar">AS</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Page - Original Mountain Peak with enhanced data organization -->
+        <section id="dashboard" class="page-section active">
+            <!-- Original Mountain Peak Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Summit Dashboard</h1>
+                    <p>Track your ascent to peak performance</p>
+                </div>
+                
+                <div class="elevation-display">
+                    <span class="elevation-label">Current Altitude</span>
+                    <span class="elevation-value">8,847m</span>
+                    <span class="elevation-peak">Peak Performance</span>
+                </div>
+            </div>
+
+            <!-- Enhanced Achievement Stats - Better data organization -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <h3>Weekly Volume</h3>
+                        <p class="stat-number">127<span style="font-size: 1.5rem;">km</span></p>
+                        <p class="stat-subtitle">Distance Covered</p>
+                    </div>
+                    <div class="stat-trend up">↗ +12% from last week</div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-icon">⛰️</div>
+                    <div class="stat-content">
+                        <h3>Elevation Gain</h3>
+                        <p class="stat-number">3,847<span style="font-size: 1.5rem;">m</span></p>
+                        <p class="stat-subtitle">Vertical Ascent</p>
+                    </div>
+                    <div class="stat-trend up">↗ +8% from last week</div>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-icon">🏃‍♂️</div>
+                    <div class="stat-content">
+                        <h3>Training Load</h3>
+                        <p class="stat-number">342<span style="font-size: 1.5rem;">TSS</span></p>
+                        <p class="stat-subtitle">This Week</p>
+                    </div>
+                    <div class="stat-trend neutral">→ Optimal Range</div>
+                </div>
+                
+                <div class="stat-card secondary">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <h3>Next Peak</h3>
+                        <p class="stat-number">42<span style="font-size: 1.5rem;">days</span></p>
+                        <p class="stat-subtitle">Western States 100</p>
+                    </div>
+                    <div class="stat-trend neutral">→ On Schedule</div>
+                </div>
+            </div>
+
+            <!-- Enhanced Content Grid with Training Zone Integration -->
+            <div class="content-grid">
+                <!-- Training Zone Distribution - From Endurance Athlete -->
+                <div class="content-card">
+                    <h3>Training Zone Distribution</h3>
+                    <p class="subtitle">Last 4 weeks breakdown</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="zone-indicator zone-1">Z1</span>
+                                <span class="text-sm">Recovery</span>
+                            </div>
+                            <span style="font-family: monospace; font-weight: 600;">45%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="zone-indicator zone-2">Z2</span>
+                                <span class="text-sm">Aerobic</span>
+                            </div>
+                            <span style="font-family: monospace; font-weight: 600;">30%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="zone-indicator zone-3">Z3</span>
+                                <span class="text-sm">Tempo</span>
+                            </div>
+                            <span style="font-family: monospace; font-weight: 600;">15%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="zone-indicator zone-4">Z4</span>
+                                <span class="text-sm">Threshold</span>
+                            </div>
+                            <span style="font-family: monospace; font-weight: 600;">8%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="zone-indicator zone-5">Z5</span>
+                                <span class="text-sm">VO2Max</span>
+                            </div>
+                            <span style="font-family: monospace; font-weight: 600;">2%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Peaks Conquered -->
+                <div class="content-card">
+                    <h3>Recent Peaks Conquered</h3>
+                    <p class="subtitle">Latest summit achievements</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                        <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border-left: 4px solid var(--zone-recovery);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="font-semibold">Long Summit Run</div>
+                                    <div class="text-sm" style="color: var(--text-muted);">32km • 2,100m elevation</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-family: monospace; font-weight: 600;">3:45:20</div>
+                                    <span class="zone-indicator zone-1">Z1-Z2</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border-left: 4px solid var(--zone-tempo);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="font-semibold">Mountain Tempo</div>
+                                    <div class="text-sm" style="color: var(--text-muted);">12km • 800m elevation</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-family: monospace; font-weight: 600;">58:30</div>
+                                    <span class="zone-indicator zone-3">Z3</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border-left: 4px solid var(--zone-recovery);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="font-semibold">Recovery Ascent</div>
+                                    <div class="text-sm" style="color: var(--text-muted);">8km • 300m elevation</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-family: monospace; font-weight: 600;">42:15</div>
+                                    <span class="zone-indicator zone-1">Z1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Race Countdown -->
+            <div class="race-countdown" style="margin-top: 2rem;">
+                <h4>Next Summit Challenge</h4>
+                <h3>Western States 100</h3>
+                <p>42 days until the ultimate test</p>
+            </div>
+        </section>
+
+        <!-- Training Plans Page -->
+        <section id="training-plans" class="page-section">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Training Expeditions</h1>
+                    <p>Choose your path to the summit</p>
+                </div>
+                <button class="btn btn-primary">⛰️ Create New Expedition</button>
+            </div>
+
+            <div class="content-grid">
+                <!-- Active Plan -->
+                <div class="content-card" style="border: 2px solid var(--primary);">
+                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h3>Western States 100</h3>
+                            <p class="subtitle">Active Summit Challenge</p>
+                        </div>
+                        <span class="zone-indicator zone-2" style="margin-left: auto;">ACTIVE</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <div>
+                            <div class="text-sm" style="color: var(--text-muted);">Summit Date</div>
+                            <div class="font-semibold">June 24, 2025</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="text-sm" style="color: var(--text-muted);">Progress</div>
+                            <div class="font-semibold">Week 14 of 24</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--bg-secondary); height: 8px; border-radius: 4px; margin-bottom: 1rem;">
+                        <div style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: 58%; border-radius: 4px;"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <button class="btn btn-primary">Continue Ascent</button>
+                        <span class="text-sm" style="color: var(--text-muted);">58% Complete</span>
+                    </div>
+                </div>
+
+                <!-- Future Plans -->
+                <div class="content-card">
+                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h3>Leadville Trail 100</h3>
+                            <p class="subtitle">High Altitude Challenge</p>
+                        </div>
+                        <span class="zone-indicator zone-1" style="margin-left: auto;">PLANNED</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <div>
+                            <div class="text-sm" style="color: var(--text-muted);">Summit Date</div>
+                            <div class="font-semibold">August 19, 2025</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="text-sm" style="color: var(--text-muted);">Duration</div>
+                            <div class="font-semibold">20 weeks</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--bg-secondary); height: 8px; border-radius: 4px; margin-bottom: 1rem;">
+                        <div style="background: var(--border-medium); height: 100%; width: 0%; border-radius: 4px;"></div>
+                    </div>
+                    
+                    <button class="btn btn-outline">Schedule Expedition</button>
+                </div>
+
+                <div class="content-card">
+                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h3>UTMB OCC 50K</h3>
+                            <p class="subtitle">Alpine Bridge Challenge</p>
+                        </div>
+                        <span class="zone-indicator zone-3" style="margin-left: auto;">BRIDGE</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <div>
+                            <div class="text-sm" style="color: var(--text-muted);">Summit Date</div>
+                            <div class="font-semibold">August 30, 2025</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="text-sm" style="color: var(--text-muted);">Duration</div>
+                            <div class="font-semibold">12 weeks</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--bg-secondary); height: 8px; border-radius: 4px; margin-bottom: 1rem;">
+                        <div style="background: var(--border-medium); height: 100%; width: 0%; border-radius: 4px;"></div>
+                    </div>
+                    
+                    <button class="btn btn-outline">Review Strategy</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Training Plan Detail with Enhanced Data Tables -->
+        <section id="plan-detail" class="page-section">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Western States 100</h1>
+                    <p>Sacramento to Auburn • 100 miles • 18,090ft elevation gain</p>
+                </div>
+                
+                <div class="elevation-display">
+                    <span class="elevation-label">Days to Summit</span>
+                    <span class="elevation-value">42</span>
+                    <span class="elevation-peak">Training Days Left</span>
+                </div>
+            </div>
+
+            <!-- Enhanced Weekly Schedule - Clean data table from Endurance Athlete -->
+            <div class="content-card">
+                <h3>Weekly Training Schedule</h3>
+                <p class="subtitle">Build Phase - Week 3 of 6</p>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Workout</th>
+                            <th>Duration</th>
+                            <th>Zone</th>
+                            <th>Elevation</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-semibold">Monday</td>
+                            <td>Recovery Run + Strength</td>
+                            <td style="font-family: monospace;">45 min</td>
+                            <td><span class="zone-indicator zone-1">Z1</span></td>
+                            <td style="font-family: monospace;">150m</td>
+                            <td style="color: var(--zone-recovery); font-weight: 600;">✓ Complete</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">Tuesday</td>
+                            <td>Mountain Tempo Run</td>
+                            <td style="font-family: monospace;">75 min</td>
+                            <td><span class="zone-indicator zone-3">Z3</span></td>
+                            <td style="font-family: monospace;">800m</td>
+                            <td style="color: var(--zone-recovery); font-weight: 600;">✓ Complete</td>
+                        </tr>
+                        <tr style="background: rgba(2, 132, 199, 0.05);">
+                            <td class="font-semibold">Wednesday</td>
+                            <td>Easy Summit Prep</td>
+                            <td style="font-family: monospace;">60 min</td>
+                            <td><span class="zone-indicator zone-1">Z1</span></td>
+                            <td style="font-family: monospace;">300m</td>
+                            <td style="color: var(--primary); font-weight: 600;">→ Today</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">Thursday</td>
+                            <td>Threshold Intervals</td>
+                            <td style="font-family: monospace;">90 min</td>
+                            <td><span class="zone-indicator zone-4">Z4</span></td>
+                            <td style="font-family: monospace;">600m</td>
+                            <td style="color: var(--text-muted);">Planned</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">Friday</td>
+                            <td>Rest & Recovery</td>
+                            <td style="font-family: monospace;">—</td>
+                            <td><span class="zone-indicator zone-1">Rest</span></td>
+                            <td style="font-family: monospace;">—</td>
+                            <td style="color: var(--text-muted);">Planned</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">Saturday</td>
+                            <td>Long Summit Run (B2B)</td>
+                            <td style="font-family: monospace;">4.5 hrs</td>
+                            <td><span class="zone-indicator zone-2">Z2</span></td>
+                            <td style="font-family: monospace;">2,100m</td>
+                            <td style="color: var(--text-muted);">Planned</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">Sunday</td>
+                            <td>Recovery Ascent (B2B)</td>
+                            <td style="font-family: monospace;">90 min</td>
+                            <td><span class="zone-indicator zone-1">Z1</span></td>
+                            <td style="font-family: monospace;">400m</td>
+                            <td style="color: var(--text-muted);">Planned</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Weekly Targets -->
+            <div class="content-grid" style="margin-top: 2rem;">
+                <div class="content-card">
+                    <h3>Weekly Summit Targets</h3>
+                    <p class="subtitle">Build phase objectives</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Total Volume</span>
+                            <span style="font-family: monospace; font-weight: 600;">85-95km</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Elevation Gain</span>
+                            <span style="font-family: monospace; font-weight: 600;">4,250m</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Training Load</span>
+                            <span style="font-family: monospace; font-weight: 600;">380 TSS</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Long Run</span>
+                            <span style="font-family: monospace; font-weight: 600;">35-40km</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3>Phase Focus Areas</h3>
+                    <p class="subtitle">Build phase priorities</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--zone-recovery);">✓</span>
+                            <span class="text-sm">Increase training load 10-15%</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--zone-recovery);">✓</span>
+                            <span class="text-sm">Practice race-day nutrition</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--zone-recovery);">✓</span>
+                            <span class="text-sm">Back-to-back long runs</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--text-muted);">○</span>
+                            <span class="text-sm">Heat acclimatization training</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: var(--text-muted);">○</span>
+                            <span class="text-sm">Course reconnaissance runs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.classList.remove(currentTheme);
+            html.classList.add(newTheme);
+            
+            // Toggle icon visibility
+            const lightIcon = document.querySelector('.light-icon');
+            const darkIcon = document.querySelector('.dark-icon');
+            
+            if (newTheme === 'dark') {
+                lightIcon.style.display = 'none';
+                darkIcon.style.display = 'inline';
+            } else {
+                lightIcon.style.display = 'inline';
+                darkIcon.style.display = 'none';
+            }
+        }
+
+        // Page navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
