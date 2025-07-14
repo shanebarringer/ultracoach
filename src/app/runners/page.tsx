@@ -4,6 +4,23 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { 
+  Card, 
+  CardHeader, 
+  CardBody, 
+  Button, 
+  Chip, 
+  Spinner, 
+  Avatar 
+} from '@heroui/react'
+import { 
+  UsersIcon, 
+  MessageCircleIcon, 
+  MapPinIcon, 
+  TrendingUpIcon, 
+  RouteIcon,
+  FlagIcon
+} from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import type { User } from '@/lib/supabase'
 
@@ -61,10 +78,7 @@ export default function RunnersPage() {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading runners...</p>
-          </div>
+          <Spinner size="lg" color="primary" label="Loading your expedition team..." />
         </div>
       </Layout>
     )
@@ -77,81 +91,122 @@ export default function RunnersPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">My Athletes</h1>
-          <p className="text-foreground-600">Guide your athletes on their summit journey</p>
-        </div>
+        {/* Hero Section */}
+        <Card className="mb-8 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <UsersIcon className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  🏔️ Expedition Team
+                </h1>
+                <p className="text-foreground-600 text-lg mt-1">
+                  Guide your athletes on their summit journey
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-600">Loading runners...</p>
-            </div>
+            <Spinner size="lg" color="primary" label="Loading expedition team..." />
           </div>
         ) : runners.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No runners yet</h3>
-            <p className="text-gray-500 mb-6">You haven&apos;t created any training plans for runners yet.</p>
-            <Link
-              href="/training-plans"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Create Your First Training Plan
-            </Link>
-          </div>
+          <Card className="max-w-md mx-auto">
+            <CardBody className="text-center py-12">
+              <div className="flex justify-center mb-6">
+                <div className="bg-primary/10 rounded-full p-6">
+                  <UsersIcon className="h-12 w-12 text-primary" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No team members yet</h3>
+              <p className="text-foreground-600 mb-6">Start building your expedition team by creating training plans</p>
+              <Button 
+                as={Link}
+                href="/training-plans"
+                color="primary"
+                size="lg"
+                startContent={<RouteIcon className="w-5 h-5" />}
+              >
+                Create Your First Training Plan
+              </Button>
+            </CardBody>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {runners.map((runner) => (
-              <div
+              <Card
                 key={runner.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-secondary/60"
               >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg">
-                    {runner.full_name.charAt(0).toUpperCase()}
+                <CardBody className="p-6">
+                  {/* Runner Header */}
+                  <div className="flex items-center mb-6">
+                    <Avatar
+                      name={runner.full_name}
+                      size="lg"
+                      className="bg-gradient-to-br from-primary to-secondary text-white font-semibold"
+                    />
+                    <div className="ml-4">
+                      <h3 className="text-lg font-semibold text-foreground">{runner.full_name}</h3>
+                      <p className="text-sm text-foreground-600">{runner.email}</p>
+                      <Chip size="sm" color="primary" variant="flat" className="mt-1">
+                        🏃 Trail Runner
+                      </Chip>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{runner.full_name}</h3>
-                    <p className="text-sm text-gray-500">{runner.email}</p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{runner.stats?.trainingPlans || 0}</div>
-                    <div className="text-xs text-gray-500">Training Plans</div>
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="flex flex-col items-center">
+                        <RouteIcon className="w-5 h-5 text-primary mb-1" />
+                        <div className="text-2xl font-bold text-primary">{runner.stats?.trainingPlans || 0}</div>
+                        <div className="text-xs text-foreground-600">Expeditions</div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex flex-col items-center">
+                        <FlagIcon className="w-5 h-5 text-success mb-1" />
+                        <div className="text-2xl font-bold text-success">{runner.stats?.completedWorkouts || 0}</div>
+                        <div className="text-xs text-foreground-600">Summits</div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex flex-col items-center">
+                        <TrendingUpIcon className="w-5 h-5 text-warning mb-1" />
+                        <div className="text-2xl font-bold text-warning">{runner.stats?.upcomingWorkouts || 0}</div>
+                        <div className="text-xs text-foreground-600">Ascents</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{runner.stats?.completedWorkouts || 0}</div>
-                    <div className="text-xs text-gray-500">Completed</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{runner.stats?.upcomingWorkouts || 0}</div>
-                    <div className="text-xs text-gray-500">Upcoming</div>
-                  </div>
-                </div>
 
-                <div className="flex gap-2">
-                  <Link
-                    href={`/chat/${runner.id}`}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors text-center"
-                  >
-                    Message
-                  </Link>
-                  <Link
-                    href="/training-plans"
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors text-center"
-                  >
-                    View Plans
-                  </Link>
-                </div>
-              </div>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      as={Link}
+                      href={`/chat/${runner.id}`}
+                      color="primary"
+                      size="sm"
+                      className="flex-1"
+                      startContent={<MessageCircleIcon className="w-4 h-4" />}
+                    >
+                      Message
+                    </Button>
+                    <Button
+                      as={Link}
+                      href="/training-plans"
+                      variant="bordered"
+                      size="sm"
+                      className="flex-1"
+                      startContent={<MapPinIcon className="w-4 h-4" />}
+                    >
+                      View Plans
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
             ))}
           </div>
         )}

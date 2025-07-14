@@ -3,9 +3,30 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { 
+  Card, 
+  CardHeader, 
+  CardBody, 
+  Button, 
+  Chip, 
+  Spinner, 
+  Avatar 
+} from '@heroui/react'
+import { 
+  CalendarDaysIcon, 
+  UsersIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  ClockIcon,
+  MapPinIcon,
+  TrendingUpIcon,
+  RouteIcon,
+  FlagIcon
+} from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import type { User } from '@/lib/supabase'
+import classNames from 'classnames'
 
 export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
@@ -88,7 +109,7 @@ export default function WeeklyPlannerPage() {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <Spinner size="lg" color="primary" label="Loading expedition planning..." />
         </div>
       </Layout>
     )
@@ -101,88 +122,147 @@ export default function WeeklyPlannerPage() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Weekly Workout Planner</h1>
-          <p className="text-gray-600 mt-1">
-            Plan a full week of workouts for your runners
-          </p>
-        </div>
+        {/* Hero Section */}
+        <Card className="mb-8 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <CalendarDaysIcon className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  🏔️ Weekly Expedition Planner
+                </h1>
+                <p className="text-foreground/70 mt-1 text-lg">
+                  Architect your team&apos;s weekly training summit - strategic workout planning for peak performance
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
 
         {/* Runner Selection */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Select Runner</h2>
-          
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <Card className="mb-6 bg-gradient-to-br from-background to-secondary/5 border-t-4 border-t-secondary">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <UsersIcon className="w-6 h-6 text-secondary" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Select Your Training Partner
+              </h2>
             </div>
-          ) : runners.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No runners found. Create training plans to connect with runners.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {runners.map((runner) => (
-                <button
-                  key={runner.id}
-                  onClick={() => setSelectedRunner(runner)}
-                  className={`text-left p-4 rounded-lg border-2 transition-colors ${
-                    selectedRunner?.id === runner.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {runner.full_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{runner.full_name}</h3>
-                      <p className="text-sm text-gray-500">{runner.email}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardBody>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Spinner size="lg" color="secondary" label="Loading your expedition team..." />
+              </div>
+            ) : runners.length === 0 ? (
+              <div className="text-center py-8">
+                <RouteIcon className="mx-auto w-12 h-12 text-default-400 mb-4" />
+                <p className="text-foreground/70 text-lg">
+                  No training partners found. Create training plans to connect with runners.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {runners.map((runner) => (
+                  <Card
+                    key={runner.id}
+                    isPressable
+                    onPress={() => setSelectedRunner(runner)}
+                    className={classNames(
+                      'transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer',
+                      selectedRunner?.id === runner.id
+                        ? 'ring-2 ring-primary bg-gradient-to-br from-primary/10 to-secondary/10 border-l-4 border-l-primary'
+                        : 'hover:bg-gradient-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent'
+                    )}
+                  >
+                    <CardBody className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          name={runner.full_name}
+                          size="md"
+                          className="bg-gradient-to-br from-primary to-secondary text-white"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{runner.full_name}</h3>
+                          <p className="text-sm text-foreground/70">{runner.email}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color="success"
+                              startContent={<TrendingUpIcon className="w-3 h-3" />}
+                            >
+                              Active
+                            </Chip>
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color="secondary"
+                              startContent={<FlagIcon className="w-3 h-3" />}
+                            >
+                              Training
+                            </Chip>
+                          </div>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
         {/* Week Navigation */}
         {selectedRunner && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
-                Week of {formatWeekRange(currentWeek)}
-              </h2>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => navigateWeek('prev')}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+          <Card className="mb-6 bg-gradient-to-br from-warning/10 to-primary/10 border-t-4 border-t-warning">
+            <CardHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <ClockIcon className="w-6 h-6 text-warning" />
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Training Week: {formatWeekRange(currentWeek)}
+                    </h2>
+                    <p className="text-foreground/70 text-sm">
+                      Planning expedition for {selectedRunner.full_name}
+                    </p>
+                  </div>
+                </div>
                 
-                <button
-                  onClick={goToCurrentWeek}
-                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-                >
-                  This Week
-                </button>
-                
-                <button
-                  onClick={() => navigateWeek('next')}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWeek('prev')}
+                    className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
+                  >
+                    <ChevronLeftIcon className="w-5 h-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="flat"
+                    size="sm"
+                    onClick={goToCurrentWeek}
+                    className="bg-warning/20 text-warning hover:bg-warning/30"
+                  >
+                    Current Week
+                  </Button>
+                  
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWeek('next')}
+                    className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
+                  >
+                    <ChevronRightIcon className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardHeader>
+          </Card>
         )}
 
         {/* Weekly Calendar */}
@@ -198,15 +278,21 @@ export default function WeeklyPlannerPage() {
         )}
 
         {!selectedRunner && !loading && runners.length > 0 && (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Select a runner to start planning</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Choose a runner from the list above to create their weekly workout plan.
-            </p>
-          </div>
+          <Card className="bg-gradient-to-br from-default/10 to-secondary/10 border-t-4 border-t-default">
+            <CardBody className="text-center py-12">
+              <CalendarDaysIcon className="mx-auto w-16 h-16 text-default-400 mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Ready to Plan Your Next Expedition?
+              </h3>
+              <p className="text-foreground/70 text-lg mb-4">
+                Select a training partner from above to architect their weekly summit plan.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-foreground/60">
+                <MapPinIcon className="w-4 h-4" />
+                <span>Strategic weekly planning for peak performance</span>
+              </div>
+            </CardBody>
+          </Card>
         )}
       </div>
     </Layout>
