@@ -21,6 +21,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import type { TrainingPlan, User } from '@/lib/supabase'
+import classNames from 'classnames'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
@@ -77,8 +78,28 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primar
               )}
             </div>
           </div>
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Icon className="w-6 h-6 text-primary" />
+          <div className={classNames(
+            'p-3 rounded-lg',
+            {
+              'bg-primary/10': color === 'primary',
+              'bg-secondary/10': color === 'secondary',
+              'bg-success/10': color === 'success',
+              'bg-warning/10': color === 'warning',
+              'bg-danger/10': color === 'danger',
+              'bg-default/10': !color || color === 'default'
+            }
+          )}>
+            <Icon className={classNames(
+              'w-6 h-6',
+              {
+                'text-primary': color === 'primary',
+                'text-secondary': color === 'secondary',
+                'text-success': color === 'success',
+                'text-warning': color === 'warning',
+                'text-danger': color === 'danger',
+                'text-default': !color || color === 'default'
+              }
+            )} />
           </div>
         </div>
         

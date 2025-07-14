@@ -8,7 +8,7 @@ import Layout from '@/components/layout/Layout'
 import type { User } from '@/lib/supabase'
 
 interface RunnerWithStats extends User {
-  stats: {
+  stats?: {
     trainingPlans: number
     completedWorkouts: number
     upcomingWorkouts: number
@@ -78,8 +78,8 @@ export default function RunnersPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Runners</h1>
-          <p className="text-gray-600">Manage and track your runners&apos; progress</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">My Athletes</h1>
+          <p className="text-foreground-600">Guide your athletes on their summit journey</p>
         </div>
 
         {loading ? (
@@ -124,15 +124,15 @@ export default function RunnersPage() {
 
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{runner.stats.trainingPlans}</div>
+                    <div className="text-2xl font-bold text-blue-600">{runner.stats?.trainingPlans || 0}</div>
                     <div className="text-xs text-gray-500">Training Plans</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{runner.stats.completedWorkouts}</div>
+                    <div className="text-2xl font-bold text-green-600">{runner.stats?.completedWorkouts || 0}</div>
                     <div className="text-xs text-gray-500">Completed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{runner.stats.upcomingWorkouts}</div>
+                    <div className="text-2xl font-bold text-orange-600">{runner.stats?.upcomingWorkouts || 0}</div>
                     <div className="text-xs text-gray-500">Upcoming</div>
                   </div>
                 </div>
