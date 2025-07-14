@@ -13,20 +13,13 @@ import { uiStateAtom, loadingStatesAtom, filteredTrainingPlansAtom } from '@/lib
 export default function TrainingPlansPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  useTrainingPlans() // Initialize training plans data
+  const { fetchTrainingPlans } = useTrainingPlans() // Get fetch function from hook
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
   const [filteredPlans] = useAtom(filteredTrainingPlansAtom)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
-  useEffect(() => {
-    if (status === 'loading') return
-    
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-  }, [session, status, router])
+  // Removed useEffect that was calling fetchTrainingPlans
 
   const handleCreateSuccess = () => {
     // Training plans will be automatically updated via the hook

@@ -7,11 +7,13 @@ import { trainingPlansAtom, loadingStatesAtom } from '@/lib/atoms'
 import type { TrainingPlan } from '@/lib/supabase'
 
 export function useTrainingPlans() {
+  console.log('useTrainingPlans: Hook initialized')
   const { data: session } = useSession()
   const [trainingPlans, setTrainingPlans] = useAtom(trainingPlansAtom)
   const setLoadingStates = useSetAtom(loadingStatesAtom)
 
   const fetchTrainingPlans = useCallback(async () => {
+    console.log('fetchTrainingPlans: Called')
     if (!session?.user?.id) return
 
     setLoadingStates(prev => ({ ...prev, trainingPlans: true }))
@@ -25,13 +27,19 @@ export function useTrainingPlans() {
       }
 
       const data = await response.json()
-      setTrainingPlans(data.trainingPlans || [])
+      // Only update if data is referentially different
+      if (JSON.stringify(data.trainingPlans) !== JSON.stringify(trainingPlans)) {
+        setTrainingPlans(data.trainingPlans || [])
+        console.log('setTrainingPlans: Data updated', data.trainingPlans.length)
+      } else {
+        console.log('setTrainingPlans: Data unchanged')
+      }
     } catch (error) {
       console.error('Error fetching training plans:', error)
     } finally {
       setLoadingStates(prev => ({ ...prev, trainingPlans: false }))
     }
-  }, [session?.user?.id, setTrainingPlans, setLoadingStates])
+  }, [session?.user?.id])
 
   const createTrainingPlan = useCallback(async (planData: Partial<TrainingPlan>) => {
     try {
@@ -134,8 +142,11 @@ export function useTrainingPlans() {
   }, [setTrainingPlans])
 
   useEffect(() => {
-    fetchTrainingPlans()
-  }, [fetchTrainingPlans])
+    console.log('useTrainingPlans useEffect: Running')
+    if (session?.user?.id) {
+      fetchTrainingPlans()
+    }
+  }, [session?.user?.id])
 
   return {
     trainingPlans,
