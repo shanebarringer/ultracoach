@@ -10,7 +10,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **Framework**: Next.js 15.3.5 with App Router
 - **Design System**: Mountain Peak Enhanced - Alpine aesthetic with professional UX patterns
 - **UI Library**: HeroUI with custom Mountain Peak theme
-- **Styling**: Tailwind CSS v4 with component-based design + Custom alpine color palette
+- **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
 - **State Management**: Jotai for atomic, granular state management
 - **Authentication**: NextAuth.js with custom credentials provider
 - **Real-time**: Supabase Realtime for live updates
@@ -61,12 +61,15 @@ activeTrainingPlansAtom: Computed active plans
   "next": "15.3.5",
   "react": "^19.0.0",
   "typescript": "^5",
-  "tailwindcss": "^4",
-  "jotai": "^2.x",
+  "tailwindcss": "^3.4.17",
+  "@heroui/react": "^2.7.11",
+  "@heroui/theme": "^2.4.17",
+  "jotai": "^2.12.5",
   "next-auth": "^4.24.11",
   "@supabase/supabase-js": "^2.50.5",
   "bcrypt": "^6.0.0",
-  "tslog": "^4.9.3"
+  "tslog": "^4.9.3",
+  "framer-motion": "^12.23.3"
 }
 ```
 
@@ -77,7 +80,10 @@ activeTrainingPlansAtom: Computed active plans
   "eslint-config-next": "15.3.5",
   "@types/node": "^20",
   "@types/react": "^19",
-  "@types/bcrypt": "^5.0.2"
+  "@types/react-dom": "^19",
+  "@types/bcrypt": "^5.0.2",
+  "autoprefixer": "^10.4.21",
+  "eslint-plugin-react-hooks": "^5.2.0"
 }
 ```
 
@@ -251,8 +257,8 @@ npx tsc --noEmit
 - ✅ Complete design system with Mountain Peak Enhanced aesthetic
 - ✅ HeroUI component migration with Mountain Peak theme implementation
 - ✅ Production-ready build with professional alpine aesthetic
-- 🔄 Full TypeScript coverage with strict mode
-- 🔄 Development server CSS optimization
+- ✅ Full TypeScript coverage with strict mode
+- ✅ Resolved Tailwind CSS v3 compatibility and HeroUI integration
 
 ### User Experience Goals
 - ✅ Inspiring mountain-themed design that emotionally connects with ultramarathon athletes
