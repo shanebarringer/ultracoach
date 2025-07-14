@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'runners-api' })
 
 export async function GET() {
   try {
@@ -18,7 +15,7 @@ export async function GET() {
       .select('runners:runner_id(*)')
       .eq('coach_id', session.user.id)
     if (plansError) {
-      logger.error('Failed to fetch runners')
+      console.error('Failed to fetch runners', plansError)
       return NextResponse.json({ error: 'Failed to fetch runners' }, { status: 500 })
     }
     // Extract unique runners
@@ -31,8 +28,8 @@ export async function GET() {
       return acc
     }, []) || []
     return NextResponse.json({ runners: uniqueRunners })
-  } catch {
-    logger.error('API error in GET /runners')
+  } catch (error) {
+    console.error('API error in GET /runners', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

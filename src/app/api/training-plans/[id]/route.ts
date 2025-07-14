@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'training-plan-id-api' })
 
 export async function GET(
   request: NextRequest,
@@ -37,7 +34,7 @@ export async function GET(
       .eq('training_plan_id', id)
       .order('date', { ascending: true })
     if (workoutsError) {
-      logger.error('Failed to fetch workouts for training plan')
+      console.error('Failed to fetch workouts for training plan', workoutsError)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
     }
     return NextResponse.json({ 
@@ -45,7 +42,7 @@ export async function GET(
       workouts: workouts || [] 
     })
   } catch (error) {
-    logger.error('Internal server error in GET', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in GET', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -81,12 +78,12 @@ export async function DELETE(
       .delete()
       .eq('id', id)
     if (deleteError) {
-      logger.error('Failed to delete training plan')
+      console.error('Failed to delete training plan', deleteError)
       return NextResponse.json({ error: 'Failed to delete training plan' }, { status: 500 })
     }
     return NextResponse.json({ message: 'Training plan deleted successfully' }, { status: 200 })
   } catch (error) {
-    logger.error('Internal server error in DELETE', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in DELETE', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

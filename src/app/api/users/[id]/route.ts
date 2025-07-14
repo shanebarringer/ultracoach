@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'users-id-api' })
 
 export async function GET(
   request: NextRequest,
@@ -23,12 +20,12 @@ export async function GET(
       .eq('id', id)
       .single()
     if (error || !user) {
-      logger.error('Failed to fetch user')
+      console.error('Failed to fetch user', error)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
     return NextResponse.json({ user })
-  } catch {
-    logger.error('API error in GET /users/[id]')
+  } catch (error) {
+    console.error('API error in GET /users/[id]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
