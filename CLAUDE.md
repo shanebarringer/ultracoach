@@ -16,9 +16,10 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-14)
-- **Active Milestone**: Design System Implementation ✅ COMPLETED
-- **Completion**: 85.0% (95/112 total tasks) + Complete Design System + HeroUI Integration
-- **Recent Completion**: HeroUI Integration with Mountain Peak Enhanced Design System - Professional alpine aesthetic with working UI components
+- **Active Milestone**: Design System Implementation ✅ COMPLETED + UI Stabilization
+- **Completion**: 87.5% (98/112 total tasks) + Complete Design System + HeroUI Integration + UI Fixes
+- **Recent Completion**: Mountain Peak Enhanced Design System fully implemented with proper styling, fixed component errors, and classnames integration
+- **Current Priority**: Fix training-plans page flickering and multiple API calls issue
 - **Next Priority**: Enhanced Training Features - Race management, phase progression, and advanced workflow features
 
 ## 🏗️ Architecture & Technology
@@ -32,6 +33,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Database**: Supabase PostgreSQL with enhanced training schema
 - **Auth**: NextAuth.js with Supabase integration
 - **Package Manager**: pnpm (better performance than npm)
+- **Styling Utilities**: classnames for conditional CSS classes
 
 ### Key Directories
 ```
@@ -191,7 +193,7 @@ pnpm lint
 - ✅ Enhanced Supabase realtime error handling for schema mismatches
 - ✅ Improved message deduplication logic for real-time updates
 
-**Recently Completed: HeroUI Integration Complete**
+**Recently Completed: Mountain Peak Enhanced Design System**
 - ✅ Fixed HeroUI provider import issue (NextUIProvider → HeroUIProvider)
 - ✅ Resolved Tailwind CSS v4 compatibility issues by downgrading to v3
 - ✅ Successfully integrated Mountain Peak Enhanced design system
@@ -200,9 +202,15 @@ pnpm lint
 - ✅ All HeroUI components now render with proper Mountain Peak styling
 - ✅ Dark/light mode theme switching functional
 - ✅ Professional alpine aesthetic with training zone color coding
+- ✅ Fixed development server CSS processing (removed turbopack flag)
+- ✅ Implemented complete Mountain Peak branding ("🏔️ UltraCoach - Conquer Your Peaks")
+- ✅ Transformed dashboards with summit terminology and achievement language
+- ✅ Fixed component errors and TypeScript issues
+- ✅ Added classnames library for better conditional styling
+- ✅ Resolved runners page TypeError and applied mountain aesthetic
 
-**Known Issues:**
-- Development server CSS processing needs optimization (production build works perfectly)
+**Current Issues:**
+- Training-plans page has flickering and multiple API calls problem (TOP PRIORITY)
 
 **Next Priority Tasks:**
 1. Enhanced Training Features - Race management system
