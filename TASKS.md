@@ -149,7 +149,7 @@
   - [ ] Convert remaining components to Jotai
   - [ ] Remove unused Context providers
   - [ ] Update type definitions
-- [ ] **Fix persistent Supabase realtime error**
+- [x] **Fix persistent Supabase realtime error**
   - [x] Investigate "mismatch between server and client bindings" error
   - [x] Consider upgrading Supabase client or adjusting schema bindings
   - [x] Ensure error handling doesn't impact user experience

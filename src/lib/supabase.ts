@@ -49,6 +49,9 @@ export interface TrainingPlan {
   created_at: string
   updated_at: string
   archived: boolean
+  current_phase?: string
+  progress?: number
+  weeks_remaining?: number
 }
 
 export interface Workout {
