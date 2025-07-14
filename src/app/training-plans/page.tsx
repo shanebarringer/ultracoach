@@ -1,19 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useAtom } from 'jotai'
 import Layout from '@/components/layout/Layout'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
-import { useTrainingPlans } from '@/hooks/useTrainingPlans'
 import { uiStateAtom, loadingStatesAtom, filteredTrainingPlansAtom } from '@/lib/atoms'
 
 export default function TrainingPlansPage() {
   const { data: session, status } = useSession()
-  const router = useRouter()
-  const { fetchTrainingPlans } = useTrainingPlans() // Get fetch function from hook
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
   const [filteredPlans] = useAtom(filteredTrainingPlansAtom)

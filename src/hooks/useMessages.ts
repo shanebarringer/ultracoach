@@ -178,7 +178,7 @@ export function useMessages(recipientId?: string) {
       console.error('Error sending message:', error)
       return false
     }
-  }, [session?.user?.id, session?.user?.name, session?.user?.email, recipientId, setMessages])
+  }, [session?.user?.id, session?.user?.name, session?.user?.email, session?.user?.role, recipientId, setMessages])
 
   // Real-time updates for messages with error handling
   useSupabaseRealtime({

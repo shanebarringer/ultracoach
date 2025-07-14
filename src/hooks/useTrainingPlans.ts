@@ -39,7 +39,7 @@ export function useTrainingPlans() {
     } finally {
       setLoadingStates(prev => ({ ...prev, trainingPlans: false }))
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, setLoadingStates, setTrainingPlans, trainingPlans])
 
   const createTrainingPlan = useCallback(async (planData: Partial<TrainingPlan>) => {
     try {
@@ -146,7 +146,7 @@ export function useTrainingPlans() {
     if (session?.user?.id) {
       fetchTrainingPlans()
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, fetchTrainingPlans])
 
   return {
     trainingPlans,
