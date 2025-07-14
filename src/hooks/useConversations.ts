@@ -10,6 +10,7 @@ import {
   chatUiStateAtom
 } from '@/lib/atoms'
 import type { Message } from '@/lib/supabase'
+import type { User } from '@/lib/supabase'
 
 export function useConversations() {
   const { data: session } = useSession()
@@ -35,10 +36,32 @@ export function useConversations() {
 
       const data = await response.json()
       const fetchedConversations = data.conversations || []
+      // Map API response to ConversationWithUser structure
+      type ApiConversation = {
+        user: User;
+        lastMessage?: Message;
+        unreadCount: number;
+      };
+      const mappedConversations = (fetchedConversations as ApiConversation[]).map((conv) => ({
+        id: conv.lastMessage?.conversation_id || '',
+        sender: {
+          id: session.user.id,
+          email: session.user.email,
+          role: session.user.role,
+          full_name: session.user.name || '',
+          created_at: '', // Not available from session
+          updated_at: '', // Not available from session
+        },
+        recipient: conv.user,
+        sender_id: session.user.id,
+        recipient_id: conv.user.id,
+        last_message_at: conv.lastMessage?.created_at || '',
+        created_at: conv.lastMessage?.created_at || '',
+        unreadCount: conv.unreadCount || 0,
+      }))
+      setConversations(mappedConversations)
       
       console.log('💬 useConversations: Fetched', fetchedConversations.length, 'conversations')
-      
-      setConversations(fetchedConversations)
       
       // Mark as initially loaded once we've successfully fetched conversations
       if (isInitialLoad) {
@@ -67,7 +90,7 @@ export function useConversations() {
         : message.sender_id
 
       const existingConvIndex = prev.findIndex(conv => {
-        const otherUser = conv.user1.id === session.user.id ? conv.user2 : conv.user1;
+        const otherUser = conv.sender.id === session.user.id ? conv.recipient : conv.sender;
         return otherUser.id === otherUserId;
       })
       
@@ -113,7 +136,7 @@ export function useConversations() {
         // Update local conversation state
         setConversations(prev => 
           prev.map(conv => {
-            const otherUser = conv.user1.id === session.user.id ? conv.user2 : conv.user1;
+            const otherUser = conv.sender.id === session.user.id ? conv.recipient : conv.sender;
             return otherUser.id === userId 
               ? { ...conv, unreadCount: 0 }
               : conv
@@ -181,7 +204,7 @@ export function useConversations() {
   })
 
   const getConversationByUserId = useCallback((userId: string) => {
-    return conversations.find(conv => conv.user1.id === userId || conv.user2.id === userId)
+    return conversations.find(conv => conv.sender.id === userId || conv.recipient.id === userId)
   }, [conversations])
 
   const totalUnreadCount = conversations.reduce((total, conv) => total + conv.unreadCount, 0)

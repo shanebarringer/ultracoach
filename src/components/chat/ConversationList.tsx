@@ -65,53 +65,57 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
         </div>
       ) : (
         <div className="divide-y divide-gray-200">
-          {conversations.map((conversation) => (
-            <Link
-              key={conversation.user2.id}
-              href={`/chat/${conversation.user2.id}`}
-              className={`block hover:bg-gray-50 transition-colors ${
-                selectedUserId === conversation.user2.id ? 'bg-blue-50' : ''
-              }`}
-            >
-              <div className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {conversation.user2.full_name.charAt(0).toUpperCase()}
+          {conversations.map((conversation) => {
+            const partner = conversation.recipient;
+            const unreadCount = conversation.unreadCount;
+            const partnerId = partner?.id;
+            const partnerName = partner ? `${partner.full_name} (${partner.role.charAt(0).toUpperCase() + partner.role.slice(1)})` : 'Unknown User';
+            // No lastMessage, so just show a default or the time
+            const lastMessageContent = conversation.last_message_at ? 'Last message sent' : `Start a conversation with ${partner?.full_name || 'this user'}`;
+            const lastMessageTime = conversation.last_message_at ? formatLastMessageTime(conversation.last_message_at) : '';
+
+            return (
+              <Link
+                key={partnerId}
+                href={`/chat/${partnerId}`}
+                className={`block hover:bg-gray-50 transition-colors ${
+                  selectedUserId === partnerId ? 'bg-blue-50' : ''
+                }`}
+              >
+                <div className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                        {partner?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {conversation.user2.full_name}
-                      </h3>
-                      {conversation.last_message_at && (
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                          {formatLastMessageTime(conversation.last_message_at)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-sm text-gray-600 truncate">
-                        {conversation.last_message_at
-                          ? truncateMessage(conversation.last_message_at)
-                          : `Start a conversation with ${conversation.user2.full_name}`
-                        }
-                      </p>
-                      {conversation.unreadCount > 0 && (
-                        <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
-                          {conversation.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 capitalize">
-                      {conversation.user2.role}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {partnerName}
+                        </h3>
+                        {lastMessageTime && (
+                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                            {lastMessageTime}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <p className="text-sm text-gray-600 truncate">
+                          {truncateMessage(lastMessageContent)}
+                        </p>
+                        {unreadCount > 0 && (
+                          <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

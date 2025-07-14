@@ -92,15 +92,15 @@ export interface MessageWithUser extends Message {
 
 export interface Conversation {
   id: string
-  user1_id: string
-  user2_id: string
+  sender_id: string
+  recipient_id: string
   last_message_at: string
   created_at: string
 }
 
 export interface ConversationWithUser extends Conversation {
-  user1: User
-  user2: User
+  sender: User
+  recipient: User
   unreadCount: number
 }
 
