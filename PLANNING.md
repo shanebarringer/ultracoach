@@ -221,8 +221,9 @@ pnpm dev
 ### Current Development Status (Updated 2025-07-14)
 - **Project Progress**: 85.0% complete (95/112 tasks) + Complete Design System + HeroUI Integration
 - **Active Milestone**: Enhanced Training Features
-- **Recent Completions**: HeroUI Integration with Mountain Peak Enhanced Design System - Complete UI overhaul with alpine aesthetic
+- **Recent Completions**: HeroUI Integration with Mountain Peak Enhanced Design System - Complete UI overhaul with alpine aesthetic + Fixed dev server CSS processing
 - **Next Priorities**: Race management system, phase progression, and advanced workout planning features
+- **Note**: Turbopack disabled for dev server due to CSS processing issues with HeroUI - consider re-enabling in future optimization milestone
 
 ### Database Operations
 ```bash

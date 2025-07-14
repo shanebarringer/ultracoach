@@ -3,7 +3,21 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { Button, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle, NavbarMenu, NavbarMenuItem } from '@heroui/react'
+import { 
+  Button, 
+  Navbar, 
+  NavbarBrand, 
+  NavbarContent, 
+  NavbarItem, 
+  NavbarMenuToggle, 
+  NavbarMenu, 
+  NavbarMenuItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar
+} from '@heroui/react'
 import NotificationBell from '@/components/common/NotificationBell'
 import { useAtom } from 'jotai'
 import { themeModeAtom } from '@/lib/atoms'
@@ -17,7 +31,13 @@ function ThemeToggle() {
   }
 
   return (
-    <Button isIconOnly variant="light" onClick={toggleTheme} aria-label="Toggle theme">
+    <Button 
+      isIconOnly 
+      variant="light" 
+      onClick={toggleTheme} 
+      aria-label="Toggle theme"
+      className="hover:bg-primary/10 transition-colors"
+    >
       {themeMode === 'light' ? (
         <SunIcon className="h-5 w-5" />
       ) : (
@@ -36,12 +56,28 @@ export default function Header() {
   }
 
   return (
-    <Navbar onMenuOpenChange={setIsMenuOpen} isMenuOpen={isMenuOpen}>
+    <Navbar 
+      onMenuOpenChange={setIsMenuOpen} 
+      isMenuOpen={isMenuOpen}
+      className="bg-background/95 backdrop-blur-md border-b border-divider"
+      height="4rem"
+    >
       <NavbarContent>
-        <NavbarMenuToggle aria-label={isMenuOpen ? "Close menu" : "Open menu"} className="md:hidden" />
+        <NavbarMenuToggle 
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"} 
+          className="md:hidden" 
+        />
         <NavbarBrand>
-          <Link href="/" className="font-bold text-inherit text-2xl">
-            UltraCoach
+          <Link href="/" className="flex items-center gap-3">
+            <span className="text-2xl">🏔️</span>
+            <div className="flex flex-col">
+              <span className="font-black text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                UltraCoach
+              </span>
+              <span className="text-xs text-muted font-medium hidden md:block">
+                Conquer Your Peaks
+              </span>
+            </div>
           </Link>
         </NavbarBrand>
       </NavbarContent>
@@ -50,70 +86,58 @@ export default function Header() {
         {session ? (
           <>
             <NavbarItem>
-              <Link href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}>
+              <Link 
+                href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
                 Dashboard
               </Link>
             </NavbarItem>
             {session.user.role === 'coach' && (
               <NavbarItem>
-                <Link href="/training-plans">
+                <Link 
+                  href="/training-plans"
+                  className="text-foreground hover:text-primary transition-colors font-medium"
+                >
                   Training Plans
                 </Link>
               </NavbarItem>
             )}
             {session.user.role === 'coach' && (
               <NavbarItem>
-                <Link href="/runners">
+                <Link 
+                  href="/runners"
+                  className="text-foreground hover:text-primary transition-colors font-medium"
+                >
                   Runners
                 </Link>
               </NavbarItem>
             )}
             {session.user.role === 'coach' && (
               <NavbarItem>
-                <Link href="/weekly-planner">
+                <Link 
+                  href="/weekly-planner"
+                  className="text-foreground hover:text-primary transition-colors font-medium"
+                >
                   Weekly Planner
                 </Link>
               </NavbarItem>
             )}
             <NavbarItem>
-              <Link href="/workouts">
+              <Link 
+                href="/workouts"
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
                 Workouts
               </Link>
             </NavbarItem>
             <NavbarItem>
-              <Link href="/chat">
+              <Link 
+                href="/chat"
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
                 Messages
               </Link>
-            </NavbarItem>
-            <NavbarItem>
-              <NotificationBell />
-            </NavbarItem>
-            <NavbarItem>
-              <ThemeToggle />
-            </NavbarItem>
-            <NavbarItem className="relative">
-              <Button
-                variant="light"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                {session.user.name}
-              </Button>
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
             </NavbarItem>
           </>
         ) : (
@@ -132,6 +156,44 @@ export default function Header() {
               >
                 Sign Up
               </Button>
+            </NavbarItem>
+          </>
+        )}
+      </NavbarContent>
+
+      <NavbarContent justify="end">
+        {session && (
+          <>
+            <NavbarItem>
+              <NotificationBell />
+            </NavbarItem>
+            <NavbarItem>
+              <ThemeToggle />
+            </NavbarItem>
+            <NavbarItem>
+              <Dropdown>
+                <DropdownTrigger>
+                  <Avatar 
+                    name={session.user.name || 'User'}
+                    className="cursor-pointer bg-gradient-to-br from-primary to-secondary text-white"
+                  />
+                </DropdownTrigger>
+                <DropdownMenu aria-label="User menu">
+                  <DropdownItem key="profile" as={Link} href="/profile">
+                    Profile
+                  </DropdownItem>
+                  <DropdownItem key="settings">
+                    Settings
+                  </DropdownItem>
+                  <DropdownItem 
+                    key="logout" 
+                    color="danger"
+                    onClick={handleSignOut}
+                  >
+                    Sign Out
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </NavbarItem>
           </>
         )}

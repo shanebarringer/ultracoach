@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
-import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react'
+import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Progress } from '@heroui/react'
+import { CalendarIcon, MapPinIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
 import { useTrainingPlans } from '@/hooks/useTrainingPlans'
 import type { TrainingPlan, User, Race } from '@/lib/supabase'
 
@@ -15,13 +16,31 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
   const [isDeleting, setIsDeleting] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlans()
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  const getStatusColor = (archived: boolean) => {
+    return archived ? 'default' : 'primary'
   }
+
+  const getPhaseColor = (phase: string) => {
+    switch (phase?.toLowerCase()) {
+      case 'base': return 'success'  // Zone 1 color
+      case 'build': return 'primary' // Zone 2 color  
+      case 'peak': return 'danger'   // Zone 4 color
+      case 'taper': return 'secondary' // Zone 5 color
+      case 'recovery': return 'warning' // Zone 3 color
+      default: return 'default'
+    }
+  }
+
+  const getGoalTypeColor = (goalType: string) => {
+    switch (goalType?.toLowerCase()) {
+      case 'completion': return 'success'
+      case 'time': return 'warning'
+      case 'placement': return 'danger'
+      default: return 'default'
+    }
+  }
+
+  
 
   const handleArchiveToggle = async () => {
     setIsArchiving(true)
@@ -52,133 +71,163 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
 
   return (
     <Card 
-      className={`hover:shadow-lg transition-shadow ${plan.archived ? 'opacity-60' : ''}`}
+      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-t-4 border-t-primary/60 ${plan.archived ? 'opacity-60' : ''}`}
       isPressable={false}
     >
-      <CardHeader className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">{plan.title}</h3>
-            {plan.archived && (
-              <Chip size="sm" variant="flat" color="default">
-                Archived
-              </Chip>
-            )}
-          </div>
-          <p className="text-small text-foreground-500 mt-1">{plan.description}</p>
+      <CardHeader className="flex justify-between items-start pb-2">
+        <div className="flex flex-col">
+          <h3 className="text-lg font-bold text-foreground">{plan.title}</h3>
+          {plan.race && (
+            <p className="text-sm text-foreground-500">{plan.race.name}</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-right">
-            <div className="text-tiny text-foreground-400">Created</div>
-            <div className="text-small font-medium">
-              {formatDate(plan.created_at)}
-            </div>
-          </div>
-          
-          {/* Action Menu */}
-          <Dropdown>
-            <DropdownTrigger>
-              <Button
-                isIconOnly
-                variant="light"
-                size="sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
-                </svg>
-              </Button>
-            </DropdownTrigger>
-            <DropdownMenu>
-              <DropdownItem
-                key="archive"
-                onClick={handleArchiveToggle}
-                isDisabled={isArchiving || isDeleting}
-              >
-                {isArchiving 
-                  ? 'Updating...'
-                  : plan.archived 
-                    ? 'Restore Plan' 
-                    : 'Archive Plan'
-                }
-              </DropdownItem>
-              <DropdownItem
-                key="delete"
-                color="danger"
-                onClick={handleDelete}
-                isDisabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Plan'}
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-        </div>
-      </CardHeader>
-
-      <CardBody>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          {plan.race && (
-            <div>
-              <div className="text-xs text-gray-500">Target Race</div>
-              <div className="text-sm font-medium text-gray-900">
-                {plan.race.name} ({new Date(plan.race.date).toLocaleDateString()})
-              </div>
-            </div>
-          )}
-          {plan.goal_type && (
-            <div>
-              <div className="text-xs text-gray-500">Goal Type</div>
-              <div className="text-sm font-medium text-gray-900 capitalize">
-                {plan.goal_type.replace('_', ' ')}
-              </div>
-            </div>
-          )}
-          {plan.plan_type && (
-            <div>
-              <div className="text-xs text-gray-500">Plan Type</div>
-              <div className="text-sm font-medium text-gray-900 capitalize">
-                {plan.plan_type.replace('_', ' ')}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {userRole === 'coach' && plan.runners && (
-          <div>
-            <div className="text-tiny text-foreground-400">Runner</div>
-            <div className="text-small font-medium">
-              {plan.runners.full_name}
-            </div>
-          </div>
-        )}
-        {userRole === 'runner' && plan.coaches && (
-          <div>
-            <div className="text-tiny text-foreground-400">Coach</div>
-            <div className="text-small font-medium">
-              {plan.coaches.full_name}
-            </div>
-          </div>
-        )}
-      </CardBody>
-
-      <CardFooter className="flex justify-between items-center">
-        <div className="flex space-x-2">
           <Chip 
-            size="sm" 
+            color={getStatusColor(plan.archived)}
+            size="sm"
             variant="flat"
-            color={plan.archived ? 'default' : 'primary'}
+            className="capitalize"
           >
             {plan.archived ? 'Archived' : 'Active'}
           </Chip>
+          {userRole === 'coach' && (
+            <Dropdown>
+              <DropdownTrigger>
+                <Button 
+                  isIconOnly 
+                  size="sm" 
+                  variant="light"
+                  className="hover:bg-default-100"
+                >
+                  <EllipsisHorizontalIcon className="w-4 h-4" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="edit">Edit Plan</DropdownItem>
+                <DropdownItem key="duplicate">Duplicate</DropdownItem>
+                <DropdownItem 
+                  key="archive" 
+                  color="warning"
+                  onClick={handleArchiveToggle}
+                  isDisabled={isArchiving || isDeleting}
+                >
+                  {isArchiving 
+                    ? 'Updating...'
+                    : plan.archived 
+                      ? 'Restore Plan' 
+                      : 'Archive Plan'
+                  }
+                </DropdownItem>
+                <DropdownItem
+                  key="delete"
+                  color="danger"
+                  onClick={handleDelete}
+                  isDisabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Plan'}
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          )}
         </div>
-        <Button
-          as={Link}
-          href={`/training-plans/${plan.id}`}
-          variant="light"
-          color="primary"
-          size="sm"
-        >
-          View Details →
-        </Button>
+      </CardHeader>
+
+      <CardBody className="py-4">
+        <div className="space-y-4">
+          {/* Race Information */}
+          {plan.race && (
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1 text-foreground-600">
+                <CalendarIcon className="w-4 h-4" />
+                <span>{new Date(plan.race.date).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-1 text-foreground-600">
+                <MapPinIcon className="w-4 h-4" />
+                <span>{plan.race.distance || 'Ultra'}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Current Phase */}
+          {plan.current_phase && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground-600">Current Phase:</span>
+              <Chip 
+                color={getPhaseColor(plan.current_phase)}
+                size="sm"
+                variant="dot"
+                className="capitalize"
+              >
+                {plan.current_phase}
+              </Chip>
+            </div>
+          )}
+
+          {/* Progress */}
+          {plan.progress !== undefined && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-foreground-600">Progress</span>
+                <span className="font-medium">{plan.progress}% Complete</span>
+              </div>
+              <Progress 
+                value={plan.progress}
+                color="primary"
+                className="h-2"
+                classNames={{
+                  indicator: "bg-gradient-to-r from-primary to-secondary"
+                }}
+              />
+            </div>
+          )}
+
+          {/* Goal Information */}
+          {plan.goal_type && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-600">Goal:</span>
+              <Chip
+                color={getGoalTypeColor(plan.goal_type)}
+                size="sm"
+                variant="flat"
+                className="capitalize"
+              >
+                {plan.goal_type.replace('_', ' ')}
+              </Chip>
+            </div>
+          )}
+
+          {/* Coach/Runner Info */}
+          {userRole === 'coach' && plan.runners && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-600">Runner:</span>
+              <span className="font-medium">{plan.runners.full_name}</span>
+            </div>
+          )}
+          {userRole === 'runner' && plan.coaches && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-600">Coach:</span>
+              <span className="font-medium">{plan.coaches.full_name}</span>
+            </div>
+          )}
+        </div>
+      </CardBody>
+
+      <CardFooter className="pt-4">
+        <div className="flex justify-between items-center w-full">
+          <Button 
+            as={Link}
+            href={`/training-plans/${plan.id}`}
+            color="primary" 
+            variant="flat"
+            size="sm"
+            className="font-medium"
+          >
+            View Details
+          </Button>
+          <div className="text-xs text-foreground-500">
+            {plan.weeks_remaining ? `${plan.weeks_remaining} weeks left` : 'Completed'}
+          </div>
+        </div>
       </CardFooter>
     </Card>
   )
