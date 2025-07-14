@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-import { Button, Input } from '@heroui/react'
+import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
+import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
@@ -59,60 +59,93 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to UltraCoach
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              label="Email address"
-              autoComplete="email"
-              required
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              isInvalid={!!errors.email}
-              errorMessage={errors.email}
-            />
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              label="Password"
-              autoComplete="current-password"
-              required
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              isInvalid={!!errors.password}
-              errorMessage={errors.password}
-            />
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <Card className="border-t-4 border-t-primary shadow-2xl">
+          <CardHeader className="text-center pb-4">
+            <div className="flex flex-col items-center space-y-3">
+              <MountainSnowIcon className="h-12 w-12 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  🏔️ UltraCoach
+                </h1>
+                <p className="text-lg text-foreground-600 mt-1">Base Camp Access</p>
+              </div>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody className="pt-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email address"
+                  autoComplete="email"
+                  required
+                  placeholder="Enter your expedition email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  isInvalid={!!errors.email}
+                  errorMessage={errors.email}
+                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Enter your summit key"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  isInvalid={!!errors.password}
+                  errorMessage={errors.password}
+                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+              </div>
 
-          <div>
-            <Button
-              type="submit"
-              color="primary"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </div>
-        </form>
+              <Button
+                type="submit"
+                color="primary"
+                size="lg"
+                className="w-full font-semibold"
+                isLoading={loading}
+                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+              >
+                {loading ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
+              </Button>
+            </form>
+
+            <Divider className="my-6" />
+            
+            <div className="text-center">
+              <p className="text-sm text-foreground-600">
+                New to the mountains?{' '}
+                <Link 
+                  href="/auth/signup" 
+                  className="font-semibold text-primary hover:text-primary-600 transition-colors"
+                >
+                  Join the expedition
+                </Link>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-import { Button, Input, Select, SelectItem } from '@heroui/react'
+import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
+import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -72,86 +72,139 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Create your UltraCoach account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
-            Or{' '}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <Input
-              id="fullName"
-              name="fullName"
-              type="text"
-              label="Full Name"
-              required
-              placeholder="Enter your full name"
-              value={formData.fullName}
-              onChange={handleChange}
-              isInvalid={!!errors.fullName}
-              errorMessage={errors.fullName}
-            />
-            
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              label="Email Address"
-              required
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              isInvalid={!!errors.email}
-              errorMessage={errors.email}
-            />
-            
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              label="Password"
-              required
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleChange}
-              isInvalid={!!errors.password}
-              errorMessage={errors.password}
-            />
-            
-            <Select
-              id="role"
-              name="role"
-              label="I am a..."
-              selectedKeys={[formData.role]}
-              onSelectionChange={(keys) => {
-                const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
-                setFormData(prev => ({ ...prev, role: selectedRole }))
-              }}
-            >
-              <SelectItem key="runner">Runner</SelectItem>
-              <SelectItem key="coach">Coach</SelectItem>
-            </Select>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <Card className="border-t-4 border-t-secondary shadow-2xl">
+          <CardHeader className="text-center pb-4">
+            <div className="flex flex-col items-center space-y-3">
+              <MountainSnowIcon className="h-12 w-12 text-secondary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  🏔️ UltraCoach
+                </h1>
+                <p className="text-lg text-foreground-600 mt-1">Join the Expedition</p>
+              </div>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody className="pt-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  label="Full Name"
+                  required
+                  placeholder="Enter your expedition name"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  isInvalid={!!errors.fullName}
+                  errorMessage={errors.fullName}
+                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  required
+                  placeholder="Enter your base camp email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  isInvalid={!!errors.email}
+                  errorMessage={errors.email}
+                  startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  required
+                  placeholder="Create your summit key"
+                  value={formData.password}
+                  onChange={handleChange}
+                  isInvalid={!!errors.password}
+                  errorMessage={errors.password}
+                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Select
+                  id="role"
+                  name="role"
+                  label="Choose your path"
+                  selectedKeys={[formData.role]}
+                  onSelectionChange={(keys) => {
+                    const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                    setFormData(prev => ({ ...prev, role: selectedRole }))
+                  }}
+                  startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    label: "text-foreground-600",
+                    value: "text-foreground"
+                  }}
+                >
+                  <SelectItem key="runner" startContent="🏃">
+                    <span className="font-medium">Trail Runner</span>
+                    <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
+                  </SelectItem>
+                  <SelectItem key="coach" startContent="🏔️">
+                    <span className="font-medium">Mountain Guide</span>
+                    <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
+                  </SelectItem>
+                </Select>
+              </div>
 
-          <div>
-            <Button
-              type="submit"
-              color="primary"
-              className="w-full dark:text-white"
-              disabled={loading}
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </Button>
-          </div>
-        </form>
+              <Button
+                type="submit"
+                color="secondary"
+                size="lg"
+                className="w-full font-semibold"
+                isLoading={loading}
+                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+              >
+                {loading ? 'Preparing your expedition...' : 'Start Your Journey'}
+              </Button>
+            </form>
+
+            <Divider className="my-6" />
+            
+            <div className="text-center">
+              <p className="text-sm text-foreground-600">
+                Already have a base camp?{' '}
+                <Link 
+                  href="/auth/signin" 
+                  className="font-semibold text-primary hover:text-primary-600 transition-colors"
+                >
+                  Return to expedition
+                </Link>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   )
