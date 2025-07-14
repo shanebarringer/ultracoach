@@ -10,6 +10,10 @@ interface BulkWorkout {
   plannedDistance?: number | null
   plannedDuration?: number | null
   notes?: string
+  category?: 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | null
+  intensity?: number | null
+  terrain?: 'road' | 'trail' | 'track' | 'treadmill' | null
+  elevationGain?: number | null
 }
 
 export async function POST(request: NextRequest) {
@@ -69,7 +73,11 @@ export async function POST(request: NextRequest) {
       planned_distance: workout.plannedDistance,
       planned_duration: workout.plannedDuration,
       workout_notes: workout.notes || '',
-      status: 'planned'
+      status: 'planned',
+      category: workout.category,
+      intensity: workout.intensity,
+      terrain: workout.terrain,
+      elevation_gain: workout.elevationGain
     }))
 
     // Bulk insert workouts
@@ -110,8 +118,8 @@ export async function POST(request: NextRequest) {
               .from('notifications')
               .insert([{
                 user_id: runner.id,
-                title: 'New Weekly Training Plan',
-                message: `${coachName} has created ${workoutCount} new workouts for your training plan.`,
+                title: '⛰️ New Weekly Expedition Plan',
+                message: `${coachName} has architected ${workoutCount} new summit ascents for your training expedition.`,
                 type: 'workout', // changed from 'success' to 'workout'
                 category: 'training_plan',
                 data: {

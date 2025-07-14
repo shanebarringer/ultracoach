@@ -121,7 +121,7 @@ export default function WeeklyPlannerPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-8 py-8">
         {/* Hero Section */}
         <Card className="mb-8 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
           <CardHeader>
