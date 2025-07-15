@@ -16,11 +16,11 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-15)
-- **Active Milestone**: Enhanced Training Features (Milestone 3) - 98% Complete!
-- **Completion**: 96.8% (109/115 total tasks) + **COMPLETE UI/UX TRANSFORMATION**
-- **Recent Major Achievement**: Fixed broken notifications system + Complete HeroUI landing page transformation
+- **Active Milestone**: Enhanced Training Features (Milestone 3) - 100% Complete! 🎉
+- **Completion**: 98.7% (114/115 total tasks) + **COMPLETE MESSAGE-WORKOUT LINKING**
+- **Recent Major Achievement**: Complete message-workout linking system with contextual communication
 - **Performance**: All builds passing, production-ready with professional alpine aesthetic throughout
-- **Next Priority**: Monthly calendar view, performance analytics, and message-workout linking features
+- **Next Priority**: Monthly calendar view, performance analytics, and advanced training features
 
 ## 🏗️ Architecture & Technology
 
@@ -251,21 +251,24 @@ pnpm lint
 3. **Plan Sequencing** - Multi-race planning workflow (50K → 50M → 100K)
 4. Advanced workout planning tools and performance optimization
 
-### ✅ Latest Major Achievement: Complete UI/UX Transformation (COMPLETED)
+### ✅ Latest Major Achievement: Complete Message-Workout Linking System (COMPLETED)
 
-**Recently Completed: Critical User Experience Fixes**
-- ✅ **Notifications System Fixed**: Rebuilt from broken placeholder to fully functional real-time notification center
-  - Professional HeroUI dropdown with badges, chips, and visual indicators
-  - Real-time updates with useNotifications hook integration
-  - Mark as read functionality (individual and bulk)
-  - Mountain Peak Enhanced styling with expedition terminology
-  - Empty states and human-readable timestamps with date-fns
-- ✅ **Landing Page HeroUI Transformation**: Complete professional alpine branding overhaul
-  - Mountain Peak Enhanced hero section with gradient backgrounds and silhouette decorations
-  - HeroUI Cards, Buttons, Chips with hover effects and proper spacing
-  - Expedition-themed content ("Conquer Your Peaks", "Sherpa Guidance", "Base Camp")
-  - Multiple CTAs with proper button variants and responsive design
-  - Lucide icons throughout for enhanced visual design
+**Recently Completed: Message-Workout Linking System**
+- ✅ **Contextual Communication**: Complete system for linking messages to specific workouts
+  - WorkoutContext component displaying workout details in chat messages
+  - WorkoutLinkSelector modal for choosing workouts and link types
+  - Support for 5 link types: reference, feedback, question, update, plan_change
+  - Professional Mountain Peak Enhanced styling throughout
+- ✅ **Enhanced Database Schema**: Comprehensive message-workout relationship system
+  - Added workout_id and context_type columns to messages table
+  - New message_workout_links table for many-to-many relationships
+  - Conversations table for grouping related messages
+  - Complete RLS policies and performance indexes
+- ✅ **Chat Interface Enhancements**: Professional workout-aware communication
+  - Workout filtering dropdown in chat header
+  - Active filter display with closeable chips
+  - Enhanced message display with workout context cards
+  - Real-time updates for workout-linked messages
 
 **Previous Achievement: Race Management System**
 - ✅ **Race Expeditions Page**: Complete interface for managing target races with professional Mountain Peak styling
@@ -343,6 +346,12 @@ UltraCoach aims to be a professional-grade ultramarathon coaching platform. Ever
 - **User experience** that's intuitive for both coaches and athletes
 
 The codebase should be maintainable, performant, and scalable to support growing usage while maintaining the high-quality user experience expected in professional coaching tools.
+
+## 🗺️ Files Referenced in Various Project Documents
+- **@CLAUDE.md**: This project guidance document
+- **@PLANNING.md**: Project vision and architectural roadmap
+- **@TASKS.md**: Current milestones and task tracking
+- **@designs/README.md**: Design system documentation
 
 ---
 
