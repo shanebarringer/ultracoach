@@ -1,11 +1,10 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
-import type { Session, User as BetterAuthUser } from './better-auth'
 
 // Authentication atoms
-export const sessionAtom = atom<Session | null>(null)
-export const userAtom = atom<BetterAuthUser | null>(null)
+export const sessionAtom = atom<Record<string, unknown> | null>(null)
+export const userAtom = atom<Record<string, unknown> | null>(null)
 export const authLoadingAtom = atom<boolean>(true)
 
 // Core application atoms

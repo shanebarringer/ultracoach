@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useSetAtom } from 'jotai'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useCallback, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'

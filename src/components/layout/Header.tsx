@@ -187,7 +187,7 @@ export default function Header() {
               <Dropdown>
                 <DropdownTrigger>
                   <Avatar 
-                    name={session.user.name || 'User'}
+                    name={session.user?.name as string || 'User'}
                     className="cursor-pointer bg-gradient-to-br from-primary to-secondary text-white"
                   />
                 </DropdownTrigger>

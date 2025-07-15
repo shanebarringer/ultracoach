@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { authClient } from '@/lib/better-auth-client';
-import type { Session, User } from '@/lib/better-auth';
 
 interface AuthState {
-  user: User | null;
-  session: Session | null;
+  user: Record<string, unknown> | null;
+  session: Record<string, unknown> | null;
   loading: boolean;
   error: string | null;
 }
@@ -28,7 +27,7 @@ export function useBetterAuth() {
             user: null,
             session: null,
             loading: false,
-            error: error.message
+            error: error.message || null
           });
           return;
         }
@@ -65,14 +64,14 @@ export function useBetterAuth() {
         setAuthState(prev => ({
           ...prev,
           loading: false,
-          error: error.message
+          error: error.message || null
         }));
         return { success: false, error: error.message };
       }
 
       setAuthState({
         user: data.user,
-        session: data.session,
+        session: data as Record<string, unknown>,
         loading: false,
         error: null
       });
@@ -89,30 +88,28 @@ export function useBetterAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, role: 'runner' | 'coach' = 'runner') => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }));
       
       const { data, error } = await authClient.signUp.email({
         email,
         password,
-        name,
-        role,
-        full_name: name
+        name
       });
 
       if (error) {
         setAuthState(prev => ({
           ...prev,
           loading: false,
-          error: error.message
+          error: error.message || null
         }));
         return { success: false, error: error.message };
       }
 
       setAuthState({
         user: data.user,
-        session: data.session,
+        session: data as Record<string, unknown>,
         loading: false,
         error: null
       });
@@ -139,7 +136,7 @@ export function useBetterAuth() {
         setAuthState(prev => ({
           ...prev,
           loading: false,
-          error: error.message
+          error: error.message || null
         }));
         return { success: false, error: error.message };
       }

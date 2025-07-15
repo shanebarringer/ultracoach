@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import Layout from '@/components/layout/Layout'

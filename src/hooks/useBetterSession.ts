@@ -41,8 +41,8 @@ export function useBetterSession() {
         return { success: false, error: error.message }
       }
 
-      setSession(session)
-      setUser(session?.user || null)
+      setSession(session as Record<string, unknown>)
+      setUser(session?.user as Record<string, unknown> || null)
       
       return { success: true, session }
     } catch (error) {
@@ -69,10 +69,10 @@ export function useSession() {
   return {
     data: session ? {
       user: {
-        id: user?.id || '',
-        email: user?.email || '',
-        name: user?.name || '',
-        role: user?.role || 'runner'
+        id: (user?.id as string) || '',
+        email: (user?.email as string) || '',
+        name: (user?.name as string) || '',
+        role: (user?.role as 'runner' | 'coach') || 'runner'
       }
     } : null,
     status: loading ? 'loading' : (session ? 'authenticated' : 'unauthenticated')

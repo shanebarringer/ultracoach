@@ -12,7 +12,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({ email: '', password: '' })
   const router = useRouter()
-  const { signIn, loading, error } = useBetterAuth()
+  const { signIn, loading } = useBetterAuth()
 
   const validate = () => {
     const newErrors = { email: '', password: '' }
@@ -38,7 +38,8 @@ export default function SignIn() {
       setErrors({ ...errors, email: result.error || 'Invalid credentials' })
     } else {
       // Redirect based on user role
-      if (result.data?.user?.role === 'coach') {
+      const userRole = (result.data?.user as { role?: string })?.role || 'runner'
+      if (userRole === 'coach') {
         router.push('/dashboard/coach')
       } else {
         router.push('/dashboard/runner')

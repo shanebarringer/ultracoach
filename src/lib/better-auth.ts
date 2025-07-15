@@ -47,7 +47,10 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
-export type User = typeof auth.$Infer.Session.user;
+export type User = typeof auth.$Infer.Session.user & {
+  role: "runner" | "coach";
+  full_name?: string | null;
+};
 
 // Type definitions for the application
 declare module "better-auth" {

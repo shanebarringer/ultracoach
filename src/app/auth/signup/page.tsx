@@ -16,7 +16,7 @@ export default function SignUp() {
   })
   const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
   const router = useRouter()
-  const { signUp, loading, error } = useBetterAuth()
+  const { signUp, loading } = useBetterAuth()
 
   const validate = () => {
     const newErrors = { email: '', password: '', fullName: '' }
@@ -41,13 +41,14 @@ export default function SignUp() {
     e.preventDefault()
     if (!validate()) return
 
-    const result = await signUp(formData.email, formData.password, formData.fullName, formData.role)
+    const result = await signUp(formData.email, formData.password, formData.fullName)
 
     if (!result.success) {
       setErrors({ ...errors, email: result.error || 'An error occurred' })
     } else {
       // Redirect based on user role
-      if (result.data?.user?.role === 'coach') {
+      const userRole = (result.data?.user as { role?: string })?.role || 'runner'
+      if (userRole === 'coach') {
         router.push('/dashboard/coach')
       } else {
         router.push('/dashboard/runner')

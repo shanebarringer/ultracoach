@@ -1,35 +1,37 @@
-import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-export default withAuth(
-  function middleware() {
-    // Add any additional middleware logic here if needed
+export function middleware(request: NextRequest) {
+  // Allow public routes
+  const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth']
+  
+  const isPublicRoute = publicRoutes.some(route => 
+    request.nextUrl.pathname.startsWith(route)
+  )
+  
+  if (isPublicRoute) {
     return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // Allow access to auth pages without token
-        if (req.nextUrl.pathname.startsWith('/auth/')) {
-          return true
-        }
-        
-        // Require token for all other pages except public API routes
-        if (req.nextUrl.pathname.startsWith('/api/auth/')) {
-          return true
-        }
-        
-        return !!token
-      },
-    },
   }
-)
+  
+  // Allow static files and API routes
+  if (
+    request.nextUrl.pathname.startsWith('/_next') ||
+    request.nextUrl.pathname.startsWith('/api/') ||
+    request.nextUrl.pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+  
+  // For now, allow all routes until we implement proper session checking
+  // TODO: Implement Better Auth session validation
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/auth (NextAuth routes)
+     * - api/auth (Better Auth routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
