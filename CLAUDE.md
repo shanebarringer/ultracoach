@@ -16,11 +16,11 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-15)
-- **Active Milestone**: Enhanced Training Features (Milestone 3) - 100% Complete! 🎉
+- **Active Milestone**: Better Auth Migration (Milestone 4) - 50% Complete! 🔄
 - **Completion**: 98.7% (114/115 total tasks) + **COMPLETE MESSAGE-WORKOUT LINKING**
-- **Recent Major Achievement**: Complete message-workout linking system with contextual communication
+- **Recent Major Achievement**: Better Auth migration in progress - security improvements and modern authentication
 - **Performance**: All builds passing, production-ready with professional alpine aesthetic throughout
-- **Next Priority**: Monthly calendar view, performance analytics, and advanced training features
+- **Current Focus**: Migrating from NextAuth.js to Better Auth for improved authentication stability
 
 ## 🏗️ Architecture & Technology
 
@@ -32,7 +32,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Icons**: Lucide React icons for enhanced visual design
 - **State**: Jotai atomic state management (migrated from React Context)
 - **Database**: Supabase PostgreSQL with enhanced training schema
-- **Auth**: NextAuth.js with Supabase integration
+- **Auth**: Better Auth (migrating from NextAuth.js for improved stability)
 - **Package Manager**: pnpm (better performance than npm)
 - **HTTP Client**: Axios for better request handling and error management
 - **Styling Utilities**: classnames for conditional CSS classes
@@ -114,6 +114,13 @@ pnpm lint
 - **Access**: `supabase/temp/credentials/test_users_2025_07_15.txt` for login details
 - **Consistent Testing**: Fixed UUIDs prevent messaging errors and enable reliable testing
 
+### Better Auth Migration (🔄 IN PROGRESS)
+- **Migration**: Replacing NextAuth.js with Better Auth for improved authentication stability
+- **Security**: Migrated to new Supabase API keys (sb_publishable_ and sb_secret_)
+- **Configuration**: Created Better Auth configuration with PostgreSQL adapter
+- **Progress**: Environment setup complete, database migration pending
+- **Benefits**: Better TypeScript support, improved session management, fewer logout issues
+
 ## 🔧 Important Development Guidelines
 
 ### State Management (CRITICAL)
@@ -140,6 +147,8 @@ pnpm lint
 - **No credentials in code**: Use environment variables
 - **Test data only**: Test credentials excluded from git
 - **RLS policies**: Database access controlled by user roles
+- **API Key Migration**: Upgraded to new Supabase API keys (sb_publishable_ and sb_secret_)
+- **Security Incident**: Resolved GitHub security alert for leaked service key (July 15, 2025)
 
 ## 📋 Session Summary (What We've Accomplished)
 
@@ -284,6 +293,26 @@ pnpm lint
 - ✅ Mountain Peak Enhanced design system applied consistently
 - ✅ Professional loading states and error handling
 - ✅ Production-ready builds with zero errors
+
+### 🔄 Current Session: Better Auth Migration (IN PROGRESS)
+
+**Security Improvements:**
+- ✅ **Resolved Security Alert**: Fixed GitHub security alert for leaked Supabase service key
+- ✅ **API Key Migration**: Upgraded to new Supabase API keys (sb_publishable_ and sb_secret_)
+- ✅ **Clean Test Scripts**: Removed hardcoded secrets, created secure test utilities
+- ✅ **Environment Security**: Updated .env.local with proper key management
+
+**Better Auth Setup:**
+- ✅ **Package Installation**: Installed Better Auth, @better-auth/cli, pg, @types/pg, dotenv
+- ✅ **Configuration**: Created Better Auth configuration with PostgreSQL adapter
+- ✅ **Database Backup**: Backed up all user data before migration (66 total records)
+- ✅ **Environment Setup**: Configured Better Auth environment variables
+
+**Next Steps:**
+- 🔄 **Database Migration**: Generate and run Better Auth database migration
+- 🔄 **API Routes**: Replace NextAuth API routes with Better Auth handlers
+- 🔄 **Frontend Migration**: Update authentication components and hooks
+- 🔄 **Testing**: Verify authentication flows and existing functionality
 
 ### 🎯 Key Success Metrics Achieved
 - ✅ Zero React Context for global state (notifications, workouts, training plans, chat system migrated)
