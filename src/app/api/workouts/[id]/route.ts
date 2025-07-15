@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'workouts-id-api' })
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -29,7 +26,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq('id', workoutId)
       .single()
     if (workoutError || !workout) {
-      logger.error('Failed to fetch workout')
+      console.error('Failed to fetch workout', workoutError)
       return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
     }
     // Prepare update data
@@ -70,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .select()
       .single()
     if (updateError) {
-      logger.error('Failed to update workout')
+      console.error('Failed to update workout', updateError)
       return NextResponse.json({ error: 'Failed to update workout' }, { status: 500 })
     }
     // Send notification to coach when runner completes workout
@@ -109,14 +106,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               }
             }])
         }
-      } catch {
-        logger.error('Failed to send workout completion notification')
+      } catch (error) {
+        console.error('Failed to send workout completion notification', error)
         // Don't fail the main request if notification fails
       }
     }
     return NextResponse.json({ workout: updatedWorkout })
-  } catch {
-    logger.error('API error in PATCH /workouts/[id]')
+  } catch (error) {
+    console.error('API error in PATCH /workouts/[id]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

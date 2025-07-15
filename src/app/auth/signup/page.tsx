@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
+import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -11,13 +13,33 @@ export default function SignUp() {
     fullName: '',
     role: 'runner' as 'runner' | 'coach'
   })
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  const validate = () => {
+    const newErrors = { email: '', password: '', fullName: '' }
+    if (!formData.fullName) {
+      newErrors.fullName = 'Full name is required.'
+    }
+    if (!formData.email) {
+      newErrors.email = 'Email is required.'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email address is invalid.'
+    }
+    if (!formData.password) {
+      newErrors.password = 'Password is required.'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters.'
+    }
+    setErrors(newErrors)
+    return !newErrors.email && !newErrors.password && !newErrors.fullName
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    if (!validate()) return
+
     setLoading(true)
 
     try {
@@ -33,10 +55,10 @@ export default function SignUp() {
         router.push('/auth/signin?message=Account created successfully')
       } else {
         const data = await response.json()
-        setError(data.error || 'An error occurred')
+        setErrors({ ...errors, email: data.error || 'An error occurred' })
       }
     } catch {
-      setError('An error occurred. Please try again.')
+      setErrors({ ...errors, email: 'An error occurred. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -50,101 +72,139 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your UltraCoach account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <Card className="border-t-4 border-t-secondary shadow-2xl">
+          <CardHeader className="text-center pb-4">
+            <div className="flex flex-col items-center space-y-3">
+              <MountainSnowIcon className="h-12 w-12 text-secondary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  🏔️ UltraCoach
+                </h1>
+                <p className="text-lg text-foreground-600 mt-1">Join the Expedition</p>
+              </div>
             </div>
-          )}
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                I am a...
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="runner">Runner</option>
-                <option value="coach">Coach</option>
-              </select>
-            </div>
-          </div>
+          </CardHeader>
+          <Divider />
+          <CardBody className="pt-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  label="Full Name"
+                  required
+                  placeholder="Enter your expedition name"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  isInvalid={!!errors.fullName}
+                  errorMessage={errors.fullName}
+                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email Address"
+                  required
+                  placeholder="Enter your base camp email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  isInvalid={!!errors.email}
+                  errorMessage={errors.email}
+                  startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  label="Password"
+                  required
+                  placeholder="Create your summit key"
+                  value={formData.password}
+                  onChange={handleChange}
+                  isInvalid={!!errors.password}
+                  errorMessage={errors.password}
+                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    input: "text-foreground",
+                    label: "text-foreground-600"
+                  }}
+                />
+                
+                <Select
+                  id="role"
+                  name="role"
+                  label="Choose your path"
+                  selectedKeys={[formData.role]}
+                  onSelectionChange={(keys) => {
+                    const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                    setFormData(prev => ({ ...prev, role: selectedRole }))
+                  }}
+                  startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
+                  variant="bordered"
+                  size="lg"
+                  classNames={{
+                    label: "text-foreground-600",
+                    value: "text-foreground"
+                  }}
+                >
+                  <SelectItem key="runner" startContent="🏃">
+                    <span className="font-medium">Trail Runner</span>
+                    <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
+                  </SelectItem>
+                  <SelectItem key="coach" startContent="🏔️">
+                    <span className="font-medium">Mountain Guide</span>
+                    <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
+                  </SelectItem>
+                </Select>
+              </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create account'}
-            </button>
-          </div>
-        </form>
+              <Button
+                type="submit"
+                color="secondary"
+                size="lg"
+                className="w-full font-semibold"
+                isLoading={loading}
+                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+              >
+                {loading ? 'Preparing your expedition...' : 'Start Your Journey'}
+              </Button>
+            </form>
+
+            <Divider className="my-6" />
+            
+            <div className="text-center">
+              <p className="text-sm text-foreground-600">
+                Already have a base camp?{' '}
+                <Link 
+                  href="/auth/signin" 
+                  className="font-semibold text-primary hover:text-primary-600 transition-colors"
+                >
+                  Return to expedition
+                </Link>
+              </p>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   )

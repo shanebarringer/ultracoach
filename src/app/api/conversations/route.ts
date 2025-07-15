@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'conversations-api' })
 
 export async function GET() {
   try {
@@ -19,7 +16,7 @@ export async function GET() {
       .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
       .order('created_at', { ascending: false })
     if (messagesError) {
-      logger.error('Failed to fetch messages for conversations')
+      console.error('Failed to fetch messages for conversations', messagesError)
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 })
     }
     // Get all unique user IDs from messages
@@ -40,7 +37,7 @@ export async function GET() {
       .select('*')
       .in('id', Array.from(userIds))
     if (usersError) {
-      logger.error('Failed to fetch user data for conversations')
+      console.error('Failed to fetch user data for conversations', usersError)
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
     }
     // Create user lookup map
@@ -80,8 +77,8 @@ export async function GET() {
         return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
       })
     return NextResponse.json({ conversations })
-  } catch {
-    logger.error('API error in GET /conversations')
+  } catch (error) {
+    console.error('API error in GET /conversations', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

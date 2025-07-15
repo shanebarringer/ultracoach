@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'messages-api' })
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +21,7 @@ export async function GET(request: NextRequest) {
       .or(`and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})`)
       .order('created_at', { ascending: true })
     if (messagesError) {
-      logger.error('Failed to fetch messages')
+      console.error('Failed to fetch messages', messagesError)
       return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
     }
     // Fetch user data for all unique sender/recipient IDs
@@ -38,7 +35,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .in('id', Array.from(userIds))
     if (usersError) {
-      logger.error('Failed to fetch user data')
+      console.error('Failed to fetch user data', usersError)
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
     }
     // Create user lookup map
@@ -51,8 +48,8 @@ export async function GET(request: NextRequest) {
       recipient: userMap.get(msg.recipient_id)
     })) || []
     return NextResponse.json({ messages })
-  } catch {
-    logger.error('API error in GET /messages')
+  } catch (error) {
+    console.error('API error in GET /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -96,12 +93,12 @@ export async function POST(request: NextRequest) {
       `)
       .single()
     if (messageError) {
-      logger.error('Failed to send message')
+      console.error('Failed to send message', messageError)
       return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
     }
     return NextResponse.json({ message }, { status: 201 })
-  } catch {
-    logger.error('API error in POST /messages')
+  } catch (error) {
+    console.error('API error in POST /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -125,12 +122,12 @@ export async function PATCH(request: NextRequest) {
       .in('id', messageIds)
       .eq('recipient_id', session.user.id)
     if (error) {
-      logger.error('Failed to update messages')
+      console.error('Failed to update messages', error)
       return NextResponse.json({ error: 'Failed to update messages' }, { status: 500 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    logger.error('API error in PATCH /messages')
+  } catch (error) {
+    console.error('API error in PATCH /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

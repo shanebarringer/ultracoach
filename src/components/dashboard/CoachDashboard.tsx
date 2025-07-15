@@ -1,66 +1,133 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+import { 
+  Card, 
+  CardHeader, 
+  CardBody,
+  Button,
+  Chip
+} from '@heroui/react'
+import { 
+  UsersIcon, 
+  CalendarDaysIcon, 
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  MapPinIcon
+} from '@heroicons/react/24/outline'
+import { useDashboardData } from '@/hooks/useDashboardData'
+import type { TrainingPlan, User } from '@/lib/supabase'
+import classNames from 'classnames'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
+interface MetricCardProps {
+  title: string
+  value: string | number
+  subtitle?: string
+  icon: React.ComponentType<{ className?: string }>
+  trend?: {
+    value: number
+    direction: 'up' | 'down' | 'neutral'
+  }
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'default'
+}
+
+function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primary' }: MetricCardProps) {
+  // Debug: Check if Icon is undefined
+  if (!Icon) {
+    console.error('MetricCard: Icon is undefined for title:', title)
+    return (
+      <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <CardBody className="p-6">
+          <div className="text-red-500">Icon undefined for: {title}</div>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  const getTrendColor = () => {
+    switch (trend?.direction) {
+      case 'up': return 'text-success'
+      case 'down': return 'text-danger'
+      default: return 'text-default-500'
+    }
+  }
+
+  const TrendIcon = trend?.direction === 'up' ? ArrowUpIcon : 
+                   trend?.direction === 'down' ? ArrowDownIcon : null
+
+  return (
+    <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <CardBody className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground-600 uppercase tracking-wider">
+              {title}
+            </p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-3xl font-bold text-foreground">
+                {value}
+              </span>
+              {subtitle && (
+                <span className="text-lg text-foreground-500">{subtitle}</span>
+              )}
+            </div>
+          </div>
+          <div className={classNames(
+            'p-3 rounded-lg',
+            {
+              'bg-primary/10': color === 'primary',
+              'bg-secondary/10': color === 'secondary',
+              'bg-success/10': color === 'success',
+              'bg-warning/10': color === 'warning',
+              'bg-danger/10': color === 'danger',
+              'bg-default/10': !color || color === 'default'
+            }
+          )}>
+            <Icon className={classNames(
+              'w-6 h-6',
+              {
+                'text-primary': color === 'primary',
+                'text-secondary': color === 'secondary',
+                'text-success': color === 'success',
+                'text-warning': color === 'warning',
+                'text-danger': color === 'danger',
+                'text-default': !color || color === 'default'
+              }
+            )} />
+          </div>
+        </div>
+        
+        {trend && (
+          <div className="flex items-center gap-1">
+            {TrendIcon && (
+              <TrendIcon className={`w-4 h-4 ${getTrendColor()}`} />
+            )}
+            <span className={`text-sm font-medium ${getTrendColor()}`}>
+              {trend.value > 0 ? '+' : ''}{trend.value}%
+            </span>
+            <span className="text-sm text-foreground-500">from last week</span>
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
+
 export default function CoachDashboard() {
-  const { data: session } = useSession()
-  const [trainingPlans, setTrainingPlans] = useState<TrainingPlanWithRunner[]>([])
-  const [runners, setRunners] = useState<User[]>([])
-  const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([])
-  const [loading, setLoading] = useState(true)
+  const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
 
-  const fetchDashboardData = useCallback(async () => {
-    try {
-      // Fetch training plans via API
-      const plansResponse = await fetch('/api/training-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        const plans = plansData.trainingPlans || []
-        setTrainingPlans(plans)
-
-        // Extract unique runners from training plans
-        const uniqueRunners = plans.reduce((acc: User[], plan: TrainingPlanWithRunner) => {
-          if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
-            acc.push(plan.runners)
-          }
-          return acc
-        }, [])
-        setRunners(uniqueRunners)
-      }
-
-      // Fetch recent completed workouts via API
-      const workoutsResponse = await fetch('/api/workouts')
-      if (workoutsResponse.ok) {
-        const workoutsData = await workoutsResponse.json()
-        const recentWorkouts = (workoutsData.workouts || [])
-          .filter((w: Workout) => w.status === 'completed')
-          .slice(0, 5)
-        setRecentWorkouts(recentWorkouts)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchDashboardData()
-    }
-  }, [session, fetchDashboardData])
+  const typedTrainingPlans = trainingPlans as TrainingPlanWithRunner[]
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="mt-4 text-foreground-600">Loading your summit dashboard...</p>
         </div>
       </div>
     )
@@ -68,132 +135,229 @@ export default function CoachDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Coach Dashboard
-          </h2>
-          <p className="text-gray-600">Welcome back, {session?.user?.name}</p>
+      {/* Page Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Summit Dashboard
+          </h1>
+          <p className="text-foreground-600">
+            Track your athletes&apos; ascent to peak performance
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
-            <h3 className="text-sm font-medium text-blue-900 mb-2">Active Training Plans</h3>
-            <p className="text-3xl font-bold text-blue-600">{trainingPlans.length}</p>
+        
+        <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
+          <div className="text-center">
+            <p className="text-xs text-warning font-medium mb-1">CURRENT ALTITUDE</p>
+            <p className="text-2xl font-bold text-foreground">8,847m</p>
+            <p className="text-sm text-foreground-600">Peak Performance</p>
           </div>
-          <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
-            <h3 className="text-sm font-medium text-green-900 mb-2">Runners</h3>
-            <p className="text-3xl font-bold text-green-600">{runners.length}</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
-            <h3 className="text-sm font-medium text-purple-900 mb-2">Recent Workouts</h3>
-            <p className="text-3xl font-bold text-purple-600">{recentWorkouts.length}</p>
-          </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Training Plans</h3>
-            <Link 
-              href="/training-plans"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors"
-            >
-              Manage Plans
-            </Link>
-          </div>
-          {trainingPlans.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="text-gray-900 font-medium mb-2">No training plans yet</p>
-              <p className="text-sm text-gray-500">Create your first training plan to get started.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {trainingPlans.map((plan) => (
-                <div key={plan.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <h4 className="font-semibold text-gray-900 mb-2">{plan.title}</h4>
-                  <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {plan.runners && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {plan.runners.full_name}
-                      </span>
-                    )}
-                    {plan.target_race_date && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {new Date(plan.target_race_date).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Active Training Plans"
+          value={trainingPlans.length}
+          subtitle="expeditions"
+          icon={CalendarDaysIcon}
+          trend={{ value: 12, direction: 'up' }}
+          color="primary"
+        />
+        
+        <MetricCard
+          title="Runners"
+          value={runners.length}
+          subtitle="athletes"
+          icon={UsersIcon}
+          trend={{ value: 8, direction: 'up' }}
+          color="success"
+        />
+        
+        <MetricCard
+          title="Recent Workouts"
+          value={recentWorkouts.length}
+          subtitle="completed"
+          icon={ChartBarIcon}
+          color="warning"
+        />
+        
+        <MetricCard
+          title="This Week"
+          value="127"
+          subtitle="km total"
+          icon={ArrowTrendingUpIcon}
+          trend={{ value: 15, direction: 'up' }}
+          color="secondary"
+        />
+      </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h3>
-          {recentWorkouts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No recent workout activity.</p>
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Training Expeditions */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
+              <p className="text-sm text-foreground-600">Active summit challenges</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {recentWorkouts.map((workout) => (
-                <div key={workout.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium text-gray-900">{workout.actual_type || workout.planned_type}</h4>
-                      <p className="text-sm text-gray-600">
-                        {new Date(workout.date).toLocaleDateString()}
-                      </p>
-                      {workout.actual_distance && (
-                        <p className="text-sm text-gray-600">
-                          Distance: {workout.actual_distance} miles
-                        </p>
+            <Button 
+              as={Link}
+              href="/training-plans"
+              color="primary"
+              className="bg-gradient-to-r from-primary to-secondary text-white font-medium"
+            >
+              ⛰️ Manage Plans
+            </Button>
+          </CardHeader>
+          <CardBody>
+            {typedTrainingPlans.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="mx-auto h-16 w-16 bg-default-100 rounded-full flex items-center justify-center mb-4">
+                  <CalendarDaysIcon className="h-8 w-8 text-default-400" />
+                </div>
+                <p className="text-foreground font-medium mb-2">No expeditions yet</p>
+                <p className="text-sm text-foreground-500">Create your first training expedition to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {typedTrainingPlans.map((plan) => (
+                  <div key={plan.id} className="border border-divider rounded-lg p-4 hover:shadow-md transition-shadow bg-content1">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-1">{plan.title}</h4>
+                        <p className="text-sm text-foreground-600">{plan.description}</p>
+                      </div>
+                      <Chip 
+                        color="primary" 
+                        variant="flat" 
+                        size="sm"
+                        className="capitalize"
+                      >
+                        Active
+                      </Chip>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {plan.runners && (
+                        <div className="flex items-center gap-1 text-sm text-foreground-600">
+                          <UsersIcon className="w-4 h-4" />
+                          <span>{plan.runners.full_name}</span>
+                        </div>
+                      )}
+                      {plan.target_race_date && (
+                        <div className="flex items-center gap-1 text-sm text-foreground-600">
+                          <CalendarDaysIcon className="w-4 h-4" />
+                          <span>{new Date(plan.target_race_date).toLocaleDateString()}</span>
+                        </div>
                       )}
                     </div>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      Completed
-                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Recent Peaks Conquered */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <div>
+              <h3 className="text-xl font-semibold text-foreground">Recent Peaks Conquered</h3>
+              <p className="text-sm text-foreground-600">Latest summit achievements</p>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {recentWorkouts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-foreground-500">No recent workout activity.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentWorkouts.map((workout) => (
+                  <div key={workout.id} className="p-4 bg-content2 border-l-4 border-l-success rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-foreground">{workout.actual_type || workout.planned_type}</h4>
+                        <div className="flex items-center gap-4 text-sm text-foreground-600 mt-1">
+                          <div className="flex items-center gap-1">
+                            <CalendarDaysIcon className="w-4 h-4" />
+                            <span>{new Date(workout.date).toLocaleDateString()}</span>
+                          </div>
+                          {workout.actual_distance && (
+                            <div className="flex items-center gap-1">
+                              <MapPinIcon className="w-4 h-4" />
+                              <span>{workout.actual_distance} miles</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Chip 
+                        color="success" 
+                        variant="dot" 
+                        size="sm"
+                      >
+                        Completed
+                      </Chip>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Your Athletes */}
+      <Card className="hover:shadow-lg transition-shadow duration-300">
+        <CardHeader>
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
+            <p className="text-sm text-foreground-600">Runners on their summit journey</p>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {runners.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-foreground-500">No runners assigned yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {runners.map((runner) => (
+                <div key={runner.id} className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
+                      {runner.full_name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">{runner.full_name}</h4>
+                      <p className="text-sm text-foreground-600">{runner.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="flat" 
+                      color="primary"
+                      className="flex-1"
+                    >
+                      View Progress
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="flat" 
+                      color="success"
+                      className="flex-1"
+                    >
+                      Send Message
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Runners</h3>
-        {runners.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No runners assigned yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {runners.map((runner) => (
-              <div key={runner.id} className="border border-gray-200 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900">{runner.full_name}</h4>
-                <p className="text-sm text-gray-600">{runner.email}</p>
-                <div className="mt-2 flex gap-2">
-                  <button className="text-blue-600 hover:text-blue-700 text-sm">
-                    View Progress
-                  </button>
-                  <button className="text-green-600 hover:text-green-700 text-sm">
-                    Send Message
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </CardBody>
+      </Card>
     </div>
   )
 }

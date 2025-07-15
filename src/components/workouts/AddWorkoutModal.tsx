@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
 
 interface AddWorkoutModalProps {
   isOpen: boolean
@@ -20,7 +21,11 @@ export default function AddWorkoutModal({
     plannedType: '',
     plannedDistance: '',
     plannedDuration: '',
-    notes: ''
+    notes: '',
+    category: '' as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '',
+    intensity: '',
+    terrain: '' as 'road' | 'trail' | 'track' | 'treadmill' | '',
+    elevationGain: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +47,11 @@ export default function AddWorkoutModal({
           plannedType: formData.plannedType,
           plannedDistance: formData.plannedDistance ? parseFloat(formData.plannedDistance) : null,
           plannedDuration: formData.plannedDuration ? parseInt(formData.plannedDuration) : null,
-          notes: formData.notes
+          notes: formData.notes,
+          category: formData.category || null,
+          intensity: formData.intensity ? parseInt(formData.intensity) : null,
+          terrain: formData.terrain || null,
+          elevationGain: formData.elevationGain ? parseInt(formData.elevationGain) : null,
         }),
       })
 
@@ -52,7 +61,11 @@ export default function AddWorkoutModal({
           plannedType: '',
           plannedDistance: '',
           plannedDuration: '',
-          notes: ''
+          notes: '',
+          category: '',
+          intensity: '',
+          terrain: '',
+          elevationGain: '',
         })
         onSuccess()
         onClose()
@@ -74,137 +87,169 @@ export default function AddWorkoutModal({
     }))
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Add Workout</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalContent>
+        <ModalHeader>Add Workout</ModalHeader>
+        <form onSubmit={handleSubmit}>
+          <ModalBody className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
-            <input
+            <Input
               type="date"
-              id="date"
+              label="Date"
               name="date"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.date}
               onChange={handleChange}
             />
-          </div>
 
-          <div>
-            <label htmlFor="plannedType" className="block text-sm font-medium text-gray-700 mb-1">
-              Workout Type
-            </label>
-            <select
-              id="plannedType"
+            <Select
+              label="Workout Type"
               name="plannedType"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.plannedType}
-              onChange={handleChange}
+              selectedKeys={formData.plannedType ? [formData.plannedType] : []}
+              onSelectionChange={(keys) => {
+                const selectedType = Array.from(keys).join('');
+                setFormData(prev => ({ ...prev, plannedType: selectedType }));
+              }}
+              placeholder="Select type..."
+              items={[
+                { id: 'Easy Run', name: 'Easy Run' },
+                { id: 'Long Run', name: 'Long Run' },
+                { id: 'Tempo Run', name: 'Tempo Run' },
+                { id: 'Interval Training', name: 'Interval Training' },
+                { id: 'Fartlek', name: 'Fartlek' },
+                { id: 'Hill Training', name: 'Hill Training' },
+                { id: 'Recovery Run', name: 'Recovery Run' },
+                { id: 'Cross Training', name: 'Cross Training' },
+                { id: 'Strength Training', name: 'Strength Training' },
+                { id: 'Rest Day', name: 'Rest Day' },
+              ]}
             >
-              <option value="">Select type...</option>
-              <option value="Easy Run">Easy Run</option>
-              <option value="Long Run">Long Run</option>
-              <option value="Tempo Run">Tempo Run</option>
-              <option value="Interval Training">Interval Training</option>
-              <option value="Fartlek">Fartlek</option>
-              <option value="Hill Training">Hill Training</option>
-              <option value="Recovery Run">Recovery Run</option>
-              <option value="Cross Training">Cross Training</option>
-              <option value="Strength Training">Strength Training</option>
-              <option value="Rest Day">Rest Day</option>
-            </select>
-          </div>
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
+                </SelectItem>
+              )}
+            </Select>
 
-          <div>
-            <label htmlFor="plannedDistance" className="block text-sm font-medium text-gray-700 mb-1">
-              Planned Distance (miles)
-            </label>
-            <input
+            <Select
+              label="Category"
+              name="category"
+              selectedKeys={formData.category ? [formData.category] : []}
+              onSelectionChange={(keys) => {
+                const selectedCategory = Array.from(keys).join('') as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '';
+                setFormData(prev => ({ ...prev, category: selectedCategory }));
+              }}
+              placeholder="Select category..."
+              items={[
+                { id: 'easy', name: 'Easy' },
+                { id: 'tempo', name: 'Tempo' },
+                { id: 'interval', name: 'Interval' },
+                { id: 'long_run', name: 'Long Run' },
+                { id: 'race_simulation', name: 'Race Simulation' },
+                { id: 'recovery', name: 'Recovery' },
+                { id: 'strength', name: 'Strength' },
+                { id: 'cross_training', name: 'Cross Training' },
+                { id: 'rest', name: 'Rest' },
+              ]}
+            >
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
+                </SelectItem>
+              )}
+            </Select>
+
+            <Input
               type="number"
-              id="plannedDistance"
+              label="Intensity (1-10)"
+              name="intensity"
+              min="1"
+              max="10"
+              value={formData.intensity}
+              onChange={handleChange}
+              placeholder="e.g., 7"
+            />
+
+            <Select
+              label="Terrain"
+              name="terrain"
+              selectedKeys={formData.terrain ? [formData.terrain] : []}
+              onSelectionChange={(keys) => {
+                const selectedTerrain = Array.from(keys).join('') as 'road' | 'trail' | 'track' | 'treadmill' | '';
+                setFormData(prev => ({ ...prev, terrain: selectedTerrain }));
+              }}
+              placeholder="Select terrain..."
+              items={[
+                { id: 'road', name: 'Road' },
+                { id: 'trail', name: 'Trail' },
+                { id: 'track', name: 'Track' },
+                { id: 'treadmill', name: 'Treadmill' },
+              ]}
+            >
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
+                </SelectItem>
+              )}
+            </Select>
+
+            <Input
+              type="number"
+              label="Elevation Gain (feet)"
+              name="elevationGain"
+              min="0"
+              value={formData.elevationGain}
+              onChange={handleChange}
+              placeholder="e.g., 500"
+            />
+
+            <Input
+              type="number"
+              label="Planned Distance (miles)"
               name="plannedDistance"
               step="0.1"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.plannedDistance}
               onChange={handleChange}
               placeholder="e.g., 5.5"
             />
-          </div>
 
-          <div>
-            <label htmlFor="plannedDuration" className="block text-sm font-medium text-gray-700 mb-1">
-              Planned Duration (minutes)
-            </label>
-            <input
+            <Input
               type="number"
-              id="plannedDuration"
+              label="Planned Duration (minutes)"
               name="plannedDuration"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.plannedDuration}
               onChange={handleChange}
               placeholder="e.g., 60"
             />
-          </div>
 
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              id="notes"
+            <Textarea
+              label="Notes"
               name="notes"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.notes}
               onChange={handleChange}
               placeholder="Additional workout instructions or notes..."
             />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-            >
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" color="primary" disabled={loading}>
               {loading ? 'Adding...' : 'Add Workout'}
-            </button>
-          </div>
+            </Button>
+          </ModalFooter>
         </form>
-      </div>
-    </div>
+      </ModalContent>
+    </Modal>
   )
 }

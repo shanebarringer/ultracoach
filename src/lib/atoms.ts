@@ -1,81 +1,6 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
-
-// Types
-export interface Notification {
-  id: string
-  user_id: string
-  type: 'workout' | 'message' | 'comment'
-  title: string
-  message: string // was 'content', now matches supabase
-  read: boolean
-  created_at: string
-}
-
-export interface Workout {
-  id: string
-  training_plan_id: string
-  date: string
-  planned_distance: number
-  planned_duration: number
-  planned_type: string
-  actual_distance?: number
-  actual_duration?: number
-  actual_type?: string
-  injury_notes?: string
-  workout_notes?: string
-  coach_feedback?: string
-  status: 'planned' | 'completed' | 'skipped'
-  created_at: string
-  updated_at: string
-}
-
-export interface TrainingPlan {
-  id: string
-  title: string
-  description?: string
-  coach_id: string
-  runner_id: string
-  archived: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface User {
-  id: string
-  email: string
-  full_name: string
-  role: 'coach' | 'runner'
-  created_at: string
-}
-
-export interface Message {
-  id: string
-  conversation_id: string
-  sender_id: string
-  recipient_id: string
-  content: string
-  read: boolean
-  created_at: string
-}
-
-export interface MessageWithUser extends Message {
-  sender: User
-}
-
-export interface Conversation {
-  id: string
-  coach_id: string
-  runner_id: string
-  created_at: string
-  updated_at: string
-}
-
-export interface ConversationWithUser {
-  user: User
-  lastMessage?: Message
-  unreadCount: number
-}
+import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
 
 // Core application atoms
 export const notificationsAtom = atom<Notification[]>([])
@@ -84,6 +9,8 @@ export const unreadNotificationsCountAtom = atom<number>(0)
 export const workoutsAtom = atom<Workout[]>([])
 export const trainingPlansAtom = atom<TrainingPlan[]>([])
 export const runnersAtom = atom<User[]>([])
+export const racesAtom = atom<Race[]>([])
+export const planTemplatesAtom = atom<PlanTemplate[]>([])
 
 // Chat atoms
 export const messagesAtom = atom<MessageWithUser[]>([])
@@ -100,11 +27,39 @@ export const loadingStatesAtom = atom({
   runners: false,
 })
 
+// Form Atoms
+export const createTrainingPlanFormAtom = atom({
+  title: '',
+  description: '',
+  runnerEmail: '',
+  race_id: null as string | null,
+  goal_type: null as 'completion' | 'time' | 'placement' | null,
+  plan_type: null as 'race_specific' | 'base_building' | 'bridge' | 'recovery' | null,
+  targetRaceDate: '',
+  targetRaceDistance: '',
+  template_id: null as string | null,
+})
+
+export const workoutLogFormAtom = atom({
+  actualType: '',
+  actualDistance: '',
+  actualDuration: '',
+  workoutNotes: '',
+  injuryNotes: '',
+  status: '',
+  category: '' as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '',
+  intensity: '',
+  terrain: '' as 'road' | 'trail' | 'track' | 'treadmill' | '',
+  elevationGain: '',
+})
+
 export const chatUiStateAtom = atom({
   hasInitiallyLoadedMessages: false,
   hasInitiallyLoadedConversations: false,
   currentRecipientId: null as string | null,
 })
+
+export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme', 'dark')
 
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,

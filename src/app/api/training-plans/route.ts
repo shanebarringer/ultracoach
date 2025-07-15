@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'training-plans-api' })
 
 export async function GET() {
   try {
@@ -19,7 +16,7 @@ export async function GET() {
         .eq('coach_id', session.user.id)
         .order('created_at', { ascending: false })
       if (error) {
-        logger.error('Failed to fetch training plans for coach')
+        console.error('Failed to fetch training plans for coach', error)
         return NextResponse.json({ error: 'Failed to fetch training plans' }, { status: 500 })
       }
       return NextResponse.json({ trainingPlans: data || [] })
@@ -30,13 +27,13 @@ export async function GET() {
         .eq('runner_id', session.user.id)
         .order('created_at', { ascending: false })
       if (error) {
-        logger.error('Failed to fetch training plans for runner')
+        console.error('Failed to fetch training plans for runner', error)
         return NextResponse.json({ error: 'Failed to fetch training plans' }, { status: 500 })
       }
       return NextResponse.json({ trainingPlans: data || [] })
     }
   } catch (error) {
-    logger.error('Internal server error in GET', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in GET', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -77,12 +74,12 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     if (planError) {
-      logger.error('Failed to create training plan')
+      console.error('Failed to create training plan', planError)
       return NextResponse.json({ error: 'Failed to create training plan' }, { status: 500 })
     }
     return NextResponse.json({ trainingPlan }, { status: 201 })
   } catch (error) {
-    logger.error('Internal server error in POST', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in POST', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

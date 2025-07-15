@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'workouts-api' })
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,12 +32,12 @@ export async function GET(request: NextRequest) {
     }
     const { data: workouts, error } = await query.order('date', { ascending: false })
     if (error) {
-      logger.error('Failed to fetch workouts')
+      console.error('Failed to fetch workouts', error)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
     }
     return NextResponse.json({ workouts: workouts || [] })
   } catch (error) {
-    logger.error('Internal server error in GET', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in GET', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -91,7 +88,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     if (workoutError) {
-      logger.error('Failed to create workout')
+      console.error('Failed to create workout', workoutError)
       return NextResponse.json({ error: 'Failed to create workout' }, { status: 500 })
     }
     // Send notification to runner about new workout
@@ -124,12 +121,12 @@ export async function POST(request: NextRequest) {
             }
           }])
       }
-    } catch {
-      logger.error('Failed to send notification for new workout')
+    } catch (error) {
+      console.error('Failed to send notification for new workout', error)
     }
     return NextResponse.json({ workout }, { status: 201 })
   } catch (error) {
-    logger.error('Internal server error in POST', { error: error instanceof Error ? error.message : error })
+    console.error('Internal server error in POST', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

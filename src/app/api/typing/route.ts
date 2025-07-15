@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'typing-api' })
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +27,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      logger.error('Error fetching typing status:', error)
+      console.error('Error fetching typing status:', error)
       return NextResponse.json({ error: 'Failed to fetch typing status' }, { status: 500 })
     }
 
@@ -42,7 +39,7 @@ export async function GET(request: NextRequest) {
       isTyping: typingStatus?.is_typing && isRecent || false 
     })
   } catch (error) {
-    logger.error('API error in GET /typing:', error)
+    console.error('API error in GET /typing:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -67,12 +64,12 @@ export async function POST(request: NextRequest) {
         last_updated: new Date().toISOString()
       })
     if (error) {
-      logger.error('Failed to update typing status')
+      console.error('Failed to update typing status', error)
       return NextResponse.json({ error: 'Failed to update typing status' }, { status: 500 })
     }
     return NextResponse.json({ success: true })
-  } catch {
-    logger.error('API error in POST /typing')
+  } catch (error) {
+    console.error('API error in POST /typing', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

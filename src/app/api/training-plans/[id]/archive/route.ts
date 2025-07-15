@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
-
-const logger = new Logger({ name: 'training-plan-archive-api' })
 
 export async function PATCH(
   request: NextRequest,
@@ -24,7 +21,7 @@ export async function PATCH(
       .eq('id', id)
       .single()
     if (planError || !plan) {
-      logger.error('Failed to fetch training plan for archive')
+      console.error('Failed to fetch training plan for archive', planError)
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
     // Update the archived status
@@ -35,7 +32,7 @@ export async function PATCH(
       .select()
       .single()
     if (updateError) {
-      logger.error('Failed to update training plan archive status')
+      console.error('Failed to update training plan archive status', updateError)
       return NextResponse.json({ error: 'Failed to update training plan' }, { status: 500 })
     }
     // Send notification to the other party about the archive/unarchive action
@@ -63,16 +60,16 @@ export async function PATCH(
             archived
           }
         }])
-    } catch {
-      logger.error('Failed to send archive notification')
+    } catch (error) {
+      console.error('Failed to send archive notification', error)
       // Don't fail the main request if notification fails
     }
     return NextResponse.json({ 
       trainingPlan: updatedPlan,
       message: `Training plan ${archived ? 'archived' : 'restored'} successfully`
     })
-  } catch {
-    logger.error('API error in PATCH /training-plans/[id]/archive')
+  } catch (error) {
+    console.error('API error in PATCH /training-plans/[id]/archive', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

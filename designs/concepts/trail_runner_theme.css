@@ -1,0 +1,594 @@
+/* Trail Runner Theme for UltraCoach
+ * Organic, nature-inspired design system for ultramarathon coaching
+ */
+
+/* =====================================================
+   TRAIL RUNNER CSS CUSTOM PROPERTIES
+   ===================================================== */
+
+:root {
+  /* ========== LIGHT MODE TRAIL COLORS ========== */
+  
+  /* Primary Forest Colors */
+  --trail-forest-50: #f7faf7;
+  --trail-forest-100: #e8f2e8;
+  --trail-forest-200: #c8e2c8;
+  --trail-forest-300: #9ecb9e;
+  --trail-forest-400: #6aae6a;
+  --trail-forest-500: #2d5a2d;
+  --trail-forest-600: #1e4a1e;
+  --trail-forest-700: #0f3a0f;
+  --trail-forest-800: #082508;
+  --trail-forest-900: #041504;
+
+  /* Earth Tones */
+  --trail-earth-50: #faf9f7;
+  --trail-earth-100: #f5f1eb;
+  --trail-earth-200: #e8ddd1;
+  --trail-earth-300: #d4c2ab;
+  --trail-earth-400: #a67c52;
+  --trail-earth-500: #8b5a3c;
+  --trail-earth-600: #6b4423;
+  --trail-earth-700: #4d2f18;
+  --trail-earth-800: #321f10;
+  --trail-earth-900: #1f1309;
+
+  /* Sunset Accents */
+  --trail-sunset-50: #fff8f1;
+  --trail-sunset-100: #ffede0;
+  --trail-sunset-200: #ffd7be;
+  --trail-sunset-300: #ffb787;
+  --trail-sunset-400: #ff8c42;
+  --trail-sunset-500: #e8631c;
+  --trail-sunset-600: #c9470a;
+  --trail-sunset-700: #a53606;
+  --trail-sunset-800: #872b08;
+  --trail-sunset-900: #71240c;
+
+  /* Stone Grays */
+  --trail-stone-50: #fafafa;
+  --trail-stone-100: #f4f4f5;
+  --trail-stone-200: #e5e5e7;
+  --trail-stone-300: #d1d1d6;
+  --trail-stone-400: #a1a1aa;
+  --trail-stone-500: #71717a;
+  --trail-stone-600: #52525b;
+  --trail-stone-700: #3f3f46;
+  --trail-stone-800: #27272a;
+  --trail-stone-900: #18181b;
+
+  /* ========== SEMANTIC COLOR ASSIGNMENTS ========== */
+  
+  /* Backgrounds */
+  --trail-bg-primary: var(--trail-stone-50);
+  --trail-bg-secondary: var(--trail-forest-50);
+  --trail-bg-card: #ffffff;
+  --trail-bg-elevated: #ffffff;
+  
+  /* Text Colors */
+  --trail-text-primary: var(--trail-stone-900);
+  --trail-text-secondary: var(--trail-stone-600);
+  --trail-text-muted: var(--trail-stone-500);
+  --trail-text-inverse: #ffffff;
+  
+  /* Border Colors */
+  --trail-border-light: var(--trail-stone-200);
+  --trail-border-medium: var(--trail-stone-300);
+  --trail-border-strong: var(--trail-stone-400);
+  
+  /* Brand Colors */
+  --trail-primary: var(--trail-forest-600);
+  --trail-primary-hover: var(--trail-forest-700);
+  --trail-secondary: var(--trail-earth-500);
+  --trail-accent: var(--trail-sunset-500);
+  --trail-accent-hover: var(--trail-sunset-600);
+  
+  /* Status Colors */
+  --trail-success: var(--trail-forest-500);
+  --trail-success-bg: var(--trail-forest-100);
+  --trail-warning: var(--trail-sunset-500);
+  --trail-warning-bg: var(--trail-sunset-100);
+  --trail-error: #dc2626;
+  --trail-error-bg: #fef2f2;
+  --trail-info: var(--trail-stone-600);
+  --trail-info-bg: var(--trail-stone-100);
+}
+
+/* ========== DARK MODE OVERRIDES ========== */
+[data-theme="dark"], .dark {
+  /* Dark Forest Environment */
+  --trail-forest-dark-50: #0a1a0a;
+  --trail-forest-dark-100: #1a2e1a;
+  --trail-forest-dark-200: #2a3d2a;
+  --trail-forest-dark-300: #3d5a3d;
+  --trail-forest-dark-400: #4d8b4d;
+  --trail-forest-dark-500: #66a166;
+
+  /* Dark Earth */
+  --trail-earth-dark-50: #1a1510;
+  --trail-earth-dark-100: #2a2318;
+  --trail-earth-dark-200: #3a3428;
+  --trail-earth-dark-400: #8b6f42;
+
+  /* Ember Glow */
+  --trail-ember-400: #ff6b1a;
+  --trail-ember-500: #ff8533;
+  
+  /* Dark Mode Semantic Colors */
+  --trail-bg-primary: var(--trail-stone-900);
+  --trail-bg-secondary: var(--trail-forest-dark-50);
+  --trail-bg-card: var(--trail-stone-800);
+  --trail-bg-elevated: var(--trail-stone-700);
+  
+  --trail-text-primary: var(--trail-stone-100);
+  --trail-text-secondary: var(--trail-stone-300);
+  --trail-text-muted: var(--trail-stone-400);
+  
+  --trail-border-light: var(--trail-stone-700);
+  --trail-border-medium: var(--trail-stone-600);
+  --trail-border-strong: var(--trail-stone-500);
+  
+  --trail-primary: var(--trail-forest-dark-400);
+  --trail-primary-hover: var(--trail-forest-dark-500);
+  --trail-accent: var(--trail-ember-400);
+  --trail-accent-hover: var(--trail-ember-500);
+  
+  --trail-success: var(--trail-forest-dark-400);
+  --trail-success-bg: var(--trail-forest-dark-100);
+  --trail-warning: var(--trail-ember-400);
+  --trail-warning-bg: var(--trail-earth-dark-100);
+}
+
+/* =====================================================
+   TYPOGRAPHY SYSTEM
+   ===================================================== */
+
+/* Trail-inspired font families */
+.trail-font-primary {
+  font-family: 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Font weight scale */
+.trail-weight-light { font-weight: 300; }
+.trail-weight-normal { font-weight: 400; }
+.trail-weight-medium { font-weight: 500; }
+.trail-weight-semibold { font-weight: 600; }
+.trail-weight-bold { font-weight: 700; }
+.trail-weight-extrabold { font-weight: 800; }
+
+/* Typography hierarchy */
+.trail-text-display {
+  font-size: 3rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.trail-text-h1 {
+  font-size: 2.25rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.trail-text-h2 {
+  font-size: 1.875rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.trail-text-h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.trail-text-h4 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.trail-text-h5 {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.trail-text-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.trail-text-small {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.trail-text-caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =====================================================
+   COMPONENT STYLES
+   ===================================================== */
+
+/* ========== NAVIGATION ========== */
+.trail-navbar {
+  background: linear-gradient(135deg, var(--trail-primary), var(--trail-primary-hover));
+  border-bottom: 2px solid var(--trail-earth-400);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(45, 90, 45, 0.12);
+}
+
+.trail-navbar-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--trail-text-inverse);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.trail-navbar-link {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.trail-navbar-link:hover {
+  color: var(--trail-text-inverse);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ========== CARDS ========== */
+.trail-card {
+  background: var(--trail-bg-card);
+  border: 1px solid var(--trail-border-light);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(45, 90, 45, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.trail-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(45, 90, 45, 0.16);
+  border-color: var(--trail-border-medium);
+}
+
+.trail-card-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--trail-border-light);
+}
+
+.trail-card-body {
+  padding: 1.5rem;
+}
+
+.trail-card-footer {
+  padding: 1rem 1.5rem 1.5rem;
+  background: var(--trail-bg-secondary);
+  border-top: 1px solid var(--trail-border-light);
+}
+
+/* Card variants */
+.trail-card-elevated {
+  background: var(--trail-bg-elevated);
+  box-shadow: 0 8px 24px rgba(45, 90, 45, 0.12);
+}
+
+.trail-card-featured {
+  border: 2px solid var(--trail-accent);
+  background: linear-gradient(135deg, var(--trail-bg-card), var(--trail-sunset-50));
+}
+
+/* ========== BUTTONS ========== */
+.trail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.trail-btn-primary {
+  background: linear-gradient(135deg, var(--trail-accent), var(--trail-accent-hover));
+  color: var(--trail-text-inverse);
+  box-shadow: 0 2px 8px rgba(232, 99, 28, 0.3);
+}
+
+.trail-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(232, 99, 28, 0.4);
+  background: linear-gradient(135deg, var(--trail-accent-hover), var(--trail-sunset-700));
+}
+
+.trail-btn-secondary {
+  background: var(--trail-earth-100);
+  color: var(--trail-earth-600);
+  border: 1px solid var(--trail-earth-400);
+}
+
+.trail-btn-secondary:hover {
+  background: var(--trail-earth-200);
+  border-color: var(--trail-earth-500);
+  transform: translateY(-1px);
+}
+
+.trail-btn-ghost {
+  background: transparent;
+  color: var(--trail-text-secondary);
+  border: 1px solid var(--trail-border-medium);
+}
+
+.trail-btn-ghost:hover {
+  background: var(--trail-bg-secondary);
+  color: var(--trail-text-primary);
+}
+
+.trail-btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}
+
+.trail-btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+}
+
+/* ========== STATUS CHIPS ========== */
+.trail-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.trail-chip-active {
+  background: var(--trail-success-bg);
+  color: var(--trail-success);
+  border-color: var(--trail-forest-300);
+}
+
+.trail-chip-complete {
+  background: var(--trail-warning-bg);
+  color: var(--trail-warning);
+  border-color: var(--trail-sunset-300);
+}
+
+.trail-chip-archived {
+  background: var(--trail-info-bg);
+  color: var(--trail-info);
+  border-color: var(--trail-stone-300);
+}
+
+.trail-chip-priority-high {
+  background: var(--trail-error-bg);
+  color: var(--trail-error);
+  border-color: #fecaca;
+}
+
+/* ========== FORMS ========== */
+.trail-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--trail-border-medium);
+  border-radius: 8px;
+  background: var(--trail-bg-card);
+  color: var(--trail-text-primary);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.trail-input:focus {
+  outline: none;
+  border-color: var(--trail-primary);
+  box-shadow: 0 0 0 3px rgba(45, 90, 45, 0.1);
+}
+
+.trail-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--trail-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.trail-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--trail-border-medium);
+  border-radius: 8px;
+  background: var(--trail-bg-card);
+  color: var(--trail-text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* ========== LAYOUT UTILITIES ========== */
+.trail-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.trail-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.trail-grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.trail-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.trail-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.trail-grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 768px) {
+  .trail-grid-cols-2,
+  .trail-grid-cols-3,
+  .trail-grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .trail-grid-cols-3,
+  .trail-grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ========== SPACING SYSTEM ========== */
+.trail-p-1 { padding: 0.25rem; }
+.trail-p-2 { padding: 0.5rem; }
+.trail-p-3 { padding: 0.75rem; }
+.trail-p-4 { padding: 1rem; }
+.trail-p-6 { padding: 1.5rem; }
+.trail-p-8 { padding: 2rem; }
+
+.trail-m-1 { margin: 0.25rem; }
+.trail-m-2 { margin: 0.5rem; }
+.trail-m-3 { margin: 0.75rem; }
+.trail-m-4 { margin: 1rem; }
+.trail-m-6 { margin: 1.5rem; }
+.trail-m-8 { margin: 2rem; }
+
+/* ========== VISUAL EFFECTS ========== */
+
+/* Topographic background pattern */
+.trail-topo-bg {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(45, 90, 45, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 90, 60, 0.03) 0%, transparent 50%);
+  background-size: 100px 100px;
+}
+
+/* Elevation gradient */
+.trail-elevation-gradient {
+  background: linear-gradient(
+    45deg, 
+    var(--trail-earth-50) 0%, 
+    var(--trail-forest-50) 30%, 
+    var(--trail-stone-100) 60%, 
+    var(--trail-sunset-50) 100%
+  );
+}
+
+/* Trail texture overlay */
+.trail-texture::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(90deg, transparent 79px, rgba(45, 90, 45, 0.04) 81px, rgba(45, 90, 45, 0.04) 82px, transparent 84px),
+    linear-gradient(rgba(45, 90, 45, 0.04) 0px, transparent 1px, transparent 79px, rgba(45, 90, 45, 0.04) 81px, rgba(45, 90, 45, 0.04) 82px, transparent 84px);
+  background-size: 84px 84px;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes trail-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes trail-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trail-animate-fade-in {
+  animation: trail-fade-in 0.5s ease-out;
+}
+
+.trail-animate-slide-up {
+  animation: trail-slide-up 0.6s ease-out;
+}
+
+/* ========== RESPONSIVE UTILITIES ========== */
+@media (max-width: 640px) {
+  .trail-text-h1 { font-size: 1.875rem; }
+  .trail-text-h2 { font-size: 1.5rem; }
+  .trail-text-display { font-size: 2.25rem; }
+  
+  .trail-container {
+    padding: 0 1rem;
+  }
+  
+  .trail-card {
+    border-radius: 8px;
+  }
+  
+  .trail-card-header,
+  .trail-card-body,
+  .trail-card-footer {
+    padding: 1rem;
+  }
+}
+
+/* ========== ACCESSIBILITY ========== */
+@media (prefers-reduced-motion: reduce) {
+  .trail-card,
+  .trail-btn,
+  .trail-input {
+    transition: none;
+  }
+  
+  .trail-animate-fade-in,
+  .trail-animate-slide-up {
+    animation: none;
+  }
+}
+
+/* Focus management */
+.trail-focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(45, 90, 45, 0.3);
+  border-radius: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .trail-card {
+    border-width: 2px;
+  }
+  
+  .trail-btn {
+    border-width: 2px;
+  }
+}

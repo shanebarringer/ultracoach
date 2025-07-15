@@ -1,0 +1,638 @@
+/* 
+ * UltraCoach - Endurance Athlete Design Theme
+ * Performance-focused, data-driven design for serious ultramarathon coaching
+ * Athletic reds, deep blues, charcoal grays, accent yellows
+ */
+
+/* =============================================================================
+   CSS Custom Properties - Color Palette
+   ============================================================================= */
+
+:root {
+  /* Performance Red Palette - Primary Athletic Color */
+  --performance-red: #D32F2F;         /* Main red - athletic, strong */
+  --performance-red-dark: #B71C1C;    /* Darker red for hovers */
+  --performance-red-light: #F44336;   /* Lighter red for accents */
+  --performance-red-50: #FFEBEE;      /* Lightest tint */
+  --performance-red-100: #FFCDD2;     /* Light tint */
+  --performance-red-200: #EF9A9A;     /* Medium-light tint */
+  --performance-red-10: rgba(211, 47, 47, 0.1);  /* 10% opacity */
+  --performance-red-20: rgba(211, 47, 47, 0.2);  /* 20% opacity */
+  --performance-red-rgb: 211, 47, 47; /* RGB values for rgba usage */
+
+  /* Deep Blue Palette - Professional, Technical */
+  --deep-blue: #1565C0;               /* Primary blue - technical precision */
+  --deep-blue-dark: #0D47A1;          /* Darker blue */
+  --deep-blue-light: #1976D2;         /* Lighter blue */
+  --deep-blue-50: #E3F2FD;            /* Lightest tint */
+  --deep-blue-100: #BBDEFB;           /* Light tint */
+  --deep-blue-10: rgba(21, 101, 192, 0.1);
+  --deep-blue-20: rgba(21, 101, 192, 0.2);
+  --deep-blue-rgb: 21, 101, 192;
+
+  /* Charcoal Gray Palette - Data Surfaces */
+  --charcoal: #37474F;                 /* Primary charcoal */
+  --charcoal-dark: #263238;            /* Darker charcoal */
+  --charcoal-light: #455A64;          /* Lighter charcoal */
+  --charcoal-50: #ECEFF1;             /* Light surface */
+  --charcoal-100: #CFD8DC;            /* Medium surface */
+  --charcoal-200: #B0BEC5;            /* Border color */
+  --charcoal-rgb: 55, 71, 79;
+
+  /* Performance Yellow - Accent & Highlights */
+  --performance-yellow: #F57F17;       /* Athletic yellow - energy */
+  --performance-yellow-dark: #E65100;  /* Darker yellow */
+  --performance-yellow-light: #FF9800; /* Lighter yellow */
+  --performance-yellow-10: rgba(245, 127, 23, 0.1);
+  --performance-yellow-rgb: 245, 127, 23;
+
+  /* Training Zone Colors - Heart Rate Zones */
+  --zone-recovery: #4CAF50;            /* Zone 1 - Green (Recovery) */
+  --zone-aerobic: #2196F3;             /* Zone 2 - Blue (Aerobic) */
+  --zone-tempo: #FF9800;               /* Zone 3 - Orange (Tempo) */
+  --zone-threshold: #F44336;           /* Zone 4 - Red (Threshold) */
+  --zone-vo2max: #9C27B0;              /* Zone 5 - Purple (VO2Max) */
+  
+  /* Training zone background colors */
+  --zone-recovery-10: rgba(76, 175, 80, 0.1);
+  --zone-aerobic-10: rgba(33, 150, 243, 0.1);
+  --zone-tempo-10: rgba(255, 152, 0, 0.1);
+  --zone-threshold-10: rgba(244, 67, 54, 0.1);
+  --zone-vo2max-10: rgba(156, 39, 176, 0.1);
+
+  /* Status Colors - Performance Indicators */
+  --success: #2E7D32;                  /* Success/positive metrics */
+  --success-light: #4CAF50;
+  --success-10: rgba(46, 125, 50, 0.1);
+  --warning: #F57C00;                  /* Warning/attention needed */
+  --warning-light: #FF9800;
+  --warning-10: rgba(245, 124, 0, 0.1);
+  --error: #C62828;                    /* Error/negative metrics */
+  --error-light: #F44336;
+  --error-10: rgba(198, 40, 40, 0.1);
+
+  /* Typography - Data-Optimized Fonts */
+  --font-data: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+/* =============================================================================
+   Light Mode Theme
+   ============================================================================= */
+
+.light-mode {
+  /* Background & Surfaces */
+  --background: #FAFAFA;               /* Main background - clean white */
+  --surface: #FFFFFF;                  /* Card/component background */
+  --surface-elevated: #F5F5F5;         /* Elevated surfaces */
+  --surface-rgb: 255, 255, 255;
+
+  /* Text & Foreground */
+  --foreground: #212121;               /* Primary text - strong contrast */
+  --foreground-muted: #616161;         /* Secondary text */
+  --foreground-light: #9E9E9E;         /* Tertiary text */
+  
+  /* Borders & Dividers */
+  --border: #E0E0E0;                   /* Default borders */
+  --border-light: #EEEEEE;             /* Light borders */
+  --divider: #F5F5F5;                  /* Section dividers */
+
+  /* Interactive States */
+  --hover: rgba(211, 47, 47, 0.04);    /* Hover background */
+  --pressed: rgba(211, 47, 47, 0.08);  /* Pressed state */
+  --focus: rgba(211, 47, 47, 0.12);    /* Focus state */
+  --selected: rgba(211, 47, 47, 0.16); /* Selected state */
+
+  /* Data Visualization */
+  --chart-grid: #F0F0F0;               /* Chart grid lines */
+  --chart-text: #666666;               /* Chart labels */
+  --data-positive: var(--success);     /* Positive data points */
+  --data-negative: var(--error);       /* Negative data points */
+  --data-neutral: var(--charcoal);     /* Neutral data points */
+
+  /* Shadows for depth */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* =============================================================================
+   Dark Mode Theme - Optimized for Data Reading
+   ============================================================================= */
+
+.dark-mode {
+  /* Background & Surfaces */
+  --background: #121212;               /* Dark background - easy on eyes */
+  --surface: #1E1E1E;                  /* Card background */
+  --surface-elevated: #2C2C2C;         /* Elevated surfaces */
+  --surface-rgb: 30, 30, 30;
+
+  /* Text & Foreground */
+  --foreground: #E0E0E0;               /* Primary text - good contrast */
+  --foreground-muted: #A0A0A0;         /* Secondary text */
+  --foreground-light: #707070;         /* Tertiary text */
+  
+  /* Borders & Dividers */
+  --border: #333333;                   /* Default borders */
+  --border-light: #2A2A2A;             /* Light borders */
+  --divider: #1F1F1F;                  /* Section dividers */
+
+  /* Interactive States */
+  --hover: rgba(211, 47, 47, 0.08);    /* Hover background */
+  --pressed: rgba(211, 47, 47, 0.12);  /* Pressed state */
+  --focus: rgba(211, 47, 47, 0.16);    /* Focus state */
+  --selected: rgba(211, 47, 47, 0.20); /* Selected state */
+
+  /* Data Visualization - Dark Mode Optimized */
+  --chart-grid: #333333;               /* Chart grid lines */
+  --chart-text: #A0A0A0;               /* Chart labels */
+  --data-positive: #66BB6A;            /* Positive data points */
+  --data-negative: #EF5350;            /* Negative data points */
+  --data-neutral: #BDBDBD;             /* Neutral data points */
+
+  /* Adjusted colors for dark mode */
+  --performance-red: #EF5350;          /* Lighter red for dark backgrounds */
+  --performance-yellow: #FFCA28;       /* Lighter yellow for dark backgrounds */
+  --deep-blue: #42A5F5;                /* Lighter blue for dark backgrounds */
+
+  /* Dark mode shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* =============================================================================
+   Typography System - Data-Optimized
+   ============================================================================= */
+
+/* Heading typography optimized for performance data */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--foreground);
+  margin: 0 0 0.5rem 0;
+}
+
+h1 { font-size: 2.5rem; font-weight: 700; }
+h2 { font-size: 2rem; font-weight: 600; }
+h3 { font-size: 1.5rem; font-weight: 600; }
+h4 { font-size: 1.25rem; font-weight: 600; }
+h5 { font-size: 1.125rem; font-weight: 500; }
+h6 { font-size: 1rem; font-weight: 500; }
+
+/* Body text optimized for readability */
+body, p, div, span {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+/* Data-specific typography */
+.metric-value, .data-number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--performance-red);
+}
+
+.metric-label, .data-label {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--foreground-muted);
+}
+
+/* Code and monospace for precise data display */
+code, pre, .monospace {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background: var(--surface-elevated);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+}
+
+/* Small text for secondary information */
+small, .text-small {
+  font-size: 0.875rem;
+  color: var(--foreground-muted);
+}
+
+/* Emphasized text */
+strong, .font-bold {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* =============================================================================
+   HeroUI Component Overrides - Endurance Athlete Theme
+   ============================================================================= */
+
+/* Button components */
+.heroui-button[data-variant="solid"][data-color="primary"] {
+  background: var(--performance-red);
+  color: white;
+  border: none;
+  font-weight: 500;
+}
+
+.heroui-button[data-variant="solid"][data-color="primary"]:hover {
+  background: var(--performance-red-dark);
+  transform: translateY(-1px);
+}
+
+.heroui-button[data-variant="light"] {
+  background: var(--surface-elevated);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.heroui-button[data-variant="light"]:hover {
+  background: var(--hover);
+  border-color: var(--performance-red);
+}
+
+/* Card components */
+.heroui-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.heroui-card:hover {
+  border-color: var(--performance-red-20);
+  box-shadow: var(--shadow-md);
+}
+
+/* Input components */
+.heroui-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+.heroui-input:focus {
+  border-color: var(--performance-red);
+  box-shadow: 0 0 0 2px var(--performance-red-10);
+}
+
+/* Table components */
+.heroui-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.heroui-table th {
+  background: var(--surface-elevated);
+  color: var(--foreground-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  padding: 1rem;
+}
+
+.heroui-table td {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.heroui-table tr:hover {
+  background: var(--surface-elevated);
+}
+
+/* Chip/Badge components */
+.heroui-chip {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+}
+
+.heroui-chip[data-color="primary"] {
+  background: var(--performance-red-10);
+  color: var(--performance-red);
+}
+
+.heroui-chip[data-color="success"] {
+  background: var(--success-10);
+  color: var(--success);
+}
+
+.heroui-chip[data-color="warning"] {
+  background: var(--warning-10);
+  color: var(--warning);
+}
+
+/* Modal components */
+.heroui-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Navbar components */
+.heroui-navbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+/* =============================================================================
+   Utility Classes - Performance & Data Focus
+   ============================================================================= */
+
+/* Performance metric styling */
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--performance-red);
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.metric-card:hover {
+  border-color: var(--performance-red-20);
+  box-shadow: var(--shadow-md);
+}
+
+/* Training zone indicators */
+.zone-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+/* Progress bars for training progression */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--performance-red), var(--performance-yellow));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Data table enhancements */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.data-table th {
+  background: var(--surface-elevated);
+  color: var(--foreground-muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table td {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.data-table tr:hover {
+  background: var(--surface-elevated);
+}
+
+/* Chart placeholders */
+.chart-placeholder {
+  height: 200px;
+  background: var(--surface-elevated);
+  border: 2px dashed var(--border);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground-muted);
+  font-weight: 500;
+}
+
+/* Analytics cards */
+.analytics-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.analytics-card:hover {
+  border-color: var(--performance-red-20);
+  box-shadow: var(--shadow-md);
+}
+
+/* Status indicators */
+.status-positive {
+  background: var(--success-10);
+  color: var(--success);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-warning {
+  background: var(--warning-10);
+  color: var(--warning);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-error {
+  background: var(--error-10);
+  color: var(--error);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Grid utilities for responsive layouts */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.25rem; }
+  
+  .metric-card {
+    padding: 1rem;
+  }
+  
+  .analytics-card {
+    padding: 1rem;
+  }
+}
+
+/* =============================================================================
+   Animation & Transitions - Smooth Performance
+   ============================================================================= */
+
+/* Global transition for theme switching */
+* {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Hover animations for interactive elements */
+.metric-card, .analytics-card, .heroui-card {
+  transition: all 0.2s ease;
+}
+
+.metric-card:hover, .analytics-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Button hover animations */
+button, .btn {
+  transition: all 0.2s ease;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Focus states for accessibility */
+button:focus, input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--performance-red);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling for page navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Loading animations for data updates */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.loading {
+  animation: pulse 2s infinite;
+}
+
+/* =============================================================================
+   Accessibility Enhancements
+   ============================================================================= */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: #000000;
+    --foreground: #000000;
+    --background: #FFFFFF;
+  }
+  
+  .dark-mode {
+    --border: #FFFFFF;
+    --foreground: #FFFFFF;
+    --background: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus-visible for better keyboard navigation */
+.focus-visible {
+  outline: 2px solid var(--performance-red);
+  outline-offset: 2px;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

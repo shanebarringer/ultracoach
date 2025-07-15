@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UltraCoach - Endurance Athlete Design Concept</title>
+    <link rel="stylesheet" href="endurance_athlete_theme.css">
+    <style>
+        /* Base layout styles for demo */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-data), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-container {
+            min-height: 100vh;
+            background: var(--background);
+            color: var(--foreground);
+        }
+        
+        /* Header styles */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(8px);
+            background: rgba(var(--surface-rgb), 0.95);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--performance-red);
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: var(--foreground);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-links a:hover {
+            background: var(--performance-red-10);
+            color: var(--performance-red);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .theme-toggle {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--performance-red-10);
+            border-color: var(--performance-red);
+        }
+        
+        /* Main content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+        
+        /* Page sections */
+        .page-section {
+            display: none;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+        
+        .page-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--foreground-muted);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-button.active {
+            color: var(--performance-red);
+            border-bottom-color: var(--performance-red);
+        }
+        
+        .tab-button:hover:not(.active) {
+            color: var(--foreground);
+            background: var(--surface-elevated);
+        }
+        
+        /* Cards and components */
+        .analytics-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .analytics-card:hover {
+            border-color: var(--performance-red-20);
+            box-shadow: 0 4px 12px rgba(var(--performance-red-rgb), 0.1);
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--performance-red);
+            opacity: 0.8;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--performance-red);
+            font-family: var(--font-mono);
+            margin: 0.5rem 0;
+        }
+        
+        .metric-label {
+            color: var(--foreground-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .metric-change {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+        
+        .metric-change.positive {
+            background: var(--success-10);
+            color: var(--success);
+        }
+        
+        .metric-change.negative {
+            background: var(--warning-10);
+            color: var(--warning);
+        }
+        
+        /* Training zones */
+        .zone-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .zone-1 { background: var(--zone-recovery); }
+        .zone-2 { background: var(--zone-aerobic); }
+        .zone-3 { background: var(--zone-tempo); }
+        .zone-4 { background: var(--zone-threshold); }
+        .zone-5 { background: var(--zone-vo2max); }
+        
+        /* Data tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        
+        .data-table th {
+            background: var(--surface-elevated);
+            color: var(--foreground-muted);
+            font-weight: 600;
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .data-table td {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--foreground);
+        }
+        
+        .data-table tr:hover {
+            background: var(--surface-elevated);
+        }
+        
+        /* Progress bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--surface-elevated);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--performance-red), var(--performance-yellow));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .btn-primary {
+            background: var(--performance-red);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--performance-red-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--surface-elevated);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--surface);
+            border-color: var(--performance-red);
+        }
+        
+        /* Charts placeholder */
+        .chart-placeholder {
+            height: 200px;
+            background: var(--surface-elevated);
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--foreground-muted);
+            font-weight: 500;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="demo-container light-mode">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">UltraCoach</a>
+            
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#training-plans">Training Plans</a></li>
+                    <li><a href="#workouts">Workouts</a></li>
+                    <li><a href="#analytics">Analytics</a></li>
+                    <li><a href="#messages">Messages</a></li>
+                </ul>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+                <span style="color: var(--foreground-muted); font-weight: 500;">Sarah Johnson</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Navigation Tabs -->
+        <div class="page-tabs">
+            <button class="tab-button active" onclick="showPage('dashboard')">Dashboard</button>
+            <button class="tab-button" onclick="showPage('training-plans')">Training Plans</button>
+            <button class="tab-button" onclick="showPage('single-plan')">Training Plan Detail</button>
+        </div>
+
+        <!-- Dashboard Page -->
+        <section id="dashboard" class="page-section active">
+            <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--foreground);">Performance Dashboard</h1>
+            <p style="color: var(--foreground-muted); margin-bottom: 2rem; font-size: 1.125rem;">Real-time analytics and training insights</p>
+
+            <!-- Key Metrics -->
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Weekly Volume</div>
+                    <div class="metric-value">47.3</div>
+                    <div style="color: var(--foreground-muted); font-size: 0.875rem;">miles</div>
+                    <div class="metric-change positive">+12% vs last week</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Avg Heart Rate</div>
+                    <div class="metric-value">142</div>
+                    <div style="color: var(--foreground-muted); font-size: 0.875rem;">bpm</div>
+                    <div class="metric-change positive">Zone 2 target</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Training Load</div>
+                    <div class="metric-value">284</div>
+                    <div style="color: var(--foreground-muted); font-size: 0.875rem;">TSS</div>
+                    <div class="metric-change negative">-5% optimal</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Race Weeks</div>
+                    <div class="metric-value">8</div>
+                    <div style="color: var(--foreground-muted); font-size: 0.875rem;">to Western States</div>
+                    <div class="metric-change positive">On track</div>
+                </div>
+            </div>
+
+            <!-- Charts and Analytics -->
+            <div class="grid-2">
+                <div class="analytics-card">
+                    <h3 style="margin-bottom: 1rem; color: var(--foreground); font-weight: 600;">Training Zones Distribution</h3>
+                    <div class="chart-placeholder">Heart Rate Zone Analysis Chart</div>
+                    <div style="margin-top: 1rem; display: flex; flex-wrap: gap: 1rem; font-size: 0.875rem;">
+                        <div><span class="zone-indicator zone-1"></span>Recovery: 18%</div>
+                        <div><span class="zone-indicator zone-2"></span>Aerobic: 65%</div>
+                        <div><span class="zone-indicator zone-3"></span>Tempo: 12%</div>
+                        <div><span class="zone-indicator zone-4"></span>Threshold: 4%</div>
+                        <div><span class="zone-indicator zone-5"></span>VO2Max: 1%</div>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3 style="margin-bottom: 1rem; color: var(--foreground); font-weight: 600;">Weekly Volume Trend</h3>
+                    <div class="chart-placeholder">Volume Progression Chart</div>
+                    <div style="margin-top: 1rem; color: var(--foreground-muted); font-size: 0.875rem;">
+                        Building phase: Week 4 of 8 • Target: 50 miles/week
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Workouts -->
+            <div style="margin-top: 2rem;">
+                <div class="analytics-card">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--foreground); font-weight: 600;">Recent Performance Data</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Workout Type</th>
+                                <th>Distance</th>
+                                <th>Avg HR</th>
+                                <th>Avg Pace</th>
+                                <th>TSS</th>
+                                <th>Zone</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Jul 13</td>
+                                <td>Long Run</td>
+                                <td>18.2 mi</td>
+                                <td>138 bpm</td>
+                                <td>8:45/mi</td>
+                                <td>142</td>
+                                <td><span class="zone-indicator zone-2"></span>Zone 2</td>
+                            </tr>
+                            <tr>
+                                <td>Jul 12</td>
+                                <td>Tempo Run</td>
+                                <td>8.0 mi</td>
+                                <td>165 bpm</td>
+                                <td>7:30/mi</td>
+                                <td>88</td>
+                                <td><span class="zone-indicator zone-4"></span>Zone 4</td>
+                            </tr>
+                            <tr>
+                                <td>Jul 11</td>
+                                <td>Recovery</td>
+                                <td>5.5 mi</td>
+                                <td>125 bpm</td>
+                                <td>9:15/mi</td>
+                                <td>35</td>
+                                <td><span class="zone-indicator zone-1"></span>Zone 1</td>
+                            </tr>
+                            <tr>
+                                <td>Jul 10</td>
+                                <td>Intervals</td>
+                                <td>10.0 mi</td>
+                                <td>172 bpm</td>
+                                <td>6:55/mi</td>
+                                <td>105</td>
+                                <td><span class="zone-indicator zone-5"></span>Zone 5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Training Plans Page -->
+        <section id="training-plans" class="page-section">
+            <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--foreground);">Training Plans</h1>
+            <p style="color: var(--foreground-muted); margin-bottom: 2rem; font-size: 1.125rem;">Science-based periodization for ultramarathon success</p>
+
+            <!-- Active Plans -->
+            <div class="grid-2" style="margin-bottom: 2rem;">
+                <div class="analytics-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h3 style="color: var(--foreground); font-weight: 600; margin-bottom: 0.5rem;">Western States 100</h3>
+                            <p style="color: var(--foreground-muted); font-size: 0.875rem;">24-week periodized plan</p>
+                        </div>
+                        <span style="background: var(--success-10); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500;">ACTIVE</span>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.875rem; color: var(--foreground-muted);">Progress</span>
+                            <span style="font-size: 0.875rem; font-weight: 500;">Week 16/24</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 67%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid-3" style="margin-bottom: 1rem; font-size: 0.875rem;">
+                        <div>
+                            <div style="color: var(--foreground-muted);">Current Phase</div>
+                            <div style="font-weight: 500;">Build 2</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">Target Date</div>
+                            <div style="font-weight: 500;">Jun 28, 2025</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">Goal Time</div>
+                            <div style="font-weight: 500;">22:00:00</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary">View Plan Details</button>
+                </div>
+
+                <div class="analytics-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h3 style="color: var(--foreground); font-weight: 600; margin-bottom: 0.5rem;">Leadville 100</h3>
+                            <p style="color: var(--foreground-muted); font-size: 0.875rem;">High-altitude preparation</p>
+                        </div>
+                        <span style="background: var(--warning-10); color: var(--warning); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500;">UPCOMING</span>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="font-size: 0.875rem; color: var(--foreground-muted);">Starts in</span>
+                            <span style="font-size: 0.875rem; font-weight: 500;">4 weeks</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 15%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid-3" style="margin-bottom: 1rem; font-size: 0.875rem;">
+                        <div>
+                            <div style="color: var(--foreground-muted);">Duration</div>
+                            <div style="font-weight: 500;">20 weeks</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">Target Date</div>
+                            <div style="font-weight: 500;">Aug 16, 2025</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">Elevation</div>
+                            <div style="font-weight: 500;">15,600 ft</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary">Plan Overview</button>
+                </div>
+            </div>
+
+            <!-- Plan Templates -->
+            <div class="analytics-card">
+                <h3 style="margin-bottom: 1.5rem; color: var(--foreground); font-weight: 600;">Available Training Templates</h3>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Distance</th>
+                            <th>Duration</th>
+                            <th>Level</th>
+                            <th>Peak Volume</th>
+                            <th>Focus</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>50K</td>
+                            <td>16 weeks</td>
+                            <td>Intermediate</td>
+                            <td>55 mi/week</td>
+                            <td>Trail + Speed</td>
+                            <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">Use Template</button></td>
+                        </tr>
+                        <tr>
+                            <td>50 Mile</td>
+                            <td>20 weeks</td>
+                            <td>Advanced</td>
+                            <td>70 mi/week</td>
+                            <td>Endurance</td>
+                            <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">Use Template</button></td>
+                        </tr>
+                        <tr>
+                            <td>100K</td>
+                            <td>24 weeks</td>
+                            <td>Expert</td>
+                            <td>85 mi/week</td>
+                            <td>Ultra Endurance</td>
+                            <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">Use Template</button></td>
+                        </tr>
+                        <tr>
+                            <td>100 Mile</td>
+                            <td>28 weeks</td>
+                            <td>Elite</td>
+                            <td>100+ mi/week</td>
+                            <td>Mental + Physical</td>
+                            <td><button class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.75rem;">Use Template</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Single Training Plan Detail -->
+        <section id="single-plan" class="page-section">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+                <div>
+                    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--foreground);">Western States 100 Training Plan</h1>
+                    <p style="color: var(--foreground-muted); margin-bottom: 1rem; font-size: 1.125rem;">24-week periodized plan • Week 16 of 24</p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <span style="background: var(--success-10); color: var(--success); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500;">Build Phase 2</span>
+                        <span style="background: var(--performance-red-10); color: var(--performance-red); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500;">67% Complete</span>
+                        <span style="background: var(--zone-aerobic-10); color: var(--zone-aerobic); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500;">Zone 2 Focus</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary">Edit Plan</button>
+            </div>
+
+            <!-- Phase Overview -->
+            <div class="analytics-card" style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1.5rem; color: var(--foreground); font-weight: 600;">Training Phases Progression</h3>
+                
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto;">
+                    <div style="flex: 1; min-width: 150px; text-align: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; border: 2px solid var(--border); opacity: 0.6;">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Base Build</div>
+                        <div style="font-size: 0.875rem; color: var(--foreground-muted);">Weeks 1-6</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--success);">✓ Completed</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; text-align: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; border: 2px solid var(--border); opacity: 0.6;">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Build 1</div>
+                        <div style="font-size: 0.875rem; color: var(--foreground-muted);">Weeks 7-12</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--success);">✓ Completed</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; text-align: center; padding: 1rem; background: var(--performance-red-10); border-radius: 0.5rem; border: 2px solid var(--performance-red);">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--performance-red);">Build 2</div>
+                        <div style="font-size: 0.875rem; color: var(--foreground-muted);">Weeks 13-18</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--performance-red);">◉ Current</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; text-align: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; border: 2px solid var(--border);">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Peak</div>
+                        <div style="font-size: 0.875rem; color: var(--foreground-muted);">Weeks 19-21</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--foreground-muted);">Upcoming</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; text-align: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; border: 2px solid var(--border);">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Taper</div>
+                        <div style="font-size: 0.875rem; color: var(--foreground-muted);">Weeks 22-24</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--foreground-muted);">Upcoming</div>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div>
+                        <div style="color: var(--foreground-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">Current Week Volume</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--performance-red);">68 miles</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--foreground-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">Phase Target</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--zone-aerobic);">Zone 2 Endurance</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--foreground-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">Race Countdown</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">8 weeks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- This Week's Schedule -->
+            <div class="grid-2">
+                <div class="analytics-card">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--foreground); font-weight: 600;">This Week's Training Schedule</h3>
+                    
+                    <div style="space-y: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 500;">Monday - Recovery Run</div>
+                                <div style="font-size: 0.875rem; color: var(--foreground-muted);">6 miles • <span class="zone-indicator zone-1"></span>Zone 1 • 9:00-9:30/mi</div>
+                            </div>
+                            <span style="background: var(--success-10); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem;">✓ Done</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 500;">Tuesday - Tempo Run</div>
+                                <div style="font-size: 0.875rem; color: var(--foreground-muted);">10 miles • <span class="zone-indicator zone-3"></span>Zone 3 • 7:45/mi tempo</div>
+                            </div>
+                            <span style="background: var(--success-10); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem;">✓ Done</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--performance-red-10); border: 1px solid var(--performance-red); border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--performance-red);">Wednesday - Rest Day</div>
+                                <div style="font-size: 0.875rem; color: var(--foreground-muted);">Recovery • Optional yoga or mobility</div>
+                            </div>
+                            <span style="background: var(--performance-red); color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem;">Today</span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--surface-elevated); border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 500;">Thursday - Hill Repeats</div>
+                                <div style="font-size: 0.875rem; color: var(--foreground-muted);">12 miles • <span class="zone-indicator zone-4"></span>Zone 4 • 6x1200m hills</div>
+                            </div>
+                            <span style="background: var(--warning-10); color: var(--warning); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem;">Planned</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--foreground); font-weight: 600;">Periodization Analytics</h3>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <div class="chart-placeholder">Training Load vs Fitness Chart</div>
+                    </div>
+                    
+                    <div class="grid-2" style="gap: 1rem; font-size: 0.875rem;">
+                        <div>
+                            <div style="color: var(--foreground-muted);">Current CTL</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--zone-aerobic);">87.3</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">ATL</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--performance-red);">92.1</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">TSB</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--warning);">-4.8</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--foreground-muted);">Ramp Rate</div>
+                            <div style="font-size: 1.25rem; font-weight: 600; color: var(--success);">5.2/week</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                themeIcon.textContent = '☀️';
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                themeIcon.textContent = '🌙';
+            }
+        }
+
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

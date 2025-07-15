@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Logger } from 'tslog'
 
 interface BulkWorkout {
   trainingPlanId: string
@@ -12,8 +11,6 @@ interface BulkWorkout {
   plannedDuration?: number | null
   notes?: string
 }
-
-const logger = new Logger({ name: 'workouts-bulk-api' })
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +35,7 @@ export async function POST(request: NextRequest) {
       .in('id', trainingPlanIds)
 
     if (plansError) {
-      logger.error('Failed to verify training plans')
+      console.error('Failed to verify training plans', plansError)
       return NextResponse.json({ error: 'Failed to verify training plans' }, { status: 500 })
     }
 
@@ -59,7 +56,7 @@ export async function POST(request: NextRequest) {
         .in('date', datesToClear)
 
       if (deleteError) {
-        logger.error('Failed to clear existing workouts')
+        console.error('Failed to clear existing workouts', deleteError)
         // Continue anyway - we'll handle duplicates at insert
       }
     }
@@ -82,7 +79,7 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (insertError) {
-      logger.error('Failed to create workouts')
+      console.error('Failed to create workouts', insertError)
       return NextResponse.json({ error: 'Failed to create workouts' }, { status: 500 })
     }
 
@@ -126,8 +123,8 @@ export async function POST(request: NextRequest) {
               }])
           }
         }
-      } catch {
-        logger.error('Failed to send notification for new weekly plan')
+      } catch (error) {
+        console.error('Failed to send notification for new weekly plan', error)
         // Don't fail the main request if notification fails
       }
     }
@@ -137,8 +134,8 @@ export async function POST(request: NextRequest) {
       created: insertedWorkouts?.length || 0,
       workouts: insertedWorkouts 
     })
-  } catch {
-    logger.error('API error in POST /workouts/bulk')
+  } catch (error) {
+    console.error('API error in POST /workouts/bulk', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

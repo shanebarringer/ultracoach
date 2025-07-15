@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
+import { useAtom } from 'jotai'
+import { workoutLogFormAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
 interface WorkoutLogModalProps {
@@ -16,16 +19,24 @@ export default function WorkoutLogModal({
   onSuccess,
   workout
 }: WorkoutLogModalProps) {
-  const [formData, setFormData] = useState({
-    actualType: workout.actual_type || workout.planned_type,
-    actualDistance: workout.actual_distance?.toString() || '',
-    actualDuration: workout.actual_duration?.toString() || '',
-    workoutNotes: workout.workout_notes || '',
-    injuryNotes: workout.injury_notes || '',
-    status: workout.status
-  })
+  const [formData, setFormData] = useAtom(workoutLogFormAtom)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    setFormData({
+      actualType: workout.actual_type || workout.planned_type,
+      actualDistance: workout.actual_distance?.toString() || '',
+      actualDuration: workout.actual_duration?.toString() || '',
+      workoutNotes: workout.workout_notes || '',
+      injuryNotes: workout.injury_notes || '',
+      status: workout.status,
+      category: workout.category || '',
+      intensity: workout.intensity?.toString() || '',
+      terrain: workout.terrain || '',
+      elevationGain: workout.elevation_gain?.toString() || '',
+    })
+  }, [workout, setFormData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,20 +44,26 @@ export default function WorkoutLogModal({
     setError('')
 
     try {
-      const response = await fetch(`/api/workouts/${workout.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          actualType: formData.actualType,
-          actualDistance: formData.actualDistance ? parseFloat(formData.actualDistance) : null,
-          actualDuration: formData.actualDuration ? parseInt(formData.actualDuration) : null,
-          workoutNotes: formData.workoutNotes,
-          injuryNotes: formData.injuryNotes,
-          status: formData.status
-        }),
-      })
+      const response = await fetch(`/api/workouts/${workout.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            actualType: formData.actualType,
+            actualDistance: formData.actualDistance ? parseFloat(formData.actualDistance) : null,
+            actualDuration: formData.actualDuration ? parseInt(formData.actualDuration) : null,
+            workoutNotes: formData.workoutNotes,
+            injuryNotes: formData.injuryNotes,
+            status: formData.status,
+            category: formData.category || null,
+            intensity: formData.intensity ? parseInt(formData.intensity) : null,
+            terrain: formData.terrain || null,
+            elevation_gain: formData.elevationGain ? parseInt(formData.elevationGain) : null,
+          }),
+        }
+      )
 
       if (response.ok) {
         onSuccess()
@@ -69,169 +86,205 @@ export default function WorkoutLogModal({
     }))
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Log Workout</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <h3 className="font-medium text-gray-900 mb-2">Planned Workout</h3>
-          <p className="text-sm text-gray-600">
-            {workout.planned_type}
-            {workout.planned_distance && ` • ${workout.planned_distance} miles`}
-            {workout.planned_duration && ` • ${workout.planned_duration} min`}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {new Date(workout.date).toLocaleDateString()}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalContent>
+        <ModalHeader>Log Workout</ModalHeader>
+        <form onSubmit={handleSubmit}>
+          <ModalBody className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">Planned Workout</h3>
+              <p className="text-sm text-gray-600">
+                {workout.planned_type}
+                {workout.planned_distance && ` • ${workout.planned_distance} miles`}
+                {workout.planned_duration && ` • ${workout.planned_duration} min`}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {new Date(workout.date).toLocaleDateString()}
+              </p>
             </div>
-          )}
 
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              id="status"
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <Select
+              label="Status"
               name="status"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.status}
-              onChange={handleChange}
+              selectedKeys={[formData.status]}
+              onSelectionChange={(keys) => {
+                const selectedStatus = Array.from(keys).join('') as 'completed' | 'skipped' | 'planned';
+                setFormData(prev => ({ ...prev, status: selectedStatus }));
+              }}
+              items={[
+                { id: 'completed', name: 'Completed' },
+                { id: 'skipped', name: 'Skipped' },
+                { id: 'planned', name: 'Planned' },
+              ]}
             >
-              <option value="completed">Completed</option>
-              <option value="skipped">Skipped</option>
-              <option value="planned">Planned</option>
-            </select>
-          </div>
+              {(item) => (
+                <SelectItem key={item.id}>
+                  {item.name}
+                </SelectItem>
+              )}
+            </Select>
 
-          {formData.status === 'completed' && (
-            <>
-              <div>
-                <label htmlFor="actualType" className="block text-sm font-medium text-gray-700 mb-1">
-                  Actual Workout Type
-                </label>
-                <select
-                  id="actualType"
+            {formData.status === 'completed' && (
+              <>
+                <Select
+                  label="Actual Workout Type"
                   name="actualType"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.actualType}
-                  onChange={handleChange}
+                  selectedKeys={formData.actualType ? [formData.actualType] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedType = Array.from(keys).join('');
+                    setFormData(prev => ({ ...prev, actualType: selectedType }));
+                  }}
+                  items={[
+                    { id: 'Easy Run', name: 'Easy Run' },
+                    { id: 'Long Run', name: 'Long Run' },
+                    { id: 'Tempo Run', name: 'Tempo Run' },
+                    { id: 'Interval Training', name: 'Interval Training' },
+                    { id: 'Fartlek', name: 'Fartlek' },
+                    { id: 'Hill Training', name: 'Hill Training' },
+                    { id: 'Recovery Run', name: 'Recovery Run' },
+                    { id: 'Cross Training', name: 'Cross Training' },
+                    { id: 'Strength Training', name: 'Strength Training' },
+                    { id: 'Rest Day', name: 'Rest Day' },
+                  ]}
                 >
-                  <option value="Easy Run">Easy Run</option>
-                  <option value="Long Run">Long Run</option>
-                  <option value="Tempo Run">Tempo Run</option>
-                  <option value="Interval Training">Interval Training</option>
-                  <option value="Fartlek">Fartlek</option>
-                  <option value="Hill Training">Hill Training</option>
-                  <option value="Recovery Run">Recovery Run</option>
-                  <option value="Cross Training">Cross Training</option>
-                  <option value="Strength Training">Strength Training</option>
-                  <option value="Rest Day">Rest Day</option>
-                </select>
-              </div>
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  )}
+                </Select>
 
-              <div>
-                <label htmlFor="actualDistance" className="block text-sm font-medium text-gray-700 mb-1">
-                  Actual Distance (miles)
-                </label>
-                <input
+                <Select
+                  label="Category"
+                  name="category"
+                  selectedKeys={formData.category ? [formData.category] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedCategory = Array.from(keys).join('') as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '';
+                    setFormData(prev => ({ ...prev, category: selectedCategory }));
+                  }}
+                  placeholder="Select category..."
+                  items={[
+                    { id: 'easy', name: 'Easy' },
+                    { id: 'tempo', name: 'Tempo' },
+                    { id: 'interval', name: 'Interval' },
+                    { id: 'long_run', name: 'Long Run' },
+                    { id: 'race_simulation', name: 'Race Simulation' },
+                    { id: 'recovery', name: 'Recovery' },
+                    { id: 'strength', name: 'Strength' },
+                    { id: 'cross_training', name: 'Cross Training' },
+                    { id: 'rest', name: 'Rest' },
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  )}
+                </Select>
+
+                <Input
                   type="number"
-                  id="actualDistance"
+                  label="Intensity (1-10)"
+                  name="intensity"
+                  min="1"
+                  max="10"
+                  value={formData.intensity}
+                  onChange={handleChange}
+                  placeholder="e.g., 7"
+                />
+
+                <Select
+                  label="Terrain"
+                  name="terrain"
+                  selectedKeys={formData.terrain ? [formData.terrain] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedTerrain = Array.from(keys)[0] as 'road' | 'trail' | 'track' | 'treadmill' | '';
+                    setFormData(prev => ({ ...prev, terrain: selectedTerrain }));
+                  }}
+                  placeholder="Select terrain..."
+                  items={[
+                    { id: 'road', name: 'Road' },
+                    { id: 'trail', name: 'Trail' },
+                    { id: 'track', name: 'Track' },
+                    { id: 'treadmill', name: 'Treadmill' },
+                  ]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  )}
+                </Select>
+
+                <Input
+                  type="number"
+                  label="Elevation Gain (feet)"
+                  name="elevationGain"
+                  min="0"
+                  value={formData.elevationGain}
+                  onChange={handleChange}
+                  placeholder="e.g., 500"
+                />
+
+                <Input
+                  type="number"
+                  label="Actual Distance (miles)"
                   name="actualDistance"
                   step="0.1"
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.actualDistance}
                   onChange={handleChange}
                   placeholder="e.g., 5.5"
                 />
-              </div>
 
-              <div>
-                <label htmlFor="actualDuration" className="block text-sm font-medium text-gray-700 mb-1">
-                  Actual Duration (minutes)
-                </label>
-                <input
+                <Input
                   type="number"
-                  id="actualDuration"
+                  label="Actual Duration (minutes)"
                   name="actualDuration"
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.actualDuration}
                   onChange={handleChange}
                   placeholder="e.g., 60"
                 />
-              </div>
-            </>
-          )}
+              </>
+            )}
 
-          <div>
-            <label htmlFor="workoutNotes" className="block text-sm font-medium text-gray-700 mb-1">
-              Workout Notes
-            </label>
-            <textarea
-              id="workoutNotes"
+            <Textarea
+              label="Workout Notes"
               name="workoutNotes"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.workoutNotes}
               onChange={handleChange}
               placeholder="How did the workout feel? Any observations..."
             />
-          </div>
 
-          <div>
-            <label htmlFor="injuryNotes" className="block text-sm font-medium text-gray-700 mb-1">
-              Injury Notes
-            </label>
-            <textarea
-              id="injuryNotes"
+            <Textarea
+              label="Injury Notes"
               name="injuryNotes"
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.injuryNotes}
               onChange={handleChange}
               placeholder="Any aches, pains, or injuries to note..."
             />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-            >
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" color="primary" disabled={loading}>
               {loading ? 'Saving...' : 'Save Workout'}
-            </button>
-          </div>
+            </Button>
+          </ModalFooter>
         </form>
-      </div>
-    </div>
+      </ModalContent>
+    </Modal>
   )
 }
