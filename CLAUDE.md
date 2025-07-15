@@ -109,9 +109,10 @@ pnpm lint
 - **Chat Features**: Enhanced error handling, smart auto-scroll, loading state optimization
 
 ### Test Data System (✅ COMPLETED)
-- **Test Users**: 2 coaches, 10 runners with realistic relationships
+- **Test Users**: 2 coaches, 10 runners with realistic relationships and fixed IDs
 - **Credentials**: All test accounts use password `password123`
-- **Access**: `credentials/latest.txt` (gitignored) for login details
+- **Access**: `supabase/temp/credentials/test_users_2025_07_15.txt` for login details
+- **Consistent Testing**: Fixed UUIDs prevent messaging errors and enable reliable testing
 
 ## 🔧 Important Development Guidelines
 
@@ -308,7 +309,7 @@ pnpm lint
 1. **ALWAYS check TASKS.md** for current priorities
 2. **Read PLANNING.md** if new to project context
 3. **Backup database** before any schema changes
-4. **Use test credentials** from `credentials/latest.txt`
+4. **Use test credentials** from `supabase/temp/credentials/test_users_2025_07_15.txt`
 
 ### During Development
 1. **Update TASKS.md** immediately when completing tasks
@@ -333,7 +334,7 @@ pnpm lint
 - **Implementation Guide**: `designs/final/heroui_migration_guide.md` - Step-by-step migration
 - **Database**: `./supabase/scripts/` for all database operations
 - **State**: `src/lib/atoms.ts` for all Jotai state definitions
-- **Auth**: Test users login with `password123`
+- **Auth**: Test users login with `password123` (see `supabase/temp/credentials/test_users_2025_07_15.txt`)
 - **PRs**: #1 (enhanced training system), #5 (training plans Jotai migration), #7 (HeroUI integration)
 
 ## 🎯 Development Philosophy
