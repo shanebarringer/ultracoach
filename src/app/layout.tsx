@@ -5,6 +5,7 @@ import SessionProvider from '@/components/providers/SessionProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
+import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +34,13 @@ export default function RootLayout({
       >
         <SessionProvider session={null}>
           <JotaiProvider>
-            <HeroUIProvider>
-              <ThemeWrapper>
-                {children}
-              </ThemeWrapper>
-            </HeroUIProvider>
+            <BetterAuthProvider>
+              <HeroUIProvider>
+                <ThemeWrapper>
+                  {children}
+                </ThemeWrapper>
+              </HeroUIProvider>
+            </BetterAuthProvider>
           </JotaiProvider>
         </SessionProvider>
       </body>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
+import { useBetterAuth } from '@/hooks/useBetterAuth'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -14,8 +15,8 @@ export default function SignUp() {
     role: 'runner' as 'runner' | 'coach'
   })
   const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { signUp, loading, error } = useBetterAuth()
 
   const validate = () => {
     const newErrors = { email: '', password: '', fullName: '' }
@@ -40,27 +41,17 @@ export default function SignUp() {
     e.preventDefault()
     if (!validate()) return
 
-    setLoading(true)
+    const result = await signUp(formData.email, formData.password, formData.fullName, formData.role)
 
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        router.push('/auth/signin?message=Account created successfully')
+    if (!result.success) {
+      setErrors({ ...errors, email: result.error || 'An error occurred' })
+    } else {
+      // Redirect based on user role
+      if (result.data?.user?.role === 'coach') {
+        router.push('/dashboard/coach')
       } else {
-        const data = await response.json()
-        setErrors({ ...errors, email: data.error || 'An error occurred' })
+        router.push('/dashboard/runner')
       }
-    } catch {
-      setErrors({ ...errors, email: 'An error occurred. Please try again.' })
-    } finally {
-      setLoading(false)
     }
   }
 

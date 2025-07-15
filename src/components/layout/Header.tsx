@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
+import { useBetterSession } from '@/hooks/useBetterSession'
 import Link from 'next/link'
 import { 
   Button, 
@@ -49,10 +50,12 @@ function ThemeToggle() {
 
 export default function Header() {
   const { data: session } = useSession()
+  const { signOut } = useBetterSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
+  const handleSignOut = async () => {
+    await signOut()
+    window.location.href = '/'
   }
 
   return (

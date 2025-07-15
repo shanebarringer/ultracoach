@@ -1,18 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
+import { useBetterAuth } from '@/hooks/useBetterAuth'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({ email: '', password: '' })
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { signIn, loading, error } = useBetterAuth()
 
   const validate = () => {
     const newErrors = { email: '', password: '' }
@@ -32,29 +32,17 @@ export default function SignIn() {
     e.preventDefault()
     if (!validate()) return
 
-    setLoading(true)
+    const result = await signIn(email, password)
 
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
-      })
-
-      if (result?.error) {
-        setErrors({ ...errors, email: 'Invalid credentials' })
+    if (!result.success) {
+      setErrors({ ...errors, email: result.error || 'Invalid credentials' })
+    } else {
+      // Redirect based on user role
+      if (result.data?.user?.role === 'coach') {
+        router.push('/dashboard/coach')
       } else {
-        const session = await getSession()
-        if (session?.user.role === 'coach') {
-          router.push('/dashboard/coach')
-        } else {
-          router.push('/dashboard/runner')
-        }
+        router.push('/dashboard/runner')
       }
-    } catch {
-      setErrors({ ...errors, email: 'An error occurred. Please try again.' })
-    } finally {
-      setLoading(false)
     }
   }
 
