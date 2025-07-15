@@ -11,33 +11,17 @@ export async function GET(request: NextRequest) {
     }
     const { searchParams } = new URL(request.url)
     const recipientId = searchParams.get('recipientId')
-    const workoutId = searchParams.get('workoutId')
     
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
     
-    // Build query for messages with workout context
-    let query = supabaseAdmin
+    // Fetch messages between the current user and the recipient
+    const { data: rawMessages, error: messagesError } = await supabaseAdmin
       .from('messages')
-      .select(`
-        *,
-        workout:workout_id(id, date, planned_type, planned_distance, status),
-        workout_links:message_workout_links(
-          workout_id,
-          link_type,
-          workout:workout_id(id, date, planned_type, planned_distance, status)
-        )
-      `)
+      .select('*')
       .or(`and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})`)
       .order('created_at', { ascending: true })
-    
-    // If filtering by specific workout
-    if (workoutId) {
-      query = query.or(`workout_id.eq.${workoutId},message_workout_links.workout_id.eq.${workoutId}`)
-    }
-    
-    const { data: rawMessages, error: messagesError } = await query
     
     if (messagesError) {
       console.error('Failed to fetch messages', messagesError)
@@ -63,18 +47,26 @@ export async function GET(request: NextRequest) {
     const userMap = new Map()
     users?.forEach(user => userMap.set(user.id, user))
     
-    // Join messages with user data and format workout context
+    // Get workout IDs from messages for batch fetching
+    const workoutIds = [...new Set(rawMessages?.filter(msg => msg.workout_id).map(msg => msg.workout_id) || [])]
+    
+    // Fetch workout data if any messages have workout context
+    const workoutMap = new Map()
+    if (workoutIds.length > 0) {
+      const { data: workouts } = await supabaseAdmin
+        .from('workouts')
+        .select('id, date, planned_type, planned_distance, status, workout_notes')
+        .in('id', workoutIds)
+      
+      workouts?.forEach(workout => workoutMap.set(workout.id, workout))
+    }
+    
+    // Join messages with user data and workout context
     const messages = rawMessages?.map(msg => ({
       ...msg,
       sender: userMap.get(msg.sender_id),
       recipient: userMap.get(msg.recipient_id),
-      workoutContext: msg.workout || (msg.workout_links && msg.workout_links.length > 0 
-        ? msg.workout_links.map((link: { workout: Record<string, unknown>; link_type: string }) => ({
-            ...link.workout,
-            linkType: link.link_type
-          }))
-        : null
-      )
+      workout: msg.workout_id ? workoutMap.get(msg.workout_id) : null
     })) || []
     
     return NextResponse.json({ messages })
@@ -160,12 +152,7 @@ export async function POST(request: NextRequest) {
           read: false
         }
       ])
-      .select(`
-        *,
-        sender:sender_id(*),
-        recipient:recipient_id(*),
-        workout:workout_id(id, date, planned_type, planned_distance, status)
-      `)
+      .select('*')
       .single()
       
     if (messageError) {
