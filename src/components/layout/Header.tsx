@@ -116,6 +116,16 @@ export default function Header() {
             {session.user.role === 'coach' && (
               <NavbarItem>
                 <Link 
+                  href="/races"
+                  className="text-foreground hover:text-primary transition-colors font-medium"
+                >
+                  Races
+                </Link>
+              </NavbarItem>
+            )}
+            {session.user.role === 'coach' && (
+              <NavbarItem>
+                <Link 
                   href="/weekly-planner"
                   className="text-foreground hover:text-primary transition-colors font-medium"
                 >
@@ -218,6 +228,13 @@ export default function Header() {
               <NavbarMenuItem>
                 <Link href="/runners" onClick={() => setIsMenuOpen(false)}>
                   Runners
+                </Link>
+              </NavbarMenuItem>
+            )}
+            {session.user.role === 'coach' && (
+              <NavbarMenuItem>
+                <Link href="/races" onClick={() => setIsMenuOpen(false)}>
+                  Races
                 </Link>
               </NavbarMenuItem>
             )}

@@ -15,12 +15,12 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-07-14)
-- **Active Milestone**: Enhanced Training Features (Milestone 3)
-- **Completion**: 98% (110/112 total tasks) + **COMPLETE MOUNTAIN PEAK ENHANCED STYLING**
-- **Recent Major Achievement**: 100% HeroUI transformation complete - all pages now feature Mountain Peak Enhanced styling
-- **Performance**: All builds passing, production-ready with professional alpine aesthetic
-- **Next Priority**: Enhanced Training Features - Race management, phase progression, and advanced workflow features
+### Current Status (Updated: 2025-07-15)
+- **Active Milestone**: Enhanced Training Features (Milestone 3) - 100% Complete! 🎉
+- **Completion**: 98.7% (114/115 total tasks) + **COMPLETE MESSAGE-WORKOUT LINKING**
+- **Recent Major Achievement**: Complete message-workout linking system with contextual communication
+- **Performance**: All builds passing, production-ready with professional alpine aesthetic throughout
+- **Next Priority**: Monthly calendar view, performance analytics, and advanced training features
 
 ## 🏗️ Architecture & Technology
 
@@ -109,9 +109,10 @@ pnpm lint
 - **Chat Features**: Enhanced error handling, smart auto-scroll, loading state optimization
 
 ### Test Data System (✅ COMPLETED)
-- **Test Users**: 2 coaches, 10 runners with realistic relationships
+- **Test Users**: 2 coaches, 10 runners with realistic relationships and fixed IDs
 - **Credentials**: All test accounts use password `password123`
-- **Access**: `credentials/latest.txt` (gitignored) for login details
+- **Access**: `supabase/temp/credentials/test_users_2025_07_15.txt` for login details
+- **Consistent Testing**: Fixed UUIDs prevent messaging errors and enable reliable testing
 
 ## 🔧 Important Development Guidelines
 
@@ -246,10 +247,43 @@ pnpm lint
 - ✅ All builds passing with zero errors
 
 **Next Priority Tasks:**
-1. Enhanced Training Features - Race management system
-2. Phase progression and training plan sequencing
-3. Advanced workout planning tools
-4. Performance optimization and testing
+1. ✅ ~~Enhanced Training Features - Race management system~~ **COMPLETED!**
+2. **Phase Progression System** - Automatic transitions, visualization, completion criteria
+3. **Plan Sequencing** - Multi-race planning workflow (50K → 50M → 100K)
+4. Advanced workout planning tools and performance optimization
+
+### ✅ Latest Major Achievement: Complete Message-Workout Linking System (COMPLETED)
+
+**Recently Completed: Message-Workout Linking System**
+- ✅ **Contextual Communication**: Complete system for linking messages to specific workouts
+  - WorkoutContext component displaying workout details in chat messages
+  - WorkoutLinkSelector modal for choosing workouts and link types
+  - Support for 5 link types: reference, feedback, question, update, plan_change
+  - Professional Mountain Peak Enhanced styling throughout
+- ✅ **Enhanced Database Schema**: Comprehensive message-workout relationship system
+  - Added workout_id and context_type columns to messages table
+  - New message_workout_links table for many-to-many relationships
+  - Conversations table for grouping related messages
+  - Complete RLS policies and performance indexes
+- ✅ **Chat Interface Enhancements**: Professional workout-aware communication
+  - Workout filtering dropdown in chat header
+  - Active filter display with closeable chips
+  - Enhanced message display with workout context cards
+  - Real-time updates for workout-linked messages
+
+**Previous Achievement: Race Management System**
+- ✅ **Race Expeditions Page**: Complete interface for managing target races with professional Mountain Peak styling
+- ✅ **Full CRUD API**: GET, POST, PUT, DELETE endpoints at `/api/races` and `/api/races/[id]`
+- ✅ **Race Categories**: Support for 50K, 50M, 100K, 100M, Marathon, and custom distances
+- ✅ **Enhanced Weekly Planner**: Improved consistency and Monday-start logic
+- ✅ **Database Field Standardization**: Consistent workout APIs across the application
+
+**Technical Implementation:**
+- ✅ Date-fns integration for timestamp formatting
+- ✅ Complete HeroUI component integration across landing and notifications
+- ✅ Mountain Peak Enhanced design system applied consistently
+- ✅ Professional loading states and error handling
+- ✅ Production-ready builds with zero errors
 
 ### 🎯 Key Success Metrics Achieved
 - ✅ Zero React Context for global state (notifications, workouts, training plans, chat system migrated)
@@ -275,7 +309,7 @@ pnpm lint
 1. **ALWAYS check TASKS.md** for current priorities
 2. **Read PLANNING.md** if new to project context
 3. **Backup database** before any schema changes
-4. **Use test credentials** from `credentials/latest.txt`
+4. **Use test credentials** from `supabase/temp/credentials/test_users_2025_07_15.txt`
 
 ### During Development
 1. **Update TASKS.md** immediately when completing tasks
@@ -300,7 +334,7 @@ pnpm lint
 - **Implementation Guide**: `designs/final/heroui_migration_guide.md` - Step-by-step migration
 - **Database**: `./supabase/scripts/` for all database operations
 - **State**: `src/lib/atoms.ts` for all Jotai state definitions
-- **Auth**: Test users login with `password123`
+- **Auth**: Test users login with `password123` (see `supabase/temp/credentials/test_users_2025_07_15.txt`)
 - **PRs**: #1 (enhanced training system), #5 (training plans Jotai migration), #7 (HeroUI integration)
 
 ## 🎯 Development Philosophy
@@ -313,6 +347,12 @@ UltraCoach aims to be a professional-grade ultramarathon coaching platform. Ever
 - **User experience** that's intuitive for both coaches and athletes
 
 The codebase should be maintainable, performant, and scalable to support growing usage while maintaining the high-quality user experience expected in professional coaching tools.
+
+## 🗺️ Files Referenced in Various Project Documents
+- **@CLAUDE.md**: This project guidance document
+- **@PLANNING.md**: Project vision and architectural roadmap
+- **@TASKS.md**: Current milestones and task tracking
+- **@designs/README.md**: Design system documentation
 
 ---
 

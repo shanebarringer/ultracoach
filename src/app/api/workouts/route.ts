@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (endDate) {
       query = query.lte('date', endDate)
     }
-    const { data: workouts, error } = await query.order('date', { ascending: false })
+    const { data: workouts, error } = await query.order('date', { ascending: true })
     if (error) {
       console.error('Failed to fetch workouts', error)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
@@ -54,7 +54,11 @@ export async function POST(request: NextRequest) {
       plannedType, 
       plannedDistance, 
       plannedDuration, 
-      notes 
+      notes,
+      category,
+      intensity,
+      terrain,
+      elevationGain
     } = await request.json()
     if (!trainingPlanId || !date || !plannedType) {
       return NextResponse.json({ 
@@ -82,7 +86,11 @@ export async function POST(request: NextRequest) {
           planned_distance: plannedDistance,
           planned_duration: plannedDuration,
           workout_notes: notes,
-          status: 'planned'
+          status: 'planned',
+          workout_category: category || null,
+          intensity_level: intensity ? parseInt(intensity) : null,
+          terrain_type: terrain || null,
+          elevation_gain_feet: elevationGain ? parseInt(elevationGain) : null
         },
       ])
       .select()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useAtom, useSetAtom } from 'jotai'
+import { useAtom } from 'jotai'
 import { useSession } from 'next-auth/react'
 import { useCallback, useEffect } from 'react'
 import { workoutsAtom, loadingStatesAtom } from '@/lib/atoms'
@@ -9,7 +9,7 @@ import type { Workout } from '@/lib/supabase'
 export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
-  const setLoadingStates = useSetAtom(loadingStatesAtom)
+  const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
 
   const fetchWorkouts = useCallback(async () => {
     if (!session?.user?.id) return
@@ -89,6 +89,7 @@ export function useWorkouts() {
 
   return {
     workouts,
+    loading: loadingStates.workouts,
     fetchWorkouts,
     updateWorkout,
     deleteWorkout,

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { userId, title, message, type, category, data } = await request.json()
+    const { userId, title, message, type } = await request.json()
     if (!userId || !title || !message) {
       return NextResponse.json({ 
         error: 'User ID, title, and message are required' 
@@ -52,9 +52,7 @@ export async function POST(request: NextRequest) {
         user_id: userId,
         title,
         message,
-        type: type || 'info',
-        category: category || 'general',
-        data: data || null
+        type: type || 'message'
       }])
       .select()
       .single()

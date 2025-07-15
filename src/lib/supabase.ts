@@ -84,6 +84,26 @@ export interface Message {
   content: string
   read: boolean
   created_at: string
+  workout_id?: string | null
+  context_type?: string
+}
+
+export interface MessageWithUser extends Message {
+  sender: User
+}
+
+export interface Conversation {
+  id: string
+  sender_id: string
+  recipient_id: string
+  last_message_at: string
+  created_at: string
+}
+
+export interface ConversationWithUser extends Conversation {
+  sender: User
+  recipient: User
+  unreadCount: number
 }
 
 export interface MessageWithUser extends Message {
