@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 import { useEffect, useCallback, useRef } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { typingStatusAtom } from '@/lib/atoms'
 
 export function useTypingStatus(recipientId: string) {

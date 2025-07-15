@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { Card, CardHeader, CardBody, Chip, Spinner, Progress, Button } from '@heroui/react'
 import { MountainSnowIcon, TrendingUpIcon, CalendarIcon, MapPinIcon, ClockIcon, FlagIcon, RouteIcon } from 'lucide-react'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -62,7 +62,7 @@ export default function RunnerDashboard() {
                 Base Camp Dashboard
               </h1>
               <p className="text-foreground-600 text-lg mt-1">
-                Welcome back, {session?.user?.name}! Ready to conquer your peaks?
+                Welcome back, {session?.user?.name as string}! Ready to conquer your peaks?
               </p>
             </div>
           </div>

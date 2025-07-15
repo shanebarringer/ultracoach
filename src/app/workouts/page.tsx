@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
 import { useAtom } from 'jotai'
 import { Card, CardBody, CardHeader, Chip, Spinner, Tabs, Tab } from '@heroui/react'

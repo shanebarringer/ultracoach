@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Chip } from '@heroui/react'
 import { Filter, X } from 'lucide-react'
 import MessageList from './MessageList'
@@ -145,7 +145,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       <div className="flex-1 flex flex-col min-h-0">
         <MessageList 
           messages={filteredMessages} 
-          currentUserId={session?.user?.id || ''} 
+          currentUserId={session?.user?.id as string || ''} 
         />
         
         {/* Typing Indicator */}

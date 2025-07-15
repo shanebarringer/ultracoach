@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-07-15T15:58:00.417Z",
+  "tables": {
+    "users": 14,
+    "training_plans": 13,
+    "messages": 34,
+    "workouts": 5
+  }
+}

@@ -2,6 +2,11 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
 
+// Authentication atoms
+export const sessionAtom = atom<Record<string, unknown> | null>(null)
+export const userAtom = atom<Record<string, unknown> | null>(null)
+export const authLoadingAtom = atom<boolean>(true)
+
 // Core application atoms
 export const notificationsAtom = atom<Notification[]>([])
 export const unreadNotificationsCountAtom = atom<number>(0)

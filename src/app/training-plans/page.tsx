@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useAtom } from 'jotai'
 import Layout from '@/components/layout/Layout'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
@@ -116,7 +116,7 @@ export default function TrainingPlansPage() {
               <TrainingPlanCard
                 key={plan.id}
                 plan={plan}
-                userRole={session.user.role}
+                userRole={session.user.role as 'runner' | 'coach'}
                 onArchiveChange={handleArchiveChange}
               />
             ))}

@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useCallback, useEffect } from 'react'
 import { trainingPlansAtom, workoutsAtom, loadingStatesAtom } from '@/lib/atoms'
 import type { TrainingPlan, Workout, User } from '@/lib/supabase'

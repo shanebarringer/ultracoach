@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SessionProvider from '@/components/providers/SessionProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
+import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,15 +31,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider session={null}>
-          <JotaiProvider>
+        <JotaiProvider>
+          <BetterAuthProvider>
             <HeroUIProvider>
               <ThemeWrapper>
                 {children}
               </ThemeWrapper>
             </HeroUIProvider>
-          </JotaiProvider>
-        </SessionProvider>
+          </BetterAuthProvider>
+        </JotaiProvider>
       </body>
     </html>
   );

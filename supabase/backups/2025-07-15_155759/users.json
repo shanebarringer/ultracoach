@@ -1,0 +1,128 @@
+[
+  {
+    "id": "123718c1-3f8b-4086-8104-ef6a9a9f68a3",
+    "email": "test@example.com",
+    "role": "runner",
+    "full_name": "Test User",
+    "created_at": "2025-07-11T21:28:42.296391+00:00",
+    "updated_at": "2025-07-11T21:28:42.296391+00:00",
+    "password_hash": "$2b$12$TzruZUYLiMrp17QH./fVcOzPc8/GRLM0LPCm6jPiutKrbP4Q/bm1S"
+  },
+  {
+    "id": "d9d1ccbe-f57c-499c-a39d-e5fa7e5534b6",
+    "email": "shanebarringer@gmail.com",
+    "role": "coach",
+    "full_name": "Shane",
+    "created_at": "2025-07-11T21:31:06.186973+00:00",
+    "updated_at": "2025-07-11T21:31:06.186973+00:00",
+    "password_hash": "$2b$12$9nL4RFiaQ/b9EZ0b7LiUGOvUUyNIkV1nFW398YchWLyJwVHdxXZtK"
+  },
+  {
+    "id": "9c6b7613-67b1-48f8-a2c5-22ad8bb83ebe",
+    "email": "coach1@ultracoach.dev",
+    "role": "coach",
+    "full_name": "Sarah Mountain",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "9f33c70b-a795-47f7-8a18-62f96be36344",
+    "email": "coach2@ultracoach.dev",
+    "role": "coach",
+    "full_name": "Mike Trailblazer",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "8e679919-9824-4733-a726-0bafbba146b3",
+    "email": "runner1@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Alex Speedster",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "410f73c8-3273-4e5a-b5cb-207546cc4a19",
+    "email": "runner2@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Jordan Endurance",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "29902c0e-f36e-4885-9e8f-702095a06ba2",
+    "email": "runner3@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Taylor Swift-feet",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "15600f6f-dce0-40bc-8f0c-b201082db3d5",
+    "email": "runner4@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Casey Hillclimber",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "809def24-1ce5-4086-991a-e824110015c4",
+    "email": "runner5@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Morgan Longdistance",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "764d1b75-a2e9-4b93-a60c-93f3a0962d08",
+    "email": "runner6@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Riley Trailrunner",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "68d51db2-8aae-4405-8be1-9a03f38a1d7c",
+    "email": "runner7@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Avery Pacesetter",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "b67b6c5a-4cbf-48dc-bd2e-5605ea3fba07",
+    "email": "runner8@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Phoenix Ultramarathoner",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "0ebbb58d-85a2-4db3-a18a-a8c1de01ea13",
+    "email": "runner9@ultracoach.dev",
+    "role": "runner",
+    "full_name": "Sage Mountaineer",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  },
+  {
+    "id": "2aee19c0-c671-4d20-8c91-5a365a61f74a",
+    "email": "runner10@ultracoach.dev",
+    "role": "runner",
+    "full_name": "River Flowstate",
+    "created_at": "2025-07-12T07:36:47.882532+00:00",
+    "updated_at": "2025-07-12T08:31:32.142485+00:00",
+    "password_hash": "$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO"
+  }
+]

@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useCallback, useEffect } from 'react'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { 
@@ -78,7 +78,7 @@ export function useConversations() {
         setLoadingStates(prev => ({ ...prev, conversations: false }))
       }
     }
-  }, [session?.user?.id, setConversations, setLoadingStates, setChatUiState])
+  }, [session?.user?.id, session?.user?.email, session?.user?.name, session?.user?.role, setConversations, setLoadingStates, setChatUiState])
 
   const updateConversationFromMessage = useCallback((message: Message) => {
     if (!session?.user?.id) return

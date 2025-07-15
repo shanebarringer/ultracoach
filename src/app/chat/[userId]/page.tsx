@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'

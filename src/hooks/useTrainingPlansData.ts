@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useSetAtom } from 'jotai'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useBetterSession'
 import { useEffect, useRef } from 'react'
 import axios from 'axios'
 import { trainingPlansAtom, loadingStatesAtom } from '@/lib/atoms'
