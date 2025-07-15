@@ -1,102 +1,194 @@
 import Link from 'next/link'
+import { 
+  Card, 
+  CardBody, 
+  Button,
+  Chip
+} from '@heroui/react'
+import { 
+  MountainSnowIcon, 
+  UsersIcon, 
+  TrendingUpIcon, 
+  MessageCircleIcon,
+  ArrowRightIcon
+} from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 
 export default function Home() {
   return (
     <Layout>
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Master Your Ultramarathon Journey
+      {/* Hero Section with Mountain Peak Enhanced styling */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600">
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+          <div className="text-center text-white">
+            <Chip
+              variant="flat"
+              color="warning"
+              size="lg"
+              className="mb-6 bg-warning-100/20 text-warning-100"
+              startContent={<MountainSnowIcon className="w-4 h-4" />}
+            >
+              🏔️ Professional Alpine Training Platform
+            </Chip>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-warning-200 bg-clip-text text-transparent">
+              Conquer Your Peaks
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              Connect with experienced coaches, track your training, and achieve your ultramarathon goals 
-              with our comprehensive training platform.
+            <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100">
+              Master ultramarathon excellence with expert coaching, scientific training methods, 
+              and the tools to reach every summit on your journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
+              <Button
+                as={Link}
                 href="/auth/signup"
-                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                size="lg"
+                color="warning"
+                variant="solid"
+                className="text-primary-900 font-semibold"
+                endContent={<ArrowRightIcon className="w-4 h-4" />}
               >
-                Get Started
-              </Link>
-              <Link
+                Begin Your Ascent
+              </Button>
+              <Button
+                as={Link}
                 href="/coaches"
-                className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+                size="lg"
+                variant="bordered"
+                className="border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
+                startContent={<UsersIcon className="w-4 h-4" />}
               >
-                Find a Coach
-              </Link>
+                Find Your Guide
+              </Button>
             </div>
           </div>
         </div>
+        {/* Mountain silhouette decoration */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-default-50 to-transparent" />
       </div>
 
-      <div className="py-16 bg-gray-50">
+      {/* Features Section */}
+      <div className="py-20 bg-default-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose UltraCoach?
+          <div className="text-center mb-16">
+            <Chip
+              variant="flat"
+              color="primary"
+              size="lg"
+              className="mb-4"
+            >
+              Why Alpine Coaching Works
+            </Chip>
+            <h2 className="text-4xl md:text-5xl font-bold text-default-900 mb-6">
+              🏔️ Base Camp to Summit
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our platform brings together the best tools and expertise to help you succeed in ultramarathon training.
+            <p className="text-xl text-default-600 max-w-3xl mx-auto">
+              Every expedition requires the right preparation, guidance, and support system. 
+              Our platform provides everything you need for ultramarathon success.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Expert Coaching</h3>
-              <p className="text-gray-600">
-                Connect with certified ultramarathon coaches who understand the unique challenges of ultra-distance running.
-              </p>
-            </div>
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardBody className="text-center p-8">
+                <div className="bg-gradient-to-br from-success-100 to-success-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <UsersIcon className="w-10 h-10 text-success-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">🎯 Expert Sherpa Guidance</h3>
+                <p className="text-default-600 leading-relaxed">
+                  Connect with certified ultramarathon coaches who&apos;ve conquered the peaks you&apos;re 
+                  climbing. Get personalized guidance for every step of your expedition.
+                </p>
+                <Chip
+                  variant="flat"
+                  color="success"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Professional Coaching
+                </Chip>
+              </CardBody>
+            </Card>
 
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Training Tracking</h3>
-              <p className="text-gray-600">
-                Comprehensive workout logging, progress tracking, and real-time feedback to keep you on track.
-              </p>
-            </div>
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardBody className="text-center p-8">
+                <div className="bg-gradient-to-br from-primary-100 to-primary-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <TrendingUpIcon className="w-10 h-10 text-primary-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">📈 Scientific Training Zones</h3>
+                <p className="text-default-600 leading-relaxed">
+                  Track every ascent with precision. Advanced workout logging, training zone analysis, 
+                  and performance metrics to optimize your mountaineering fitness.
+                </p>
+                <Chip
+                  variant="flat"
+                  color="primary"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Data-Driven Training
+                </Chip>
+              </CardBody>
+            </Card>
 
-            <div className="text-center">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-time Communication</h3>
-              <p className="text-gray-600">
-                Stay connected with your coach through our messaging system and get support when you need it.
-              </p>
-            </div>
+            <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardBody className="text-center p-8">
+                <div className="bg-gradient-to-br from-warning-100 to-warning-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageCircleIcon className="w-10 h-10 text-warning-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">💬 Base Camp Communication</h3>
+                <p className="text-default-600 leading-relaxed">
+                  Stay connected with your coaching team through real-time messaging. 
+                  Get immediate support and guidance when conditions change.
+                </p>
+                <Chip
+                  variant="flat"
+                  color="warning"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Real-Time Support
+                </Chip>
+              </CardBody>
+            </Card>
           </div>
         </div>
       </div>
 
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Ready to Start Your Journey?
+      {/* Call to Action Section */}
+      <div className="py-20 bg-gradient-to-r from-primary-600 to-secondary-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <MountainSnowIcon className="w-16 h-16 text-warning-300 mx-auto mb-6" />
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready for Your Next Summit?
           </h2>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of ultramarathon runners who are already training smarter with UltraCoach.
+          <p className="text-xl text-primary-100 mb-10 max-w-3xl mx-auto leading-relaxed">
+            Join the expedition of ultramarathon athletes who are already conquering their peaks 
+            with professional coaching, scientific training, and unwavering support.
           </p>
-          <Link
-            href="/auth/signup"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-block"
-          >
-            Start Training Today
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              as={Link}
+              href="/auth/signup"
+              size="lg"
+              color="warning"
+              variant="solid"
+              className="text-primary-900 font-bold text-lg px-8"
+              endContent={<ArrowRightIcon className="w-5 h-5" />}
+            >
+              Start Your Expedition Today
+            </Button>
+            <Button
+              as={Link}
+              href="/auth/signin"
+              size="lg"
+              variant="bordered"
+              className="border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
+            >
+              Return to Base Camp
+            </Button>
+          </div>
         </div>
       </div>
     </Layout>
