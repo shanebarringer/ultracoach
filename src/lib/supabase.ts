@@ -84,6 +84,8 @@ export interface Message {
   content: string
   read: boolean
   created_at: string
+  workout_id?: string | null
+  context_type?: string
 }
 
 export interface MessageWithUser extends Message {

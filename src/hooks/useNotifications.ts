@@ -75,7 +75,12 @@ export function useNotifications() {
         .eq('user_id', session?.user?.id)
 
       if (error) {
-        console.error('Error marking notification as read:', error)
+        console.error('Error marking notification as read:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         return
       }
 

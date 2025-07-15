@@ -115,7 +115,7 @@ export function useMessages(recipientId?: string) {
     }
   }, [session?.user?.id, recipientId])
 
-  const sendMessage = useCallback(async (content: string, targetRecipientId?: string) => {
+  const sendMessage = useCallback(async (content: string, workoutId?: string, contextType?: string, targetRecipientId?: string) => {
     const targetId = targetRecipientId || recipientId
     if (!session?.user?.id || !targetId) return false
 
@@ -126,6 +126,8 @@ export function useMessages(recipientId?: string) {
       content,
       sender_id: session.user.id,
       recipient_id: targetId,
+      workout_id: workoutId || null,
+      context_type: contextType || 'general',
       read: false,
       created_at: new Date().toISOString(),
       sender: {
@@ -149,7 +151,9 @@ export function useMessages(recipientId?: string) {
         },
         body: JSON.stringify({
           content,
-          recipientId: targetId
+          recipientId: targetId,
+          workoutId,
+          contextType
         }),
       })
 
