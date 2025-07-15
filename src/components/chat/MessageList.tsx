@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { MessageWithUser } from '@/lib/supabase'
+import WorkoutContext from './WorkoutContext'
+import { useWorkouts } from '@/hooks/useWorkouts'
 
 interface MessageListProps {
   messages: MessageWithUser[]
@@ -14,6 +16,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   const [isUserScrolling, setIsUserScrolling] = useState(false)
   const [lastMessageCount, setLastMessageCount] = useState(0)
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { workouts } = useWorkouts()
 
   const scrollToBottom = () => {
     const container = containerRef.current
@@ -208,6 +211,24 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
                         <div className="whitespace-pre-wrap break-words">
                           {message.content}
                         </div>
+                        
+                        {/* Workout context */}
+                        {message.workout_id && (() => {
+                          const workout = workouts.find(w => w.id === message.workout_id)
+                          if (workout) {
+                            return (
+                              <div className="mt-2">
+                                <WorkoutContext
+                                  workout={workout}
+                                  linkType={message.context_type?.replace('workout_', '') || 'reference'}
+                                  className="text-xs"
+                                />
+                              </div>
+                            )
+                          }
+                          return null
+                        })()}
+                        
                         <div
                           className={`text-xs mt-1 flex items-center justify-between ${
                             isOwnMessage ? 'text-blue-100' : 'text-gray-500'

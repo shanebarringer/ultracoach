@@ -22,12 +22,12 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const { messages, loading, sendMessage } = useMessages(recipientId)
   const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
 
-  const handleSendMessage = useCallback(async (content: string) => {
+  const handleSendMessage = useCallback(async (content: string, workoutId?: string, contextType?: string) => {
     if (!session?.user?.id || sending) return
 
     setSending(true)
     try {
-      const success = await sendMessage(content)
+      const success = await sendMessage(content, workoutId, contextType)
       if (!success) {
         alert('Failed to send message. Please try again.')
       }
@@ -89,6 +89,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         onStartTyping={startTyping}
         onStopTyping={stopTyping}
         disabled={sending || !session?.user?.id}
+        recipientId={recipientId}
       />
     </div>
   )
