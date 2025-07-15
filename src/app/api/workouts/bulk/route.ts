@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
       planned_duration: workout.plannedDuration,
       workout_notes: workout.notes || '',
       status: 'planned',
-      category: workout.category,
-      intensity: workout.intensity,
-      terrain: workout.terrain,
-      elevation_gain: workout.elevationGain
+      workout_category: workout.category,
+      intensity_level: workout.intensity,
+      terrain_type: workout.terrain,
+      elevation_gain_feet: workout.elevationGain
     }))
 
     // Bulk insert workouts

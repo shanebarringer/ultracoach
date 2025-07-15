@@ -63,13 +63,16 @@ BEGIN
     (gen_random_uuid(), 'River - Recovery & Comeback', 'Returning from injury', coach2_id, runner10_id, false, NOW());
 
     -- Create some simple sample workouts for first two training plans
-    INSERT INTO workouts (id, training_plan_id, date, planned_type, planned_distance, planned_duration, workout_notes, status, created_at) VALUES
+    INSERT INTO workouts (
+      id, training_plan_id, date, planned_type, planned_distance, planned_duration, workout_notes, status, created_at,
+      workout_category, intensity_level, terrain_type, elevation_gain_feet
+    ) VALUES
     -- Alex's workouts
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 6, 50, 'Comfortable aerobic pace', 'planned', NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 2, 'Tempo Run', 8, 60, 'Comfortably hard effort', 'planned', NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 3, 'Easy Run', 5, 40, 'Easy recovery pace', 'planned', NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 6, 50, 'Comfortable aerobic pace', 'planned', NOW(), 'easy', 3, 'road', 100),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 2, 'Tempo Run', 8, 60, 'Comfortably hard effort', 'planned', NOW(), 'tempo', 6, 'road', 150),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), CURRENT_DATE + 3, 'Easy Run', 5, 40, 'Easy recovery pace', 'planned', NOW(), 'easy', 2, 'road', 80),
     -- Riley's workouts  
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 4, 35, 'Trail running fundamentals', 'planned', NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 2, 'Long Run', 12, 90, 'Build endurance on trails', 'planned', NOW());
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 1, 'Easy Run', 4, 35, 'Trail running fundamentals', 'planned', NOW(), 'easy', 3, 'trail', 120),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), CURRENT_DATE + 2, 'Long Run', 12, 90, 'Build endurance on trails', 'planned', NOW(), 'long_run', 5, 'trail', 300);
 
 END $$;

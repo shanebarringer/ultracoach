@@ -217,21 +217,25 @@ export default function WeeklyPlannerCalendar({
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
 
-  // Generate the 7 days of the week
+  // Generate the 7 days of the week, always starting from Monday
   const generateWeekDays = useCallback((startDate: Date): DayWorkout[] => {
+    // Force startDate to Monday of the week
+    const monday = new Date(startDate)
+    const day = monday.getDay()
+    // getDay(): 0=Sunday, 1=Monday, ..., 6=Saturday
+    const diff = (day === 0 ? -6 : 1 - day) // if Sunday, go back 6 days; else, back to Monday
+    monday.setDate(monday.getDate() + diff)
+
     const days: DayWorkout[] = []
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate)
-      date.setDate(startDate.getDate() + i)
-      
+      const date = new Date(monday)
+      date.setDate(monday.getDate() + i)
       days.push({
         date,
         dayName: dayNames[i]
       })
     }
-    
     return days
   }, [])
 
@@ -268,12 +272,25 @@ export default function WeeklyPlannerCalendar({
 
   // Merge existing workouts with week structure
   useEffect(() => {
-    setWeekWorkouts(prevDays => 
+    // Debug log: print all workout dates and week days
+    console.log('existingWorkouts:', existingWorkouts.map(w => w.date))
+    // Sort workouts by date ascending (ISO string)
+    const sortedWorkouts = [...existingWorkouts].sort((a, b) => {
+      const aDate = typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0]
+      const bDate = typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0]
+      return aDate.localeCompare(bDate)
+    })
+    // Map and then sort weekWorkouts by date
+    const mapped = (prevDays: DayWorkout[]) =>
       prevDays.map(day => {
-        const existingWorkout = existingWorkouts.find(w => 
-          new Date(w.date).toDateString() === day.date.toDateString()
-        )
-        
+        const dayIso = day.date.toISOString().split('T')[0]
+        const existingWorkout = sortedWorkouts.find(w => {
+          const workoutIso = (typeof w.date === 'string' ? w.date : new Date(w.date).toISOString().split('T')[0])
+          return workoutIso === dayIso
+        })
+        if (existingWorkout) {
+          console.log(`Matched workout for ${dayIso}:`, existingWorkout)
+        }
         if (existingWorkout) {
           return {
             ...day,
@@ -289,10 +306,13 @@ export default function WeeklyPlannerCalendar({
             }
           }
         }
-        
         return day
       })
-    )
+    // Now sort mapped weekWorkouts by date
+    setWeekWorkouts(prevDays => {
+      const mappedDays = mapped(prevDays)
+      return [...mappedDays].sort((a, b) => a.date.getTime() - b.date.getTime())
+    })
   }, [existingWorkouts])
 
   const updateDayWorkout = (dayIndex: number, field: string, value: string | number | undefined) => {

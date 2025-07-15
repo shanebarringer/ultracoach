@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (endDate) {
       query = query.lte('date', endDate)
     }
-    const { data: workouts, error } = await query.order('date', { ascending: false })
+    const { data: workouts, error } = await query.order('date', { ascending: true })
     if (error) {
       console.error('Failed to fetch workouts', error)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
