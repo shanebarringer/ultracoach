@@ -1,0 +1,12 @@
+
+> ultracoach@0.1.0 dev /Users/MXB5594/playground/ultracoach
+> next dev
+
+ ⚠ Port 3000 is in use, using available port 3005 instead.
+   ▲ Next.js 15.3.5
+   - Local:        http://localhost:3005
+   - Network:      http://10.231.106.112:3005
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1473ms
