@@ -3,10 +3,10 @@ import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
   // Allow public routes
-  const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth']
+  const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth', '/']
   
   const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
   )
   
   if (isPublicRoute) {
@@ -21,9 +21,16 @@ export function middleware(request: NextRequest) {
   ) {
     return NextResponse.next()
   }
+
+  // Check for Better Auth session token
+  const sessionToken = request.cookies.get('better-auth.session_token')
   
-  // For now, allow all routes until we implement proper session checking
-  // TODO: Implement Better Auth session validation
+  if (!sessionToken) {
+    // Redirect to signin if no session token
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  }
+  
+  // Allow authenticated routes
   return NextResponse.next()
 }
 

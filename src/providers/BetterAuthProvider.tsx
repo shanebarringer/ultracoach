@@ -20,12 +20,17 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
           console.error('Better Auth session error:', error)
           setSession(null)
           setUser(null)
-        } else {
+        } else if (session) {
+          console.log('Better Auth session restored:', session.user?.email)
           setSession(session)
           setUser(session?.user || null)
+        } else {
+          // No session found, which is normal for unauthenticated users
+          setSession(null)
+          setUser(null)
         }
       } catch (error) {
-        console.error('Better Auth error:', error)
+        console.error('Better Auth critical error:', error)
         setSession(null)
         setUser(null)
       } finally {

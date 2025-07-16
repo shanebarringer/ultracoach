@@ -1,17 +1,39 @@
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import { better_auth_users, better_auth_accounts, better_auth_sessions, better_auth_verification_tokens } from './schema';
 
-// Database connection pool
-const pool = new Pool({
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required for Better Auth');
+}
+
+// Create a dedicated database connection for Better Auth with optimized settings
+const betterAuthPool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 5, // Reduced pool size for Better Auth only
+  min: 1, // Keep at least one connection alive
+  idleTimeoutMillis: 60000, // Increased idle timeout
+  connectionTimeoutMillis: 5000, // Increased connection timeout
+  acquireTimeoutMillis: 10000, // Add acquire timeout
 });
 
+const betterAuthDb = drizzle(betterAuthPool);
+
 export const auth = betterAuth({
-  database: pool,
+  database: drizzleAdapter(betterAuthDb, {
+    provider: "pg",
+    schema: {
+      user: better_auth_users,
+      account: better_auth_accounts,
+      session: better_auth_sessions,
+      verification: better_auth_verification_tokens,
+    },
+  }),
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   secret: process.env.BETTER_AUTH_SECRET!,
   
