@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { auth } from "@/lib/better-auth"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Allow public routes
   const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth', '/']
   
@@ -13,24 +14,51 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
-  // Allow static files and API routes
+  // Allow static files
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.startsWith('/api/') ||
     request.nextUrl.pathname.includes('.')
   ) {
     return NextResponse.next()
   }
 
-  // Check for Better Auth session token
-  const sessionToken = request.cookies.get('better-auth.session_token')
-  
-  if (!sessionToken) {
-    // Redirect to signin if no session token
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  // For API routes (except auth), validate session
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    try {
+      const session = await auth.api.getSession({
+        headers: request.headers
+      })
+      
+      if (!session) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      
+      return NextResponse.next()
+    } catch (error) {
+      console.error('Middleware session validation error:', error)
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
+    }
   }
-  
-  // Allow authenticated routes
+
+  // For dashboard routes, validate session and redirect if needed
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    try {
+      const session = await auth.api.getSession({
+        headers: request.headers
+      })
+      
+      if (!session) {
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
+      
+      return NextResponse.next()
+    } catch (error) {
+      console.error('Middleware session validation error:', error)
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+  }
+
+  // Default: allow other routes for now
   return NextResponse.next()
 }
 
