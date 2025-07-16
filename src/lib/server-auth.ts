@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/better-auth'
+import { mapBetterAuthUserToOriginalUser } from '@/lib/user-mapping'
 
 export async function getServerSession(request: NextRequest) {
   try {
@@ -11,13 +12,21 @@ export async function getServerSession(request: NextRequest) {
       return null
     }
     
-    // Use Better Auth ID directly - no mapping needed after migration
+    // Map Better Auth ID to original UUID for database compatibility
+    const originalUserId = await mapBetterAuthUserToOriginalUser(session.user.id)
+    
+    if (!originalUserId) {
+      console.error('Could not map Better Auth user to original user:', session.user.id)
+      return null
+    }
+    
     return {
       user: {
-        id: session.user.id, // Better Auth ID is now the primary ID
+        id: originalUserId, // Use original UUID for database queries
         email: session.user.email,
         name: session.user.name,
-        role: (session.user as { role?: string }).role || 'runner'
+        role: (session.user as { role?: string }).role || 'runner',
+        betterAuthId: session.user.id // Keep Better Auth ID for reference
       }
     }
   } catch (error) {
