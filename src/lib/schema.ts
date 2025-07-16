@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, uuid, boolean, decimal, integer, varchar } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   email: text('email').unique().notNull(),
   password_hash: text('password_hash').notNull(),
   role: text('role').notNull().$type<"runner" | "coach">(),
@@ -14,8 +14,8 @@ export const training_plans = pgTable('training_plans', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
   description: text('description'),
-  coach_id: uuid('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  runner_id: uuid('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  coach_id: text('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  runner_id: text('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   target_race_date: timestamp('target_race_date'),
   target_race_distance: text('target_race_distance'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -42,8 +42,8 @@ export const workouts = pgTable('workouts', {
 
 export const messages = pgTable('messages', {
   id: uuid('id').primaryKey().defaultRandom(),
-  sender_id: uuid('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  recipient_id: uuid('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sender_id: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipient_id: text('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   read: boolean('read').default(false),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -54,7 +54,7 @@ export const messages = pgTable('messages', {
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
-  user_id: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  user_id: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull().$type<"message" | "workout" | "comment">(),
   title: text('title').notNull(),
   message: text('message').notNull(),
@@ -72,8 +72,8 @@ export const message_workout_links = pgTable('message_workout_links', {
 
 export const conversations = pgTable('conversations', {
     id: uuid('id').primaryKey().defaultRandom(),
-    coach_id: uuid('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    runner_id: uuid('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    coach_id: text('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    runner_id: text('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     training_plan_id: uuid('training_plan_id').references(() => training_plans.id, { onDelete: 'set null' }),
     title: varchar('title', { length: 255 }),
     last_message_at: timestamp('last_message_at', { withTimezone: true }).defaultNow(),

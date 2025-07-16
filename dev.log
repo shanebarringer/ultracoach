@@ -219,3 +219,127 @@ Server session error: [Error [APIError]: Failed to get session] {
 }
  GET /api/workouts 401 in 5212ms
  GET /api/workouts 200 in 335ms
+ ✓ Compiled in 3.1s (4465 modules)
+ GET /dashboard/coach 200 in 357ms
+ ✓ Compiled in 1272ms (2161 modules)
+ GET /dashboard/coach 200 in 19ms
+ ✓ Compiled in 742ms (2161 modules)
+ GET /dashboard/coach 200 in 14ms
+ ○ Compiling /api/auth/[...all] ...
+ ✓ Compiled /api/auth/[...all] in 1816ms (2833 modules)
+ GET /api/auth/get-session 200 in 2201ms
+ GET /dashboard/coach 200 in 72ms
+ ○ Compiling /api/user/role ...
+ ✓ Compiled /api/user/role in 738ms (2847 modules)
+ GET /dashboard/coach 200 in 74ms
+Error fetching user role: Error: Failed query: select "role" from "users" where "users"."id" = $1 limit $2
+params: s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM,1
+    at async GET (src/app/api/user/role/route.ts:25:17)
+  23 |     }
+  24 |
+> 25 |     const user = await db
+     |                 ^
+  26 |       .select({ role: users.role })
+  27 |       .from(users)
+  28 |       .where(eq(users.id, userId)) {
+  query: 'select "role" from "users" where "users"."id" = $1 limit $2',
+  params: [Array],
+  [cause]: error: invalid input syntax for type uuid: "s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM"
+      at async GET (src/app/api/user/role/route.ts:25:17)
+    23 |     }
+    24 |
+  > 25 |     const user = await db
+       |                 ^
+    26 |       .select({ role: users.role })
+    27 |       .from(users)
+    28 |       .where(eq(users.id, userId)) {
+    length: 164,
+    severity: 'ERROR',
+    code: '22P02',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: "unnamed portal parameter $1 = '...'",
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'uuid.c',
+    line: '138',
+    routine: 'string_to_uuid'
+  }
+}
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 500 in 1472ms
+[error: {:shutdown, :db_termination}] {
+  length: 56,
+  severity: 'FATAL',
+  code: 'XX000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  client: [Client]
+}
+ ⨯ uncaughtException: [error: {:shutdown, :db_termination}] {
+  length: 56,
+  severity: 'FATAL',
+  code: 'XX000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  client: [Client]
+}
+ ⨯ uncaughtException:  [error: {:shutdown, :db_termination}] {
+  length: 56,
+  severity: 'FATAL',
+  code: 'XX000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  client: [Client]
+}
+ ✓ Compiled in 1478ms (2161 modules)
+ GET /dashboard/coach 200 in 36ms
+ ✓ Compiled in 1538ms (4465 modules)
+ GET /dashboard/coach 200 in 94ms
+ ○ Compiling /api/user/role ...
+ ✓ Compiled /api/user/role in 987ms (2433 modules)
+ GET /dashboard/coach 200 in 65ms
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 1635ms
+ GET /api/user/role?userId=9c6b7613-67b1-48f8-a2c5-22ad8bb83ebe 200 in 51ms
+ GET /dashboard/coach 200 in 384ms

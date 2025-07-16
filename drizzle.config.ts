@@ -6,9 +6,12 @@ dotenv.config({ path: '.env.local' });
 export default defineConfig({
   dialect: 'postgresql',
   schema: './src/lib/schema.ts',
-  out: './drizzle',
+  out: './supabase/migrations',
   dbCredentials: {
     url: process.env.DATABASE_URL!,
+    ssl: {
+      rejectUnauthorized: false
+    }
   },
   verbose: true,
   strict: true,
