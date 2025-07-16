@@ -30,18 +30,17 @@ echo "🔧 Updating password hashes for test users..."
 # Update all test user password hashes
 PGPASSWORD="$DATABASE_PASSWORD" psql -h aws-0-us-east-2.pooler.supabase.com -U postgres.ccnbzjpccmlribljugve -d postgres << 'EOF'
 -- Update test user password hashes to correct bcrypt hash for 'password123'
-UPDATE users 
-SET password_hash = '$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO',
+UPDATE better_auth_accounts
+SET password = '$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO',
     updated_at = NOW()
-WHERE email LIKE '%ultracoach.dev';
+WHERE account_id LIKE '%ultracoach.dev';
 
 -- Show results
 SELECT 
-    COUNT(*) as total_updated,
-    string_agg(DISTINCT role, ', ') as roles_updated
-FROM users 
-WHERE email LIKE '%ultracoach.dev' 
-AND password_hash = '$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO';
+    COUNT(*) as total_updated
+FROM better_auth_accounts 
+WHERE account_id LIKE '%ultracoach.dev' 
+AND password = '$2b$10$X8I5wWTv1hemEAXQsZX3y.iWGnBG/gCCZ0iP/Q1VsupZkIhD3PQcO';
 EOF
 
 echo ""

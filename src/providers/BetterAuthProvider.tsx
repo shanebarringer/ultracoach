@@ -11,13 +11,19 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
   const [, setAuthLoading] = useAtom(authLoadingAtom)
 
   useEffect(() => {
+    // Only run on client side to prevent hydration issues
+    if (typeof window === 'undefined') return
+    
     // Get initial session
     const getSession = async () => {
       try {
         const { data: session, error } = await authClient.getSession()
         
         if (error) {
-          console.error('Better Auth session error:', error)
+          // Don't log error for normal "no session" cases
+          if (error.status !== 404 && error.status !== 401) {
+            console.error('Better Auth session error:', error)
+          }
           setSession(null)
           setUser(null)
         } else if (session) {
@@ -30,7 +36,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
           setUser(null)
         }
       } catch (error) {
-        console.error('Better Auth critical error:', error)
+        // Don't log network errors on homepage - it's normal not to have a session
+        console.warn('Better Auth session check failed (this is normal if not logged in):', error)
         setSession(null)
         setUser(null)
       } finally {

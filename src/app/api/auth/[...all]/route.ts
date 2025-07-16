@@ -20,3 +20,7 @@ export async function DELETE(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   return auth.handler(req);
 }
+
+export async function OPTIONS(req: NextRequest) {
+  return auth.handler(req);
+}

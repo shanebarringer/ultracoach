@@ -2,18 +2,220 @@
 > ultracoach@0.1.0 dev /Users/MXB5594/playground/ultracoach
 > next dev
 
- ⚠ Port 3000 is in use, using available port 3005 instead.
    ▲ Next.js 15.3.5
-   - Local:        http://localhost:3005
-   - Network:      http://10.231.106.112:3005
+   - Local:        http://localhost:3000
+   - Network:      http://10.231.107.7:3000
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1473ms
-   Reload env: .env.local
-   Reload env: .env.local
-   Reload env: .env.local
-   Reload env: .env.local
-   Reload env: .env.local
-   Reload env: .env.local
-[?25h
+ ✓ Ready in 1570ms
+ ○ Compiling /api/auth/[...all] ...
+ ✓ Compiled /api/auth/[...all] in 1030ms (875 modules)
+ POST /api/auth/sign-in/email 200 in 3668ms
+ ✓ Compiled in 289ms (596 modules)
+ POST /api/auth/sign-in/email 200 in 1749ms
+ ✓ Compiled in 432ms (875 modules)
+ ✓ Compiled /middleware in 173ms (108 modules)
+ ○ Compiling /api/user/role ...
+ ✓ Compiled /api/user/role in 757ms (890 modules)
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 1083ms
+ ○ Compiling /auth/signin ...
+ ✓ Compiled /auth/signin in 3.5s (4684 modules)
+ HEAD /auth/signin 200 in 3778ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.3s (4072 modules)
+ GET /_next/static/chunks/_app-pages-browser_node_modules_pnpm_heroui_dom-animation_2_1_10_framer-motion_12_23_6_react--f3acde1.js 404 in 2449ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1902ms (4638 modules)
+ GET / 200 in 2309ms
+ ✓ Compiled /api/auth/[...all] in 457ms (3046 modules)
+ GET /api/auth/get-session 200 in 976ms
+ POST /api/auth/sign-out 200 in 100ms
+ GET / 200 in 312ms
+ GET /api/auth/get-session 200 in 21ms
+ ✓ Compiled /auth/signin in 301ms (3055 modules)
+ GET /auth/signin 200 in 400ms
+ POST /api/auth/sign-in/email 200 in 1665ms
+ ○ Compiling /api/user/role ...
+ ✓ Compiled /api/user/role in 903ms (3069 modules)
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 1234ms
+ ○ Compiling /dashboard/coach ...
+ ✓ Compiled /dashboard/coach in 1120ms (5218 modules)
+ GET /dashboard/coach 200 in 1183ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /auth/signin 200 in 123ms
+ ✓ Compiled /favicon.ico in 495ms (3088 modules)
+ GET /favicon.ico 200 in 539ms
+ GET /api/auth/get-session 200 in 627ms
+ POST /api/auth/sign-in/email 200 in 1674ms
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 277ms
+ GET /dashboard/coach 200 in 62ms
+ ○ Compiling /api/training-plans ...
+ ✓ Compiled /api/training-plans in 592ms (5305 modules)
+Failed to fetch training plans for coach {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM"'
+}
+ GET /api/training-plans 500 in 1391ms
+Failed to fetch training plans for coach {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM"'
+}
+ GET /api/training-plans 500 in 348ms
+ ○ Compiling /api/workouts ...
+ ✓ Compiled /api/workouts in 810ms (5307 modules)
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM"'
+}
+ GET /api/workouts 500 in 1372ms
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM"'
+}
+ GET /api/workouts 500 in 184ms
+ POST /api/auth/sign-out 200 in 92ms
+ GET /auth/signin 200 in 438ms
+ GET / 200 in 441ms
+ GET /api/auth/get-session 200 in 33ms
+ GET /auth/signin 200 in 38ms
+ POST /api/auth/sign-in/email 200 in 1342ms
+ GET /api/user/role?userId=NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA 200 in 281ms
+ ○ Compiling /dashboard/runner ...
+ ✓ Compiled /dashboard/runner in 917ms (5330 modules)
+ GET /dashboard/runner 200 in 963ms
+Failed to fetch training plans for runner {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/training-plans 500 in 634ms
+Failed to fetch training plans for runner {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/training-plans 500 in 178ms
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/workouts 500 in 424ms
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/workouts 500 in 203ms
+ ✓ Compiled in 2.6s (4451 modules)
+ GET /dashboard/runner 200 in 195ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /dashboard/runner 200 in 265ms
+ ✓ Compiled /api/auth/[...all] in 442ms (2320 modules)
+ ✓ Compiled (2847 modules)
+ GET /favicon.ico 200 in 1039ms
+ GET /api/auth/get-session 200 in 1280ms
+ ○ Compiling /api/training-plans ...
+ ✓ Compiled /api/training-plans in 798ms (2932 modules)
+Failed to fetch training plans for runner {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/training-plans 500 in 1529ms
+Failed to fetch training plans for runner {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/training-plans 500 in 278ms
+ ○ Compiling /api/workouts ...
+ ✓ Compiled /api/workouts in 832ms (2934 modules)
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/workouts 500 in 1389ms
+Failed to fetch workouts {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA"'
+}
+ GET /api/workouts 500 in 170ms
+ ✓ Compiled in 873ms (2161 modules)
+ GET /dashboard/runner 200 in 58ms
+ ✓ Compiled in 1642ms (5096 modules)
+ GET /dashboard/runner 200 in 68ms
+ HEAD / 200 in 294ms
+ GET /api/training-plans 401 in 226ms
+ GET / 200 in 230ms
+ GET /api/auth/get-session 200 in 518ms
+ GET /dashboard/runner 200 in 17ms
+ GET /api/training-plans 200 in 655ms
+ GET /api/training-plans 200 in 230ms
+ GET /api/workouts 200 in 470ms
+ GET /api/workouts 200 in 267ms
+ POST /api/auth/sign-out 200 in 66ms
+ GET /auth/signin 200 in 71ms
+ GET / 200 in 76ms
+ GET /api/auth/get-session 200 in 19ms
+ GET /auth/signin 200 in 23ms
+ POST /api/auth/sign-in/email 200 in 1338ms
+ ○ Compiling /api/user/role ...
+ ✓ Compiled /api/user/role in 881ms (2935 modules)
+ GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 1215ms
+ GET /dashboard/coach 200 in 60ms
+ GET /api/training-plans 200 in 9840ms
+ GET /api/training-plans 200 in 266ms
+[2m2025-07-16T16:12:49.860Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: 0wDWsGGhBUkWoabIjuHKSJpgNbmUVVMn
+    at async getServerSession (src/lib/server-auth.ts:7:20)
+    at async GET (src/app/api/workouts/route.ts:7:20)
+   5 | export async function getServerSession(request: NextRequest) {
+   6 |   try {
+>  7 |     const session = await auth.api.getSession({
+     |                    ^
+   8 |       headers: request.headers
+   9 |     })
+  10 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:7:20)
+      at async GET (src/app/api/workouts/route.ts:7:20)
+     5 | export async function getServerSession(request: NextRequest) {
+     6 |   try {
+  >  7 |     const session = await auth.api.getSession({
+       |                    ^
+     8 |       headers: request.headers
+     9 |     })
+    10 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+Server session error: [Error [APIError]: Failed to get session] {
+  status: 'INTERNAL_SERVER_ERROR',
+  body: [Object],
+  headers: {},
+  statusCode: 500
+}
+ GET /api/workouts 401 in 5212ms
+ GET /api/workouts 200 in 335ms

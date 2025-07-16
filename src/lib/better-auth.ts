@@ -19,7 +19,6 @@ const betterAuthPool = new Pool({
   min: 1, // Keep at least one connection alive
   idleTimeoutMillis: 60000, // Increased idle timeout
   connectionTimeoutMillis: 5000, // Increased connection timeout
-  acquireTimeoutMillis: 10000, // Add acquire timeout
 });
 
 const betterAuthDb = drizzle(betterAuthPool);
@@ -32,6 +31,9 @@ export const auth = betterAuth({
       account: better_auth_accounts,
       session: better_auth_sessions,
       verification: better_auth_verification_tokens,
+    },
+    options: {
+      enableTables: true,
     },
   }),
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
@@ -55,10 +57,14 @@ export const auth = betterAuth({
         type: "string",
         required: true,
         defaultValue: "runner",
+        input: true,
+        output: true,
       },
-      full_name: {
+      fullName: {
         type: "string",
         required: false,
+        input: true,
+        output: true,
       },
     },
   },

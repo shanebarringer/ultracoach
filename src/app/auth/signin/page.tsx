@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
-import { useBetterAuth } from '@/hooks/useBetterAuth'
+import { authClient } from '@/lib/better-auth-client'
+import { useAtom } from 'jotai'
+import { sessionAtom, userAtom, authLoadingAtom } from '@/lib/atoms'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({ email: '', password: '' })
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { signIn, loading } = useBetterAuth()
+  const [, setSession] = useAtom(sessionAtom)
+  const [, setUser] = useAtom(userAtom)
 
   const validate = () => {
     const newErrors = { email: '', password: '' }
@@ -32,18 +36,57 @@ export default function SignIn() {
     e.preventDefault()
     if (!validate()) return
 
-    const result = await signIn(email, password)
+    setLoading(true)
+    
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password
+      })
 
-    if (!result.success) {
-      setErrors({ ...errors, email: result.error || 'Invalid credentials' })
-    } else {
-      // Redirect based on user role
-      const userRole = (result.data?.user as { role?: string })?.role || 'runner'
-      if (userRole === 'coach') {
-        router.push('/dashboard/coach')
-      } else {
-        router.push('/dashboard/runner')
+      if (error) {
+        console.error('SignIn error:', error)
+        setErrors({ 
+          ...errors, 
+          email: error.message || 'Invalid credentials' 
+        })
+        return
       }
+
+      if (data) {
+        // Update Jotai atoms
+        setSession(data)
+        setUser(data.user)
+        
+        // Fetch user role from database
+        try {
+          const roleResponse = await fetch(`/api/user/role?userId=${data.user.id}`)
+          const roleData = await roleResponse.json()
+          const userRole = roleData.role || 'runner'
+          
+          // Update user object with role
+          setUser({ ...data.user, role: userRole })
+          
+          // Redirect based on user role
+          if (userRole === 'coach') {
+            router.push('/dashboard/coach')
+          } else {
+            router.push('/dashboard/runner')
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error)
+          // Default to runner if role fetch fails
+          router.push('/dashboard/runner')
+        }
+      }
+    } catch (error) {
+      console.error('SignIn exception:', error)
+      setErrors({ 
+        ...errors, 
+        email: error instanceof Error ? error.message : 'Login failed' 
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -112,6 +155,8 @@ export default function SignIn() {
                 type="submit"
                 color="primary"
                 size="lg"
+                as="button"
+                disableRipple
                 className="w-full font-semibold"
                 isLoading={loading}
                 startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}

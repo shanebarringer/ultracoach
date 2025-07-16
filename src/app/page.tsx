@@ -1,4 +1,9 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSession } from '@/hooks/useBetterSession'
 import { 
   Card, 
   CardBody, 
@@ -15,6 +20,36 @@ import {
 import Layout from '@/components/layout/Layout'
 
 export default function Home() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    // If user is logged in, redirect to appropriate dashboard
+    if (status === 'authenticated' && session?.user) {
+      const userRole = session.user.role || 'runner'
+      if (userRole === 'coach') {
+        router.push('/dashboard/coach')
+      } else {
+        router.push('/dashboard/runner')
+      }
+    }
+  }, [session, status, router])
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </Layout>
+    )
+  }
+
+  // If authenticated, don't show the landing page (redirect will happen)
+  if (status === 'authenticated') {
+    return null
+  }
   return (
     <Layout>
       {/* Hero Section with Mountain Peak Enhanced styling */}
