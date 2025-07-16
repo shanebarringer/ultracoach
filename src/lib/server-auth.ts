@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/better-auth'
 import { mapBetterAuthUserToOriginalUser } from '@/lib/user-mapping'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('server-auth')
 
 export async function getServerSession(request: NextRequest) {
   try {
@@ -16,7 +19,7 @@ export async function getServerSession(request: NextRequest) {
     const originalUserId = await mapBetterAuthUserToOriginalUser(session.user.id)
     
     if (!originalUserId) {
-      console.error('Could not map Better Auth user to original user:', session.user.id)
+      logger.error('Could not map Better Auth user to original user:', session.user.id)
       return null
     }
     
@@ -30,7 +33,7 @@ export async function getServerSession(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error('Server session error:', error)
+    logger.error('Server session error:', error)
     return null
   }
 }

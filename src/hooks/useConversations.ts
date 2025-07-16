@@ -11,6 +11,9 @@ import {
 } from '@/lib/atoms'
 import type { Message } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useConversations');
 
 export function useConversations() {
   const { data: session } = useSession()
@@ -30,7 +33,7 @@ export function useConversations() {
       const response = await fetch('/api/conversations')
       
       if (!response.ok) {
-        console.error('Error fetching conversations:', response.statusText)
+        logger.error('Error fetching conversations:', response.statusText)
         return
       }
 
@@ -61,7 +64,7 @@ export function useConversations() {
       }))
       setConversations(mappedConversations)
       
-      console.log('💬 useConversations: Fetched', fetchedConversations.length, 'conversations')
+      logger.info('💬 useConversations: Fetched', fetchedConversations.length, 'conversations')
       
       // Mark as initially loaded once we've successfully fetched conversations
       if (isInitialLoad) {
@@ -71,7 +74,7 @@ export function useConversations() {
         }))
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error)
+      logger.error('Error fetching conversations:', error)
     } finally {
       // Only turn off loading if this was an initial load
       if (isInitialLoad) {
@@ -144,7 +147,7 @@ export function useConversations() {
         )
       }
     } catch (error) {
-      console.error('Error marking conversation as read:', error)
+      logger.error('Error marking conversation as read:', error)
     }
   }, [session?.user?.id, setConversations])
 
@@ -181,7 +184,7 @@ export function useConversations() {
           fetchConversations(false)
         }
       } catch (error) {
-        console.error('Error processing realtime conversation insert:', error)
+        logger.error('Error processing realtime conversation insert:', error)
       }
     },
     onUpdate: (payload) => {
@@ -198,7 +201,7 @@ export function useConversations() {
           fetchConversations(false)
         }
       } catch (error) {
-        console.error('Error processing realtime conversation update:', error)
+        logger.error('Error processing realtime conversation update:', error)
       }
     }
   })

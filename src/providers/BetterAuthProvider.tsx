@@ -4,6 +4,9 @@ import { useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { sessionAtom, userAtom, authLoadingAtom } from '@/lib/atoms'
 import { authClient } from '@/lib/better-auth-client'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('BetterAuthProvider');
 
 export function BetterAuthProvider({ children }: { children: React.ReactNode }) {
   const [, setSession] = useAtom(sessionAtom)
@@ -22,12 +25,12 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         if (error) {
           // Don't log error for normal "no session" cases
           if (error.status !== 404 && error.status !== 401) {
-            console.error('Better Auth session error:', error)
+            logger.error('Better Auth session error:', error)
           }
           setSession(null)
           setUser(null)
         } else if (session) {
-          console.log('Better Auth session restored:', session.user?.email)
+          logger.info('Better Auth session restored:', session.user?.email)
           setSession(session)
           setUser(session?.user || null)
         } else {
@@ -37,7 +40,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         }
       } catch (error) {
         // Don't log network errors on homepage - it's normal not to have a session
-        console.warn('Better Auth session check failed (this is normal if not logged in):', error)
+        logger.warn('Better Auth session check failed (this is normal if not logged in):', error)
         setSession(null)
         setUser(null)
       } finally {

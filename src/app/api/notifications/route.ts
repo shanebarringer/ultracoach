@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('notifications-api');
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,12 +25,12 @@ export async function GET(request: NextRequest) {
     }
     const { data: notifications, error } = await query
     if (error) {
-      console.error('Failed to fetch notifications', error)
+      logger.error('Failed to fetch notifications', error)
       return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
     }
     return NextResponse.json({ notifications: notifications || [] })
   } catch (error) {
-    console.error('API error in GET /notifications', error)
+    logger.error('API error in GET /notifications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -56,12 +59,12 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     if (error) {
-      console.error('Failed to create notification', error)
+      logger.error('Failed to create notification', error)
       return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
     }
     return NextResponse.json({ notification }, { status: 201 })
   } catch (error) {
-    console.error('API error in POST /notifications', error)
+    logger.error('API error in POST /notifications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -90,13 +93,13 @@ export async function PATCH(request: NextRequest) {
       .eq('user_id', session.user.id)
 
     if (error) {
-      console.error('Failed to update notifications', error)
+      logger.error('Failed to update notifications', error)
       return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('API error in PATCH /notifications', error)
+    logger.error('API error in PATCH /notifications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

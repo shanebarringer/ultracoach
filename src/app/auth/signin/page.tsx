@@ -7,7 +7,10 @@ import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/reac
 import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
 import { authClient } from '@/lib/better-auth-client'
 import { useAtom } from 'jotai'
-import { sessionAtom, userAtom, authLoadingAtom } from '@/lib/atoms'
+import { sessionAtom, userAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('SignIn');
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
@@ -45,7 +48,7 @@ export default function SignIn() {
       })
 
       if (error) {
-        console.error('SignIn error:', error)
+        logger.error('SignIn error:', error)
         setErrors({ 
           ...errors, 
           email: error.message || 'Invalid credentials' 
@@ -74,13 +77,13 @@ export default function SignIn() {
             router.push('/dashboard/runner')
           }
         } catch (error) {
-          console.error('Error fetching user role:', error)
+          logger.error('Error fetching user role:', error)
           // Default to runner if role fetch fails
           router.push('/dashboard/runner')
         }
       }
     } catch (error) {
-      console.error('SignIn exception:', error)
+      logger.error('SignIn exception:', error)
       setErrors({ 
         ...errors, 
         email: error instanceof Error ? error.message : 'Login failed' 

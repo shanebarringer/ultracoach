@@ -2,6 +2,9 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { users, better_auth_users } from './schema';
 import { eq } from 'drizzle-orm';
+import { createLogger } from './logger';
+
+const logger = createLogger('user-mapping');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -51,7 +54,7 @@ export async function mapBetterAuthUserToOriginalUser(betterAuthUserId: string):
 
     return result;
   } catch (error) {
-    console.error('Error mapping Better Auth user to original user:', error);
+    logger.error('Error mapping Better Auth user to original user:', error);
     return null;
   }
 }
@@ -92,7 +95,7 @@ export async function mapOriginalUserToBetterAuthUser(originalUserId: string): P
 
     return result;
   } catch (error) {
-    console.error('Error mapping original user to Better Auth user:', error);
+    logger.error('Error mapping original user to Better Auth user:', error);
     return null;
   }
 }
@@ -119,7 +122,7 @@ export async function resolveUserId(userId: string): Promise<{ originalId: strin
     
     return null;
   } catch (error) {
-    console.error('Error resolving user ID:', error);
+    logger.error('Error resolving user ID:', error);
     return null;
   }
 }
