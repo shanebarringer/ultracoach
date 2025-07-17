@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { auth } from "@/lib/better-auth"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger('middleware')
 
 export async function middleware(request: NextRequest) {
   // Allow public routes
@@ -35,7 +38,7 @@ export async function middleware(request: NextRequest) {
       
       return NextResponse.next()
     } catch (error) {
-      console.error('Middleware session validation error:', error)
+      logger.error('Middleware session validation error:', error)
       return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
     }
   }
@@ -53,7 +56,7 @@ export async function middleware(request: NextRequest) {
       
       return NextResponse.next()
     } catch (error) {
-      console.error('Middleware session validation error:', error)
+      logger.error('Middleware session validation error:', error)
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
   }

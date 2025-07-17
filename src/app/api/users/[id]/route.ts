@@ -14,7 +14,7 @@ export async function GET(
     const { id } = await params
     // Fetch user details
     const { data: user, error } = await supabaseAdmin
-      .from('users')
+      .from('better_auth_users')
       .select('*')
       .eq('id', id)
       .single()

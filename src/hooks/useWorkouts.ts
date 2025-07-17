@@ -5,6 +5,9 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useCallback, useEffect } from 'react'
 import { workoutsAtom, loadingStatesAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useWorkouts')
 
 export function useWorkouts() {
   const { data: session } = useSession()
@@ -20,14 +23,14 @@ export function useWorkouts() {
       const response = await fetch('/api/workouts')
       
       if (!response.ok) {
-        console.error('Failed to fetch workouts:', response.statusText)
+        logger.error('Failed to fetch workouts:', response.statusText)
         return
       }
 
       const data = await response.json()
       setWorkouts(data.workouts || [])
     } catch (error) {
-      console.error('Error fetching workouts:', error)
+      logger.error('Error fetching workouts:', error)
     } finally {
       setLoadingStates(prev => ({ ...prev, workouts: false }))
     }
@@ -58,7 +61,7 @@ export function useWorkouts() {
 
       return data.workout
     } catch (error) {
-      console.error('Error updating workout:', error)
+      logger.error('Error updating workout:', error)
       throw error
     }
   }, [setWorkouts])
@@ -76,7 +79,7 @@ export function useWorkouts() {
       // Update local state
       setWorkouts(prev => prev.filter(workout => workout.id !== workoutId))
     } catch (error) {
-      console.error('Error deleting workout:', error)
+      logger.error('Error deleting workout:', error)
       throw error
     }
   }, [setWorkouts])

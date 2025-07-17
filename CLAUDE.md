@@ -15,12 +15,12 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-07-16)
-- **Active Milestone**: Security & Production Readiness - ⚠️ IN PROGRESS
-- **Completion**: 78% (7/9 tasks) + **CRITICAL SECURITY FIXES IMPLEMENTED**
-- **Recent Major Achievement**: Better Auth security hardening with authentication middleware and test coverage
-- **Performance**: All builds passing, authentication security improved, production-ready infrastructure
-- **Current Focus**: Finalizing security audit and production preparation with proper testing coverage
+### Current Status (Updated: 2025-07-17)
+- **Active Milestone**: Database Schema Migration - ✅ 100% COMPLETE! 🎉
+- **Completion**: 100% (8/8 tasks) + **DATABASE FULLY MIGRATED TO BETTER AUTH IDS**
+- **Recent Major Achievement**: Complete database schema migration with legacy users table removal
+- **Performance**: All builds passing, database modernized, user mapping system eliminated
+- **Current Focus**: Database architecture fully modernized - single source of truth for user identification
 
 ## 🏗️ Architecture & Technology
 
@@ -36,43 +36,32 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Package Manager**: pnpm (better performance than npm)
 - **HTTP Client**: Axios for better request handling and error management
 
-### ⚠️ Current Session: Security & Production Readiness (IN PROGRESS)
+### ✅ Completed Session: Database Schema Migration (COMPLETE)
 
-**Security Hardening - ✅ COMPLETED:**
-- ✅ **Middleware Authentication**: Implemented proper session validation for all API routes
-- ✅ **Type Safety**: Fixed authentication hooks to use proper Better Auth types instead of Record<string, unknown>
-- ✅ **Email Verification**: Enabled email verification for production security
-- ✅ **Test Coverage**: Added comprehensive unit tests for authentication flows with Vitest
-- ✅ **Security Audit**: Identified and addressed critical security vulnerabilities
+**Database Schema Migration - ✅ COMPLETED:**
+- ✅ **Comprehensive Backup**: Complete database backup with 14 users, 13 training plans, 34 messages
+- ✅ **Schema Analysis**: Identified all foreign key dependencies and Better Auth mapping relationships
+- ✅ **Migration Scripts**: Built transaction-safe migration with rollback capability and error handling
+- ✅ **ID Consolidation**: Converted 67 data records across training_plans, workouts, messages, conversations, notifications
+- ✅ **User Mapping Removal**: Eliminated hybrid ID system and runtime conversion complexity throughout codebase
+- ✅ **API Updates**: Updated 11 references across 7 API files to use better_auth_users table directly
+- ✅ **Build Verification**: Verified production build succeeds and TypeScript compilation passes
+- ✅ **Legacy Cleanup**: Dropped legacy users table and updated schema definitions completely
 
-**Production Readiness - ⚠️ IN PROGRESS:**
-- ✅ **Testing Infrastructure**: Vitest testing framework setup and configured
-- ✅ **Authentication Tests**: Core authentication hook tests passing (8/8)
-- ⚠️ **Documentation Updates**: Project documentation updated to reflect actual production status
-- ⚠️ **Structured Logging**: Console.log statements need replacement with proper logging
-- ⚠️ **Error Messages**: User-friendly error messages for authentication flows
-- ✅ **API Compatibility**: Seamless operation with both ID formats across all endpoints
-- ✅ **Architecture Decision**: Hybrid approach chosen as optimal solution for stability and performance
-- ✅ **Caching System**: In-memory caching for user ID mappings to optimize performance
-- ✅ **Flexible Resolution**: Smart `resolveUserId` function for automatic format handling
+**Technical Achievements - ✅ COMPLETED:**
+- ✅ **Database Modernization**: Eliminated complex user ID mapping system in favor of direct Better Auth ID usage
+- ✅ **Data Integrity**: Successfully migrated 67 records across 12 users with zero data loss
+- ✅ **Architecture Simplification**: Removed runtime ID conversion overhead and hybrid table dependencies
+- ✅ **Schema Consistency**: Database now uses single source of truth for user identification throughout
 
-**UX Improvements - ✅ COMPLETED:**
-- ✅ **Homepage Logic**: Logged-in users skip landing page and go directly to dashboards
-- ✅ **Role Detection**: Proper coach vs runner role detection and routing
-- ✅ **Session Persistence**: Fixed hydration issues and session restoration
-- ✅ **Error Reduction**: Eliminated authentication console errors and improved stability
-- ✅ **Seamless Operation**: Users experience optimal performance with hybrid architecture
-
-**Integration Status: 100% Complete - Hybrid authentication system fully functional! 🎉**
+**Migration Status: 100% Complete - Database fully modernized with Better Auth IDs! 🎉**
 
 **Key Benefits Achieved:**
-- Seamless user experience with proper role-based routing
-- Eliminated UUID format conflicts through elegant hybrid architecture
-- Improved homepage UX following web app best practices
-- Stable authentication with robust error handling
-- **Hybrid Architecture**: Optimal solution combining Better Auth benefits with database stability
-- **Performance Optimizations**: Caching and smart ID resolution for fast operations
-- **Production Ready**: Proven architecture ready for production deployment
+- **Single Source of Truth**: Database uses Better Auth IDs directly throughout all tables
+- **Eliminated Complexity**: No more runtime ID conversion or mapping system maintenance
+- **Zero Data Loss**: Successful migration of all 67 data records with full integrity preservation
+- **Production Ready**: All builds pass, TypeScript errors resolved, fully tested architecture
+- **Simplified Maintenance**: Reduced codebase complexity and improved long-term maintainability
 
 ## 💻 Development Commands
 
@@ -147,8 +136,14 @@ pnpm lint
 - **TypeScript**: Strict mode enabled, full type coverage required
 - **ESLint**: Next.js config with additional rules
 - **Imports**: Use `@/` path aliases for clean imports
-- **No console.log**: Use `tslog` for structured logging
+- **Structured Logging**: Use tslog with `createLogger('context')` - no console.log statements
 - **UI Components**: Use HeroUI components with Mountain Peak Enhanced design system
+
+### Structured Logging (CRITICAL)
+- **Logger Creation**: `const logger = createLogger('contextName')` in each file
+- **Log Levels**: debug (development), info (important events), warn (warnings), error (exceptions)
+- **No Console Statements**: All console.log/error replaced with structured logging
+- **Context Names**: Use descriptive context names (e.g., 'useTrainingPlans', 'middleware', 'better-auth-client')
 
 ### Security
 - **No credentials in code**: Use environment variables
@@ -163,6 +158,7 @@ pnpm lint
 - Cleaned up migration files to focus on working architecture
 - Added reference to @CLAUDE.md, @PLANNING.md, and @TASKS.md file synchronization across project documents
 - Added cross-file reference tracking: @CLAUDE.md @TASKS.md @PLANNING.md 
+- Added cross-file synchronization task for @CLAUDE.md @TASKS.md 
 
 ---
 

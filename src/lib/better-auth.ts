@@ -32,9 +32,6 @@ export const auth = betterAuth({
       session: better_auth_sessions,
       verification: better_auth_verification_tokens,
     },
-    options: {
-      enableTables: true,
-    },
   }),
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   secret: process.env.BETTER_AUTH_SECRET!,
@@ -77,7 +74,7 @@ export const auth = betterAuth({
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user & {
   role: "runner" | "coach";
-  full_name?: string | null;
+  fullName?: string | null;
 };
 
 // Type definitions for the application

@@ -120,7 +120,7 @@ describe('useBetterAuth', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
     })
 
-    let signInResult: any
+    let signInResult: { success: boolean; error?: string }
     await act(async () => {
       signInResult = await result.current.signIn('test@example.com', 'password123')
     })
@@ -151,7 +151,7 @@ describe('useBetterAuth', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
     })
 
-    let signInResult: any
+    let signInResult: { success: boolean; error?: string }
     await act(async () => {
       signInResult = await result.current.signIn('test@example.com', 'wrong-password')
     })
@@ -193,7 +193,7 @@ describe('useBetterAuth', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
     })
 
-    let signUpResult: any
+    let signUpResult: { success: boolean; error?: string }
     await act(async () => {
       signUpResult = await result.current.signUp('new@example.com', 'password123', 'New User')
     })
@@ -235,7 +235,7 @@ describe('useBetterAuth', () => {
     // Verify user is signed in
     expect(result.current.user).toEqual(mockSession.user)
 
-    let signOutResult: any
+    let signOutResult: { success: boolean; error?: string }
     await act(async () => {
       signOutResult = await result.current.signOut()
     })
@@ -266,7 +266,7 @@ describe('useBetterAuth', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
     })
 
-    let signOutResult: any
+    let signOutResult: { success: boolean; error?: string }
     await act(async () => {
       signOutResult = await result.current.signOut()
     })

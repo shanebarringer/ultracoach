@@ -11,6 +11,9 @@ import {
   chatUiStateAtom
 } from '@/lib/atoms'
 import type { MessageWithUser, Message } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useMessages');
 
 export function useMessages(recipientId?: string) {
   const { data: session } = useSession()
@@ -39,7 +42,7 @@ export function useMessages(recipientId?: string) {
       const response = await fetch(`/api/messages?recipientId=${targetId}`)
       
       if (!response.ok) {
-        console.error('Error fetching messages:', response.statusText)
+        logger.error('Error fetching messages:', response.statusText)
         return
       }
 
@@ -67,10 +70,10 @@ export function useMessages(recipientId?: string) {
           })
 
           if (!readResponse.ok) {
-            console.error('Error marking messages as read:', readResponse.statusText)
+            logger.error('Error marking messages as read:', readResponse.statusText)
           }
         } catch (error) {
-          console.error('Error marking messages as read:', error)
+          logger.error('Error marking messages as read:', error)
         }
       }
       // Mark as initially loaded once we've successfully fetched messages
@@ -82,7 +85,7 @@ export function useMessages(recipientId?: string) {
         }))
       }
     } catch (error) {
-      console.error('Error fetching messages:', error)
+      logger.error('Error fetching messages:', error)
     } finally {
       // Only turn off loading if this was an initial load
       if (isInitialLoad) {
@@ -108,10 +111,10 @@ export function useMessages(recipientId?: string) {
       })
 
       if (!response.ok) {
-        console.error('Error marking messages as read:', response.statusText)
+        logger.error('Error marking messages as read:', response.statusText)
       }
     } catch (error) {
-      console.error('Error marking messages as read:', error)
+      logger.error('Error marking messages as read:', error)
     }
   }, [session?.user?.id, recipientId])
 
@@ -160,7 +163,7 @@ export function useMessages(recipientId?: string) {
       if (!response.ok) {
         // Remove optimistic message on failure
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
-        console.error('Error sending message:', response.statusText)
+        logger.error('Error sending message:', response.statusText)
         return false
       }
 
@@ -179,7 +182,7 @@ export function useMessages(recipientId?: string) {
     } catch (error) {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
-      console.error('Error sending message:', error)
+      logger.error('Error sending message:', error)
       return false
     }
   }, [session?.user?.id, session?.user?.name, session?.user?.email, session?.user?.role, recipientId, setMessages])
@@ -238,10 +241,10 @@ export function useMessages(recipientId?: string) {
             }
           })
           .catch((error) => {
-            console.error('Error fetching sender info:', error)
+            logger.error('Error fetching sender info:', error)
           })
       } catch (error) {
-        console.error('Error processing realtime message insert:', error)
+        logger.error('Error processing realtime message insert:', error)
       }
     },
     onUpdate: (payload) => {
@@ -263,7 +266,7 @@ export function useMessages(recipientId?: string) {
           )
         )
       } catch (error) {
-        console.error('Error processing realtime message update:', error)
+        logger.error('Error processing realtime message update:', error)
       }
     }
   })

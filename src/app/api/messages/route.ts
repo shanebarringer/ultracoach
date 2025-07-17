@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       userIds.add(msg.recipient_id)
     })
     const { data: users, error: usersError } = await supabaseAdmin
-      .from('users')
+      .from('better_auth_users')
       .select('*')
       .in('id', Array.from(userIds))
     if (usersError) {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     
     // Verify the recipient exists
     const { data: recipient, error: recipientError } = await supabaseAdmin
-      .from('users')
+      .from('better_auth_users')
       .select('id')
       .eq('id', recipientId)
       .single()

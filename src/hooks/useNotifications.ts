@@ -7,6 +7,9 @@ import { supabase } from '@/lib/supabase'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms'
 import type { Notification } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useNotifications');
 
 export function useNotifications() {
   const { data: session } = useSession()
@@ -25,14 +28,14 @@ export function useNotifications() {
         .limit(50)
 
       if (error) {
-        console.error('Error fetching notifications:', error)
+        logger.error('Error fetching notifications:', error)
         return
       }
 
       setNotifications(data || [])
       setUnreadCount((data || []).filter(n => !n.read).length)
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      logger.error('Error fetching notifications:', error)
     }
   }, [session?.user?.id, setNotifications, setUnreadCount])
 
@@ -75,7 +78,7 @@ export function useNotifications() {
         .eq('user_id', session?.user?.id)
 
       if (error) {
-        console.error('Error marking notification as read:', {
+        logger.error('Error marking notification as read:', {
           error,
           message: error.message,
           details: error.details,
@@ -92,7 +95,7 @@ export function useNotifications() {
         return updated
       })
     } catch (error) {
-      console.error('Error marking notification as read:', error)
+      logger.error('Error marking notification as read:', error)
     }
   }
 
@@ -105,7 +108,7 @@ export function useNotifications() {
         .eq('read', false)
 
       if (error) {
-        console.error('Error marking all notifications as read:', error)
+        logger.error('Error marking all notifications as read:', error)
         return
       }
 
@@ -115,7 +118,7 @@ export function useNotifications() {
         return updated
       })
     } catch (error) {
-      console.error('Error marking all notifications as read:', error)
+      logger.error('Error marking all notifications as read:', error)
     }
   }
 
@@ -126,10 +129,10 @@ export function useNotifications() {
         .insert([notification])
 
       if (error) {
-        console.error('Error creating notification:', error)
+        logger.error('Error creating notification:', error)
       }
     } catch (error) {
-      console.error('Error creating notification:', error)
+      logger.error('Error creating notification:', error)
     }
   }
 
