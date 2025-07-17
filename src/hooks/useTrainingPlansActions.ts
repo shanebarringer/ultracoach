@@ -5,6 +5,9 @@ import { useCallback } from 'react'
 import axios from 'axios'
 import { trainingPlansAtom } from '@/lib/atoms'
 import type { TrainingPlan } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useTrainingPlansActions')
 
 export function useTrainingPlansActions() {
   const setTrainingPlans = useSetAtom(trainingPlansAtom)
@@ -18,7 +21,7 @@ export function useTrainingPlansActions() {
 
       return response.data.trainingPlan
     } catch (error) {
-      console.error('Error creating training plan:', error)
+      logger.error('Error creating training plan:', error)
       throw error
     }
   }, [setTrainingPlans])
@@ -36,7 +39,7 @@ export function useTrainingPlansActions() {
 
       return response.data.trainingPlan
     } catch (error) {
-      console.error('Error updating training plan:', error)
+      logger.error('Error updating training plan:', error)
       throw error
     }
   }, [setTrainingPlans])
@@ -48,7 +51,7 @@ export function useTrainingPlansActions() {
       // Update local state
       setTrainingPlans(prev => prev.filter(plan => plan.id !== planId))
     } catch (error) {
-      console.error('Error deleting training plan:', error)
+      logger.error('Error deleting training plan:', error)
       throw error
     }
   }, [setTrainingPlans])
@@ -66,7 +69,7 @@ export function useTrainingPlansActions() {
 
       return response.data.trainingPlan
     } catch (error) {
-      console.error('Error archiving training plan:', error)
+      logger.error('Error archiving training plan:', error)
       throw error
     }
   }, [setTrainingPlans])
