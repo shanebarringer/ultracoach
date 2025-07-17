@@ -38,7 +38,7 @@ export async function PATCH(
     try {
       const recipientId = session.user.role === 'coach' ? plan.runner_id : plan.coach_id
       const { data: actor } = await supabaseAdmin
-        .from('users')
+        .from('better_auth_users')
         .select('full_name')
         .eq('id', session.user.id)
         .single()

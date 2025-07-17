@@ -1,21 +1,26 @@
 import { pgTable, text, timestamp, uuid, boolean, decimal, integer, varchar } from 'drizzle-orm/pg-core';
 
-export const users = pgTable('users', {
-  id: text('id').primaryKey(),
-  email: text('email').unique().notNull(),
-  password_hash: text('password_hash').notNull(),
-  role: text('role').notNull().$type<"runner" | "coach">(),
-  full_name: text('full_name').notNull(),
-  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+// Better Auth users table becomes the primary user table
+export const better_auth_users = pgTable('better_auth_users', {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').default(false),
+    name: text('name'),
+    image: text('image'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+    role: text('role').default('runner').$type<"runner" | "coach">(),
+    fullName: text('full_name'),
 });
+
 
 export const training_plans = pgTable('training_plans', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
   description: text('description'),
-  coach_id: text('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  runner_id: text('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // Updated to reference better_auth_users instead of users
+  coach_id: text('coach_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
+  runner_id: text('runner_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
   target_race_date: timestamp('target_race_date'),
   target_race_distance: text('target_race_distance'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -42,8 +47,9 @@ export const workouts = pgTable('workouts', {
 
 export const messages = pgTable('messages', {
   id: uuid('id').primaryKey().defaultRandom(),
-  sender_id: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  recipient_id: text('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // Updated to reference better_auth_users instead of users
+  sender_id: text('sender_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
+  recipient_id: text('recipient_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   read: boolean('read').default(false),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -54,7 +60,8 @@ export const messages = pgTable('messages', {
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
-  user_id: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // Updated to reference better_auth_users instead of users
+  user_id: text('user_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
   type: text('type').notNull().$type<"message" | "workout" | "comment">(),
   title: text('title').notNull(),
   message: text('message').notNull(),
@@ -72,25 +79,14 @@ export const message_workout_links = pgTable('message_workout_links', {
 
 export const conversations = pgTable('conversations', {
     id: uuid('id').primaryKey().defaultRandom(),
-    coach_id: text('coach_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    runner_id: text('runner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    // Updated to reference better_auth_users instead of users
+    coach_id: text('coach_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
+    runner_id: text('runner_id').notNull().references(() => better_auth_users.id, { onDelete: 'cascade' }),
     training_plan_id: uuid('training_plan_id').references(() => training_plans.id, { onDelete: 'set null' }),
     title: varchar('title', { length: 255 }),
     last_message_at: timestamp('last_message_at', { withTimezone: true }).defaultNow(),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
-
-export const better_auth_users = pgTable('better_auth_users', {
-    id: text('id').primaryKey(),
-    email: text('email').notNull().unique(),
-    emailVerified: boolean('email_verified').default(false),
-    name: text('name'),
-    image: text('image'),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-    role: text('role').default('runner').$type<"runner" | "coach">(),
-    fullName: text('full_name'),
 });
 
 export const better_auth_accounts = pgTable('better_auth_accounts', {

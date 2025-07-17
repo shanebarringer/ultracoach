@@ -101,12 +101,12 @@ export async function POST(request: NextRequest) {
     // Send notification to runner about new workout
     try {
       const { data: runner } = await supabaseAdmin
-        .from('users')
+        .from('better_auth_users')
         .select('id, full_name')
         .eq('id', plan.runner_id)
         .single()
       const { data: coach } = await supabaseAdmin
-        .from('users')
+        .from('better_auth_users')
         .select('full_name')
         .eq('id', session.user.id)
         .single()

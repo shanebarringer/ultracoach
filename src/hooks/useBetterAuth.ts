@@ -34,8 +34,8 @@ export function useBetterAuth() {
         }
 
         setAuthState({
-          user: session?.user || null,
-          session: session || null,
+          user: session?.user as User | null,
+          session: session as Session | null,
           loading: false,
           error: null
         });
@@ -70,9 +70,11 @@ export function useBetterAuth() {
         return { success: false, error: error.message };
       }
 
+      // For sign in, get the session after authentication
+      const sessionResult = await authClient.getSession();
       setAuthState({
-        user: data.user,
-        session: data.session,
+        user: data.user as User,
+        session: sessionResult.data as Session | null,
         loading: false,
         error: null
       });
@@ -108,9 +110,11 @@ export function useBetterAuth() {
         return { success: false, error: error.message };
       }
 
+      // For sign up, get the session after authentication
+      const sessionResult = await authClient.getSession();
       setAuthState({
-        user: data.user,
-        session: data.session,
+        user: data.user as User,
+        session: sessionResult.data as Session | null,
         loading: false,
         error: null
       });

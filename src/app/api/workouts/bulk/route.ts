@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         const firstPlan = trainingPlans?.find(plan => plan.id === workouts[0].trainingPlanId)
         if (firstPlan) {
           const { data: runner } = await supabaseAdmin
-            .from('users')
+            .from('better_auth_users')
             .select('id, full_name')
             .eq('id', firstPlan.runner_id)
             .single()
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           if (runner) {
             // Get coach info
             const { data: coach } = await supabaseAdmin
-              .from('users')
+              .from('better_auth_users')
               .select('full_name')
               .eq('id', session.user.id)
               .single()

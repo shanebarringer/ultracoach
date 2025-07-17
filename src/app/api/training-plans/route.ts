@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
     // Find the runner by email
     const { data: runner, error: runnerError } = await supabaseAdmin
-      .from('users')
+      .from('better_auth_users')
       .select('*')
       .eq('email', runnerEmail)
       .eq('role', 'runner')

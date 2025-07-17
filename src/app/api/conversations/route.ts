@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
     // Fetch user data for all conversation partners
     const { data: users, error: usersError } = await supabaseAdmin
-      .from('users')
+      .from('better_auth_users')
       .select('*')
       .in('id', Array.from(userIds))
     if (usersError) {

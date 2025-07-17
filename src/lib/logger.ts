@@ -3,33 +3,19 @@ import { Logger } from 'tslog';
 // Create logger instance with configuration
 const logger = new Logger({
   name: 'UltraCoach',
-  minLevel: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  minLevel: process.env.NODE_ENV === 'production' ? 3 : 0, // 3=info, 0=debug
   prettyLogTemplate: '{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}} {{logLevelName}} [{{name}}] ',
   prettyErrorTemplate: '\n{{errorName}} {{errorMessage}}\nstack: {{errorStack}}',
   prettyLogStyles: {
     logLevelName: {
       '*': ['bold', 'black', 'bgColorWhite'],
-      'SILLY': ['bold', 'white'],
-      'TRACE': ['bold', 'whiteBright'],
       'DEBUG': ['bold', 'green'],
       'INFO': ['bold', 'blue'],
       'WARN': ['bold', 'yellow'],
       'ERROR': ['bold', 'red'],
       'FATAL': ['bold', 'redBright']
     },
-    date: ['fgColorWhite'],
-    logLevelName: {
-      '*': ['bold', 'black', 'bgColorWhite'],
-      'DEBUG': ['bold', 'green'],
-      'INFO': ['bold', 'blue'],
-      'WARN': ['bold', 'yellow'],
-      'ERROR': ['bold', 'red'],
-    },
-    name: ['fgColorWhite'],
-    nameWithDelimiterPrefix: ['fgColorWhite'],
-    nameWithDelimiterSuffix: ['fgColorWhite'],
-    functionName: ['fgColorWhite'],
-    filePathWithLine: ['fgColorWhite'],
+    name: ['bold', 'white'],
   },
   hideLogPositionForProduction: process.env.NODE_ENV === 'production',
 });
