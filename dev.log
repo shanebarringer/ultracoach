@@ -343,3 +343,5 @@ params: s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM,1
  GET /api/user/role?userId=s8sS0h4hyH8Y0Ion4yMVGpDixvxM3rAM 200 in 1635ms
  GET /api/user/role?userId=9c6b7613-67b1-48f8-a2c5-22ad8bb83ebe 200 in 51ms
  GET /dashboard/coach 200 in 384ms
+ ✓ Compiled in 3.5s (2161 modules)
+[?25h

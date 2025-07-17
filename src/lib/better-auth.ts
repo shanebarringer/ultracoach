@@ -46,7 +46,7 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true for production
+    requireEmailVerification: true, // Enabled for production security
     minPasswordLength: 8,
     maxPasswordLength: 128,
   },

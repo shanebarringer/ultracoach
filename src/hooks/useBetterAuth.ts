@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { authClient } from '@/lib/better-auth-client';
+import type { Session, User } from '@/lib/better-auth-client';
 
 interface AuthState {
-  user: Record<string, unknown> | null;
-  session: Record<string, unknown> | null;
+  user: User | null;
+  session: Session | null;
   loading: boolean;
   error: string | null;
 }
@@ -71,7 +72,7 @@ export function useBetterAuth() {
 
       setAuthState({
         user: data.user,
-        session: data as Record<string, unknown>,
+        session: data.session,
         loading: false,
         error: null
       });
@@ -109,7 +110,7 @@ export function useBetterAuth() {
 
       setAuthState({
         user: data.user,
-        session: data as Record<string, unknown>,
+        session: data.session,
         loading: false,
         error: null
       });
