@@ -98,7 +98,7 @@ export default function ConversationList({ selectedUserId }: ConversationListPro
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0 relative">
                       <Avatar
-                        name={partner?.full_name}
+                        name={partner?.full_name || 'User'}
                         size="md"
                         classNames={{
                           base: "bg-gradient-to-br from-primary to-secondary",

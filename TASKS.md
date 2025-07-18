@@ -494,6 +494,11 @@
   - [ ] Audit authentication and session management
   - [ ] Test for common security vulnerabilities
   - [ ] Implement rate limiting and abuse protection
+- [ ] **CI/CD Pipeline**
+  - [ ] GitHub Actions for Playwright tests
+  - [ ] Automated test runs on PR creation
+  - [ ] Cross-browser testing in CI
+  - [ ] Playwright MCP integration for automated PR creation on test failures
 
 ### Documentation & Deployment
 - [ ] **User documentation**

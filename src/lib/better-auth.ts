@@ -19,25 +19,22 @@ const betterAuthPool = new Pool({
   min: 1, // Keep fewer connections alive
   idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
   connectionTimeoutMillis: 60000, // 60 seconds connection timeout for Supabase
-  acquireTimeoutMillis: 60000, // 60 seconds acquire timeout
-  statement_timeout: 60000, // 60 seconds statement timeout
-  query_timeout: 60000, // 60 seconds query timeout
   application_name: 'ultracoach-better-auth', // Help identify connections
   keepAlive: true, // Keep connections alive
   keepAliveInitialDelayMillis: 10000, // 10 seconds
 });
 
 // Add connection event handlers for monitoring
-betterAuthPool.on('connect', (client) => {
+betterAuthPool.on('connect', () => {
   console.log('Better Auth: Database connection established');
 });
 
-betterAuthPool.on('error', (err, client) => {
+betterAuthPool.on('error', (err) => {
   console.error('Better Auth: Database pool error:', err);
   // Don't exit the process, just log the error
 });
 
-betterAuthPool.on('remove', (client) => {
+betterAuthPool.on('remove', () => {
   console.log('Better Auth: Client removed from pool');
 });
 

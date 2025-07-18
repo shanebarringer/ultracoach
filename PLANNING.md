@@ -84,6 +84,14 @@ activeTrainingPlansAtom: Computed active plans
 }
 ```
 
+### Testing & CI/CD Infrastructure
+```json
+{
+  "@playwright/test": "^1.45.0",
+  "playwright": "^1.45.0"
+}
+```
+
 ### Development Tools
 ```json
 {
@@ -196,6 +204,8 @@ activeTrainingPlansAtom: Computed active plans
 - **Integration Testing**: Database operations and real-time features
 - **Performance Testing**: State management and large datasets
 - **Security Testing**: RLS policies and authentication
+- **End-to-End Testing**: Playwright for cross-browser testing
+- **CI/CD Pipeline**: GitHub Actions for automated testing and deployment
 
 ## 📁 Project Structure
 
@@ -267,6 +277,21 @@ pnpm build
 
 # Type checking
 npx tsc --noEmit
+```
+
+### Testing & CI/CD
+```bash
+# Run Playwright tests
+npx playwright test
+
+# Run tests on specific browser
+npx playwright test --project=chromium
+
+# Run tests with UI
+npx playwright test --ui
+
+# Install browsers
+npx playwright install
 ```
 
 ## 🎯 Success Metrics
