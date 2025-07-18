@@ -157,46 +157,54 @@ export default function CoachDashboard() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Active Training Plans"
-          value={trainingPlans.length}
-          subtitle="expeditions"
-          icon={CalendarDaysIcon}
-          trend={{ value: 12, direction: 'up' }}
-          color="primary"
-        />
+        <div data-testid="active-plans-count">
+          <MetricCard
+            title="Active Training Plans"
+            value={trainingPlans.length}
+            subtitle="expeditions"
+            icon={CalendarDaysIcon}
+            trend={{ value: 12, direction: 'up' }}
+            color="primary"
+          />
+        </div>
         
-        <MetricCard
-          title="Runners"
-          value={runners.length}
-          subtitle="athletes"
-          icon={UsersIcon}
-          trend={{ value: 8, direction: 'up' }}
-          color="success"
-        />
+        <div data-testid="total-runners-count">
+          <MetricCard
+            title="Runners"
+            value={runners.length}
+            subtitle="athletes"
+            icon={UsersIcon}
+            trend={{ value: 8, direction: 'up' }}
+            color="success"
+          />
+        </div>
         
-        <MetricCard
-          title="Recent Workouts"
-          value={recentWorkouts.length}
-          subtitle="completed"
-          icon={ChartBarIcon}
-          color="warning"
-        />
+        <div data-testid="upcoming-workouts-count">
+          <MetricCard
+            title="Recent Workouts"
+            value={recentWorkouts.length}
+            subtitle="completed"
+            icon={ChartBarIcon}
+            color="warning"
+          />
+        </div>
         
-        <MetricCard
-          title="This Week"
-          value="127"
-          subtitle="km total"
-          icon={ArrowTrendingUpIcon}
-          trend={{ value: 15, direction: 'up' }}
-          color="secondary"
-        />
+        <div data-testid="this-week-count">
+          <MetricCard
+            title="This Week"
+            value="127"
+            subtitle="km total"
+            icon={ArrowTrendingUpIcon}
+            trend={{ value: 15, direction: 'up' }}
+            color="secondary"
+          />
+        </div>
       </div>
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Training Expeditions */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="training-plans-section">
           <CardHeader className="flex justify-between items-center">
             <div>
               <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
@@ -260,7 +268,7 @@ export default function CoachDashboard() {
         </Card>
 
         {/* Recent Peaks Conquered */}
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="recent-activity-section">
           <CardHeader>
             <div>
               <h3 className="text-xl font-semibold text-foreground">Recent Peaks Conquered</h3>
@@ -309,7 +317,7 @@ export default function CoachDashboard() {
       </div>
 
       {/* Your Athletes */}
-      <Card className="hover:shadow-lg transition-shadow duration-300">
+      <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="runners-section">
         <CardHeader>
           <div>
             <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
@@ -327,10 +335,10 @@ export default function CoachDashboard() {
                 <div key={runner.id} className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-                      {runner.full_name.charAt(0)}
+                      {(runner.full_name || 'U').charAt(0)}
                     </div>
                     <div>
-                      <h4 className="font-medium text-foreground">{runner.full_name}</h4>
+                      <h4 className="font-medium text-foreground">{runner.full_name || 'User'}</h4>
                       <p className="text-sm text-foreground-600">{runner.email}</p>
                     </div>
                   </div>

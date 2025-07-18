@@ -74,11 +74,11 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-medium">
-            {recipient.full_name.charAt(0).toUpperCase()}
+            {(recipient.full_name || 'U').charAt(0).toUpperCase()}
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">
-              {recipient.full_name}
+              {recipient.full_name || 'User'}
             </h1>
             <p className="text-sm text-foreground-600 capitalize">
               {recipient.role}
@@ -152,7 +152,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         <div className="px-4">
           <TypingIndicator 
             isTyping={isRecipientTyping} 
-            userName={recipient.full_name} 
+            userName={recipient.full_name || 'User'} 
           />
         </div>
       </div>

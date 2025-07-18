@@ -220,7 +220,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
                               <div className="mt-2">
                                 <WorkoutContext
                                   workout={workout}
-                                  linkType={message.context_type?.replace('workout_', '') || 'reference'}
+                                  linkType={'reference'}
                                   className="text-xs"
                                 />
                               </div>

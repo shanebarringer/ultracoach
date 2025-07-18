@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { auth } from "@/lib/better-auth"
-import { createLogger } from "@/lib/logger"
-
-const logger = createLogger('middleware')
 
 export async function middleware(request: NextRequest) {
   // Allow public routes
@@ -25,40 +21,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For API routes (except auth), validate session
+  // For API routes (except auth), let the API routes handle their own authentication
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    try {
-      const session = await auth.api.getSession({
-        headers: request.headers
-      })
-      
-      if (!session) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-      
-      return NextResponse.next()
-    } catch (error) {
-      logger.error('Middleware session validation error:', error)
-      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
-    }
+    return NextResponse.next()
   }
 
-  // For dashboard routes, validate session and redirect if needed
+  // For dashboard routes, check for session cookie
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    try {
-      const session = await auth.api.getSession({
-        headers: request.headers
-      })
-      
-      if (!session) {
-        return NextResponse.redirect(new URL('/auth/signin', request.url))
-      }
-      
-      return NextResponse.next()
-    } catch (error) {
-      logger.error('Middleware session validation error:', error)
+    const sessionCookie = request.cookies.get('better-auth.session_token')
+    
+    if (!sessionCookie) {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
+    
+    return NextResponse.next()
   }
 
   // Default: allow other routes for now

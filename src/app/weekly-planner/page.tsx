@@ -178,12 +178,12 @@ export default function WeeklyPlannerPage() {
                     <CardBody className="p-4">
                       <div className="flex items-center gap-3">
                         <Avatar
-                          name={runner.full_name}
+                          name={runner.full_name || 'User'}
                           size="md"
                           className="bg-gradient-to-br from-primary to-secondary text-white"
                         />
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{runner.full_name}</h3>
+                          <h3 className="font-semibold text-foreground">{runner.full_name || 'User'}</h3>
                           <p className="text-sm text-foreground/70">{runner.email}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <Chip

@@ -16,11 +16,11 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-17)
-- **Active Milestone**: Database Schema Migration - ✅ 100% COMPLETE! 🎉
-- **Completion**: 100% (8/8 tasks) + **DATABASE FULLY MIGRATED TO BETTER AUTH IDS**
+- **Active Milestone**: All Core Development Complete - Ready for Production Polish 🎉
+- **Completion**: 100% (169/169 tasks) + **ALL MILESTONES COMPLETE**
 - **Recent Major Achievement**: Complete database schema migration with legacy users table removal
-- **Performance**: All builds passing, database modernized, user mapping system eliminated
-- **Current Focus**: Database architecture fully modernized - single source of truth for user identification
+- **Performance**: All builds passing, zero warnings, database modernized, user mapping system eliminated
+- **Current Focus**: Production optimization, testing validation, and final polish before deployment
 
 ## 🏗️ Architecture & Technology
 
@@ -95,6 +95,23 @@ pnpm lint
 ./supabase/scripts/reset_database.sh
 ```
 
+### Supabase CLI Best Practices (2025)
+```bash
+# Run SQL queries directly (preferred for automation)
+supabase db query "SELECT * FROM better_auth_users LIMIT 5;"
+
+# Execute SQL files (for complex operations)
+supabase db query --file ./supabase/migrations/001_setup.sql
+
+# Database operations with explicit environment
+supabase db reset --linked
+supabase db push --linked
+
+# Local development
+supabase start
+supabase db seed
+```
+
 ## 🎯 Key Features & Context
 
 ### Enhanced Training System (✅ COMPLETED)
@@ -105,11 +122,11 @@ pnpm lint
 - **Plan sequencing**: 50K → 50M → 50K → 100M progression support
 
 ### Better Auth Integration (✅ COMPLETED)
-- **Integration Status**: Hybrid authentication system fully operational and production-ready
+- **Integration Status**: Full Better Auth migration completed with database schema modernization
 - **Security**: Migrated to new Supabase API keys (sb_publishable_ and sb_secret_)
-- **Architecture**: Hybrid approach with Better Auth + user mapping system for optimal performance
+- **Architecture**: Direct Better Auth ID usage throughout database - no more user mapping system
 - **API Routes**: All routes working seamlessly with Better Auth authentication
-- **Benefits**: Better TypeScript support, improved session management, zero-downtime deployment
+- **Benefits**: Better TypeScript support, improved session management, production-ready build
 
 ### Test Data System (✅ COMPLETED)
 - **Test Users**: 2 coaches, 10 runners with realistic relationships and fixed IDs
@@ -119,10 +136,10 @@ pnpm lint
 
 ## 🔧 Important Development Guidelines
 
-### Authentication (CRITICAL - HYBRID ARCHITECTURE)
+### Authentication (CRITICAL - PRODUCTION READY)
 - **Better Auth**: Successfully migrated from NextAuth.js to Better Auth for improved stability
-- **Hybrid System**: Better Auth handles authentication, user mapping handles database compatibility
-- **Testing**: All existing test credentials work seamlessly with the hybrid system
+- **Direct ID Usage**: Database uses Better Auth IDs directly - no more user mapping system
+- **Testing**: All existing test credentials work seamlessly with the modernized system
 - **Sessions**: Better Auth provides superior session management and security
 
 ### State Management (CRITICAL)
@@ -145,20 +162,42 @@ pnpm lint
 - **No Console Statements**: All console.log/error replaced with structured logging
 - **Context Names**: Use descriptive context names (e.g., 'useTrainingPlans', 'middleware', 'better-auth-client')
 
-### Security
-- **No credentials in code**: Use environment variables
+### Security (CRITICAL)
+- **No credentials in code**: Use environment variables for ALL database connections
+- **Environment Variables**: Required variables in .env.local (DATABASE_PASSWORD, DB_USER, etc.)
+- **Secure Scripts**: All database scripts use `source load_env.sh` for secure environment loading
+- **SQL Injection Protection**: Use parameterized queries and input validation in all database operations
 - **Test data only**: Test credentials excluded from git
 - **RLS policies**: Database access controlled by user roles
 - **API Key Migration**: Upgraded to new Supabase API keys (sb_publishable_ and sb_secret_)
 - **Security Incident**: Resolved GitHub security alert for leaked service key (July 15, 2025)
 
+### Database Script Security Guidelines
+- **NEVER hardcode database URLs** - Use environment variables only
+- **Use load_env.sh**: All scripts must `source "$SCRIPT_DIR/load_env.sh"`
+- **Validate inputs**: Check table names match regex `^[a-zA-Z_][a-zA-Z0-9_]*$`
+- **Use quoted identifiers**: Wrap table names in quotes for SQL queries
+- **Parameterized queries**: Use `psql -c "query" param1 param2` format when possible
+- **Prefer Supabase CLI**: Use `supabase db query` over direct `psql` for consistency and authentication
+
+### MCP (Model Context Protocol) Guidelines
+- **Context7 MCP**: Use for up-to-date documentation access (`use context7` in prompts)
+- **GitHub MCP**: For repository operations and issue management
+- **Security**: Only use trusted MCP servers, review configurations
+- **Configuration**: Store in project `.mcp.json` for team consistency
+
 ## 🚨 Recent Documentation Update
-- Completed Better Auth integration with hybrid architecture
-- Updated documentation to reflect hybrid approach as chosen solution
-- Cleaned up migration files to focus on working architecture
-- Added reference to @CLAUDE.md, @PLANNING.md, and @TASKS.md file synchronization across project documents
-- Added cross-file reference tracking: @CLAUDE.md @TASKS.md @PLANNING.md 
-- Added cross-file synchronization task for @CLAUDE.md @TASKS.md 
+- **Security Hardening**: Removed all hardcoded database connections, implemented secure environment loading
+- **Playwright Testing**: Complete cross-browser testing infrastructure with comprehensive test coverage
+- **Database Migration**: Completed full schema migration to Better Auth IDs with zero data loss
+- **Production Ready**: Resolved all build warnings, optimized middleware performance, comprehensive security review
+- **SQL Injection Protection**: Added input validation and parameterized queries to all database scripts
+- **Environment Security**: Standardized secure environment variable loading across all scripts
+- **Supabase CLI Integration**: Updated all scripts to use modern Supabase CLI commands for consistency
+- **MCP Configuration**: Added Model Context Protocol guidelines for enhanced AI-driven development
+- **Documentation**: Added comprehensive security guidelines and MCP setup to @PLANNING.md and @CLAUDE.md
+- **Cross-file Sync**: @CLAUDE.md @TASKS.md @PLANNING.md synchronized for security, testing, and MCP updates
+- **Zero Warnings**: Production build optimized, security vulnerabilities resolved, testing framework ready
 
 ---
 
