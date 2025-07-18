@@ -15,10 +15,12 @@ const betterAuthPool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  max: 5, // Reduced pool size for Better Auth only
-  min: 1, // Keep at least one connection alive
-  idleTimeoutMillis: 60000, // Increased idle timeout
-  connectionTimeoutMillis: 5000, // Increased connection timeout
+  max: 10, // Increased pool size for Better Auth
+  min: 2, // Keep more connections alive
+  idleTimeoutMillis: 120000, // 2 minutes idle timeout
+  connectionTimeoutMillis: 30000, // 30 seconds connection timeout for Supabase
+  acquireTimeoutMillis: 30000, // 30 seconds acquire timeout
+  statement_timeout: 30000, // 30 seconds statement timeout
 });
 
 const betterAuthDb = drizzle(betterAuthPool);
@@ -43,7 +45,7 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true, // Enabled for production security
+    requireEmailVerification: false, // Disabled for development - enable for production
     minPasswordLength: 8,
     maxPasswordLength: 128,
   },
