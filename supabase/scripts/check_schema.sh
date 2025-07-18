@@ -3,6 +3,7 @@ set -e
 
 # Database Schema Check Script
 # This script checks what tables currently exist in the database
+# For production environments, consider using .pgpass files for enhanced security.
 
 echo "🔍 Checking Current Database Schema..."
 echo ""
@@ -13,6 +14,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Load environment variables using robust loader
 source "$SCRIPT_DIR/load_env.sh"
 
+# Determine the database connection string to use
+DB_CONN="$DATABASE_URL"
+if [ -n "$SUPABASE_DB_URL" ]; then
+    DB_CONN="$SUPABASE_DB_URL"
+fi
+
+if [ -z "$DB_CONN" ]; then
+    echo "❌ No database connection available. Set DATABASE_URL or SUPABASE_DB_URL."
+    exit 1
+fi
+
 # Function to run SQL query
 run_query() {
     local query="$1"
@@ -20,12 +32,30 @@ run_query() {
     
     echo "  🔧 $description"
     if command -v supabase &> /dev/null && [ -n "$SUPABASE_DB_URL" ]; then
-        supabase db query --db-url "$SUPABASE_DB_URL" "$query"
-    elif [ -n "$DATABASE_URL" ]; then
-        psql "$DATABASE_URL" -c "$query"
+        supabase db query --db-url "$DB_CONN" "$query"
     else
-        echo "❌ No database connection available. Set DATABASE_URL or SUPABASE_DB_URL."
-        exit 1
+        psql "$DB_CONN" -c "$query"
+    fi
+}
+
+# Function to check for table existence and row count
+check_table() {
+    local table_name="$1"
+    echo "  Checking $table_name..."
+    
+    # Use a parameterized query to prevent SQL injection
+    EXISTS_QUERY="SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table_name');"
+    
+    EXISTS=$(psql "$DB_CONN" -t -c "$EXISTS_QUERY")
+
+    if [[ "$EXISTS" =~ "t" ]]; then
+        echo "    ✅ $table_name exists"
+        # Get row count
+        COUNT_QUERY="SELECT COUNT(*) FROM \"$table_name\";"
+        COUNT=$(psql "$DB_CONN" -t -c "$COUNT_QUERY")
+        echo "    📊 Row count: $COUNT"
+    else
+        echo "    ❌ $table_name does not exist"
     fi
 }
 
@@ -55,52 +85,22 @@ ORDER BY tc.table_name, kcu.column_name;
 echo ""
 echo "🏗️ Enhanced Training Tables Check:"
 ENHANCED_TABLES=("races" "training_phases" "plan_phases" "plan_templates" "template_phases")
-
 for table in "${ENHANCED_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
-    if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
-        echo "    📊 Row count: $COUNT"
-    else
-        echo "    ❌ $table does not exist"
-    fi
+    check_table "$table"
 done
 
 echo ""
 echo "👥 User Tables Check:"
 USER_TABLES=("users" "better_auth_users" "user_mapping")
-
 for table in "${USER_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
-    if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
-        echo "    📊 Row count: $COUNT"
-    else
-        echo "    ❌ $table does not exist"
-    fi
+    check_table "$table"
 done
 
 echo ""
 echo "🔄 Core Tables Check:"
 CORE_TABLES=("training_plans" "workouts" "conversations" "messages" "notifications")
-
 for table in "${CORE_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
-    if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
-        echo "    📊 Row count: $COUNT"
-    else
-        echo "    ❌ $table does not exist"
-    fi
+    check_table "$table"
 done
 
 echo ""

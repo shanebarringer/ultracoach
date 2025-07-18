@@ -35,9 +35,9 @@ if [ -f "$PROJECT_ROOT/.env.local" ]; then
             value="${BASH_REMATCH[2]}"
             
             # Remove quotes if present
-            if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+            if [[ "$value" =~ ^"(.*)"$ ]]; then
                 value="${BASH_REMATCH[1]}"
-            elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+            elif [[ "$value" =~ ^'(.*)'$ ]]; then
                 value="${BASH_REMATCH[1]}"
             fi
             
@@ -51,13 +51,13 @@ fi
 
 # Check for required environment variables and build DATABASE_URL if needed
 if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_DB_URL" ]; then
-    if [ -n "$DATABASE_PASSWORD" ]; then
-        DATABASE_URL="postgresql://postgres.ccnbzjpccmlribljugve:${DATABASE_PASSWORD}@3.139.14.59:5432/postgres"
+    if [ -n "$DB_USER" ] && [ -n "$DATABASE_PASSWORD" ] && [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ] && [ -n "$DB_NAME" ]; then
+        DATABASE_URL="postgresql://${DB_USER}:${DATABASE_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
         export DATABASE_URL
         echo "✅ Built DATABASE_URL from environment variables"
     else
         echo "⚠️  DATABASE_URL not set. You can:"
-        echo "   1. Set DATABASE_PASSWORD in your .env.local file"
+        echo "   1. Set DB_USER, DATABASE_PASSWORD, DB_HOST, DB_PORT, and DB_NAME in your .env.local file"
         echo "   2. Set DATABASE_URL directly in .env.local"
         echo "   3. Use: supabase link --project-ref your-project-ref"
         exit 1
