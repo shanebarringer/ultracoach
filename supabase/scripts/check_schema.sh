@@ -56,17 +56,32 @@ echo ""
 echo "🏗️ Enhanced Training Tables Check:"
 ENHANCED_TABLES=("races" "training_phases" "plan_phases" "plan_templates" "template_phases")
 
-for table in "${ENHANCED_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
+# Function to safely check if table exists and get row count
+check_table_safely() {
+    local table_name="$1"
+    
+    # Validate table name contains only safe characters
+    if [[ ! "$table_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "    ❌ Invalid table name: $table_name"
+        return 1
+    fi
+    
+    echo "  Checking $table_name..."
+    
+    # Use parameterized query approach with psql
+    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = \$1);" "$table_name")
     if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
+        echo "    ✅ $table_name exists"
+        # Get row count using quoted identifier for safety
+        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM \"$table_name\";")
         echo "    📊 Row count: $COUNT"
     else
-        echo "    ❌ $table does not exist"
+        echo "    ❌ $table_name does not exist"
     fi
+}
+
+for table in "${ENHANCED_TABLES[@]}"; do
+    check_table_safely "$table"
 done
 
 echo ""
@@ -74,16 +89,7 @@ echo "👥 User Tables Check:"
 USER_TABLES=("users" "better_auth_users" "user_mapping")
 
 for table in "${USER_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
-    if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
-        echo "    📊 Row count: $COUNT"
-    else
-        echo "    ❌ $table does not exist"
-    fi
+    check_table_safely "$table"
 done
 
 echo ""
@@ -91,16 +97,7 @@ echo "🔄 Core Tables Check:"
 CORE_TABLES=("training_plans" "workouts" "conversations" "messages" "notifications")
 
 for table in "${CORE_TABLES[@]}"; do
-    echo "  Checking $table..."
-    EXISTS=$(psql "$DATABASE_URL" -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
-    if [[ "$EXISTS" =~ "t" ]]; then
-        echo "    ✅ $table exists"
-        # Get row count
-        COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM $table;")
-        echo "    📊 Row count: $COUNT"
-    else
-        echo "    ❌ $table does not exist"
-    fi
+    check_table_safely "$table"
 done
 
 echo ""
