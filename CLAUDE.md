@@ -95,6 +95,23 @@ pnpm lint
 ./supabase/scripts/reset_database.sh
 ```
 
+### Supabase CLI Best Practices (2025)
+```bash
+# Run SQL queries directly (preferred for automation)
+supabase db query "SELECT * FROM better_auth_users LIMIT 5;"
+
+# Execute SQL files (for complex operations)
+supabase db query --file ./supabase/migrations/001_setup.sql
+
+# Database operations with explicit environment
+supabase db reset --linked
+supabase db push --linked
+
+# Local development
+supabase start
+supabase db seed
+```
+
 ## 🎯 Key Features & Context
 
 ### Enhanced Training System (✅ COMPLETED)
@@ -161,6 +178,13 @@ pnpm lint
 - **Validate inputs**: Check table names match regex `^[a-zA-Z_][a-zA-Z0-9_]*$`
 - **Use quoted identifiers**: Wrap table names in quotes for SQL queries
 - **Parameterized queries**: Use `psql -c "query" param1 param2` format when possible
+- **Prefer Supabase CLI**: Use `supabase db query` over direct `psql` for consistency and authentication
+
+### MCP (Model Context Protocol) Guidelines
+- **Context7 MCP**: Use for up-to-date documentation access (`use context7` in prompts)
+- **GitHub MCP**: For repository operations and issue management
+- **Security**: Only use trusted MCP servers, review configurations
+- **Configuration**: Store in project `.mcp.json` for team consistency
 
 ## 🚨 Recent Documentation Update
 - **Security Hardening**: Removed all hardcoded database connections, implemented secure environment loading
@@ -169,9 +193,11 @@ pnpm lint
 - **Production Ready**: Resolved all build warnings, optimized middleware performance, comprehensive security review
 - **SQL Injection Protection**: Added input validation and parameterized queries to all database scripts
 - **Environment Security**: Standardized secure environment variable loading across all scripts
-- **Documentation**: Added comprehensive security guidelines to @PLANNING.md and @CLAUDE.md
-- **Cross-file Sync**: @CLAUDE.md @TASKS.md @PLANNING.md synchronized for security and testing updates
-- **Zero Warnings**: Production build optimized, security vulnerabilities resolved, testing framework ready 
+- **Supabase CLI Integration**: Updated all scripts to use modern Supabase CLI commands for consistency
+- **MCP Configuration**: Added Model Context Protocol guidelines for enhanced AI-driven development
+- **Documentation**: Added comprehensive security guidelines and MCP setup to @PLANNING.md and @CLAUDE.md
+- **Cross-file Sync**: @CLAUDE.md @TASKS.md @PLANNING.md synchronized for security, testing, and MCP updates
+- **Zero Warnings**: Production build optimized, security vulnerabilities resolved, testing framework ready
 
 ---
 

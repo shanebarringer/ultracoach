@@ -138,6 +138,23 @@ activeTrainingPlansAtom: Computed active plans
 - **Reset**: `./supabase/scripts/reset_database.sh`
 - **Backup**: `./supabase/scripts/backup_user_data.sh`
 
+### Supabase CLI Operations (Modern Approach)
+```bash
+# Direct SQL execution (preferred for 2025+)
+supabase db query "SELECT table_name FROM information_schema.tables;"
+
+# File-based operations
+supabase db query --file ./path/to/script.sql
+
+# Environment-specific operations
+supabase db reset --linked    # Production database
+supabase db reset --local     # Local development
+
+# Migration management
+supabase db push              # Apply migrations
+supabase db pull              # Sync schema changes
+```
+
 ## 🎯 Key Features
 
 ### Race-Centric Planning
@@ -355,5 +372,43 @@ npx playwright install
 - [ ] Regular security audit of RLS policies
 - [ ] Monitor for suspicious database activity
 - [ ] Backup encryption and secure storage
+
+## 🤖 AI-Enhanced Development Workflow
+
+### Model Context Protocol (MCP) Integration
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "github": {
+      "command": "claude-mcp-github",
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+### AI-Driven Database Management
+- **Context7 MCP**: Access current Supabase documentation with `use context7`
+- **GitHub MCP**: Automated issue management and PR workflows
+- **BigQuery MCP**: Advanced analytics and query optimization
+- **Fetch MCP**: Real-time documentation and API reference retrieval
+
+### Development Workflow Enhancement
+1. **Documentation Access**: Use Context7 for up-to-date API references
+2. **Code Generation**: Leverage MCP servers for scaffolding and boilerplate
+3. **Testing Automation**: Integrate MCP for test generation and validation
+4. **Deployment Automation**: Use GitHub MCP for CI/CD pipeline management
+
+### Security Considerations for MCP
+- Only use trusted, verified MCP servers
+- Store MCP configurations in version control for team consistency
+- Regularly audit MCP server permissions and access patterns
+- Monitor for prompt injection or data leakage in MCP interactions
 
 This planning document serves as the foundation for all development decisions and architectural choices in the UltraCoach project.
