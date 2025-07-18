@@ -11,6 +11,7 @@ export async function getServerSession(request: NextRequest) {
     })
     
     if (!session) {
+      logger.debug('No session found')
       return null
     }
     
@@ -24,7 +25,20 @@ export async function getServerSession(request: NextRequest) {
       }
     }
   } catch (error) {
-    logger.error('Server session error:', error)
+    // Log different error types for better debugging
+    if (error instanceof Error) {
+      if (error.message.includes('ENETUNREACH')) {
+        logger.error('Network unreachable - database connection failed:', error.message)
+      } else if (error.message.includes('Connection terminated')) {
+        logger.error('Database connection terminated:', error.message)
+      } else if (error.message.includes('timeout')) {
+        logger.error('Database connection timeout:', error.message)
+      } else {
+        logger.error('Server session error:', error)
+      }
+    } else {
+      logger.error('Unknown server session error:', error)
+    }
     return null
   }
 }

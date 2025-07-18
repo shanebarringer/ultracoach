@@ -15,12 +15,30 @@ const betterAuthPool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  max: 10, // Increased pool size for Better Auth
-  min: 2, // Keep more connections alive
-  idleTimeoutMillis: 120000, // 2 minutes idle timeout
-  connectionTimeoutMillis: 30000, // 30 seconds connection timeout for Supabase
-  acquireTimeoutMillis: 30000, // 30 seconds acquire timeout
-  statement_timeout: 30000, // 30 seconds statement timeout
+  max: 5, // Reduced pool size to prevent connection limits
+  min: 1, // Keep fewer connections alive
+  idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
+  connectionTimeoutMillis: 60000, // 60 seconds connection timeout for Supabase
+  acquireTimeoutMillis: 60000, // 60 seconds acquire timeout
+  statement_timeout: 60000, // 60 seconds statement timeout
+  query_timeout: 60000, // 60 seconds query timeout
+  application_name: 'ultracoach-better-auth', // Help identify connections
+  keepAlive: true, // Keep connections alive
+  keepAliveInitialDelayMillis: 10000, // 10 seconds
+});
+
+// Add connection event handlers for monitoring
+betterAuthPool.on('connect', (client) => {
+  console.log('Better Auth: Database connection established');
+});
+
+betterAuthPool.on('error', (err, client) => {
+  console.error('Better Auth: Database pool error:', err);
+  // Don't exit the process, just log the error
+});
+
+betterAuthPool.on('remove', (client) => {
+  console.log('Better Auth: Client removed from pool');
 });
 
 const betterAuthDb = drizzle(betterAuthPool);
@@ -78,6 +96,19 @@ export type User = typeof auth.$Infer.Session.user & {
   role: "runner" | "coach";
   fullName?: string | null;
 };
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal: string) => {
+  console.log(`Better Auth: Received ${signal}, closing database connections...`);
+  betterAuthPool.end(() => {
+    console.log('Better Auth: Database pool connections closed');
+    process.exit(0);
+  });
+};
+
+// Handle process termination
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Type definitions for the application
 declare module "better-auth" {
