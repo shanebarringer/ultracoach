@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
       content, 
       recipientId, 
       workoutId, 
-      contextType = 'general',
       workoutLinks = [] 
     } = await request.json()
     
@@ -147,7 +146,6 @@ export async function POST(request: NextRequest) {
           sender_id: session.user.id,
           recipient_id: recipientId,
           workout_id: workoutId || null,
-          context_type: contextType,
           read: false
         }
       ])

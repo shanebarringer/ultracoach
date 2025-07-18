@@ -78,14 +78,13 @@ export interface Workout {
 
 export interface Message {
   id: string
-  conversation_id: string
+  conversation_id?: string
   sender_id: string
   recipient_id: string
   content: string
   read: boolean
   created_at: string
   workout_id?: string | null
-  context_type?: string
 }
 
 export interface MessageWithUser extends Message {

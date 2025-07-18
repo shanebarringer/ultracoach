@@ -145,21 +145,33 @@ pnpm lint
 - **No Console Statements**: All console.log/error replaced with structured logging
 - **Context Names**: Use descriptive context names (e.g., 'useTrainingPlans', 'middleware', 'better-auth-client')
 
-### Security
-- **No credentials in code**: Use environment variables
+### Security (CRITICAL)
+- **No credentials in code**: Use environment variables for ALL database connections
+- **Environment Variables**: Required variables in .env.local (DATABASE_PASSWORD, DB_USER, etc.)
+- **Secure Scripts**: All database scripts use `source load_env.sh` for secure environment loading
+- **SQL Injection Protection**: Use parameterized queries and input validation in all database operations
 - **Test data only**: Test credentials excluded from git
 - **RLS policies**: Database access controlled by user roles
 - **API Key Migration**: Upgraded to new Supabase API keys (sb_publishable_ and sb_secret_)
 - **Security Incident**: Resolved GitHub security alert for leaked service key (July 15, 2025)
 
+### Database Script Security Guidelines
+- **NEVER hardcode database URLs** - Use environment variables only
+- **Use load_env.sh**: All scripts must `source "$SCRIPT_DIR/load_env.sh"`
+- **Validate inputs**: Check table names match regex `^[a-zA-Z_][a-zA-Z0-9_]*$`
+- **Use quoted identifiers**: Wrap table names in quotes for SQL queries
+- **Parameterized queries**: Use `psql -c "query" param1 param2` format when possible
+
 ## 🚨 Recent Documentation Update
-- Completed full database schema migration to Better Auth IDs
-- Updated documentation to reflect production-ready architecture
-- Resolved all build warnings and optimized middleware performance
-- Eliminated user mapping system complexity throughout codebase
-- Added reference to @CLAUDE.md, @PLANNING.md, and @TASKS.md file synchronization across project documents
-- Added cross-file reference tracking: @CLAUDE.md @TASKS.md @PLANNING.md 
-- Project ready for production deployment with zero warnings 
+- **Security Hardening**: Removed all hardcoded database connections, implemented secure environment loading
+- **Playwright Testing**: Complete cross-browser testing infrastructure with comprehensive test coverage
+- **Database Migration**: Completed full schema migration to Better Auth IDs with zero data loss
+- **Production Ready**: Resolved all build warnings, optimized middleware performance, comprehensive security review
+- **SQL Injection Protection**: Added input validation and parameterized queries to all database scripts
+- **Environment Security**: Standardized secure environment variable loading across all scripts
+- **Documentation**: Added comprehensive security guidelines to @PLANNING.md and @CLAUDE.md
+- **Cross-file Sync**: @CLAUDE.md @TASKS.md @PLANNING.md synchronized for security and testing updates
+- **Zero Warnings**: Production build optimized, security vulnerabilities resolved, testing framework ready 
 
 ---
 

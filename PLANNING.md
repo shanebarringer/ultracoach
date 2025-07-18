@@ -84,6 +84,14 @@ activeTrainingPlansAtom: Computed active plans
 }
 ```
 
+### Testing & CI/CD Infrastructure
+```json
+{
+  "@playwright/test": "^1.45.0",
+  "playwright": "^1.45.0"
+}
+```
+
 ### Development Tools
 ```json
 {
@@ -196,6 +204,8 @@ activeTrainingPlansAtom: Computed active plans
 - **Integration Testing**: Database operations and real-time features
 - **Performance Testing**: State management and large datasets
 - **Security Testing**: RLS policies and authentication
+- **End-to-End Testing**: Playwright for cross-browser testing
+- **CI/CD Pipeline**: GitHub Actions for automated testing and deployment
 
 ## 📁 Project Structure
 
@@ -269,6 +279,21 @@ pnpm build
 npx tsc --noEmit
 ```
 
+### Testing & CI/CD
+```bash
+# Run Playwright tests
+npx playwright test
+
+# Run tests on specific browser
+npx playwright test --project=chromium
+
+# Run tests with UI
+npx playwright test --ui
+
+# Install browsers
+npx playwright install
+```
+
 ## 🎯 Success Metrics
 
 ### Technical Goals
@@ -295,5 +320,40 @@ npx tsc --noEmit
 - Scalable template system for different coaching styles
 - Professional periodization methodology
 - Data-driven training insights and progress tracking
+
+## 🛡️ Security Architecture
+
+### Database Security
+- **Row Level Security (RLS)**: Comprehensive policies ensuring users can only access their own data
+- **Environment Variables**: All database connection details use environment variables - no hardcoded credentials
+- **SQL Injection Protection**: Parameterized queries and input validation in all database scripts
+- **Connection Security**: Secure PostgreSQL connection pooling with timeout handling
+
+### Authentication Security
+- **Better Auth Integration**: Modern, secure authentication with proper session management
+- **Password Security**: Bcrypt hashing with salt for all user passwords
+- **Session Management**: Secure JWT tokens with proper expiration and refresh logic
+- **Role-Based Access**: Coach and runner roles with appropriate permission boundaries
+
+### Environment Security
+- **Secure Environment Loading**: Robust environment variable parsing that handles special characters
+- **Secret Management**: All secrets stored in `.env.local` (excluded from version control)
+- **Development vs Production**: Clear separation of environment configurations
+- **API Key Rotation**: Support for rotating Supabase API keys without code changes
+
+### Script Security
+- **Input Validation**: All database scripts validate table names and inputs
+- **Process Security**: No password exposure in process lists or command-line arguments
+- **Error Handling**: Secure error messages that don't expose internal details
+- **Transaction Safety**: Atomic operations with proper rollback mechanisms
+
+### Production Security Checklist
+- [ ] All `.env.local` files excluded from version control
+- [ ] Database passwords rotated and stored securely
+- [ ] API keys use least-privilege access
+- [ ] SSL/TLS enforced for all database connections
+- [ ] Regular security audit of RLS policies
+- [ ] Monitor for suspicious database activity
+- [ ] Backup encryption and secure storage
 
 This planning document serves as the foundation for all development decisions and architectural choices in the UltraCoach project.

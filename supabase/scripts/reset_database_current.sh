@@ -31,8 +31,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUPABASE_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(dirname "$SUPABASE_DIR")"
 
-# Load environment variables
-source "$SCRIPT_DIR/new_load_env.sh"
+# Load environment variables using secure loader
+source "$SCRIPT_DIR/load_env.sh"
 
 # Function to run SQL
 run_sql() {

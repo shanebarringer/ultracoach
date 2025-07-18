@@ -13,3 +13,1355 @@
  ○ Compiling /api/training-plans ...
  ✓ Compiled /api/training-plans in 1986ms (996 modules)
  GET /api/training-plans 401 in 2295ms
+ ○ Compiling /runners ...
+ ✓ Compiled /runners in 4.4s (4414 modules)
+ GET /runners 200 in 4765ms
+ ○ Compiling /api/auth/[...all] ...
+ ✓ Compiled /api/auth/[...all] in 522ms (2297 modules)
+ ✓ Compiled in 740ms (2133 modules)
+ GET /favicon.ico 200 in 1993ms
+ GET /api/auth/get-session 200 in 2710ms
+ ○ Compiling /api/runners ...
+ ✓ Compiled /api/runners in 751ms (5051 modules)
+ GET /api/runners 200 in 1697ms
+ GET /api/runners 200 in 219ms
+ GET /api/runners 200 in 208ms
+ GET /api/runners 200 in 210ms
+ GET /api/runners 200 in 200ms
+ GET /api/runners 200 in 277ms
+ GET /api/runners 200 in 215ms
+ GET /api/runners 200 in 224ms
+ GET /api/runners 200 in 195ms
+ GET /api/runners 200 in 188ms
+ GET /api/runners 200 in 204ms
+ GET /api/runners 200 in 204ms
+ GET /api/runners 200 in 198ms
+ GET /api/runners 200 in 209ms
+ GET /api/runners 200 in 186ms
+ GET /api/runners 200 in 190ms
+ GET /api/runners 200 in 183ms
+ GET /api/runners 200 in 190ms
+ GET /api/runners 200 in 193ms
+ GET /api/runners 200 in 198ms
+ GET /api/runners 200 in 188ms
+ GET /api/runners 200 in 185ms
+ GET /api/runners 200 in 183ms
+ GET /api/runners 200 in 180ms
+ GET /api/runners 200 in 197ms
+ GET /api/runners 200 in 207ms
+ GET /api/runners 200 in 192ms
+ GET /api/runners 200 in 191ms
+ GET /api/runners 200 in 213ms
+ GET /api/runners 200 in 175ms
+ GET /api/runners 200 in 364ms
+ GET /api/runners 200 in 184ms
+ GET /api/runners 200 in 188ms
+ GET /api/runners 200 in 186ms
+ GET /api/runners 200 in 221ms
+ GET /api/runners 200 in 200ms
+ GET /api/runners 200 in 196ms
+ GET /api/runners 200 in 194ms
+ GET /api/runners 200 in 189ms
+ GET /api/runners 200 in 182ms
+ GET /api/runners 200 in 195ms
+ GET /api/runners 200 in 229ms
+ GET /api/runners 200 in 194ms
+ GET /api/runners 200 in 187ms
+ GET /api/runners 200 in 218ms
+ GET /api/runners 200 in 182ms
+ GET /api/runners 200 in 191ms
+ GET /api/runners 200 in 209ms
+ GET /api/runners 200 in 195ms
+ ○ Compiling /training-plans ...
+ ✓ Compiled /training-plans in 1074ms (5245 modules)
+ GET /training-plans 200 in 1280ms
+ GET /api/runners 200 in 1818ms
+ ○ Compiling /api/training-plans ...
+ ✓ Compiled /api/training-plans in 550ms (3054 modules)
+ GET /api/training-plans 200 in 1235ms
+ GET /api/training-plans 200 in 202ms
+ ○ Compiling /training-plans/[id] ...
+ ✓ Compiled /training-plans/[id] in 1266ms (5258 modules)
+ GET /training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 1842ms
+ ○ Compiling /api/training-plans/[id] ...
+ ✓ Compiled /api/training-plans/[id] in 568ms (5260 modules)
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 2622ms
+ ○ Compiling /_not-found ...
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 744ms
+ ✓ Compiled /_not-found in 1322ms (5264 modules)
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 2467ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 2365ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 33ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 333ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 17ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 287ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 349ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 25ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 328ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 23ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 283ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 24ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 523ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 38ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 566ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 25ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 296ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 315ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 306ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 347ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 388ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 22ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 341ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 26ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 318ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 325ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 301ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 24ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 317ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 31ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 340ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 106ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 384ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 310ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 309ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 332ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 17ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 283ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 72ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 366ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 392ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 31ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 317ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 296ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 330ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 355ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 26ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 324ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 16ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 307ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 318ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 24ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 331ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 308ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 17ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 287ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 307ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 29ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 331ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 17ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 315ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 309ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 22ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 290ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 15ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 297ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 303ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 285ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 16ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 292ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 20ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 328ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 24ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 377ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 19ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 339ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 34ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 306ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 23ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 298ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 16ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 301ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 18ms
+ GET /runners 200 in 26ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 341ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 22ms
+ GET /api/runners 200 in 225ms
+ GET /api/runners 200 in 202ms
+ GET /api/runners 200 in 243ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 671ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 21ms
+ GET /api/runners 200 in 212ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3 200 in 331ms
+ GET /api/training-plans/49992d9c-906b-426f-925b-40f15dbfd1e3/phases 404 in 16ms
+ GET /api/runners 200 in 200ms
+ GET /api/runners 200 in 186ms
+ GET /api/runners 200 in 232ms
+ GET /api/runners 200 in 207ms
+ GET /api/runners 200 in 209ms
+ GET /api/runners 200 in 216ms
+ GET /api/runners 200 in 211ms
+ GET /api/runners 200 in 218ms
+ GET /api/runners 200 in 214ms
+ GET /api/runners 200 in 195ms
+ GET /api/runners 200 in 232ms
+ GET /api/runners 200 in 356ms
+ ○ Compiling /chat ...
+ ✓ Compiled /chat in 1744ms (5287 modules)
+ GET /chat 200 in 2028ms
+ GET /api/runners 200 in 2381ms
+ ○ Compiling /api/conversations ...
+ ✓ Compiled /api/conversations in 1163ms (5289 modules)
+ GET /api/runners 200 in 1442ms
+ GET /api/conversations 200 in 1941ms
+ GET /api/conversations 200 in 453ms
+ GET /api/runners 200 in 297ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 4.3s (4656 modules)
+ GET /chat 200 in 1673ms
+ ✓ Compiled /api/auth/[...all] in 426ms (2451 modules)
+ ✓ Compiled (2978 modules)
+ GET /favicon.ico 200 in 997ms
+ GET /api/auth/get-session 200 in 1420ms
+ ○ Compiling /api/conversations ...
+ ✓ Compiled /api/conversations in 1472ms (3072 modules)
+ GET /api/conversations 200 in 2295ms
+ GET /api/conversations 200 in 651ms
+ GET /api/conversations 200 in 386ms
+ GET /api/conversations 200 in 426ms
+ GET /api/conversations 200 in 548ms
+ GET /api/conversations 200 in 281ms
+ GET /api/conversations 200 in 308ms
+ GET /api/conversations 200 in 266ms
+ GET /api/conversations 200 in 312ms
+ ✓ Compiled in 2.1s (5289 modules)
+ GET /chat 200 in 96ms
+ ✓ Compiled in 3.3s (5289 modules)
+ GET /chat 200 in 44ms
+[2m2025-07-18T04:15:41.344Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:15:41.547[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 31317ms
+[2m2025-07-18T04:16:00.840Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:00.977[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30195ms
+[2m2025-07-18T04:16:11.376Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:11.510[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30732ms
+[2m2025-07-18T04:16:12.117Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:12.250[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30695ms
+[2m2025-07-18T04:16:31.576Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:31.727[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30165ms
+[2m2025-07-18T04:16:42.594Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:42.709[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30148ms
+[2m2025-07-18T04:16:42.713Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:16:42.776[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30215ms
+[2m2025-07-18T04:17:02.284Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:02.441[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30172ms
+[2m2025-07-18T04:17:10.839Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:10.962[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30137ms
+[2m2025-07-18T04:17:12.786Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:12.863[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30084ms
+[2m2025-07-18T04:17:32.810Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:32.920[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30127ms
+[2m2025-07-18T04:17:40.799Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:40.862[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30074ms
+[2m2025-07-18T04:17:42.890Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:17:42.956[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30075ms
+[2m2025-07-18T04:18:02.947Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:03.083[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30151ms
+[2m2025-07-18T04:18:10.792Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:10.916[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30132ms
+[2m2025-07-18T04:18:12.970Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:13.036[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30077ms
+[2m2025-07-18T04:18:33.103Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:33.250[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30157ms
+ GET /api/conversations 200 in 3079ms
+ GET /api/conversations 200 in 23603ms
+ GET /api/conversations 200 in 26342ms
+[2m2025-07-18T04:18:40.793Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:40.970[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+[2m2025-07-18T04:18:43.042Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:18:43.126[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+[2m2025-07-18T04:19:03.074Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:19:03.866[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+[2m2025-07-18T04:19:07.497Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:19:07.579[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 30091ms
+[2m2025-07-18T04:22:49.660Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:22:49.777[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 222185ms
+[2m2025-07-18T04:22:49.782Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:22:50.114[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 229140ms
+[2m2025-07-18T04:30:12.980Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 04:30:13.121[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 443013ms
+[2m2025-07-18T04:30:13.163Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: connect ENETUNREACH 3.139.14.59:5432 - Local (0.0.0.0:52349)
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    errno: -51,
+    code: 'ENETUNREACH',
+    syscall: 'connect',
+    address: '3.139.14.59',
+    port: 5432
+  }
+}
+2025-07-18 04:30:13.226[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 73ms
+[2m2025-07-18T04:30:13.231Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: connect ENETUNREACH 3.139.14.59:5432 - Local (0.0.0.0:52350)
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    errno: -51,
+    code: 'ENETUNREACH',
+    syscall: 'connect',
+    address: '3.139.14.59',
+    port: 5432
+  }
+}
+2025-07-18 04:30:13.300[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 148ms
+[2m2025-07-18T04:30:13.311Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: connect ENETUNREACH 3.139.14.59:5432 - Local (0.0.0.0:52351)
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    errno: -51,
+    code: 'ENETUNREACH',
+    syscall: 'connect',
+    address: '3.139.14.59',
+    port: 5432
+  }
+}
+2025-07-18 04:30:13.371[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 64ms
+[2m2025-07-18T05:02:45.135Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated due to connection timeout
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |      {
+    [cause]: [Error: Connection terminated unexpectedly]
+  }
+}
+2025-07-18 05:02:45.345[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 1061906ms
+ GET /api/conversations 200 in 787ms
+[2m2025-07-18T07:10:18.641Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated unexpectedly
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |     
+}
+2025-07-18 07:10:18.804[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 243ms
+ GET /api/conversations 200 in 683ms
+[2m2025-07-18T10:06:41.968Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated unexpectedly
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |     
+}
+2025-07-18 10:06:42.167[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 260ms
+ GET /api/conversations 200 in 779ms
+[2m2025-07-18T13:44:05.514Z[0m [31mERROR[0m [1m[Better Auth]:[0m INTERNAL_SERVER_ERROR Error: Failed query: select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1
+params: vLjp8SohUBkofShHNKRgqMtlxC9PpDJA
+    at async getServerSession (src/lib/server-auth.ts:9:20)
+    at async GET (src/app/api/conversations/route.ts:7:20)
+   7 | export async function getServerSession(request: NextRequest) {
+   8 |   try {
+>  9 |     const session = await auth.api.getSession({
+     |                    ^
+  10 |       headers: request.headers
+  11 |     })
+  12 |      {
+  query: 'select "id", "expires_at", "token", "user_id", "ip_address", "user_agent", "created_at", "updated_at" from "better_auth_sessions" where "better_auth_sessions"."token" = $1',
+  params: [Array],
+  [cause]: Error: Connection terminated unexpectedly
+      at async getServerSession (src/lib/server-auth.ts:9:20)
+      at async GET (src/app/api/conversations/route.ts:7:20)
+     7 | export async function getServerSession(request: NextRequest) {
+     8 |   try {
+  >  9 |     const session = await auth.api.getSession({
+       |                    ^
+    10 |       headers: request.headers
+    11 |     })
+    12 |     
+}
+2025-07-18 13:44:05.858[0m[0m [31m[1mERROR[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] Server session error:
+
+ APIError [0m[0m Failed to get session, INTERNAL_SERVER_ERROR, [object Object], [object Object], 500, APIError[0m[0m
+stack: [0m[0m
+ GET /api/conversations 401 in 432ms
+ GET /api/conversations 200 in 2325ms
+ GET /api/conversations 200 in 298ms
+ GET /api/conversations 200 in 505ms
+ GET /api/conversations 200 in 284ms
+ GET /api/conversations 200 in 285ms
+ GET /api/conversations 200 in 263ms
+ GET /api/conversations 200 in 263ms
+ GET /api/conversations 200 in 275ms
+ GET /api/conversations 200 in 258ms
+ GET /api/conversations 200 in 259ms
+ GET /api/conversations 200 in 253ms
+ GET /api/conversations 200 in 304ms
+ GET /api/conversations 200 in 247ms
+ GET /api/conversations 200 in 271ms
+ GET /api/conversations 200 in 287ms
+ GET /api/conversations 200 in 250ms
+ GET /api/conversations 200 in 251ms
+ GET /api/conversations 200 in 258ms
+ GET /api/conversations 200 in 253ms
+ GET /api/conversations 200 in 253ms
+ GET /api/conversations 200 in 247ms
+ GET /api/conversations 200 in 258ms
+ GET /api/conversations 200 in 289ms
+ GET /api/conversations 200 in 269ms
+ GET /api/conversations 200 in 255ms
+ GET /api/conversations 200 in 255ms
+ GET /api/conversations 200 in 356ms
+ GET /api/conversations 200 in 267ms
+ GET /api/conversations 200 in 270ms
+ GET /api/conversations 200 in 246ms
+ GET /api/conversations 200 in 302ms
+ GET /api/conversations 200 in 263ms
+ GET /api/conversations 200 in 262ms
+ GET /api/conversations 200 in 287ms
+ GET /api/conversations 200 in 246ms
+ GET /api/conversations 200 in 287ms
+ GET /api/conversations 200 in 268ms
+ GET /api/conversations 200 in 267ms
+ GET /api/conversations 200 in 272ms
+ GET /api/conversations 200 in 253ms
+ GET /api/conversations 200 in 284ms
+ GET /api/conversations 200 in 284ms
+ GET /api/conversations 200 in 289ms
+ GET /api/conversations 200 in 265ms
+ GET /api/conversations 200 in 275ms
+ GET /api/conversations 200 in 330ms
+ GET /api/conversations 200 in 238ms
+ GET /api/conversations 200 in 221ms
+ GET /api/conversations 200 in 248ms
+ GET /api/conversations 200 in 229ms
+ GET /api/conversations 200 in 258ms
+ GET /api/conversations 200 in 231ms
+ GET /api/conversations 200 in 308ms
+ GET /api/conversations 200 in 250ms
+ GET /api/conversations 200 in 236ms
+ GET /api/conversations 200 in 1010ms
+ GET /api/conversations 200 in 254ms
+ GET /api/conversations 200 in 240ms
+ GET /api/conversations 200 in 253ms
+ GET /api/conversations 200 in 238ms
+ GET /api/conversations 200 in 233ms
+ GET /api/conversations 200 in 249ms
+ GET /api/conversations 200 in 223ms
+ GET /api/conversations 200 in 236ms
+ GET /api/conversations 200 in 208ms
+ GET /api/conversations 200 in 275ms
+ GET /api/conversations 200 in 272ms
+ GET /api/conversations 200 in 227ms
+ GET /api/conversations 200 in 241ms
+ GET /api/conversations 200 in 227ms
+ GET /api/conversations 200 in 272ms
+ GET /api/conversations 200 in 256ms
+ GET /api/conversations 200 in 243ms
+ ○ Compiling /api/runners ...
+ ✓ Compiled /api/runners in 3.1s (3070 modules)
+ GET /api/runners 200 in 4007ms
+ GET /api/runners 200 in 300ms
+ GET /api/runners 200 in 342ms
+ GET /api/runners 200 in 155ms
+ GET /api/runners 200 in 190ms
+ GET /api/runners 200 in 163ms
+ GET /api/runners 200 in 183ms
+ GET /api/runners 200 in 193ms
+ GET /api/runners 200 in 179ms
+ GET /api/runners 200 in 191ms
+ GET /api/runners 200 in 166ms
+ GET /api/runners 200 in 170ms
+ GET /api/conversations 200 in 153ms
+ GET /api/runners 200 in 443ms
+ ○ Compiling /chat/[userId] ...
+ ✓ Compiled /chat/[userId] in 4.3s (5332 modules)
+ GET /api/runners 200 in 4835ms
+ GET /chat/NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA 200 in 6283ms
+ ○ Compiling /api/users/[id] ...
+ ✓ Compiled /api/users/[id] in 978ms (5334 modules)
+ GET /api/users/NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA 200 in 2253ms
+ GET /api/users/NkEl0kwvWcn63wxs5mx2f55z7p3OHlRA 200 in 147ms
+ ✓ Compiled in 4.8s (4682 modules)
+ ✓ Compiled in 517ms (2247 modules)
+ ✓ Compiled in 606ms (2247 modules)
+ ✓ Compiled in 821ms (2247 modules)
+ ○ Compiling /api/auth/[...all] ...
+ ✓ Compiled /api/auth/[...all] in 1429ms (2964 modules)
+ GET /api/auth/get-session 200 in 1703ms
+ ○ Compiling /api/conversations ...
+ ✓ Compiled /api/conversations in 1033ms (3070 modules)
+2025-07-18 17:17:43.362[0m[0m [32m[1mDEBUG[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] No session found
+ GET /api/conversations 401 in 1283ms
+ ✓ Compiled /api/runners in 405ms (3072 modules)
+2025-07-18 17:17:47.984[0m[0m [32m[1mDEBUG[22m[39m[0m[0m [[37m[1mUltraCoach:server-auth[22m[39m[0m[0m] No session found
+ GET /api/runners 401 in 520ms
+ ✓ Compiled in 1717ms (2247 modules)
+ ✓ Compiled in 722ms (2247 modules)
+ ✓ Compiled in 2.1s (4682 modules)
+ ✓ Compiled in 1510ms (2247 modules)
+ ✓ Compiled in 861ms (2247 modules)
+ ✓ Compiled in 993ms (2247 modules)
+ ✓ Compiled in 641ms (2247 modules)
+ ✓ Compiled in 424ms (2247 modules)
+ ✓ Compiled in 1012ms (2247 modules)
+ ✓ Compiled in 5.6s (4682 modules)
+ ✓ Compiled in 1874ms (4682 modules)
+ ✓ Compiled in 1613ms (4682 modules)
+ ✓ Compiled in 820ms (2247 modules)
+ ✓ Compiled in 1441ms (2247 modules)
+ ✓ Compiled in 687ms (2247 modules)
+ ✓ Compiled in 548ms (2247 modules)
+ ✓ Compiled in 547ms (2247 modules)
+ ✓ Compiled in 1324ms (4682 modules)
+ ✓ Compiled in 1048ms (2247 modules)
+ ✓ Compiled in 870ms (2247 modules)
+ ✓ Compiled in 849ms (2247 modules)
+ ✓ Compiled in 1622ms (2247 modules)
+ ✓ Compiled in 4.7s (4668 modules)
+ ○ Compiling /api/auth/[...all] ...
+ ✓ Compiled /api/auth/[...all] in 7.4s (2964 modules)
+ GET /api/auth/get-session 200 in 507ms
+ GET /api/auth/get-session 200 in 505ms
+ OPTIONS /api/auth/sign-in/email 404 in 507ms
+ OPTIONS /api/auth/sign-in/email 404 in 510ms
+ GET /api/auth/get-session 200 in 511ms
+ OPTIONS /api/auth/sign-in/email 404 in 515ms
+ ✓ Compiled in 1731ms (2247 modules)
+ ✓ Compiled in 760ms (2247 modules)
+Better Auth: Received SIGTERM, closing database connections...
+Better Auth: Database pool connections closed
+[?25h

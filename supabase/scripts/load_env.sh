@@ -51,15 +51,47 @@ fi
 
 # Check for required environment variables and build DATABASE_URL if needed
 if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_DB_URL" ]; then
-    if [ -n "$DB_USER" ] && [ -n "$DATABASE_PASSWORD" ] && [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ] && [ -n "$DB_NAME" ]; then
+    # Set default values for database connection components
+    DB_HOST="${DB_HOST:-aws-0-us-east-2.pooler.supabase.com}"
+    DB_PORT="${DB_PORT:-5432}"
+    DB_NAME="${DB_NAME:-postgres}"
+    
+    # Check if we have the minimum required information
+    if [ -n "$DATABASE_PASSWORD" ] && [ -n "$DB_USER" ]; then
+        # Build DATABASE_URL from components
         DATABASE_URL="postgresql://${DB_USER}:${DATABASE_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
         export DATABASE_URL
         echo "✅ Built DATABASE_URL from environment variables"
+        echo "   Host: $DB_HOST:$DB_PORT"
+        echo "   Database: $DB_NAME"
+        echo "   User: $DB_USER"
+    elif [ -n "$DATABASE_PASSWORD" ]; then
+        # Legacy fallback - warn user about deprecated usage
+        echo "⚠️  Using legacy database configuration. Please update your .env.local file:"
+        echo "   Add: DB_USER=postgres.your-project-ref"
+        echo "   Add: DB_HOST=aws-0-us-east-2.pooler.supabase.com"
+        echo "   This fallback will be removed in a future version."
+        
+        # Use legacy default (will be removed in future)
+        DB_USER="${DB_USER:-postgres.ccnbzjpccmlribljugve}"
+        DATABASE_URL="postgresql://${DB_USER}:${DATABASE_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+        export DATABASE_URL
+        echo "✅ Built DATABASE_URL from legacy configuration"
     else
-        echo "⚠️  DATABASE_URL not set. You can:"
-        echo "   1. Set DB_USER, DATABASE_PASSWORD, DB_HOST, DB_PORT, and DB_NAME in your .env.local file"
-        echo "   2. Set DATABASE_URL directly in .env.local"
-        echo "   3. Use: supabase link --project-ref your-project-ref"
+        echo "❌ Database configuration incomplete. You need to set:"
+        echo "   Option 1: Set DATABASE_URL directly in .env.local"
+        echo "   Option 2: Set all required components:"
+        echo "     - DATABASE_PASSWORD (required)"
+        echo "     - DB_USER (required, e.g., postgres.your-project-ref)"
+        echo "     - DB_HOST (optional, defaults to aws-0-us-east-2.pooler.supabase.com)"
+        echo "     - DB_PORT (optional, defaults to 5432)"
+        echo "     - DB_NAME (optional, defaults to postgres)"
+        echo ""
+        echo "   Example .env.local:"
+        echo "     DATABASE_PASSWORD=your-password"
+        echo "     DB_USER=postgres.your-project-ref"
+        echo ""
+        echo "   Or use: supabase link --project-ref your-project-ref"
         exit 1
     fi
 fi

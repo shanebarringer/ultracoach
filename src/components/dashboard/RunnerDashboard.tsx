@@ -79,7 +79,7 @@ export default function RunnerDashboard() {
                   <MapPinIcon className="w-5 h-5 text-primary" />
                   <h3 className="text-sm font-semibold text-foreground-700">Active Expeditions</h3>
                 </div>
-                <p className="text-3xl font-bold text-primary">{trainingPlans.length}</p>
+                <p className="text-3xl font-bold text-primary" data-testid="active-plans-count">{trainingPlans.length}</p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="primary" variant="flat">
@@ -98,7 +98,7 @@ export default function RunnerDashboard() {
                   <TrendingUpIcon className="w-5 h-5 text-success" />
                   <h3 className="text-sm font-semibold text-foreground-700">Upcoming Ascents</h3>
                 </div>
-                <p className="text-3xl font-bold text-success">{upcomingWorkouts.length}</p>
+                <p className="text-3xl font-bold text-success" data-testid="upcoming-workouts-count">{upcomingWorkouts.length}</p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="success" variant="flat">
@@ -117,7 +117,7 @@ export default function RunnerDashboard() {
                   <CalendarIcon className="w-5 h-5 text-warning" />
                   <h3 className="text-sm font-semibold text-foreground-700">This Week</h3>
                 </div>
-                <p className="text-3xl font-bold text-warning">{thisWeekWorkouts.length}</p>
+                <p className="text-3xl font-bold text-warning" data-testid="this-week-count">{thisWeekWorkouts.length}</p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="warning" variant="flat">
@@ -132,7 +132,7 @@ export default function RunnerDashboard() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Training Plans */}
-        <Card className="h-fit">
+        <Card className="h-fit" data-testid="training-plans-section">
           <CardHeader>
             <div className="flex items-center gap-2">
               <MapPinIcon className="w-5 h-5 text-primary" />
@@ -194,7 +194,7 @@ export default function RunnerDashboard() {
         </Card>
 
         {/* Upcoming Workouts */}
-        <Card className="h-fit">
+        <Card className="h-fit" data-testid="upcoming-workouts-section">
           <CardHeader>
             <div className="flex items-center gap-2">
               <TrendingUpIcon className="w-5 h-5 text-success" />
