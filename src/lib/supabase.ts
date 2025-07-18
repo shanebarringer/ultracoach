@@ -16,7 +16,7 @@ export interface User {
   id: string
   email: string
   role: 'runner' | 'coach'
-  full_name: string
+  full_name: string | null
   created_at: string
   updated_at: string
 }

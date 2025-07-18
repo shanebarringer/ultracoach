@@ -65,13 +65,22 @@ activeTrainingPlansAtom: Computed active plans
   "@heroui/react": "^2.7.11",
   "@heroui/theme": "^2.4.17",
   "jotai": "^2.12.5",
-  "next-auth": "^4.24.11",
+  "better-auth": "^1.0.0",
   "@supabase/supabase-js": "^2.50.5",
   "axios": "^1.10.0",
   "bcrypt": "^6.0.0",
   "tslog": "^4.9.3",
   "framer-motion": "^12.23.3",
   "classnames": "^2.5.1"
+}
+```
+
+### Strava Integration Dependencies
+```json
+{
+  "strava-v3": "^2.0.0",
+  "node-cron": "^3.0.0",
+  "date-fns": "^2.30.0"
 }
 ```
 
@@ -152,6 +161,14 @@ activeTrainingPlansAtom: Computed active plans
 - Intensity levels (1-10) and effort tracking
 - Terrain types: trail, road, track, treadmill
 - Elevation gain and weather condition tracking
+
+### Strava Integration
+- Seamless OAuth connection between UltraCoach and Strava accounts
+- Bi-directional workout sync: planned workouts → Strava calendar, completed activities → UltraCoach
+- Real-time activity import with GPS data, pace, heart rate, and elevation metrics
+- Automatic workout completion logging based on Strava activities
+- Enhanced analytics combining planned vs actual performance data
+- Coach insights dashboard with execution vs planning analysis
 
 ### Real-time Communication
 - Coach-runner chat with typing indicators and smart auto-scroll

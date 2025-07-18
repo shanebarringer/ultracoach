@@ -56,8 +56,8 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   }
 
   const filteredUsers = availableUsers.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -101,13 +101,13 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                     onClick={() => handleStartConversation(user.id)}
                   >
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium mr-3">
-                      {user.full_name.charAt(0).toUpperCase()}
+                      {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {user.full_name}
+                        {user.full_name || 'Unknown User'}
                       </h3>
-                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                      <p className="text-sm text-gray-500 truncate">{user.email || 'No email'}</p>
                       <p className="text-xs text-gray-400 capitalize">{user.role}</p>
                     </div>
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
