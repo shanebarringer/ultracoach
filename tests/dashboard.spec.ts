@@ -4,18 +4,32 @@ test.describe('Dashboard Functionality', () => {
   // Helper function to login
   async function loginAsRunner(page) {
     await page.goto('/auth/signin');
+    
+    // Wait for signin form to load
+    await page.waitForSelector('input[type="email"]', { timeout: 10000 });
+    
     await page.fill('input[type="email"]', 'runner1@ultracoach.dev');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/dashboard\/runner/);
+    
+    // Wait for redirect and dashboard to load
+    await expect(page).toHaveURL(/dashboard\/runner/, { timeout: 15000 });
+    await page.waitForSelector('h1', { timeout: 10000 });
   }
 
   async function loginAsCoach(page) {
     await page.goto('/auth/signin');
+    
+    // Wait for signin form to load
+    await page.waitForSelector('input[type="email"]', { timeout: 10000 });
+    
     await page.fill('input[type="email"]', 'coach1@ultracoach.dev');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/dashboard\/coach/);
+    
+    // Wait for redirect and dashboard to load
+    await expect(page).toHaveURL(/dashboard\/coach/, { timeout: 15000 });
+    await page.waitForSelector('h1', { timeout: 10000 });
   }
 
   test('runner dashboard should display training plans', async ({ page }) => {
