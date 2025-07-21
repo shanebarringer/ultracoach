@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
 import { useAtom } from 'jotai'
@@ -25,7 +25,6 @@ export default function WorkoutsPage() {
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
   const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
-  const [showLogWorkout, setShowLogWorkout] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -81,8 +80,7 @@ export default function WorkoutsPage() {
   }, [])
 
   const handleWorkoutPress = useCallback((workout: Workout) => {
-    setUiState(prev => ({ ...prev, selectedWorkout: workout }))
-    setShowLogWorkout(true)
+    setUiState(prev => ({ ...prev, selectedWorkout: workout, showLogWorkout: true }))
   }, [setUiState])
 
 
@@ -175,8 +173,8 @@ export default function WorkoutsPage() {
       </div>
       {uiState.selectedWorkout && (
         <WorkoutLogModal
-          isOpen={showLogWorkout}
-          onClose={() => setShowLogWorkout(false)}
+          isOpen={uiState.showLogWorkout}
+          onClose={() => setUiState(prev => ({ ...prev, showLogWorkout: false }))}
           onSuccess={handleLogWorkoutSuccess}
           workout={uiState.selectedWorkout as Workout}
         />

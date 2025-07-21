@@ -1,37 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
 import { authClient } from '@/lib/better-auth-client'
 import { useAtom } from 'jotai'
-import { sessionAtom, userAtom } from '@/lib/atoms'
+import { sessionAtom, userAtom, signInFormAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('SignIn');
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState({ email: '', password: '' })
-  const [loading, setLoading] = useState(false)
+  const [signInForm, setSignInForm] = useAtom(signInFormAtom)
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
 
   const validate = () => {
     const newErrors = { email: '', password: '' }
-    if (!email) {
+    if (!signInForm.email) {
       newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/\S+@\S+\.\S+/.test(signInForm.email)) {
       newErrors.email = 'Email address is invalid.'
     }
-    if (!password) {
+    if (!signInForm.password) {
       newErrors.password = 'Password is required.'
     }
-    setErrors(newErrors)
+    setSignInForm(prev => ({ ...prev, errors: newErrors }))
     return !newErrors.email && !newErrors.password
   }
 
@@ -39,20 +36,23 @@ export default function SignIn() {
     e.preventDefault()
     if (!validate()) return
 
-    setLoading(true)
+    setSignInForm(prev => ({ ...prev, loading: true }))
     
     try {
       const { data, error } = await authClient.signIn.email({
-        email,
-        password
+        email: signInForm.email,
+        password: signInForm.password
       })
 
       if (error) {
         logger.error('SignIn error:', error)
-        setErrors({ 
-          ...errors, 
-          email: error.message || 'Invalid credentials' 
-        })
+        setSignInForm(prev => ({ 
+          ...prev, 
+          errors: { 
+            ...prev.errors, 
+            email: error.message || 'Invalid credentials' 
+          }
+        }))
         return
       }
 
@@ -84,12 +84,15 @@ export default function SignIn() {
       }
     } catch (error) {
       logger.error('SignIn exception:', error)
-      setErrors({ 
-        ...errors, 
-        email: error instanceof Error ? error.message : 'Login failed' 
-      })
+      setSignInForm(prev => ({ 
+        ...prev, 
+        errors: { 
+          ...prev.errors, 
+          email: error instanceof Error ? error.message : 'Login failed' 
+        }
+      }))
     } finally {
-      setLoading(false)
+      setSignInForm(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -120,10 +123,10 @@ export default function SignIn() {
                   autoComplete="email"
                   required
                   placeholder="Enter your expedition email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  isInvalid={!!errors.email}
-                  errorMessage={errors.email}
+                  value={signInForm.email}
+                  onChange={(e) => setSignInForm(prev => ({ ...prev, email: e.target.value }))}
+                  isInvalid={!!signInForm.errors.email}
+                  errorMessage={signInForm.errors.email}
                   startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
                   size="lg"
@@ -140,10 +143,10 @@ export default function SignIn() {
                   autoComplete="current-password"
                   required
                   placeholder="Enter your summit key"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  isInvalid={!!errors.password}
-                  errorMessage={errors.password}
+                  value={signInForm.password}
+                  onChange={(e) => setSignInForm(prev => ({ ...prev, password: e.target.value }))}
+                  isInvalid={!!signInForm.errors.password}
+                  errorMessage={signInForm.errors.password}
                   startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
                   size="lg"
@@ -161,10 +164,10 @@ export default function SignIn() {
                 as="button"
                 disableRipple
                 className="w-full font-semibold"
-                isLoading={loading}
-                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={signInForm.loading}
+                startContent={!signInForm.loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {loading ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
+                {signInForm.loading ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
               </Button>
             </form>
 

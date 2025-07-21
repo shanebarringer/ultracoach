@@ -58,6 +58,29 @@ export const workoutLogFormAtom = atom({
   elevationGain: '',
 })
 
+export const signInFormAtom = atom({
+  email: '',
+  password: '',
+  errors: { email: '', password: '' },
+  loading: false,
+})
+
+export const signUpFormAtom = atom({
+  fullName: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  role: 'runner' as 'coach' | 'runner',
+  errors: {
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: '',
+  },
+  loading: false,
+})
+
 export const chatUiStateAtom = atom({
   hasInitiallyLoadedMessages: false,
   hasInitiallyLoadedConversations: false,
@@ -75,6 +98,25 @@ export const uiStateAtom = atom({
   workoutFilter: 'all' as 'all' | 'planned' | 'completed' | 'skipped',
   showArchived: false,
   currentWeek: new Date(),
+})
+
+// Async atoms for data fetching with Suspense support
+export const asyncWorkoutsAtom = atom(async () => {
+  const response = await fetch('/api/workouts')
+  if (!response.ok) throw new Error('Failed to fetch workouts')
+  return response.json()
+})
+
+export const asyncTrainingPlansAtom = atom(async () => {
+  const response = await fetch('/api/training-plans')
+  if (!response.ok) throw new Error('Failed to fetch training plans')
+  return response.json()
+})
+
+export const asyncNotificationsAtom = atom(async () => {
+  const response = await fetch('/api/notifications')
+  if (!response.ok) throw new Error('Failed to fetch notifications')
+  return response.json()
 })
 
 // Derived atoms

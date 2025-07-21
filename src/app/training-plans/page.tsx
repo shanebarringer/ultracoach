@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { useSession } from '@/hooks/useBetterSession'
 import { useAtom } from 'jotai'
 import Layout from '@/components/layout/Layout'
@@ -14,14 +14,13 @@ export default function TrainingPlansPage() {
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
   const [filteredPlans] = useAtom(filteredTrainingPlansAtom)
-  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Initialize the hook to fetch training plans
   useTrainingPlansData()
 
   const handleCreateSuccess = () => {
     // Training plans will be automatically updated via the hook
-    setShowCreateModal(false)
+    setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))
   }
 
   const handleArchiveChange = () => {
@@ -70,7 +69,7 @@ export default function TrainingPlansPage() {
             
             {session.user.role === 'coach' && (
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: true }))}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
               >
                 Create New Plan
@@ -102,7 +101,7 @@ export default function TrainingPlansPage() {
             {session.user.role === 'coach' && (
               <div className="mt-6">
                 <button
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: true }))}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                 >
                   Create Training Plan
@@ -124,8 +123,8 @@ export default function TrainingPlansPage() {
         )}
 
         <CreateTrainingPlanModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+          isOpen={uiState.showCreateTrainingPlan}
+          onClose={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))}
           onSuccess={handleCreateSuccess}
         />
       </div>

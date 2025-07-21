@@ -1,39 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
+import { useAtom } from 'jotai'
+import { signUpFormAtom } from '@/lib/atoms'
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    role: 'runner' as 'runner' | 'coach'
-  })
-  const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
+  const [signUpForm, setSignUpForm] = useAtom(signUpFormAtom)
   const router = useRouter()
   const { signUp, loading } = useBetterAuth()
 
   const validate = () => {
-    const newErrors = { email: '', password: '', fullName: '' }
-    if (!formData.fullName) {
+    const newErrors = { fullName: '', email: '', password: '', confirmPassword: '', role: '' }
+    if (!signUpForm.fullName) {
       newErrors.fullName = 'Full name is required.'
     }
-    if (!formData.email) {
+    if (!signUpForm.email) {
       newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(signUpForm.email)) {
       newErrors.email = 'Email address is invalid.'
     }
-    if (!formData.password) {
+    if (!signUpForm.password) {
       newErrors.password = 'Password is required.'
-    } else if (formData.password.length < 8) {
+    } else if (signUpForm.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters.'
     }
-    setErrors(newErrors)
+    setSignUpForm(prev => ({ ...prev, errors: newErrors }))
     return !newErrors.email && !newErrors.password && !newErrors.fullName
   }
 
@@ -41,10 +37,13 @@ export default function SignUp() {
     e.preventDefault()
     if (!validate()) return
 
-    const result = await signUp(formData.email, formData.password, formData.fullName)
+    const result = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName)
 
     if (!result.success) {
-      setErrors({ ...errors, email: result.error || 'An error occurred' })
+      setSignUpForm(prev => ({ 
+        ...prev, 
+        errors: { ...prev.errors, email: result.error || 'An error occurred' }
+      }))
     } else {
       // Redirect based on user role
       const userRole = (result.data?.user as { role?: string })?.role || 'runner'
@@ -56,10 +55,10 @@ export default function SignUp() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
+  const handleChange = (field: keyof typeof signUpForm, value: string) => {
+    setSignUpForm(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [field]: value
     }))
   }
 
@@ -89,10 +88,10 @@ export default function SignUp() {
                   label="Full Name"
                   required
                   placeholder="Enter your expedition name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  isInvalid={!!errors.fullName}
-                  errorMessage={errors.fullName}
+                  value={signUpForm.fullName}
+                  onChange={(e) => handleChange('fullName', e.target.value)}
+                  isInvalid={!!signUpForm.errors.fullName}
+                  errorMessage={signUpForm.errors.fullName}
                   startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
                   size="lg"
@@ -109,10 +108,10 @@ export default function SignUp() {
                   label="Email Address"
                   required
                   placeholder="Enter your base camp email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  isInvalid={!!errors.email}
-                  errorMessage={errors.email}
+                  value={signUpForm.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  isInvalid={!!signUpForm.errors.email}
+                  errorMessage={signUpForm.errors.email}
                   startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
                   size="lg"
@@ -129,10 +128,10 @@ export default function SignUp() {
                   label="Password"
                   required
                   placeholder="Create your summit key"
-                  value={formData.password}
-                  onChange={handleChange}
-                  isInvalid={!!errors.password}
-                  errorMessage={errors.password}
+                  value={signUpForm.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  isInvalid={!!signUpForm.errors.password}
+                  errorMessage={signUpForm.errors.password}
                   startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
                   size="lg"
@@ -146,10 +145,10 @@ export default function SignUp() {
                   id="role"
                   name="role"
                   label="Choose your path"
-                  selectedKeys={[formData.role]}
+                  selectedKeys={[signUpForm.role]}
                   onSelectionChange={(keys) => {
                     const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
-                    setFormData(prev => ({ ...prev, role: selectedRole }))
+                    handleChange('role', selectedRole)
                   }}
                   startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
                   variant="bordered"
