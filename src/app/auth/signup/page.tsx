@@ -12,7 +12,7 @@ import { signUpFormAtom } from '@/lib/atoms'
 export default function SignUp() {
   const [signUpForm, setSignUpForm] = useAtom(signUpFormAtom)
   const router = useRouter()
-  const { signUp, loading } = useBetterAuth()
+  const { signUp } = useBetterAuth()
 
   const validate = () => {
     const newErrors = { fullName: '', email: '', password: '', confirmPassword: '', role: '' }
@@ -37,21 +37,38 @@ export default function SignUp() {
     e.preventDefault()
     if (!validate()) return
 
-    const result = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName)
+    setSignUpForm(prev => ({ ...prev, loading: true }))
+    
+    try {
+      const result = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName)
 
-    if (!result.success) {
+      if (!result.success) {
+        // Sanitize error message for security
+        const sanitizedError = result.error?.toLowerCase().includes('email') && result.error?.toLowerCase().includes('exists')
+                               ? 'An account with this email already exists'
+                               : 'Registration failed. Please try again.'
+        setSignUpForm(prev => ({ 
+          ...prev, 
+          loading: false,
+          errors: { ...prev.errors, email: sanitizedError }
+        }))
+      } else {
+        // Redirect based on user role
+        const userRole = (result.data?.user as { role?: string })?.role || 'runner'
+        if (userRole === 'coach') {
+          router.push('/dashboard/coach')
+        } else {
+          router.push('/dashboard/runner')
+        }
+        // Keep loading true during redirect
+      }
+    } catch {
+      // Sanitize error message for security - don't use the actual error
       setSignUpForm(prev => ({ 
         ...prev, 
-        errors: { ...prev.errors, email: result.error || 'An error occurred' }
+        loading: false,
+        errors: { ...prev.errors, email: 'Registration failed. Please try again.' }
       }))
-    } else {
-      // Redirect based on user role
-      const userRole = (result.data?.user as { role?: string })?.role || 'runner'
-      if (userRole === 'coach') {
-        router.push('/dashboard/coach')
-      } else {
-        router.push('/dashboard/runner')
-      }
     }
   }
 
@@ -174,10 +191,10 @@ export default function SignUp() {
                 color="secondary"
                 size="lg"
                 className="w-full font-semibold"
-                isLoading={loading}
-                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={signUpForm.loading}
+                startContent={!signUpForm.loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {loading ? 'Preparing your expedition...' : 'Start Your Journey'}
+                {signUpForm.loading ? 'Preparing your expedition...' : 'Start Your Journey'}
               </Button>
             </form>
 

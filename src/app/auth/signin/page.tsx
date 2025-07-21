@@ -46,11 +46,17 @@ export default function SignIn() {
 
       if (error) {
         logger.error('SignIn error:', error)
+        // Sanitize error message for security - don't expose internal details
+        const sanitizedMessage = error.message?.toLowerCase().includes('invalid') || 
+                                 error.message?.toLowerCase().includes('incorrect') ||
+                                 error.message?.toLowerCase().includes('not found')
+                                 ? 'Invalid email or password' 
+                                 : 'Invalid credentials'
         setSignInForm(prev => ({ 
           ...prev, 
           errors: { 
             ...prev.errors, 
-            email: error.message || 'Invalid credentials' 
+            email: sanitizedMessage
           }
         }))
         return
@@ -78,17 +84,33 @@ export default function SignIn() {
           }
         } catch (error) {
           logger.error('Error fetching user role:', error)
-          // Default to runner if role fetch fails
-          router.push('/dashboard/runner')
+          
+          // Notify user of the issue but allow them to proceed
+          setSignInForm(prev => ({ 
+            ...prev, 
+            errors: { 
+              ...prev.errors, 
+              email: 'Warning: Unable to verify your role. You will be logged in as a runner.' 
+            }
+          }))
+          
+          // Default to runner role and proceed
+          setUser({ ...data.user, role: 'runner' })
+          
+          // Add a small delay to let user see the warning
+          setTimeout(() => {
+            router.push('/dashboard/runner')
+          }, 2000)
         }
       }
     } catch (error) {
       logger.error('SignIn exception:', error)
+      // Sanitize error message for security
       setSignInForm(prev => ({ 
         ...prev, 
         errors: { 
           ...prev.errors, 
-          email: error instanceof Error ? error.message : 'Login failed' 
+          email: 'Login failed. Please try again.' 
         }
       }))
     } finally {

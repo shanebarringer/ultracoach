@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
+import { createLogger } from './logger'
 import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
 
 // Authentication atoms
@@ -101,22 +102,81 @@ export const uiStateAtom = atom({
 })
 
 // Async atoms for data fetching with Suspense support
-export const asyncWorkoutsAtom = atom(async () => {
-  const response = await fetch('/api/workouts')
-  if (!response.ok) throw new Error('Failed to fetch workouts')
-  return response.json()
+const logger = createLogger('AsyncAtoms')
+
+export const asyncWorkoutsAtom = atom(async (get) => {
+  const session = get(sessionAtom)
+  if (!session) throw new Error('No session available')
+  
+  try {
+    const response = await fetch('/api/workouts', {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      logger.error(`Failed to fetch workouts: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch workouts: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    logger.debug('Successfully fetched workouts', { count: data.length })
+    return data
+  } catch (error) {
+    logger.error('Error fetching workouts:', error)
+    throw error
+  }
 })
 
-export const asyncTrainingPlansAtom = atom(async () => {
-  const response = await fetch('/api/training-plans')
-  if (!response.ok) throw new Error('Failed to fetch training plans')
-  return response.json()
+export const asyncTrainingPlansAtom = atom(async (get) => {
+  const session = get(sessionAtom)
+  if (!session) throw new Error('No session available')
+  
+  try {
+    const response = await fetch('/api/training-plans', {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      logger.error(`Failed to fetch training plans: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch training plans: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    logger.debug('Successfully fetched training plans', { count: data.length })
+    return data
+  } catch (error) {
+    logger.error('Error fetching training plans:', error)
+    throw error
+  }
 })
 
-export const asyncNotificationsAtom = atom(async () => {
-  const response = await fetch('/api/notifications')
-  if (!response.ok) throw new Error('Failed to fetch notifications')
-  return response.json()
+export const asyncNotificationsAtom = atom(async (get) => {
+  const session = get(sessionAtom)
+  if (!session) throw new Error('No session available')
+  
+  try {
+    const response = await fetch('/api/notifications', {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      logger.error(`Failed to fetch notifications: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch notifications: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    logger.debug('Successfully fetched notifications', { count: data.length })
+    return data
+  } catch (error) {
+    logger.error('Error fetching notifications:', error)
+    throw error
+  }
 })
 
 // Derived atoms
