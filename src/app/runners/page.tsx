@@ -144,12 +144,12 @@ export default function RunnersPage() {
                   {/* Runner Header */}
                   <div className="flex items-center mb-6">
                     <Avatar
-                      name={runner.full_name}
+                      name={runner.full_name || 'User'}
                       size="lg"
                       className="bg-gradient-to-br from-primary to-secondary text-white font-semibold"
                     />
                     <div className="ml-4">
-                      <h3 className="text-lg font-semibold text-foreground">{runner.full_name}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{runner.full_name || 'User'}</h3>
                       <p className="text-sm text-foreground-600">{runner.email}</p>
                       <Chip size="sm" color="primary" variant="flat" className="mt-1">
                         🏃 Trail Runner

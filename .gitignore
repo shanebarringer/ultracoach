@@ -46,3 +46,8 @@ supabase/credentials/
 supabase/temp/
 test-users.txt
 *.credentials.txt
+
+# Playwright test results and artifacts
+test-results/
+playwright-report/
+debug-*.png

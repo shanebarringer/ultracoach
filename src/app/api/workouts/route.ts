@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('api-workouts')
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,12 +34,12 @@ export async function GET(request: NextRequest) {
     }
     const { data: workouts, error } = await query.order('date', { ascending: true })
     if (error) {
-      console.error('Failed to fetch workouts', error)
+      logger.error('Failed to fetch workouts', error)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
     }
     return NextResponse.json({ workouts: workouts || [] })
   } catch (error) {
-    console.error('Internal server error in GET', error)
+    logger.error('Internal server error in GET', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     if (workoutError) {
-      console.error('Failed to create workout', workoutError)
+      logger.error('Failed to create workout', workoutError)
       return NextResponse.json({ error: 'Failed to create workout' }, { status: 500 })
     }
     // Send notification to runner about new workout
@@ -129,11 +132,11 @@ export async function POST(request: NextRequest) {
           }])
       }
     } catch (error) {
-      console.error('Failed to send notification for new workout', error)
+      logger.error('Failed to send notification for new workout', error)
     }
     return NextResponse.json({ workout }, { status: 201 })
   } catch (error) {
-    console.error('Internal server error in POST', error)
+    logger.error('Internal server error in POST', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

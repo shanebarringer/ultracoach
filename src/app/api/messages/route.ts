@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('api-messages')
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true })
     
     if (messagesError) {
-      console.error('Failed to fetch messages', messagesError)
+      logger.error('Failed to fetch messages', messagesError)
       return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
     }
     
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .in('id', Array.from(userIds))
     if (usersError) {
-      console.error('Failed to fetch user data', usersError)
+      logger.error('Failed to fetch user data', usersError)
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
     }
     
@@ -70,7 +73,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ messages })
   } catch (error) {
-    console.error('API error in GET /messages', error)
+    logger.error('API error in GET /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -85,7 +88,6 @@ export async function POST(request: NextRequest) {
       content, 
       recipientId, 
       workoutId, 
-      contextType = 'general',
       workoutLinks = [] 
     } = await request.json()
     
@@ -147,7 +149,6 @@ export async function POST(request: NextRequest) {
           sender_id: session.user.id,
           recipient_id: recipientId,
           workout_id: workoutId || null,
-          context_type: contextType,
           read: false
         }
       ])
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
       .single()
       
     if (messageError) {
-      console.error('Failed to send message', messageError)
+      logger.error('Failed to send message', messageError)
       return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
     }
     
@@ -172,14 +173,14 @@ export async function POST(request: NextRequest) {
         .insert(linksToInsert)
         
       if (linksError) {
-        console.error('Failed to create workout links', linksError)
+        logger.error('Failed to create workout links', linksError)
         // Don't fail the request, just log the error
       }
     }
     
     return NextResponse.json({ message }, { status: 201 })
   } catch (error) {
-    console.error('API error in POST /messages', error)
+    logger.error('API error in POST /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -203,12 +204,12 @@ export async function PATCH(request: NextRequest) {
       .in('id', messageIds)
       .eq('recipient_id', session.user.id)
     if (error) {
-      console.error('Failed to update messages', error)
+      logger.error('Failed to update messages', error)
       return NextResponse.json({ error: 'Failed to update messages' }, { status: 500 })
     }
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('API error in PATCH /messages', error)
+    logger.error('API error in PATCH /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
