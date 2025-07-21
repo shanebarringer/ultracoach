@@ -4,10 +4,13 @@ import { nextCookies } from "better-auth/next-js";
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { better_auth_users, better_auth_accounts, better_auth_sessions, better_auth_verification_tokens } from './schema';
+import { createLogger } from './logger';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required for Better Auth');
 }
+
+const logger = createLogger('better-auth');
 
 // Create a dedicated database connection for Better Auth with optimized settings
 const betterAuthPool = new Pool({
@@ -26,16 +29,16 @@ const betterAuthPool = new Pool({
 
 // Add connection event handlers for monitoring
 betterAuthPool.on('connect', () => {
-  console.log('Better Auth: Database connection established');
+  logger.info('Database connection established');
 });
 
 betterAuthPool.on('error', (err) => {
-  console.error('Better Auth: Database pool error:', err);
+  logger.error('Database pool error:', err);
   // Don't exit the process, just log the error
 });
 
 betterAuthPool.on('remove', () => {
-  console.log('Better Auth: Client removed from pool');
+  logger.debug('Client removed from pool');
 });
 
 const betterAuthDb = drizzle(betterAuthPool);
@@ -96,9 +99,9 @@ export type User = typeof auth.$Infer.Session.user & {
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal: string) => {
-  console.log(`Better Auth: Received ${signal}, closing database connections...`);
+  logger.info(`Received ${signal}, closing database connections...`);
   betterAuthPool.end(() => {
-    console.log('Better Auth: Database pool connections closed');
+    logger.info('Database pool connections closed');
     process.exit(0);
   });
 };
