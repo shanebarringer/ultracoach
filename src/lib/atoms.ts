@@ -44,6 +44,8 @@ export const createTrainingPlanFormAtom = atom({
   targetRaceDate: '',
   targetRaceDistance: '',
   template_id: null as string | null,
+  loading: false,
+  error: '',
 })
 
 export const workoutLogFormAtom = atom({
@@ -57,6 +59,8 @@ export const workoutLogFormAtom = atom({
   intensity: '',
   terrain: '' as 'road' | 'trail' | 'track' | 'treadmill' | '',
   elevationGain: '',
+  loading: false,
+  error: '',
 })
 
 export const signInFormAtom = atom({
@@ -86,6 +90,15 @@ export const chatUiStateAtom = atom({
   hasInitiallyLoadedMessages: false,
   hasInitiallyLoadedConversations: false,
   currentRecipientId: null as string | null,
+  sending: false,
+  filterWorkoutId: null as string | null,
+})
+
+export const messageInputAtom = atom({
+  message: '',
+  linkedWorkout: null as Workout | null,
+  linkType: 'reference',
+  showWorkoutSelector: false,
 })
 
 export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme', 'dark')
@@ -99,6 +112,7 @@ export const uiStateAtom = atom({
   workoutFilter: 'all' as 'all' | 'planned' | 'completed' | 'skipped',
   showArchived: false,
   currentWeek: new Date(),
+  useSuspense: false, // Toggle for demonstrating Suspense vs traditional loading
 })
 
 // Async atoms for data fetching with Suspense support

@@ -7,6 +7,8 @@ import { useAtom } from 'jotai'
 import { Card, CardBody, Spinner, Tabs, Tab } from '@heroui/react'
 import { MountainSnowIcon, ClockIcon, MapPinIcon, TrendingUpIcon } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
+import AsyncDataProvider from '@/components/data/AsyncDataProvider'
+import AsyncWorkoutsList from '@/components/data/AsyncWorkoutsList'
 import dynamic from 'next/dynamic'
 
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
@@ -138,37 +140,84 @@ export default function WorkoutsPage() {
           </Tabs>
         </div>
 
-        {loadingStates.workouts ? (
-          <div className="flex justify-center items-center h-64">
-            <Spinner size="lg" color="primary" label="Loading your training history..." />
-          </div>
-        ) : filteredWorkouts.length === 0 ? (
-          <Card className="py-12">
-            <CardBody className="text-center">
-              <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No training sessions found</h3>
-              <p className="text-foreground-600">
-                {uiState.workoutFilter === 'all' 
-                  ? 'Your training journey begins here. Plan your first expedition!'
-                  : `No ${uiState.workoutFilter} sessions found. Adjust your view or plan new training.`
-                }
-              </p>
+        {/* Feature Toggle: Demonstrate Suspense vs Traditional Loading */}
+        <div className="mb-6">
+          <Card className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+            <CardBody>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-foreground">🔬 React Suspense Demo</h4>
+                  <p className="text-sm text-foreground-600">
+                    Toggle between traditional loading and React Suspense patterns
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground-600">Traditional</span>
+                  <button
+                    onClick={() => setUiState(prev => ({ ...prev, useSuspense: !prev.useSuspense }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      uiState.useSuspense ? 'bg-primary' : 'bg-default-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        uiState.useSuspense ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm text-foreground-600">Suspense</span>
+                </div>
+              </div>
             </CardBody>
           </Card>
+        </div>
+
+        {/* Conditional rendering: Modern React vs Traditional */}
+        {uiState.useSuspense ? (
+          // Modern React 19 Pattern with Enhanced Error Boundaries
+          <AsyncDataProvider enableSuspenseDemo={true}>
+            <AsyncWorkoutsList
+              onWorkoutPress={handleWorkoutPress}
+              formatDate={formatDate}
+              getWorkoutStatusColor={getWorkoutStatusColor}
+              getWorkoutTypeIcon={getWorkoutTypeIcon}
+              getWorkoutIntensityColor={getWorkoutIntensityColor}
+            />
+          </AsyncDataProvider>
         ) : (
-          <div className="space-y-4">
-            {filteredWorkouts.map((workout) => (
-              <WorkoutCard
-                key={workout.id}
-                workout={workout}
-                onPress={handleWorkoutPress}
-                formatDate={formatDate}
-                getWorkoutStatusColor={getWorkoutStatusColor}
-                getWorkoutTypeIcon={getWorkoutTypeIcon}
-                getWorkoutIntensityColor={getWorkoutIntensityColor}
-              />
-            ))}
-          </div>
+          // Traditional Loading Pattern (existing)
+          loadingStates.workouts ? (
+            <div className="flex justify-center items-center h-64">
+              <Spinner size="lg" color="primary" label="Loading your training history..." />
+            </div>
+          ) : filteredWorkouts.length === 0 ? (
+            <Card className="py-12">
+              <CardBody className="text-center">
+                <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No training sessions found</h3>
+                <p className="text-foreground-600">
+                  {uiState.workoutFilter === 'all' 
+                    ? 'Your training journey begins here. Plan your first expedition!'
+                    : `No ${uiState.workoutFilter} sessions found. Adjust your view or plan new training.`
+                  }
+                </p>
+              </CardBody>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredWorkouts.map((workout) => (
+                <WorkoutCard
+                  key={workout.id}
+                  workout={workout}
+                  onPress={handleWorkoutPress}
+                  formatDate={formatDate}
+                  getWorkoutStatusColor={getWorkoutStatusColor}
+                  getWorkoutTypeIcon={getWorkoutTypeIcon}
+                  getWorkoutIntensityColor={getWorkoutIntensityColor}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
       {uiState.selectedWorkout && (

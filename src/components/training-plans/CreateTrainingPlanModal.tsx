@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { createTrainingPlanFormAtom, racesAtom, planTemplatesAtom } from '@/lib/atoms'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
@@ -20,8 +20,6 @@ export default function CreateTrainingPlanModal({
   const [formData, setFormData] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
@@ -75,8 +73,7 @@ export default function CreateTrainingPlanModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
+    setFormData(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
       const payload = {
@@ -104,18 +101,26 @@ export default function CreateTrainingPlanModal({
           plan_type: null,
           targetRaceDate: '',
           targetRaceDistance: '',
-          template_id: null, // Reset template_id
+          template_id: null,
+          loading: false,
+          error: '',
         })
         onSuccess()
         onClose()
       } else {
         const data = await response.json()
-        setError(data.error || 'Failed to create training plan')
+        setFormData(prev => ({ 
+          ...prev, 
+          loading: false,
+          error: data.error || 'Failed to create training plan'
+        }))
       }
     } catch {
-      setError('An error occurred. Please try again.')
-    } finally {
-      setLoading(false)
+      setFormData(prev => ({ 
+        ...prev, 
+        loading: false,
+        error: 'An error occurred. Please try again.'
+      }))
     }
   }
 
@@ -132,9 +137,9 @@ export default function CreateTrainingPlanModal({
         <ModalHeader>Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit}>
           <ModalBody className="space-y-4">
-            {error && (
+            {formData.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
+                {formData.error}
               </div>
             )}
 
@@ -284,8 +289,8 @@ export default function CreateTrainingPlanModal({
             <Button variant="light" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Plan'}
+            <Button type="submit" color="primary" disabled={formData.loading}>
+              {formData.loading ? 'Creating...' : 'Create Plan'}
             </Button>
           </ModalFooter>
         </form>

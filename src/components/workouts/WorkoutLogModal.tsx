@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { workoutLogFormAtom } from '@/lib/atoms'
@@ -20,8 +20,6 @@ export default function WorkoutLogModal({
   workout
 }: WorkoutLogModalProps) {
   const [formData, setFormData] = useAtom(workoutLogFormAtom)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     setFormData({
@@ -35,13 +33,14 @@ export default function WorkoutLogModal({
       intensity: workout.intensity?.toString() || '',
       terrain: workout.terrain || '',
       elevationGain: workout.elevation_gain?.toString() || '',
+      loading: false,
+      error: '',
     })
   }, [workout, setFormData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
+    setFormData(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
       const response = await fetch(`/api/workouts/${workout.id}`,
@@ -66,16 +65,23 @@ export default function WorkoutLogModal({
       )
 
       if (response.ok) {
+        setFormData(prev => ({ ...prev, loading: false }))
         onSuccess()
         onClose()
       } else {
         const data = await response.json()
-        setError(data.error || 'Failed to update workout')
+        setFormData(prev => ({ 
+          ...prev, 
+          loading: false,
+          error: data.error || 'Failed to update workout'
+        }))
       }
     } catch {
-      setError('An error occurred. Please try again.')
-    } finally {
-      setLoading(false)
+      setFormData(prev => ({ 
+        ...prev, 
+        loading: false,
+        error: 'An error occurred. Please try again.'
+      }))
     }
   }
 
@@ -104,9 +110,9 @@ export default function WorkoutLogModal({
               </p>
             </div>
 
-            {error && (
+            {formData.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
+                {formData.error}
               </div>
             )}
 
@@ -279,8 +285,8 @@ export default function WorkoutLogModal({
             <Button variant="light" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Workout'}
+            <Button type="submit" color="primary" disabled={formData.loading}>
+              {formData.loading ? 'Saving...' : 'Save Workout'}
             </Button>
           </ModalFooter>
         </form>
