@@ -1,21 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { authClient } from '@/lib/better-auth-client';
 import type { Session, User } from '@/lib/better-auth-client';
-
-interface AuthState {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  error: string | null;
-}
+import { authStateAtom } from '@/lib/atoms';
 
 export function useBetterAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    loading: true,
-    error: null
-  });
+  const [authState, setAuthState] = useAtom(authStateAtom);
 
   useEffect(() => {
     // Get initial session
@@ -50,7 +40,7 @@ export function useBetterAuth() {
     };
 
     getSession();
-  }, []);
+  }, [setAuthState]);
 
   const signIn = async (email: string, password: string) => {
     try {

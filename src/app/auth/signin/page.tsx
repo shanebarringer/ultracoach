@@ -8,6 +8,7 @@ import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
 import { authClient } from '@/lib/better-auth-client'
 import { useAtom } from 'jotai'
 import { sessionAtom, userAtom, signInFormAtom } from '@/lib/atoms'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('SignIn');
@@ -119,8 +120,9 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <ModernErrorBoundary>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
         <Card className="border-t-4 border-t-primary shadow-2xl">
           <CardHeader className="text-center pb-4">
             <div className="flex flex-col items-center space-y-3">
@@ -208,7 +210,8 @@ export default function SignIn() {
             </div>
           </CardBody>
         </Card>
+        </div>
       </div>
-    </div>
+    </ModernErrorBoundary>
   )
 }

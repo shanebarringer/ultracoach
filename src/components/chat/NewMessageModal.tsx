@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
+import { useAtom } from 'jotai'
 import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
-import type { User } from '@/lib/supabase'
+import { newMessageModalAtom } from '@/lib/atoms'
 
 interface NewMessageModalProps {
   isOpen: boolean
@@ -15,13 +16,12 @@ import { Modal, ModalContent, ModalHeader, ModalBody, Input, Button } from '@her
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [availableUsers, setAvailableUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [newMessageState, setNewMessageState] = useAtom(newMessageModalAtom)
 
   const fetchAvailableUsers = useCallback(async () => {
     if (!session?.user) return
 
+    setNewMessageState(prev => ({ ...prev, loading: true }))
     try {
       let endpoint = ''
       if (session.user.role === 'coach') {
@@ -35,14 +35,17 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
       const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
-        setAvailableUsers(data.runners || data.coaches || [])
+        setNewMessageState(prev => ({ 
+          ...prev, 
+          availableUsers: data.runners || data.coaches || [],
+          loading: false
+        }))
       }
     } catch (error) {
       console.error('Error fetching available users:', error)
-    } finally {
-      setLoading(false)
+      setNewMessageState(prev => ({ ...prev, loading: false }))
     }
-  }, [session?.user])
+  }, [session?.user, setNewMessageState])
 
   useEffect(() => {
     if (isOpen && session?.user) {
@@ -55,9 +58,9 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = availableUsers.filter(user =>
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = newMessageState.availableUsers.filter(user =>
+    user.full_name?.toLowerCase().includes(newMessageState.searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(newMessageState.searchTerm.toLowerCase())
   )
 
   return (
@@ -68,11 +71,11 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
           <Input
             type="text"
             placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={newMessageState.searchTerm}
+            onChange={(e) => setNewMessageState(prev => ({ ...prev, searchTerm: e.target.value }))}
           />
           <div className="max-h-64 overflow-y-auto mt-4">
-            {loading ? (
+            {newMessageState.loading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
@@ -82,7 +85,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  {searchTerm ? 'No users found' : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
+                  {newMessageState.searchTerm ? 'No users found' : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   {session?.user?.role === 'coach' 

@@ -6,6 +6,7 @@ import { useAtom } from 'jotai'
 import Layout from '@/components/layout/Layout'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { uiStateAtom, loadingStatesAtom, filteredTrainingPlansAtom } from '@/lib/atoms'
 import { useTrainingPlansData } from '@/hooks/useTrainingPlansData'
 
@@ -43,7 +44,8 @@ export default function TrainingPlansPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <ModernErrorBoundary>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Training Plans</h1>
@@ -127,7 +129,8 @@ export default function TrainingPlansPage() {
           onClose={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))}
           onSuccess={handleCreateSuccess}
         />
-      </div>
+        </div>
+      </ModernErrorBoundary>
     </Layout>
   )
 }

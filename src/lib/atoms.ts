@@ -2,11 +2,20 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { createLogger } from './logger'
 import type { Notification, Workout, TrainingPlan, User, Race, PlanTemplate, MessageWithUser, ConversationWithUser } from './supabase'
+import type { Session, User as BetterAuthUser } from './better-auth-client'
 
 // Authentication atoms
 export const sessionAtom = atom<Record<string, unknown> | null>(null)
 export const userAtom = atom<Record<string, unknown> | null>(null)
 export const authLoadingAtom = atom<boolean>(true)
+
+// Better Auth state atom
+export const authStateAtom = atom({
+  user: null as BetterAuthUser | null,
+  session: null as Session | null,
+  loading: true,
+  error: null as string | null,
+})
 
 // Core application atoms
 export const notificationsAtom = atom<Notification[]>([])
@@ -92,6 +101,7 @@ export const chatUiStateAtom = atom({
   currentRecipientId: null as string | null,
   sending: false,
   filterWorkoutId: null as string | null,
+  showNewMessage: false,
 })
 
 export const messageInputAtom = atom({
@@ -99,6 +109,12 @@ export const messageInputAtom = atom({
   linkedWorkout: null as Workout | null,
   linkType: 'reference',
   showWorkoutSelector: false,
+})
+
+export const newMessageModalAtom = atom({
+  availableUsers: [] as User[],
+  loading: true,
+  searchTerm: '',
 })
 
 export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme', 'dark')

@@ -9,6 +9,7 @@ import { MountainSnowIcon, ClockIcon, MapPinIcon, TrendingUpIcon } from 'lucide-
 import Layout from '@/components/layout/Layout'
 import AsyncDataProvider from '@/components/data/AsyncDataProvider'
 import AsyncWorkoutsList from '@/components/data/AsyncWorkoutsList'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import dynamic from 'next/dynamic'
 
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
@@ -102,21 +103,22 @@ export default function WorkoutsPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
-              <MountainSnowIcon className="w-8 h-8 text-primary" />
-              Training Log
-            </h1>
-            <p className="text-foreground-600 mt-2 text-lg">
-              {session.user.role === 'coach' 
-                ? 'Guide your athletes to their summit'
-                : 'Track your ascent to peak performance'
-              }
-            </p>
+      <ModernErrorBoundary>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
+                <MountainSnowIcon className="w-8 h-8 text-primary" />
+                Training Log
+              </h1>
+              <p className="text-foreground-600 mt-2 text-lg">
+                {session.user.role === 'coach' 
+                  ? 'Guide your athletes to their summit'
+                  : 'Track your ascent to peak performance'
+                }
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Filter Tabs */}
         <div className="mb-8">
@@ -219,15 +221,17 @@ export default function WorkoutsPage() {
             </div>
           )
         )}
-      </div>
-      {uiState.selectedWorkout && (
-        <WorkoutLogModal
-          isOpen={uiState.showLogWorkout}
-          onClose={() => setUiState(prev => ({ ...prev, showLogWorkout: false }))}
-          onSuccess={handleLogWorkoutSuccess}
-          workout={uiState.selectedWorkout as Workout}
-        />
-      )}
+          
+          {uiState.selectedWorkout && (
+            <WorkoutLogModal
+              isOpen={uiState.showLogWorkout}
+              onClose={() => setUiState(prev => ({ ...prev, showLogWorkout: false }))}
+              onSuccess={handleLogWorkoutSuccess}
+              workout={uiState.selectedWorkout as Workout}
+            />
+          )}
+        </div>
+      </ModernErrorBoundary>
     </Layout>
   )
 }
