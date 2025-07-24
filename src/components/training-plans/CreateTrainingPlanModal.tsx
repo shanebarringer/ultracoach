@@ -47,9 +47,8 @@ export default function CreateTrainingPlanModal({
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
-    formState: { errors, isSubmitting }
+    formState: { isSubmitting }
   } = useForm<CreateTrainingPlanForm>({
     resolver: zodResolver(createTrainingPlanSchema),
     defaultValues: {
@@ -65,8 +64,6 @@ export default function CreateTrainingPlanModal({
     }
   })
 
-  const watchedRaceId = watch('race_id')
-  const watchedTemplateId = watch('template_id')
 
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
