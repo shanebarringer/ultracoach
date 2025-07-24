@@ -1,6 +1,9 @@
 'use client'
 
 import React from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
@@ -11,38 +14,45 @@ import { sessionAtom, userAtom, signInFormAtom } from '@/lib/atoms'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('SignIn');
+const logger = createLogger('SignIn')
+
+// Zod schema for signin form validation
+const signInSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required').min(6, 'Password must be at least 6 characters'),
+})
+
+type SignInForm = z.infer<typeof signInSchema>
 
 export default function SignIn() {
-  const [signInForm, setSignInForm] = useAtom(signInFormAtom)
+  const [formState, setFormState] = useAtom(signInFormAtom)
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
 
-  const validate = () => {
-    const newErrors = { email: '', password: '' }
-    if (!signInForm.email) {
-      newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(signInForm.email)) {
-      newErrors.email = 'Email address is invalid.'
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+    setError
+  } = useForm<SignInForm>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
     }
-    if (!signInForm.password) {
-      newErrors.password = 'Password is required.'
-    }
-    setSignInForm(prev => ({ ...prev, errors: newErrors }))
-    return !newErrors.email && !newErrors.password
-  }
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-
-    setSignInForm(prev => ({ ...prev, loading: true }))
+  const onSubmit = async (data: SignInForm) => {
+    setFormState(prev => ({ ...prev, loading: true }))
     
     try {
-      const { data, error } = await authClient.signIn.email({
-        email: signInForm.email,
-        password: signInForm.password
+      logger.info('Attempting sign in:', { email: data.email })
+      
+      const { data: authData, error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password
       })
 
       if (error) {
@@ -53,29 +63,27 @@ export default function SignIn() {
                                  error.message?.toLowerCase().includes('not found')
                                  ? 'Invalid email or password' 
                                  : 'Invalid credentials'
-        setSignInForm(prev => ({ 
-          ...prev, 
-          errors: { 
-            ...prev.errors, 
-            email: sanitizedMessage
-          }
-        }))
+        setError('email', { message: sanitizedMessage })
         return
       }
 
-      if (data) {
+      if (authData) {
         // Update Jotai atoms
-        setSession(data)
-        setUser(data.user)
+        setSession(authData)
+        setUser(authData.user)
+        
+        logger.info('Sign in successful, fetching user role')
         
         // Fetch user role from database
         try {
-          const roleResponse = await fetch(`/api/user/role?userId=${data.user.id}`)
+          const roleResponse = await fetch(`/api/user/role?userId=${authData.user.id}`)
           const roleData = await roleResponse.json()
           const userRole = roleData.role || 'runner'
           
+          logger.info('User role fetched:', { userRole })
+          
           // Update user object with role
-          setUser({ ...data.user, role: userRole })
+          setUser({ ...authData.user, role: userRole })
           
           // Redirect based on user role
           if (userRole === 'coach') {
@@ -87,16 +95,12 @@ export default function SignIn() {
           logger.error('Error fetching user role:', error)
           
           // Notify user of the issue but allow them to proceed
-          setSignInForm(prev => ({ 
-            ...prev, 
-            errors: { 
-              ...prev.errors, 
-              email: 'Warning: Unable to verify your role. You will be logged in as a runner.' 
-            }
-          }))
+          setError('email', { 
+            message: 'Warning: Unable to verify your role. You will be logged in as a runner.' 
+          })
           
           // Default to runner role and proceed
-          setUser({ ...data.user, role: 'runner' })
+          setUser({ ...authData.user, role: 'runner' })
           
           // Add a small delay to let user see the warning
           setTimeout(() => {
@@ -107,15 +111,9 @@ export default function SignIn() {
     } catch (error) {
       logger.error('SignIn exception:', error)
       // Sanitize error message for security
-      setSignInForm(prev => ({ 
-        ...prev, 
-        errors: { 
-          ...prev.errors, 
-          email: 'Login failed. Please try again.' 
-        }
-      }))
+      setError('email', { message: 'Login failed. Please try again.' })
     } finally {
-      setSignInForm(prev => ({ ...prev, loading: false }))
+      setFormState(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -137,47 +135,55 @@ export default function SignIn() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
-                <Input
-                  id="email"
+                <Controller
                   name="email"
-                  type="email"
-                  label="Email address"
-                  autoComplete="email"
-                  required
-                  placeholder="Enter your expedition email"
-                  value={signInForm.email}
-                  onChange={(e) => setSignInForm(prev => ({ ...prev, email: e.target.value }))}
-                  isInvalid={!!signInForm.errors.email}
-                  errorMessage={signInForm.errors.email}
-                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      label="Email address"
+                      autoComplete="email"
+                      required
+                      placeholder="Enter your expedition email"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
-                <Input
-                  id="password"
+                <Controller
                   name="password"
-                  type="password"
-                  label="Password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="Enter your summit key"
-                  value={signInForm.password}
-                  onChange={(e) => setSignInForm(prev => ({ ...prev, password: e.target.value }))}
-                  isInvalid={!!signInForm.errors.password}
-                  errorMessage={signInForm.errors.password}
-                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      label="Password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="Enter your summit key"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
               </div>
 
@@ -188,10 +194,10 @@ export default function SignIn() {
                 as="button"
                 disableRipple
                 className="w-full font-semibold"
-                isLoading={signInForm.loading}
-                startContent={!signInForm.loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={isSubmitting || formState.loading}
+                startContent={!(isSubmitting || formState.loading) ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {signInForm.loading ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
+                {(isSubmitting || formState.loading) ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
               </Button>
             </form>
 

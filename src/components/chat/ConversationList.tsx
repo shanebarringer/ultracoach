@@ -1,53 +1,77 @@
 'use client'
 
-import { Suspense } from 'react'
+import { memo, useMemo } from 'react'
 import Link from 'next/link'
 import { Avatar, Badge, Chip, Skeleton } from '@heroui/react'
 import { ClockIcon, MessageCircleIcon } from 'lucide-react'
 import { useConversations } from '@/hooks/useConversations'
 import AsyncConversationList from './AsyncConversationList'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ConversationList')
+
+// Helper functions moved outside component for better performance
+const formatLastMessageTime = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+  if (diffInHours < 1) {
+    return 'Just now'
+  } else if (diffInHours < 24) {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } else if (diffInHours < 168) {
+    return date.toLocaleDateString('en-US', { weekday: 'short' })
+  } else {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+}
+
+const truncateMessage = (content: string, maxLength: number = 50) => {
+  if (content.length <= maxLength) return content
+  return content.substring(0, maxLength) + '...'
+}
+
+const getRoleColor = (role: string) => {
+  switch (role) {
+    case 'coach':
+      return 'primary'
+    case 'runner':
+      return 'secondary'
+    default:
+      return 'default'
+  }
+}
 
 interface ConversationListProps {
   selectedUserId?: string
   useSuspense?: boolean
 }
 
-export default function ConversationList({ selectedUserId, useSuspense = false }: ConversationListProps) {
+function ConversationList({ selectedUserId, useSuspense = false }: ConversationListProps) {
+  // Call hooks at the top level always
+  const { conversations, loading } = useConversations()
+
+  // Log when conversations data changes
+  useMemo(() => {
+    logger.debug('Conversations updated:', { 
+      conversationCount: conversations.length,
+      selectedUserId,
+      loading 
+    })
+    return conversations
+  }, [conversations, selectedUserId, loading])
+
   // If useSuspense is enabled, use the async version
   if (useSuspense) {
     return <AsyncConversationList selectedUserId={selectedUserId} />
-  }
-
-  // Traditional loading pattern
-  const { conversations, loading } = useConversations()
-
-
-  const formatLastMessageTime = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-
-    if (diffInHours < 1) {
-      return 'Just now'
-    } else if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-    } else if (diffInHours < 168) {
-      return date.toLocaleDateString('en-US', { weekday: 'short' })
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      })
-    }
-  }
-
-  const truncateMessage = (content: string, maxLength: number = 50) => {
-    if (content.length <= maxLength) return content
-    return content.substring(0, maxLength) + '...'
   }
 
   if (loading) {
@@ -64,17 +88,6 @@ export default function ConversationList({ selectedUserId, useSuspense = false }
         ))}
       </div>
     )
-  }
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'coach':
-        return 'primary'
-      case 'runner':
-        return 'secondary'
-      default:
-        return 'default'
-    }
   }
 
   return (
@@ -176,3 +189,12 @@ export default function ConversationList({ selectedUserId, useSuspense = false }
     </div>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(ConversationList, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  return (
+    prevProps.selectedUserId === nextProps.selectedUserId &&
+    prevProps.useSuspense === nextProps.useSuspense
+  )
+})

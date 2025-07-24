@@ -1,7 +1,10 @@
-import React, { memo } from 'react'
+import React, { memo, useCallback } from 'react'
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import { ClockIcon, MapPinIcon, TrendingUpIcon } from 'lucide-react'
 import type { Workout } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('WorkoutCard')
 
 interface WorkoutCardProps {
   workout: Workout
@@ -20,11 +23,21 @@ const WorkoutCard = memo(function WorkoutCard({
   getWorkoutTypeIcon,
   getWorkoutIntensityColor
 }: WorkoutCardProps) {
+  
+  const handlePress = useCallback(() => {
+    logger.debug('Workout card pressed:', { 
+      workoutId: workout.id, 
+      workoutType: workout.planned_type, 
+      status: workout.status 
+    })
+    onPress(workout)
+  }, [workout, onPress])
+
   return (
     <Card 
       className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-primary/60"
       isPressable
-      onPress={() => onPress(workout)}
+      onPress={handlePress}
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start w-full">
@@ -121,6 +134,22 @@ const WorkoutCard = memo(function WorkoutCard({
         )}
       </CardBody>
     </Card>
+  )
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  // Only re-render if workout data has actually changed
+  return (
+    prevProps.workout.id === nextProps.workout.id &&
+    prevProps.workout.status === nextProps.workout.status &&
+    prevProps.workout.planned_type === nextProps.workout.planned_type &&
+    prevProps.workout.actual_type === nextProps.workout.actual_type &&
+    prevProps.workout.planned_distance === nextProps.workout.planned_distance &&
+    prevProps.workout.actual_distance === nextProps.workout.actual_distance &&
+    prevProps.workout.planned_duration === nextProps.workout.planned_duration &&
+    prevProps.workout.actual_duration === nextProps.workout.actual_duration &&
+    prevProps.workout.intensity === nextProps.workout.intensity &&
+    prevProps.workout.workout_notes === nextProps.workout.workout_notes &&
+    prevProps.workout.date === nextProps.workout.date
   )
 })
 

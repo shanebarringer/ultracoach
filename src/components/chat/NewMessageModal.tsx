@@ -1,10 +1,23 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAtom } from 'jotai'
 import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
 import { newMessageModalAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NewMessageModal')
+
+// Zod schema for search form validation
+const searchSchema = z.object({
+  searchTerm: z.string().max(100, 'Search term must be less than 100 characters').optional(),
+})
+
+type SearchForm = z.infer<typeof searchSchema>
 
 interface NewMessageModalProps {
   isOpen: boolean
@@ -18,10 +31,29 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   const router = useRouter()
   const [newMessageState, setNewMessageState] = useAtom(newMessageModalAtom)
 
+  // React Hook Form setup
+  const {
+    control,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<SearchForm>({
+    resolver: zodResolver(searchSchema),
+    defaultValues: {
+      searchTerm: '',
+    }
+  })
+
+  const searchTerm = watch('searchTerm') || ''
+
   const fetchAvailableUsers = useCallback(async () => {
-    if (!session?.user) return
+    if (!session?.user) {
+      logger.debug('No session user available, skipping fetch')
+      return
+    }
 
     setNewMessageState(prev => ({ ...prev, loading: true }))
+    
     try {
       let endpoint = ''
       if (session.user.role === 'coach') {
@@ -32,17 +64,32 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
         endpoint = '/api/coaches'
       }
 
+      logger.info('Fetching available users:', { userRole: session.user.role, endpoint })
+
       const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
+        const users = data.runners || data.coaches || []
+        
+        logger.info('Successfully fetched available users:', { 
+          userCount: users.length, 
+          userRole: session.user.role 
+        })
+        
         setNewMessageState(prev => ({ 
           ...prev, 
-          availableUsers: data.runners || data.coaches || [],
+          availableUsers: users,
           loading: false
         }))
+      } else {
+        logger.error('Failed to fetch available users:', { 
+          status: response.status, 
+          statusText: response.statusText 
+        })
+        setNewMessageState(prev => ({ ...prev, loading: false }))
       }
     } catch (error) {
-      console.error('Error fetching available users:', error)
+      logger.error('Error fetching available users:', error)
       setNewMessageState(prev => ({ ...prev, loading: false }))
     }
   }, [session?.user, setNewMessageState])
@@ -53,14 +100,21 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     }
   }, [isOpen, session?.user, fetchAvailableUsers])
 
+  useEffect(() => {
+    if (isOpen) {
+      reset({ searchTerm: '' })
+    }
+  }, [isOpen, reset])
+
   const handleStartConversation = (userId: string) => {
+    logger.info('Starting conversation:', { userId, userRole: session?.user?.role })
     onClose()
     router.push(`/chat/${userId}`)
   }
 
   const filteredUsers = newMessageState.availableUsers.filter(user =>
-    user.full_name?.toLowerCase().includes(newMessageState.searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(newMessageState.searchTerm.toLowerCase())
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -68,11 +122,18 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
       <ModalContent>
         <ModalHeader>New Message</ModalHeader>
         <ModalBody>
-          <Input
-            type="text"
-            placeholder="Search by name or email..."
-            value={newMessageState.searchTerm}
-            onChange={(e) => setNewMessageState(prev => ({ ...prev, searchTerm: e.target.value }))}
+          <Controller
+            name="searchTerm"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="text"
+                placeholder="Search by name or email..."
+                isInvalid={!!fieldState.error}
+                errorMessage={fieldState.error?.message}
+              />
+            )}
           />
           <div className="max-h-64 overflow-y-auto mt-4">
             {newMessageState.loading ? (
@@ -85,7 +146,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  {newMessageState.searchTerm ? 'No users found' : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
+                  {searchTerm ? 'No users found' : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   {session?.user?.role === 'coach' 

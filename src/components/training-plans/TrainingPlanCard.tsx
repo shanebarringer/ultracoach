@@ -1,9 +1,37 @@
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import Link from 'next/link'
 import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Progress } from '@heroui/react'
 import { CalendarIcon, MapPinIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
 import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
 import type { TrainingPlan, User, Race } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('TrainingPlanCard')
+
+// Helper functions moved outside component for better performance
+const getStatusColor = (archived: boolean) => {
+  return archived ? 'default' : 'primary'
+}
+
+const getPhaseColor = (phase: string) => {
+  switch (phase?.toLowerCase()) {
+    case 'base': return 'success'  // Zone 1 color
+    case 'build': return 'primary' // Zone 2 color  
+    case 'peak': return 'danger'   // Zone 4 color
+    case 'taper': return 'secondary' // Zone 5 color
+    case 'recovery': return 'warning' // Zone 3 color
+    default: return 'default'
+  }
+}
+
+const getGoalTypeColor = (goalType: string) => {
+  switch (goalType?.toLowerCase()) {
+    case 'completion': return 'success'
+    case 'time': return 'warning'
+    case 'placement': return 'danger'
+    default: return 'default'
+  }
+}
 
 interface TrainingPlanCardProps {
   plan: TrainingPlan & { runners?: User; coaches?: User; race?: Race }
@@ -11,63 +39,41 @@ interface TrainingPlanCardProps {
   onArchiveChange?: () => void
 }
 
-export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardProps) {
+function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardProps) {
   const [isArchiving, setIsArchiving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
-  const getStatusColor = (archived: boolean) => {
-    return archived ? 'default' : 'primary'
-  }
-
-  const getPhaseColor = (phase: string) => {
-    switch (phase?.toLowerCase()) {
-      case 'base': return 'success'  // Zone 1 color
-      case 'build': return 'primary' // Zone 2 color  
-      case 'peak': return 'danger'   // Zone 4 color
-      case 'taper': return 'secondary' // Zone 5 color
-      case 'recovery': return 'warning' // Zone 3 color
-      default: return 'default'
-    }
-  }
-
-  const getGoalTypeColor = (goalType: string) => {
-    switch (goalType?.toLowerCase()) {
-      case 'completion': return 'success'
-      case 'time': return 'warning'
-      case 'placement': return 'danger'
-      default: return 'default'
-    }
-  }
-
-  
-
-  const handleArchiveToggle = async () => {
+  const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
     try {
+      logger.info('Toggling archive status for training plan:', { planId: plan.id, currentArchived: plan.archived })
       await archiveTrainingPlan(plan.id)
       onArchiveChange?.()
+      logger.info('Successfully toggled archive status')
     } catch (error) {
-      console.error('Error toggling archive status:', error)
+      logger.error('Error toggling archive status:', error)
       alert('Failed to update training plan')
     } finally {
       setIsArchiving(false)
     }
-  }
+  }, [plan.id, plan.archived, archiveTrainingPlan, onArchiveChange])
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!window.confirm('Are you sure you want to delete this training plan? This action cannot be undone.')) return;
     setIsDeleting(true)
     try {
+      logger.info('Deleting training plan:', { planId: plan.id, planTitle: plan.title })
       await deleteTrainingPlan(plan.id)
       onArchiveChange?.()
+      logger.info('Successfully deleted training plan')
     } catch (error) {
-      console.error('Error deleting training plan:', error)
+      logger.error('Error deleting training plan:', error)
       alert('Failed to delete training plan')
     } finally {
       setIsDeleting(false)
     }
-  }
+  }, [plan.id, plan.title, deleteTrainingPlan, onArchiveChange])
 
   return (
     <Card 
@@ -232,3 +238,6 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
     </Card>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(TrainingPlanCard)

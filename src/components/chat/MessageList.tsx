@@ -1,16 +1,81 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react'
 import type { MessageWithUser } from '@/lib/supabase'
 import WorkoutContext from './WorkoutContext'
 import { useWorkouts } from '@/hooks/useWorkouts'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('MessageList')
 
 interface MessageListProps {
   messages: MessageWithUser[]
   currentUserId: string
 }
 
-export default function MessageList({ messages, currentUserId }: MessageListProps) {
+// Helper functions moved outside component for better performance
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } else if (diffInHours < 168) { // Less than a week
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } else {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+}
+
+const groupMessagesByDate = (messages: MessageWithUser[]) => {
+  const groups: { [key: string]: MessageWithUser[] } = {}
+  
+  messages.forEach(message => {
+    const date = new Date(message.created_at).toDateString()
+    if (!groups[date]) {
+      groups[date] = []
+    }
+    groups[date].push(message)
+  })
+  
+  return groups
+}
+
+const formatDateHeader = (dateString: string) => {
+  const date = new Date(dateString)
+  const today = new Date().toDateString()
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString()
+  
+  if (dateString === today) {
+    return 'Today'
+  } else if (dateString === yesterday) {
+    return 'Yesterday'
+  } else {
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+}
+
+function MessageList({ messages, currentUserId }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [isUserScrolling, setIsUserScrolling] = useState(false)
@@ -18,9 +83,10 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { workouts } = useWorkouts()
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     const container = containerRef.current
     if (container) {
+      logger.debug('Scrolling to bottom of message list')
       // Use requestAnimationFrame for better timing and scrollTop to avoid page-level scrolling
       requestAnimationFrame(() => {
         container.scrollTo({
@@ -29,7 +95,7 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
         })
       })
     }
-  }
+  }, [])
 
   const handleScroll = useCallback(() => {
     const container = containerRef.current
@@ -95,68 +161,11 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
     }
   }, [messages.length, handleScroll])
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-    } else if (diffInHours < 168) { // Less than a week
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
-    }
-  }
-
-  const groupMessagesByDate = (messages: MessageWithUser[]) => {
-    const groups: { [key: string]: MessageWithUser[] } = {}
-    
-    messages.forEach(message => {
-      const date = new Date(message.created_at).toDateString()
-      if (!groups[date]) {
-        groups[date] = []
-      }
-      groups[date].push(message)
-    })
-    
-    return groups
-  }
-
-  const formatDateHeader = (dateString: string) => {
-    const date = new Date(dateString)
-    const today = new Date().toDateString()
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString()
-    
-    if (dateString === today) {
-      return 'Today'
-    } else if (dateString === yesterday) {
-      return 'Yesterday'
-    } else {
-      return date.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      })
-    }
-  }
-
-  const messageGroups = groupMessagesByDate(messages)
+  // Memoize expensive message grouping operation
+  const messageGroups = useMemo(() => {
+    logger.debug('Grouping messages by date:', { messageCount: messages.length })
+    return groupMessagesByDate(messages)
+  }, [messages])
 
   if (messages.length === 0) {
     return (
@@ -279,3 +288,18 @@ export default function MessageList({ messages, currentUserId }: MessageListProp
     </div>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(MessageList, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  // Only re-render if messages array or currentUserId has actually changed
+  return (
+    prevProps.currentUserId === nextProps.currentUserId &&
+    prevProps.messages.length === nextProps.messages.length &&
+    prevProps.messages.every((msg, index) => 
+      msg.id === nextProps.messages[index]?.id &&
+      msg.content === nextProps.messages[index]?.content &&
+      msg.read === nextProps.messages[index]?.read
+    )
+  )
+})

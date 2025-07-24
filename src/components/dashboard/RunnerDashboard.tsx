@@ -1,15 +1,62 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { useSession } from '@/hooks/useBetterSession'
 import { Card, CardHeader, CardBody, Chip, Spinner, Progress, Button } from '@heroui/react'
 import { MountainSnowIcon, TrendingUpIcon, CalendarIcon, MapPinIcon, ClockIcon, FlagIcon, RouteIcon } from 'lucide-react'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import type { TrainingPlan } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
 
+const logger = createLogger('RunnerDashboard')
 
-export default function RunnerDashboard() {
+// Helper functions moved outside component for better performance
+const getTrainingPlanProgress = (plan: TrainingPlan) => {
+  // Calculate progress based on current date vs target race date
+  if (!plan.target_race_date) return 0
+  const today = new Date()
+  const raceDate = new Date(plan.target_race_date)
+  const createdDate = new Date(plan.created_at)
+  const totalDays = Math.max(1, Math.ceil((raceDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)))
+  const daysPassed = Math.ceil((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.min(100, Math.max(0, (daysPassed / totalDays) * 100))
+}
+
+const getWorkoutTypeIcon = (type: string) => {
+  switch (type?.toLowerCase()) {
+    case 'long_run':
+      return <MountainSnowIcon className="w-4 h-4" />
+    case 'interval':
+      return <TrendingUpIcon className="w-4 h-4" />
+    case 'tempo':
+      return <ClockIcon className="w-4 h-4" />
+    default:
+      return <RouteIcon className="w-4 h-4" />
+  }
+}
+
+function RunnerDashboard() {
   const { data: session } = useSession()
   const { trainingPlans, upcomingWorkouts, loading } = useDashboardData()
+
+  // Memoize expensive computations and add logging
+  const thisWeekWorkouts = useMemo(() => {
+    const today = new Date()
+    const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const filtered = upcomingWorkouts.filter(w => {
+      const workoutDate = new Date(w.date)
+      return workoutDate >= today && workoutDate <= weekFromToday
+    })
+    
+    logger.debug('Dashboard data updated:', {
+      trainingPlansCount: trainingPlans.length,
+      upcomingWorkoutsCount: upcomingWorkouts.length,
+      thisWeekWorkoutsCount: filtered.length,
+      loading
+    })
+    
+    return filtered
+  }, [upcomingWorkouts, trainingPlans.length, loading])
 
   if (loading) {
     return (
@@ -18,37 +65,6 @@ export default function RunnerDashboard() {
       </div>
     )
   }
-
-  const getTrainingPlanProgress = (plan: TrainingPlan) => {
-    // Calculate progress based on current date vs target race date
-    if (!plan.target_race_date) return 0
-    const today = new Date()
-    const raceDate = new Date(plan.target_race_date)
-    const createdDate = new Date(plan.created_at)
-    const totalDays = Math.max(1, Math.ceil((raceDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)))
-    const daysPassed = Math.ceil((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
-    return Math.min(100, Math.max(0, (daysPassed / totalDays) * 100))
-  }
-
-  const getWorkoutTypeIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'long_run':
-        return <MountainSnowIcon className="w-4 h-4" />
-      case 'interval':
-        return <TrendingUpIcon className="w-4 h-4" />
-      case 'tempo':
-        return <ClockIcon className="w-4 h-4" />
-      default:
-        return <RouteIcon className="w-4 h-4" />
-    }
-  }
-
-  const thisWeekWorkouts = upcomingWorkouts.filter(w => {
-    const workoutDate = new Date(w.date)
-    const today = new Date()
-    const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-    return workoutDate >= today && workoutDate <= weekFromToday
-  })
 
   return (
     <div className="space-y-8">
@@ -253,3 +269,6 @@ export default function RunnerDashboard() {
     </div>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(RunnerDashboard)

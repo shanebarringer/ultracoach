@@ -1,6 +1,9 @@
 'use client'
 
 import React from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
@@ -8,53 +11,60 @@ import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide
 import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { useAtom } from 'jotai'
 import { signUpFormAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('SignUp')
+
+// Zod schema for signup form validation
+const signUpSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required').min(2, 'Full name must be at least 2 characters'),
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['runner', 'coach'], { required_error: 'Please select your role' }),
+})
+
+type SignUpForm = z.infer<typeof signUpSchema>
 
 export default function SignUp() {
-  const [signUpForm, setSignUpForm] = useAtom(signUpFormAtom)
+  const [formState, setFormState] = useAtom(signUpFormAtom)
   const router = useRouter()
   const { signUp } = useBetterAuth()
 
-  const validate = () => {
-    const newErrors = { fullName: '', email: '', password: '', confirmPassword: '', role: '' }
-    if (!signUpForm.fullName) {
-      newErrors.fullName = 'Full name is required.'
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+    setError
+  } = useForm<SignUpForm>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      role: 'runner',
     }
-    if (!signUpForm.email) {
-      newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(signUpForm.email)) {
-      newErrors.email = 'Email address is invalid.'
-    }
-    if (!signUpForm.password) {
-      newErrors.password = 'Password is required.'
-    } else if (signUpForm.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters.'
-    }
-    setSignUpForm(prev => ({ ...prev, errors: newErrors }))
-    return !newErrors.email && !newErrors.password && !newErrors.fullName
-  }
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-
-    setSignUpForm(prev => ({ ...prev, loading: true }))
+  const onSubmit = async (data: SignUpForm) => {
+    setFormState(prev => ({ ...prev, loading: true }))
     
     try {
-      const result = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName)
+      logger.info('Attempting sign up:', { email: data.email, fullName: data.fullName, role: data.role })
+      
+      const result = await signUp(data.email, data.password, data.fullName)
 
       if (!result.success) {
+        logger.error('Sign up failed:', result.error)
         // Sanitize error message for security
         const sanitizedError = result.error?.toLowerCase().includes('email') && result.error?.toLowerCase().includes('exists')
                                ? 'An account with this email already exists'
                                : 'Registration failed. Please try again.'
-        setSignUpForm(prev => ({ 
-          ...prev, 
-          loading: false,
-          errors: { ...prev.errors, email: sanitizedError }
-        }))
+        setError('email', { message: sanitizedError })
       } else {
+        logger.info('Sign up successful:', { userRole: data.role })
         // Redirect based on user role
-        const userRole = (result.data?.user as { role?: string })?.role || 'runner'
+        const userRole = (result.data?.user as { role?: string })?.role || data.role
         if (userRole === 'coach') {
           router.push('/dashboard/coach')
         } else {
@@ -62,21 +72,13 @@ export default function SignUp() {
         }
         // Keep loading true during redirect
       }
-    } catch {
+    } catch (error) {
+      logger.error('Sign up exception:', error)
       // Sanitize error message for security - don't use the actual error
-      setSignUpForm(prev => ({ 
-        ...prev, 
-        loading: false,
-        errors: { ...prev.errors, email: 'Registration failed. Please try again.' }
-      }))
+      setError('email', { message: 'Registration failed. Please try again.' })
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }))
     }
-  }
-
-  const handleChange = (field: keyof typeof signUpForm, value: string) => {
-    setSignUpForm(prev => ({
-      ...prev,
-      [field]: value
-    }))
   }
 
   return (
@@ -96,94 +98,112 @@ export default function SignUp() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
-                <Input
-                  id="fullName"
+                <Controller
                   name="fullName"
-                  type="text"
-                  label="Full Name"
-                  required
-                  placeholder="Enter your expedition name"
-                  value={signUpForm.fullName}
-                  onChange={(e) => handleChange('fullName', e.target.value)}
-                  isInvalid={!!signUpForm.errors.fullName}
-                  errorMessage={signUpForm.errors.fullName}
-                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="fullName"
+                      type="text"
+                      label="Full Name"
+                      required
+                      placeholder="Enter your expedition name"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Input
-                  id="email"
+                <Controller
                   name="email"
-                  type="email"
-                  label="Email Address"
-                  required
-                  placeholder="Enter your base camp email"
-                  value={signUpForm.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  isInvalid={!!signUpForm.errors.email}
-                  errorMessage={signUpForm.errors.email}
-                  startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      label="Email Address"
+                      required
+                      placeholder="Enter your base camp email"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Input
-                  id="password"
+                <Controller
                   name="password"
-                  type="password"
-                  label="Password"
-                  required
-                  placeholder="Create your summit key"
-                  value={signUpForm.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  isInvalid={!!signUpForm.errors.password}
-                  errorMessage={signUpForm.errors.password}
-                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      label="Password"
+                      required
+                      placeholder="Create your summit key"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Select
-                  id="role"
+                <Controller
                   name="role"
-                  label="Choose your path"
-                  selectedKeys={[signUpForm.role]}
-                  onSelectionChange={(keys) => {
-                    const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
-                    handleChange('role', selectedRole)
-                  }}
-                  startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    label: "text-foreground-600",
-                    value: "text-foreground"
-                  }}
-                >
-                  <SelectItem key="runner" startContent="🏃">
-                    <span className="font-medium">Trail Runner</span>
-                    <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
-                  </SelectItem>
-                  <SelectItem key="coach" startContent="🏔️">
-                    <span className="font-medium">Mountain Guide</span>
-                    <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
-                  </SelectItem>
-                </Select>
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Select
+                      selectedKeys={field.value ? [field.value] : []}
+                      onSelectionChange={(keys) => {
+                        const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                        field.onChange(selectedRole)
+                      }}
+                      label="Choose your path"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        label: "text-foreground-600",
+                        value: "text-foreground"
+                      }}
+                    >
+                      <SelectItem key="runner" startContent="🏃">
+                        <span className="font-medium">Trail Runner</span>
+                        <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
+                      </SelectItem>
+                      <SelectItem key="coach" startContent="🏔️">
+                        <span className="font-medium">Mountain Guide</span>
+                        <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
+                      </SelectItem>
+                    </Select>
+                  )}
+                />
               </div>
 
               <Button
@@ -191,10 +211,10 @@ export default function SignUp() {
                 color="secondary"
                 size="lg"
                 className="w-full font-semibold"
-                isLoading={signUpForm.loading}
-                startContent={!signUpForm.loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={isSubmitting || formState.loading}
+                startContent={!(isSubmitting || formState.loading) ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {signUpForm.loading ? 'Preparing your expedition...' : 'Start Your Journey'}
+                {(isSubmitting || formState.loading) ? 'Preparing your expedition...' : 'Start Your Journey'}
               </Button>
             </form>
 

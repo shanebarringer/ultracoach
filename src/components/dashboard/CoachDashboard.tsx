@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { memo, useMemo } from 'react'
 import { 
   Card, 
   CardHeader, 
@@ -14,13 +15,15 @@ import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
   ArrowUpIcon,
-  ArrowDownIcon,
-  MapPinIcon
+  ArrowDownIcon
 } from '@heroicons/react/24/outline'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import RecentActivity from './RecentActivity'
 import type { TrainingPlan, User } from '@/lib/supabase'
 import classNames from 'classnames'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('CoachDashboard')
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
@@ -36,10 +39,10 @@ interface MetricCardProps {
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'default'
 }
 
-function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primary' }: MetricCardProps) {
+const MetricCard = memo(function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primary' }: MetricCardProps) {
   // Debug: Check if Icon is undefined
   if (!Icon) {
-    console.error('MetricCard: Icon is undefined for title:', title)
+    logger.error('MetricCard: Icon is undefined for title:', title)
     return (
       <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
         <CardBody className="p-6">
@@ -116,12 +119,22 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primar
       </CardBody>
     </Card>
   )
-}
+})
 
-export default function CoachDashboard() {
+function CoachDashboard() {
   const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
 
-  const typedTrainingPlans = trainingPlans as TrainingPlanWithRunner[]
+  // Memoize expensive computations and add logging
+  const typedTrainingPlans = useMemo(() => {
+    const plans = trainingPlans as TrainingPlanWithRunner[]
+    logger.debug('Dashboard data updated:', {
+      plansCount: plans.length,
+      runnersCount: runners.length,
+      recentWorkoutsCount: recentWorkouts.length,
+      loading
+    })
+    return plans
+  }, [trainingPlans, runners.length, recentWorkouts.length, loading])
 
   if (loading) {
     return (
@@ -331,3 +344,6 @@ export default function CoachDashboard() {
     </div>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(CoachDashboard)
