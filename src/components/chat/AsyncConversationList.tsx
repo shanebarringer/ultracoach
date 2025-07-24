@@ -1,93 +1,61 @@
 'use client'
 
-import { memo, useMemo } from 'react'
+import { Suspense } from 'react'
+import { useAtom } from 'jotai'
 import Link from 'next/link'
 import { Avatar, Badge, Chip, Skeleton } from '@heroui/react'
 import { ClockIcon, MessageCircleIcon } from 'lucide-react'
-import { useConversations } from '@/hooks/useConversations'
-import AsyncConversationList from './AsyncConversationList'
-import { createLogger } from '@/lib/logger'
+import { asyncConversationsAtom } from '@/lib/atoms'
+import type { ConversationWithUser } from '@/lib/supabase'
 
-const logger = createLogger('ConversationList')
-
-// Helper functions moved outside component for better performance
-const formatLastMessageTime = (dateString: string) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-
-  if (diffInHours < 1) {
-    return 'Just now'
-  } else if (diffInHours < 24) {
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
-  } else if (diffInHours < 168) {
-    return date.toLocaleDateString('en-US', { weekday: 'short' })
-  } else {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    })
-  }
-}
-
-const truncateMessage = (content: string, maxLength: number = 50) => {
-  if (content.length <= maxLength) return content
-  return content.substring(0, maxLength) + '...'
-}
-
-const getRoleColor = (role: string) => {
-  switch (role) {
-    case 'coach':
-      return 'primary'
-    case 'runner':
-      return 'secondary'
-    default:
-      return 'default'
-  }
-}
-
-interface ConversationListProps {
+interface AsyncConversationListProps {
   selectedUserId?: string
-  useSuspense?: boolean
 }
 
-function ConversationList({ selectedUserId, useSuspense = false }: ConversationListProps) {
-  // Call hooks at the top level always
-  const { conversations, loading } = useConversations()
+interface ConversationListContentProps {
+  selectedUserId?: string
+}
 
-  // Log when conversations data changes
-  useMemo(() => {
-    logger.debug('Conversations updated:', { 
-      conversationCount: conversations.length,
-      selectedUserId,
-      loading 
-    })
-    return conversations
-  }, [conversations, selectedUserId, loading])
+function ConversationListContent({ selectedUserId }: ConversationListContentProps) {
+  const [conversations] = useAtom(asyncConversationsAtom)
 
-  // If useSuspense is enabled, use the async version
-  if (useSuspense) {
-    return <AsyncConversationList selectedUserId={selectedUserId} />
+  const formatLastMessageTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+    if (diffInHours < 1) {
+      return 'Just now'
+    } else if (diffInHours < 24) {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+    } else if (diffInHours < 168) {
+      return date.toLocaleDateString('en-US', { weekday: 'short' })
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="p-4 space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center space-x-3">
-            <Skeleton className="w-10 h-10 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-3/4 rounded" />
-              <Skeleton className="h-3 w-1/2 rounded" />
-            </div>
-          </div>
-        ))}
-      </div>
-    )
+  const truncateMessage = (content: string, maxLength: number = 50) => {
+    if (content.length <= maxLength) return content
+    return content.substring(0, maxLength) + '...'
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'coach':
+        return 'primary'
+      case 'runner':
+        return 'secondary'
+      default:
+        return 'default'
+    }
   }
 
   return (
@@ -190,11 +158,24 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
   )
 }
 
-// Memoize the component to prevent unnecessary re-renders
-export default memo(ConversationList, (prevProps, nextProps) => {
-  // Custom comparison function for better memoization
+const LoadingFallback = () => (
+  <div className="p-4 space-y-3">
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="flex items-center space-x-3">
+        <Skeleton className="w-10 h-10 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4 rounded" />
+          <Skeleton className="h-3 w-1/2 rounded" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+export default function AsyncConversationList({ selectedUserId }: AsyncConversationListProps) {
   return (
-    prevProps.selectedUserId === nextProps.selectedUserId &&
-    prevProps.useSuspense === nextProps.useSuspense
+    <Suspense fallback={<LoadingFallback />}>
+      <ConversationListContent selectedUserId={selectedUserId} />
+    </Suspense>
   )
-})
+}

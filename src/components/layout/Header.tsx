@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo, useCallback, useMemo } from 'react'
 import { useSession } from '@/hooks/useBetterSession'
 import { useBetterSession } from '@/hooks/useBetterSession'
 import Link from 'next/link'
@@ -23,13 +23,18 @@ import NotificationBell from '@/components/common/NotificationBell'
 import { useAtom } from 'jotai'
 import { themeModeAtom } from '@/lib/atoms'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
+import { createLogger } from '@/lib/logger'
 
-function ThemeToggle() {
+const logger = createLogger('Header')
+
+const ThemeToggle = memo(function ThemeToggle() {
   const [themeMode, setThemeMode] = useAtom(themeModeAtom)
 
-  const toggleTheme = () => {
-    setThemeMode(themeMode === 'light' ? 'dark' : 'light')
-  }
+  const toggleTheme = useCallback(() => {
+    const newTheme = themeMode === 'light' ? 'dark' : 'light'
+    logger.debug('Toggling theme:', { from: themeMode, to: newTheme })
+    setThemeMode(newTheme)
+  }, [themeMode, setThemeMode])
 
   return (
     <Button 
@@ -46,17 +51,46 @@ function ThemeToggle() {
       )}
     </Button>
   )
-}
+})
 
-export default function Header() {
+function Header() {
   const { data: session } = useSession()
   const { signOut } = useBetterSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
+    logger.info('User signing out')
     await signOut()
     window.location.href = '/'
-  }
+  }, [signOut])
+
+  const handleMenuClose = useCallback(() => {
+    setIsMenuOpen(false)
+  }, [])
+
+  // Memoize user navigation items to prevent unnecessary re-renders
+  const userNavItems = useMemo(() => {
+    if (!session) return []
+    
+    const baseItems = [
+      { href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner', label: 'Dashboard' },
+      { href: '/workouts', label: 'Workouts' },
+      { href: '/chat', label: 'Messages' }
+    ]
+
+    if (session.user.role === 'coach') {
+      return [
+        baseItems[0], // Dashboard
+        { href: '/training-plans', label: 'Training Plans' },
+        { href: '/runners', label: 'Runners' },
+        { href: '/races', label: 'Races' },
+        { href: '/weekly-planner', label: 'Weekly Planner' },
+        ...baseItems.slice(1) // Workouts, Messages
+      ]
+    }
+
+    return baseItems
+  }, [session])
 
   return (
     <Navbar 
@@ -88,70 +122,16 @@ export default function Header() {
       <NavbarContent className="hidden md:flex gap-4" justify="center">
         {session ? (
           <>
-            <NavbarItem>
-              <Link 
-                href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'}
-                className="text-foreground hover:text-primary transition-colors font-medium"
-              >
-                Dashboard
-              </Link>
-            </NavbarItem>
-            {session.user.role === 'coach' && (
-              <NavbarItem>
+            {userNavItems.map((item) => (
+              <NavbarItem key={item.href}>
                 <Link 
-                  href="/training-plans"
+                  href={item.href}
                   className="text-foreground hover:text-primary transition-colors font-medium"
                 >
-                  Training Plans
+                  {item.label}
                 </Link>
               </NavbarItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarItem>
-                <Link 
-                  href="/runners"
-                  className="text-foreground hover:text-primary transition-colors font-medium"
-                >
-                  Runners
-                </Link>
-              </NavbarItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarItem>
-                <Link 
-                  href="/races"
-                  className="text-foreground hover:text-primary transition-colors font-medium"
-                >
-                  Races
-                </Link>
-              </NavbarItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarItem>
-                <Link 
-                  href="/weekly-planner"
-                  className="text-foreground hover:text-primary transition-colors font-medium"
-                >
-                  Weekly Planner
-                </Link>
-              </NavbarItem>
-            )}
-            <NavbarItem>
-              <Link 
-                href="/workouts"
-                className="text-foreground hover:text-primary transition-colors font-medium"
-              >
-                Workouts
-              </Link>
-            </NavbarItem>
-            <NavbarItem>
-              <Link 
-                href="/chat"
-                className="text-foreground hover:text-primary transition-colors font-medium"
-              >
-                Messages
-              </Link>
-            </NavbarItem>
+            ))}
           </>
         ) : (
           <>
@@ -215,57 +195,21 @@ export default function Header() {
       <NavbarMenu>
         {session ? (
           <>
-            <NavbarMenuItem>
-              <Link href={session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'} onClick={() => setIsMenuOpen(false)}>
-                Dashboard
-              </Link>
-            </NavbarMenuItem>
-            {session.user.role === 'coach' && (
-              <NavbarMenuItem>
-                <Link href="/training-plans" onClick={() => setIsMenuOpen(false)}>
-                  Training Plans
+            {userNavItems.map((item) => (
+              <NavbarMenuItem key={item.href}>
+                <Link href={item.href} onClick={handleMenuClose}>
+                  {item.label}
                 </Link>
               </NavbarMenuItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarMenuItem>
-                <Link href="/runners" onClick={() => setIsMenuOpen(false)}>
-                  Runners
-                </Link>
-              </NavbarMenuItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarMenuItem>
-                <Link href="/races" onClick={() => setIsMenuOpen(false)}>
-                  Races
-                </Link>
-              </NavbarMenuItem>
-            )}
-            {session.user.role === 'coach' && (
-              <NavbarMenuItem>
-                <Link href="/weekly-planner" onClick={() => setIsMenuOpen(false)}>
-                  Weekly Planner
-                </Link>
-              </NavbarMenuItem>
-            )}
+            ))}
             <NavbarMenuItem>
-              <Link href="/workouts" onClick={() => setIsMenuOpen(false)}>
-                Workouts
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Link href="/chat" onClick={() => setIsMenuOpen(false)}>
-                Messages
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/profile" onClick={handleMenuClose}>
                 Profile
               </Link>
             </NavbarMenuItem>
             <NavbarMenuItem>
               <Button
-                onClick={() => { handleSignOut(); setIsMenuOpen(false); }}
+                onClick={() => { handleSignOut(); handleMenuClose(); }}
                 className="w-full text-left"
                 variant="light"
               >
@@ -276,7 +220,7 @@ export default function Header() {
         ) : (
           <>
             <NavbarMenuItem>
-              <Link href="/auth/signin" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/auth/signin" onClick={handleMenuClose}>
                 Sign In
               </Link>
             </NavbarMenuItem>
@@ -286,7 +230,7 @@ export default function Header() {
                 href="/auth/signup"
                 color="primary"
                 className="w-full"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={handleMenuClose}
               >
                 Sign Up
               </Button>
@@ -297,3 +241,6 @@ export default function Header() {
     </Navbar>
   )
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(Header)

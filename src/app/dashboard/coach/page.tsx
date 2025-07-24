@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Layout from '@/components/layout/Layout'
 import CoachDashboard from '@/components/dashboard/CoachDashboard'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 
 export default function CoachDashboardPage() {
   const { data: session, status } = useSession()
@@ -40,9 +41,11 @@ export default function CoachDashboardPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <ModernErrorBoundary>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CoachDashboard />
-      </div>
+        </div>
+      </ModernErrorBoundary>
     </Layout>
   )
 }

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useSession } from '@/hooks/useBetterSession'
+import { useAtom } from 'jotai'
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Chip } from '@heroui/react'
 import { Filter, X } from 'lucide-react'
 import MessageList from './MessageList'
@@ -10,6 +11,7 @@ import TypingIndicator from './TypingIndicator'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
+import { chatUiStateAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
 
 interface ChatWindowProps {
@@ -19,8 +21,7 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) {
   const { data: session } = useSession()
-  const [sending, setSending] = useState(false)
-  const [filterWorkoutId, setFilterWorkoutId] = useState<string | null>(null)
+  const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
   
   // Use Jotai hooks for state management
   const { messages, loading, sendMessage } = useMessages(recipientId)
@@ -28,9 +29,9 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const { workouts } = useWorkouts()
 
   const handleSendMessage = useCallback(async (content: string, workoutId?: string, contextType?: string) => {
-    if (!session?.user?.id || sending) return
+    if (!session?.user?.id || chatUiState.sending) return
 
-    setSending(true)
+    setChatUiState(prev => ({ ...prev, sending: true }))
     try {
       const success = await sendMessage(content, workoutId, contextType)
       if (!success) {
@@ -40,18 +41,18 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       console.error('Error sending message:', error)
       alert('Failed to send message. Please try again.')
     } finally {
-      setSending(false)
+      setChatUiState(prev => ({ ...prev, sending: false }))
     }
-  }, [session?.user?.id, sending, sendMessage])
+  }, [session?.user?.id, chatUiState.sending, sendMessage, setChatUiState])
 
   // Filter messages by workout if filter is active
-  const filteredMessages = filterWorkoutId 
-    ? messages.filter(msg => msg.workout_id === filterWorkoutId)
+  const filteredMessages = chatUiState.filterWorkoutId 
+    ? messages.filter(msg => msg.workout_id === chatUiState.filterWorkoutId)
     : messages
 
   // Get workout for filter display
-  const filterWorkout = filterWorkoutId 
-    ? workouts.find(w => w.id === filterWorkoutId)
+  const filterWorkout = chatUiState.filterWorkoutId 
+    ? workouts.find(w => w.id === chatUiState.filterWorkoutId)
     : null
 
   // Get workouts that have messages for filtering options
@@ -93,7 +94,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             <Chip 
               color="primary" 
               variant="flat"
-              onClose={() => setFilterWorkoutId(null)}
+              onClose={() => setChatUiState(prev => ({ ...prev, filterWorkoutId: null }))}
               size="sm"
             >
               {filterWorkout.planned_type || 'Workout'} - {new Date(filterWorkout.date || '').toLocaleDateString()}
@@ -117,14 +118,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                 aria-label="Filter messages by workout"
                 onAction={(key) => {
                   if (key === 'clear') {
-                    setFilterWorkoutId(null)
+                    setChatUiState(prev => ({ ...prev, filterWorkoutId: null }))
                   } else {
-                    setFilterWorkoutId(key as string)
+                    setChatUiState(prev => ({ ...prev, filterWorkoutId: key as string }))
                   }
                 }}
               >
                 {[
-                  ...(filterWorkoutId ? [
+                  ...(chatUiState.filterWorkoutId ? [
                     <DropdownItem key="clear" startContent={<X className="h-4 w-4" />}>
                       Show All Messages
                     </DropdownItem>
@@ -162,7 +163,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         onSendMessage={handleSendMessage} 
         onStartTyping={startTyping}
         onStopTyping={stopTyping}
-        disabled={sending || !session?.user?.id}
+        disabled={chatUiState.sending || !session?.user?.id}
         recipientId={recipientId}
       />
     </div>

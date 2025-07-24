@@ -2,17 +2,20 @@
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useAtom } from 'jotai'
 import { Card, CardHeader, Button, Spinner } from '@heroui/react'
 import { MessageCircleIcon, PlusIcon, MountainIcon } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import ConversationList from '@/components/chat/ConversationList'
 import NewMessageModal from '@/components/chat/NewMessageModal'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { chatUiStateAtom } from '@/lib/atoms'
 
 export default function ChatPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [showNewMessage, setShowNewMessage] = useState(false)
+  const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -39,8 +42,9 @@ export default function ChatPage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="flex h-[calc(100vh-200px)] overflow-hidden">
+      <ModernErrorBoundary>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="flex h-[calc(100vh-200px)] overflow-hidden">
           {/* Conversations Sidebar */}
           <div className="w-full md:w-1/3 lg:w-1/4 border-r border-divider flex flex-col">
             <CardHeader className="bg-content2 border-b border-divider">
@@ -56,7 +60,7 @@ export default function ChatPage() {
                   color="primary"
                   variant="solid"
                   size="sm"
-                  onPress={() => setShowNewMessage(true)}
+                  onPress={() => setChatUiState(prev => ({ ...prev, showNewMessage: true }))}
                   className="hover:scale-105 transition-transform"
                 >
                   <PlusIcon className="w-4 h-4" />
@@ -89,7 +93,7 @@ export default function ChatPage() {
                 color="primary"
                 variant="bordered"
                 startContent={<PlusIcon className="w-4 h-4" />}
-                onPress={() => setShowNewMessage(true)}
+                onPress={() => setChatUiState(prev => ({ ...prev, showNewMessage: true }))}
               >
                 Start New Conversation
               </Button>
@@ -98,10 +102,11 @@ export default function ChatPage() {
         </Card>
 
         <NewMessageModal
-          isOpen={showNewMessage}
-          onClose={() => setShowNewMessage(false)}
+          isOpen={chatUiState.showNewMessage || false}
+          onClose={() => setChatUiState(prev => ({ ...prev, showNewMessage: false }))}
         />
-      </div>
+        </div>
+      </ModernErrorBoundary>
     </Layout>
   )
 }

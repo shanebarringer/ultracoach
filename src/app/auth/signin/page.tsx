@@ -1,74 +1,89 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon } from 'lucide-react'
 import { authClient } from '@/lib/better-auth-client'
 import { useAtom } from 'jotai'
-import { sessionAtom, userAtom } from '@/lib/atoms'
+import { sessionAtom, userAtom, signInFormAtom } from '@/lib/atoms'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('SignIn');
+const logger = createLogger('SignIn')
+
+// Zod schema for signin form validation
+const signInSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required').min(6, 'Password must be at least 6 characters'),
+})
+
+type SignInForm = z.infer<typeof signInSchema>
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState({ email: '', password: '' })
-  const [loading, setLoading] = useState(false)
+  const [formState, setFormState] = useAtom(signInFormAtom)
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
 
-  const validate = () => {
-    const newErrors = { email: '', password: '' }
-    if (!email) {
-      newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email address is invalid.'
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+    setError
+  } = useForm<SignInForm>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
     }
-    if (!password) {
-      newErrors.password = 'Password is required.'
-    }
-    setErrors(newErrors)
-    return !newErrors.email && !newErrors.password
-  }
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-
-    setLoading(true)
+  const onSubmit = async (data: SignInForm) => {
+    setFormState(prev => ({ ...prev, loading: true }))
     
     try {
-      const { data, error } = await authClient.signIn.email({
-        email,
-        password
+      logger.info('Attempting sign in:', { email: data.email })
+      
+      const { data: authData, error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password
       })
 
       if (error) {
         logger.error('SignIn error:', error)
-        setErrors({ 
-          ...errors, 
-          email: error.message || 'Invalid credentials' 
-        })
+        // Sanitize error message for security - don't expose internal details
+        const sanitizedMessage = error.message?.toLowerCase().includes('invalid') || 
+                                 error.message?.toLowerCase().includes('incorrect') ||
+                                 error.message?.toLowerCase().includes('not found')
+                                 ? 'Invalid email or password' 
+                                 : 'Invalid credentials'
+        setError('email', { message: sanitizedMessage })
         return
       }
 
-      if (data) {
+      if (authData) {
         // Update Jotai atoms
-        setSession(data)
-        setUser(data.user)
+        setSession(authData)
+        setUser(authData.user)
+        
+        logger.info('Sign in successful, fetching user role')
         
         // Fetch user role from database
         try {
-          const roleResponse = await fetch(`/api/user/role?userId=${data.user.id}`)
+          const roleResponse = await fetch(`/api/user/role?userId=${authData.user.id}`)
           const roleData = await roleResponse.json()
           const userRole = roleData.role || 'runner'
           
+          logger.info('User role fetched:', { userRole })
+          
           // Update user object with role
-          setUser({ ...data.user, role: userRole })
+          setUser({ ...authData.user, role: userRole })
           
           // Redirect based on user role
           if (userRole === 'coach') {
@@ -78,24 +93,34 @@ export default function SignIn() {
           }
         } catch (error) {
           logger.error('Error fetching user role:', error)
-          // Default to runner if role fetch fails
-          router.push('/dashboard/runner')
+          
+          // Notify user of the issue but allow them to proceed
+          setError('email', { 
+            message: 'Warning: Unable to verify your role. You will be logged in as a runner.' 
+          })
+          
+          // Default to runner role and proceed
+          setUser({ ...authData.user, role: 'runner' })
+          
+          // Add a small delay to let user see the warning
+          setTimeout(() => {
+            router.push('/dashboard/runner')
+          }, 2000)
         }
       }
     } catch (error) {
       logger.error('SignIn exception:', error)
-      setErrors({ 
-        ...errors, 
-        email: error instanceof Error ? error.message : 'Login failed' 
-      })
+      // Sanitize error message for security
+      setError('email', { message: 'Login failed. Please try again.' })
     } finally {
-      setLoading(false)
+      setFormState(prev => ({ ...prev, loading: false }))
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <ModernErrorBoundary>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
         <Card className="border-t-4 border-t-primary shadow-2xl">
           <CardHeader className="text-center pb-4">
             <div className="flex flex-col items-center space-y-3">
@@ -110,47 +135,55 @@ export default function SignIn() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
-                <Input
-                  id="email"
+                <Controller
                   name="email"
-                  type="email"
-                  label="Email address"
-                  autoComplete="email"
-                  required
-                  placeholder="Enter your expedition email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  isInvalid={!!errors.email}
-                  errorMessage={errors.email}
-                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      label="Email address"
+                      autoComplete="email"
+                      required
+                      placeholder="Enter your expedition email"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
-                <Input
-                  id="password"
+                <Controller
                   name="password"
-                  type="password"
-                  label="Password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="Enter your summit key"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  isInvalid={!!errors.password}
-                  errorMessage={errors.password}
-                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      label="Password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="Enter your summit key"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
               </div>
 
@@ -161,10 +194,10 @@ export default function SignIn() {
                 as="button"
                 disableRipple
                 className="w-full font-semibold"
-                isLoading={loading}
-                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={isSubmitting || formState.loading}
+                startContent={!(isSubmitting || formState.loading) ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {loading ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
+                {(isSubmitting || formState.loading) ? 'Ascending to Base Camp...' : 'Begin Your Expedition'}
               </Button>
             </form>
 
@@ -183,7 +216,8 @@ export default function SignIn() {
             </div>
           </CardBody>
         </Card>
+        </div>
       </div>
-    </div>
+    </ModernErrorBoundary>
   )
 }

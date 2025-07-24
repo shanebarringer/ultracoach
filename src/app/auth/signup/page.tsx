@@ -1,66 +1,84 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
 import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
+import { useAtom } from 'jotai'
+import { signUpFormAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('SignUp')
+
+// Zod schema for signup form validation
+const signUpSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required').min(2, 'Full name must be at least 2 characters'),
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['runner', 'coach'], { required_error: 'Please select your role' }),
+})
+
+type SignUpForm = z.infer<typeof signUpSchema>
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    role: 'runner' as 'runner' | 'coach'
-  })
-  const [errors, setErrors] = useState({ email: '', password: '', fullName: '' })
+  const [formState, setFormState] = useAtom(signUpFormAtom)
   const router = useRouter()
-  const { signUp, loading } = useBetterAuth()
+  const { signUp } = useBetterAuth()
 
-  const validate = () => {
-    const newErrors = { email: '', password: '', fullName: '' }
-    if (!formData.fullName) {
-      newErrors.fullName = 'Full name is required.'
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+    setError
+  } = useForm<SignUpForm>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      role: 'runner',
     }
-    if (!formData.email) {
-      newErrors.email = 'Email is required.'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email address is invalid.'
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required.'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters.'
-    }
-    setErrors(newErrors)
-    return !newErrors.email && !newErrors.password && !newErrors.fullName
-  }
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
+  const onSubmit = async (data: SignUpForm) => {
+    setFormState(prev => ({ ...prev, loading: true }))
+    
+    try {
+      logger.info('Attempting sign up:', { email: data.email, fullName: data.fullName, role: data.role })
+      
+      const result = await signUp(data.email, data.password, data.fullName)
 
-    const result = await signUp(formData.email, formData.password, formData.fullName)
-
-    if (!result.success) {
-      setErrors({ ...errors, email: result.error || 'An error occurred' })
-    } else {
-      // Redirect based on user role
-      const userRole = (result.data?.user as { role?: string })?.role || 'runner'
-      if (userRole === 'coach') {
-        router.push('/dashboard/coach')
+      if (!result.success) {
+        logger.error('Sign up failed:', result.error)
+        // Sanitize error message for security
+        const sanitizedError = result.error?.toLowerCase().includes('email') && result.error?.toLowerCase().includes('exists')
+                               ? 'An account with this email already exists'
+                               : 'Registration failed. Please try again.'
+        setError('email', { message: sanitizedError })
       } else {
-        router.push('/dashboard/runner')
+        logger.info('Sign up successful:', { userRole: data.role })
+        // Redirect based on user role
+        const userRole = (result.data?.user as { role?: string })?.role || data.role
+        if (userRole === 'coach') {
+          router.push('/dashboard/coach')
+        } else {
+          router.push('/dashboard/runner')
+        }
+        // Keep loading true during redirect
       }
+    } catch (error) {
+      logger.error('Sign up exception:', error)
+      // Sanitize error message for security - don't use the actual error
+      setError('email', { message: 'Registration failed. Please try again.' })
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }))
     }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
   }
 
   return (
@@ -80,94 +98,112 @@ export default function SignUp() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
-                <Input
-                  id="fullName"
+                <Controller
                   name="fullName"
-                  type="text"
-                  label="Full Name"
-                  required
-                  placeholder="Enter your expedition name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  isInvalid={!!errors.fullName}
-                  errorMessage={errors.fullName}
-                  startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="fullName"
+                      type="text"
+                      label="Full Name"
+                      required
+                      placeholder="Enter your expedition name"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Input
-                  id="email"
+                <Controller
                   name="email"
-                  type="email"
-                  label="Email Address"
-                  required
-                  placeholder="Enter your base camp email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  isInvalid={!!errors.email}
-                  errorMessage={errors.email}
-                  startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      label="Email Address"
+                      required
+                      placeholder="Enter your base camp email"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Input
-                  id="password"
+                <Controller
                   name="password"
-                  type="password"
-                  label="Password"
-                  required
-                  placeholder="Create your summit key"
-                  value={formData.password}
-                  onChange={handleChange}
-                  isInvalid={!!errors.password}
-                  errorMessage={errors.password}
-                  startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    input: "text-foreground",
-                    label: "text-foreground-600"
-                  }}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      label="Password"
+                      required
+                      placeholder="Create your summit key"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        input: "text-foreground",
+                        label: "text-foreground-600"
+                      }}
+                    />
+                  )}
                 />
                 
-                <Select
-                  id="role"
+                <Controller
                   name="role"
-                  label="Choose your path"
-                  selectedKeys={[formData.role]}
-                  onSelectionChange={(keys) => {
-                    const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
-                    setFormData(prev => ({ ...prev, role: selectedRole }))
-                  }}
-                  startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
-                  variant="bordered"
-                  size="lg"
-                  classNames={{
-                    label: "text-foreground-600",
-                    value: "text-foreground"
-                  }}
-                >
-                  <SelectItem key="runner" startContent="🏃">
-                    <span className="font-medium">Trail Runner</span>
-                    <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
-                  </SelectItem>
-                  <SelectItem key="coach" startContent="🏔️">
-                    <span className="font-medium">Mountain Guide</span>
-                    <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
-                  </SelectItem>
-                </Select>
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Select
+                      selectedKeys={field.value ? [field.value] : []}
+                      onSelectionChange={(keys) => {
+                        const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                        field.onChange(selectedRole)
+                      }}
+                      label="Choose your path"
+                      isInvalid={!!fieldState.error}
+                      errorMessage={fieldState.error?.message}
+                      startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
+                      variant="bordered"
+                      size="lg"
+                      classNames={{
+                        label: "text-foreground-600",
+                        value: "text-foreground"
+                      }}
+                    >
+                      <SelectItem key="runner" startContent="🏃">
+                        <span className="font-medium">Trail Runner</span>
+                        <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
+                      </SelectItem>
+                      <SelectItem key="coach" startContent="🏔️">
+                        <span className="font-medium">Mountain Guide</span>
+                        <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
+                      </SelectItem>
+                    </Select>
+                  )}
+                />
               </div>
 
               <Button
@@ -175,10 +211,10 @@ export default function SignUp() {
                 color="secondary"
                 size="lg"
                 className="w-full font-semibold"
-                isLoading={loading}
-                startContent={!loading ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                isLoading={isSubmitting || formState.loading}
+                startContent={!(isSubmitting || formState.loading) ? <MountainSnowIcon className="w-5 h-5" /> : null}
               >
-                {loading ? 'Preparing your expedition...' : 'Start Your Journey'}
+                {(isSubmitting || formState.loading) ? 'Preparing your expedition...' : 'Start Your Journey'}
               </Button>
             </form>
 

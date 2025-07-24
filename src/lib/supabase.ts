@@ -141,3 +141,20 @@ export interface TemplatePhase {
   order: number
   created_at: string
 }
+
+// Extended interfaces for optimistic updates and component states
+export interface OptimisticWorkout extends Workout {
+  isPending?: boolean
+  hasError?: boolean
+}
+
+export interface OptimisticMessage extends MessageWithUser {
+  isPending?: boolean
+  hasError?: boolean
+  isOptimistic?: boolean
+}
+
+export interface ExtendedTrainingPlan extends TrainingPlan {
+  isPending?: boolean
+  hasError?: boolean
+}

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { Textarea, Button } from '@heroui/react'
 import { Link2, Send } from 'lucide-react'
+import { useAtom } from 'jotai'
 import WorkoutLinkSelector from './WorkoutLinkSelector'
 import WorkoutContext from './WorkoutContext'
+import { messageInputAtom } from '@/lib/atoms'
 import { Workout } from '@/lib/supabase'
 
 interface MessageInputProps {
@@ -16,19 +17,19 @@ interface MessageInputProps {
 }
 
 export default function MessageInput({ onSendMessage, disabled = false, onStartTyping, onStopTyping, recipientId }: MessageInputProps) {
-  const [message, setMessage] = useState('')
-  const [linkedWorkout, setLinkedWorkout] = useState<Workout | null>(null)
-  const [linkType, setLinkType] = useState<string>('reference')
-  const [showWorkoutSelector, setShowWorkoutSelector] = useState(false)
+  const [messageInput, setMessageInput] = useAtom(messageInputAtom)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (message.trim() && !disabled) {
-      const contextType = linkedWorkout ? 'workout_' + linkType : 'general'
-      onSendMessage(message.trim(), linkedWorkout?.id, contextType)
-      setMessage('')
-      setLinkedWorkout(null)
-      setLinkType('reference')
+    if (messageInput.message.trim() && !disabled) {
+      const contextType = messageInput.linkedWorkout ? 'workout_' + messageInput.linkType : 'general'
+      onSendMessage(messageInput.message.trim(), messageInput.linkedWorkout?.id, contextType)
+      setMessageInput({
+        message: '',
+        linkedWorkout: null,
+        linkType: 'reference',
+        showWorkoutSelector: false,
+      })
       onStopTyping?.()
     }
   }
@@ -41,25 +42,31 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
   }
 
   const handleSelectWorkout = (workout: Workout, selectedLinkType: string) => {
-    setLinkedWorkout(workout)
-    setLinkType(selectedLinkType)
-    setShowWorkoutSelector(false)
+    setMessageInput(prev => ({
+      ...prev,
+      linkedWorkout: workout,
+      linkType: selectedLinkType,
+      showWorkoutSelector: false,
+    }))
   }
 
   const handleRemoveWorkout = () => {
-    setLinkedWorkout(null)
-    setLinkType('reference')
+    setMessageInput(prev => ({
+      ...prev,
+      linkedWorkout: null,
+      linkType: 'reference',
+    }))
   }
 
   return (
     <>
       <div className="p-4 border-t border-default-200 dark:border-default-700 space-y-3">
         {/* Workout context display */}
-        {linkedWorkout && (
+        {messageInput.linkedWorkout && (
           <div className="relative">
             <WorkoutContext
-              workout={linkedWorkout}
-              linkType={linkType}
+              workout={messageInput.linkedWorkout}
+              linkType={messageInput.linkType}
             />
             <Button
               size="sm"
@@ -77,9 +84,9 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <div className="flex-1 space-y-2">
             <Textarea
-              value={message}
+              value={messageInput.message}
               onChange={(e) => {
-                setMessage(e.target.value)
+                setMessageInput(prev => ({ ...prev, message: e.target.value }))
                 if (e.target.value.trim() && !disabled) {
                   onStartTyping?.()
                 } else {
@@ -88,8 +95,8 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
               }}
               onKeyPress={handleKeyPress}
               onBlur={() => onStopTyping?.()}
-              placeholder={linkedWorkout 
-                ? `Add ${linkType} about ${linkedWorkout.planned_type || 'workout'}...`
+              placeholder={messageInput.linkedWorkout 
+                ? `Add ${messageInput.linkType} about ${messageInput.linkedWorkout.planned_type || 'workout'}...`
                 : "Type your message..."
               }
               minRows={1}
@@ -108,7 +115,7 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
               size="sm"
               variant="light"
               isIconOnly
-              onPress={() => setShowWorkoutSelector(true)}
+              onPress={() => setMessageInput(prev => ({ ...prev, showWorkoutSelector: true }))}
               disabled={disabled}
               className="text-default-500 hover:text-primary-500"
             >
@@ -121,7 +128,7 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
               size="sm"
               color="primary"
               isIconOnly
-              disabled={!message.trim() || disabled}
+              disabled={!messageInput.message.trim() || disabled}
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -131,8 +138,8 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
 
       {/* Workout selector modal */}
       <WorkoutLinkSelector
-        isOpen={showWorkoutSelector}
-        onClose={() => setShowWorkoutSelector(false)}
+        isOpen={messageInput.showWorkoutSelector}
+        onClose={() => setMessageInput(prev => ({ ...prev, showWorkoutSelector: false }))}
         onSelectWorkout={handleSelectWorkout}
         recipientId={recipientId}
       />

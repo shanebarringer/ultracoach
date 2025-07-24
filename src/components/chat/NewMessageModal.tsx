@@ -1,9 +1,23 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useAtom } from 'jotai'
 import { useSession } from '@/hooks/useBetterSession'
 import { useRouter } from 'next/navigation'
-import type { User } from '@/lib/supabase'
+import { newMessageModalAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NewMessageModal')
+
+// Zod schema for search form validation
+const searchSchema = z.object({
+  searchTerm: z.string().max(100, 'Search term must be less than 100 characters').optional(),
+})
+
+type SearchForm = z.infer<typeof searchSchema>
 
 interface NewMessageModalProps {
   isOpen: boolean
@@ -15,13 +29,31 @@ import { Modal, ModalContent, ModalHeader, ModalBody, Input, Button } from '@her
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [availableUsers, setAvailableUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [newMessageState, setNewMessageState] = useAtom(newMessageModalAtom)
+
+  // React Hook Form setup
+  const {
+    control,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<SearchForm>({
+    resolver: zodResolver(searchSchema),
+    defaultValues: {
+      searchTerm: '',
+    }
+  })
+
+  const searchTerm = watch('searchTerm') || ''
 
   const fetchAvailableUsers = useCallback(async () => {
-    if (!session?.user) return
+    if (!session?.user) {
+      logger.debug('No session user available, skipping fetch')
+      return
+    }
 
+    setNewMessageState(prev => ({ ...prev, loading: true }))
+    
     try {
       let endpoint = ''
       if (session.user.role === 'coach') {
@@ -32,17 +64,35 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
         endpoint = '/api/coaches'
       }
 
+      logger.info('Fetching available users:', { userRole: session.user.role, endpoint })
+
       const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
-        setAvailableUsers(data.runners || data.coaches || [])
+        const users = data.runners || data.coaches || []
+        
+        logger.info('Successfully fetched available users:', { 
+          userCount: users.length, 
+          userRole: session.user.role 
+        })
+        
+        setNewMessageState(prev => ({ 
+          ...prev, 
+          availableUsers: users,
+          loading: false
+        }))
+      } else {
+        logger.error('Failed to fetch available users:', { 
+          status: response.status, 
+          statusText: response.statusText 
+        })
+        setNewMessageState(prev => ({ ...prev, loading: false }))
       }
     } catch (error) {
-      console.error('Error fetching available users:', error)
-    } finally {
-      setLoading(false)
+      logger.error('Error fetching available users:', error)
+      setNewMessageState(prev => ({ ...prev, loading: false }))
     }
-  }, [session?.user])
+  }, [session?.user, setNewMessageState])
 
   useEffect(() => {
     if (isOpen && session?.user) {
@@ -50,12 +100,19 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     }
   }, [isOpen, session?.user, fetchAvailableUsers])
 
+  useEffect(() => {
+    if (isOpen) {
+      reset({ searchTerm: '' })
+    }
+  }, [isOpen, reset])
+
   const handleStartConversation = (userId: string) => {
+    logger.info('Starting conversation:', { userId, userRole: session?.user?.role })
     onClose()
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = availableUsers.filter(user =>
+  const filteredUsers = newMessageState.availableUsers.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -65,14 +122,21 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
       <ModalContent>
         <ModalHeader>New Message</ModalHeader>
         <ModalBody>
-          <Input
-            type="text"
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+          <Controller
+            name="searchTerm"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                type="text"
+                placeholder="Search by name or email..."
+                isInvalid={!!fieldState.error}
+                errorMessage={fieldState.error?.message}
+              />
+            )}
           />
           <div className="max-h-64 overflow-y-auto mt-4">
-            {loading ? (
+            {newMessageState.loading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
