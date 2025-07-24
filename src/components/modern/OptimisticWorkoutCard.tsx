@@ -4,10 +4,10 @@ import { memo, useTransition } from 'react'
 import { Card, CardBody, Chip, Button, Spinner } from '@heroui/react'
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from 'lucide-react'
 import { useOptimisticUpdates } from '@/hooks/useOptimisticUpdates'
-import type { Workout } from '@/lib/supabase'
+import type { OptimisticWorkout, Workout } from '@/lib/supabase'
 
 interface OptimisticWorkoutCardProps {
-  workout: Workout & { isPending?: boolean; hasError?: boolean }
+  workout: OptimisticWorkout
   onPress: (workout: Workout) => void
   formatDate: (date: string) => string
   getWorkoutStatusColor: (status: string) => "default" | "warning" | "success" | "primary" | "secondary" | "danger"

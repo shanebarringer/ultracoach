@@ -134,14 +134,22 @@ export const uiStateAtom = atom({
 // Async atoms for data fetching with Suspense support
 const logger = createLogger('AsyncAtoms')
 
+// Refresh trigger atom for forcing data refetch
+export const workoutsRefreshTriggerAtom = atom(0)
+
 export const asyncWorkoutsAtom = atom(async (get) => {
   const session = get(sessionAtom)
+  const refreshTrigger = get(workoutsRefreshTriggerAtom) // Dependency for invalidation
+  // refreshTrigger is used as a dependency to force atom re-evaluation
+  void refreshTrigger // Silence ESLint warning
   if (!session) throw new Error('No session available')
   
   try {
     const response = await fetch('/api/workouts', {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Better Auth uses cookie-based authentication automatically
+        // Authorization headers would be added here if tokens were available
       }
     })
     
@@ -166,7 +174,9 @@ export const asyncTrainingPlansAtom = atom(async (get) => {
   try {
     const response = await fetch('/api/training-plans', {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Better Auth uses cookie-based authentication automatically
+        // Authorization headers would be added here if tokens were available
       }
     })
     
@@ -191,7 +201,9 @@ export const asyncNotificationsAtom = atom(async (get) => {
   try {
     const response = await fetch('/api/notifications', {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Better Auth uses cookie-based authentication automatically
+        // Authorization headers would be added here if tokens were available
       }
     })
     

@@ -5,6 +5,9 @@ import { useAtom } from 'jotai'
 import { Spinner, Card, CardBody } from '@heroui/react'
 import { uiStateAtom } from '@/lib/atoms'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AsyncDataProvider')
 
 interface AsyncDataProviderProps {
   children: ReactNode
@@ -66,7 +69,7 @@ export default function AsyncDataProvider({
         fallback={() => ErrorComponent}
         maxRetries={3}
         onError={(error, errorInfo) => {
-          console.error('AsyncDataProvider caught error:', {
+          logger.error('AsyncDataProvider caught error:', {
             error: error.message,
             componentStack: errorInfo.componentStack,
           })
