@@ -221,6 +221,55 @@ export const asyncNotificationsAtom = atom(async (get) => {
   }
 })
 
+export const asyncConversationsAtom = atom(async (get) => {
+  const session = get(sessionAtom)
+  if (!session) throw new Error('No session available')
+  
+  try {
+    const response = await fetch('/api/conversations', {
+      headers: {
+        'Content-Type': 'application/json',
+        // Better Auth uses cookie-based authentication automatically
+        // Authorization headers would be added here if tokens were available
+      }
+    })
+    
+    if (!response.ok) {
+      logger.error(`Failed to fetch conversations: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch conversations: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    const fetchedConversations = data.conversations || []
+    
+    // Map API response to ConversationWithUser structure - access session from user object
+    const user = session as { user: { id: string; email: string; role: string; name: string } }
+    const mappedConversations = fetchedConversations.map((conv: any) => ({
+      id: conv.lastMessage?.conversation_id || '',
+      sender: {
+        id: user.user.id,
+        email: user.user.email,
+        role: user.user.role,
+        full_name: user.user.name || '',
+        created_at: '',
+        updated_at: '',
+      },
+      recipient: conv.user,
+      sender_id: user.user.id,
+      recipient_id: conv.user.id,
+      last_message_at: conv.lastMessage?.created_at || '',
+      created_at: conv.lastMessage?.created_at || '',
+      unreadCount: conv.unreadCount || 0,
+    }))
+    
+    logger.debug('Successfully fetched conversations', { count: mappedConversations.length })
+    return mappedConversations
+  } catch (error) {
+    logger.error('Error fetching conversations:', error)
+    throw error
+  }
+})
+
 // Derived atoms
 export const unreadNotificationsAtom = atom((get) => {
   const notifications = get(notificationsAtom)

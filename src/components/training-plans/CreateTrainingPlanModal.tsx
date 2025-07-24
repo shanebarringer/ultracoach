@@ -2,9 +2,30 @@
 
 import { useEffect } from 'react'
 import { useAtom } from 'jotai'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { createTrainingPlanFormAtom, racesAtom, planTemplatesAtom } from '@/lib/atoms'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
 import type { PlanTemplate, Race } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('CreateTrainingPlanModal')
+
+// Zod schema for form validation
+const createTrainingPlanSchema = z.object({
+  title: z.string().min(1, 'Plan title is required').max(100, 'Title must be less than 100 characters'),
+  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+  runnerEmail: z.string().email('Please enter a valid email address'),
+  race_id: z.string().nullable(),
+  goal_type: z.enum(['completion', 'time', 'placement']).nullable(),
+  plan_type: z.enum(['race_specific', 'base_building', 'bridge', 'recovery']).nullable(),
+  targetRaceDate: z.string().optional(),
+  targetRaceDistance: z.string().optional(),
+  template_id: z.string().nullable(),
+})
+
+type CreateTrainingPlanForm = z.infer<typeof createTrainingPlanSchema>
 
 interface CreateTrainingPlanModalProps {
   isOpen: boolean
@@ -17,23 +38,46 @@ export default function CreateTrainingPlanModal({
   onClose,
   onSuccess
 }: CreateTrainingPlanModalProps) {
-  const [formData, setFormData] = useAtom(createTrainingPlanFormAtom)
+  const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting }
+  } = useForm<CreateTrainingPlanForm>({
+    resolver: zodResolver(createTrainingPlanSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      runnerEmail: '',
+      race_id: null,
+      goal_type: null,
+      plan_type: null,
+      targetRaceDate: '',
+      targetRaceDistance: '',
+      template_id: null,
+    }
+  })
+
+  const watchedRaceId = watch('race_id')
+  const watchedTemplateId = watch('template_id')
 
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
     if (selectedTemplate) {
-      setFormData(prev => ({
-        ...prev,
-        title: selectedTemplate.name,
-        description: selectedTemplate.description || '',
-        plan_type: 'race_specific', // Assuming templates are race-specific
-        targetRaceDistance: selectedTemplate.distance_category,
-        // Clear race_id and targetRaceDate if a template is selected
-        race_id: null,
-        targetRaceDate: '',
-      }))
+      setValue('title', selectedTemplate.name)
+      setValue('description', selectedTemplate.description || '')
+      setValue('plan_type', 'race_specific') // Assuming templates are race-specific
+      setValue('targetRaceDistance', selectedTemplate.distance_category)
+      // Clear race_id and targetRaceDate if a template is selected
+      setValue('race_id', null)
+      setValue('targetRaceDate', '')
     }
   }
 
@@ -71,17 +115,18 @@ export default function CreateTrainingPlanModal({
     }
   }, [isOpen, races.length, setRaces, planTemplates.length, setPlanTemplates])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormData(prev => ({ ...prev, loading: true, error: '' }))
+  const onSubmit = async (data: CreateTrainingPlanForm) => {
+    setFormState(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
       const payload = {
-        ...formData,
-        targetRaceDate: formData.race_id ? undefined : formData.targetRaceDate,
-        targetRaceDistance: formData.race_id ? undefined : formData.targetRaceDistance,
-        template_id: formData.template_id || undefined, // Add template_id
+        ...data,
+        targetRaceDate: data.race_id ? undefined : data.targetRaceDate,
+        targetRaceDistance: data.race_id ? undefined : data.targetRaceDistance,
+        template_id: data.template_id || undefined,
       }
+
+      logger.info('Submitting training plan creation:', { payload })
 
       const response = await fetch('/api/training-plans', {
         method: 'POST',
@@ -92,31 +137,23 @@ export default function CreateTrainingPlanModal({
       })
 
       if (response.ok) {
-        setFormData({
-          title: '',
-          description: '',
-          runnerEmail: '',
-          race_id: null,
-          goal_type: null,
-          plan_type: null,
-          targetRaceDate: '',
-          targetRaceDistance: '',
-          template_id: null,
-          loading: false,
-          error: '',
-        })
+        logger.info('Training plan created successfully')
+        setFormState(prev => ({ ...prev, loading: false, error: '' }))
+        reset() // Reset form with react-hook-form
         onSuccess()
         onClose()
       } else {
-        const data = await response.json()
-        setFormData(prev => ({ 
+        const errorData = await response.json()
+        logger.error('Failed to create training plan:', errorData)
+        setFormState(prev => ({ 
           ...prev, 
           loading: false,
-          error: data.error || 'Failed to create training plan'
+          error: errorData.error || 'Failed to create training plan'
         }))
       }
-    } catch {
-      setFormData(prev => ({ 
+    } catch (error) {
+      logger.error('Error creating training plan:', error)
+      setFormState(prev => ({ 
         ...prev, 
         loading: false,
         error: 'An error occurred. Please try again.'
@@ -124,70 +161,88 @@ export default function CreateTrainingPlanModal({
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
         <ModalHeader>Create Training Plan</ModalHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <ModalBody className="space-y-4">
-            {formData.error && (
+            {formState.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {formData.error}
+                {formState.error}
               </div>
             )}
 
-            <Select
-              label="Select Template (Optional)"
+            <Controller
               name="template_id"
-              selectedKeys={formData.template_id ? [formData.template_id] : []}
-              onSelectionChange={(keys) => {
-                const selectedTemplateId = Array.from(keys).join('');
-                handleTemplateSelect(selectedTemplateId);
-              }}
-              placeholder="Choose a plan template..."
-              items={[{ id: '', name: 'Start from scratch' }, ...planTemplates]}
-            >
-              {(item) => (
-                <SelectItem key={item.id}>
-                  {item.name} {item.id !== '' && (item as PlanTemplate).distance_category && (item as PlanTemplate).difficulty_level && `(${(item as PlanTemplate).distance_category} - ${(item as PlanTemplate).difficulty_level})`}
-                </SelectItem>
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="Select Template (Optional)"
+                  selectedKeys={field.value ? [field.value] : []}
+                  onSelectionChange={(keys) => {
+                    const selectedTemplateId = Array.from(keys).join('');
+                    field.onChange(selectedTemplateId || null);
+                    setValue('template_id', selectedTemplateId || null);
+                    handleTemplateSelect(selectedTemplateId);
+                  }}
+                  placeholder="Choose a plan template..."
+                  items={[{ id: '', name: 'Start from scratch' }, ...planTemplates]}
+                >
+                  {(item) => (
+                    <SelectItem key={item.id}>
+                      {item.name} {item.id !== '' && (item as PlanTemplate).distance_category && (item as PlanTemplate).difficulty_level && `(${(item as PlanTemplate).distance_category} - ${(item as PlanTemplate).difficulty_level})`}
+                    </SelectItem>
+                  )}
+                </Select>
               )}
-            </Select>
+            />
 
-            <Input
-              type="text"
-              label="Plan Title"
+            <Controller
               name="title"
-              required
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="e.g., 100-Mile Ultra Training Plan"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  label="Plan Title"
+                  placeholder="e.g., 100-Mile Ultra Training Plan"
+                  isRequired
+                  isInvalid={!!fieldState.error}
+                  errorMessage={fieldState.error?.message}
+                />
+              )}
             />
 
-            <Textarea
-              label="Description"
+            <Controller
               name="description"
-              rows={3}
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Describe the training plan goals and approach..."
+              control={control}
+              render={({ field, fieldState }) => (
+                <Textarea
+                  {...field}
+                  label="Description"
+                  rows={3}
+                  placeholder="Describe the training plan goals and approach..."
+                  isInvalid={!!fieldState.error}
+                  errorMessage={fieldState.error?.message}
+                />
+              )}
             />
 
-            <Input
-              type="email"
-              label="Runner Email"
+            <Controller
               name="runnerEmail"
-              required
-              value={formData.runnerEmail}
-              onChange={handleChange}
-              placeholder="runner@example.com"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  {...field}
+                  type="email"
+                  label="Runner Email"
+                  placeholder="runner@example.com"
+                  isRequired
+                  isInvalid={!!fieldState.error}
+                  errorMessage={fieldState.error?.message}
+                />
+              )}
             />
 
             <Select
@@ -289,8 +344,8 @@ export default function CreateTrainingPlanModal({
             <Button variant="light" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={formData.loading}>
-              {formData.loading ? 'Creating...' : 'Create Plan'}
+            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
+              {(isSubmitting || formState.loading) ? 'Creating...' : 'Create Plan'}
             </Button>
           </ModalFooter>
         </form>
