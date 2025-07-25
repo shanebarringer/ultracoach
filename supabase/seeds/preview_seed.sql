@@ -3,7 +3,7 @@
 -- This file runs automatically when a Preview Branch is created
 
 -- Insert enhanced test data for preview environments
-INSERT INTO better_auth_users (id, email, name, role, created_at, updated_at)
+INSERT INTO better_auth_users (id, email, full_name, role, created_at, updated_at)
 VALUES 
   -- Preview test coach
   ('preview-coach-001', 'coach.preview@ultracoach.dev', 'Alex Mountain', 'coach', NOW(), NOW()),
@@ -14,7 +14,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Create sample training plan for preview testing
 INSERT INTO training_plans (
-  id, title, description, user_id, coach_id, plan_type, target_race_date, 
+  id, title, description, runner_id, coach_id, plan_type, target_race_date, 
   goal_type, target_time, created_at, updated_at
 )
 VALUES (

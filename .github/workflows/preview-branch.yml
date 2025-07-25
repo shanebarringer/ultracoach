@@ -1,17 +1,21 @@
-name: Supabase Preview Branch Deployment
+name: Supabase Preview Branch Deployment (Disabled)
 
-# Trigger on Pull Requests that modify database schema
+# Temporarily disabled - will re-enable post initial production release
+# on:
+#   pull_request:
+#     types:
+#       - opened
+#       - reopened
+#       - synchronize
+#     branches:
+#       - main
+#       - develop
+#     paths:
+#       - 'supabase/**'
+
+# Trigger manually only for now
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-    branches:
-      - main
-      - develop
-    paths:
-      - 'supabase/**'
+  workflow_dispatch:
 
 jobs:
   # Wait for Supabase Preview Branch to be ready
@@ -67,7 +71,7 @@ jobs:
       - name: Run database tests
         run: |
           echo "Testing Preview Branch: $GITHUB_HEAD_REF"
-          echo "Database URL: $DATABASE_URL" 
+          echo "Database URL: [REDACTED]" 
           # Add your database tests here
           # Example: pnpm test:db
 

@@ -294,11 +294,48 @@ ALTER TABLE "notifications" ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS policies (users can only see their own data)
 -- Note: Better Auth uses text IDs, not UUIDs like Supabase Auth
+
+-- Users table policies
 CREATE POLICY "Users can view own profile" ON "better_auth_users"
-FOR SELECT USING (true); -- Temporarily allow all access for development
+FOR SELECT USING (id = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can update own profile" ON "better_auth_users"
-FOR UPDATE USING (true); -- Temporarily allow all access for development
+FOR UPDATE USING (id = current_setting('app.current_user_id', true));
+
+-- Training plans policies
+CREATE POLICY "Coaches can view their plans" ON "training_plans"
+FOR SELECT USING (coach_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Runners can view their plans" ON "training_plans"
+FOR SELECT USING (runner_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Coaches can manage their plans" ON "training_plans"
+FOR ALL USING (coach_id = current_setting('app.current_user_id', true));
+
+-- Workouts policies
+CREATE POLICY "Users can view their workouts" ON "workouts"
+FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Users can manage their workouts" ON "workouts"
+FOR ALL USING (user_id = current_setting('app.current_user_id', true));
+
+-- Messages policies
+CREATE POLICY "Users can view their messages" ON "messages"
+FOR SELECT USING (sender_id = current_setting('app.current_user_id', true) OR recipient_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Users can send messages" ON "messages"
+FOR INSERT WITH CHECK (sender_id = current_setting('app.current_user_id', true));
+
+-- Conversations policies
+CREATE POLICY "Users can view their conversations" ON "conversations"
+FOR SELECT USING (user1_id = current_setting('app.current_user_id', true) OR user2_id = current_setting('app.current_user_id', true));
+
+-- Notifications policies
+CREATE POLICY "Users can view their notifications" ON "notifications"
+FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY "Users can update their notifications" ON "notifications"
+FOR UPDATE USING (user_id = current_setting('app.current_user_id', true));
 
 -- Success message
 SELECT 'UltraCoach production-ready schema created successfully!' AS status;
