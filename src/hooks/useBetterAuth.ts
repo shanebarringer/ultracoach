@@ -54,6 +54,8 @@ export function useBetterAuth() {
       if (error) {
         setAuthState(prev => ({
           ...prev,
+          user: null,
+          session: null,
           loading: false,
           error: error.message || null
         }));
@@ -94,6 +96,8 @@ export function useBetterAuth() {
       if (error) {
         setAuthState(prev => ({
           ...prev,
+          user: null,
+          session: null,
           loading: false,
           error: error.message || null
         }));
@@ -130,6 +134,8 @@ export function useBetterAuth() {
       if (error) {
         setAuthState(prev => ({
           ...prev,
+          user: null,
+          session: null,
           loading: false,
           error: error.message || null
         }));

@@ -21,6 +21,11 @@ const mockAuthClient = await import('@/lib/better-auth-client')
 describe('useBetterAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset to default behavior - return null session
+    vi.mocked(mockAuthClient.authClient.getSession).mockResolvedValue({
+      data: null,
+      error: null
+    })
   })
 
   it('should initialize with loading state', async () => {
@@ -98,16 +103,25 @@ describe('useBetterAuth', () => {
         email: 'test@example.com',
         role: 'runner' as const,
         full_name: 'Test User'
-      },
-      session: {
-        token: 'session-token'
       }
     }
 
-    vi.mocked(mockAuthClient.authClient.getSession).mockResolvedValue({
-      data: null,
-      error: null
-    })
+    const mockSessionData = {
+      user: mockSignInData.user,
+      token: 'session-token'
+    }
+
+    // Initial getSession call returns null
+    vi.mocked(mockAuthClient.authClient.getSession)
+      .mockResolvedValueOnce({
+        data: null,
+        error: null
+      })
+      // Second getSession call after sign in returns session
+      .mockResolvedValueOnce({
+        data: mockSessionData,
+        error: null
+      })
 
     vi.mocked(mockAuthClient.authClient.signIn.email).mockResolvedValue({
       data: mockSignInData,
@@ -127,7 +141,7 @@ describe('useBetterAuth', () => {
 
     expect(signInResult.success).toBe(true)
     expect(result.current.user).toEqual(mockSignInData.user)
-    expect(result.current.session).toEqual(mockSignInData.session)
+    expect(result.current.session).toEqual(mockSessionData)
     expect(result.current.error).toBe(null)
     expect(result.current.loading).toBe(false)
   })
@@ -171,16 +185,25 @@ describe('useBetterAuth', () => {
         email: 'new@example.com',
         role: 'runner' as const,
         full_name: 'New User'
-      },
-      session: {
-        token: 'new-session-token'
       }
     }
 
-    vi.mocked(mockAuthClient.authClient.getSession).mockResolvedValue({
-      data: null,
-      error: null
-    })
+    const mockSessionData = {
+      user: mockSignUpData.user,
+      token: 'new-session-token'
+    }
+
+    // Initial getSession call returns null
+    vi.mocked(mockAuthClient.authClient.getSession)
+      .mockResolvedValueOnce({
+        data: null,
+        error: null
+      })
+      // Second getSession call after sign up returns session
+      .mockResolvedValueOnce({
+        data: mockSessionData,
+        error: null
+      })
 
     vi.mocked(mockAuthClient.authClient.signUp.email).mockResolvedValue({
       data: mockSignUpData,
@@ -200,7 +223,7 @@ describe('useBetterAuth', () => {
 
     expect(signUpResult.success).toBe(true)
     expect(result.current.user).toEqual(mockSignUpData.user)
-    expect(result.current.session).toEqual(mockSignUpData.session)
+    expect(result.current.session).toEqual(mockSessionData)
     expect(result.current.error).toBe(null)
     expect(result.current.loading).toBe(false)
   })
