@@ -159,8 +159,8 @@ export const asyncWorkoutsAtom = atom(async (get) => {
     }
     
     const data = await response.json()
-    logger.debug('Successfully fetched workouts', { count: data.length })
-    return data
+    logger.debug('Successfully fetched workouts', { count: data.workouts.length })
+    return data.workouts
   } catch (error) {
     logger.error('Error fetching workouts:', error)
     throw error
@@ -186,8 +186,8 @@ export const asyncTrainingPlansAtom = atom(async (get) => {
     }
     
     const data = await response.json()
-    logger.debug('Successfully fetched training plans', { count: data.length })
-    return data
+    logger.debug('Successfully fetched training plans', { count: data.trainingPlans.length })
+    return data.trainingPlans
   } catch (error) {
     logger.error('Error fetching training plans:', error)
     throw error

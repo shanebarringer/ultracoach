@@ -53,7 +53,7 @@ export const auth = betterAuth({
       verification: better_auth_verification_tokens,
     },
   }),
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
   secret: process.env.BETTER_AUTH_SECRET!,
   
   session: {

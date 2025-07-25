@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS races (
     terrain_type VARCHAR(50), -- 'trail', 'road', 'mixed'
     website_url TEXT,
     notes TEXT,
-    created_by UUID REFERENCES users(id) ON DELETE CASCADE,
+    created_by TEXT REFERENCES better_auth_users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS plan_templates (
     difficulty_level VARCHAR(20), -- 'beginner', 'intermediate', 'advanced'
     peak_weekly_miles INTEGER,
     min_base_miles INTEGER, -- prerequisite weekly miles
-    created_by UUID REFERENCES users(id),
+    created_by TEXT REFERENCES better_auth_users(id),
     is_public BOOLEAN DEFAULT FALSE,
     tags TEXT[], -- ['mountain', 'road', 'first_ultra', 'time_goal']
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -146,9 +146,9 @@ ALTER TABLE template_phases ENABLE ROW LEVEL SECURITY;
 
 -- Races policies
 CREATE POLICY "Users can view all races" ON races FOR SELECT USING (true);
-CREATE POLICY "Users can create races" ON races FOR INSERT WITH CHECK (auth.uid() = created_by);
-CREATE POLICY "Users can update their races" ON races FOR UPDATE USING (auth.uid() = created_by);
-CREATE POLICY "Users can delete their races" ON races FOR DELETE USING (auth.uid() = created_by);
+CREATE POLICY "Users can create races" ON races FOR INSERT WITH CHECK (current_setting('app.current_user_id', true) = created_by);
+CREATE POLICY "Users can update their races" ON races FOR UPDATE USING (current_setting('app.current_user_id', true) = created_by);
+CREATE POLICY "Users can delete their races" ON races FOR DELETE USING (current_setting('app.current_user_id', true) = created_by);
 
 -- Training phases policies (read-only for most users)
 CREATE POLICY "Users can view training phases" ON training_phases FOR SELECT USING (true);
@@ -159,7 +159,7 @@ USING (
     EXISTS (
         SELECT 1 FROM training_plans tp 
         WHERE tp.id = plan_phases.training_plan_id 
-        AND (tp.coach_id = auth.uid() OR tp.runner_id = auth.uid())
+        AND (tp.coach_id = current_setting('app.current_user_id', true) OR tp.runner_id = current_setting('app.current_user_id', true))
     )
 );
 
@@ -168,19 +168,19 @@ USING (
     EXISTS (
         SELECT 1 FROM training_plans tp 
         WHERE tp.id = plan_phases.training_plan_id 
-        AND tp.coach_id = auth.uid()
+        AND tp.coach_id = current_setting('app.current_user_id', true)
     )
 );
 
 -- Plan templates policies
 CREATE POLICY "Users can view public templates" ON plan_templates FOR SELECT 
-USING (is_public = true OR created_by = auth.uid());
+USING (is_public = true OR created_by = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can create templates" ON plan_templates FOR INSERT 
-WITH CHECK (auth.uid() = created_by);
+WITH CHECK (created_by = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can update their templates" ON plan_templates FOR UPDATE 
-USING (auth.uid() = created_by);
+USING (created_by = current_setting('app.current_user_id', true));
 
 -- Template phases policies
 CREATE POLICY "Users can view template phases" ON template_phases FOR SELECT 
@@ -188,7 +188,7 @@ USING (
     EXISTS (
         SELECT 1 FROM plan_templates pt 
         WHERE pt.id = template_phases.template_id 
-        AND (pt.is_public = true OR pt.created_by = auth.uid())
+        AND (pt.is_public = true OR pt.created_by = current_setting('app.current_user_id', true))
     )
 );
 
@@ -197,7 +197,7 @@ USING (
     EXISTS (
         SELECT 1 FROM plan_templates pt 
         WHERE pt.id = template_phases.template_id 
-        AND pt.created_by = auth.uid()
+        AND pt.created_by = current_setting('app.current_user_id', true)
     )
 );
 
