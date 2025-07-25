@@ -6,21 +6,19 @@ import { Skeleton } from '@heroui/react'
 import { asyncTrainingPlansAtom, uiStateAtom } from '@/lib/atoms'
 import TrainingPlanCard from './TrainingPlanCard'
 import type { TrainingPlan } from '@/lib/supabase'
-import type { Session } from '@/lib/better-auth-client'
+// Session type no longer needed
 
 interface AsyncTrainingPlansListProps {
-  session: Session
   userRole: 'runner' | 'coach'
   onArchiveChange: () => void
 }
 
 interface TrainingPlansContentProps {
-  session: Session
   userRole: 'runner' | 'coach'
   onArchiveChange: () => void
 }
 
-function TrainingPlansContent({ session, userRole, onArchiveChange }: TrainingPlansContentProps) {
+function TrainingPlansContent({ userRole, onArchiveChange }: TrainingPlansContentProps) {
   const [trainingPlans] = useAtom(asyncTrainingPlansAtom)
   const [uiState] = useAtom(uiStateAtom)
 
@@ -82,11 +80,10 @@ const LoadingFallback = () => (
   </div>
 )
 
-export default function AsyncTrainingPlansList({ session, userRole, onArchiveChange }: AsyncTrainingPlansListProps) {
+export default function AsyncTrainingPlansList({ userRole, onArchiveChange }: AsyncTrainingPlansListProps) {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <TrainingPlansContent 
-        session={session} 
         userRole={userRole} 
         onArchiveChange={onArchiveChange} 
       />

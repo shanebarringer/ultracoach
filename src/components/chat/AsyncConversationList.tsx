@@ -68,7 +68,7 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
         </div>
       ) : (
         <div className="divide-y divide-divider/50">
-          {conversations.map((conversation) => {
+          {conversations.map((conversation: ConversationWithUser) => {
             const partner = conversation.recipient;
             const unreadCount = conversation.unreadCount;
             const partnerId = partner?.id;

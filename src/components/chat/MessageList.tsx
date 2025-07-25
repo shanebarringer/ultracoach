@@ -145,7 +145,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
       
       setLastMessageCount(messages.length)
     }
-  }, [messages, currentUserId, lastMessageCount, isUserScrolling])
+  }, [messages, currentUserId, lastMessageCount, isUserScrolling, scrollToBottom])
 
   useEffect(() => {
     const container = containerRef.current

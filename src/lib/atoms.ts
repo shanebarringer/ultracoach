@@ -244,7 +244,7 @@ export const asyncConversationsAtom = atom(async (get) => {
     
     // Map API response to ConversationWithUser structure - access session from user object
     const user = session as { user: { id: string; email: string; role: string; name: string } }
-    const mappedConversations = fetchedConversations.map((conv: any) => ({
+    const mappedConversations = fetchedConversations.map((conv: { user: User; lastMessage?: { conversation_id: string; created_at: string }; unreadCount?: number }) => ({
       id: conv.lastMessage?.conversation_id || '',
       sender: {
         id: user.user.id,

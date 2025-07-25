@@ -118,7 +118,6 @@ export default function TrainingPlansPage() {
         {uiState.useSuspense ? (
           // Modern React 19 Pattern with Suspense
           <AsyncTrainingPlansList
-            session={session}
             userRole={session.user.role as 'runner' | 'coach'}
             onArchiveChange={handleArchiveChange}
           />

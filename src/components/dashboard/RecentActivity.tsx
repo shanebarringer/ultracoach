@@ -22,7 +22,7 @@ interface RecentActivityContentProps {
   userRole: 'coach' | 'runner'
 }
 
-function RecentActivityContent({ title, subtitle, limit, userRole }: RecentActivityContentProps) {
+function RecentActivityContent({ title, subtitle, limit }: RecentActivityContentProps) {
   const [workouts] = useAtom(asyncWorkoutsAtom)
   
   // Filter to completed workouts and limit results
@@ -46,7 +46,7 @@ function RecentActivityContent({ title, subtitle, limit, userRole }: RecentActiv
           </div>
         ) : (
           <div className="space-y-4">
-            {recentWorkouts.map((workout) => (
+            {recentWorkouts.map((workout: Workout) => (
               <div key={workout.id} className="p-4 bg-content2 border-l-4 border-l-success rounded-lg">
                 <div className="flex justify-between items-start">
                   <div>
@@ -79,7 +79,7 @@ function RecentActivityContent({ title, subtitle, limit, userRole }: RecentActiv
                 </div>
                 {workout.workout_notes && (
                   <p className="text-sm text-foreground-600 mt-2 italic">
-                    "{workout.workout_notes}"
+                    &ldquo;{workout.workout_notes}&rdquo;
                   </p>
                 )}
               </div>

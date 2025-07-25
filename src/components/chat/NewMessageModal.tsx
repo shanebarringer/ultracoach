@@ -35,8 +35,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   const {
     control,
     watch,
-    reset,
-    formState: { errors }
+    reset
   } = useForm<SearchForm>({
     resolver: zodResolver(searchSchema),
     defaultValues: {

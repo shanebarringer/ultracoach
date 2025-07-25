@@ -48,6 +48,7 @@ export default function CreateTrainingPlanModal({
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { isSubmitting }
   } = useForm<CreateTrainingPlanForm>({
     resolver: zodResolver(createTrainingPlanSchema),
@@ -64,6 +65,8 @@ export default function CreateTrainingPlanModal({
     }
   })
 
+  // Watch all form values for conditional rendering
+  const formData = watch()
 
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
@@ -248,7 +251,7 @@ export default function CreateTrainingPlanModal({
               selectedKeys={formData.plan_type ? [formData.plan_type] : []}
               onSelectionChange={(keys) => {
                 const selectedPlanType = Array.from(keys).join('') as 'race_specific' | 'base_building' | 'bridge' | 'recovery' | '';
-                setFormData(prev => ({ ...prev, plan_type: selectedPlanType === '' ? null : selectedPlanType }));
+                setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType);
               }}
               placeholder="Select plan type..."
             >
@@ -264,7 +267,7 @@ export default function CreateTrainingPlanModal({
               selectedKeys={formData.race_id ? [formData.race_id] : []}
               onSelectionChange={(keys) => {
                 const selectedRaceId = Array.from(keys).join('');
-                setFormData(prev => ({ ...prev, race_id: selectedRaceId === '' ? null : selectedRaceId }));
+                setValue('race_id', selectedRaceId === '' ? null : selectedRaceId);
               }}
               placeholder="Select a target race..."
               items={[{ id: '', name: 'No specific race' }, ...races]}
@@ -277,12 +280,16 @@ export default function CreateTrainingPlanModal({
             </Select>
 
             {!formData.race_id && (
-              <Input
-                type="date"
-                label="Target Race Date (Optional)"
+              <Controller
                 name="targetRaceDate"
-                value={formData.targetRaceDate}
-                onChange={handleChange}
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="date"
+                    label="Target Race Date (Optional)"
+                    {...field}
+                  />
+                )}
               />
             )}
 
@@ -293,7 +300,7 @@ export default function CreateTrainingPlanModal({
                 selectedKeys={formData.targetRaceDistance ? [formData.targetRaceDistance] : []}
                 onSelectionChange={(keys) => {
                   const selectedDistance = Array.from(keys).join('');
-                  setFormData(prev => ({ ...prev, targetRaceDistance: selectedDistance }));
+                  setValue('targetRaceDistance', selectedDistance);
                 }}
                 placeholder="Select distance..."
                 items={[
@@ -319,7 +326,7 @@ export default function CreateTrainingPlanModal({
               selectedKeys={formData.goal_type ? [formData.goal_type] : []}
               onSelectionChange={(keys) => {
                 const selectedGoalType = Array.from(keys).join('') as 'completion' | 'time' | 'placement' | '';
-                setFormData(prev => ({ ...prev, goal_type: selectedGoalType === '' ? null : selectedGoalType }));
+                setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType);
               }}
               placeholder="Select goal type..."
               items={[
