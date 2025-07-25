@@ -5,9 +5,9 @@
  * for Row Level Security policies in Supabase when using Better Auth.
  */
 
-import { auth } from '@/lib/server-auth';
+import { auth } from '@/lib/better-auth';
 import { createClient } from '@supabase/supabase-js';
-import { createLogger } from 'tslog';
+import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('db-context');
 
@@ -108,12 +108,15 @@ export async function withUserContext<T>(
  * Get the current user from Better Auth session
  * Returns null if no valid session
  */
-export async function getCurrentUser(): Promise<{ id: string; email: string } | null> {
+export async function getCurrentUser(headers?: Headers): Promise<{ id: string; email: string } | null> {
   try {
+    if (!headers) {
+      logger.debug('No headers provided, cannot get current user');
+      return null;
+    }
+
     const session = await auth.api.getSession({
-      headers: {
-        // Headers will be populated by middleware/API route
-      }
+      headers: headers
     });
 
     if (!session?.user) {
@@ -134,8 +137,8 @@ export async function getCurrentUser(): Promise<{ id: string; email: string } | 
  * Create a Supabase client configured for the current user
  * This client will have the user context automatically set
  */
-export async function createUserSupabaseClient(userId?: string) {
-  const effectiveUserId = userId || (await getCurrentUser())?.id;
+export async function createUserSupabaseClient(userId?: string, headers?: Headers) {
+  const effectiveUserId = userId || (await getCurrentUser(headers))?.id;
   
   if (!effectiveUserId) {
     logger.warn('No user ID available for Supabase client');
@@ -168,7 +171,7 @@ export async function setContextFromSession(request: Request): Promise<string | 
   try {
     // Extract session from Better Auth
     const session = await auth.api.getSession({
-      headers: Object.fromEntries(request.headers.entries())
+      headers: request.headers
     });
 
     if (session?.user?.id) {
