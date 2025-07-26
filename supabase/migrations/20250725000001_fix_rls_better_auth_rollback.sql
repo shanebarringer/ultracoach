@@ -54,10 +54,10 @@ CREATE POLICY "Coaches can manage their plans" ON "training_plans"
 FOR ALL USING (coach_id = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can view their workouts" ON "workouts"
-FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+FOR SELECT USING (runner_id = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can manage their workouts" ON "workouts"
-FOR ALL USING (user_id = current_setting('app.current_user_id', true));
+FOR ALL USING (runner_id = current_setting('app.current_user_id', true));
 
 CREATE POLICY "Users can view their messages" ON "messages"
 FOR SELECT USING (sender_id = current_setting('app.current_user_id', true) OR recipient_id = current_setting('app.current_user_id', true));
