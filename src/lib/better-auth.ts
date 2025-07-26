@@ -49,6 +49,10 @@ betterAuthPool.on('remove', () => {
 
 const betterAuthDb = drizzle(betterAuthPool)
 
+const apiBaseUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : process.env.BETTER_AUTH_URL || 'http://localhost:3001'
+
 export const auth = betterAuth({
   database: drizzleAdapter(betterAuthDb, {
     provider: 'pg',
@@ -59,7 +63,7 @@ export const auth = betterAuth({
       verification: better_auth_verification_tokens,
     },
   }),
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
+  baseURL: apiBaseUrl,
   secret: process.env.BETTER_AUTH_SECRET!,
 
   session: {
