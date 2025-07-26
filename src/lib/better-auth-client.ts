@@ -5,10 +5,8 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('better-auth-client')
 
-import { apiBaseUrl } from '@/lib/better-auth'
-
 export const authClient = createAuthClient({
-  baseURL: apiBaseUrl + '/api/auth',
+  baseURL: '/api/auth',
   fetchOptions: {
     onError(context) {
       logger.error('Better Auth client error:', {
