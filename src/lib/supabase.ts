@@ -61,10 +61,19 @@ export interface Workout {
   planned_distance?: number
   planned_duration?: number
   planned_type: string
-  category?: 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest'; // New: Workout category
-  intensity?: number; // New: Intensity level (1-10)
-  terrain?: 'road' | 'trail' | 'track' | 'treadmill'; // New: Terrain type
-  elevation_gain?: number; // New: Elevation gain
+  category?:
+    | 'easy'
+    | 'tempo'
+    | 'interval'
+    | 'long_run'
+    | 'race_simulation'
+    | 'recovery'
+    | 'strength'
+    | 'cross_training'
+    | 'rest' // New: Workout category
+  intensity?: number // New: Intensity level (1-10)
+  terrain?: 'road' | 'trail' | 'track' | 'treadmill' // New: Terrain type
+  elevation_gain?: number // New: Elevation gain
   actual_distance?: number
   actual_duration?: number
   actual_type?: string

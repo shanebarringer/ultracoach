@@ -1,17 +1,17 @@
-require('dotenv').config({ path: '.env.local' });
-const { Pool } = require('pg');
+require('dotenv').config({ path: '.env.local' })
+const { Pool } = require('pg')
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+})
 
 async function checkConstraints() {
-  const client = await pool.connect();
-  
+  const client = await pool.connect()
+
   try {
-    console.log('🔍 Checking foreign key constraints...\n');
-    
+    console.log('🔍 Checking foreign key constraints...\n')
+
     // Get all foreign key constraints
     const constraints = await client.query(`
       SELECT
@@ -35,37 +35,42 @@ async function checkConstraints() {
           OR ccu.table_name IN ('users', 'better_auth_users')
         )
       ORDER BY tc.table_name, tc.constraint_name
-    `);
-    
-    console.log(`Found ${constraints.rows.length} foreign key constraints:`);
-    
+    `)
+
+    console.log(`Found ${constraints.rows.length} foreign key constraints:`)
+
     constraints.rows.forEach(constraint => {
-      console.log(`\n📋 ${constraint.table_name}.${constraint.column_name}`);
-      console.log(`   Constraint: ${constraint.constraint_name}`);
-      console.log(`   References: ${constraint.foreign_table_name}.${constraint.foreign_column_name}`);
-    });
-    
+      console.log(`\n📋 ${constraint.table_name}.${constraint.column_name}`)
+      console.log(`   Constraint: ${constraint.constraint_name}`)
+      console.log(
+        `   References: ${constraint.foreign_table_name}.${constraint.foreign_column_name}`
+      )
+    })
+
     // Check specific constraints that might be causing issues
-    console.log('\n🎯 User-related constraints:');
-    
-    const userConstraints = constraints.rows.filter(c => 
-      c.foreign_table_name === 'users' || c.foreign_table_name === 'better_auth_users'
-    );
-    
+    console.log('\n🎯 User-related constraints:')
+
+    const userConstraints = constraints.rows.filter(
+      c => c.foreign_table_name === 'users' || c.foreign_table_name === 'better_auth_users'
+    )
+
     userConstraints.forEach(constraint => {
-      console.log(`   ${constraint.table_name}.${constraint.column_name} → ${constraint.foreign_table_name}.${constraint.foreign_column_name} (${constraint.constraint_name})`);
-    });
-    
+      console.log(
+        `   ${constraint.table_name}.${constraint.column_name} → ${constraint.foreign_table_name}.${constraint.foreign_column_name} (${constraint.constraint_name})`
+      )
+    })
   } catch (error) {
-    console.error('❌ Check failed:', error.message);
-    throw error;
+    console.error('❌ Check failed:', error.message)
+    throw error
   } finally {
-    client.release();
+    client.release()
   }
 }
 
 if (require.main === module) {
-  checkConstraints().catch(console.error).finally(() => pool.end());
+  checkConstraints()
+    .catch(console.error)
+    .finally(() => pool.end())
 }
 
-module.exports = { checkConstraints };
+module.exports = { checkConstraints }

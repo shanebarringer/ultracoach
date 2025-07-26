@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(request)
     if (!session?.user) {
@@ -43,10 +41,10 @@ export async function PATCH(
         .eq('id', session.user.id)
         .single()
       const action = archived ? 'archived' : 'unarchived'
-      const actorName = actor?.full_name || (session.user.role === 'coach' ? 'Your coach' : 'Your runner')
-      await supabaseAdmin
-        .from('notifications')
-        .insert([{
+      const actorName =
+        actor?.full_name || (session.user.role === 'coach' ? 'Your coach' : 'Your runner')
+      await supabaseAdmin.from('notifications').insert([
+        {
           user_id: recipientId,
           title: `Training Plan ${archived ? 'Archived' : 'Restored'}`,
           message: `${actorName} has ${action} the training plan "${plan.name}".`,
@@ -56,16 +54,17 @@ export async function PATCH(
             action: 'view_training_plans',
             trainingPlanId: id,
             planName: plan.name,
-            archived
-          }
-        }])
+            archived,
+          },
+        },
+      ])
     } catch (error) {
       console.error('Failed to send archive notification', error)
       // Don't fail the main request if notification fails
     }
-    return NextResponse.json({ 
+    return NextResponse.json({
       trainingPlan: updatedPlan,
-      message: `Training plan ${archived ? 'archived' : 'restored'} successfully`
+      message: `Training plan ${archived ? 'archived' : 'restored'} successfully`,
     })
   } catch (error) {
     console.error('API error in PATCH /training-plans/[id]/archive', error)

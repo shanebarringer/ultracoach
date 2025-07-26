@@ -1,12 +1,16 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { useAtom } from 'jotai'
-import { useSession } from '@/hooks/useBetterSession'
+import { z } from 'zod'
+
+import { useCallback, useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+
 import { useRouter } from 'next/navigation'
+
+import { useSession } from '@/hooks/useBetterSession'
 import { newMessageModalAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
@@ -24,23 +28,17 @@ interface NewMessageModalProps {
   onClose: () => void
 }
 
-import { Modal, ModalContent, ModalHeader, ModalBody, Input, Button } from '@heroui/react'
-
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
   const [newMessageState, setNewMessageState] = useAtom(newMessageModalAtom)
 
   // React Hook Form setup
-  const {
-    control,
-    watch,
-    reset
-  } = useForm<SearchForm>({
+  const { control, watch, reset } = useForm<SearchForm>({
     resolver: zodResolver(searchSchema),
     defaultValues: {
       searchTerm: '',
-    }
+    },
   })
 
   const searchTerm = watch('searchTerm') || ''
@@ -52,7 +50,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     }
 
     setNewMessageState(prev => ({ ...prev, loading: true }))
-    
+
     try {
       let endpoint = ''
       if (session.user.role === 'coach') {
@@ -69,21 +67,21 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
       if (response.ok) {
         const data = await response.json()
         const users = data.runners || data.coaches || []
-        
-        logger.info('Successfully fetched available users:', { 
-          userCount: users.length, 
-          userRole: session.user.role 
+
+        logger.info('Successfully fetched available users:', {
+          userCount: users.length,
+          userRole: session.user.role,
         })
-        
-        setNewMessageState(prev => ({ 
-          ...prev, 
+
+        setNewMessageState(prev => ({
+          ...prev,
           availableUsers: users,
-          loading: false
+          loading: false,
         }))
       } else {
-        logger.error('Failed to fetch available users:', { 
-          status: response.status, 
-          statusText: response.statusText 
+        logger.error('Failed to fetch available users:', {
+          status: response.status,
+          statusText: response.statusText,
         })
         setNewMessageState(prev => ({ ...prev, loading: false }))
       }
@@ -111,9 +109,10 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = newMessageState.availableUsers.filter(user =>
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = newMessageState.availableUsers.filter(
+    user =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -141,22 +140,33 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-8">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+                  />
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  {searchTerm ? 'No users found' : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
+                  {searchTerm
+                    ? 'No users found'
+                    : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  {session?.user?.role === 'coach' 
+                  {session?.user?.role === 'coach'
                     ? 'Create training plans to connect with runners'
-                    : 'Ask your coach to create a training plan for you'
-                  }
+                    : 'Ask your coach to create a training plan for you'}
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredUsers.map((user) => (
+                {filteredUsers.map(user => (
                   <Button
                     key={user.id}
                     variant="light"
@@ -173,8 +183,18 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                       <p className="text-sm text-gray-500 truncate">{user.email || 'No email'}</p>
                       <p className="text-xs text-gray-400 capitalize">{user.role}</p>
                     </div>
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </Button>
                 ))}

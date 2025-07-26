@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -16,7 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       workoutNotes,
       injuryNotes,
       status,
-      coachFeedback
+      coachFeedback,
     } = await request.json()
     // Fetch the workout and related plan
     const { data: workout, error: workoutError } = await supabaseAdmin
@@ -86,9 +87,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (coach && runner) {
           const workoutType = actualType || workout.planned_type
           const distance = actualDistance ? ` (${actualDistance} miles)` : ''
-          await supabaseAdmin
-            .from('notifications')
-            .insert([{
+          await supabaseAdmin.from('notifications').insert([
+            {
               user_id: coach.id,
               title: 'Workout Completed',
               message: `${runner.full_name} completed their ${workoutType}${distance} workout.`,
@@ -101,9 +101,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
                 runnerName: runner.full_name,
                 workoutType,
                 actualDistance,
-                actualDuration
-              }
-            }])
+                actualDuration,
+              },
+            },
+          ])
         }
       } catch (error) {
         console.error('Failed to send workout completion notification', error)

@@ -1,21 +1,23 @@
 'use client'
 
-import React, { useState } from 'react'
-import { 
-  Modal, 
-  ModalContent, 
-  ModalHeader, 
-  ModalBody, 
-  ModalFooter,
+import {
   Button,
-  Select,
-  SelectItem,
-  Chip,
   Card,
   CardBody,
-  Input
+  Chip,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
 } from '@heroui/react'
-import { Link2, Calendar, MapPin, Target } from 'lucide-react'
+import { Calendar, Link2, MapPin, Target } from 'lucide-react'
+
+import React, { useState } from 'react'
+
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { Workout } from '@/lib/supabase'
 
@@ -31,7 +33,7 @@ const LINK_TYPES = [
   { key: 'feedback', label: 'Feedback', description: 'Provide feedback on workout' },
   { key: 'question', label: 'Question', description: 'Ask about this workout' },
   { key: 'update', label: 'Update', description: 'Share workout update' },
-  { key: 'plan_change', label: 'Plan Change', description: 'Suggest plan modification' }
+  { key: 'plan_change', label: 'Plan Change', description: 'Suggest plan modification' },
 ]
 
 export default function WorkoutLinkSelector({
@@ -46,7 +48,8 @@ export default function WorkoutLinkSelector({
 
   // Filter workouts for the current conversation context
   const filteredWorkouts = workouts.filter(workout => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch =
+      searchTerm === '' ||
       workout.planned_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workout.date?.includes(searchTerm)
     return matchesSearch
@@ -59,10 +62,14 @@ export default function WorkoutLinkSelector({
 
   const getWorkoutStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'success'
-      case 'planned': return 'primary'
-      case 'skipped': return 'warning'
-      default: return 'default'
+      case 'completed':
+        return 'success'
+      case 'planned':
+        return 'primary'
+      case 'skipped':
+        return 'warning'
+      default:
+        return 'default'
     }
   }
 
@@ -84,12 +91,7 @@ export default function WorkoutLinkSelector({
   }
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={handleClose}
-      size="2xl"
-      scrollBehavior="inside"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} size="2xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-primary-500" />
@@ -100,11 +102,11 @@ export default function WorkoutLinkSelector({
           <Input
             placeholder="Search workouts by type or date..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             startContent={<Target className="h-4 w-4 text-default-400" />}
             classNames={{
-              input: "text-small",
-              inputWrapper: "bg-background"
+              input: 'text-small',
+              inputWrapper: 'bg-background',
             }}
           />
 
@@ -113,12 +115,12 @@ export default function WorkoutLinkSelector({
             label="Link Type"
             placeholder="Select how this message relates to the workout"
             selectedKeys={[linkType]}
-            onSelectionChange={(keys) => setLinkType(Array.from(keys)[0] as string)}
+            onSelectionChange={keys => setLinkType(Array.from(keys)[0] as string)}
             classNames={{
-              trigger: "bg-background"
+              trigger: 'bg-background',
             }}
           >
-            {LINK_TYPES.map((type) => (
+            {LINK_TYPES.map(type => (
               <SelectItem key={type.key}>
                 <div>
                   <div className="font-medium">{type.label}</div>
@@ -142,14 +144,14 @@ export default function WorkoutLinkSelector({
                 <p className="text-small text-default-400">Try adjusting your search</p>
               </div>
             ) : (
-              groupedWorkouts.map((workout) => (
-                <Card 
+              groupedWorkouts.map(workout => (
+                <Card
                   key={workout.id}
                   isPressable
                   onPress={() => setSelectedWorkout(workout)}
                   className={`transition-all duration-200 cursor-pointer ${
-                    selectedWorkout?.id === workout.id 
-                      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950' 
+                    selectedWorkout?.id === workout.id
+                      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950'
                       : 'hover:bg-default-50 dark:hover:bg-default-900'
                   }`}
                 >
@@ -161,15 +163,15 @@ export default function WorkoutLinkSelector({
                           <span className="text-small font-medium">
                             {new Date(workout.date || '').toLocaleDateString()}
                           </span>
-                          <Chip 
-                            size="sm" 
+                          <Chip
+                            size="sm"
                             color={getWorkoutStatusColor(workout.status || 'planned')}
                             variant="flat"
                           >
                             {workout.status || 'planned'}
                           </Chip>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="font-medium text-foreground">
                             {workout.planned_type || 'Training Run'}
@@ -198,14 +200,11 @@ export default function WorkoutLinkSelector({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button 
-            variant="light" 
-            onPress={handleClose}
-          >
+          <Button variant="light" onPress={handleClose}>
             Cancel
           </Button>
-          <Button 
-            color="primary" 
+          <Button
+            color="primary"
             onPress={handleSelectWorkout}
             isDisabled={!selectedWorkout}
             startContent={<Link2 className="h-4 w-4" />}

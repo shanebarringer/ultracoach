@@ -1,8 +1,13 @@
 ignoredBuiltDependencies:
   - better-sqlite3
+  - prisma
 
 onlyBuiltDependencies:
+  - '@heroui/shared-utils'
+  - '@prisma/client'
+  - '@prisma/engines'
   - '@tailwindcss/oxide'
   - bcrypt
+  - esbuild
   - sharp
   - unrs-resolver

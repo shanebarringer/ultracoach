@@ -1,8 +1,10 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { themeModeAtom } from '@/lib/atoms'
+
 import { useEffect } from 'react'
+
+import { themeModeAtom } from '@/lib/atoms'
 
 export function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const [themeMode] = useAtom(themeModeAtom)

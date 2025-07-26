@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -53,13 +54,15 @@ export async function GET(request: NextRequest) {
         conversationMap.set(partnerId, {
           user: partner,
           lastMessage: message,
-          unreadCount: 0
+          unreadCount: 0,
         })
       }
       const conversation = conversationMap.get(partnerId)
       // Update last message if this message is more recent
-      if (!conversation.lastMessage || 
-          new Date(message.created_at) > new Date(conversation.lastMessage.created_at)) {
+      if (
+        !conversation.lastMessage ||
+        new Date(message.created_at) > new Date(conversation.lastMessage.created_at)
+      ) {
         conversation.lastMessage = message
       }
       // Count unread messages (messages sent to current user that are unread)
@@ -68,13 +71,14 @@ export async function GET(request: NextRequest) {
       }
     })
     // Convert to array and sort by last message time
-    const conversations = Array.from(conversationMap.values())
-      .sort((a, b) => {
-        if (!a.lastMessage && !b.lastMessage) return 0
-        if (!a.lastMessage) return 1
-        if (!b.lastMessage) return -1
-        return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
-      })
+    const conversations = Array.from(conversationMap.values()).sort((a, b) => {
+      if (!a.lastMessage && !b.lastMessage) return 0
+      if (!a.lastMessage) return 1
+      if (!b.lastMessage) return -1
+      return (
+        new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime()
+      )
+    })
     return NextResponse.json({ conversations })
   } catch (error) {
     console.error('API error in GET /conversations', error)

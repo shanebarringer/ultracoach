@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react'
-import type { MessageWithUser } from '@/lib/supabase'
-import WorkoutContext from './WorkoutContext'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { createLogger } from '@/lib/logger'
+import type { MessageWithUser } from '@/lib/supabase'
+
+import WorkoutContext from './WorkoutContext'
 
 const logger = createLogger('MessageList')
 
@@ -23,14 +25,15 @@ const formatTime = (dateString: string) => {
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     })
-  } else if (diffInHours < 168) { // Less than a week
+  } else if (diffInHours < 168) {
+    // Less than a week
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     })
   } else {
     return date.toLocaleDateString('en-US', {
@@ -38,14 +41,14 @@ const formatTime = (dateString: string) => {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     })
   }
 }
 
 const groupMessagesByDate = (messages: MessageWithUser[]) => {
   const groups: { [key: string]: MessageWithUser[] } = {}
-  
+
   messages.forEach(message => {
     const date = new Date(message.created_at).toDateString()
     if (!groups[date]) {
@@ -53,7 +56,7 @@ const groupMessagesByDate = (messages: MessageWithUser[]) => {
     }
     groups[date].push(message)
   })
-  
+
   return groups
 }
 
@@ -61,7 +64,7 @@ const formatDateHeader = (dateString: string) => {
   const date = new Date(dateString)
   const today = new Date().toDateString()
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString()
-  
+
   if (dateString === today) {
     return 'Today'
   } else if (dateString === yesterday) {
@@ -70,7 +73,7 @@ const formatDateHeader = (dateString: string) => {
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     })
   }
 }
@@ -91,7 +94,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
       requestAnimationFrame(() => {
         container.scrollTo({
           top: container.scrollHeight,
-          behavior: 'smooth'
+          behavior: 'smooth',
         })
       })
     }
@@ -100,18 +103,19 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
   const handleScroll = useCallback(() => {
     const container = containerRef.current
     if (container) {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 50
       setShowScrollButton(!isNearBottom && messages.length > 0)
-      
+
       // If user scrolls up significantly, they are actively browsing
       if (!isNearBottom) {
         setIsUserScrolling(true)
-        
+
         // Clear existing timeout
         if (scrollTimeoutRef.current) {
           clearTimeout(scrollTimeoutRef.current)
         }
-        
+
         // Reset user scrolling state after 3 seconds of no scrolling
         scrollTimeoutRef.current = setTimeout(() => {
           setIsUserScrolling(false)
@@ -128,12 +132,13 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
   useEffect(() => {
     const container = containerRef.current
     if (container && messages.length > 0) {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 50
       const isInitialLoad = lastMessageCount === 0 && messages.length > 0
       const isNewMessage = messages.length > lastMessageCount
       const lastMessage = messages[messages.length - 1]
       const isMyMessage = lastMessage && lastMessage.sender_id === currentUserId
-      
+
       // Auto-scroll only in these cases:
       // 1. Initial load of messages
       // 2. User is near bottom and a new message arrives (and not actively scrolling)
@@ -142,7 +147,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
         // Small delay to ensure DOM has updated
         setTimeout(() => scrollToBottom(), 50)
       }
-      
+
       setLastMessageCount(messages.length)
     }
   }, [messages, currentUserId, lastMessageCount, isUserScrolling, scrollToBottom])
@@ -171,8 +176,18 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No messages yet</h3>
           <p className="mt-1 text-sm text-gray-500">Start the conversation by sending a message.</p>
@@ -183,10 +198,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
 
   return (
     <div className="flex-1 relative flex flex-col min-h-0">
-      <div 
-        ref={containerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-      >
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {Object.entries(messageGroups).map(([date, dayMessages]) => (
           <div key={date}>
             <div className="flex justify-center mb-4">
@@ -194,17 +206,19 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                 {formatDateHeader(date)}
               </span>
             </div>
-            
+
             <div className="space-y-2">
-              {dayMessages.map((message) => {
+              {dayMessages.map(message => {
                 const isOwnMessage = message.sender_id === currentUserId
-                
+
                 return (
                   <div
                     key={message.id}
                     className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'order-1' : 'order-2'}`}>
+                    <div
+                      className={`max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'order-1' : 'order-2'}`}
+                    >
                       <div
                         className={`px-4 py-2 rounded-lg text-base font-normal ${
                           isOwnMessage
@@ -217,27 +231,26 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                             {message.sender.full_name}
                           </div>
                         )}
-                        <div className="whitespace-pre-wrap break-words">
-                          {message.content}
-                        </div>
-                        
+                        <div className="whitespace-pre-wrap break-words">{message.content}</div>
+
                         {/* Workout context */}
-                        {message.workout_id && (() => {
-                          const workout = workouts.find(w => w.id === message.workout_id)
-                          if (workout) {
-                            return (
-                              <div className="mt-2">
-                                <WorkoutContext
-                                  workout={workout}
-                                  linkType={'reference'}
-                                  className="text-xs"
-                                />
-                              </div>
-                            )
-                          }
-                          return null
-                        })()}
-                        
+                        {message.workout_id &&
+                          (() => {
+                            const workout = workouts.find(w => w.id === message.workout_id)
+                            if (workout) {
+                              return (
+                                <div className="mt-2">
+                                  <WorkoutContext
+                                    workout={workout}
+                                    linkType={'reference'}
+                                    className="text-xs"
+                                  />
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
+
                         <div
                           className={`text-xs mt-1 flex items-center justify-between ${
                             isOwnMessage ? 'text-blue-100' : 'text-gray-500'
@@ -248,16 +261,40 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                             <div className="flex items-center ml-2">
                               {message.read ? (
                                 <div className="flex">
-                                  <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  <svg
+                                    className="w-3 h-3 text-blue-200"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
                                   </svg>
-                                  <svg className="w-3 h-3 text-blue-200 -ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  <svg
+                                    className="w-3 h-3 text-blue-200 -ml-1"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
                                   </svg>
                                 </div>
                               ) : (
-                                <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                <svg
+                                  className="w-3 h-3 text-blue-200"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               )}
                             </div>
@@ -281,7 +318,12 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
           aria-label="Scroll to bottom"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
           </svg>
         </button>
       )}
@@ -296,10 +338,11 @@ export default memo(MessageList, (prevProps, nextProps) => {
   return (
     prevProps.currentUserId === nextProps.currentUserId &&
     prevProps.messages.length === nextProps.messages.length &&
-    prevProps.messages.every((msg, index) => 
-      msg.id === nextProps.messages[index]?.id &&
-      msg.content === nextProps.messages[index]?.content &&
-      msg.read === nextProps.messages[index]?.read
+    prevProps.messages.every(
+      (msg, index) =>
+        msg.id === nextProps.messages[index]?.id &&
+        msg.content === nextProps.messages[index]?.content &&
+        msg.read === nextProps.messages[index]?.read
     )
   )
 })

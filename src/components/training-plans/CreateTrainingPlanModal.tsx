@@ -1,20 +1,36 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useAtom } from 'jotai'
-import { useForm, Controller } from 'react-hook-form'
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
+  Textarea,
+} from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useAtom } from 'jotai'
 import { z } from 'zod'
-import { createTrainingPlanFormAtom, racesAtom, planTemplatesAtom } from '@/lib/atoms'
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
-import type { PlanTemplate, Race } from '@/lib/supabase'
+
+import { useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+
+import { createTrainingPlanFormAtom, planTemplatesAtom, racesAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import type { PlanTemplate, Race } from '@/lib/supabase'
 
 const logger = createLogger('CreateTrainingPlanModal')
 
 // Zod schema for form validation
 const createTrainingPlanSchema = z.object({
-  title: z.string().min(1, 'Plan title is required').max(100, 'Title must be less than 100 characters'),
+  title: z
+    .string()
+    .min(1, 'Plan title is required')
+    .max(100, 'Title must be less than 100 characters'),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   runnerEmail: z.string().email('Please enter a valid email address'),
   race_id: z.string().nullable(),
@@ -36,7 +52,7 @@ interface CreateTrainingPlanModalProps {
 export default function CreateTrainingPlanModal({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
 }: CreateTrainingPlanModalProps) {
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
@@ -49,7 +65,7 @@ export default function CreateTrainingPlanModal({
     reset,
     setValue,
     watch,
-    formState: { isSubmitting }
+    formState: { isSubmitting },
   } = useForm<CreateTrainingPlanForm>({
     resolver: zodResolver(createTrainingPlanSchema),
     defaultValues: {
@@ -62,7 +78,7 @@ export default function CreateTrainingPlanModal({
       targetRaceDate: '',
       targetRaceDistance: '',
       template_id: null,
-    }
+    },
   })
 
   // Watch all form values for conditional rendering
@@ -145,18 +161,18 @@ export default function CreateTrainingPlanModal({
       } else {
         const errorData = await response.json()
         logger.error('Failed to create training plan:', errorData)
-        setFormState(prev => ({ 
-          ...prev, 
+        setFormState(prev => ({
+          ...prev,
           loading: false,
-          error: errorData.error || 'Failed to create training plan'
+          error: errorData.error || 'Failed to create training plan',
         }))
       }
     } catch (error) {
       logger.error('Error creating training plan:', error)
-      setFormState(prev => ({ 
-        ...prev, 
+      setFormState(prev => ({
+        ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.'
+        error: 'An error occurred. Please try again.',
       }))
     }
   }
@@ -180,18 +196,22 @@ export default function CreateTrainingPlanModal({
                 <Select
                   label="Select Template (Optional)"
                   selectedKeys={field.value ? [field.value] : []}
-                  onSelectionChange={(keys) => {
-                    const selectedTemplateId = Array.from(keys).join('');
-                    field.onChange(selectedTemplateId || null);
-                    setValue('template_id', selectedTemplateId || null);
-                    handleTemplateSelect(selectedTemplateId);
+                  onSelectionChange={keys => {
+                    const selectedTemplateId = Array.from(keys).join('')
+                    field.onChange(selectedTemplateId || null)
+                    setValue('template_id', selectedTemplateId || null)
+                    handleTemplateSelect(selectedTemplateId)
                   }}
                   placeholder="Choose a plan template..."
                   items={[{ id: '', name: 'Start from scratch' }, ...planTemplates]}
                 >
-                  {(item) => (
+                  {item => (
                     <SelectItem key={item.id}>
-                      {item.name} {item.id !== '' && (item as PlanTemplate).distance_category && (item as PlanTemplate).difficulty_level && `(${(item as PlanTemplate).distance_category} - ${(item as PlanTemplate).difficulty_level})`}
+                      {item.name}{' '}
+                      {item.id !== '' &&
+                        (item as PlanTemplate).distance_category &&
+                        (item as PlanTemplate).difficulty_level &&
+                        `(${(item as PlanTemplate).distance_category} - ${(item as PlanTemplate).difficulty_level})`}
                     </SelectItem>
                   )}
                 </Select>
@@ -249,9 +269,14 @@ export default function CreateTrainingPlanModal({
               label="Plan Type"
               name="plan_type"
               selectedKeys={formData.plan_type ? [formData.plan_type] : []}
-              onSelectionChange={(keys) => {
-                const selectedPlanType = Array.from(keys).join('') as 'race_specific' | 'base_building' | 'bridge' | 'recovery' | '';
-                setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType);
+              onSelectionChange={keys => {
+                const selectedPlanType = Array.from(keys).join('') as
+                  | 'race_specific'
+                  | 'base_building'
+                  | 'bridge'
+                  | 'recovery'
+                  | ''
+                setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType)
               }}
               placeholder="Select plan type..."
             >
@@ -265,16 +290,19 @@ export default function CreateTrainingPlanModal({
               label="Target Race (Optional)"
               name="race_id"
               selectedKeys={formData.race_id ? [formData.race_id] : []}
-              onSelectionChange={(keys) => {
-                const selectedRaceId = Array.from(keys).join('');
-                setValue('race_id', selectedRaceId === '' ? null : selectedRaceId);
+              onSelectionChange={keys => {
+                const selectedRaceId = Array.from(keys).join('')
+                setValue('race_id', selectedRaceId === '' ? null : selectedRaceId)
               }}
               placeholder="Select a target race..."
               items={[{ id: '', name: 'No specific race' }, ...races]}
             >
-              {(item) => (
+              {item => (
                 <SelectItem key={item.id}>
-                  {item.name} {item.id !== '' && (item as Race).date && `(${new Date((item as Race).date).toLocaleDateString()})`}
+                  {item.name}{' '}
+                  {item.id !== '' &&
+                    (item as Race).date &&
+                    `(${new Date((item as Race).date).toLocaleDateString()})`}
                 </SelectItem>
               )}
             </Select>
@@ -284,11 +312,7 @@ export default function CreateTrainingPlanModal({
                 name="targetRaceDate"
                 control={control}
                 render={({ field }) => (
-                  <Input
-                    type="date"
-                    label="Target Race Date (Optional)"
-                    {...field}
-                  />
+                  <Input type="date" label="Target Race Date (Optional)" {...field} />
                 )}
               />
             )}
@@ -298,9 +322,9 @@ export default function CreateTrainingPlanModal({
                 label="Target Race Distance (Optional)"
                 name="targetRaceDistance"
                 selectedKeys={formData.targetRaceDistance ? [formData.targetRaceDistance] : []}
-                onSelectionChange={(keys) => {
-                  const selectedDistance = Array.from(keys).join('');
-                  setValue('targetRaceDistance', selectedDistance);
+                onSelectionChange={keys => {
+                  const selectedDistance = Array.from(keys).join('')
+                  setValue('targetRaceDistance', selectedDistance)
                 }}
                 placeholder="Select distance..."
                 items={[
@@ -312,11 +336,7 @@ export default function CreateTrainingPlanModal({
                   { id: 'Other', name: 'Other' },
                 ]}
               >
-                {(item) => (
-                  <SelectItem key={item.id}>
-                    {item.name}
-                  </SelectItem>
-                )}
+                {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
               </Select>
             )}
 
@@ -324,9 +344,13 @@ export default function CreateTrainingPlanModal({
               label="Goal Type (Optional)"
               name="goal_type"
               selectedKeys={formData.goal_type ? [formData.goal_type] : []}
-              onSelectionChange={(keys) => {
-                const selectedGoalType = Array.from(keys).join('') as 'completion' | 'time' | 'placement' | '';
-                setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType);
+              onSelectionChange={keys => {
+                const selectedGoalType = Array.from(keys).join('') as
+                  | 'completion'
+                  | 'time'
+                  | 'placement'
+                  | ''
+                setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType)
               }}
               placeholder="Select goal type..."
               items={[
@@ -336,20 +360,15 @@ export default function CreateTrainingPlanModal({
                 { id: 'placement', name: 'Placement Goal' },
               ]}
             >
-              {(item) => (
-                <SelectItem key={item.id}>
-                  {item.name}
-                </SelectItem>
-              )}
+              {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
             </Select>
-
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
-              {(isSubmitting || formState.loading) ? 'Creating...' : 'Create Plan'}
+              {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
             </Button>
           </ModalFooter>
         </form>

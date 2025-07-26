@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api-training-plans')
 
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest) {
     if (!session?.user || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { title, description, runnerEmail, targetRaceDate, targetRaceDistance } = await request.json()
+    const { title, description, runnerEmail, targetRaceDate, targetRaceDistance } =
+      await request.json()
     if (!title || !runnerEmail) {
       return NextResponse.json({ error: 'Title and runner email are required' }, { status: 400 })
     }

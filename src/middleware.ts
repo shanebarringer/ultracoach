@@ -1,23 +1,20 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   // Allow public routes
   const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth', '/']
-  
-  const isPublicRoute = publicRoutes.some(route => 
-    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
+
+  const isPublicRoute = publicRoutes.some(
+    route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
   )
-  
+
   if (isPublicRoute) {
     return NextResponse.next()
   }
-  
+
   // Allow static files
-  if (
-    request.nextUrl.pathname.startsWith('/_next') ||
-    request.nextUrl.pathname.includes('.')
-  ) {
+  if (request.nextUrl.pathname.startsWith('/_next') || request.nextUrl.pathname.includes('.')) {
     return NextResponse.next()
   }
 
@@ -29,11 +26,11 @@ export async function middleware(request: NextRequest) {
   // For dashboard routes, check for session cookie
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     const sessionCookie = request.cookies.get('better-auth.session_token')
-    
+
     if (!sessionCookie) {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
-    
+
     return NextResponse.next()
   }
 
@@ -51,6 +48,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.).*)",
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.).*)',
   ],
 }

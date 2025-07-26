@@ -1,14 +1,15 @@
-import React, { Suspense } from 'react'
 import { Spinner } from '@heroui/react'
+
+import React, { Suspense } from 'react'
 
 interface SuspenseWrapperProps {
   children: React.ReactNode
   loadingMessage?: string
 }
 
-export default function SuspenseWrapper({ 
-  children, 
-  loadingMessage = "Loading your training journey..."
+export default function SuspenseWrapper({
+  children,
+  loadingMessage = 'Loading your training journey...',
 }: SuspenseWrapperProps) {
   const fallback = (
     <div className="flex justify-center items-center h-64">
@@ -16,9 +17,5 @@ export default function SuspenseWrapper({
     </div>
   )
 
-  return (
-    <Suspense fallback={fallback}>
-      {children}
-    </Suspense>
-  )
+  return <Suspense fallback={fallback}>{children}</Suspense>
 }

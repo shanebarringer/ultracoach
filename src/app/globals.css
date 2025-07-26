@@ -15,7 +15,7 @@
     --alpine-blue-700: #0369a1;
     --alpine-blue-800: #075985;
     --alpine-blue-900: #0c4a6e;
-    
+
     --summit-gold-50: #fffbeb;
     --summit-gold-100: #fef3c7;
     --summit-gold-200: #fde68a;
@@ -24,7 +24,7 @@
     --summit-gold-500: #f59e0b;
     --summit-gold-600: #d97706;
     --summit-gold-700: #b45309;
-    
+
     --granite-50: #f8fafc;
     --granite-100: #f1f5f9;
     --granite-200: #e2e8f0;
@@ -35,17 +35,17 @@
     --granite-700: #334155;
     --granite-800: #1e293b;
     --granite-900: #0f172a;
-    
+
     /* Training Zone Colors */
     --zone-recovery: #059669;
     --zone-aerobic: #0ea5e9;
     --zone-tempo: #f59e0b;
     --zone-threshold: #ef4444;
     --zone-vo2max: #8b5cf6;
-    
+
     /* Enhanced Shadows */
     --shadow-mountain: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
-    
+
     /* Light Theme Variables */
     --bg-primary: var(--granite-50);
     --bg-secondary: #ffffff;
@@ -59,12 +59,12 @@
     --primary-hover: var(--alpine-blue-700);
     --secondary: var(--summit-gold-400);
     --secondary-hover: var(--summit-gold-500);
-    
+
     /* Base theme colors */
     --background: var(--bg-primary);
     --foreground: var(--text-primary);
   }
-  
+
   .dark {
     --bg-primary: var(--granite-900);
     --bg-secondary: var(--granite-800);
@@ -78,7 +78,7 @@
     --primary-hover: var(--alpine-blue-300);
     --secondary: var(--summit-gold-400);
     --secondary-hover: var(--summit-gold-300);
-    
+
     --background: var(--bg-primary);
     --foreground: var(--text-primary);
   }
@@ -88,7 +88,9 @@
     color: var(--foreground);
     font-family: 'Inter', var(--font-geist-sans), sans-serif;
     font-weight: 400;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
 }
 
@@ -97,7 +99,7 @@
   .mountain-gradient {
     background: linear-gradient(135deg, var(--alpine-blue-600), var(--summit-gold-400));
   }
-  
+
   .metric-card-mountain {
     @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6;
     @apply hover:shadow-lg hover:-translate-y-1 transition-all duration-300;
@@ -108,23 +110,23 @@
   .zone-indicator {
     @apply inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wide;
   }
-  
+
   .zone-1 {
     @apply bg-success/10 text-success border border-success/20;
   }
-  
+
   .zone-2 {
     @apply bg-primary/10 text-primary border border-primary/20;
   }
-  
+
   .zone-3 {
     @apply bg-warning/10 text-warning border border-warning/20;
   }
-  
+
   .zone-4 {
     @apply bg-danger/10 text-danger border border-danger/20;
   }
-  
+
   .zone-5 {
     @apply bg-secondary/10 text-secondary border border-secondary/20;
   }
@@ -133,16 +135,20 @@
   .progress-mountain {
     @apply relative overflow-hidden;
   }
-  
+
   .progress-mountain::after {
     content: '';
     @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
     animation: shimmer 2s infinite;
   }
-  
+
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 
   /* Metric Cards with Mountain styling */
@@ -150,24 +156,24 @@
     @apply bg-background border border-divider rounded-xl p-6 relative overflow-hidden;
     @apply hover:shadow-lg hover:-translate-y-1 transition-all duration-300;
   }
-  
+
   .metric-card-enhanced::before {
     content: '';
     @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary;
   }
-  
+
   .metric-card-enhanced.primary::before {
     @apply bg-primary;
   }
-  
+
   .metric-card-enhanced.secondary::before {
     @apply bg-secondary;
   }
-  
+
   .metric-card-enhanced.success::before {
     @apply bg-success;
   }
-  
+
   .metric-card-enhanced.warning::before {
     @apply bg-warning;
   }

@@ -1,15 +1,18 @@
 # Database Schema Migration Plan: Better Auth IDs
 
 ## Overview
+
 Migrate from hybrid authentication system to use Better Auth IDs directly throughout the database, eliminating the user mapping complexity.
 
 ## Current State
+
 - **Primary Users Table**: `users` (text IDs, original UUIDs)
 - **Better Auth Table**: `better_auth_users` (text IDs, Better Auth format)
 - **Mapping System**: Runtime mapping between the two ID formats
 - **Performance Impact**: Every request requires ID mapping lookup
 
 ## Target State
+
 - **Single Users Table**: `better_auth_users` becomes the primary user table
 - **Direct References**: All foreign keys reference `better_auth_users.id` directly
 - **No Mapping**: Eliminate user mapping system entirely
@@ -18,6 +21,7 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
 ## Migration Steps
 
 ### Phase 1: Preparation & Backup
+
 1. **Data Backup**
    - Export current user mappings
    - Backup all existing data
@@ -29,6 +33,7 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
    - Plan migration sequence
 
 ### Phase 2: Schema Migration
+
 1. **Update Schema File**
    - Change all `users.id` references to `better_auth_users.id`
    - Update foreign key constraints
@@ -37,11 +42,12 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
 2. **Tables to Update**
    - `training_plans`: coach_id, runner_id
    - `messages`: sender_id, recipient_id
-   - `notifications`: user_id  
+   - `notifications`: user_id
    - `conversations`: coach_id, runner_id
    - Any other tables with user references
 
 ### Phase 3: Data Migration
+
 1. **User Data Consolidation**
    - Migrate essential user data from `users` to `better_auth_users`
    - Update all foreign key references
@@ -54,6 +60,7 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
    - Update conversations with Better Auth IDs
 
 ### Phase 4: Code Updates
+
 1. **Remove Mapping System**
    - Delete `src/lib/user-mapping.ts`
    - Update `src/lib/server-auth.ts`
@@ -70,6 +77,7 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
    - Test all authentication flows
 
 ### Phase 5: Cleanup
+
 1. **Remove Old System**
    - Drop `users` table
    - Remove mapping-related code
@@ -81,18 +89,21 @@ Migrate from hybrid authentication system to use Better Auth IDs directly throug
    - Performance testing
 
 ## Risk Mitigation
+
 - **Rollback Plan**: Complete backup and rollback scripts
 - **Testing**: Comprehensive testing in development environment
 - **Staging**: Deploy to staging environment first
 - **Monitoring**: Monitor for issues during migration
 
 ## Benefits
+
 - **Simplified Architecture**: Single source of truth for users
 - **Improved Performance**: No mapping overhead
 - **Better Maintainability**: Less complex codebase
 - **Future-Proof**: Clean foundation for future development
 
 ## Timeline
+
 - **Phase 1**: 1-2 hours (Preparation)
 - **Phase 2**: 2-3 hours (Schema Migration)
 - **Phase 3**: 2-3 hours (Data Migration)

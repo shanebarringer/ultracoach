@@ -1,11 +1,13 @@
 'use client'
 
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import Layout from '@/components/layout/Layout'
+
+import { useRouter } from 'next/navigation'
+
 import RunnerDashboard from '@/components/dashboard/RunnerDashboard'
+import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { useSession } from '@/hooks/useBetterSession'
 
 export default function RunnerDashboardPage() {
   const { data: session, status } = useSession()
@@ -13,7 +15,7 @@ export default function RunnerDashboardPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return

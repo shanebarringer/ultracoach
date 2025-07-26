@@ -1,9 +1,12 @@
 'use client'
 
+import { Button, Card, CardBody, Chip } from '@heroui/react'
+import { AlertTriangleIcon, HomeIcon, RefreshCwIcon } from 'lucide-react'
+
 import React from 'react'
-import { Card, CardBody, Button, Chip } from '@heroui/react'
-import { AlertTriangleIcon, RefreshCwIcon, HomeIcon } from 'lucide-react'
+
 import { useRouter } from 'next/navigation'
+
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('ModernErrorBoundary')
@@ -17,7 +20,7 @@ interface ModernErrorBoundaryState {
 
 interface ModernErrorBoundaryProps {
   children: React.ReactNode
-  fallback?: React.ComponentType<{ 
+  fallback?: React.ComponentType<{
     error?: Error
     errorInfo?: React.ErrorInfo
     retry?: () => void
@@ -28,13 +31,13 @@ interface ModernErrorBoundaryProps {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void
 }
 
-const DefaultErrorFallback = ({ 
-  error, 
-  errorInfo, 
-  retry, 
-  resetError, 
-  retryCount = 0 
-}: { 
+const DefaultErrorFallback = ({
+  error,
+  errorInfo,
+  retry,
+  resetError,
+  retryCount = 0,
+}: {
   error?: Error
   errorInfo?: React.ErrorInfo
   retry?: () => void
@@ -52,14 +55,12 @@ const DefaultErrorFallback = ({
         <div className="flex justify-center">
           <AlertTriangleIcon className="h-16 w-16 text-danger" />
         </div>
-        
+
         <div className="space-y-3">
-          <h3 className="text-xl font-semibold text-foreground">
-            Something went wrong
-          </h3>
-          
+          <h3 className="text-xl font-semibold text-foreground">Something went wrong</h3>
+
           <p className="text-foreground-600 max-w-md mx-auto">
-            {error?.message || 'An unexpected error occurred. We\'re working to fix this.'}
+            {error?.message || "An unexpected error occurred. We're working to fix this."}
           </p>
 
           {retryCount > 0 && (
@@ -80,7 +81,7 @@ const DefaultErrorFallback = ({
               Try Again
             </Button>
           )}
-          
+
           <Button
             variant="light"
             startContent={<HomeIcon className="w-4 h-4" />}
@@ -90,11 +91,7 @@ const DefaultErrorFallback = ({
           </Button>
 
           {resetError && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={resetError}
-            >
+            <Button variant="ghost" size="sm" onPress={resetError}>
               Reset
             </Button>
           )}
@@ -102,9 +99,7 @@ const DefaultErrorFallback = ({
 
         {isDevelopment && error && (
           <details className="text-left bg-default-100 p-4 rounded-lg mt-6">
-            <summary className="cursor-pointer font-medium text-sm mb-2">
-              Debug Information
-            </summary>
+            <summary className="cursor-pointer font-medium text-sm mb-2">Debug Information</summary>
             <div className="space-y-2 text-xs font-mono">
               <div>
                 <strong>Error:</strong> {error.name}: {error.message}
@@ -134,16 +129,16 @@ const DefaultErrorFallback = ({
 }
 
 export class ModernErrorBoundary extends React.Component<
-  ModernErrorBoundaryProps, 
+  ModernErrorBoundaryProps,
   ModernErrorBoundaryState
 > {
   private retryTimeoutId: NodeJS.Timeout | null = null
 
   constructor(props: ModernErrorBoundaryProps) {
     super(props)
-    this.state = { 
-      hasError: false, 
-      retryCount: 0 
+    this.state = {
+      hasError: false,
+      retryCount: 0,
     }
   }
 
@@ -153,7 +148,7 @@ export class ModernErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ errorInfo })
-    
+
     // Log error with structured logging
     logger.error('Error boundary caught error:', {
       error: error.message,
@@ -169,7 +164,7 @@ export class ModernErrorBoundary extends React.Component<
     if (typeof window !== 'undefined' && 'gtag' in window) {
       // Example: Google Analytics error tracking
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).gtag('event', 'exception', {
+      ;(window as any).gtag('event', 'exception', {
         description: error.message,
         fatal: false,
       })
@@ -193,11 +188,11 @@ export class ModernErrorBoundary extends React.Component<
 
     logger.info('Retrying after error', { retryCount: newRetryCount })
 
-    this.setState({ 
-      hasError: false, 
-      error: undefined, 
+    this.setState({
+      hasError: false,
+      error: undefined,
       errorInfo: undefined,
-      retryCount: newRetryCount 
+      retryCount: newRetryCount,
     })
 
     // Optional: Add exponential backoff for retries
@@ -209,11 +204,11 @@ export class ModernErrorBoundary extends React.Component<
   }
 
   handleResetError = () => {
-    this.setState({ 
-      hasError: false, 
-      error: undefined, 
-      errorInfo: undefined, 
-      retryCount: 0 
+    this.setState({
+      hasError: false,
+      error: undefined,
+      errorInfo: undefined,
+      retryCount: 0,
     })
   }
 
@@ -221,7 +216,7 @@ export class ModernErrorBoundary extends React.Component<
     if (this.state.hasError) {
       const FallbackComponent = this.props.fallback || DefaultErrorFallback
       return (
-        <FallbackComponent 
+        <FallbackComponent
           error={this.state.error}
           errorInfo={this.state.errorInfo}
           retry={this.handleRetry}

@@ -1,29 +1,27 @@
 'use client'
 
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
-import { useParams } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
-import { 
-  Card, 
-  CardHeader, 
-  Button, 
-  Spinner, 
+import {
+  Button,
+  Card,
+  CardHeader,
   Modal,
+  ModalBody,
   ModalContent,
   ModalHeader,
-  ModalBody,
-  useDisclosure
+  Spinner,
+  useDisclosure,
 } from '@heroui/react'
-import { 
-  MessageCircleIcon, 
-  MenuIcon, 
-  MountainSnowIcon,
-  ArrowLeftIcon
-} from 'lucide-react'
-import Layout from '@/components/layout/Layout'
-import ConversationList from '@/components/chat/ConversationList'
+import { ArrowLeftIcon, MenuIcon, MessageCircleIcon, MountainSnowIcon } from 'lucide-react'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+
 import ChatWindow from '@/components/chat/ChatWindow'
+import ConversationList from '@/components/chat/ConversationList'
+import Layout from '@/components/layout/Layout'
+import { useSession } from '@/hooks/useBetterSession'
 import type { User } from '@/lib/supabase'
 
 export default function ChatUserPage() {
@@ -41,7 +39,7 @@ export default function ChatUserPage() {
 
     try {
       const response = await fetch(`/api/users/${userId}`)
-      
+
       if (!response.ok) {
         console.error('Error fetching recipient:', response.statusText)
         router.push('/chat')
@@ -60,7 +58,7 @@ export default function ChatUserPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
@@ -87,12 +85,7 @@ export default function ChatUserPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Mobile Conversations Modal */}
-        <Modal 
-          isOpen={isOpen} 
-          onClose={onClose}
-          size="md"
-          className="md:hidden"
-        >
+        <Modal isOpen={isOpen} onClose={onClose} size="md" className="md:hidden">
           <ModalContent>
             <ModalHeader className="flex items-center gap-2">
               <MessageCircleIcon className="w-5 h-5 text-primary" />
@@ -116,10 +109,9 @@ export default function ChatUserPage() {
                       🏔️ Base Camp Communications
                     </h1>
                     <p className="text-sm text-foreground-600 mt-1">
-                      {session.user.role === 'coach' 
+                      {session.user.role === 'coach'
                         ? 'Guide your expedition team'
-                        : 'Connect with your mountain guide'
-                      }
+                        : 'Connect with your mountain guide'}
                     </p>
                   </div>
                 </div>
@@ -133,12 +125,7 @@ export default function ChatUserPage() {
             <div className="flex-1 flex flex-col min-h-0">
               {/* Mobile Header with Sidebar Toggle */}
               <div className="md:hidden flex items-center px-4 py-3 border-b border-divider bg-gradient-to-r from-primary/10 to-secondary/10">
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={onOpen}
-                  className="mr-3"
-                >
+                <Button isIconOnly variant="light" onPress={onOpen} className="mr-3">
                   <MenuIcon className="w-5 h-5" />
                 </Button>
                 <Button

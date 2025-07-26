@@ -1,0 +1,8 @@
+2025-07-25 13:03:03 [INFO] Database Schema Validation Tool
+2025-07-25 13:03:03 [INFO] Verbose mode enabled
+2025-07-25 13:03:03 [INFO] Starting database schema validation...
+2025-07-25 13:03:03 [INFO] Checking core tables...
+2025-07-25 13:03:04 [ERROR] Query failed: SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'better_auth_users'
+    );

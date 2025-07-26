@@ -1,27 +1,22 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { 
-  Card, 
-  CardHeader, 
-  CardBody, 
-  Button, 
-  Chip, 
-  Spinner, 
-  Avatar 
-} from '@heroui/react'
-import { 
-  UsersIcon, 
-  MessageCircleIcon, 
-  MapPinIcon, 
-  TrendingUpIcon, 
+import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
+import {
+  FlagIcon,
+  MapPinIcon,
+  MessageCircleIcon,
   RouteIcon,
-  FlagIcon
+  TrendingUpIcon,
+  UsersIcon,
 } from 'lucide-react'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
 import Layout from '@/components/layout/Layout'
+import { useSession } from '@/hooks/useBetterSession'
 import type { User } from '@/lib/supabase'
 
 interface RunnerWithStats extends User {
@@ -43,7 +38,7 @@ export default function RunnersPage() {
 
     try {
       const response = await fetch('/api/runners')
-      
+
       if (!response.ok) {
         console.error('Failed to fetch runners:', response.statusText)
         return
@@ -60,7 +55,7 @@ export default function RunnersPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
@@ -121,8 +116,10 @@ export default function RunnersPage() {
                 </div>
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">No team members yet</h3>
-              <p className="text-foreground-600 mb-6">Start building your expedition team by creating training plans</p>
-              <Button 
+              <p className="text-foreground-600 mb-6">
+                Start building your expedition team by creating training plans
+              </p>
+              <Button
                 as={Link}
                 href="/training-plans"
                 color="primary"
@@ -135,7 +132,7 @@ export default function RunnersPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {runners.map((runner) => (
+            {runners.map(runner => (
               <Card
                 key={runner.id}
                 className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-secondary/60"
@@ -149,7 +146,9 @@ export default function RunnersPage() {
                       className="bg-gradient-to-br from-primary to-secondary text-white font-semibold"
                     />
                     <div className="ml-4">
-                      <h3 className="text-lg font-semibold text-foreground">{runner.full_name || 'User'}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {runner.full_name || 'User'}
+                      </h3>
                       <p className="text-sm text-foreground-600">{runner.email}</p>
                       <Chip size="sm" color="primary" variant="flat" className="mt-1">
                         🏃 Trail Runner
@@ -162,21 +161,27 @@ export default function RunnersPage() {
                     <div className="text-center">
                       <div className="flex flex-col items-center">
                         <RouteIcon className="w-5 h-5 text-primary mb-1" />
-                        <div className="text-2xl font-bold text-primary">{runner.stats?.trainingPlans || 0}</div>
+                        <div className="text-2xl font-bold text-primary">
+                          {runner.stats?.trainingPlans || 0}
+                        </div>
                         <div className="text-xs text-foreground-600">Expeditions</div>
                       </div>
                     </div>
                     <div className="text-center">
                       <div className="flex flex-col items-center">
                         <FlagIcon className="w-5 h-5 text-success mb-1" />
-                        <div className="text-2xl font-bold text-success">{runner.stats?.completedWorkouts || 0}</div>
+                        <div className="text-2xl font-bold text-success">
+                          {runner.stats?.completedWorkouts || 0}
+                        </div>
                         <div className="text-xs text-foreground-600">Summits</div>
                       </div>
                     </div>
                     <div className="text-center">
                       <div className="flex flex-col items-center">
                         <TrendingUpIcon className="w-5 h-5 text-warning mb-1" />
-                        <div className="text-2xl font-bold text-warning">{runner.stats?.upcomingWorkouts || 0}</div>
+                        <div className="text-2xl font-bold text-warning">
+                          {runner.stats?.upcomingWorkouts || 0}
+                        </div>
                         <div className="text-xs text-foreground-600">Ascents</div>
                       </div>
                     </div>

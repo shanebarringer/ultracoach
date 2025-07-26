@@ -1,9 +1,11 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useAtom } from 'jotai'
-import { Card, CardHeader, CardBody, Chip, Skeleton } from '@heroui/react'
 import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { Card, CardBody, CardHeader, Chip, Skeleton } from '@heroui/react'
+import { useAtom } from 'jotai'
+
+import { Suspense } from 'react'
+
 import { asyncWorkoutsAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
@@ -24,7 +26,7 @@ interface RecentActivityContentProps {
 
 function RecentActivityContent({ title, subtitle, limit }: RecentActivityContentProps) {
   const [workouts] = useAtom(asyncWorkoutsAtom)
-  
+
   // Filter to completed workouts and limit results
   const recentWorkouts = workouts
     .filter((workout: Workout) => workout.status === 'completed')
@@ -32,7 +34,10 @@ function RecentActivityContent({ title, subtitle, limit }: RecentActivityContent
     .slice(0, limit)
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="recent-activity-section">
+    <Card
+      className="hover:shadow-lg transition-shadow duration-300"
+      data-testid="recent-activity-section"
+    >
       <CardHeader>
         <div>
           <h3 className="text-xl font-semibold text-foreground">{title}</h3>
@@ -47,10 +52,15 @@ function RecentActivityContent({ title, subtitle, limit }: RecentActivityContent
         ) : (
           <div className="space-y-4">
             {recentWorkouts.map((workout: Workout) => (
-              <div key={workout.id} className="p-4 bg-content2 border-l-4 border-l-success rounded-lg">
+              <div
+                key={workout.id}
+                className="p-4 bg-content2 border-l-4 border-l-success rounded-lg"
+              >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-medium text-foreground">{workout.actual_type || workout.planned_type}</h4>
+                    <h4 className="font-medium text-foreground">
+                      {workout.actual_type || workout.planned_type}
+                    </h4>
                     <div className="flex items-center gap-4 text-sm text-foreground-600 mt-1">
                       <div className="flex items-center gap-1">
                         <CalendarDaysIcon className="w-4 h-4" />
@@ -69,11 +79,7 @@ function RecentActivityContent({ title, subtitle, limit }: RecentActivityContent
                       )}
                     </div>
                   </div>
-                  <Chip 
-                    color="success" 
-                    variant="dot" 
-                    size="sm"
-                  >
+                  <Chip color="success" variant="dot" size="sm">
                     Completed
                   </Chip>
                 </div>
@@ -120,17 +126,17 @@ const LoadingFallback = ({ title }: { title: string }) => (
   </Card>
 )
 
-export default function RecentActivity({ 
-  title = "Recent Peaks Conquered",
-  subtitle = "Latest summit achievements", 
+export default function RecentActivity({
+  title = 'Recent Peaks Conquered',
+  subtitle = 'Latest summit achievements',
   limit = 5,
   userRole = 'coach',
-  useSuspense = true 
+  useSuspense = true,
 }: RecentActivityProps) {
   if (useSuspense) {
     return (
       <Suspense fallback={<LoadingFallback title={title} />}>
-        <RecentActivityContent 
+        <RecentActivityContent
           title={title}
           subtitle={subtitle}
           limit={limit}

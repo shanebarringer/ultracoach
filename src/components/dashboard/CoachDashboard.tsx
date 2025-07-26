@@ -1,27 +1,25 @@
 'use client'
 
-import Link from 'next/link'
-import { memo, useMemo } from 'react'
-import { 
-  Card, 
-  CardHeader, 
-  CardBody,
-  Button,
-  Chip
-} from '@heroui/react'
-import { 
-  UsersIcon, 
-  CalendarDaysIcon, 
-  ChartBarIcon,
+import {
+  ArrowDownIcon,
   ArrowTrendingUpIcon,
   ArrowUpIcon,
-  ArrowDownIcon
+  CalendarDaysIcon,
+  ChartBarIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline'
-import { useDashboardData } from '@/hooks/useDashboardData'
-import RecentActivity from './RecentActivity'
-import type { TrainingPlan, User } from '@/lib/supabase'
+import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import classNames from 'classnames'
+
+import { memo, useMemo } from 'react'
+
+import Link from 'next/link'
+
+import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
+import type { TrainingPlan, User } from '@/lib/supabase'
+
+import RecentActivity from './RecentActivity'
 
 const logger = createLogger('CoachDashboard')
 
@@ -39,7 +37,14 @@ interface MetricCardProps {
   color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'default'
 }
 
-const MetricCard = memo(function MetricCard({ title, value, subtitle, icon: Icon, trend, color = 'primary' }: MetricCardProps) {
+const MetricCard = memo(function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  trend,
+  color = 'primary',
+}: MetricCardProps) {
   // Debug: Check if Icon is undefined
   if (!Icon) {
     logger.error('MetricCard: Icon is undefined for title:', title)
@@ -54,14 +59,17 @@ const MetricCard = memo(function MetricCard({ title, value, subtitle, icon: Icon
 
   const getTrendColor = () => {
     switch (trend?.direction) {
-      case 'up': return 'text-success'
-      case 'down': return 'text-danger'
-      default: return 'text-default-500'
+      case 'up':
+        return 'text-success'
+      case 'down':
+        return 'text-danger'
+      default:
+        return 'text-default-500'
     }
   }
 
-  const TrendIcon = trend?.direction === 'up' ? ArrowUpIcon : 
-                   trend?.direction === 'down' ? ArrowDownIcon : null
+  const TrendIcon =
+    trend?.direction === 'up' ? ArrowUpIcon : trend?.direction === 'down' ? ArrowDownIcon : null
 
   return (
     <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -72,46 +80,39 @@ const MetricCard = memo(function MetricCard({ title, value, subtitle, icon: Icon
               {title}
             </p>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-bold text-foreground">
-                {value}
-              </span>
-              {subtitle && (
-                <span className="text-lg text-foreground-500">{subtitle}</span>
-              )}
+              <span className="text-3xl font-bold text-foreground">{value}</span>
+              {subtitle && <span className="text-lg text-foreground-500">{subtitle}</span>}
             </div>
           </div>
-          <div className={classNames(
-            'p-3 rounded-lg',
-            {
+          <div
+            className={classNames('p-3 rounded-lg', {
               'bg-primary/10': color === 'primary',
               'bg-secondary/10': color === 'secondary',
               'bg-success/10': color === 'success',
               'bg-warning/10': color === 'warning',
               'bg-danger/10': color === 'danger',
-              'bg-default/10': !color || color === 'default'
-            }
-          )}>
-            <Icon className={classNames(
-              'w-6 h-6',
-              {
+              'bg-default/10': !color || color === 'default',
+            })}
+          >
+            <Icon
+              className={classNames('w-6 h-6', {
                 'text-primary': color === 'primary',
                 'text-secondary': color === 'secondary',
                 'text-success': color === 'success',
                 'text-warning': color === 'warning',
                 'text-danger': color === 'danger',
-                'text-default': !color || color === 'default'
-              }
-            )} />
+                'text-default': !color || color === 'default',
+              })}
+            />
           </div>
         </div>
-        
+
         {trend && (
           <div className="flex items-center gap-1">
-            {TrendIcon && (
-              <TrendIcon className={`w-4 h-4 ${getTrendColor()}`} />
-            )}
+            {TrendIcon && <TrendIcon className={`w-4 h-4 ${getTrendColor()}`} />}
             <span className={`text-sm font-medium ${getTrendColor()}`}>
-              {trend.value > 0 ? '+' : ''}{trend.value}%
+              {trend.value > 0 ? '+' : ''}
+              {trend.value}%
             </span>
             <span className="text-sm text-foreground-500">from last week</span>
           </div>
@@ -131,7 +132,7 @@ function CoachDashboard() {
       plansCount: plans.length,
       runnersCount: runners.length,
       recentWorkoutsCount: recentWorkouts.length,
-      loading
+      loading,
     })
     return plans
   }, [trainingPlans, runners.length, recentWorkouts.length, loading])
@@ -152,14 +153,12 @@ function CoachDashboard() {
       {/* Page Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Summit Dashboard
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Summit Dashboard</h1>
           <p className="text-foreground-600">
             Track your athletes&apos; ascent to peak performance
           </p>
         </div>
-        
+
         <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
           <div className="text-center">
             <p className="text-xs text-warning font-medium mb-1">CURRENT ALTITUDE</p>
@@ -181,7 +180,7 @@ function CoachDashboard() {
             color="primary"
           />
         </div>
-        
+
         <div data-testid="total-runners-count">
           <MetricCard
             title="Runners"
@@ -192,7 +191,7 @@ function CoachDashboard() {
             color="success"
           />
         </div>
-        
+
         <div data-testid="upcoming-workouts-count">
           <MetricCard
             title="Recent Workouts"
@@ -202,7 +201,7 @@ function CoachDashboard() {
             color="warning"
           />
         </div>
-        
+
         <div data-testid="this-week-count">
           <MetricCard
             title="This Week"
@@ -218,13 +217,16 @@ function CoachDashboard() {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Training Expeditions */}
-        <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="training-plans-section">
+        <Card
+          className="hover:shadow-lg transition-shadow duration-300"
+          data-testid="training-plans-section"
+        >
           <CardHeader className="flex justify-between items-center">
             <div>
               <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
               <p className="text-sm text-foreground-600">Active summit challenges</p>
             </div>
-            <Button 
+            <Button
               as={Link}
               href="/training-plans"
               color="primary"
@@ -240,23 +242,23 @@ function CoachDashboard() {
                   <CalendarDaysIcon className="h-8 w-8 text-default-400" />
                 </div>
                 <p className="text-foreground font-medium mb-2">No expeditions yet</p>
-                <p className="text-sm text-foreground-500">Create your first training expedition to get started.</p>
+                <p className="text-sm text-foreground-500">
+                  Create your first training expedition to get started.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {typedTrainingPlans.map((plan) => (
-                  <div key={plan.id} className="border border-divider rounded-lg p-4 hover:shadow-md transition-shadow bg-content1">
+                {typedTrainingPlans.map(plan => (
+                  <div
+                    key={plan.id}
+                    className="border border-divider rounded-lg p-4 hover:shadow-md transition-shadow bg-content1"
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-semibold text-foreground mb-1">{plan.title}</h4>
                         <p className="text-sm text-foreground-600">{plan.description}</p>
                       </div>
-                      <Chip 
-                        color="primary" 
-                        variant="flat" 
-                        size="sm"
-                        className="capitalize"
-                      >
+                      <Chip color="primary" variant="flat" size="sm" className="capitalize">
                         Active
                       </Chip>
                     </div>
@@ -282,7 +284,7 @@ function CoachDashboard() {
         </Card>
 
         {/* Recent Peaks Conquered - Using Suspense-enabled component */}
-        <RecentActivity 
+        <RecentActivity
           title="Recent Peaks Conquered"
           subtitle="Latest summit achievements"
           limit={5}
@@ -292,7 +294,10 @@ function CoachDashboard() {
       </div>
 
       {/* Your Athletes */}
-      <Card className="hover:shadow-lg transition-shadow duration-300" data-testid="runners-section">
+      <Card
+        className="hover:shadow-lg transition-shadow duration-300"
+        data-testid="runners-section"
+      >
         <CardHeader>
           <div>
             <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
@@ -306,8 +311,11 @@ function CoachDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {runners.map((runner) => (
-                <div key={runner.id} className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow">
+              {runners.map(runner => (
+                <div
+                  key={runner.id}
+                  className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
                       {(runner.full_name || 'U').charAt(0)}
@@ -318,20 +326,10 @@ function CoachDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="flat" 
-                      color="primary"
-                      className="flex-1"
-                    >
+                    <Button size="sm" variant="flat" color="primary" className="flex-1">
                       View Progress
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="flat" 
-                      color="success"
-                      className="flex-1"
-                    >
+                    <Button size="sm" variant="flat" color="success" className="flex-1">
                       Send Message
                     </Button>
                   </div>

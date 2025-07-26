@@ -1,18 +1,18 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js')
+require('dotenv').config({ path: '.env.local' })
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase credentials');
-  process.exit(1);
+  console.error('Missing Supabase credentials')
+  process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function runMigration() {
-  console.log('Starting Better Auth migration...');
+  console.log('Starting Better Auth migration...')
 
   // Better Auth tables SQL
   const migrationSQL = `
@@ -73,77 +73,71 @@ async function runMigration() {
     CREATE INDEX IF NOT EXISTS idx_better_auth_sessions_user_id ON better_auth_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_better_auth_sessions_token ON better_auth_sessions(token);
     CREATE INDEX IF NOT EXISTS idx_better_auth_verification_tokens_identifier ON better_auth_verification_tokens(identifier);
-  `;
+  `
 
   try {
     // Run the migration
-    const { data, error } = await supabase.rpc('exec_sql', { sql: migrationSQL });
-    
+    const { data, error } = await supabase.rpc('exec_sql', { sql: migrationSQL })
+
     if (error) {
-      console.error('Migration failed:', error);
-      process.exit(1);
+      console.error('Migration failed:', error)
+      process.exit(1)
     }
 
-    console.log('Better Auth tables created successfully');
+    console.log('Better Auth tables created successfully')
 
     // Now migrate existing users
-    const { data: existingUsers, error: fetchError } = await supabase
-      .from('users')
-      .select('*');
+    const { data: existingUsers, error: fetchError } = await supabase.from('users').select('*')
 
     if (fetchError) {
-      console.error('Failed to fetch existing users:', fetchError);
-      process.exit(1);
+      console.error('Failed to fetch existing users:', fetchError)
+      process.exit(1)
     }
 
-    console.log(`Found ${existingUsers.length} existing users to migrate`);
+    console.log(`Found ${existingUsers.length} existing users to migrate`)
 
     // Migrate users one by one
     for (const user of existingUsers) {
-      console.log(`Migrating user: ${user.email}`);
-      
+      console.log(`Migrating user: ${user.email}`)
+
       // Insert user into better_auth_users
-      const { error: userError } = await supabase
-        .from('better_auth_users')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          name: user.full_name,
-          role: user.role,
-          full_name: user.full_name,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        });
+      const { error: userError } = await supabase.from('better_auth_users').upsert({
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        role: user.role,
+        full_name: user.full_name,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      })
 
       if (userError) {
-        console.error(`Failed to migrate user ${user.email}:`, userError);
-        continue;
+        console.error(`Failed to migrate user ${user.email}:`, userError)
+        continue
       }
 
       // Create account for password authentication
       if (user.password_hash) {
-        const { error: accountError } = await supabase
-          .from('better_auth_accounts')
-          .upsert({
-            id: crypto.randomUUID(),
-            account_id: user.email,
-            provider_id: 'credential',
-            user_id: user.id,
-            password: user.password_hash,
-            created_at: user.created_at,
-            updated_at: user.updated_at
-          });
+        const { error: accountError } = await supabase.from('better_auth_accounts').upsert({
+          id: crypto.randomUUID(),
+          account_id: user.email,
+          provider_id: 'credential',
+          user_id: user.id,
+          password: user.password_hash,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+        })
 
         if (accountError && !accountError.message.includes('duplicate key')) {
-          console.error(`Failed to create account for ${user.email}:`, accountError);
+          console.error(`Failed to create account for ${user.email}:`, accountError)
         }
       }
     }
 
-    console.log('Migration completed successfully!');
+    console.log('Migration completed successfully!')
   } catch (error) {
-    console.error('Migration error:', error);
-    process.exit(1);
+    console.error('Migration error:', error)
+    process.exit(1)
   }
 }
 
@@ -156,20 +150,20 @@ async function createExecSqlFunction() {
       EXECUTE sql;
     END;
     $$ LANGUAGE plpgsql SECURITY DEFINER;
-  `;
+  `
 
   try {
-    const { error } = await supabase.rpc('exec_sql', { sql: functionSQL });
+    const { error } = await supabase.rpc('exec_sql', { sql: functionSQL })
     if (error && !error.message.includes('already exists')) {
-      console.log('Creating exec_sql function...');
+      console.log('Creating exec_sql function...')
       // If the function doesn't exist, we'll need to create it a different way
       // For now, let's run the migration differently
-      return false;
+      return false
     }
-    return true;
+    return true
   } catch {
-    return false;
+    return false
   }
 }
 
-runMigration();
+runMigration()

@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   graphql_public: {
@@ -76,11 +70,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "better_auth_accounts_user_id_better_auth_users_id_fk"
-            columns: ["user_id"]
+            foreignKeyName: 'better_auth_accounts_user_id_better_auth_users_id_fk'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -117,11 +111,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "better_auth_sessions_user_id_better_auth_users_id_fk"
-            columns: ["user_id"]
+            foreignKeyName: 'better_auth_sessions_user_id_better_auth_users_id_fk'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -221,25 +215,25 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "conversations_training_plan_id_training_plans_id_fk"
-            columns: ["training_plan_id"]
+            foreignKeyName: 'conversations_training_plan_id_training_plans_id_fk'
+            columns: ['training_plan_id']
             isOneToOne: false
-            referencedRelation: "training_plans"
-            referencedColumns: ["id"]
+            referencedRelation: 'training_plans'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "conversations_user1_id_better_auth_users_id_fk"
-            columns: ["user1_id"]
+            foreignKeyName: 'conversations_user1_id_better_auth_users_id_fk'
+            columns: ['user1_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "conversations_user2_id_better_auth_users_id_fk"
-            columns: ["user2_id"]
+            foreignKeyName: 'conversations_user2_id_better_auth_users_id_fk'
+            columns: ['user2_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -267,18 +261,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "message_workout_links_message_id_messages_id_fk"
-            columns: ["message_id"]
+            foreignKeyName: 'message_workout_links_message_id_messages_id_fk'
+            columns: ['message_id']
             isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
+            referencedRelation: 'messages'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "message_workout_links_workout_id_workouts_id_fk"
-            columns: ["workout_id"]
+            foreignKeyName: 'message_workout_links_workout_id_workouts_id_fk'
+            columns: ['workout_id']
             isOneToOne: false
-            referencedRelation: "workouts"
-            referencedColumns: ["id"]
+            referencedRelation: 'workouts'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -321,32 +315,32 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "messages_conversation_id_conversations_id_fk"
-            columns: ["conversation_id"]
+            foreignKeyName: 'messages_conversation_id_conversations_id_fk'
+            columns: ['conversation_id']
             isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            referencedRelation: 'conversations'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "messages_recipient_id_better_auth_users_id_fk"
-            columns: ["recipient_id"]
+            foreignKeyName: 'messages_recipient_id_better_auth_users_id_fk'
+            columns: ['recipient_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "messages_sender_id_better_auth_users_id_fk"
-            columns: ["sender_id"]
+            foreignKeyName: 'messages_sender_id_better_auth_users_id_fk'
+            columns: ['sender_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "messages_workout_id_workouts_id_fk"
-            columns: ["workout_id"]
+            foreignKeyName: 'messages_workout_id_workouts_id_fk'
+            columns: ['workout_id']
             isOneToOne: false
-            referencedRelation: "workouts"
-            referencedColumns: ["id"]
+            referencedRelation: 'workouts'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -386,11 +380,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_user_id_better_auth_users_id_fk"
-            columns: ["user_id"]
+            foreignKeyName: 'notifications_user_id_better_auth_users_id_fk'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -442,11 +436,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "plan_templates_created_by_better_auth_users_id_fk"
-            columns: ["created_by"]
+            foreignKeyName: 'plan_templates_created_by_better_auth_users_id_fk'
+            columns: ['created_by']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -498,11 +492,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "races_created_by_better_auth_users_id_fk"
-            columns: ["created_by"]
+            foreignKeyName: 'races_created_by_better_auth_users_id_fk'
+            columns: ['created_by']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -542,18 +536,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "template_phases_phase_id_training_phases_id_fk"
-            columns: ["phase_id"]
+            foreignKeyName: 'template_phases_phase_id_training_phases_id_fk'
+            columns: ['phase_id']
             isOneToOne: false
-            referencedRelation: "training_phases"
-            referencedColumns: ["id"]
+            referencedRelation: 'training_phases'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "template_phases_template_id_plan_templates_id_fk"
-            columns: ["template_id"]
+            foreignKeyName: 'template_phases_template_id_plan_templates_id_fk'
+            columns: ['template_id']
             isOneToOne: false
-            referencedRelation: "plan_templates"
-            referencedColumns: ["id"]
+            referencedRelation: 'plan_templates'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -638,18 +632,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "training_plans_coach_id_better_auth_users_id_fk"
-            columns: ["coach_id"]
+            foreignKeyName: 'training_plans_coach_id_better_auth_users_id_fk'
+            columns: ['coach_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "training_plans_runner_id_better_auth_users_id_fk"
-            columns: ["runner_id"]
+            foreignKeyName: 'training_plans_runner_id_better_auth_users_id_fk'
+            columns: ['runner_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -725,18 +719,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "workouts_training_plan_id_training_plans_id_fk"
-            columns: ["training_plan_id"]
+            foreignKeyName: 'workouts_training_plan_id_training_plans_id_fk'
+            columns: ['training_plan_id']
             isOneToOne: false
-            referencedRelation: "training_plans"
-            referencedColumns: ["id"]
+            referencedRelation: 'training_plans'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "workouts_user_id_better_auth_users_id_fk"
-            columns: ["user_id"]
+            foreignKeyName: 'workouts_user_id_better_auth_users_id_fk'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "better_auth_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'better_auth_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -864,11 +858,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
+            foreignKeyName: 'objects_bucketId_fkey'
+            columns: ['bucket_id']
             isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
+            referencedRelation: 'buckets'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -896,11 +890,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "prefixes_bucketId_fkey"
-            columns: ["bucket_id"]
+            foreignKeyName: 'prefixes_bucketId_fkey'
+            columns: ['bucket_id']
             isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
+            referencedRelation: 'buckets'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -940,11 +934,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
+            foreignKeyName: 's3_multipart_uploads_bucket_id_fkey'
+            columns: ['bucket_id']
             isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
+            referencedRelation: 'buckets'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -987,18 +981,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
+            foreignKeyName: 's3_multipart_uploads_parts_bucket_id_fkey'
+            columns: ['bucket_id']
             isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
+            referencedRelation: 'buckets'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
+            foreignKeyName: 's3_multipart_uploads_parts_upload_id_fkey'
+            columns: ['upload_id']
             isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
+            referencedRelation: 's3_multipart_uploads'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1172,29 +1166,27 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1203,21 +1195,21 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1226,21 +1218,21 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1248,33 +1240,31 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums'] | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
@@ -1288,4 +1278,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

@@ -7,6 +7,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 ## 🏗️ Architecture Overview
 
 ### Frontend Architecture
+
 - **Framework**: Next.js 15.3.5 with App Router
 - **Design System**: Mountain Peak Enhanced - Alpine aesthetic with professional UX patterns
 - **UI Library**: HeroUI with custom Mountain Peak theme
@@ -17,6 +18,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **TypeScript**: Full TypeScript with strict mode for type safety
 
 ### Backend Architecture
+
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
 - **Authentication**: Supabase Auth integrated with NextAuth.js
 - **API**: Next.js API routes with RESTful design
@@ -26,6 +28,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 ### Database Schema
 
 #### Core Tables
+
 - **users**: Coach and runner accounts with roles
 - **training_plans**: Enhanced with race targeting and phase tracking
 - **workouts**: Enhanced with categorization and intensity tracking
@@ -33,6 +36,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **notifications**: User notification system
 
 #### Enhanced Training System (NEW)
+
 - **races**: Target races with distance, terrain, elevation data
 - **training_phases**: Standard periodization phases (Base, Build, Peak, Taper, Recovery)
 - **plan_phases**: Training plan phase progression tracking
@@ -40,6 +44,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **template_phases**: Phase structure definitions for templates
 
 ### State Management (Jotai)
+
 ```typescript
 // Core atoms
 notificationsAtom: Notification[]
@@ -56,6 +61,7 @@ activeTrainingPlansAtom: Computed active plans
 ## 💻 Technology Stack
 
 ### Core Dependencies
+
 ```json
 {
   "next": "15.3.5",
@@ -76,6 +82,7 @@ activeTrainingPlansAtom: Computed active plans
 ```
 
 ### Strava Integration Dependencies
+
 ```json
 {
   "strava-v3": "^2.0.0",
@@ -85,6 +92,7 @@ activeTrainingPlansAtom: Computed active plans
 ```
 
 ### Testing & CI/CD Infrastructure
+
 ```json
 {
   "@playwright/test": "^1.45.0",
@@ -93,6 +101,7 @@ activeTrainingPlansAtom: Computed active plans
 ```
 
 ### Development Tools
+
 ```json
 {
   "eslint": "^9",
@@ -107,18 +116,21 @@ activeTrainingPlansAtom: Computed active plans
 ```
 
 ### Package Manager
+
 - **Primary**: pnpm (better performance, disk efficiency, stricter dependency management)
 - **Commands**: `pnpm install`, `pnpm dev`, `pnpm build`, `pnpm lint`
 
 ## 🛠️ Required Tools
 
 ### Development Environment
+
 - **Node.js**: v18+ (recommended v20+)
 - **pnpm**: Latest version for package management
 - **Git**: Version control with GitHub integration
 - **VS Code**: Recommended IDE with TypeScript/React extensions
 
 ### Database & Infrastructure
+
 - **Supabase CLI**: For database management and migrations
   ```bash
   npm install -g supabase
@@ -133,12 +145,14 @@ activeTrainingPlansAtom: Computed active plans
   ```
 
 ### Database Management Scripts
+
 - **Setup**: `./supabase/scripts/setup_enhanced_training.sh`
 - **Seed**: `./supabase/scripts/seed_database.sh`
 - **Reset**: `./supabase/scripts/reset_database.sh`
 - **Backup**: `./supabase/scripts/backup_user_data.sh`
 
 ### Supabase CLI Operations (Modern Approach)
+
 ```bash
 # Direct SQL execution (preferred for 2025+)
 supabase db query "SELECT table_name FROM information_schema.tables;"
@@ -158,36 +172,42 @@ supabase db pull              # Sync schema changes
 ## 🎯 Key Features
 
 ### Race-Centric Planning
+
 - Training plans built around specific target races
 - Goal types: completion, time goals, placement
 - Race information: distance, terrain, elevation, location
 - Real ultra races included (Western States, Leadville, UTMB, etc.)
 
 ### Periodization Support
+
 - Standard training phases with automatic progression
 - Phase-specific workout organization and targets
 - Focus areas for each phase (base, build, peak, taper, recovery)
 - Training load management and progression tracking
 
 ### Plan Templates
+
 - 15+ pre-built templates for common ultra distances
 - Difficulty levels: beginner, intermediate, advanced
 - Specialized plans: base building, bridge plans, recovery
 - Public templates available to all users, custom templates for coaches
 
 ### Plan Sequencing
+
 - Link training plans together for race progressions
 - Support for 50K → 50M → 100K → 100M pathways
 - Base building periods between race cycles
 - Bridge plans for maintaining fitness between races
 
 ### Enhanced Workouts
+
 - Workout categories: easy, tempo, interval, long_run, race_simulation
 - Intensity levels (1-10) and effort tracking
 - Terrain types: trail, road, track, treadmill
 - Elevation gain and weather condition tracking
 
 ### Strava Integration
+
 - Seamless OAuth connection between UltraCoach and Strava accounts
 - Bi-directional workout sync: planned workouts → Strava calendar, completed activities → UltraCoach
 - Real-time activity import with GPS data, pace, heart rate, and elevation metrics
@@ -196,6 +216,7 @@ supabase db pull              # Sync schema changes
 - Coach insights dashboard with execution vs planning analysis
 
 ### Real-time Communication
+
 - Coach-runner chat with typing indicators and smart auto-scroll
 - Notification system for workout updates
 - Real-time plan and workout synchronization with error resilience
@@ -205,11 +226,13 @@ supabase db pull              # Sync schema changes
 ## 🔄 Development Workflow
 
 ### Branch Strategy
+
 - **main**: Production-ready code
 - **feature/**: Feature development branches
 - **hotfix/**: Critical bug fixes
 
 ### Commit Conventions
+
 - **feat**: New features
 - **fix**: Bug fixes
 - **refactor**: Code refactoring
@@ -217,6 +240,7 @@ supabase db pull              # Sync schema changes
 - **test**: Test additions/updates
 
 ### Testing Strategy
+
 - **Manual Testing**: Test user accounts with realistic data
 - **Integration Testing**: Database operations and real-time features
 - **Performance Testing**: State management and large datasets
@@ -249,6 +273,7 @@ ultracoach/
 ## 🚀 Development Commands
 
 ### Getting Started
+
 ```bash
 # Install dependencies
 pnpm install
@@ -265,6 +290,7 @@ pnpm dev
 ```
 
 ### Current Development Status (Updated 2025-07-14)
+
 - **Project Progress**: 90% complete (101/112 tasks) + Complete Design System + HeroUI Integration + Performance Optimization
 - **Active Milestone**: Enhanced Training Features (Milestone 3)
 - **Recent Completions**: Training-plans page performance optimization with split hook architecture and Axios integration
@@ -273,6 +299,7 @@ pnpm dev
 - **Performance**: Single API call per page load, smooth user experience, production-ready
 
 ### Database Operations
+
 ```bash
 # Seed database with templates and test data
 ./supabase/scripts/seed_database.sh
@@ -285,6 +312,7 @@ pnpm dev
 ```
 
 ### Code Quality
+
 ```bash
 # Run linting
 pnpm lint
@@ -297,6 +325,7 @@ npx tsc --noEmit
 ```
 
 ### Testing & CI/CD
+
 ```bash
 # Run Playwright tests
 npx playwright test
@@ -314,6 +343,7 @@ npx playwright install
 ## 🎯 Success Metrics
 
 ### Technical Goals
+
 - ✅ Zero React Context for global state (notifications, workouts, training plans, chat system with UX enhancements migrated)
 - ✅ Comprehensive database schema for professional coaching
 - ✅ Real-time updates with sub-second latency, error resilience, and graceful fallbacks
@@ -324,6 +354,7 @@ npx playwright install
 - ✅ Resolved Tailwind CSS v3 compatibility and HeroUI integration
 
 ### User Experience Goals
+
 - ✅ Inspiring mountain-themed design that emotionally connects with ultramarathon athletes
 - ✅ Professional data organization with scientific training zone color coding
 - ✅ Intuitive race targeting and goal setting
@@ -333,6 +364,7 @@ npx playwright install
 - Fast, performant state updates with granular reactivity
 
 ### Business Goals
+
 - Support for multiple race distances and types
 - Scalable template system for different coaching styles
 - Professional periodization methodology
@@ -341,30 +373,35 @@ npx playwright install
 ## 🛡️ Security Architecture
 
 ### Database Security
+
 - **Row Level Security (RLS)**: Comprehensive policies ensuring users can only access their own data
 - **Environment Variables**: All database connection details use environment variables - no hardcoded credentials
 - **SQL Injection Protection**: Parameterized queries and input validation in all database scripts
 - **Connection Security**: Secure PostgreSQL connection pooling with timeout handling
 
 ### Authentication Security
+
 - **Better Auth Integration**: Modern, secure authentication with proper session management
 - **Password Security**: Bcrypt hashing with salt for all user passwords
 - **Session Management**: Secure JWT tokens with proper expiration and refresh logic
 - **Role-Based Access**: Coach and runner roles with appropriate permission boundaries
 
 ### Environment Security
+
 - **Secure Environment Loading**: Robust environment variable parsing that handles special characters
 - **Secret Management**: All secrets stored in `.env.local` (excluded from version control)
 - **Development vs Production**: Clear separation of environment configurations
 - **API Key Rotation**: Support for rotating Supabase API keys without code changes
 
 ### Script Security
+
 - **Input Validation**: All database scripts validate table names and inputs
 - **Process Security**: No password exposure in process lists or command-line arguments
 - **Error Handling**: Secure error messages that don't expose internal details
 - **Transaction Safety**: Atomic operations with proper rollback mechanisms
 
 ### Production Security Checklist
+
 - [ ] All `.env.local` files excluded from version control
 - [ ] Database passwords rotated and stored securely
 - [ ] API keys use least-privilege access
@@ -376,6 +413,7 @@ npx playwright install
 ## 🤖 AI-Enhanced Development Workflow
 
 ### Model Context Protocol (MCP) Integration
+
 ```json
 {
   "mcpServers": {
@@ -394,18 +432,21 @@ npx playwright install
 ```
 
 ### AI-Driven Database Management
+
 - **Context7 MCP**: Access current Supabase documentation with `use context7`
 - **GitHub MCP**: Automated issue management and PR workflows
 - **BigQuery MCP**: Advanced analytics and query optimization
 - **Fetch MCP**: Real-time documentation and API reference retrieval
 
 ### Development Workflow Enhancement
+
 1. **Documentation Access**: Use Context7 for up-to-date API references
 2. **Code Generation**: Leverage MCP servers for scaffolding and boilerplate
 3. **Testing Automation**: Integrate MCP for test generation and validation
 4. **Deployment Automation**: Use GitHub MCP for CI/CD pipeline management
 
 ### Security Considerations for MCP
+
 - Only use trusted, verified MCP servers
 - Store MCP configurations in version control for team consistency
 - Regularly audit MCP server permissions and access patterns

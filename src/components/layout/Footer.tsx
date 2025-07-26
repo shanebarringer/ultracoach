@@ -8,11 +8,11 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-2xl font-bold mb-4">UltraCoach</h3>
             <p className="text-gray-300 max-w-md">
-              The ultimate platform for ultramarathon training. Connect with experienced coaches 
-              and take your endurance running to the next level.
+              The ultimate platform for ultramarathon training. Connect with experienced coaches and
+              take your endurance running to the next level.
             </p>
           </div>
-          
+
           <div>
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
@@ -38,7 +38,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h4 className="text-lg font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
@@ -60,11 +60,9 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        
+
         <div className="mt-8 pt-8 border-t border-gray-700 text-center">
-          <p className="text-gray-400">
-            © 2024 UltraCoach. All rights reserved.
-          </p>
+          <p className="text-gray-400">© 2024 UltraCoach. All rights reserved.</p>
         </div>
       </div>
     </footer>

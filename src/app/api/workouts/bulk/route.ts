@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -9,7 +10,17 @@ interface BulkWorkout {
   plannedDistance?: number | null
   plannedDuration?: number | null
   notes?: string
-  category?: 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | null
+  category?:
+    | 'easy'
+    | 'tempo'
+    | 'interval'
+    | 'long_run'
+    | 'race_simulation'
+    | 'recovery'
+    | 'strength'
+    | 'cross_training'
+    | 'rest'
+    | null
   intensity?: number | null
   terrain?: 'road' | 'trail' | 'track' | 'treadmill' | null
   elevationGain?: number | null
@@ -18,7 +29,7 @@ interface BulkWorkout {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session?.user || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -31,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Verify all training plans belong to this coach
     const trainingPlanIds = [...new Set(workouts.map(w => w.trainingPlanId))]
-    
+
     const { data: trainingPlans, error: plansError } = await supabaseAdmin
       .from('training_plans')
       .select('id, coach_id, runner_id')
@@ -50,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Delete existing workouts for the same dates to avoid duplicates
     const datesToClear = [...new Set(workouts.map(w => w.date))]
-    
+
     for (const planId of trainingPlanIds) {
       const { error: deleteError } = await supabaseAdmin
         .from('workouts')
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
       workout_category: workout.category,
       intensity_level: workout.intensity,
       terrain_type: workout.terrain,
-      elevation_gain_feet: workout.elevationGain
+      elevation_gain_feet: workout.elevationGain,
     }))
 
     // Bulk insert workouts
@@ -113,9 +124,8 @@ export async function POST(request: NextRequest) {
             const coachName = coach?.full_name || 'Your coach'
             const workoutCount = insertedWorkouts.length
 
-            await supabaseAdmin
-              .from('notifications')
-              .insert([{
+            await supabaseAdmin.from('notifications').insert([
+              {
                 user_id: runner.id,
                 title: '⛰️ New Weekly Expedition Plan',
                 message: `${coachName} has architected ${workoutCount} new summit ascents for your training expedition.`,
@@ -125,9 +135,10 @@ export async function POST(request: NextRequest) {
                   action: 'view_workouts',
                   workoutCount,
                   coachId: session.user.id,
-                  coachName
-                }
-              }])
+                  coachName,
+                },
+              },
+            ])
           }
         }
       } catch (error) {
@@ -136,10 +147,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       created: insertedWorkouts?.length || 0,
-      workouts: insertedWorkouts 
+      workouts: insertedWorkouts,
     })
   } catch (error) {
     console.error('API error in POST /workouts/bulk', error)

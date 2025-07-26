@@ -112,15 +112,15 @@
   --color-primary: var(--alpine-blue-600);
   --color-primary-hover: var(--alpine-blue-700);
   --color-primary-light: var(--alpine-blue-100);
-  
+
   --color-success: var(--altitude-green-600);
   --color-success-hover: var(--altitude-green-700);
   --color-success-light: var(--altitude-green-100);
-  
+
   --color-warning: var(--warning-orange-500);
   --color-warning-hover: var(--warning-orange-600);
   --color-warning-light: var(--warning-orange-100);
-  
+
   --color-danger: var(--danger-red-500);
   --color-danger-hover: var(--danger-red-600);
   --color-danger-light: var(--danger-red-100);
@@ -137,8 +137,16 @@
   --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
 
   /* Mountain-specific gradients */
-  --gradient-mountain: linear-gradient(135deg, var(--alpine-blue-500) 0%, var(--alpine-blue-700) 100%);
-  --gradient-summit: linear-gradient(135deg, var(--summit-gold-400) 0%, var(--summit-gold-600) 100%);
+  --gradient-mountain: linear-gradient(
+    135deg,
+    var(--alpine-blue-500) 0%,
+    var(--alpine-blue-700) 100%
+  );
+  --gradient-summit: linear-gradient(
+    135deg,
+    var(--summit-gold-400) 0%,
+    var(--summit-gold-600) 100%
+  );
   --gradient-sky: linear-gradient(180deg, var(--alpine-blue-50) 0%, var(--alpine-blue-200) 100%);
 }
 
@@ -169,15 +177,15 @@
   --color-primary: var(--alpine-blue-400);
   --color-primary-hover: var(--alpine-blue-300);
   --color-primary-light: var(--alpine-blue-900);
-  
+
   --color-success: var(--altitude-green-400);
   --color-success-hover: var(--altitude-green-300);
   --color-success-light: var(--altitude-green-900);
-  
+
   --color-warning: var(--warning-orange-400);
   --color-warning-hover: var(--warning-orange-300);
   --color-warning-light: var(--warning-orange-900);
-  
+
   --color-danger: var(--danger-red-400);
   --color-danger-hover: var(--danger-red-300);
   --color-danger-light: var(--danger-red-900);
@@ -194,8 +202,16 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 
   /* Mountain-specific gradients for dark theme */
-  --gradient-mountain: linear-gradient(135deg, var(--alpine-blue-400) 0%, var(--alpine-blue-600) 100%);
-  --gradient-summit: linear-gradient(135deg, var(--summit-gold-300) 0%, var(--summit-gold-500) 100%);
+  --gradient-mountain: linear-gradient(
+    135deg,
+    var(--alpine-blue-400) 0%,
+    var(--alpine-blue-600) 100%
+  );
+  --gradient-summit: linear-gradient(
+    135deg,
+    var(--summit-gold-300) 0%,
+    var(--summit-gold-500) 100%
+  );
   --gradient-sky: linear-gradient(180deg, var(--granite-gray-800) 0%, var(--granite-gray-900) 100%);
 }
 
@@ -210,16 +226,28 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
   font-weight: 400;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Heading hierarchy with bold, confident styling */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.025em;
@@ -352,7 +380,11 @@ p {
    BUTTONS & INTERACTIVE ELEMENTS
    ============================================ */
 
-.action-btn, .create-btn, .view-btn, .theme-toggle, .notification-btn {
+.action-btn,
+.create-btn,
+.view-btn,
+.theme-toggle,
+.notification-btn {
   border: none;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -532,7 +564,9 @@ p {
    CARDS & CONTENT BLOCKS
    ============================================ */
 
-.stats-grid, .content-grid, .training-plans-grid {
+.stats-grid,
+.content-grid,
+.training-plans-grid {
   display: grid;
   gap: 1.5rem;
   margin-bottom: 2rem;
@@ -550,7 +584,9 @@ p {
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
 }
 
-.stat-card, .content-card, .training-plan-card {
+.stat-card,
+.content-card,
+.training-plan-card {
   background: var(--bg-card);
   border: 2px solid var(--border-primary);
   border-radius: 1rem;
@@ -559,7 +595,9 @@ p {
   transition: all 0.3s ease;
 }
 
-.stat-card:hover, .content-card:hover, .training-plan-card:hover {
+.stat-card:hover,
+.content-card:hover,
+.training-plan-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
   border-color: var(--color-primary);
@@ -584,10 +622,18 @@ p {
   background: var(--color-primary);
 }
 
-.stat-card.primary::before { background: var(--color-primary); }
-.stat-card.success::before { background: var(--color-success); }
-.stat-card.warning::before { background: var(--color-warning); }
-.stat-card.accent::before { background: var(--brand-secondary); }
+.stat-card.primary::before {
+  background: var(--color-primary);
+}
+.stat-card.success::before {
+  background: var(--color-success);
+}
+.stat-card.warning::before {
+  background: var(--color-warning);
+}
+.stat-card.accent::before {
+  background: var(--brand-secondary);
+}
 
 .stat-icon {
   font-size: 2.5rem;
@@ -596,10 +642,18 @@ p {
   background: var(--color-primary-light);
 }
 
-.stat-card.primary .stat-icon { background: var(--color-primary-light); }
-.stat-card.success .stat-icon { background: var(--color-success-light); }
-.stat-card.warning .stat-icon { background: var(--color-warning-light); }
-.stat-card.accent .stat-icon { background: var(--summit-gold-100); }
+.stat-card.primary .stat-icon {
+  background: var(--color-primary-light);
+}
+.stat-card.success .stat-icon {
+  background: var(--color-success-light);
+}
+.stat-card.warning .stat-icon {
+  background: var(--color-warning-light);
+}
+.stat-card.accent .stat-icon {
+  background: var(--summit-gold-100);
+}
 
 .stat-content h3 {
   font-size: 1rem;
@@ -622,7 +676,8 @@ p {
   margin: 0;
 }
 
-.stat-trend, .stat-countdown {
+.stat-trend,
+.stat-countdown {
   margin-left: auto;
   font-size: 0.875rem;
   font-weight: 600;
@@ -872,7 +927,10 @@ p {
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: conic-gradient(var(--color-primary) 0% var(--progress-value, 0%), var(--bg-tertiary) var(--progress-value, 0%) 100%);
+  background: conic-gradient(
+    var(--color-primary) 0% var(--progress-value, 0%),
+    var(--bg-tertiary) var(--progress-value, 0%) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1429,27 +1487,61 @@ p {
   border: 0;
 }
 
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+.text-center {
+  text-align: center;
+}
+.text-left {
+  text-align: left;
+}
+.text-right {
+  text-align: right;
+}
 
-.font-bold { font-weight: 700; }
-.font-semibold { font-weight: 600; }
-.font-medium { font-weight: 500; }
+.font-bold {
+  font-weight: 700;
+}
+.font-semibold {
+  font-weight: 600;
+}
+.font-medium {
+  font-weight: 500;
+}
 
-.uppercase { text-transform: uppercase; }
-.lowercase { text-transform: lowercase; }
-.capitalize { text-transform: capitalize; }
+.uppercase {
+  text-transform: uppercase;
+}
+.lowercase {
+  text-transform: lowercase;
+}
+.capitalize {
+  text-transform: capitalize;
+}
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: 0.25rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-4 { margin-bottom: 1rem; }
+.mb-0 {
+  margin-bottom: 0;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
 
-.hidden { display: none; }
-.block { display: block; }
-.flex { display: flex; }
-.grid { display: grid; }
+.hidden {
+  display: none;
+}
+.block {
+  display: block;
+}
+.flex {
+  display: flex;
+}
+.grid {
+  display: grid;
+}
 
 /* ============================================
    ANIMATIONS & TRANSITIONS
@@ -1478,7 +1570,8 @@ p {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -1500,7 +1593,10 @@ p {
 
 /* Smooth transitions for theme switching */
 * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .theme-icon {

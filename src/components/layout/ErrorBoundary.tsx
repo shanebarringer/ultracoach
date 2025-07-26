@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
-import { Card, CardBody, Button } from '@heroui/react'
+import { Button, Card, CardBody } from '@heroui/react'
 import { AlertTriangleIcon, RefreshCwIcon } from 'lucide-react'
+
+import React from 'react'
 
 interface ErrorBoundaryState {
   hasError: boolean

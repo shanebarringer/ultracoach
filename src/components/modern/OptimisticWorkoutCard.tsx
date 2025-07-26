@@ -1,8 +1,10 @@
 'use client'
 
+import { Button, Card, CardBody, Chip, Spinner } from '@heroui/react'
+import { CheckCircleIcon, ClockIcon, XCircleIcon } from 'lucide-react'
+
 import { memo, useTransition } from 'react'
-import { Card, CardBody, Chip, Button, Spinner } from '@heroui/react'
-import { CheckCircleIcon, XCircleIcon, ClockIcon } from 'lucide-react'
+
 import { useOptimisticUpdates } from '@/hooks/useOptimisticUpdates'
 import type { OptimisticWorkout, Workout } from '@/lib/supabase'
 
@@ -10,9 +12,13 @@ interface OptimisticWorkoutCardProps {
   workout: OptimisticWorkout
   onPress: (workout: Workout) => void
   formatDate: (date: string) => string
-  getWorkoutStatusColor: (status: string) => "default" | "warning" | "success" | "primary" | "secondary" | "danger"
+  getWorkoutStatusColor: (
+    status: string
+  ) => 'default' | 'warning' | 'success' | 'primary' | 'secondary' | 'danger'
   getWorkoutTypeIcon: (type: string) => React.ReactNode
-  getWorkoutIntensityColor: (intensity: number) => "default" | "warning" | "success" | "primary" | "secondary" | "danger"
+  getWorkoutIntensityColor: (
+    intensity: number
+  ) => 'default' | 'warning' | 'success' | 'primary' | 'secondary' | 'danger'
 }
 
 /**
@@ -35,23 +41,19 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
 
   const handleQuickStatusUpdate = (newStatus: 'completed' | 'skipped') => {
     startTransition(() => {
-      updateWorkoutOptimistic(
-        workout.id,
-        { status: newStatus },
-        async () => {
-          const response = await fetch(`/api/workouts/${workout.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus }),
-          })
-          
-          if (!response.ok) {
-            throw new Error('Failed to update workout status')
-          }
-          
-          return response.json()
+      updateWorkoutOptimistic(workout.id, { status: newStatus }, async () => {
+        const response = await fetch(`/api/workouts/${workout.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update workout status')
         }
-      )
+
+        return response.json()
+      })
     })
   }
 
@@ -59,7 +61,7 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
   const hasError = workout.hasError
 
   return (
-    <Card 
+    <Card
       className={`
         transition-all duration-200 cursor-pointer hover:shadow-lg
         ${isUpdating ? 'opacity-75 scale-[0.98]' : 'hover:scale-[1.02]'}
@@ -74,12 +76,8 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
             {/* Header with loading indicator */}
             <div className="flex items-center gap-2">
               {getWorkoutTypeIcon(workout.planned_type)}
-              <h3 className="font-semibold text-foreground">
-                {workout.planned_type || 'Workout'}
-              </h3>
-              {isUpdating && (
-                <Spinner size="sm" color="primary" className="ml-2" />
-              )}
+              <h3 className="font-semibold text-foreground">{workout.planned_type || 'Workout'}</h3>
+              {isUpdating && <Spinner size="sm" color="primary" className="ml-2" />}
               {hasError && (
                 <Chip color="danger" size="sm" variant="flat">
                   Update Failed
@@ -90,30 +88,18 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
             {/* Workout details */}
             <div className="flex flex-wrap gap-2 text-sm text-foreground-600">
               <span>{formatDate(workout.date)}</span>
-              {workout.planned_distance && (
-                <span>• {workout.planned_distance} miles</span>
-              )}
-              {workout.planned_duration && (
-                <span>• {workout.planned_duration} min</span>
-              )}
+              {workout.planned_distance && <span>• {workout.planned_distance} miles</span>}
+              {workout.planned_duration && <span>• {workout.planned_duration} min</span>}
             </div>
 
             {/* Status and intensity */}
             <div className="flex items-center gap-2">
-              <Chip 
-                color={getWorkoutStatusColor(workout.status)} 
-                size="sm"
-                variant="flat"
-              >
+              <Chip color={getWorkoutStatusColor(workout.status)} size="sm" variant="flat">
                 {workout.status}
               </Chip>
-              
+
               {workout.intensity && (
-                <Chip
-                  color={getWorkoutIntensityColor(workout.intensity)}
-                  size="sm"
-                  variant="dot"
-                >
+                <Chip color={getWorkoutIntensityColor(workout.intensity)} size="sm" variant="dot">
                   Zone {workout.intensity}
                 </Chip>
               )}
@@ -134,7 +120,7 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
                 >
                   Complete
                 </Button>
-                
+
                 <Button
                   size="sm"
                   color="danger"

@@ -1,7 +1,19 @@
 'use client'
 
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
+  Textarea,
+} from '@heroui/react'
+
 import { useState } from 'react'
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
 
 interface AddWorkoutModalProps {
   isOpen: boolean
@@ -10,11 +22,11 @@ interface AddWorkoutModalProps {
   trainingPlanId: string
 }
 
-export default function AddWorkoutModal({ 
-  isOpen, 
-  onClose, 
+export default function AddWorkoutModal({
+  isOpen,
+  onClose,
   onSuccess,
-  trainingPlanId
+  trainingPlanId,
 }: AddWorkoutModalProps) {
   const [formData, setFormData] = useState({
     date: '',
@@ -22,7 +34,17 @@ export default function AddWorkoutModal({
     plannedDistance: '',
     plannedDuration: '',
     notes: '',
-    category: '' as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '',
+    category: '' as
+      | 'easy'
+      | 'tempo'
+      | 'interval'
+      | 'long_run'
+      | 'race_simulation'
+      | 'recovery'
+      | 'strength'
+      | 'cross_training'
+      | 'rest'
+      | '',
     intensity: '',
     terrain: '' as 'road' | 'trail' | 'track' | 'treadmill' | '',
     elevationGain: '',
@@ -80,10 +102,12 @@ export default function AddWorkoutModal({
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }))
   }
 
@@ -113,9 +137,9 @@ export default function AddWorkoutModal({
               name="plannedType"
               required
               selectedKeys={formData.plannedType ? [formData.plannedType] : []}
-              onSelectionChange={(keys) => {
-                const selectedType = Array.from(keys).join('');
-                setFormData(prev => ({ ...prev, plannedType: selectedType }));
+              onSelectionChange={keys => {
+                const selectedType = Array.from(keys).join('')
+                setFormData(prev => ({ ...prev, plannedType: selectedType }))
               }}
               placeholder="Select type..."
               items={[
@@ -131,20 +155,26 @@ export default function AddWorkoutModal({
                 { id: 'Rest Day', name: 'Rest Day' },
               ]}
             >
-              {(item) => (
-                <SelectItem key={item.id}>
-                  {item.name}
-                </SelectItem>
-              )}
+              {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
             </Select>
 
             <Select
               label="Category"
               name="category"
               selectedKeys={formData.category ? [formData.category] : []}
-              onSelectionChange={(keys) => {
-                const selectedCategory = Array.from(keys).join('') as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '';
-                setFormData(prev => ({ ...prev, category: selectedCategory }));
+              onSelectionChange={keys => {
+                const selectedCategory = Array.from(keys).join('') as
+                  | 'easy'
+                  | 'tempo'
+                  | 'interval'
+                  | 'long_run'
+                  | 'race_simulation'
+                  | 'recovery'
+                  | 'strength'
+                  | 'cross_training'
+                  | 'rest'
+                  | ''
+                setFormData(prev => ({ ...prev, category: selectedCategory }))
               }}
               placeholder="Select category..."
               items={[
@@ -159,11 +189,7 @@ export default function AddWorkoutModal({
                 { id: 'rest', name: 'Rest' },
               ]}
             >
-              {(item) => (
-                <SelectItem key={item.id}>
-                  {item.name}
-                </SelectItem>
-              )}
+              {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
             </Select>
 
             <Input
@@ -181,9 +207,14 @@ export default function AddWorkoutModal({
               label="Terrain"
               name="terrain"
               selectedKeys={formData.terrain ? [formData.terrain] : []}
-              onSelectionChange={(keys) => {
-                const selectedTerrain = Array.from(keys).join('') as 'road' | 'trail' | 'track' | 'treadmill' | '';
-                setFormData(prev => ({ ...prev, terrain: selectedTerrain }));
+              onSelectionChange={keys => {
+                const selectedTerrain = Array.from(keys).join('') as
+                  | 'road'
+                  | 'trail'
+                  | 'track'
+                  | 'treadmill'
+                  | ''
+                setFormData(prev => ({ ...prev, terrain: selectedTerrain }))
               }}
               placeholder="Select terrain..."
               items={[
@@ -193,11 +224,7 @@ export default function AddWorkoutModal({
                 { id: 'treadmill', name: 'Treadmill' },
               ]}
             >
-              {(item) => (
-                <SelectItem key={item.id}>
-                  {item.name}
-                </SelectItem>
-              )}
+              {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
             </Select>
 
             <Input

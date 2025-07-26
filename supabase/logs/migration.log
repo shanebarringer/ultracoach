@@ -1,0 +1,22 @@
+2025-07-24 21:53:21 [INFO] [0;34mInitializing migration tracking...[0m
+2025-07-24 21:53:21 [ERROR] [0;31mFailed to initialize migration tracking[0m
+2025-07-24 21:55:16 [INFO] [0;34mInitializing migration tracking...[0m
+2025-07-24 21:55:18 [ERROR] [0;31mFailed to initialize migration tracking[0m
+2025-07-24 21:55:52 [INFO] [0;34mInitializing migration tracking...[0m
+2025-07-24 21:55:52 [ERROR] [0;31mFailed to initialize migration tracking[0m
+2025-07-24 21:56:31 [INFO] [0;34mInitializing migration tracking...[0m
+2025-07-24 21:56:31 [ERROR] [0;31mFailed to initialize migration tracking[0m
+2025-07-24 21:56:41 [INFO] [0;34mInitializing migration tracking...[0m
+2025-07-24 21:56:42 [SUCCESS] [0;32mMigration tracking initialized[0m
+2025-07-24 21:56:46 [INFO] [0;34mTesting migration: 20250725000001_fix_rls_better_auth.sql[0m
+2025-07-24 21:56:46 [INFO] [0;34mCreating backup: pre_migration_20250724_215646[0m
+2025-07-24 21:56:47 [ERROR] [0;31mFailed to create backup[0m
+2025-07-24 21:57:39 [INFO] [0;34mApplying migration: 20250724215701_add_set_config_function.sql[0m
+2025-07-24 21:57:39 [INFO] [0;34mCreating backup: pre_migration_20250724_215739[0m
+2025-07-24 21:57:40 [ERROR] [0;31mFailed to create backup[0m
+2025-07-24 21:57:43 [INFO] [0;34mMigration Status[0m
+2025-07-24 21:57:43 [INFO] [0;34mAvailable migrations:[0m
+2025-07-24 21:57:43 [INFO] [0;34mApplied migrations:[0m
+2025-07-25 13:03:07 [INFO] [0;34mMigration Status[0m
+2025-07-25 13:03:07 [INFO] [0;34mAvailable migrations:[0m
+2025-07-25 13:03:07 [INFO] [0;34mApplied migrations:[0m

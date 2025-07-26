@@ -1,14 +1,27 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
+  Textarea,
+} from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { z } from 'zod'
+
+import { useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+
 import { workoutLogFormAtom } from '@/lib/atoms'
-import type { Workout } from '@/lib/supabase'
 import { createLogger } from '@/lib/logger'
+import type { Workout } from '@/lib/supabase'
 
 const logger = createLogger('WorkoutLogModal')
 
@@ -16,8 +29,26 @@ const logger = createLogger('WorkoutLogModal')
 const workoutLogSchema = z.object({
   status: z.enum(['completed', 'skipped', 'planned']),
   actualType: z.string().optional(),
-  category: z.enum(['easy', 'tempo', 'interval', 'long_run', 'race_simulation', 'recovery', 'strength', 'cross_training', 'rest']).nullable().optional(),
-  intensity: z.number().min(1, 'Intensity must be at least 1').max(10, 'Intensity must be at most 10').nullable().optional(),
+  category: z
+    .enum([
+      'easy',
+      'tempo',
+      'interval',
+      'long_run',
+      'race_simulation',
+      'recovery',
+      'strength',
+      'cross_training',
+      'rest',
+    ])
+    .nullable()
+    .optional(),
+  intensity: z
+    .number()
+    .min(1, 'Intensity must be at least 1')
+    .max(10, 'Intensity must be at most 10')
+    .nullable()
+    .optional(),
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
   elevationGain: z.number().min(0, 'Elevation gain must be positive').nullable().optional(),
   actualDistance: z.number().min(0, 'Distance must be positive').nullable().optional(),
@@ -35,11 +66,11 @@ interface WorkoutLogModalProps {
   workout: Workout
 }
 
-export default function WorkoutLogModal({ 
-  isOpen, 
-  onClose, 
+export default function WorkoutLogModal({
+  isOpen,
+  onClose,
   onSuccess,
-  workout
+  workout,
 }: WorkoutLogModalProps) {
   const [formState, setFormState] = useAtom(workoutLogFormAtom)
 
@@ -49,7 +80,7 @@ export default function WorkoutLogModal({
     handleSubmit,
     reset,
     watch,
-    formState: { isSubmitting }
+    formState: { isSubmitting },
   } = useForm<WorkoutLogForm>({
     resolver: zodResolver(workoutLogSchema),
     defaultValues: {
@@ -63,7 +94,7 @@ export default function WorkoutLogModal({
       actualDuration: workout.actual_duration || undefined,
       workoutNotes: workout.workout_notes || '',
       injuryNotes: workout.injury_notes || '',
-    }
+    },
   })
 
   const watchedStatus = watch('status')
@@ -121,18 +152,18 @@ export default function WorkoutLogModal({
       } else {
         const errorData = await response.json()
         logger.error('Failed to update workout:', errorData)
-        setFormState(prev => ({ 
-          ...prev, 
+        setFormState(prev => ({
+          ...prev,
           loading: false,
-          error: errorData.error || 'Failed to update workout'
+          error: errorData.error || 'Failed to update workout',
         }))
       }
     } catch (error) {
       logger.error('Error updating workout:', error)
-      setFormState(prev => ({ 
-        ...prev, 
+      setFormState(prev => ({
+        ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.'
+        error: 'An error occurred. Please try again.',
       }))
     }
   }
@@ -169,9 +200,12 @@ export default function WorkoutLogModal({
                   label="Status"
                   isRequired
                   selectedKeys={field.value ? [field.value] : []}
-                  onSelectionChange={(keys) => {
-                    const selectedStatus = Array.from(keys).join('') as 'completed' | 'skipped' | 'planned';
-                    field.onChange(selectedStatus);
+                  onSelectionChange={keys => {
+                    const selectedStatus = Array.from(keys).join('') as
+                      | 'completed'
+                      | 'skipped'
+                      | 'planned'
+                    field.onChange(selectedStatus)
                   }}
                   isInvalid={!!fieldState.error}
                   errorMessage={fieldState.error?.message}
@@ -181,11 +215,7 @@ export default function WorkoutLogModal({
                     { id: 'planned', name: 'Planned' },
                   ]}
                 >
-                  {(item) => (
-                    <SelectItem key={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  )}
+                  {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                 </Select>
               )}
             />
@@ -199,9 +229,9 @@ export default function WorkoutLogModal({
                     <Select
                       label="Actual Workout Type"
                       selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={(keys) => {
-                        const selectedType = Array.from(keys).join('');
-                        field.onChange(selectedType);
+                      onSelectionChange={keys => {
+                        const selectedType = Array.from(keys).join('')
+                        field.onChange(selectedType)
                       }}
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
@@ -218,11 +248,7 @@ export default function WorkoutLogModal({
                         { id: 'Rest Day', name: 'Rest Day' },
                       ]}
                     >
-                      {(item) => (
-                        <SelectItem key={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      )}
+                      {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                     </Select>
                   )}
                 />
@@ -234,9 +260,19 @@ export default function WorkoutLogModal({
                     <Select
                       label="Category"
                       selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={(keys) => {
-                        const selectedCategory = Array.from(keys).join('') as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | '';
-                        field.onChange(selectedCategory || undefined);
+                      onSelectionChange={keys => {
+                        const selectedCategory = Array.from(keys).join('') as
+                          | 'easy'
+                          | 'tempo'
+                          | 'interval'
+                          | 'long_run'
+                          | 'race_simulation'
+                          | 'recovery'
+                          | 'strength'
+                          | 'cross_training'
+                          | 'rest'
+                          | ''
+                        field.onChange(selectedCategory || undefined)
                       }}
                       placeholder="Select category..."
                       isInvalid={!!fieldState.error}
@@ -253,11 +289,7 @@ export default function WorkoutLogModal({
                         { id: 'rest', name: 'Rest' },
                       ]}
                     >
-                      {(item) => (
-                        <SelectItem key={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      )}
+                      {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                     </Select>
                   )}
                 />
@@ -273,7 +305,9 @@ export default function WorkoutLogModal({
                       min="1"
                       max="10"
                       value={field.value?.toString() || ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={e =>
+                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      }
                       placeholder="e.g., 7"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
@@ -288,9 +322,14 @@ export default function WorkoutLogModal({
                     <Select
                       label="Terrain"
                       selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={(keys) => {
-                        const selectedTerrain = Array.from(keys)[0] as 'road' | 'trail' | 'track' | 'treadmill' | '';
-                        field.onChange(selectedTerrain || undefined);
+                      onSelectionChange={keys => {
+                        const selectedTerrain = Array.from(keys)[0] as
+                          | 'road'
+                          | 'trail'
+                          | 'track'
+                          | 'treadmill'
+                          | ''
+                        field.onChange(selectedTerrain || undefined)
                       }}
                       placeholder="Select terrain..."
                       isInvalid={!!fieldState.error}
@@ -302,11 +341,7 @@ export default function WorkoutLogModal({
                         { id: 'treadmill', name: 'Treadmill' },
                       ]}
                     >
-                      {(item) => (
-                        <SelectItem key={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      )}
+                      {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                     </Select>
                   )}
                 />
@@ -321,7 +356,9 @@ export default function WorkoutLogModal({
                       label="Elevation Gain (feet)"
                       min="0"
                       value={field.value?.toString() || ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={e =>
+                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      }
                       placeholder="e.g., 500"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
@@ -340,7 +377,9 @@ export default function WorkoutLogModal({
                       step="0.1"
                       min="0"
                       value={field.value?.toString() || ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={e =>
+                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      }
                       placeholder="e.g., 5.5"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
@@ -358,7 +397,9 @@ export default function WorkoutLogModal({
                       label="Actual Duration (minutes)"
                       min="0"
                       value={field.value?.toString() || ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                      onChange={e =>
+                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                      }
                       placeholder="e.g., 60"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
@@ -403,7 +444,7 @@ export default function WorkoutLogModal({
               Cancel
             </Button>
             <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
-              {(isSubmitting || formState.loading) ? 'Saving...' : 'Save Workout'}
+              {isSubmitting || formState.loading ? 'Saving...' : 'Save Workout'}
             </Button>
           </ModalFooter>
         </form>

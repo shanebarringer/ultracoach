@@ -1,40 +1,43 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
-import { 
-  Card, 
-  CardHeader, 
-  CardBody, 
-  Button, 
-  Chip, 
-  Spinner, 
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Divider,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Select,
   SelectItem,
+  Spinner,
   Textarea,
-  Divider
+  useDisclosure,
 } from '@heroui/react'
-import { 
-  MountainSnowIcon, 
-  FlagIcon, 
-  MapPinIcon, 
+import {
   CalendarIcon,
-  TrendingUpIcon,
-  GlobeIcon,
-  PlusIcon,
   EditIcon,
+  FlagIcon,
+  GlobeIcon,
+  MapPinIcon,
+  MountainSnowIcon,
+  PlusIcon,
+  RouteIcon,
   TrashIcon,
-  RouteIcon
+  TrendingUpIcon,
 } from 'lucide-react'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
+
 import Layout from '@/components/layout/Layout'
+import { useSession } from '@/hooks/useBetterSession'
 
 interface Race {
   id: string
@@ -56,13 +59,13 @@ const DISTANCE_TYPES = [
   { key: '100K', label: '100K (62.14 miles)' },
   { key: '100M', label: '100 Mile' },
   { key: 'Marathon', label: 'Marathon (26.2 miles)' },
-  { key: 'Custom', label: 'Custom Distance' }
+  { key: 'Custom', label: 'Custom Distance' },
 ]
 
 const TERRAIN_TYPES = [
   { key: 'trail', label: 'Trail' },
   { key: 'road', label: 'Road' },
-  { key: 'mixed', label: 'Mixed' }
+  { key: 'mixed', label: 'Mixed' },
 ]
 
 export default function RacesPage() {
@@ -80,7 +83,7 @@ export default function RacesPage() {
     elevation_gain_feet: '',
     terrain_type: 'trail',
     website_url: '',
-    notes: ''
+    notes: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -90,7 +93,7 @@ export default function RacesPage() {
 
     try {
       const response = await fetch('/api/races')
-      
+
       if (!response.ok) {
         console.error('Failed to fetch races:', response.statusText)
         return
@@ -107,7 +110,7 @@ export default function RacesPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
@@ -133,7 +136,7 @@ export default function RacesPage() {
         elevation_gain_feet: race.elevation_gain_feet.toString(),
         terrain_type: race.terrain_type,
         website_url: race.website_url || '',
-        notes: race.notes || ''
+        notes: race.notes || '',
       })
     } else {
       setSelectedRace(null)
@@ -146,7 +149,7 @@ export default function RacesPage() {
         elevation_gain_feet: '',
         terrain_type: 'trail',
         website_url: '',
-        notes: ''
+        notes: '',
       })
     }
     onOpen()
@@ -159,7 +162,7 @@ export default function RacesPage() {
     try {
       const url = selectedRace ? `/api/races/${selectedRace.id}` : '/api/races'
       const method = selectedRace ? 'PUT' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -168,7 +171,7 @@ export default function RacesPage() {
         body: JSON.stringify({
           ...formData,
           distance_miles: parseFloat(formData.distance_miles),
-          elevation_gain_feet: parseInt(formData.elevation_gain_feet) || 0
+          elevation_gain_feet: parseInt(formData.elevation_gain_feet) || 0,
         }),
       })
 
@@ -190,7 +193,7 @@ export default function RacesPage() {
 
     try {
       const response = await fetch(`/api/races/${raceId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
 
       if (response.ok) {
@@ -205,21 +208,31 @@ export default function RacesPage() {
 
   const getDistanceTypeColor = (type: string) => {
     switch (type) {
-      case '50K': return 'primary'
-      case '50M': return 'secondary'
-      case '100K': return 'success'
-      case '100M': return 'warning'
-      case 'Marathon': return 'danger'
-      default: return 'default'
+      case '50K':
+        return 'primary'
+      case '50M':
+        return 'secondary'
+      case '100K':
+        return 'success'
+      case '100M':
+        return 'warning'
+      case 'Marathon':
+        return 'danger'
+      default:
+        return 'default'
     }
   }
 
   const getTerrainIcon = (terrain: string) => {
     switch (terrain) {
-      case 'trail': return <MountainSnowIcon className="w-4 h-4" />
-      case 'road': return <RouteIcon className="w-4 h-4" />
-      case 'mixed': return <MapPinIcon className="w-4 h-4" />
-      default: return <MountainSnowIcon className="w-4 h-4" />
+      case 'trail':
+        return <MountainSnowIcon className="w-4 h-4" />
+      case 'road':
+        return <RouteIcon className="w-4 h-4" />
+      case 'mixed':
+        return <MapPinIcon className="w-4 h-4" />
+      default:
+        return <MountainSnowIcon className="w-4 h-4" />
     }
   }
 
@@ -268,12 +281,7 @@ export default function RacesPage() {
         </Card>
 
         {/* Race Management Modal */}
-        <Modal 
-          isOpen={isOpen} 
-          onClose={onClose}
-          size="2xl"
-          scrollBehavior="inside"
-        >
+        <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
           <ModalContent>
             <form onSubmit={handleSubmit}>
               <ModalHeader className="flex items-center gap-2">
@@ -287,7 +295,7 @@ export default function RacesPage() {
                       label="Race Name"
                       placeholder="Enter race name"
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       required
                       variant="bordered"
                       startContent={<MountainSnowIcon className="w-4 h-4 text-foreground-400" />}
@@ -296,7 +304,7 @@ export default function RacesPage() {
                       label="Date"
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                       required
                       variant="bordered"
                       startContent={<CalendarIcon className="w-4 h-4 text-foreground-400" />}
@@ -307,14 +315,14 @@ export default function RacesPage() {
                     <Select
                       label="Distance Type"
                       selectedKeys={[formData.distance_type]}
-                      onSelectionChange={(keys) => {
+                      onSelectionChange={keys => {
                         const selected = Array.from(keys).join('')
                         setFormData(prev => ({ ...prev, distance_type: selected }))
                       }}
                       variant="bordered"
                       startContent={<RouteIcon className="w-4 h-4 text-foreground-400" />}
                     >
-                      {DISTANCE_TYPES.map((type) => (
+                      {DISTANCE_TYPES.map(type => (
                         <SelectItem key={type.key}>{type.label}</SelectItem>
                       ))}
                     </Select>
@@ -324,7 +332,9 @@ export default function RacesPage() {
                       step="0.01"
                       placeholder="Enter distance"
                       value={formData.distance_miles}
-                      onChange={(e) => setFormData(prev => ({ ...prev, distance_miles: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, distance_miles: e.target.value }))
+                      }
                       required
                       variant="bordered"
                       startContent={<TrendingUpIcon className="w-4 h-4 text-foreground-400" />}
@@ -336,7 +346,7 @@ export default function RacesPage() {
                       label="Location"
                       placeholder="Enter race location"
                       value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
                       required
                       variant="bordered"
                       startContent={<MapPinIcon className="w-4 h-4 text-foreground-400" />}
@@ -346,7 +356,9 @@ export default function RacesPage() {
                       type="number"
                       placeholder="Enter elevation gain"
                       value={formData.elevation_gain_feet}
-                      onChange={(e) => setFormData(prev => ({ ...prev, elevation_gain_feet: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, elevation_gain_feet: e.target.value }))
+                      }
                       variant="bordered"
                       startContent={<MountainSnowIcon className="w-4 h-4 text-foreground-400" />}
                     />
@@ -356,14 +368,14 @@ export default function RacesPage() {
                     <Select
                       label="Terrain Type"
                       selectedKeys={[formData.terrain_type]}
-                      onSelectionChange={(keys) => {
+                      onSelectionChange={keys => {
                         const selected = Array.from(keys).join('')
                         setFormData(prev => ({ ...prev, terrain_type: selected }))
                       }}
                       variant="bordered"
                       startContent={getTerrainIcon(formData.terrain_type)}
                     >
-                      {TERRAIN_TYPES.map((type) => (
+                      {TERRAIN_TYPES.map(type => (
                         <SelectItem key={type.key}>{type.label}</SelectItem>
                       ))}
                     </Select>
@@ -371,7 +383,9 @@ export default function RacesPage() {
                       label="Website URL"
                       placeholder="Enter race website"
                       value={formData.website_url}
-                      onChange={(e) => setFormData(prev => ({ ...prev, website_url: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({ ...prev, website_url: e.target.value }))
+                      }
                       variant="bordered"
                       startContent={<GlobeIcon className="w-4 h-4 text-foreground-400" />}
                     />
@@ -381,7 +395,7 @@ export default function RacesPage() {
                     label="Notes"
                     placeholder="Enter race notes and details"
                     value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     variant="bordered"
                     rows={3}
                   />
@@ -391,13 +405,13 @@ export default function RacesPage() {
                 <Button variant="light" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   color="primary"
                   isLoading={isSubmitting}
                   startContent={!isSubmitting ? <FlagIcon className="w-4 h-4" /> : null}
                 >
-                  {isSubmitting ? 'Saving...' : (selectedRace ? 'Update Race' : 'Add Race')}
+                  {isSubmitting ? 'Saving...' : selectedRace ? 'Update Race' : 'Add Race'}
                 </Button>
               </ModalFooter>
             </form>
@@ -417,9 +431,13 @@ export default function RacesPage() {
                   <FlagIcon className="h-12 w-12 text-primary" />
                 </div>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No race expeditions yet</h3>
-              <p className="text-foreground-600 mb-6">Create your first race to start planning summit challenges</p>
-              <Button 
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No race expeditions yet
+              </h3>
+              <p className="text-foreground-600 mb-6">
+                Create your first race to start planning summit challenges
+              </p>
+              <Button
                 onPress={() => handleOpenModal()}
                 color="primary"
                 size="lg"
@@ -431,7 +449,7 @@ export default function RacesPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {races.map((race) => (
+            {races.map(race => (
               <Card
                 key={race.id}
                 className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-primary/60"
@@ -495,11 +513,15 @@ export default function RacesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <RouteIcon className="w-4 h-4 text-foreground-600" />
-                      <span className="text-sm text-foreground-600">{race.distance_miles} miles</span>
+                      <span className="text-sm text-foreground-600">
+                        {race.distance_miles} miles
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MountainSnowIcon className="w-4 h-4 text-foreground-600" />
-                      <span className="text-sm text-foreground-600">{race.elevation_gain_feet.toLocaleString()} ft gain</span>
+                      <span className="text-sm text-foreground-600">
+                        {race.elevation_gain_feet.toLocaleString()} ft gain
+                      </span>
                     </div>
                   </div>
 
@@ -507,9 +529,7 @@ export default function RacesPage() {
                   {race.notes && (
                     <>
                       <Divider className="my-4" />
-                      <p className="text-sm text-foreground-600 italic">
-                        {race.notes}
-                      </p>
+                      <p className="text-sm text-foreground-600 italic">{race.notes}</p>
                     </>
                   )}
 

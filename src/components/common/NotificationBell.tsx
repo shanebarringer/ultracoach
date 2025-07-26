@@ -1,19 +1,20 @@
 'use client'
 
-import { 
-  Button, 
-  Badge, 
-  Dropdown, 
-  DropdownTrigger, 
-  DropdownMenu, 
+import {
+  Badge,
+  Button,
+  Chip,
+  Dropdown,
   DropdownItem,
+  DropdownMenu,
   DropdownSection,
-  Chip
+  DropdownTrigger,
 } from '@heroui/react'
-import { BellIcon, CheckIcon } from 'lucide-react'
-import { useNotifications } from '@/hooks/useNotifications'
-import { formatDistanceToNow } from 'date-fns'
 import classNames from 'classnames'
+import { formatDistanceToNow } from 'date-fns'
+import { BellIcon, CheckIcon } from 'lucide-react'
+
+import { useNotifications } from '@/hooks/useNotifications'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
@@ -57,14 +58,10 @@ export default function NotificationBell() {
   return (
     <Dropdown placement="bottom-end" className="min-w-80">
       <DropdownTrigger>
-        <Button
-          variant="light"
-          isIconOnly
-          className="relative"
-        >
-          <Badge 
-            content={unreadCount > 0 ? unreadCount.toString() : ''} 
-            color="danger" 
+        <Button variant="light" isIconOnly className="relative">
+          <Badge
+            content={unreadCount > 0 ? unreadCount.toString() : ''}
+            color="danger"
             size="sm"
             isInvisible={unreadCount === 0}
           >
@@ -72,17 +69,9 @@ export default function NotificationBell() {
           </Badge>
         </Button>
       </DropdownTrigger>
-      <DropdownMenu
-        aria-label="Notifications"
-        variant="flat"
-        className="max-h-96 overflow-y-auto"
-      >
+      <DropdownMenu aria-label="Notifications" variant="flat" className="max-h-96 overflow-y-auto">
         <DropdownSection showDivider>
-          <DropdownItem
-            key="header"
-            className="h-14 gap-2"
-            textValue="Notifications Header"
-          >
+          <DropdownItem key="header" className="h-14 gap-2" textValue="Notifications Header">
             <div className="flex justify-between items-center w-full">
               <div className="flex flex-col">
                 <span className="text-medium font-semibold">🏔️ Base Camp Updates</span>
@@ -118,12 +107,12 @@ export default function NotificationBell() {
             </DropdownItem>
           ) : (
             <>
-              {notifications.slice(0, 10).map((notification) => (
+              {notifications.slice(0, 10).map(notification => (
                 <DropdownItem
                   key={notification.id}
                   className={classNames(
-                    "p-3 border-l-3",
-                    !notification.read ? "bg-primary-50 border-l-primary" : "border-l-transparent"
+                    'p-3 border-l-3',
+                    !notification.read ? 'bg-primary-50 border-l-primary' : 'border-l-transparent'
                   )}
                   textValue={notification.title}
                   onPress={() => handleNotificationClick(notification.id, notification.read)}
@@ -134,10 +123,12 @@ export default function NotificationBell() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={classNames(
-                          "text-sm font-medium truncate",
-                          !notification.read && "text-primary-700"
-                        )}>
+                        <p
+                          className={classNames(
+                            'text-sm font-medium truncate',
+                            !notification.read && 'text-primary-700'
+                          )}
+                        >
                           {notification.title}
                         </p>
                         {!notification.read && (
@@ -156,7 +147,9 @@ export default function NotificationBell() {
                           {notification.type}
                         </Chip>
                         <span className="text-xs text-default-400">
-                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                          })}
                         </span>
                       </div>
                     </div>

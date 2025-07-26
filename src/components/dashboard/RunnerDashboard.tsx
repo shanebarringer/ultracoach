@@ -1,12 +1,22 @@
 'use client'
 
+import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
+import {
+  CalendarIcon,
+  ClockIcon,
+  FlagIcon,
+  MapPinIcon,
+  MountainSnowIcon,
+  RouteIcon,
+  TrendingUpIcon,
+} from 'lucide-react'
+
 import { memo, useMemo } from 'react'
+
 import { useSession } from '@/hooks/useBetterSession'
-import { Card, CardHeader, CardBody, Chip, Spinner, Progress, Button } from '@heroui/react'
-import { MountainSnowIcon, TrendingUpIcon, CalendarIcon, MapPinIcon, ClockIcon, FlagIcon, RouteIcon } from 'lucide-react'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import type { TrainingPlan } from '@/lib/supabase'
 import { createLogger } from '@/lib/logger'
+import type { TrainingPlan } from '@/lib/supabase'
 
 const logger = createLogger('RunnerDashboard')
 
@@ -17,7 +27,10 @@ const getTrainingPlanProgress = (plan: TrainingPlan) => {
   const today = new Date()
   const raceDate = new Date(plan.target_race_date)
   const createdDate = new Date(plan.created_at)
-  const totalDays = Math.max(1, Math.ceil((raceDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)))
+  const totalDays = Math.max(
+    1,
+    Math.ceil((raceDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+  )
   const daysPassed = Math.ceil((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
   return Math.min(100, Math.max(0, (daysPassed / totalDays) * 100))
 }
@@ -47,14 +60,14 @@ function RunnerDashboard() {
       const workoutDate = new Date(w.date)
       return workoutDate >= today && workoutDate <= weekFromToday
     })
-    
+
     logger.debug('Dashboard data updated:', {
       trainingPlansCount: trainingPlans.length,
       upcomingWorkoutsCount: upcomingWorkouts.length,
       thisWeekWorkoutsCount: filtered.length,
-      loading
+      loading,
     })
-    
+
     return filtered
   }, [upcomingWorkouts, trainingPlans.length, loading])
 
@@ -95,7 +108,9 @@ function RunnerDashboard() {
                   <MapPinIcon className="w-5 h-5 text-primary" />
                   <h3 className="text-sm font-semibold text-foreground-700">Active Expeditions</h3>
                 </div>
-                <p className="text-3xl font-bold text-primary" data-testid="active-plans-count">{trainingPlans.length}</p>
+                <p className="text-3xl font-bold text-primary" data-testid="active-plans-count">
+                  {trainingPlans.length}
+                </p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="primary" variant="flat">
@@ -114,7 +129,12 @@ function RunnerDashboard() {
                   <TrendingUpIcon className="w-5 h-5 text-success" />
                   <h3 className="text-sm font-semibold text-foreground-700">Upcoming Ascents</h3>
                 </div>
-                <p className="text-3xl font-bold text-success" data-testid="upcoming-workouts-count">{upcomingWorkouts.length}</p>
+                <p
+                  className="text-3xl font-bold text-success"
+                  data-testid="upcoming-workouts-count"
+                >
+                  {upcomingWorkouts.length}
+                </p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="success" variant="flat">
@@ -133,7 +153,9 @@ function RunnerDashboard() {
                   <CalendarIcon className="w-5 h-5 text-warning" />
                   <h3 className="text-sm font-semibold text-foreground-700">This Week</h3>
                 </div>
-                <p className="text-3xl font-bold text-warning" data-testid="this-week-count">{thisWeekWorkouts.length}</p>
+                <p className="text-3xl font-bold text-warning" data-testid="this-week-count">
+                  {thisWeekWorkouts.length}
+                </p>
               </div>
               <div className="text-right">
                 <Chip size="sm" color="warning" variant="flat">
@@ -159,18 +181,25 @@ function RunnerDashboard() {
             {trainingPlans.length === 0 ? (
               <div className="text-center py-8">
                 <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No expeditions planned</h3>
-                <p className="text-foreground-600 mb-4">Connect with your guide to plan your next summit</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  No expeditions planned
+                </h3>
+                <p className="text-foreground-600 mb-4">
+                  Connect with your guide to plan your next summit
+                </p>
                 <Button color="primary" variant="bordered" size="sm">
                   Find a Guide
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {trainingPlans.map((plan) => {
+                {trainingPlans.map(plan => {
                   const progress = getTrainingPlanProgress(plan)
                   return (
-                    <Card key={plan.id} className="border border-divider hover:shadow-md transition-shadow">
+                    <Card
+                      key={plan.id}
+                      className="border border-divider hover:shadow-md transition-shadow"
+                    >
                       <CardBody className="p-4">
                         <div className="flex justify-between items-start mb-3">
                           <h3 className="font-semibold text-foreground">{plan.title}</h3>
@@ -190,12 +219,14 @@ function RunnerDashboard() {
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-foreground-600">Progress to summit</span>
-                            <span className="text-xs text-foreground-600">{Math.round(progress)}%</span>
+                            <span className="text-xs text-foreground-600">
+                              {Math.round(progress)}%
+                            </span>
                           </div>
-                          <Progress 
-                            value={progress} 
-                            color="primary" 
-                            size="sm" 
+                          <Progress
+                            value={progress}
+                            color="primary"
+                            size="sm"
                             className="w-full"
                             showValueLabel={false}
                           />
@@ -226,8 +257,11 @@ function RunnerDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {upcomingWorkouts.map((workout) => (
-                  <Card key={workout.id} className="border border-divider hover:shadow-md transition-shadow">
+                {upcomingWorkouts.map(workout => (
+                  <Card
+                    key={workout.id}
+                    className="border border-divider hover:shadow-md transition-shadow"
+                  >
                     <CardBody className="p-4">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">

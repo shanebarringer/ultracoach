@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+
 import type { RealtimeChannel } from '@supabase/supabase-js'
+
+import { supabase } from '@/lib/supabase'
 
 interface UseSupabaseRealtimeProps {
   table: string
@@ -20,7 +22,7 @@ export function useSupabaseRealtime({
   filter,
   onInsert,
   onUpdate,
-  onDelete
+  onDelete,
 }: UseSupabaseRealtimeProps) {
   const channelRef = useRef<RealtimeChannel | null>(null)
 
@@ -32,9 +34,9 @@ export function useSupabaseRealtime({
     }
 
     try {
-      // Create a stable channel name  
+      // Create a stable channel name
       const channelName = `realtime-${table}-${filter || 'all'}`
-      
+
       let channel = supabase.channel(channelName)
 
       // Set up the subscription with error handling
@@ -45,9 +47,9 @@ export function useSupabaseRealtime({
             event: '*',
             schema: 'public',
             table,
-            filter
+            filter,
           },
-          (payload) => {
+          payload => {
             try {
               switch (payload.eventType) {
                 case 'INSERT':
@@ -71,9 +73,9 @@ export function useSupabaseRealtime({
           {
             event: '*',
             schema: 'public',
-            table
+            table,
           },
-          (payload) => {
+          payload => {
             try {
               switch (payload.eventType) {
                 case 'INSERT':
@@ -100,14 +102,18 @@ export function useSupabaseRealtime({
           console.log(`✅ Successfully subscribed to ${table} realtime updates`)
         } else if (status === 'CHANNEL_ERROR') {
           console.error(`❌ Error subscribing to ${table} realtime updates:`, err)
-          
+
           // Handle schema mismatch errors gracefully
-          if (err && err.message && err.message.includes('mismatch between server and client bindings')) {
+          if (
+            err &&
+            err.message &&
+            err.message.includes('mismatch between server and client bindings')
+          ) {
             console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
             // The component will still work, just without real-time updates
             return
           }
-          
+
           // For other errors, also continue gracefully
           console.warn(`⚠️ Real-time updates disabled for ${table}, components will still function`)
         } else if (status === 'TIMED_OUT') {
@@ -121,17 +127,23 @@ export function useSupabaseRealtime({
     } catch (error) {
       // Catch any realtime setup errors and continue gracefully
       console.warn(`🔄 Realtime setup failed for ${table}, falling back to polling:`, error)
-      
+
       // If error message contains schema mismatch, provide specific guidance
-      if (error && typeof error === 'object' && 'message' in error && 
-          typeof error.message === 'string' && 
-          error.message.includes('mismatch between server and client bindings')) {
-        console.warn(`📊 Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`)
+      if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string' &&
+        error.message.includes('mismatch between server and client bindings')
+      ) {
+        console.warn(
+          `📊 Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`
+        )
       }
     }
 
     // Cleanup function
-    return () => {      
+    return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
         channelRef.current = null

@@ -1,15 +1,27 @@
 'use client'
 
-import React from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Divider,
+  Input,
+  Select,
+  SelectItem,
+} from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button, Input, Select, SelectItem, Card, CardHeader, CardBody, Divider } from '@heroui/react'
-import { MountainSnowIcon, UserIcon, LockIcon, MailIcon, FlagIcon } from 'lucide-react'
-import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { useAtom } from 'jotai'
+import { FlagIcon, LockIcon, MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
+import { z } from 'zod'
+
+import React from 'react'
+import { Controller, useForm } from 'react-hook-form'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { signUpFormAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
@@ -17,9 +29,15 @@ const logger = createLogger('SignUp')
 
 // Zod schema for signup form validation
 const signUpSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required').min(2, 'Full name must be at least 2 characters'),
+  fullName: z
+    .string()
+    .min(1, 'Full name is required')
+    .min(2, 'Full name must be at least 2 characters'),
   email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters'),
   role: z.enum(['runner', 'coach'], { message: 'Please select your role' }),
 })
 
@@ -35,7 +53,7 @@ export default function SignUp() {
     control,
     handleSubmit,
     formState: { isSubmitting },
-    setError
+    setError,
   } = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -43,23 +61,29 @@ export default function SignUp() {
       email: '',
       password: '',
       role: 'runner',
-    }
+    },
   })
 
   const onSubmit = async (data: SignUpForm) => {
     setFormState(prev => ({ ...prev, loading: true }))
-    
+
     try {
-      logger.info('Attempting sign up:', { email: data.email, fullName: data.fullName, role: data.role })
-      
+      logger.info('Attempting sign up:', {
+        email: data.email,
+        fullName: data.fullName,
+        role: data.role,
+      })
+
       const result = await signUp(data.email, data.password, data.fullName)
 
       if (!result.success) {
         logger.error('Sign up failed:', result.error)
         // Sanitize error message for security
-        const sanitizedError = result.error?.toLowerCase().includes('email') && result.error?.toLowerCase().includes('exists')
-                               ? 'An account with this email already exists'
-                               : 'Registration failed. Please try again.'
+        const sanitizedError =
+          result.error?.toLowerCase().includes('email') &&
+          result.error?.toLowerCase().includes('exists')
+            ? 'An account with this email already exists'
+            : 'Registration failed. Please try again.'
         setError('email', { message: sanitizedError })
       } else {
         logger.info('Sign up successful:', { userRole: data.role })
@@ -117,13 +141,13 @@ export default function SignUp() {
                       variant="bordered"
                       size="lg"
                       classNames={{
-                        input: "text-foreground",
-                        label: "text-foreground-600"
+                        input: 'text-foreground',
+                        label: 'text-foreground-600',
                       }}
                     />
                   )}
                 />
-                
+
                 <Controller
                   name="email"
                   control={control}
@@ -141,13 +165,13 @@ export default function SignUp() {
                       variant="bordered"
                       size="lg"
                       classNames={{
-                        input: "text-foreground",
-                        label: "text-foreground-600"
+                        input: 'text-foreground',
+                        label: 'text-foreground-600',
                       }}
                     />
                   )}
                 />
-                
+
                 <Controller
                   name="password"
                   control={control}
@@ -165,20 +189,20 @@ export default function SignUp() {
                       variant="bordered"
                       size="lg"
                       classNames={{
-                        input: "text-foreground",
-                        label: "text-foreground-600"
+                        input: 'text-foreground',
+                        label: 'text-foreground-600',
                       }}
                     />
                   )}
                 />
-                
+
                 <Controller
                   name="role"
                   control={control}
                   render={({ field, fieldState }) => (
                     <Select
                       selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={(keys) => {
+                      onSelectionChange={keys => {
                         const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
                         field.onChange(selectedRole)
                       }}
@@ -189,17 +213,21 @@ export default function SignUp() {
                       variant="bordered"
                       size="lg"
                       classNames={{
-                        label: "text-foreground-600",
-                        value: "text-foreground"
+                        label: 'text-foreground-600',
+                        value: 'text-foreground',
                       }}
                     >
                       <SelectItem key="runner" startContent="🏃">
                         <span className="font-medium">Trail Runner</span>
-                        <span className="text-sm text-foreground-500 block">Conquer your personal peaks</span>
+                        <span className="text-sm text-foreground-500 block">
+                          Conquer your personal peaks
+                        </span>
                       </SelectItem>
                       <SelectItem key="coach" startContent="🏔️">
                         <span className="font-medium">Mountain Guide</span>
-                        <span className="text-sm text-foreground-500 block">Lead others to their summit</span>
+                        <span className="text-sm text-foreground-500 block">
+                          Lead others to their summit
+                        </span>
                       </SelectItem>
                     </Select>
                   )}
@@ -212,19 +240,25 @@ export default function SignUp() {
                 size="lg"
                 className="w-full font-semibold"
                 isLoading={isSubmitting || formState.loading}
-                startContent={!(isSubmitting || formState.loading) ? <MountainSnowIcon className="w-5 h-5" /> : null}
+                startContent={
+                  !(isSubmitting || formState.loading) ? (
+                    <MountainSnowIcon className="w-5 h-5" />
+                  ) : null
+                }
               >
-                {(isSubmitting || formState.loading) ? 'Preparing your expedition...' : 'Start Your Journey'}
+                {isSubmitting || formState.loading
+                  ? 'Preparing your expedition...'
+                  : 'Start Your Journey'}
               </Button>
             </form>
 
             <Divider className="my-6" />
-            
+
             <div className="text-center">
               <p className="text-sm text-foreground-600">
                 Already have a base camp?{' '}
-                <Link 
-                  href="/auth/signin" 
+                <Link
+                  href="/auth/signin"
                   className="font-semibold text-primary hover:text-primary-600 transition-colors"
                 >
                   Return to expedition

@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
     const supabase = supabaseAdmin
-    
-    const { data: race, error } = await supabase
-      .from('races')
-      .select('*')
-      .eq('id', id)
-      .single()
+
+    const { data: race, error } = await supabase.from('races').select('*').eq('id', id).single()
 
     if (error) {
       console.error('Error fetching race:', error)
@@ -49,13 +43,10 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -70,7 +61,7 @@ export async function PUT(
       elevation_gain_feet,
       terrain_type,
       website_url,
-      notes
+      notes,
     } = await request.json()
 
     if (!name || !date || !distance_miles || !distance_type || !location || !terrain_type) {
@@ -78,7 +69,7 @@ export async function PUT(
     }
 
     const supabase = supabaseAdmin
-    
+
     // Check if race exists and user has permission
     const { data: existingRace, error: fetchError } = await supabase
       .from('races')
@@ -106,7 +97,7 @@ export async function PUT(
         terrain_type,
         website_url: website_url || null,
         notes: notes || null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()
@@ -130,14 +121,14 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
     const supabase = supabaseAdmin
-    
+
     // Check if race exists and user has permission
     const { data: existingRace, error: fetchError } = await supabase
       .from('races')
@@ -166,15 +157,15 @@ export async function DELETE(
     }
 
     if (plansUsingRace && plansUsingRace.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete race that is being used in training plans' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Cannot delete race that is being used in training plans',
+        },
+        { status: 400 }
+      )
     }
 
-    const { error } = await supabase
-      .from('races')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('races').delete().eq('id', id)
 
     if (error) {
       console.error('Error deleting race:', error)

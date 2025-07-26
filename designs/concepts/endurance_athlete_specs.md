@@ -7,6 +7,7 @@ The **Endurance Athlete** design concept transforms UltraCoach into a performanc
 ## Design Philosophy
 
 ### Core Principles
+
 - **Clean & Performance-Focused**: Minimal visual noise, maximum data clarity
 - **Data-Driven**: Emphasize charts, metrics, progress tracking, scientific training
 - **Professional Coaching**: Appeal to serious coaches and performance-oriented athletes
@@ -14,6 +15,7 @@ The **Endurance Athlete** design concept transforms UltraCoach into a performanc
 - **Accessibility First**: Optimized for data readability in both light and dark modes
 
 ### Target Audience
+
 - Professional ultramarathon coaches
 - Data-driven endurance athletes
 - Performance analysts and sports scientists
@@ -24,45 +26,42 @@ The **Endurance Athlete** design concept transforms UltraCoach into a performanc
 ### Primary Colors - Athletic Performance
 
 #### Performance Red (Primary Athletic Color)
+
 ```css
---performance-red: #D32F2F         /* Main red - athletic, strong */
---performance-red-dark: #B71C1C    /* Darker red for hovers */
---performance-red-light: #F44336   /* Lighter red for accents */
---performance-red-50: #FFEBEE      /* Lightest tint */
---performance-red-100: #FFCDD2     /* Light tint */
---performance-red-10: rgba(211, 47, 47, 0.1)  /* 10% opacity */
---performance-red-20: rgba(211, 47, 47, 0.2)  /* 20% opacity */
+--performance-red: #d32f2f /* Main red - athletic, strong */ --performance-red-dark: #b71c1c
+  /* Darker red for hovers */ --performance-red-light: #f44336 /* Lighter red for accents */
+  --performance-red-50: #ffebee /* Lightest tint */ --performance-red-100: #ffcdd2 /* Light tint */
+  --performance-red-10: rgba(211, 47, 47, 0.1) /* 10% opacity */
+  --performance-red-20: rgba(211, 47, 47, 0.2) /* 20% opacity */;
 ```
 
 **Usage**: Primary buttons, key metrics, active states, branding, important data points
 
 #### Deep Blue (Professional Technical)
+
 ```css
---deep-blue: #1565C0               /* Primary blue - technical precision */
---deep-blue-dark: #0D47A1          /* Darker blue */
---deep-blue-light: #1976D2         /* Lighter blue */
---deep-blue-50: #E3F2FD            /* Lightest tint */
---deep-blue-10: rgba(21, 101, 192, 0.1)
+--deep-blue: #1565c0 /* Primary blue - technical precision */ --deep-blue-dark: #0d47a1
+  /* Darker blue */ --deep-blue-light: #1976d2 /* Lighter blue */ --deep-blue-50: #e3f2fd
+  /* Lightest tint */ --deep-blue-10: rgba(21, 101, 192, 0.1);
 ```
 
 **Usage**: Secondary buttons, links, data visualization, coaching elements
 
 #### Charcoal Gray (Data Surfaces)
+
 ```css
---charcoal: #37474F                 /* Primary charcoal */
---charcoal-dark: #263238            /* Darker charcoal */
---charcoal-light: #455A64          /* Lighter charcoal */
---charcoal-50: #ECEFF1             /* Light surface */
---charcoal-100: #CFD8DC            /* Medium surface */
+--charcoal: #37474f /* Primary charcoal */ --charcoal-dark: #263238 /* Darker charcoal */
+  --charcoal-light: #455a64 /* Lighter charcoal */ --charcoal-50: #eceff1 /* Light surface */
+  --charcoal-100: #cfd8dc /* Medium surface */;
 ```
 
 **Usage**: Text, borders, neutral elements, data tables
 
 #### Performance Yellow (Accent & Highlights)
+
 ```css
---performance-yellow: #F57F17       /* Athletic yellow - energy */
---performance-yellow-dark: #E65100  /* Darker yellow */
---performance-yellow-light: #FF9800 /* Lighter yellow */
+--performance-yellow: #f57f17 /* Athletic yellow - energy */ --performance-yellow-dark: #e65100
+  /* Darker yellow */ --performance-yellow-light: #ff9800 /* Lighter yellow */;
 ```
 
 **Usage**: Highlights, warnings, progress indicators, accent elements
@@ -72,11 +71,10 @@ The **Endurance Athlete** design concept transforms UltraCoach into a performanc
 Scientific color coding for heart rate and power zones:
 
 ```css
---zone-recovery: #4CAF50            /* Zone 1 - Green (Recovery) */
---zone-aerobic: #2196F3             /* Zone 2 - Blue (Aerobic) */
---zone-tempo: #FF9800               /* Zone 3 - Orange (Tempo) */
---zone-threshold: #F44336           /* Zone 4 - Red (Threshold) */
---zone-vo2max: #9C27B0              /* Zone 5 - Purple (VO2Max) */
+--zone-recovery: #4caf50 /* Zone 1 - Green (Recovery) */ --zone-aerobic: #2196f3
+  /* Zone 2 - Blue (Aerobic) */ --zone-tempo: #ff9800 /* Zone 3 - Orange (Tempo) */
+  --zone-threshold: #f44336 /* Zone 4 - Red (Threshold) */ --zone-vo2max: #9c27b0
+  /* Zone 5 - Purple (VO2Max) */;
 ```
 
 **Usage**: Training zone indicators, workout categorization, performance analysis
@@ -84,9 +82,8 @@ Scientific color coding for heart rate and power zones:
 ### Status & Feedback Colors
 
 ```css
---success: #2E7D32                  /* Success/positive metrics */
---warning: #F57C00                  /* Warning/attention needed */
---error: #C62828                    /* Error/negative metrics */
+--success: #2e7d32 /* Success/positive metrics */ --warning: #f57c00 /* Warning/attention needed */
+  --error: #c62828 /* Error/negative metrics */;
 ```
 
 **Usage**: Status indicators, form validation, performance trends
@@ -95,36 +92,24 @@ Scientific color coding for heart rate and power zones:
 
 ```css
 /* Backgrounds & Surfaces */
---background: #FAFAFA               /* Main background - clean white */
---surface: #FFFFFF                  /* Card/component background */
---surface-elevated: #F5F5F5         /* Elevated surfaces */
-
-/* Text & Foreground */
---foreground: #212121               /* Primary text - strong contrast */
---foreground-muted: #616161         /* Secondary text */
---foreground-light: #9E9E9E         /* Tertiary text */
-
-/* Borders & Interactions */
---border: #E0E0E0                   /* Default borders */
---hover: rgba(211, 47, 47, 0.04)    /* Hover background */
+--background: #fafafa /* Main background - clean white */ --surface: #ffffff
+  /* Card/component background */ --surface-elevated: #f5f5f5 /* Elevated surfaces */
+  /* Text & Foreground */ --foreground: #212121 /* Primary text - strong contrast */
+  --foreground-muted: #616161 /* Secondary text */ --foreground-light: #9e9e9e /* Tertiary text */
+  /* Borders & Interactions */ --border: #e0e0e0 /* Default borders */
+  --hover: rgba(211, 47, 47, 0.04) /* Hover background */;
 ```
 
 ### Dark Mode Theme (Optimized for Data Reading)
 
 ```css
 /* Backgrounds & Surfaces */
---background: #121212               /* Dark background - easy on eyes */
---surface: #1E1E1E                  /* Card background */
---surface-elevated: #2C2C2C         /* Elevated surfaces */
-
-/* Text & Foreground */
---foreground: #E0E0E0               /* Primary text - good contrast */
---foreground-muted: #A0A0A0         /* Secondary text */
---foreground-light: #707070         /* Tertiary text */
-
-/* Adjusted colors for dark backgrounds */
---performance-red: #EF5350          /* Lighter red for dark backgrounds */
---performance-yellow: #FFCA28       /* Lighter yellow for dark backgrounds */
+--background: #121212 /* Dark background - easy on eyes */ --surface: #1e1e1e /* Card background */
+  --surface-elevated: #2c2c2c /* Elevated surfaces */ /* Text & Foreground */ --foreground: #e0e0e0
+  /* Primary text - good contrast */ --foreground-muted: #a0a0a0 /* Secondary text */
+  --foreground-light: #707070 /* Tertiary text */ /* Adjusted colors for dark backgrounds */
+  --performance-red: #ef5350 /* Lighter red for dark backgrounds */ --performance-yellow: #ffca28
+  /* Lighter yellow for dark backgrounds */;
 ```
 
 ## Typography System
@@ -142,6 +127,7 @@ Scientific color coding for heart rate and power zones:
 ### Typography Hierarchy
 
 #### Headlines (Data-Friendly)
+
 - **H1**: 2.5rem, 700 weight - Dashboard titles, main page headers
 - **H2**: 2rem, 600 weight - Section headers
 - **H3**: 1.5rem, 600 weight - Card titles, subsection headers
@@ -149,11 +135,13 @@ Scientific color coding for heart rate and power zones:
 - **H5/H6**: 1.125rem/1rem, 500 weight - Minor headers
 
 #### Body Text (Optimized for Readability)
+
 - **Body**: 1rem, 400 weight, 1.6 line height - Main content
 - **Small**: 0.875rem - Secondary information, captions
 - **Tiny**: 0.75rem - Labels, tags, metadata
 
 #### Data-Specific Typography
+
 - **Metric Values**: Monospace font, 700 weight, performance red color
 - **Data Labels**: Uppercase, 0.875rem, 500 weight, letter-spacing 0.05em
 - **Table Data**: Consistent spacing, clear hierarchy
@@ -186,22 +174,24 @@ Scientific color coding for heart rate and power zones:
 ### HeroUI Component Adaptations
 
 #### Buttons
+
 ```css
 /* Primary button - Performance red theme */
-.heroui-button[data-variant="solid"][data-color="primary"] {
+.heroui-button[data-variant='solid'][data-color='primary'] {
   background: var(--performance-red);
   color: white;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
-.heroui-button[data-variant="solid"][data-color="primary"]:hover {
+.heroui-button[data-variant='solid'][data-color='primary']:hover {
   background: var(--performance-red-dark);
   transform: translateY(-1px);
 }
 ```
 
 #### Cards
+
 ```css
 /* Analytics cards with subtle hover effects */
 .heroui-card {
@@ -220,6 +210,7 @@ Scientific color coding for heart rate and power zones:
 ```
 
 #### Data Tables
+
 ```css
 /* Performance-optimized data tables */
 .heroui-table {
@@ -241,6 +232,7 @@ Scientific color coding for heart rate and power zones:
 ```
 
 #### Input Fields
+
 ```css
 /* Clean input styling for data entry */
 .heroui-input {
@@ -260,6 +252,7 @@ Scientific color coding for heart rate and power zones:
 ### Custom Components
 
 #### Metric Cards
+
 ```css
 .metric-card {
   background: var(--surface);
@@ -285,6 +278,7 @@ Scientific color coding for heart rate and power zones:
 ```
 
 #### Training Zone Indicators
+
 ```css
 .zone-indicator {
   display: inline-block;
@@ -295,14 +289,25 @@ Scientific color coding for heart rate and power zones:
 }
 
 /* Zone-specific colors */
-.zone-1 { background: var(--zone-recovery); }
-.zone-2 { background: var(--zone-aerobic); }
-.zone-3 { background: var(--zone-tempo); }
-.zone-4 { background: var(--zone-threshold); }
-.zone-5 { background: var(--zone-vo2max); }
+.zone-1 {
+  background: var(--zone-recovery);
+}
+.zone-2 {
+  background: var(--zone-aerobic);
+}
+.zone-3 {
+  background: var(--zone-tempo);
+}
+.zone-4 {
+  background: var(--zone-threshold);
+}
+.zone-5 {
+  background: var(--zone-vo2max);
+}
 ```
 
 #### Progress Bars
+
 ```css
 .progress-bar {
   width: 100%;
@@ -324,6 +329,7 @@ Scientific color coding for heart rate and power zones:
 ## Data Visualization Guidelines
 
 ### Chart Color Scheme
+
 - **Primary Data**: Performance red (#D32F2F)
 - **Secondary Data**: Deep blue (#1565C0)
 - **Comparison Data**: Performance yellow (#F57F17)
@@ -331,7 +337,9 @@ Scientific color coding for heart rate and power zones:
 - **Grid Lines**: Light border color (#E0E0E0 light / #333333 dark)
 
 ### Training Zone Visualization
+
 Use the established zone colors consistently across all charts:
+
 - Zone 1 (Recovery): Green (#4CAF50)
 - Zone 2 (Aerobic): Blue (#2196F3)
 - Zone 3 (Tempo): Orange (#FF9800)
@@ -339,6 +347,7 @@ Use the established zone colors consistently across all charts:
 - Zone 5 (VO2Max): Purple (#9C27B0)
 
 ### Chart Types
+
 1. **Line Charts**: Weekly volume trends, fitness progression
 2. **Bar Charts**: Training distribution, weekly summaries
 3. **Scatter Plots**: Pace vs heart rate analysis
@@ -348,13 +357,27 @@ Use the established zone colors consistently across all charts:
 ## Layout & Spacing
 
 ### Grid System
+
 ```css
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
 ```
 
 ### Spacing Scale
+
 - **xs**: 0.25rem (4px) - Tight spacing
 - **sm**: 0.5rem (8px) - Close elements
 - **md**: 1rem (16px) - Standard spacing
@@ -363,6 +386,7 @@ Use the established zone colors consistently across all charts:
 - **2xl**: 3rem (48px) - Page sections
 
 ### Border Radius
+
 - **Small**: 0.25rem - Badges, chips
 - **Medium**: 0.5rem - Buttons, inputs
 - **Large**: 0.75rem - Cards, modals
@@ -371,17 +395,20 @@ Use the established zone colors consistently across all charts:
 ## Implementation Notes
 
 ### Phase 1: Core Theme Application
+
 1. Update CSS custom properties in the main theme file
 2. Modify HeroUI theme configuration in `tailwind.config.js`
 3. Apply new color palette to existing components
 
 ### Phase 2: Component Enhancement
+
 1. Update metric display components with monospace fonts
 2. Implement training zone indicators throughout the app
 3. Enhance data tables with improved styling
 4. Add progress bars for training plan progression
 
 ### Phase 3: Advanced Features
+
 1. Implement chart placeholder styling for future data visualization
 2. Add hover effects and micro-interactions
 3. Optimize dark mode for extended data reading sessions
@@ -390,6 +417,7 @@ Use the established zone colors consistently across all charts:
 ### Technical Considerations
 
 #### CSS Custom Properties Implementation
+
 ```css
 /* Example implementation in existing components */
 .training-plan-card {
@@ -406,6 +434,7 @@ Use the established zone colors consistently across all charts:
 ```
 
 #### HeroUI Theme Integration
+
 ```javascript
 // tailwind.config.js integration
 heroui({
@@ -413,8 +442,8 @@ heroui({
     light: {
       colors: {
         primary: {
-          DEFAULT: "#D32F2F",
-          foreground: "#ffffff",
+          DEFAULT: '#D32F2F',
+          foreground: '#ffffff',
         },
         // ... other color definitions
       },
@@ -422,8 +451,8 @@ heroui({
     dark: {
       colors: {
         primary: {
-          DEFAULT: "#EF5350",
-          foreground: "#ffffff",
+          DEFAULT: '#EF5350',
+          foreground: '#ffffff',
         },
         // ... dark mode adaptations
       },
@@ -435,16 +464,19 @@ heroui({
 ### Accessibility Features
 
 #### High Contrast Support
+
 - Ensure 4.5:1 contrast ratio for normal text
 - Ensure 3:1 contrast ratio for large text
 - Support for `prefers-contrast: high` media query
 
 #### Motion Preferences
+
 - Respect `prefers-reduced-motion` settings
 - Provide smooth but subtle animations
 - Allow users to disable motion effects
 
 #### Screen Reader Support
+
 - Proper semantic markup for data tables
 - ARIA labels for interactive elements
 - Screen reader-only content for complex data
@@ -452,16 +484,19 @@ heroui({
 ## Future Enhancements
 
 ### Advanced Data Visualization
+
 - Integration with Chart.js or D3.js for interactive charts
 - Real-time data updates with smooth animations
 - Custom chart components matching the theme
 
 ### Performance Monitoring
+
 - Live metrics dashboard with WebSocket updates
 - Training load calculations and visualizations
 - Predictive analytics for race preparation
 
 ### Mobile Optimization
+
 - Touch-friendly data interaction
 - Responsive chart layouts
 - Optimized metric display for small screens

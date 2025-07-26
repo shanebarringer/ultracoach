@@ -1,10 +1,12 @@
 'use client'
 
-import { useAtom, useSetAtom } from 'jotai'
-import { useSession } from '@/hooks/useBetterSession'
-import { useEffect, useRef } from 'react'
 import axios from 'axios'
-import { trainingPlansAtom, loadingStatesAtom } from '@/lib/atoms'
+import { useAtom, useSetAtom } from 'jotai'
+
+import { useEffect, useRef } from 'react'
+
+import { useSession } from '@/hooks/useBetterSession'
+import { loadingStatesAtom, trainingPlansAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useTrainingPlansData')
@@ -18,7 +20,7 @@ export function useTrainingPlansData() {
 
   useEffect(() => {
     logger.debug('useEffect: Running')
-    
+
     // Only fetch if we have a session and haven't fetched yet
     if (!session?.user?.id || hasFetchedRef.current) {
       return
@@ -30,7 +32,7 @@ export function useTrainingPlansData() {
 
       try {
         const response = await axios.get('/api/training-plans')
-        
+
         logger.debug('setTrainingPlans: Data updated', response.data.trainingPlans?.length)
         setTrainingPlans(response.data.trainingPlans || [])
         hasFetchedRef.current = true

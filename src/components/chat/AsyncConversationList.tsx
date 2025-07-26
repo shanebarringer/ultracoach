@@ -1,10 +1,13 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useAtom } from 'jotai'
-import Link from 'next/link'
 import { Avatar, Badge, Chip, Skeleton } from '@heroui/react'
+import { useAtom } from 'jotai'
 import { ClockIcon, MessageCircleIcon } from 'lucide-react'
+
+import { Suspense } from 'react'
+
+import Link from 'next/link'
+
 import { asyncConversationsAtom } from '@/lib/atoms'
 import type { ConversationWithUser } from '@/lib/supabase'
 
@@ -30,14 +33,14 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
       return date.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
       })
     } else if (diffInHours < 168) {
       return date.toLocaleDateString('en-US', { weekday: 'short' })
     } else {
       return date.toLocaleDateString('en-US', {
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
       })
     }
   }
@@ -64,17 +67,23 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
         <div className="p-6 text-center">
           <MessageCircleIcon className="mx-auto h-8 w-8 text-foreground-400 mb-3" />
           <p className="text-foreground-600 text-sm">No expedition communications yet</p>
-          <p className="text-foreground-400 text-xs mt-1">Start a conversation to begin your journey</p>
+          <p className="text-foreground-400 text-xs mt-1">
+            Start a conversation to begin your journey
+          </p>
         </div>
       ) : (
         <div className="divide-y divide-divider/50">
           {conversations.map((conversation: ConversationWithUser) => {
-            const partner = conversation.recipient;
-            const unreadCount = conversation.unreadCount;
-            const partnerId = partner?.id;
-            const partnerName = partner?.full_name || 'Unknown Explorer';
-            const lastMessageContent = conversation.last_message_at ? 'Last message sent' : `Begin your expedition dialogue with ${partner?.full_name || 'this explorer'}`;
-            const lastMessageTime = conversation.last_message_at ? formatLastMessageTime(conversation.last_message_at) : '';
+            const partner = conversation.recipient
+            const unreadCount = conversation.unreadCount
+            const partnerId = partner?.id
+            const partnerName = partner?.full_name || 'Unknown Explorer'
+            const lastMessageContent = conversation.last_message_at
+              ? 'Last message sent'
+              : `Begin your expedition dialogue with ${partner?.full_name || 'this explorer'}`
+            const lastMessageTime = conversation.last_message_at
+              ? formatLastMessageTime(conversation.last_message_at)
+              : ''
 
             return (
               <Link
@@ -91,8 +100,8 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
                         name={partner?.full_name || 'User'}
                         size="md"
                         classNames={{
-                          base: "bg-gradient-to-br from-primary to-secondary",
-                          name: "text-white font-semibold"
+                          base: 'bg-gradient-to-br from-primary to-secondary',
+                          name: 'text-white font-semibold',
                         }}
                       />
                       {partner?.role && (
@@ -150,7 +159,7 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
                   </div>
                 </div>
               </Link>
-            );
+            )
           })}
         </div>
       )}

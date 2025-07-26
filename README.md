@@ -18,6 +18,7 @@ A Next.js application for ultra-marathon training management with coach-runner r
 ### Prerequisites
 
 Install required tools:
+
 ```bash
 # Install pnpm
 npm install -g pnpm
@@ -32,6 +33,7 @@ docker --version
 ### Installation
 
 1. Clone the repository and install dependencies:
+
 ```bash
 git clone <repository-url>
 cd ultracoach
@@ -39,12 +41,14 @@ pnpm install
 ```
 
 2. Set up environment variables:
+
 ```bash
 cp .env.example .env.local
 # Add your Supabase credentials (local development will use defaults)
 ```
 
 3. Start the local development environment:
+
 ```bash
 # Start Supabase services (database, auth, API)
 supabase start
@@ -59,6 +63,7 @@ Access the Supabase Studio at [http://localhost:54323](http://localhost:54323) f
 ### Database Management
 
 Supabase local development commands:
+
 ```bash
 # Core database operations
 supabase start           # Start all Supabase services
@@ -79,6 +84,7 @@ pnpm run dev:local       # Start both Supabase and Next.js in parallel
 ### Test Users & Data
 
 The database seeds create comprehensive test data:
+
 - **2 Coaches**: coach1@ultracoach.dev, coach2@ultracoach.dev
 - **10 Runners**: runner1-10@ultracoach.dev
 - **10 Training Plans**: Various race distances and difficulty levels
@@ -92,12 +98,14 @@ Access credentials are also available in `/supabase/temp/credentials/test_users_
 The project uses modern code quality tools with automatic formatting:
 
 ### ESLint Configuration
+
 - **ES2023 (ES14)** support with modern JavaScript features
 - **Next.js** rules with TypeScript integration
 - **Prettier** integration for consistent formatting
 - **Custom rules** for better developer experience
 
 ### Prettier Configuration
+
 - **Semi-colons**: Disabled (modern style)
 - **Quotes**: Single quotes preferred
 - **Print width**: 100 characters
@@ -105,6 +113,7 @@ The project uses modern code quality tools with automatic formatting:
 - **Trailing commas**: ES5 compatible
 
 ### VS Code Integration
+
 For optimal development experience, add these VS Code settings:
 
 ```json
