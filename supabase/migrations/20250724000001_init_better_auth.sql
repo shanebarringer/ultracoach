@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS "training_plans" (
 CREATE TABLE IF NOT EXISTS "workouts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"training_plan_id" uuid NOT NULL,
-	"user_id" text NOT NULL,
+	"runner_id" text NOT NULL,
 	"title" text,
 	"description" text,
 	"date" timestamp NOT NULL,
@@ -213,8 +213,8 @@ ADD CONSTRAINT "workouts_training_plan_id_training_plans_id_fk"
 FOREIGN KEY ("training_plan_id") REFERENCES "public"."training_plans"("id") ON DELETE cascade ON UPDATE no action;
 
 ALTER TABLE "workouts" 
-ADD CONSTRAINT "workouts_user_id_better_auth_users_id_fk" 
-FOREIGN KEY ("user_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;
+ADD CONSTRAINT "workouts_runner_id_better_auth_users_id_fk" 
+FOREIGN KEY ("runner_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;
 
 ALTER TABLE "conversations" 
 ADD CONSTRAINT "conversations_user1_id_better_auth_users_id_fk" 
@@ -276,7 +276,7 @@ FOREIGN KEY ("created_by") REFERENCES "public"."better_auth_users"("id") ON DELE
 CREATE INDEX IF NOT EXISTS "idx_training_plans_coach_id" ON "training_plans"("coach_id");
 CREATE INDEX IF NOT EXISTS "idx_training_plans_runner_id" ON "training_plans"("runner_id");
 CREATE INDEX IF NOT EXISTS "idx_workouts_training_plan_id" ON "workouts"("training_plan_id");
-CREATE INDEX IF NOT EXISTS "idx_workouts_user_id" ON "workouts"("user_id");
+CREATE INDEX IF NOT EXISTS "idx_workouts_runner_id" ON "workouts"("runner_id");
 CREATE INDEX IF NOT EXISTS "idx_workouts_date" ON "workouts"("date");
 CREATE INDEX IF NOT EXISTS "idx_messages_conversation_id" ON "messages"("conversation_id");
 CREATE INDEX IF NOT EXISTS "idx_messages_sender_id" ON "messages"("sender_id");
@@ -313,11 +313,11 @@ CREATE POLICY "Coaches can manage their plans" ON "training_plans"
 FOR ALL USING (coach_id = current_setting('app.current_user_id', true));
 
 -- Workouts policies
-CREATE POLICY "Users can view their workouts" ON "workouts"
-FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+CREATE POLICY "Runners can view their workouts" ON "workouts"
+FOR SELECT USING (runner_id = current_setting('app.current_user_id', true));
 
-CREATE POLICY "Users can manage their workouts" ON "workouts"
-FOR ALL USING (user_id = current_setting('app.current_user_id', true));
+CREATE POLICY "Runners can manage their workouts" ON "workouts"
+FOR ALL USING (runner_id = current_setting('app.current_user_id', true));
 
 -- Messages policies
 CREATE POLICY "Users can view their messages" ON "messages"

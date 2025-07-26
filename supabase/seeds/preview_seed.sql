@@ -34,7 +34,7 @@ VALUES (
 -- Create sample workouts for testing
 INSERT INTO workouts (
   id, title, description, date, planned_type, planned_distance, planned_duration,
-  intensity, terrain_type, training_plan_id, user_id, created_at, updated_at
+  intensity, terrain_type, training_plan_id, runner_id, created_at, updated_at
 )
 VALUES 
   (
