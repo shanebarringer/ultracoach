@@ -21,9 +21,9 @@ const logger = createLogger('better-auth')
 // Create a dedicated database connection for Better Auth with optimized settings
 const betterAuthPool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: true } 
+    : { rejectUnauthorized: false }, // Only disable SSL verification in development
   max: 5, // Reduced pool size to prevent connection limits
   min: 1, // Keep fewer connections alive
   idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
@@ -69,7 +69,7 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Disabled for development - enable for production
+    requireEmailVerification: process.env.NODE_ENV === 'production', // Enable email verification in production
     minPasswordLength: 8,
     maxPasswordLength: 128,
   },
