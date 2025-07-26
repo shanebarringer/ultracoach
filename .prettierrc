@@ -15,5 +15,9 @@
   "insertPragma": false,
   "jsxSingleQuote": false,
   "proseWrap": "preserve",
-  "requirePragma": false
+  "requirePragma": false,
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": ["^react(.*)", "^next(.*)", "^@supabase/(.*)", "^@/(.*)", "^[./]"],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true
 }
