@@ -38,7 +38,7 @@ jobs:
     needs: [wait-for-preview]
     if: ${{ needs.wait-for-preview.outputs.status == 'success' }}
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,7 +71,6 @@ jobs:
       - name: Run database tests
         run: |
           echo "Testing Preview Branch: $GITHUB_HEAD_REF"
-          echo "Database URL: [REDACTED]" 
           # Add your database tests here
           # Example: pnpm test:db
 
@@ -98,7 +97,7 @@ jobs:
     needs: [wait-for-preview]
     if: ${{ needs.wait-for-preview.outputs.status == 'failure' }}
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Comment on PR about failure
         uses: actions/github-script@v7
@@ -110,6 +109,6 @@ jobs:
               repo: context.repo.repo,
               body: '❌ Supabase Preview Branch deployment failed. Please check your database migrations and try again.'
             })
-      
+
       - name: Fail the workflow
         run: exit 1
