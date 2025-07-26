@@ -1,15 +1,17 @@
 'use client'
 
 import { useAtom, useSetAtom } from 'jotai'
-import { useSession } from '@/hooks/useBetterSession'
+
 import { useCallback, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+
+import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms'
-import type { Notification } from '@/lib/supabase'
 import { createLogger } from '@/lib/logger'
+import { supabase } from '@/lib/supabase'
+import type { Notification } from '@/lib/supabase'
 
-const logger = createLogger('useNotifications');
+const logger = createLogger('useNotifications')
 
 export function useNotifications() {
   const { data: session } = useSession()
@@ -49,7 +51,7 @@ export function useNotifications() {
   useSupabaseRealtime({
     table: 'notifications',
     filter: `user_id=eq.${session?.user?.id}`,
-    onInsert: (payload) => {
+    onInsert: payload => {
       const newNotification = payload.new as Notification
       setNotifications(prev => {
         const updated = [newNotification, ...prev.slice(0, 49)]
@@ -57,7 +59,7 @@ export function useNotifications() {
         return updated
       })
     },
-    onUpdate: (payload) => {
+    onUpdate: payload => {
       const updatedNotification = payload.new as Notification
       setNotifications(prev => {
         const updated = prev.map(notif =>
@@ -66,7 +68,7 @@ export function useNotifications() {
         setUnreadCount(updated.filter(n => !n.read).length)
         return updated
       })
-    }
+    },
   })
 
   const markAsRead = async (notificationId: string) => {
@@ -82,7 +84,7 @@ export function useNotifications() {
           error,
           message: error.message,
           details: error.details,
-          hint: error.hint
+          hint: error.hint,
         })
         return
       }
@@ -124,9 +126,7 @@ export function useNotifications() {
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'created_at'>) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert([notification])
+      const { error } = await supabase.from('notifications').insert([notification])
 
       if (error) {
         logger.error('Error creating notification:', error)
@@ -143,6 +143,6 @@ export function useNotifications() {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    addNotification
+    addNotification,
   }
 }

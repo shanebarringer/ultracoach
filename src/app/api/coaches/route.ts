@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -18,14 +19,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch coaches' }, { status: 500 })
     }
     // Extract unique coaches
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const uniqueCoaches = trainingPlans?.reduce((acc: any[], plan: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (plan.coaches && !acc.find((c: any) => c.id === plan.coaches.id)) {
-        acc.push(plan.coaches)
+    const uniqueCoaches: unknown[] = []
+    
+    if (trainingPlans) {
+      for (const plan of trainingPlans) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const coaches = (plan as any).coaches
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (coaches && !uniqueCoaches.find((c: any) => c.id === coaches.id)) {
+          uniqueCoaches.push(coaches)
+        }
       }
-      return acc
-    }, []) || []
+    }
     return NextResponse.json({ coaches: uniqueCoaches })
   } catch (error) {
     console.error('API error in GET /coaches', error)

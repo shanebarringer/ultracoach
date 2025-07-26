@@ -1,10 +1,25 @@
-import { useState, useCallback, memo } from 'react'
+import { CalendarIcon, EllipsisHorizontalIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Progress,
+} from '@heroui/react'
+
+import { memo, useCallback, useState } from 'react'
+
 import Link from 'next/link'
-import { Card, CardHeader, CardBody, CardFooter, Button, Chip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Progress } from '@heroui/react'
-import { CalendarIcon, MapPinIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
+
 import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
-import type { TrainingPlan, User, Race } from '@/lib/supabase'
 import { createLogger } from '@/lib/logger'
+import type { Race, TrainingPlan, User } from '@/lib/supabase'
 
 const logger = createLogger('TrainingPlanCard')
 
@@ -15,21 +30,31 @@ const getStatusColor = (archived: boolean) => {
 
 const getPhaseColor = (phase: string) => {
   switch (phase?.toLowerCase()) {
-    case 'base': return 'success'  // Zone 1 color
-    case 'build': return 'primary' // Zone 2 color  
-    case 'peak': return 'danger'   // Zone 4 color
-    case 'taper': return 'secondary' // Zone 5 color
-    case 'recovery': return 'warning' // Zone 3 color
-    default: return 'default'
+    case 'base':
+      return 'success' // Zone 1 color
+    case 'build':
+      return 'primary' // Zone 2 color
+    case 'peak':
+      return 'danger' // Zone 4 color
+    case 'taper':
+      return 'secondary' // Zone 5 color
+    case 'recovery':
+      return 'warning' // Zone 3 color
+    default:
+      return 'default'
   }
 }
 
 const getGoalTypeColor = (goalType: string) => {
   switch (goalType?.toLowerCase()) {
-    case 'completion': return 'success'
-    case 'time': return 'warning'
-    case 'placement': return 'danger'
-    default: return 'default'
+    case 'completion':
+      return 'success'
+    case 'time':
+      return 'warning'
+    case 'placement':
+      return 'danger'
+    default:
+      return 'default'
   }
 }
 
@@ -47,7 +72,10 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
     try {
-      logger.info('Toggling archive status for training plan:', { planId: plan.id, currentArchived: plan.archived })
+      logger.info('Toggling archive status for training plan:', {
+        planId: plan.id,
+        currentArchived: plan.archived,
+      })
       await archiveTrainingPlan(plan.id)
       onArchiveChange?.()
       logger.info('Successfully toggled archive status')
@@ -60,7 +88,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   }, [plan.id, plan.archived, archiveTrainingPlan, onArchiveChange])
 
   const handleDelete = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to delete this training plan? This action cannot be undone.')) return;
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this training plan? This action cannot be undone.'
+      )
+    )
+      return
     setIsDeleting(true)
     try {
       logger.info('Deleting training plan:', { planId: plan.id, planTitle: plan.title })
@@ -76,19 +109,17 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   }, [plan.id, plan.title, deleteTrainingPlan, onArchiveChange])
 
   return (
-    <Card 
+    <Card
       className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-t-4 border-t-primary/60 ${plan.archived ? 'opacity-60' : ''}`}
       isPressable={false}
     >
       <CardHeader className="flex justify-between items-start pb-2">
         <div className="flex flex-col">
           <h3 className="text-lg font-bold text-foreground">{plan.title}</h3>
-          {plan.race && (
-            <p className="text-sm text-foreground-500">{plan.race.name}</p>
-          )}
+          {plan.race && <p className="text-sm text-foreground-500">{plan.race.name}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <Chip 
+          <Chip
             color={getStatusColor(plan.archived)}
             size="sm"
             variant="flat"
@@ -99,30 +130,20 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           {userRole === 'coach' && (
             <Dropdown>
               <DropdownTrigger>
-                <Button 
-                  isIconOnly 
-                  size="sm" 
-                  variant="light"
-                  className="hover:bg-default-100"
-                >
+                <Button isIconOnly size="sm" variant="light" className="hover:bg-default-100">
                   <EllipsisHorizontalIcon className="w-4 h-4" />
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
                 <DropdownItem key="edit">Edit Plan</DropdownItem>
                 <DropdownItem key="duplicate">Duplicate</DropdownItem>
-                <DropdownItem 
-                  key="archive" 
+                <DropdownItem
+                  key="archive"
                   color="warning"
                   onClick={handleArchiveToggle}
                   isDisabled={isArchiving || isDeleting}
                 >
-                  {isArchiving 
-                    ? 'Updating...'
-                    : plan.archived 
-                      ? 'Restore Plan' 
-                      : 'Archive Plan'
-                  }
+                  {isArchiving ? 'Updating...' : plan.archived ? 'Restore Plan' : 'Archive Plan'}
                 </DropdownItem>
                 <DropdownItem
                   key="delete"
@@ -158,7 +179,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           {plan.current_phase && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground-600">Current Phase:</span>
-              <Chip 
+              <Chip
                 color={getPhaseColor(plan.current_phase)}
                 size="sm"
                 variant="dot"
@@ -176,12 +197,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 <span className="text-foreground-600">Progress</span>
                 <span className="font-medium">{plan.progress}% Complete</span>
               </div>
-              <Progress 
+              <Progress
                 value={plan.progress}
                 color="primary"
                 className="h-2"
                 classNames={{
-                  indicator: "bg-gradient-to-r from-primary to-secondary"
+                  indicator: 'bg-gradient-to-r from-primary to-secondary',
                 }}
               />
             </div>
@@ -220,10 +241,10 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
       <CardFooter className="pt-4">
         <div className="flex justify-between items-center w-full">
-          <Button 
+          <Button
             as={Link}
             href={`/training-plans/${plan.id}`}
-            color="primary" 
+            color="primary"
             variant="flat"
             size="sm"
             className="font-medium"

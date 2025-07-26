@@ -1,8 +1,10 @@
 'use client'
 
+import { Button, Card, CardBody, Chip } from '@heroui/react'
+import { Calendar, Clock, ExternalLink, MapPin, Target } from 'lucide-react'
+
 import React from 'react'
-import { Card, CardBody, Chip, Button } from '@heroui/react'
-import { Calendar, MapPin, Target, Clock, ExternalLink } from 'lucide-react'
+
 import { Workout } from '@/lib/supabase'
 
 interface WorkoutContextProps {
@@ -14,10 +16,10 @@ interface WorkoutContextProps {
 
 const LINK_TYPE_COLORS = {
   reference: 'default',
-  feedback: 'success', 
+  feedback: 'success',
   question: 'warning',
   update: 'primary',
-  plan_change: 'secondary'
+  plan_change: 'secondary',
 } as const
 
 const LINK_TYPE_LABELS = {
@@ -25,23 +27,27 @@ const LINK_TYPE_LABELS = {
   feedback: 'Feedback',
   question: 'Question',
   update: 'Update',
-  plan_change: 'Plan Change'
+  plan_change: 'Plan Change',
 } as const
 
-export default function WorkoutContext({ 
-  workout, 
+export default function WorkoutContext({
+  workout,
   linkType = 'reference',
   className = '',
-  onViewWorkout 
+  onViewWorkout,
 }: WorkoutContextProps) {
   if (!workout) return null
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'success'
-      case 'planned': return 'primary'
-      case 'skipped': return 'warning'
-      default: return 'default'
+      case 'completed':
+        return 'success'
+      case 'planned':
+        return 'primary'
+      case 'skipped':
+        return 'warning'
+      default:
+        return 'default'
     }
   }
 
@@ -60,34 +66,32 @@ export default function WorkoutContext({
     } else if (date.toDateString() === tomorrow.toDateString()) {
       return 'Tomorrow'
     } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
       })
     }
   }
 
   return (
-    <Card className={`border-l-4 border-l-primary-500 bg-primary-50/50 dark:bg-primary-950/30 ${className}`}>
+    <Card
+      className={`border-l-4 border-l-primary-500 bg-primary-50/50 dark:bg-primary-950/30 ${className}`}
+    >
       <CardBody className="p-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {/* Header with link type and status */}
             <div className="flex items-center gap-2 mb-2">
-              <Chip 
-                size="sm" 
+              <Chip
+                size="sm"
                 color={LINK_TYPE_COLORS[linkType as keyof typeof LINK_TYPE_COLORS] || 'default'}
                 variant="flat"
                 startContent={<Target className="h-3 w-3" />}
               >
                 {LINK_TYPE_LABELS[linkType as keyof typeof LINK_TYPE_LABELS] || linkType}
               </Chip>
-              <Chip 
-                size="sm" 
-                color={getStatusColor(workout.status || 'planned')}
-                variant="dot"
-              >
+              <Chip size="sm" color={getStatusColor(workout.status || 'planned')} variant="dot">
                 {workout.status || 'planned'}
               </Chip>
             </div>
@@ -96,12 +100,8 @@ export default function WorkoutContext({
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-small">
                 <Calendar className="h-3 w-3 text-default-500" />
-                <span className="font-medium">
-                  {formatDate(workout.date || '')}
-                </span>
-                <span className="text-default-600">
-                  {workout.planned_type || 'Training Run'}
-                </span>
+                <span className="font-medium">{formatDate(workout.date || '')}</span>
+                <span className="text-default-600">{workout.planned_type || 'Training Run'}</span>
               </div>
 
               {(workout.planned_distance || workout.planned_duration) && (

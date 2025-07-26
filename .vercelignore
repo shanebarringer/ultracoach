@@ -1,0 +1,59 @@
+# Vercel ignore file - excludes files from deployment
+
+# Environment files
+.env*
+!.env.example
+
+# Local development
+.next/
+node_modules/
+.pnpm-store/
+
+# Database files
+*.sqlite
+*.db
+/supabase/.temp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scripts that shouldn't be deployed
+/supabase/scripts/
+/scripts/env-validator.js
+/scripts/rotate-secrets.js
+
+# Backups
+.env-backups/
+/supabase/backups/
+
+# Documentation
+/docs/
+README.md
+PLANNING.md
+TASKS.md
+COMPLETED_MILESTONES.md
+CLAUDE.md
+vercel-env-setup.md
+
+# Temporary files
+/tmp/
+/temp/

@@ -1,11 +1,13 @@
 'use client'
 
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import Layout from '@/components/layout/Layout'
+
+import { useRouter } from 'next/navigation'
+
 import CoachDashboard from '@/components/dashboard/CoachDashboard'
+import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { useSession } from '@/hooks/useBetterSession'
 
 export default function CoachDashboardPage() {
   const { data: session, status } = useSession()
@@ -13,7 +15,7 @@ export default function CoachDashboardPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
@@ -43,7 +45,7 @@ export default function CoachDashboardPage() {
     <Layout>
       <ModernErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CoachDashboard />
+          <CoachDashboard />
         </div>
       </ModernErrorBoundary>
     </Layout>

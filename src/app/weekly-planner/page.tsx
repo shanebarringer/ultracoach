@@ -1,32 +1,27 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useSession } from '@/hooks/useBetterSession'
-import { useRouter } from 'next/navigation'
-import { 
-  Card, 
-  CardHeader, 
-  CardBody, 
-  Button, 
-  Chip, 
-  Spinner, 
-  Avatar 
-} from '@heroui/react'
-import { 
-  CalendarDaysIcon, 
-  UsersIcon, 
-  ChevronLeftIcon, 
-  ChevronRightIcon, 
+import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
+import classNames from 'classnames'
+import {
+  CalendarDaysIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   ClockIcon,
+  FlagIcon,
   MapPinIcon,
-  TrendingUpIcon,
   RouteIcon,
-  FlagIcon
+  TrendingUpIcon,
+  UsersIcon,
 } from 'lucide-react'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { useRouter } from 'next/navigation'
+
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
+import { useSession } from '@/hooks/useBetterSession'
 import type { User } from '@/lib/supabase'
-import classNames from 'classnames'
 
 export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
@@ -47,7 +42,7 @@ export default function WeeklyPlannerPage() {
 
     try {
       const response = await fetch('/api/runners')
-      
+
       if (!response.ok) {
         console.error('Failed to fetch runners:', response.statusText)
         return
@@ -64,7 +59,7 @@ export default function WeeklyPlannerPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-    
+
     if (!session) {
       router.push('/auth/signin')
       return
@@ -81,14 +76,14 @@ export default function WeeklyPlannerPage() {
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)
     sunday.setDate(monday.getDate() + 6)
-    
-    return `${monday.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    })} - ${sunday.toLocaleDateString('en-US', { 
-      month: 'short', 
+
+    return `${monday.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
-      year: 'numeric'
+    })} - ${sunday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     })}`
   }
 
@@ -132,7 +127,8 @@ export default function WeeklyPlannerPage() {
                   🏔️ Weekly Expedition Planner
                 </h1>
                 <p className="text-foreground/70 mt-1 text-lg">
-                  Architect your team&apos;s weekly training summit - strategic workout planning for peak performance
+                  Architect your team&apos;s weekly training summit - strategic workout planning for
+                  peak performance
                 </p>
               </div>
             </div>
@@ -163,7 +159,7 @@ export default function WeeklyPlannerPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {runners.map((runner) => (
+                {runners.map(runner => (
                   <Card
                     key={runner.id}
                     isPressable
@@ -183,7 +179,9 @@ export default function WeeklyPlannerPage() {
                           className="bg-gradient-to-br from-primary to-secondary text-white"
                         />
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{runner.full_name || 'User'}</h3>
+                          <h3 className="font-semibold text-foreground">
+                            {runner.full_name || 'User'}
+                          </h3>
                           <p className="text-sm text-foreground/70">{runner.email}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <Chip
@@ -229,7 +227,7 @@ export default function WeeklyPlannerPage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Button
                     isIconOnly
@@ -240,7 +238,7 @@ export default function WeeklyPlannerPage() {
                   >
                     <ChevronLeftIcon className="w-5 h-5" />
                   </Button>
-                  
+
                   <Button
                     variant="flat"
                     size="sm"
@@ -249,7 +247,7 @@ export default function WeeklyPlannerPage() {
                   >
                     Current Week
                   </Button>
-                  
+
                   <Button
                     isIconOnly
                     variant="ghost"

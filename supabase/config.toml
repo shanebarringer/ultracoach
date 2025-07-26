@@ -1,0 +1,72 @@
+# Supabase Configuration for UltraCoach
+# Multi-environment configuration for development, preview, and production
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "auth", "realtime"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.seed]
+# Main seed files for all environments
+sql_paths = [
+  "./seeds/01_seed_better_auth_users.sql",
+  "./seeds/02_seed_training_phases.sql", 
+  "./seeds/03_seed_plan_templates.sql",
+  "./seeds/04_seed_template_phases.sql",
+  "./seeds/05_seed_sample_races.sql"
+]
+
+[realtime]
+enabled = true
+ip_version = "IPv4"
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1:54321"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+image_transformation = { enabled = true }
+
+[auth]
+enabled = true
+site_url = "http://localhost:3001"
+additional_redirect_urls = ["https://ultracoach.vercel.app"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+# Environment-specific configurations
+
+# Production configuration (linked project)
+[remotes.production]
+project_id = "ccnbzjpccmlribljugve"
+
+[remotes.production.api]
+max_rows = 100  # Stricter limits for production
+
+# Analytics (for production monitoring)
+[analytics]
+enabled = false
+port = 54327
+
+# Edge Functions
+[functions]
+# Future configuration for Strava integration functions

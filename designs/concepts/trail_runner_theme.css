@@ -8,7 +8,7 @@
 
 :root {
   /* ========== LIGHT MODE TRAIL COLORS ========== */
-  
+
   /* Primary Forest Colors */
   --trail-forest-50: #f7faf7;
   --trail-forest-100: #e8f2e8;
@@ -58,31 +58,31 @@
   --trail-stone-900: #18181b;
 
   /* ========== SEMANTIC COLOR ASSIGNMENTS ========== */
-  
+
   /* Backgrounds */
   --trail-bg-primary: var(--trail-stone-50);
   --trail-bg-secondary: var(--trail-forest-50);
   --trail-bg-card: #ffffff;
   --trail-bg-elevated: #ffffff;
-  
+
   /* Text Colors */
   --trail-text-primary: var(--trail-stone-900);
   --trail-text-secondary: var(--trail-stone-600);
   --trail-text-muted: var(--trail-stone-500);
   --trail-text-inverse: #ffffff;
-  
+
   /* Border Colors */
   --trail-border-light: var(--trail-stone-200);
   --trail-border-medium: var(--trail-stone-300);
   --trail-border-strong: var(--trail-stone-400);
-  
+
   /* Brand Colors */
   --trail-primary: var(--trail-forest-600);
   --trail-primary-hover: var(--trail-forest-700);
   --trail-secondary: var(--trail-earth-500);
   --trail-accent: var(--trail-sunset-500);
   --trail-accent-hover: var(--trail-sunset-600);
-  
+
   /* Status Colors */
   --trail-success: var(--trail-forest-500);
   --trail-success-bg: var(--trail-forest-100);
@@ -95,7 +95,8 @@
 }
 
 /* ========== DARK MODE OVERRIDES ========== */
-[data-theme="dark"], .dark {
+[data-theme='dark'],
+.dark {
   /* Dark Forest Environment */
   --trail-forest-dark-50: #0a1a0a;
   --trail-forest-dark-100: #1a2e1a;
@@ -113,26 +114,26 @@
   /* Ember Glow */
   --trail-ember-400: #ff6b1a;
   --trail-ember-500: #ff8533;
-  
+
   /* Dark Mode Semantic Colors */
   --trail-bg-primary: var(--trail-stone-900);
   --trail-bg-secondary: var(--trail-forest-dark-50);
   --trail-bg-card: var(--trail-stone-800);
   --trail-bg-elevated: var(--trail-stone-700);
-  
+
   --trail-text-primary: var(--trail-stone-100);
   --trail-text-secondary: var(--trail-stone-300);
   --trail-text-muted: var(--trail-stone-400);
-  
+
   --trail-border-light: var(--trail-stone-700);
   --trail-border-medium: var(--trail-stone-600);
   --trail-border-strong: var(--trail-stone-500);
-  
+
   --trail-primary: var(--trail-forest-dark-400);
   --trail-primary-hover: var(--trail-forest-dark-500);
   --trail-accent: var(--trail-ember-400);
   --trail-accent-hover: var(--trail-ember-500);
-  
+
   --trail-success: var(--trail-forest-dark-400);
   --trail-success-bg: var(--trail-forest-dark-100);
   --trail-warning: var(--trail-ember-400);
@@ -150,12 +151,24 @@
 }
 
 /* Font weight scale */
-.trail-weight-light { font-weight: 300; }
-.trail-weight-normal { font-weight: 400; }
-.trail-weight-medium { font-weight: 500; }
-.trail-weight-semibold { font-weight: 600; }
-.trail-weight-bold { font-weight: 700; }
-.trail-weight-extrabold { font-weight: 800; }
+.trail-weight-light {
+  font-weight: 300;
+}
+.trail-weight-normal {
+  font-weight: 400;
+}
+.trail-weight-medium {
+  font-weight: 500;
+}
+.trail-weight-semibold {
+  font-weight: 600;
+}
+.trail-weight-bold {
+  font-weight: 700;
+}
+.trail-weight-extrabold {
+  font-weight: 800;
+}
 
 /* Typography hierarchy */
 .trail-text-display {
@@ -437,10 +450,18 @@
   gap: 1.5rem;
 }
 
-.trail-grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.trail-grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.trail-grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.trail-grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.trail-grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.trail-grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.trail-grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.trail-grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 
 @media (max-width: 768px) {
   .trail-grid-cols-2,
@@ -458,25 +479,49 @@
 }
 
 /* ========== SPACING SYSTEM ========== */
-.trail-p-1 { padding: 0.25rem; }
-.trail-p-2 { padding: 0.5rem; }
-.trail-p-3 { padding: 0.75rem; }
-.trail-p-4 { padding: 1rem; }
-.trail-p-6 { padding: 1.5rem; }
-.trail-p-8 { padding: 2rem; }
+.trail-p-1 {
+  padding: 0.25rem;
+}
+.trail-p-2 {
+  padding: 0.5rem;
+}
+.trail-p-3 {
+  padding: 0.75rem;
+}
+.trail-p-4 {
+  padding: 1rem;
+}
+.trail-p-6 {
+  padding: 1.5rem;
+}
+.trail-p-8 {
+  padding: 2rem;
+}
 
-.trail-m-1 { margin: 0.25rem; }
-.trail-m-2 { margin: 0.5rem; }
-.trail-m-3 { margin: 0.75rem; }
-.trail-m-4 { margin: 1rem; }
-.trail-m-6 { margin: 1.5rem; }
-.trail-m-8 { margin: 2rem; }
+.trail-m-1 {
+  margin: 0.25rem;
+}
+.trail-m-2 {
+  margin: 0.5rem;
+}
+.trail-m-3 {
+  margin: 0.75rem;
+}
+.trail-m-4 {
+  margin: 1rem;
+}
+.trail-m-6 {
+  margin: 1.5rem;
+}
+.trail-m-8 {
+  margin: 2rem;
+}
 
 /* ========== VISUAL EFFECTS ========== */
 
 /* Topographic background pattern */
 .trail-topo-bg {
-  background-image: 
+  background-image:
     radial-gradient(circle at 25% 25%, rgba(45, 90, 45, 0.03) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(139, 90, 60, 0.03) 0%, transparent 50%);
   background-size: 100px 100px;
@@ -485,10 +530,10 @@
 /* Elevation gradient */
 .trail-elevation-gradient {
   background: linear-gradient(
-    45deg, 
-    var(--trail-earth-50) 0%, 
-    var(--trail-forest-50) 30%, 
-    var(--trail-stone-100) 60%, 
+    45deg,
+    var(--trail-earth-50) 0%,
+    var(--trail-forest-50) 30%,
+    var(--trail-stone-100) 60%,
     var(--trail-sunset-50) 100%
   );
 }
@@ -501,9 +546,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    linear-gradient(90deg, transparent 79px, rgba(45, 90, 45, 0.04) 81px, rgba(45, 90, 45, 0.04) 82px, transparent 84px),
-    linear-gradient(rgba(45, 90, 45, 0.04) 0px, transparent 1px, transparent 79px, rgba(45, 90, 45, 0.04) 81px, rgba(45, 90, 45, 0.04) 82px, transparent 84px);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 79px,
+      rgba(45, 90, 45, 0.04) 81px,
+      rgba(45, 90, 45, 0.04) 82px,
+      transparent 84px
+    ),
+    linear-gradient(
+      rgba(45, 90, 45, 0.04) 0px,
+      transparent 1px,
+      transparent 79px,
+      rgba(45, 90, 45, 0.04) 81px,
+      rgba(45, 90, 45, 0.04) 82px,
+      transparent 84px
+    );
   background-size: 84px 84px;
   pointer-events: none;
   opacity: 0.3;
@@ -542,18 +600,24 @@
 
 /* ========== RESPONSIVE UTILITIES ========== */
 @media (max-width: 640px) {
-  .trail-text-h1 { font-size: 1.875rem; }
-  .trail-text-h2 { font-size: 1.5rem; }
-  .trail-text-display { font-size: 2.25rem; }
-  
+  .trail-text-h1 {
+    font-size: 1.875rem;
+  }
+  .trail-text-h2 {
+    font-size: 1.5rem;
+  }
+  .trail-text-display {
+    font-size: 2.25rem;
+  }
+
   .trail-container {
     padding: 0 1rem;
   }
-  
+
   .trail-card {
     border-radius: 8px;
   }
-  
+
   .trail-card-header,
   .trail-card-body,
   .trail-card-footer {
@@ -568,7 +632,7 @@
   .trail-input {
     transition: none;
   }
-  
+
   .trail-animate-fade-in,
   .trail-animate-slide-up {
     animation: none;
@@ -587,7 +651,7 @@
   .trail-card {
     border-width: 2px;
   }
-  
+
   .trail-btn {
     border-width: 2px;
   }

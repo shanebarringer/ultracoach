@@ -1,596 +1,613 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UltraCoach - Mountain Peak Design Concept</title>
-    <link rel="stylesheet" href="mountain_peak_theme.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="mountain_peak_theme.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/heroicons@2.0.16/dist/heroicons.min.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="mountain-header">
-        <nav class="mountain-nav">
-            <div class="nav-brand">
-                <h1 class="brand-text">🏔️ UltraCoach</h1>
-                <span class="brand-tagline">Conquer Your Peaks</span>
+      <nav class="mountain-nav">
+        <div class="nav-brand">
+          <h1 class="brand-text">🏔️ UltraCoach</h1>
+          <span class="brand-tagline">Conquer Your Peaks</span>
+        </div>
+
+        <div class="nav-links">
+          <a href="#dashboard" class="nav-link active">Dashboard</a>
+          <a href="#training-plans" class="nav-link">Training Plans</a>
+          <a href="#workouts" class="nav-link">Workouts</a>
+          <a href="#messages" class="nav-link">Messages</a>
+
+          <div class="nav-actions">
+            <button class="notification-btn">
+              <span class="notification-icon">🔔</span>
+              <span class="notification-badge">3</span>
+            </button>
+
+            <button class="theme-toggle" onclick="toggleTheme()">
+              <span class="theme-icon light-icon">☀️</span>
+              <span class="theme-icon dark-icon">🌙</span>
+            </button>
+
+            <div class="profile-menu">
+              <span class="profile-name">Alex Summit</span>
+              <div class="profile-avatar">AS</div>
             </div>
-            
-            <div class="nav-links">
-                <a href="#dashboard" class="nav-link active">Dashboard</a>
-                <a href="#training-plans" class="nav-link">Training Plans</a>
-                <a href="#workouts" class="nav-link">Workouts</a>
-                <a href="#messages" class="nav-link">Messages</a>
-                
-                <div class="nav-actions">
-                    <button class="notification-btn">
-                        <span class="notification-icon">🔔</span>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    
-                    <button class="theme-toggle" onclick="toggleTheme()">
-                        <span class="theme-icon light-icon">☀️</span>
-                        <span class="theme-icon dark-icon">🌙</span>
-                    </button>
-                    
-                    <div class="profile-menu">
-                        <span class="profile-name">Alex Summit</span>
-                        <div class="profile-avatar">AS</div>
-                    </div>
-                </div>
-            </div>
-        </nav>
+          </div>
+        </div>
+      </nav>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Dashboard Page -->
-        <section id="dashboard" class="page-section active">
-            <div class="page-header">
-                <div class="page-title">
-                    <h1>Summit Dashboard</h1>
-                    <p>Track your ascent to peak performance</p>
-                </div>
-                
-                <div class="elevation-display">
-                    <div class="current-elevation">
-                        <span class="elevation-label">Current Altitude</span>
-                        <span class="elevation-value">8,847m</span>
-                        <span class="elevation-peak">Peak Performance</span>
-                    </div>
-                </div>
+      <!-- Dashboard Page -->
+      <section id="dashboard" class="page-section active">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Summit Dashboard</h1>
+            <p>Track your ascent to peak performance</p>
+          </div>
+
+          <div class="elevation-display">
+            <div class="current-elevation">
+              <span class="elevation-label">Current Altitude</span>
+              <span class="elevation-value">8,847m</span>
+              <span class="elevation-peak">Peak Performance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievement Stats -->
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+              <h3>Active Goals</h3>
+              <p class="stat-number">3</p>
+              <p class="stat-subtitle">Peaks to Conquer</p>
+            </div>
+            <div class="stat-trend up">+12%</div>
+          </div>
+
+          <div class="stat-card success">
+            <div class="stat-icon">⛰️</div>
+            <div class="stat-content">
+              <h3>Summits Reached</h3>
+              <p class="stat-number">127</p>
+              <p class="stat-subtitle">Training Peaks</p>
+            </div>
+            <div class="stat-trend up">+8</div>
+          </div>
+
+          <div class="stat-card warning">
+            <div class="stat-icon">🏃‍♂️</div>
+            <div class="stat-content">
+              <h3>This Week</h3>
+              <p class="stat-number">87km</p>
+              <p class="stat-subtitle">Vertical: 3,420m</p>
+            </div>
+            <div class="stat-trend down">-5%</div>
+          </div>
+
+          <div class="stat-card accent">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-content">
+              <h3>Next Peak</h3>
+              <p class="stat-number">12</p>
+              <p class="stat-subtitle">Days to Hardrock</p>
+            </div>
+            <div class="stat-countdown">Ready to climb</div>
+          </div>
+        </div>
+
+        <!-- Race Calendar -->
+        <div class="content-grid">
+          <div class="content-card">
+            <div class="card-header">
+              <h2>🗻 Upcoming Expeditions</h2>
+              <button class="action-btn">View All</button>
             </div>
 
-            <!-- Achievement Stats -->
-            <div class="stats-grid">
-                <div class="stat-card primary">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-content">
-                        <h3>Active Goals</h3>
-                        <p class="stat-number">3</p>
-                        <p class="stat-subtitle">Peaks to Conquer</p>
-                    </div>
-                    <div class="stat-trend up">+12%</div>
+            <div class="race-list">
+              <div class="race-item priority-high">
+                <div class="race-info">
+                  <h3>Hardrock 100</h3>
+                  <p class="race-details">100M • 33,000ft+ • Silverton, CO</p>
+                  <p class="race-date">July 26, 2025</p>
                 </div>
-                
-                <div class="stat-card success">
-                    <div class="stat-icon">⛰️</div>
-                    <div class="stat-content">
-                        <h3>Summits Reached</h3>
-                        <p class="stat-number">127</p>
-                        <p class="stat-subtitle">Training Peaks</p>
-                    </div>
-                    <div class="stat-trend up">+8</div>
+                <div class="race-status">
+                  <span class="status-badge peak">Peak Phase</span>
+                  <div class="progress-ring">
+                    <span class="progress-value">87%</span>
+                  </div>
                 </div>
-                
-                <div class="stat-card warning">
-                    <div class="stat-icon">🏃‍♂️</div>
-                    <div class="stat-content">
-                        <h3>This Week</h3>
-                        <p class="stat-number">87km</p>
-                        <p class="stat-subtitle">Vertical: 3,420m</p>
-                    </div>
-                    <div class="stat-trend down">-5%</div>
+              </div>
+
+              <div class="race-item priority-medium">
+                <div class="race-info">
+                  <h3>Mount Whitney Trail Race</h3>
+                  <p class="race-details">50K • 6,100ft+ • Lone Pine, CA</p>
+                  <p class="race-date">August 15, 2025</p>
                 </div>
-                
-                <div class="stat-card accent">
-                    <div class="stat-icon">🏆</div>
-                    <div class="stat-content">
-                        <h3>Next Peak</h3>
-                        <p class="stat-number">12</p>
-                        <p class="stat-subtitle">Days to Hardrock</p>
-                    </div>
-                    <div class="stat-countdown">Ready to climb</div>
+                <div class="race-status">
+                  <span class="status-badge build">Build Phase</span>
+                  <div class="progress-ring">
+                    <span class="progress-value">45%</span>
+                  </div>
                 </div>
+              </div>
+
+              <div class="race-item priority-low">
+                <div class="race-info">
+                  <h3>UTMB Mont-Blanc</h3>
+                  <p class="race-details">100M • 32,800ft+ • Chamonix, France</p>
+                  <p class="race-date">September 12, 2025</p>
+                </div>
+                <div class="race-status">
+                  <span class="status-badge base">Base Phase</span>
+                  <div class="progress-ring">
+                    <span class="progress-value">23%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h2>🎯 Performance Metrics</h2>
+              <button class="action-btn">Detailed View</button>
             </div>
 
-            <!-- Race Calendar -->
-            <div class="content-grid">
-                <div class="content-card">
-                    <div class="card-header">
-                        <h2>🗻 Upcoming Expeditions</h2>
-                        <button class="action-btn">View All</button>
-                    </div>
-                    
-                    <div class="race-list">
-                        <div class="race-item priority-high">
-                            <div class="race-info">
-                                <h3>Hardrock 100</h3>
-                                <p class="race-details">100M • 33,000ft+ • Silverton, CO</p>
-                                <p class="race-date">July 26, 2025</p>
-                            </div>
-                            <div class="race-status">
-                                <span class="status-badge peak">Peak Phase</span>
-                                <div class="progress-ring">
-                                    <span class="progress-value">87%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="race-item priority-medium">
-                            <div class="race-info">
-                                <h3>Mount Whitney Trail Race</h3>
-                                <p class="race-details">50K • 6,100ft+ • Lone Pine, CA</p>
-                                <p class="race-date">August 15, 2025</p>
-                            </div>
-                            <div class="race-status">
-                                <span class="status-badge build">Build Phase</span>
-                                <div class="progress-ring">
-                                    <span class="progress-value">45%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="race-item priority-low">
-                            <div class="race-info">
-                                <h3>UTMB Mont-Blanc</h3>
-                                <p class="race-details">100M • 32,800ft+ • Chamonix, France</p>
-                                <p class="race-date">September 12, 2025</p>
-                            </div>
-                            <div class="race-status">
-                                <span class="status-badge base">Base Phase</span>
-                                <div class="progress-ring">
-                                    <span class="progress-value">23%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="content-card">
-                    <div class="card-header">
-                        <h2>🎯 Performance Metrics</h2>
-                        <button class="action-btn">Detailed View</button>
-                    </div>
-                    
-                    <div class="metrics-grid">
-                        <div class="metric-item">
-                            <div class="metric-label">VO2 Max</div>
-                            <div class="metric-value">58.2</div>
-                            <div class="metric-trend up">+2.1</div>
-                        </div>
-                        
-                        <div class="metric-item">
-                            <div class="metric-label">Altitude Adaptation</div>
-                            <div class="metric-value">94%</div>
-                            <div class="metric-trend up">+12%</div>
-                        </div>
-                        
-                        <div class="metric-item">
-                            <div class="metric-label">Recovery Score</div>
-                            <div class="metric-value">87</div>
-                            <div class="metric-trend stable">Stable</div>
-                        </div>
-                        
-                        <div class="metric-item">
-                            <div class="metric-label">Peak Power</div>
-                            <div class="metric-value">425W</div>
-                            <div class="metric-trend up">+18W</div>
-                        </div>
-                    </div>
-                    
-                    <div class="elevation-chart">
-                        <div class="chart-header">Weekly Elevation Profile</div>
-                        <div class="chart-area">
-                            <!-- SVG Mountain Chart -->
-                            <svg viewBox="0 0 400 120" class="mountain-chart">
-                                <defs>
-                                    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" style="stop-color:var(--alpine-blue-400);stop-opacity:0.8" />
-                                        <stop offset="100%" style="stop-color:var(--alpine-blue-600);stop-opacity:0.3" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M0,100 L50,80 L100,60 L150,40 L200,65 L250,35 L300,55 L350,25 L400,45 L400,120 L0,120 Z" 
-                                      fill="url(#mountainGradient)" stroke="var(--alpine-blue-500)" stroke-width="2"/>
-                                <!-- Peak markers -->
-                                <circle cx="150" cy="40" r="4" fill="var(--summit-gold-500)"/>
-                                <circle cx="250" cy="35" r="4" fill="var(--summit-gold-500)"/>
-                                <circle cx="350" cy="25" r="4" fill="var(--summit-gold-500)"/>
-                            </svg>
-                        </div>
-                        <div class="chart-labels">
-                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <div class="metric-label">VO2 Max</div>
+                <div class="metric-value">58.2</div>
+                <div class="metric-trend up">+2.1</div>
+              </div>
 
-        <!-- Training Plans Page -->
-        <section id="training-plans" class="page-section">
-            <div class="page-header">
-                <div class="page-title">
-                    <h1>Training Expeditions</h1>
-                    <p>Your path to conquering the peaks</p>
-                </div>
-                
-                <button class="create-btn primary">
-                    <span>+</span> Plan New Expedition
-                </button>
+              <div class="metric-item">
+                <div class="metric-label">Altitude Adaptation</div>
+                <div class="metric-value">94%</div>
+                <div class="metric-trend up">+12%</div>
+              </div>
+
+              <div class="metric-item">
+                <div class="metric-label">Recovery Score</div>
+                <div class="metric-value">87</div>
+                <div class="metric-trend stable">Stable</div>
+              </div>
+
+              <div class="metric-item">
+                <div class="metric-label">Peak Power</div>
+                <div class="metric-value">425W</div>
+                <div class="metric-trend up">+18W</div>
+              </div>
             </div>
 
-            <div class="training-plans-grid">
-                <div class="training-plan-card featured">
-                    <div class="plan-header">
-                        <div class="plan-badge peak">Active Peak</div>
-                        <div class="plan-actions">
-                            <button class="action-btn">⋯</button>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-content">
-                        <h3>Hardrock 100 - Summit Assault</h3>
-                        <p class="plan-description">16-week peak preparation for the ultimate high-altitude challenge</p>
-                        
-                        <div class="plan-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Target Race</span>
-                                <span class="detail-value">Hardrock 100</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Elevation Gain</span>
-                                <span class="detail-value">33,000ft+</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Phase</span>
-                                <span class="detail-value">Peak - Week 14</span>
-                            </div>
-                        </div>
-                        
-                        <div class="plan-progress">
-                            <div class="progress-header">
-                                <span>Training Progress</span>
-                                <span>87%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 87%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-footer">
-                        <div class="plan-coach">
-                            <span>Coach: Maria Highpoint</span>
-                        </div>
-                        <button class="view-btn">Summit Details →</button>
-                    </div>
-                </div>
-                
-                <div class="training-plan-card">
-                    <div class="plan-header">
-                        <div class="plan-badge build">Build Phase</div>
-                        <div class="plan-actions">
-                            <button class="action-btn">⋯</button>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-content">
-                        <h3>Whitney Portal Challenge</h3>
-                        <p class="plan-description">8-week technical climbing preparation for Mount Whitney</p>
-                        
-                        <div class="plan-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Target Race</span>
-                                <span class="detail-value">Mount Whitney 50K</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Elevation Gain</span>
-                                <span class="detail-value">6,100ft+</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Phase</span>
-                                <span class="detail-value">Build - Week 5</span>
-                            </div>
-                        </div>
-                        
-                        <div class="plan-progress">
-                            <div class="progress-header">
-                                <span>Training Progress</span>
-                                <span>45%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 45%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-footer">
-                        <div class="plan-coach">
-                            <span>Coach: Maria Highpoint</span>
-                        </div>
-                        <button class="view-btn">View Plan →</button>
-                    </div>
-                </div>
-                
-                <div class="training-plan-card">
-                    <div class="plan-header">
-                        <div class="plan-badge base">Base Phase</div>
-                        <div class="plan-actions">
-                            <button class="action-btn">⋯</button>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-content">
-                        <h3>UTMB Foundation Builder</h3>
-                        <p class="plan-description">20-week comprehensive base building for UTMB Mont-Blanc</p>
-                        
-                        <div class="plan-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Target Race</span>
-                                <span class="detail-value">UTMB Mont-Blanc</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Elevation Gain</span>
-                                <span class="detail-value">32,800ft+</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Phase</span>
-                                <span class="detail-value">Base - Week 3</span>
-                            </div>
-                        </div>
-                        
-                        <div class="plan-progress">
-                            <div class="progress-header">
-                                <span>Training Progress</span>
-                                <span>23%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 23%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-footer">
-                        <div class="plan-coach">
-                            <span>Coach: Maria Highpoint</span>
-                        </div>
-                        <button class="view-btn">View Plan →</button>
-                    </div>
-                </div>
+            <div class="elevation-chart">
+              <div class="chart-header">Weekly Elevation Profile</div>
+              <div class="chart-area">
+                <!-- SVG Mountain Chart -->
+                <svg viewBox="0 0 400 120" class="mountain-chart">
+                  <defs>
+                    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop
+                        offset="0%"
+                        style="stop-color: var(--alpine-blue-400); stop-opacity: 0.8"
+                      />
+                      <stop
+                        offset="100%"
+                        style="stop-color: var(--alpine-blue-600); stop-opacity: 0.3"
+                      />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M0,100 L50,80 L100,60 L150,40 L200,65 L250,35 L300,55 L350,25 L400,45 L400,120 L0,120 Z"
+                    fill="url(#mountainGradient)"
+                    stroke="var(--alpine-blue-500)"
+                    stroke-width="2"
+                  />
+                  <!-- Peak markers -->
+                  <circle cx="150" cy="40" r="4" fill="var(--summit-gold-500)" />
+                  <circle cx="250" cy="35" r="4" fill="var(--summit-gold-500)" />
+                  <circle cx="350" cy="25" r="4" fill="var(--summit-gold-500)" />
+                </svg>
+              </div>
+              <div class="chart-labels">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span
+                ><span>Sat</span><span>Sun</span>
+              </div>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <!-- Single Training Plan Detail -->
-        <section id="plan-detail" class="page-section">
-            <div class="plan-detail-header">
-                <div class="breadcrumb">
-                    <a href="#training-plans">Training Plans</a> / <span>Hardrock 100 - Summit Assault</span>
-                </div>
-                
-                <div class="plan-title-section">
-                    <div class="plan-title-content">
-                        <h1>Hardrock 100 - Summit Assault</h1>
-                        <p>16-week peak preparation for the ultimate high-altitude challenge</p>
-                        <div class="plan-badges">
-                            <span class="badge peak">Peak Phase</span>
-                            <span class="badge race">Week 14 of 16</span>
-                            <span class="badge athlete">Advanced</span>
-                        </div>
-                    </div>
-                    
-                    <div class="plan-summit-info">
-                        <div class="summit-card">
-                            <h3>🏔️ Target Summit</h3>
-                            <div class="summit-details">
-                                <p><strong>Hardrock 100</strong></p>
-                                <p>July 26, 2025</p>
-                                <p>Silverton, Colorado</p>
-                                <p><strong>100 Miles • 33,000ft+</strong></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      <!-- Training Plans Page -->
+      <section id="training-plans" class="page-section">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Training Expeditions</h1>
+            <p>Your path to conquering the peaks</p>
+          </div>
+
+          <button class="create-btn primary"><span>+</span> Plan New Expedition</button>
+        </div>
+
+        <div class="training-plans-grid">
+          <div class="training-plan-card featured">
+            <div class="plan-header">
+              <div class="plan-badge peak">Active Peak</div>
+              <div class="plan-actions">
+                <button class="action-btn">⋯</button>
+              </div>
             </div>
 
-            <div class="plan-detail-content">
-                <div class="phase-timeline">
-                    <h2>🗻 Expedition Phases</h2>
-                    <div class="timeline">
-                        <div class="timeline-item completed">
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-content">
-                                <h4>Base Camp (Weeks 1-6)</h4>
-                                <p>Foundation building • Aerobic development</p>
-                                <span class="timeline-status">✓ Completed</span>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item completed">
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-content">
-                                <h4>Altitude Training (Weeks 7-10)</h4>
-                                <p>High-altitude adaptation • Power development</p>
-                                <span class="timeline-status">✓ Completed</span>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item active">
-                            <div class="timeline-marker active"></div>
-                            <div class="timeline-content">
-                                <h4>Summit Push (Weeks 11-14)</h4>
-                                <p>Peak intensity • Race simulation</p>
-                                <span class="timeline-status">🎯 Current Phase</span>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-content">
-                                <h4>Final Ascent (Weeks 15-16)</h4>
-                                <p>Taper • Race preparation</p>
-                                <span class="timeline-status">📅 Upcoming</span>
-                            </div>
-                        </div>
-                    </div>
+            <div class="plan-content">
+              <h3>Hardrock 100 - Summit Assault</h3>
+              <p class="plan-description">
+                16-week peak preparation for the ultimate high-altitude challenge
+              </p>
+
+              <div class="plan-details">
+                <div class="detail-item">
+                  <span class="detail-label">Target Race</span>
+                  <span class="detail-value">Hardrock 100</span>
                 </div>
-                
-                <div class="weekly-breakdown">
-                    <h2>📊 This Week's Expedition Plan</h2>
-                    <div class="week-summary">
-                        <div class="week-stats">
-                            <div class="week-stat">
-                                <span class="stat-label">Total Distance</span>
-                                <span class="stat-value">87 km</span>
-                            </div>
-                            <div class="week-stat">
-                                <span class="stat-label">Elevation Gain</span>
-                                <span class="stat-value">3,420m</span>
-                            </div>
-                            <div class="week-stat">
-                                <span class="stat-label">Training Time</span>
-                                <span class="stat-value">12h 45m</span>
-                            </div>
-                            <div class="week-stat">
-                                <span class="stat-label">Intensity</span>
-                                <span class="stat-value">Peak</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="workout-schedule">
-                        <div class="workout-day">
-                            <div class="day-header">
-                                <h4>Monday</h4>
-                                <span class="workout-type recovery">Recovery</span>
-                            </div>
-                            <div class="workout-content">
-                                <p><strong>Easy Trail Run</strong></p>
-                                <p>8km • 300m elevation • Zone 1-2</p>
-                                <p>Focus: Active recovery, leg turnover</p>
-                            </div>
-                        </div>
-                        
-                        <div class="workout-day">
-                            <div class="day-header">
-                                <h4>Tuesday</h4>
-                                <span class="workout-type tempo">Tempo</span>
-                            </div>
-                            <div class="workout-content">
-                                <p><strong>High-Altitude Intervals</strong></p>
-                                <p>15km • 800m elevation • 6x5min @ threshold</p>
-                                <p>Simulate race pace at 3,000m+ elevation</p>
-                            </div>
-                        </div>
-                        
-                        <div class="workout-day featured">
-                            <div class="day-header">
-                                <h4>Wednesday</h4>
-                                <span class="workout-type long">Summit Training</span>
-                            </div>
-                            <div class="workout-content">
-                                <p><strong>Peak Simulation Run</strong></p>
-                                <p>32km • 1,400m elevation • Back-to-back climbs</p>
-                                <p>Practice fueling, gear, mental preparation</p>
-                                <div class="workout-note">
-                                    🎯 Key workout: Hardrock terrain simulation
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="workout-day">
-                            <div class="day-header">
-                                <h4>Thursday</h4>
-                                <span class="workout-type recovery">Recovery</span>
-                            </div>
-                            <div class="workout-content">
-                                <p><strong>Cross Training</strong></p>
-                                <p>45min • Strength + mobility</p>
-                                <p>Focus: Core, stability, injury prevention</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="detail-item">
+                  <span class="detail-label">Elevation Gain</span>
+                  <span class="detail-value">33,000ft+</span>
                 </div>
+                <div class="detail-item">
+                  <span class="detail-label">Phase</span>
+                  <span class="detail-value">Peak - Week 14</span>
+                </div>
+              </div>
+
+              <div class="plan-progress">
+                <div class="progress-header">
+                  <span>Training Progress</span>
+                  <span>87%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 87%"></div>
+                </div>
+              </div>
             </div>
-        </section>
+
+            <div class="plan-footer">
+              <div class="plan-coach">
+                <span>Coach: Maria Highpoint</span>
+              </div>
+              <button class="view-btn">Summit Details →</button>
+            </div>
+          </div>
+
+          <div class="training-plan-card">
+            <div class="plan-header">
+              <div class="plan-badge build">Build Phase</div>
+              <div class="plan-actions">
+                <button class="action-btn">⋯</button>
+              </div>
+            </div>
+
+            <div class="plan-content">
+              <h3>Whitney Portal Challenge</h3>
+              <p class="plan-description">
+                8-week technical climbing preparation for Mount Whitney
+              </p>
+
+              <div class="plan-details">
+                <div class="detail-item">
+                  <span class="detail-label">Target Race</span>
+                  <span class="detail-value">Mount Whitney 50K</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Elevation Gain</span>
+                  <span class="detail-value">6,100ft+</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Phase</span>
+                  <span class="detail-value">Build - Week 5</span>
+                </div>
+              </div>
+
+              <div class="plan-progress">
+                <div class="progress-header">
+                  <span>Training Progress</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 45%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-footer">
+              <div class="plan-coach">
+                <span>Coach: Maria Highpoint</span>
+              </div>
+              <button class="view-btn">View Plan →</button>
+            </div>
+          </div>
+
+          <div class="training-plan-card">
+            <div class="plan-header">
+              <div class="plan-badge base">Base Phase</div>
+              <div class="plan-actions">
+                <button class="action-btn">⋯</button>
+              </div>
+            </div>
+
+            <div class="plan-content">
+              <h3>UTMB Foundation Builder</h3>
+              <p class="plan-description">
+                20-week comprehensive base building for UTMB Mont-Blanc
+              </p>
+
+              <div class="plan-details">
+                <div class="detail-item">
+                  <span class="detail-label">Target Race</span>
+                  <span class="detail-value">UTMB Mont-Blanc</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Elevation Gain</span>
+                  <span class="detail-value">32,800ft+</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Phase</span>
+                  <span class="detail-value">Base - Week 3</span>
+                </div>
+              </div>
+
+              <div class="plan-progress">
+                <div class="progress-header">
+                  <span>Training Progress</span>
+                  <span>23%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 23%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="plan-footer">
+              <div class="plan-coach">
+                <span>Coach: Maria Highpoint</span>
+              </div>
+              <button class="view-btn">View Plan →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Single Training Plan Detail -->
+      <section id="plan-detail" class="page-section">
+        <div class="plan-detail-header">
+          <div class="breadcrumb">
+            <a href="#training-plans">Training Plans</a> /
+            <span>Hardrock 100 - Summit Assault</span>
+          </div>
+
+          <div class="plan-title-section">
+            <div class="plan-title-content">
+              <h1>Hardrock 100 - Summit Assault</h1>
+              <p>16-week peak preparation for the ultimate high-altitude challenge</p>
+              <div class="plan-badges">
+                <span class="badge peak">Peak Phase</span>
+                <span class="badge race">Week 14 of 16</span>
+                <span class="badge athlete">Advanced</span>
+              </div>
+            </div>
+
+            <div class="plan-summit-info">
+              <div class="summit-card">
+                <h3>🏔️ Target Summit</h3>
+                <div class="summit-details">
+                  <p><strong>Hardrock 100</strong></p>
+                  <p>July 26, 2025</p>
+                  <p>Silverton, Colorado</p>
+                  <p><strong>100 Miles • 33,000ft+</strong></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plan-detail-content">
+          <div class="phase-timeline">
+            <h2>🗻 Expedition Phases</h2>
+            <div class="timeline">
+              <div class="timeline-item completed">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <h4>Base Camp (Weeks 1-6)</h4>
+                  <p>Foundation building • Aerobic development</p>
+                  <span class="timeline-status">✓ Completed</span>
+                </div>
+              </div>
+
+              <div class="timeline-item completed">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <h4>Altitude Training (Weeks 7-10)</h4>
+                  <p>High-altitude adaptation • Power development</p>
+                  <span class="timeline-status">✓ Completed</span>
+                </div>
+              </div>
+
+              <div class="timeline-item active">
+                <div class="timeline-marker active"></div>
+                <div class="timeline-content">
+                  <h4>Summit Push (Weeks 11-14)</h4>
+                  <p>Peak intensity • Race simulation</p>
+                  <span class="timeline-status">🎯 Current Phase</span>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <h4>Final Ascent (Weeks 15-16)</h4>
+                  <p>Taper • Race preparation</p>
+                  <span class="timeline-status">📅 Upcoming</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="weekly-breakdown">
+            <h2>📊 This Week's Expedition Plan</h2>
+            <div class="week-summary">
+              <div class="week-stats">
+                <div class="week-stat">
+                  <span class="stat-label">Total Distance</span>
+                  <span class="stat-value">87 km</span>
+                </div>
+                <div class="week-stat">
+                  <span class="stat-label">Elevation Gain</span>
+                  <span class="stat-value">3,420m</span>
+                </div>
+                <div class="week-stat">
+                  <span class="stat-label">Training Time</span>
+                  <span class="stat-value">12h 45m</span>
+                </div>
+                <div class="week-stat">
+                  <span class="stat-label">Intensity</span>
+                  <span class="stat-value">Peak</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="workout-schedule">
+              <div class="workout-day">
+                <div class="day-header">
+                  <h4>Monday</h4>
+                  <span class="workout-type recovery">Recovery</span>
+                </div>
+                <div class="workout-content">
+                  <p><strong>Easy Trail Run</strong></p>
+                  <p>8km • 300m elevation • Zone 1-2</p>
+                  <p>Focus: Active recovery, leg turnover</p>
+                </div>
+              </div>
+
+              <div class="workout-day">
+                <div class="day-header">
+                  <h4>Tuesday</h4>
+                  <span class="workout-type tempo">Tempo</span>
+                </div>
+                <div class="workout-content">
+                  <p><strong>High-Altitude Intervals</strong></p>
+                  <p>15km • 800m elevation • 6x5min @ threshold</p>
+                  <p>Simulate race pace at 3,000m+ elevation</p>
+                </div>
+              </div>
+
+              <div class="workout-day featured">
+                <div class="day-header">
+                  <h4>Wednesday</h4>
+                  <span class="workout-type long">Summit Training</span>
+                </div>
+                <div class="workout-content">
+                  <p><strong>Peak Simulation Run</strong></p>
+                  <p>32km • 1,400m elevation • Back-to-back climbs</p>
+                  <p>Practice fueling, gear, mental preparation</p>
+                  <div class="workout-note">🎯 Key workout: Hardrock terrain simulation</div>
+                </div>
+              </div>
+
+              <div class="workout-day">
+                <div class="day-header">
+                  <h4>Thursday</h4>
+                  <span class="workout-type recovery">Recovery</span>
+                </div>
+                <div class="workout-content">
+                  <p><strong>Cross Training</strong></p>
+                  <p>45min • Strength + mobility</p>
+                  <p>Focus: Core, stability, injury prevention</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script>
-        // Theme toggle functionality
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
-            html.classList.remove(currentTheme);
-            html.classList.add(newTheme);
-            
-            // Update theme toggle button
-            const lightIcon = document.querySelector('.light-icon');
-            const darkIcon = document.querySelector('.dark-icon');
-            
-            if (newTheme === 'dark') {
-                lightIcon.style.display = 'none';
-                darkIcon.style.display = 'inline';
-            } else {
-                lightIcon.style.display = 'inline';
-                darkIcon.style.display = 'none';
-            }
+      // Theme toggle functionality
+      function toggleTheme() {
+        const html = document.documentElement
+        const currentTheme = html.classList.contains('dark') ? 'dark' : 'light'
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light'
+
+        html.classList.remove(currentTheme)
+        html.classList.add(newTheme)
+
+        // Update theme toggle button
+        const lightIcon = document.querySelector('.light-icon')
+        const darkIcon = document.querySelector('.dark-icon')
+
+        if (newTheme === 'dark') {
+          lightIcon.style.display = 'none'
+          darkIcon.style.display = 'inline'
+        } else {
+          lightIcon.style.display = 'inline'
+          darkIcon.style.display = 'none'
         }
+      }
 
-        // Initialize theme
-        document.addEventListener('DOMContentLoaded', function() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const lightIcon = document.querySelector('.light-icon');
-            const darkIcon = document.querySelector('.dark-icon');
-            
-            if (isDark) {
-                lightIcon.style.display = 'none';
-                darkIcon.style.display = 'inline';
-            } else {
-                lightIcon.style.display = 'inline';
-                darkIcon.style.display = 'none';
-            }
-        });
+      // Initialize theme
+      document.addEventListener('DOMContentLoaded', function () {
+        const isDark = document.documentElement.classList.contains('dark')
+        const lightIcon = document.querySelector('.light-icon')
+        const darkIcon = document.querySelector('.dark-icon')
 
-        // Page navigation
-        function showPage(pageId) {
-            // Hide all pages
-            document.querySelectorAll('.page-section').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // Show selected page
-            document.getElementById(pageId).classList.add('active');
-            
-            // Update navigation
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            
-            document.querySelector(`[href="#${pageId}"]`).classList.add('active');
+        if (isDark) {
+          lightIcon.style.display = 'none'
+          darkIcon.style.display = 'inline'
+        } else {
+          lightIcon.style.display = 'inline'
+          darkIcon.style.display = 'none'
         }
+      })
 
-        // Add click handlers for navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const pageId = this.getAttribute('href').substring(1);
-                    showPage(pageId);
-                });
-            });
-        });
+      // Page navigation
+      function showPage(pageId) {
+        // Hide all pages
+        document.querySelectorAll('.page-section').forEach(page => {
+          page.classList.remove('active')
+        })
+
+        // Show selected page
+        document.getElementById(pageId).classList.add('active')
+
+        // Update navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+          link.classList.remove('active')
+        })
+
+        document.querySelector(`[href="#${pageId}"]`).classList.add('active')
+      }
+
+      // Add click handlers for navigation
+      document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.nav-link').forEach(link => {
+          link.addEventListener('click', function (e) {
+            e.preventDefault()
+            const pageId = this.getAttribute('href').substring(1)
+            showPage(pageId)
+          })
+        })
+      })
     </script>
-</body>
+  </body>
 </html>

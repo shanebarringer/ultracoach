@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const supabase = supabaseAdmin
-    
+
     // Get all races for coaches, or races for specific runners
-    let query = supabase
-      .from('races')
-      .select('*')
-      .order('date', { ascending: true })
+    let query = supabase.from('races').select('*').order('date', { ascending: true })
 
     if (session.user.role === 'coach') {
       // Coaches can see all races
@@ -29,9 +27,9 @@ export async function GET(request: NextRequest) {
         .select('race_id')
         .eq('runner_id', session.user.id)
         .not('race_id', 'is', null)
-      
+
       const raceIds = runnerPlans?.map(plan => plan.race_id).filter(Boolean) || []
-      
+
       if (raceIds.length > 0) {
         query = query.in('id', raceIds)
       } else {
@@ -57,7 +55,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
       elevation_gain_feet,
       terrain_type,
       website_url,
-      notes
+      notes,
     } = await request.json()
 
     if (!name || !date || !distance_miles || !distance_type || !location || !terrain_type) {
@@ -79,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = supabaseAdmin
-    
+
     const { data: race, error } = await supabase
       .from('races')
       .insert({
@@ -92,7 +90,7 @@ export async function POST(request: NextRequest) {
         terrain_type,
         website_url: website_url || null,
         notes: notes || null,
-        created_by: session.user.id
+        created_by: session.user.id,
       })
       .select()
       .single()

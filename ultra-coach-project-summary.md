@@ -77,6 +77,7 @@ ultracoach/
 ## Database Schema
 
 ### Tables
+
 1. **users** - Runner and coach profiles
 2. **training_plans** - Training plans created by coaches
 3. **workouts** - Individual workout sessions
@@ -84,6 +85,7 @@ ultracoach/
 5. **notifications** - System notifications
 
 ### Key Features
+
 - Row Level Security (RLS) for data protection
 - Real-time subscriptions for chat and notifications
 - Automatic triggers for notifications
@@ -91,32 +93,38 @@ ultracoach/
 ## Key Features Implemented
 
 ### 1. User Management
+
 - Dual role system (runners and coaches)
 - Profile management
 - Secure authentication with NextAuth.js
 
 ### 2. Training Plan Management
+
 - Coaches create and assign training plans
 - Plans include target race information
 - Workout scheduling and tracking
 
 ### 3. Workout Tracking
+
 - Detailed workout logging
 - Injury and notes tracking
 - Coach feedback system
 - Real-time status updates
 
 ### 4. Communication System
+
 - Real-time chat between runners and coaches
 - Message read status
 - Conversation management
 
 ### 5. Notification System
+
 - Real-time notifications for important events
 - Different notification types (messages, workouts, comments)
 - Unread counters and management
 
 ### 6. Mobile Responsive Design
+
 - Tailwind CSS implementation
 - Mobile navigation
 - Responsive layouts
@@ -124,18 +132,21 @@ ultracoach/
 ## Setup Instructions
 
 ### 1. Initialize Project
+
 ```bash
 npx create-next-app@latest ultracoach
 cd ultracoach
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm install @supabase/supabase-js next-auth bcrypt @tailwindcss/forms
 npm install --save-dev tailwindcss postcss autoprefixer
 ```
 
 ### 3. Environment Variables (.env.local)
+
 ```
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key-at-least-32-characters
@@ -144,6 +155,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 ### 4. Supabase Setup
+
 1. Create project at [supabase.com](https://supabase.com)
 2. Run the SQL migrations to create tables
 3. Set up Row Level Security policies
@@ -152,6 +164,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ### 5. Key Files to Create
 
 #### package.json
+
 ```json
 {
   "name": "ultracoach",
@@ -183,12 +196,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 #### tailwind.config.js
+
 ```javascript
 module.exports = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       fontFamily: {
@@ -196,13 +207,12 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
+  plugins: [require('@tailwindcss/forms')],
 }
 ```
 
 #### styles/globals.css
+
 ```css
 @tailwind base;
 @tailwind components;
@@ -218,6 +228,7 @@ body {
 ## Data Import from CSV
 
 Your uploaded CSV ("Shanes Running Log.csv") contains:
+
 - Day, Date, Run Plan, Actual, Injury Comments, Life/Workout Notes, Comments from Corinne
 
 Create a data import script to map this to your workouts table.
@@ -235,6 +246,7 @@ Create a data import script to map this to your workouts table.
 ## Real-time Features
 
 The app uses Supabase real-time subscriptions for:
+
 - Chat messages
 - Workout updates
 - Notifications

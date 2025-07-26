@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('notifications-api');
+const logger = createLogger('notifications-api')
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,19 +44,24 @@ export async function POST(request: NextRequest) {
     }
     const { userId, title, message, type } = await request.json()
     if (!userId || !title || !message) {
-      return NextResponse.json({ 
-        error: 'User ID, title, and message are required' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'User ID, title, and message are required',
+        },
+        { status: 400 }
+      )
     }
     // Create notification
     const { data: notification, error } = await supabaseAdmin
       .from('notifications')
-      .insert([{
-        user_id: userId,
-        title,
-        message,
-        type: type || 'message'
-      }])
+      .insert([
+        {
+          user_id: userId,
+          title,
+          message,
+          type: type || 'message',
+        },
+      ])
       .select()
       .single()
     if (error) {
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(request)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -80,9 +86,12 @@ export async function PATCH(request: NextRequest) {
     const { notificationIds, read } = await request.json()
 
     if (!Array.isArray(notificationIds)) {
-      return NextResponse.json({ 
-        error: 'Notification IDs must be an array' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Notification IDs must be an array',
+        },
+        { status: 400 }
+      )
     }
 
     // Update notifications (only user's own notifications)

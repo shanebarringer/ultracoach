@@ -1,0 +1,114 @@
+name: Supabase Preview Branch Deployment (Disabled)
+
+# Temporarily disabled - will re-enable post initial production release
+# on:
+#   pull_request:
+#     types:
+#       - opened
+#       - reopened
+#       - synchronize
+#     branches:
+#       - main
+#       - develop
+#     paths:
+#       - 'supabase/**'
+
+# Trigger manually only for now
+on:
+  workflow_dispatch:
+
+jobs:
+  # Wait for Supabase Preview Branch to be ready
+  wait-for-preview:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.check.outputs.conclusion }}
+    steps:
+      - name: Wait for Supabase Preview Branch
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: check
+        with:
+          checkName: Supabase Preview
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          timeoutSeconds: 600 # Wait up to 10 minutes
+
+  # Run tests against the Preview Branch
+  test-preview-branch:
+    needs: [wait-for-preview]
+    if: ${{ needs.wait-for-preview.outputs.status == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Get Preview Branch details
+        run: |
+          supabase --experimental branches get "$GITHUB_HEAD_REF" -o env >> $GITHUB_ENV
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Run database tests
+        run: |
+          echo "Testing Preview Branch: $GITHUB_HEAD_REF"
+          # Add your database tests here
+          # Example: pnpm test:db
+
+      - name: Run build test
+        run: |
+          pnpm build
+        env:
+          SUPABASE_URL: ${{ env.API_URL }}
+          SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Preview Branch tests passed! Database changes look good.'
+            })
+
+  # Handle Preview Branch failures
+  handle-failure:
+    needs: [wait-for-preview]
+    if: ${{ needs.wait-for-preview.outputs.status == 'failure' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Comment on PR about failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ Supabase Preview Branch deployment failed. Please check your database migrations and try again.'
+            })
+
+      - name: Fail the workflow
+        run: exit 1

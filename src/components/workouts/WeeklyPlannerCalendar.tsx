@@ -1,32 +1,27 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useSession } from '@/hooks/useBetterSession'
-import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  Button, 
-  Input, 
-  Select, 
-  SelectItem, 
-  Textarea, 
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
   Chip,
-  Spinner,
+  Input,
   Popover,
+  PopoverContent,
   PopoverTrigger,
-  PopoverContent
+  Select,
+  SelectItem,
+  Spinner,
+  Textarea,
 } from '@heroui/react'
-import { 
-  PlayIcon, 
-  MountainIcon,
-  ClockIcon,
-  RouteIcon,
-  ZapIcon,
-  TargetIcon
-} from 'lucide-react'
-import type { User, Workout } from '@/lib/supabase'
 import classNames from 'classnames'
+import { ClockIcon, MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-react'
+
+import { useCallback, useEffect, useState } from 'react'
+
+import { useSession } from '@/hooks/useBetterSession'
+import type { User, Workout } from '@/lib/supabase'
 
 interface DayWorkout {
   date: Date
@@ -36,7 +31,16 @@ interface DayWorkout {
     distance?: number
     duration?: number
     notes?: string
-    category?: 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest'
+    category?:
+      | 'easy'
+      | 'tempo'
+      | 'interval'
+      | 'long_run'
+      | 'race_simulation'
+      | 'recovery'
+      | 'strength'
+      | 'cross_training'
+      | 'rest'
     intensity?: number
     terrain?: 'road' | 'trail' | 'track' | 'treadmill'
     elevationGain?: number
@@ -52,14 +56,14 @@ interface WeeklyPlannerCalendarProps {
 const WORKOUT_TYPES = [
   'Rest Day',
   'Easy Run',
-  'Long Run', 
+  'Long Run',
   'Tempo Run',
   'Interval Training',
   'Fartlek',
   'Hill Training',
   'Recovery Run',
   'Cross Training',
-  'Strength Training'
+  'Strength Training',
 ]
 
 const WORKOUT_CATEGORIES = [
@@ -71,51 +75,71 @@ const WORKOUT_CATEGORIES = [
   { id: 'recovery', name: 'Recovery', color: 'success' },
   { id: 'strength', name: 'Strength', color: 'default' },
   { id: 'cross_training', name: 'Cross Training', color: 'default' },
-  { id: 'rest', name: 'Rest', color: 'default' }
+  { id: 'rest', name: 'Rest', color: 'default' },
 ]
 
 // Terrain union type and metadata
-export type TerrainType = 'road' | 'trail' | 'track' | 'treadmill';
+export type TerrainType = 'road' | 'trail' | 'track' | 'treadmill'
 
-export const TERRAIN_OPTIONS: Record<TerrainType, { label: string; icon: React.ElementType; color: 'primary' | 'success' | 'secondary' | 'warning' | 'danger' | 'default' }> = {
+export const TERRAIN_OPTIONS: Record<
+  TerrainType,
+  {
+    label: string
+    icon: React.ElementType
+    color: 'primary' | 'success' | 'secondary' | 'warning' | 'danger' | 'default'
+  }
+> = {
   road: { label: 'Road', icon: RouteIcon, color: 'primary' },
   trail: { label: 'Trail', icon: MountainIcon, color: 'success' },
   track: { label: 'Track', icon: TargetIcon, color: 'secondary' },
   treadmill: { label: 'Treadmill', icon: PlayIcon, color: 'default' },
-};
+}
 
 // Helper for Chip color type
-const getChipColor = (color: string | undefined): 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' => {
-  if (!color) return 'default';
-  if ([
-    'default',
-    'primary',
-    'secondary',
-    'success',
-    'warning',
-    'danger',
-  ].includes(color)) {
-    return color as 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+const getChipColor = (
+  color: string | undefined
+): 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' => {
+  if (!color) return 'default'
+  if (['default', 'primary', 'secondary', 'success', 'warning', 'danger'].includes(color)) {
+    return color as 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
   }
-  return 'default';
+  return 'default'
 }
 
 // Helper for intensity color and label
 function getIntensityColor(intensity: number): 'success' | 'primary' | 'warning' | 'danger' {
-  if (intensity <= 3) return 'success';
-  if (intensity <= 5) return 'primary';
-  if (intensity <= 7) return 'warning';
-  return 'danger';
+  if (intensity <= 3) return 'success'
+  if (intensity <= 5) return 'primary'
+  if (intensity <= 7) return 'warning'
+  return 'danger'
 }
 
 function getIntensityLabel(intensity: number): string {
-  if (intensity <= 3) return 'Easy';
-  if (intensity <= 5) return 'Moderate';
-  if (intensity <= 7) return 'Hard';
-  return 'Maximum';
+  if (intensity <= 3) return 'Easy'
+  if (intensity <= 5) return 'Moderate'
+  if (intensity <= 7) return 'Hard'
+  return 'Maximum'
 }
 
-function CategoryChip({ category, onSelect }: { category?: string, onSelect: (catId: 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | undefined) => void }) {
+function CategoryChip({
+  category,
+  onSelect,
+}: {
+  category?: string
+  onSelect: (
+    catId:
+      | 'easy'
+      | 'tempo'
+      | 'interval'
+      | 'long_run'
+      | 'race_simulation'
+      | 'recovery'
+      | 'strength'
+      | 'cross_training'
+      | 'rest'
+      | undefined
+  ) => void
+}) {
   const current = WORKOUT_CATEGORIES.find(c => c.id === category)
   return (
     <Popover placement="bottom-start">
@@ -138,10 +162,25 @@ function CategoryChip({ category, onSelect }: { category?: string, onSelect: (ca
                 'flex items-center gap-2 px-2 py-1 rounded hover:bg-default-100 transition',
                 category === cat.id ? 'ring-2 ring-primary' : ''
               )}
-              onClick={() => onSelect(cat.id as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest')}
+              onClick={() =>
+                onSelect(
+                  cat.id as
+                    | 'easy'
+                    | 'tempo'
+                    | 'interval'
+                    | 'long_run'
+                    | 'race_simulation'
+                    | 'recovery'
+                    | 'strength'
+                    | 'cross_training'
+                    | 'rest'
+                )
+              }
               type="button"
             >
-              <Chip size="sm" color={getChipColor(cat.color)} variant="flat">{cat.name}</Chip>
+              <Chip size="sm" color={getChipColor(cat.color)} variant="flat">
+                {cat.name}
+              </Chip>
             </button>
           ))}
         </div>
@@ -150,8 +189,14 @@ function CategoryChip({ category, onSelect }: { category?: string, onSelect: (ca
   )
 }
 
-function TerrainChip({ terrain, onSelect }: { terrain?: TerrainType, onSelect: (terrain: TerrainType) => void }) {
-  const current = terrain ? TERRAIN_OPTIONS[terrain] : undefined;
+function TerrainChip({
+  terrain,
+  onSelect,
+}: {
+  terrain?: TerrainType
+  onSelect: (terrain: TerrainType) => void
+}) {
+  const current = terrain ? TERRAIN_OPTIONS[terrain] : undefined
   return (
     <Popover placement="bottom-start">
       <PopoverTrigger>
@@ -166,26 +211,32 @@ function TerrainChip({ terrain, onSelect }: { terrain?: TerrainType, onSelect: (
               <current.icon className="w-4 h-4" />
               {current.label}
             </span>
-          ) : 'Set Terrain'}
+          ) : (
+            'Set Terrain'
+          )}
         </Chip>
       </PopoverTrigger>
       <PopoverContent className="p-2 min-w-[160px]">
         <div className="flex flex-col gap-2">
-          {Object.entries(TERRAIN_OPTIONS).filter(([key]) => typeof key === 'string').map(([key, opt]) => (
-            <button
-              key={key}
-              className={classNames(
-                'flex items-center gap-2 px-2 py-1 rounded hover:bg-default-100 transition',
-                (typeof terrain === 'string' ? terrain : '') === key ? 'ring-2 ring-primary' : ''
-              )}
-              onClick={() => { if (typeof key === 'string') onSelect(key as TerrainType); }}
-              type="button"
-            >
-              <Chip size="sm" color={opt.color} variant="flat">
-                <opt.icon className="w-4 h-4" /> {opt.label}
-              </Chip>
-            </button>
-          ))}
+          {Object.entries(TERRAIN_OPTIONS)
+            .filter(([key]) => typeof key === 'string')
+            .map(([key, opt]) => (
+              <button
+                key={key}
+                className={classNames(
+                  'flex items-center gap-2 px-2 py-1 rounded hover:bg-default-100 transition',
+                  (typeof terrain === 'string' ? terrain : '') === key ? 'ring-2 ring-primary' : ''
+                )}
+                onClick={() => {
+                  if (typeof key === 'string') onSelect(key as TerrainType)
+                }}
+                type="button"
+              >
+                <Chip size="sm" color={opt.color} variant="flat">
+                  <opt.icon className="w-4 h-4" /> {opt.label}
+                </Chip>
+              </button>
+            ))}
         </div>
       </PopoverContent>
     </Popover>
@@ -198,7 +249,7 @@ const WORKOUT_TYPE_TO_CATEGORY: Record<string, string> = {
   'Long Run': 'long_run',
   'Tempo Run': 'tempo',
   'Interval Training': 'interval',
-  'Fartlek': 'interval',
+  Fartlek: 'interval',
   'Hill Training': 'interval',
   'Recovery Run': 'recovery',
   'Cross Training': 'cross_training',
@@ -209,7 +260,7 @@ const WORKOUT_TYPE_TO_CATEGORY: Record<string, string> = {
 export default function WeeklyPlannerCalendar({
   runner,
   weekStart,
-  onWeekUpdate
+  onWeekUpdate,
 }: WeeklyPlannerCalendarProps) {
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
@@ -223,7 +274,7 @@ export default function WeeklyPlannerCalendar({
     const monday = new Date(startDate)
     const day = monday.getDay()
     // getDay(): 0=Sunday, 1=Monday, ..., 6=Saturday
-    const diff = (day === 0 ? -6 : 1 - day) // if Sunday, go back 6 days; else, back to Monday
+    const diff = day === 0 ? -6 : 1 - day // if Sunday, go back 6 days; else, back to Monday
     monday.setDate(monday.getDate() + diff)
 
     const days: DayWorkout[] = []
@@ -233,7 +284,7 @@ export default function WeeklyPlannerCalendar({
       date.setDate(monday.getDate() + i)
       days.push({
         date,
-        dayName: dayNames[i]
+        dayName: dayNames[i],
       })
     }
     return days
@@ -252,7 +303,7 @@ export default function WeeklyPlannerCalendar({
       const response = await fetch(
         `/api/workouts?runnerId=${runner.id}&startDate=${startDate}&endDate=${endDateStr}`
       )
-      
+
       if (response.ok) {
         const data = await response.json()
         setExistingWorkouts(data.workouts || [])
@@ -273,11 +324,16 @@ export default function WeeklyPlannerCalendar({
   // Merge existing workouts with week structure
   useEffect(() => {
     // Debug log: print all workout dates and week days
-    console.log('existingWorkouts:', existingWorkouts.map(w => w.date))
+    console.log(
+      'existingWorkouts:',
+      existingWorkouts.map(w => w.date)
+    )
     // Sort workouts by date ascending (ISO string)
     const sortedWorkouts = [...existingWorkouts].sort((a, b) => {
-      const aDate = typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0]
-      const bDate = typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0]
+      const aDate =
+        typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0]
+      const bDate =
+        typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0]
       return aDate.localeCompare(bDate)
     })
     // Map and then sort weekWorkouts by date
@@ -285,7 +341,8 @@ export default function WeeklyPlannerCalendar({
       prevDays.map(day => {
         const dayIso = day.date.toISOString().split('T')[0]
         const existingWorkout = sortedWorkouts.find(w => {
-          const workoutIso = (typeof w.date === 'string' ? w.date : new Date(w.date).toISOString().split('T')[0])
+          const workoutIso =
+            typeof w.date === 'string' ? w.date : new Date(w.date).toISOString().split('T')[0]
           return workoutIso === dayIso
         })
         if (existingWorkout) {
@@ -302,8 +359,8 @@ export default function WeeklyPlannerCalendar({
               category: existingWorkout.category || undefined,
               intensity: existingWorkout.intensity || undefined,
               terrain: existingWorkout.terrain || undefined,
-              elevationGain: existingWorkout.elevation_gain || undefined
-            }
+              elevationGain: existingWorkout.elevation_gain || undefined,
+            },
           }
         }
         return day
@@ -315,19 +372,33 @@ export default function WeeklyPlannerCalendar({
     })
   }, [existingWorkouts])
 
-  const updateDayWorkout = (dayIndex: number, field: string, value: string | number | undefined) => {
+  const updateDayWorkout = (
+    dayIndex: number,
+    field: string,
+    value: string | number | undefined
+  ) => {
     setWeekWorkouts(prev => {
       const updated = [...prev]
       const day = updated[dayIndex]
-      
+
       if (!day.workout) {
         day.workout = { type: 'Easy Run' }
       }
-      
+
       if (field === 'type') {
         day.workout.type = value as string
         // Set category to default for this type
-        day.workout.category = WORKOUT_TYPE_TO_CATEGORY[value as string] as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | undefined
+        day.workout.category = WORKOUT_TYPE_TO_CATEGORY[value as string] as
+          | 'easy'
+          | 'tempo'
+          | 'interval'
+          | 'long_run'
+          | 'race_simulation'
+          | 'recovery'
+          | 'strength'
+          | 'cross_training'
+          | 'rest'
+          | undefined
         // Clear distance/duration for rest days
         if (value === 'Rest Day') {
           day.workout.distance = undefined
@@ -336,7 +407,17 @@ export default function WeeklyPlannerCalendar({
           day.workout.intensity = undefined
         }
       } else if (field === 'category') {
-        day.workout.category = value as 'easy' | 'tempo' | 'interval' | 'long_run' | 'race_simulation' | 'recovery' | 'strength' | 'cross_training' | 'rest' | undefined
+        day.workout.category = value as
+          | 'easy'
+          | 'tempo'
+          | 'interval'
+          | 'long_run'
+          | 'race_simulation'
+          | 'recovery'
+          | 'strength'
+          | 'cross_training'
+          | 'rest'
+          | undefined
       } else if (field === 'distance') {
         day.workout.distance = value ? Number(value) : undefined
       } else if (field === 'duration') {
@@ -347,12 +428,12 @@ export default function WeeklyPlannerCalendar({
         day.workout.intensity = value ? Number(value) : undefined
       } else if (field === 'terrain') {
         if (typeof value === 'string') {
-          day.workout.terrain = value as TerrainType;
+          day.workout.terrain = value as TerrainType
         }
       } else if (field === 'elevationGain') {
         day.workout.elevationGain = value ? Number(value) : undefined
       }
-      
+
       return updated
     })
     setHasChanges(true)
@@ -377,10 +458,10 @@ export default function WeeklyPlannerCalendar({
       if (!plansResponse.ok) {
         throw new Error('Failed to find training plan')
       }
-      
+
       const plansData = await plansResponse.json()
       const trainingPlan = plansData.trainingPlans?.[0]
-      
+
       if (!trainingPlan) {
         throw new Error('No training plan found for this runner')
       }
@@ -398,7 +479,7 @@ export default function WeeklyPlannerCalendar({
           category: day.workout!.category || null,
           intensity: day.workout!.intensity || null,
           terrain: day.workout!.terrain || null,
-          elevationGain: day.workout!.elevationGain || null
+          elevationGain: day.workout!.elevationGain || null,
         }))
 
       // Bulk create workouts
@@ -408,7 +489,7 @@ export default function WeeklyPlannerCalendar({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          workouts: workoutsToCreate
+          workouts: workoutsToCreate,
         }),
       })
 
@@ -419,10 +500,12 @@ export default function WeeklyPlannerCalendar({
 
       setHasChanges(false)
       onWeekUpdate()
-      
+
       // Show success message - using alert for now but should integrate with notification system
-      alert(`⛰️ Successfully planned ${workoutsToCreate.length} summit ascents for ${runner.full_name}!`)
-      
+      alert(
+        `⛰️ Successfully planned ${workoutsToCreate.length} summit ascents for ${runner.full_name}!`
+      )
+
       // Refresh existing workouts
       fetchExistingWorkouts()
     } catch (error) {
@@ -436,7 +519,7 @@ export default function WeeklyPlannerCalendar({
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -460,7 +543,7 @@ export default function WeeklyPlannerCalendar({
               </p>
             </div>
           </div>
-          
+
           {hasChanges && (
             <Button
               color="success"
@@ -483,24 +566,28 @@ export default function WeeklyPlannerCalendar({
               key={day.date.toISOString()}
               className={classNames(
                 'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-                isToday(day.date) 
-                  ? 'ring-2 ring-primary bg-gradient-to-br from-primary/10 to-secondary/10 border-l-4 border-l-primary' 
+                isToday(day.date)
+                  ? 'ring-2 ring-primary bg-gradient-to-br from-primary/10 to-secondary/10 border-l-4 border-l-primary'
                   : 'hover:bg-gradient-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent'
               )}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between w-full">
                   <div>
-                    <h4 className={classNames(
-                      'font-semibold text-sm',
-                      isToday(day.date) ? 'text-primary' : 'text-foreground'
-                    )}>
+                    <h4
+                      className={classNames(
+                        'font-semibold text-sm',
+                        isToday(day.date) ? 'text-primary' : 'text-foreground'
+                      )}
+                    >
                       {day.dayName}
                     </h4>
-                    <p className={classNames(
-                      'text-xs',
-                      isToday(day.date) ? 'text-primary/70' : 'text-foreground/70'
-                    )}>
+                    <p
+                      className={classNames(
+                        'text-xs',
+                        isToday(day.date) ? 'text-primary/70' : 'text-foreground/70'
+                      )}
+                    >
                       {formatDate(day.date)}
                     </p>
                   </div>
@@ -513,12 +600,12 @@ export default function WeeklyPlannerCalendar({
                     {/* Category Chip */}
                     <CategoryChip
                       category={day.workout?.category}
-                      onSelect={(catId) => updateDayWorkout(index, 'category', catId)}
+                      onSelect={catId => updateDayWorkout(index, 'category', catId)}
                     />
                     {/* Terrain Chip */}
                     <TerrainChip
                       terrain={day.workout?.terrain}
-                      onSelect={(terrain) => updateDayWorkout(index, 'terrain', terrain)}
+                      onSelect={terrain => updateDayWorkout(index, 'terrain', terrain)}
                     />
                   </div>
                 </div>
@@ -531,19 +618,15 @@ export default function WeeklyPlannerCalendar({
                   size="sm"
                   fullWidth
                   selectedKeys={day.workout?.type ? [day.workout.type] : []}
-                  onSelectionChange={(keys) => {
-                    const selectedType = Array.from(keys).join('');
-                    updateDayWorkout(index, 'type', selectedType);
+                  onSelectionChange={keys => {
+                    const selectedType = Array.from(keys).join('')
+                    updateDayWorkout(index, 'type', selectedType)
                   }}
                   placeholder="No workout"
                   items={WORKOUT_TYPES.map(type => ({ id: type, name: type }))}
                   className="text-xs"
                 >
-                  {(item) => (
-                    <SelectItem key={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  )}
+                  {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                 </Select>
 
                 {day.workout && day.workout.type && day.workout.type !== 'Rest Day' && (
@@ -557,7 +640,7 @@ export default function WeeklyPlannerCalendar({
                       step="0.1"
                       min="0"
                       value={day.workout.distance?.toString() || ''}
-                      onChange={(e) => updateDayWorkout(index, 'distance', e.target.value)}
+                      onChange={e => updateDayWorkout(index, 'distance', e.target.value)}
                       placeholder="5.5"
                       startContent={<RouteIcon className="w-3 h-3 text-default-400" />}
                       endContent={<span className="text-xs text-gray-500">mi</span>}
@@ -571,7 +654,7 @@ export default function WeeklyPlannerCalendar({
                       fullWidth
                       min="0"
                       value={day.workout.duration?.toString() || ''}
-                      onChange={(e) => updateDayWorkout(index, 'duration', e.target.value)}
+                      onChange={e => updateDayWorkout(index, 'duration', e.target.value)}
                       placeholder="60"
                       startContent={<ClockIcon className="w-3 h-3 text-default-400" />}
                       endContent={<span className="text-xs text-gray-500">min</span>}
@@ -586,7 +669,7 @@ export default function WeeklyPlannerCalendar({
                       min="1"
                       max="10"
                       value={day.workout.intensity?.toString() || ''}
-                      onChange={(e) => updateDayWorkout(index, 'intensity', e.target.value)}
+                      onChange={e => updateDayWorkout(index, 'intensity', e.target.value)}
                       placeholder="7"
                       startContent={<ZapIcon className="w-3 h-3 text-default-400" />}
                       endContent={<span className="text-xs text-gray-500">1-10</span>}
@@ -600,7 +683,7 @@ export default function WeeklyPlannerCalendar({
                       fullWidth
                       min="0"
                       value={day.workout.elevationGain?.toString() || ''}
-                      onChange={(e) => updateDayWorkout(index, 'elevationGain', e.target.value)}
+                      onChange={e => updateDayWorkout(index, 'elevationGain', e.target.value)}
                       placeholder="500"
                       startContent={<MountainIcon className="w-3 h-3 text-default-400" />}
                       endContent={<span className="text-xs text-gray-500">ft</span>}
@@ -613,7 +696,7 @@ export default function WeeklyPlannerCalendar({
                       fullWidth
                       rows={2}
                       value={day.workout.notes || ''}
-                      onChange={(e) => updateDayWorkout(index, 'notes', e.target.value)}
+                      onChange={e => updateDayWorkout(index, 'notes', e.target.value)}
                       placeholder="Summit strategy & instructions..."
                       className="text-xs"
                     />
@@ -623,22 +706,25 @@ export default function WeeklyPlannerCalendar({
                       <div className="pt-2">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs text-foreground/70">Intensity Zone:</span>
-                          <Chip 
-                            size="sm" 
-                            color={getIntensityColor(day.workout.intensity)} 
+                          <Chip
+                            size="sm"
+                            color={getIntensityColor(day.workout.intensity)}
                             variant="flat"
                           >
                             {getIntensityLabel(day.workout.intensity)}
                           </Chip>
                         </div>
                         <div className="w-full bg-default-200 rounded-full h-1.5">
-                          <div 
+                          <div
                             className={classNames(
                               'h-1.5 rounded-full transition-all duration-300',
-                              day.workout.intensity <= 3 ? 'bg-success' :
-                              day.workout.intensity <= 5 ? 'bg-primary' :
-                              day.workout.intensity <= 7 ? 'bg-warning' :
-                              'bg-danger'
+                              day.workout.intensity <= 3
+                                ? 'bg-success'
+                                : day.workout.intensity <= 5
+                                  ? 'bg-primary'
+                                  : day.workout.intensity <= 7
+                                    ? 'bg-warning'
+                                    : 'bg-danger'
                             )}
                             style={{ width: `${day.workout.intensity * 10}%` }}
                           />

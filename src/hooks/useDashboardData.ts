@@ -1,8 +1,10 @@
 import { useAtom } from 'jotai'
-import { useSession } from '@/hooks/useBetterSession'
+
 import { useCallback, useEffect } from 'react'
-import { trainingPlansAtom, workoutsAtom, loadingStatesAtom } from '@/lib/atoms'
-import type { TrainingPlan, Workout, User } from '@/lib/supabase'
+
+import { useSession } from '@/hooks/useBetterSession'
+import { loadingStatesAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
@@ -49,9 +51,7 @@ export function useDashboardData() {
     return acc
   }, [])
 
-  const recentWorkouts = workouts
-    .filter((w: Workout) => w.status === 'completed')
-    .slice(0, 5)
+  const recentWorkouts = workouts.filter((w: Workout) => w.status === 'completed').slice(0, 5)
 
   const upcomingWorkouts = workouts
     .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())

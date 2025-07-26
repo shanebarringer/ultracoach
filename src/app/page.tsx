@@ -1,23 +1,21 @@
 'use client'
 
-import Link from 'next/link'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSession } from '@/hooks/useBetterSession'
-import { 
-  Card, 
-  CardBody, 
-  Button,
-  Chip
-} from '@heroui/react'
-import { 
-  MountainSnowIcon, 
-  UsersIcon, 
-  TrendingUpIcon, 
+import { Button, Card, CardBody, Chip } from '@heroui/react'
+import {
+  ArrowRightIcon,
   MessageCircleIcon,
-  ArrowRightIcon
+  MountainSnowIcon,
+  TrendingUpIcon,
+  UsersIcon,
 } from 'lucide-react'
+
+import { useEffect } from 'react'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
 import Layout from '@/components/layout/Layout'
+import { useSession } from '@/hooks/useBetterSession'
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -70,8 +68,8 @@ export default function Home() {
               Conquer Your Peaks
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100">
-              Master ultramarathon excellence with expert coaching, scientific training methods, 
-              and the tools to reach every summit on your journey.
+              Master ultramarathon excellence with expert coaching, scientific training methods, and
+              the tools to reach every summit on your journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -106,20 +104,15 @@ export default function Home() {
       <div className="py-20 bg-default-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Chip
-              variant="flat"
-              color="primary"
-              size="lg"
-              className="mb-4"
-            >
+            <Chip variant="flat" color="primary" size="lg" className="mb-4">
               Why Alpine Coaching Works
             </Chip>
             <h2 className="text-4xl md:text-5xl font-bold text-default-900 mb-6">
               🏔️ Base Camp to Summit
             </h2>
             <p className="text-xl text-default-600 max-w-3xl mx-auto">
-              Every expedition requires the right preparation, guidance, and support system. 
-              Our platform provides everything you need for ultramarathon success.
+              Every expedition requires the right preparation, guidance, and support system. Our
+              platform provides everything you need for ultramarathon success.
             </p>
           </div>
 
@@ -129,17 +122,14 @@ export default function Home() {
                 <div className="bg-gradient-to-br from-success-100 to-success-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <UsersIcon className="w-10 h-10 text-success-700" />
                 </div>
-                <h3 className="text-2xl font-bold text-default-900 mb-4">🎯 Expert Sherpa Guidance</h3>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">
+                  🎯 Expert Sherpa Guidance
+                </h3>
                 <p className="text-default-600 leading-relaxed">
-                  Connect with certified ultramarathon coaches who&apos;ve conquered the peaks you&apos;re 
-                  climbing. Get personalized guidance for every step of your expedition.
+                  Connect with certified ultramarathon coaches who&apos;ve conquered the peaks
+                  you&apos;re climbing. Get personalized guidance for every step of your expedition.
                 </p>
-                <Chip
-                  variant="flat"
-                  color="success"
-                  size="sm"
-                  className="mt-4"
-                >
+                <Chip variant="flat" color="success" size="sm" className="mt-4">
                   Professional Coaching
                 </Chip>
               </CardBody>
@@ -150,17 +140,14 @@ export default function Home() {
                 <div className="bg-gradient-to-br from-primary-100 to-primary-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <TrendingUpIcon className="w-10 h-10 text-primary-700" />
                 </div>
-                <h3 className="text-2xl font-bold text-default-900 mb-4">📈 Scientific Training Zones</h3>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">
+                  📈 Scientific Training Zones
+                </h3>
                 <p className="text-default-600 leading-relaxed">
-                  Track every ascent with precision. Advanced workout logging, training zone analysis, 
-                  and performance metrics to optimize your mountaineering fitness.
+                  Track every ascent with precision. Advanced workout logging, training zone
+                  analysis, and performance metrics to optimize your mountaineering fitness.
                 </p>
-                <Chip
-                  variant="flat"
-                  color="primary"
-                  size="sm"
-                  className="mt-4"
-                >
+                <Chip variant="flat" color="primary" size="sm" className="mt-4">
                   Data-Driven Training
                 </Chip>
               </CardBody>
@@ -171,17 +158,14 @@ export default function Home() {
                 <div className="bg-gradient-to-br from-warning-100 to-warning-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <MessageCircleIcon className="w-10 h-10 text-warning-700" />
                 </div>
-                <h3 className="text-2xl font-bold text-default-900 mb-4">💬 Base Camp Communication</h3>
+                <h3 className="text-2xl font-bold text-default-900 mb-4">
+                  💬 Base Camp Communication
+                </h3>
                 <p className="text-default-600 leading-relaxed">
-                  Stay connected with your coaching team through real-time messaging. 
-                  Get immediate support and guidance when conditions change.
+                  Stay connected with your coaching team through real-time messaging. Get immediate
+                  support and guidance when conditions change.
                 </p>
-                <Chip
-                  variant="flat"
-                  color="warning"
-                  size="sm"
-                  className="mt-4"
-                >
+                <Chip variant="flat" color="warning" size="sm" className="mt-4">
                   Real-Time Support
                 </Chip>
               </CardBody>
@@ -199,7 +183,7 @@ export default function Home() {
             Ready for Your Next Summit?
           </h2>
           <p className="text-xl text-primary-100 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Join the expedition of ultramarathon athletes who are already conquering their peaks 
+            Join the expedition of ultramarathon athletes who are already conquering their peaks
             with professional coaching, scientific training, and unwavering support.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,7 +1,9 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { useEffect, useCallback, useRef } from 'react'
+
+import { useCallback, useEffect, useRef } from 'react'
+
 import { useSession } from '@/hooks/useBetterSession'
 import { typingStatusAtom } from '@/lib/atoms'
 
@@ -15,41 +17,44 @@ export function useTypingStatus(recipientId: string) {
   const conversationStatus = typingStatuses[recipientId] || {
     isTyping: false,
     isRecipientTyping: false,
-    lastTypingUpdate: 0
+    lastTypingUpdate: 0,
   }
 
   const { isTyping, isRecipientTyping } = conversationStatus
 
   // Send typing status to server (disabled until typing_status table is created)
-  const sendTypingStatus = useCallback(async (typing: boolean) => {
-    if (!session?.user?.id || !recipientId) return
+  const sendTypingStatus = useCallback(
+    async (typing: boolean) => {
+      if (!session?.user?.id || !recipientId) return
 
-    // Temporarily disabled - uncomment when typing_status table is created
-    return
+      // Temporarily disabled - uncomment when typing_status table is created
+      return
 
-    console.log('⌨️ Sending typing status:', { typing, recipientId })
+      console.log('⌨️ Sending typing status:', { typing, recipientId })
 
-    try {
-      const response = await fetch('/api/typing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          recipientId,
-          isTyping: typing
-        }),
-      })
+      try {
+        const response = await fetch('/api/typing', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipientId,
+            isTyping: typing,
+          }),
+        })
 
-      if (!response.ok) {
-        console.error('❌ Failed to send typing status:', response.statusText)
-      } else {
-        console.log('✅ Typing status sent successfully')
+        if (!response.ok) {
+          console.error('❌ Failed to send typing status:', response.statusText)
+        } else {
+          console.log('✅ Typing status sent successfully')
+        }
+      } catch (error) {
+        console.error('❌ Error sending typing status:', error)
       }
-    } catch (error) {
-      console.error('❌ Error sending typing status:', error)
-    }
-  }, [session?.user?.id, recipientId])
+    },
+    [session?.user?.id, recipientId]
+  )
 
   // Stop typing indicator
   const stopTyping = useCallback(() => {
@@ -60,10 +65,10 @@ export function useTypingStatus(recipientId: string) {
       [recipientId]: {
         ...prev[recipientId],
         isTyping: false,
-        lastTypingUpdate: Date.now()
-      }
+        lastTypingUpdate: Date.now(),
+      },
     }))
-    
+
     sendTypingStatus(false)
 
     if (sendTypingTimeoutRef.current) {
@@ -81,10 +86,10 @@ export function useTypingStatus(recipientId: string) {
       [recipientId]: {
         ...prev[recipientId],
         isTyping: true,
-        lastTypingUpdate: Date.now()
-      }
+        lastTypingUpdate: Date.now(),
+      },
     }))
-    
+
     sendTypingStatus(true)
 
     // Clear any existing timeout
@@ -113,10 +118,10 @@ export function useTypingStatus(recipientId: string) {
               [recipientId]: {
                 ...prev[recipientId],
                 isRecipientTyping: data.isTyping,
-                lastTypingUpdate: Date.now()
-              }
+                lastTypingUpdate: Date.now(),
+              },
             }))
-            
+
             // Auto-clear after 5 seconds
             if (data.isTyping) {
               if (typingTimeoutRef.current) {
@@ -128,8 +133,8 @@ export function useTypingStatus(recipientId: string) {
                   [recipientId]: {
                     ...prev[recipientId],
                     isRecipientTyping: false,
-                    lastTypingUpdate: Date.now()
-                  }
+                    lastTypingUpdate: Date.now(),
+                  },
                 }))
               }, 5000)
             }
@@ -164,6 +169,6 @@ export function useTypingStatus(recipientId: string) {
   return {
     isRecipientTyping,
     startTyping,
-    stopTyping
+    stopTyping,
   }
 }

@@ -1,10 +1,12 @@
 'use client'
 
-import { Suspense, ReactNode } from 'react'
+import { Card, CardBody, Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { Spinner, Card, CardBody } from '@heroui/react'
-import { uiStateAtom } from '@/lib/atoms'
+
+import { ReactNode, Suspense } from 'react'
+
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncDataProvider')
@@ -18,13 +20,13 @@ interface AsyncDataProviderProps {
 
 const DefaultLoadingFallback = () => (
   <div className="flex justify-center items-center h-64">
-    <Spinner 
-      size="lg" 
-      color="primary" 
-      label="Loading your expedition data..." 
+    <Spinner
+      size="lg"
+      color="primary"
+      label="Loading your expedition data..."
       classNames={{
-        circle1: "border-b-primary",
-        circle2: "border-b-secondary",
+        circle1: 'border-b-primary',
+        circle2: 'border-b-secondary',
       }}
     />
   </div>
@@ -33,12 +35,8 @@ const DefaultLoadingFallback = () => (
 const DefaultErrorFallback = () => (
   <Card className="py-12">
     <CardBody className="text-center">
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        Failed to load data
-      </h3>
-      <p className="text-foreground-600">
-        Please check your connection and try again.
-      </p>
+      <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load data</h3>
+      <p className="text-foreground-600">Please check your connection and try again.</p>
     </CardBody>
   </Card>
 )
@@ -55,7 +53,7 @@ export default function AsyncDataProvider({
   enableSuspenseDemo = false,
 }: AsyncDataProviderProps) {
   const [uiState] = useAtom(uiStateAtom)
-  
+
   // Use Suspense demo toggle if enabled, otherwise default to traditional patterns
   const useSuspense = enableSuspenseDemo ? uiState.useSuspense : true
 
@@ -75,17 +73,11 @@ export default function AsyncDataProvider({
           })
         }}
       >
-        <Suspense fallback={LoadingComponent}>
-          {children}
-        </Suspense>
+        <Suspense fallback={LoadingComponent}>{children}</Suspense>
       </ModernErrorBoundary>
     )
   }
 
   // Traditional pattern for fallback compatibility
-  return (
-    <ModernErrorBoundary fallback={() => ErrorComponent}>
-      {children}
-    </ModernErrorBoundary>
-  )
+  return <ModernErrorBoundary fallback={() => ErrorComponent}>{children}</ModernErrorBoundary>
 }

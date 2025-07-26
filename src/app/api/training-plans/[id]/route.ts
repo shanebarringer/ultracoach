@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(request)
     if (!session?.user) {
@@ -36,9 +34,9 @@ export async function GET(
       console.error('Failed to fetch workouts for training plan', workoutsError)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
     }
-    return NextResponse.json({ 
-      trainingPlan, 
-      workouts: workouts || [] 
+    return NextResponse.json({
+      trainingPlan,
+      workouts: workouts || [],
     })
   } catch (error) {
     console.error('Internal server error in GET', error)
@@ -65,17 +63,15 @@ export async function DELETE(
     if (planError || !plan) {
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
-    const hasAccess = session.user.role === 'coach'
-      ? plan.coach_id === session.user.id
-      : plan.runner_id === session.user.id
+    const hasAccess =
+      session.user.role === 'coach'
+        ? plan.coach_id === session.user.id
+        : plan.runner_id === session.user.id
     if (!hasAccess) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
     // Delete the plan
-    const { error: deleteError } = await supabaseAdmin
-      .from('training_plans')
-      .delete()
-      .eq('id', id)
+    const { error: deleteError } = await supabaseAdmin.from('training_plans').delete().eq('id', id)
     if (deleteError) {
       console.error('Failed to delete training plan', deleteError)
       return NextResponse.json({ error: 'Failed to delete training plan' }, { status: 500 })

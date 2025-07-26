@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useAtom } from 'jotai'
-import { sessionAtom, userAtom, authLoadingAtom } from '@/lib/atoms'
+
+import { useEffect } from 'react'
+
+import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('BetterAuthProvider');
+const logger = createLogger('BetterAuthProvider')
 
 export function BetterAuthProvider({ children }: { children: React.ReactNode }) {
   const [, setSession] = useAtom(sessionAtom)
@@ -16,12 +18,12 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
-    
+
     // Get initial session
     const getSession = async () => {
       try {
         const { data: session, error } = await authClient.getSession()
-        
+
         if (error) {
           // Don't log error for normal "no session" cases
           if (error.status !== 404 && error.status !== 401) {

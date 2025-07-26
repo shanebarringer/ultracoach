@@ -1,28 +1,31 @@
 'use client'
 
-import { useState, memo, useCallback, useMemo } from 'react'
+import { MoonIcon, SunIcon } from '@heroicons/react/24/outline'
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
+  NavbarMenu,
+  NavbarMenuItem,
+  NavbarMenuToggle,
+} from '@heroui/react'
+import { useAtom } from 'jotai'
+
+import { memo, useCallback, useMemo, useState } from 'react'
+
+import Link from 'next/link'
+
+import NotificationBell from '@/components/common/NotificationBell'
 import { useSession } from '@/hooks/useBetterSession'
 import { useBetterSession } from '@/hooks/useBetterSession'
-import Link from 'next/link'
-import { 
-  Button, 
-  Navbar, 
-  NavbarBrand, 
-  NavbarContent, 
-  NavbarItem, 
-  NavbarMenuToggle, 
-  NavbarMenu, 
-  NavbarMenuItem,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Avatar
-} from '@heroui/react'
-import NotificationBell from '@/components/common/NotificationBell'
-import { useAtom } from 'jotai'
 import { themeModeAtom } from '@/lib/atoms'
-import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Header')
@@ -37,18 +40,14 @@ const ThemeToggle = memo(function ThemeToggle() {
   }, [themeMode, setThemeMode])
 
   return (
-    <Button 
-      isIconOnly 
-      variant="light" 
-      onClick={toggleTheme} 
+    <Button
+      isIconOnly
+      variant="light"
+      onClick={toggleTheme}
       aria-label="Toggle theme"
       className="hover:bg-primary/10 transition-colors"
     >
-      {themeMode === 'light' ? (
-        <SunIcon className="h-5 w-5" />
-      ) : (
-        <MoonIcon className="h-5 w-5" />
-      )}
+      {themeMode === 'light' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
     </Button>
   )
 })
@@ -71,11 +70,14 @@ function Header() {
   // Memoize user navigation items to prevent unnecessary re-renders
   const userNavItems = useMemo(() => {
     if (!session) return []
-    
+
     const baseItems = [
-      { href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner', label: 'Dashboard' },
+      {
+        href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
+        label: 'Dashboard',
+      },
       { href: '/workouts', label: 'Workouts' },
-      { href: '/chat', label: 'Messages' }
+      { href: '/chat', label: 'Messages' },
     ]
 
     if (session.user.role === 'coach') {
@@ -85,7 +87,7 @@ function Header() {
         { href: '/runners', label: 'Runners' },
         { href: '/races', label: 'Races' },
         { href: '/weekly-planner', label: 'Weekly Planner' },
-        ...baseItems.slice(1) // Workouts, Messages
+        ...baseItems.slice(1), // Workouts, Messages
       ]
     }
 
@@ -93,16 +95,16 @@ function Header() {
   }, [session])
 
   return (
-    <Navbar 
-      onMenuOpenChange={setIsMenuOpen} 
+    <Navbar
+      onMenuOpenChange={setIsMenuOpen}
       isMenuOpen={isMenuOpen}
       className="bg-background/95 backdrop-blur-md border-b border-divider"
       height="4rem"
     >
       <NavbarContent>
-        <NavbarMenuToggle 
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"} 
-          className="md:hidden" 
+        <NavbarMenuToggle
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          className="md:hidden"
         />
         <NavbarBrand>
           <Link href="/" className="flex items-center gap-3">
@@ -122,9 +124,9 @@ function Header() {
       <NavbarContent className="hidden md:flex gap-4" justify="center">
         {session ? (
           <>
-            {userNavItems.map((item) => (
+            {userNavItems.map(item => (
               <NavbarItem key={item.href}>
-                <Link 
+                <Link
                   href={item.href}
                   className="text-foreground hover:text-primary transition-colors font-medium"
                 >
@@ -136,17 +138,10 @@ function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Link href="/auth/signin">
-                Sign In
-              </Link>
+              <Link href="/auth/signin">Sign In</Link>
             </NavbarItem>
             <NavbarItem>
-              <Button
-                as={Link}
-                href="/auth/signup"
-                color="primary"
-                size="sm"
-              >
+              <Button as={Link} href="/auth/signup" color="primary" size="sm">
                 Sign Up
               </Button>
             </NavbarItem>
@@ -166,8 +161,8 @@ function Header() {
             <NavbarItem>
               <Dropdown>
                 <DropdownTrigger>
-                  <Avatar 
-                    name={session.user?.name as string || 'User'}
+                  <Avatar
+                    name={(session.user?.name as string) || 'User'}
                     className="cursor-pointer bg-gradient-to-br from-primary to-secondary text-white"
                   />
                 </DropdownTrigger>
@@ -175,14 +170,8 @@ function Header() {
                   <DropdownItem key="profile" as={Link} href="/profile">
                     Profile
                   </DropdownItem>
-                  <DropdownItem key="settings">
-                    Settings
-                  </DropdownItem>
-                  <DropdownItem 
-                    key="logout" 
-                    color="danger"
-                    onClick={handleSignOut}
-                  >
+                  <DropdownItem key="settings">Settings</DropdownItem>
+                  <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
                     Sign Out
                   </DropdownItem>
                 </DropdownMenu>
@@ -195,7 +184,7 @@ function Header() {
       <NavbarMenu>
         {session ? (
           <>
-            {userNavItems.map((item) => (
+            {userNavItems.map(item => (
               <NavbarMenuItem key={item.href}>
                 <Link href={item.href} onClick={handleMenuClose}>
                   {item.label}
@@ -209,7 +198,10 @@ function Header() {
             </NavbarMenuItem>
             <NavbarMenuItem>
               <Button
-                onClick={() => { handleSignOut(); handleMenuClose(); }}
+                onClick={() => {
+                  handleSignOut()
+                  handleMenuClose()
+                }}
                 className="w-full text-left"
                 variant="light"
               >

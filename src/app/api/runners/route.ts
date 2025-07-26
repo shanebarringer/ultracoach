@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -18,14 +19,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch runners' }, { status: 500 })
     }
     // Extract unique runners
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const uniqueRunners = trainingPlans?.reduce((acc: any[], plan: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (plan.runners && !acc.find((r: any) => r.id === plan.runners.id)) {
-        acc.push(plan.runners)
+    const uniqueRunners: unknown[] = []
+    
+    if (trainingPlans) {
+      for (const plan of trainingPlans) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const runners = (plan as any).runners
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (runners && !uniqueRunners.find((r: any) => r.id === runners.id)) {
+          uniqueRunners.push(runners)
+        }
       }
-      return acc
-    }, []) || []
+    }
     return NextResponse.json({ runners: uniqueRunners })
   } catch (error) {
     console.error('API error in GET /runners', error)

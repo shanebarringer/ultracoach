@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api-workouts')
 
@@ -15,9 +16,7 @@ export async function GET(request: NextRequest) {
     const runnerId = searchParams.get('runnerId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
-    let query = supabaseAdmin
-      .from('workouts')
-      .select('*, training_plans!inner(*)')
+    let query = supabaseAdmin.from('workouts').select('*, training_plans!inner(*)')
     if (session.user.role === 'coach') {
       query = query.eq('training_plans.coach_id', session.user.id)
       if (runnerId) {
@@ -50,22 +49,25 @@ export async function POST(request: NextRequest) {
     if (!session?.user || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const { 
-      trainingPlanId, 
-      date, 
-      plannedType, 
-      plannedDistance, 
-      plannedDuration, 
+    const {
+      trainingPlanId,
+      date,
+      plannedType,
+      plannedDistance,
+      plannedDuration,
       notes,
       category,
       intensity,
       terrain,
-      elevationGain
+      elevationGain,
     } = await request.json()
     if (!trainingPlanId || !date || !plannedType) {
-      return NextResponse.json({ 
-        error: 'Training plan ID, date, and workout type are required' 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Training plan ID, date, and workout type are required',
+        },
+        { status: 400 }
+      )
     }
     // Verify the coach owns this training plan
     const { data: plan, error: planError } = await supabaseAdmin
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
           workout_category: category || null,
           intensity_level: intensity ? parseInt(intensity) : null,
           terrain_type: terrain || null,
-          elevation_gain_feet: elevationGain ? parseInt(elevationGain) : null
+          elevation_gain_feet: elevationGain ? parseInt(elevationGain) : null,
         },
       ])
       .select()
@@ -115,9 +117,8 @@ export async function POST(request: NextRequest) {
         .single()
       if (runner) {
         const coachName = coach?.full_name || 'Your coach'
-        await supabaseAdmin
-          .from('notifications')
-          .insert([{
+        await supabaseAdmin.from('notifications').insert([
+          {
             user_id: runner.id,
             title: 'New Workout Added',
             message: `${coachName} added a new workout to your training plan.`,
@@ -127,9 +128,10 @@ export async function POST(request: NextRequest) {
               action: 'view_workouts',
               workoutId: workout.id,
               coachId: session.user.id,
-              coachName
-            }
-          }])
+              coachName,
+            },
+          },
+        ])
       }
     } catch (error) {
       logger.error('Failed to send notification for new workout', error)

@@ -1,12 +1,14 @@
 'use client'
 
-import { Textarea, Button } from '@heroui/react'
-import { Link2, Send } from 'lucide-react'
+import { Button, Textarea } from '@heroui/react'
 import { useAtom } from 'jotai'
-import WorkoutLinkSelector from './WorkoutLinkSelector'
-import WorkoutContext from './WorkoutContext'
+import { Link2, Send } from 'lucide-react'
+
 import { messageInputAtom } from '@/lib/atoms'
 import { Workout } from '@/lib/supabase'
+
+import WorkoutContext from './WorkoutContext'
+import WorkoutLinkSelector from './WorkoutLinkSelector'
 
 interface MessageInputProps {
   onSendMessage: (content: string, workoutId?: string, contextType?: string) => void
@@ -16,13 +18,21 @@ interface MessageInputProps {
   recipientId: string
 }
 
-export default function MessageInput({ onSendMessage, disabled = false, onStartTyping, onStopTyping, recipientId }: MessageInputProps) {
+export default function MessageInput({
+  onSendMessage,
+  disabled = false,
+  onStartTyping,
+  onStopTyping,
+  recipientId,
+}: MessageInputProps) {
   const [messageInput, setMessageInput] = useAtom(messageInputAtom)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (messageInput.message.trim() && !disabled) {
-      const contextType = messageInput.linkedWorkout ? 'workout_' + messageInput.linkType : 'general'
+      const contextType = messageInput.linkedWorkout
+        ? 'workout_' + messageInput.linkType
+        : 'general'
       onSendMessage(messageInput.message.trim(), messageInput.linkedWorkout?.id, contextType)
       setMessageInput({
         message: '',
@@ -64,10 +74,7 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
         {/* Workout context display */}
         {messageInput.linkedWorkout && (
           <div className="relative">
-            <WorkoutContext
-              workout={messageInput.linkedWorkout}
-              linkType={messageInput.linkType}
-            />
+            <WorkoutContext workout={messageInput.linkedWorkout} linkType={messageInput.linkType} />
             <Button
               size="sm"
               variant="light"
@@ -85,7 +92,7 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
           <div className="flex-1 space-y-2">
             <Textarea
               value={messageInput.message}
-              onChange={(e) => {
+              onChange={e => {
                 setMessageInput(prev => ({ ...prev, message: e.target.value }))
                 if (e.target.value.trim() && !disabled) {
                   onStartTyping?.()
@@ -95,16 +102,17 @@ export default function MessageInput({ onSendMessage, disabled = false, onStartT
               }}
               onKeyPress={handleKeyPress}
               onBlur={() => onStopTyping?.()}
-              placeholder={messageInput.linkedWorkout 
-                ? `Add ${messageInput.linkType} about ${messageInput.linkedWorkout.planned_type || 'workout'}...`
-                : "Type your message..."
+              placeholder={
+                messageInput.linkedWorkout
+                  ? `Add ${messageInput.linkType} about ${messageInput.linkedWorkout.planned_type || 'workout'}...`
+                  : 'Type your message...'
               }
               minRows={1}
               maxRows={5}
               disabled={disabled}
               classNames={{
-                input: "text-small",
-                inputWrapper: "bg-default-100 dark:bg-default-900"
+                input: 'text-small',
+                inputWrapper: 'bg-default-100 dark:bg-default-900',
               }}
             />
           </div>
