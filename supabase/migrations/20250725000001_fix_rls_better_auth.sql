@@ -99,7 +99,7 @@ FOR UPDATE USING (runner_id = auth.current_user_id());
 
 -- Users can view and manage their own workouts
 CREATE POLICY "workouts_user_access" ON "workouts"
-FOR ALL USING (user_id = auth.current_user_id());
+FOR ALL USING (runner_id = auth.current_user_id());
 
 -- Coaches can view workouts of their runners (through training plan relationship)
 CREATE POLICY "workouts_coach_select" ON "workouts"
