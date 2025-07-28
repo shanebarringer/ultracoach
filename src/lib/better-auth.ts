@@ -16,22 +16,33 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required for Better Auth')
 }
 
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error('BETTER_AUTH_SECRET environment variable is required for Better Auth')
+}
+
 const logger = createLogger('better-auth')
 
 // Create a dedicated database connection for Better Auth with optimized settings
-const betterAuthPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' 
-    ? { rejectUnauthorized: true } 
-    : { rejectUnauthorized: false }, // Only disable SSL verification in development
-  max: 5, // Reduced pool size to prevent connection limits
-  min: 1, // Keep fewer connections alive
-  idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
-  connectionTimeoutMillis: 60000, // 60 seconds connection timeout for Supabase
-  application_name: 'ultracoach-better-auth', // Help identify connections
-  keepAlive: true, // Keep connections alive
-  keepAliveInitialDelayMillis: 10000, // 10 seconds
-})
+let betterAuthPool: Pool
+try {
+  betterAuthPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' 
+      ? { rejectUnauthorized: true } 
+      : { rejectUnauthorized: false }, // Only disable SSL verification in development
+    max: 5, // Reduced pool size to prevent connection limits
+    min: 1, // Keep fewer connections alive
+    idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
+    connectionTimeoutMillis: 60000, // 60 seconds connection timeout for Supabase
+    application_name: 'ultracoach-better-auth', // Help identify connections
+    keepAlive: true, // Keep connections alive
+    keepAliveInitialDelayMillis: 10000, // 10 seconds
+  })
+  logger.info('Better Auth database pool initialized successfully')
+} catch (error) {
+  logger.error('Failed to initialize Better Auth database pool:', error)
+  throw new Error(`Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+}
 
 // Add connection event handlers for monitoring
 betterAuthPool.on('connect', () => {
@@ -80,54 +91,64 @@ function getBetterAuthBaseUrl(): string {
 }
 
 const apiBaseUrl = getBetterAuthBaseUrl()
+logger.info('Initializing Better Auth with baseURL:', apiBaseUrl)
 
-export const auth = betterAuth({
-  database: drizzleAdapter(betterAuthDb, {
-    provider: 'pg',
-    schema: {
-      user: better_auth_users,
-      account: better_auth_accounts,
-      session: better_auth_sessions,
-      verification: better_auth_verification_tokens,
-    },
-  }),
-  baseURL: apiBaseUrl,
-  secret: process.env.BETTER_AUTH_SECRET!,
-
-  session: {
-    maxAge: 14 * 24 * 60 * 60, // 14 days
-    freshAge: 60 * 60, // 1 hour
-  },
-
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: process.env.NODE_ENV === 'production', // Enable email verification in production
-    minPasswordLength: 8,
-    maxPasswordLength: 128,
-  },
-
-  user: {
-    additionalFields: {
-      role: {
-        type: 'string',
-        required: true,
-        defaultValue: 'runner',
-        input: true,
-        output: true,
+let auth: ReturnType<typeof betterAuth>
+try {
+  auth = betterAuth({
+    database: drizzleAdapter(betterAuthDb, {
+      provider: 'pg',
+      schema: {
+        user: better_auth_users,
+        account: better_auth_accounts,
+        session: better_auth_sessions,
+        verification: better_auth_verification_tokens,
       },
-      fullName: {
-        type: 'string',
-        required: false,
-        input: true,
-        output: true,
+    }),
+    baseURL: apiBaseUrl,
+    secret: process.env.BETTER_AUTH_SECRET!,
+
+    session: {
+      maxAge: 14 * 24 * 60 * 60, // 14 days
+      freshAge: 60 * 60, // 1 hour
+    },
+
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: process.env.NODE_ENV === 'production', // Enable email verification in production
+      minPasswordLength: 8,
+      maxPasswordLength: 128,
+    },
+
+    user: {
+      additionalFields: {
+        role: {
+          type: 'string',
+          required: true,
+          defaultValue: 'runner',
+          input: true,
+          output: true,
+        },
+        fullName: {
+          type: 'string',
+          required: false,
+          input: true,
+          output: true,
+        },
       },
     },
-  },
 
-  plugins: [
-    nextCookies(), // This must be the last plugin
-  ],
-})
+    plugins: [
+      nextCookies(), // This must be the last plugin
+    ],
+  })
+  logger.info('Better Auth initialized successfully')
+} catch (error) {
+  logger.error('Failed to initialize Better Auth:', error)
+  throw new Error(`Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+}
+
+export { auth }
 
 export type Session = typeof auth.$Infer.Session
 export type User = typeof auth.$Infer.Session.user & {
