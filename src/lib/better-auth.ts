@@ -49,7 +49,25 @@ betterAuthPool.on('remove', () => {
 
 const betterAuthDb = drizzle(betterAuthPool)
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001'
+// Construct proper Better Auth base URL following Vercel best practices
+function getBetterAuthBaseUrl(): string {
+  // Vercel best practice: Use VERCEL_URL in production (automatically set by Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/auth`
+  }
+  
+  // Alternative: Use explicit BETTER_AUTH_URL if provided (takes precedence)
+  if (process.env.BETTER_AUTH_URL) {
+    const url = process.env.BETTER_AUTH_URL
+    // If it already includes /api/auth, use as-is, otherwise append it
+    return url.includes('/api/auth') ? url : `${url}/api/auth`
+  }
+  
+  // Development fallback
+  return 'http://localhost:3001/api/auth'
+}
+
+const apiBaseUrl = getBetterAuthBaseUrl()
 
 export const auth = betterAuth({
   database: drizzleAdapter(betterAuthDb, {
