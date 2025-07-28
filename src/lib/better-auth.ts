@@ -59,8 +59,8 @@ function getBetterAuthBaseUrl(): string {
   // Alternative: Use explicit BETTER_AUTH_URL if provided (takes precedence)
   if (process.env.BETTER_AUTH_URL) {
     const url = process.env.BETTER_AUTH_URL
-    // If it already includes /api/auth, use as-is, otherwise append it
-    return url.includes('/api/auth') ? url : `${url}/api/auth`
+    // Use endsWith for more accurate detection of /api/auth path
+    return url.endsWith('/api/auth') ? url : `${url}/api/auth`
   }
   
   // Development fallback
