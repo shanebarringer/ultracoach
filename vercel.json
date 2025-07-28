@@ -8,12 +8,6 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/auth/(.*)",
-      "destination": "/api/auth/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
