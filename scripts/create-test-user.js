@@ -19,7 +19,7 @@ async function createTestUser() {
   console.log('🔧 Creating test user for production...')
   
   try {
-    // Hash the password
+    // Hash the password using bcrypt (Better Auth's default)
     const password = 'password123'
     const hashedPassword = await bcrypt.hash(password, 10)
     
@@ -38,6 +38,9 @@ async function createTestUser() {
     if (existingUser.rows.length > 0) {
       console.log('✅ User already exists in Better Auth tables')
       console.log('User details:', existingUser.rows[0])
+      
+      // Update password with proper bcrypt hash format
+      console.log('🔄 Updating password with proper bcrypt hash format...')
       
       // Check if password exists
       const passwordCheck = await pool.query(
@@ -58,13 +61,13 @@ async function createTestUser() {
         `, [email, existingUser.rows[0].id, hashedPassword])
         console.log('✅ Created password entry')
       } else {
-        console.log('✅ Password entry exists')
+        console.log('✅ Password entry exists, updating with proper bcrypt hash...')
         // Update password to ensure it's correct
         await pool.query(
           'UPDATE better_auth_accounts SET password = $1, updated_at = NOW() WHERE user_id = $2 AND provider_id = $3',
           [hashedPassword, existingUser.rows[0].id, 'credential']
         )
-        console.log('✅ Updated password to ensure consistency')
+        console.log('✅ Updated password with bcrypt hash')
       }
       
       // Also update email_verified to true
@@ -73,6 +76,11 @@ async function createTestUser() {
         [existingUser.rows[0].id]
       )
       console.log('✅ Set email as verified')
+      
+      console.log('\n🎯 Test credentials:')
+      console.log(`Email: ${email}`)
+      console.log(`Password: ${password}`)
+      console.log(`Role: ${role}`)
       
       return
     }
