@@ -18,7 +18,39 @@ async function handleAuthRequest(req: NextRequest, method: string) {
       }
     })
 
-    const response = await auth.handler(req)
+    // Create a clean request without non-Better Auth cookies to avoid hex parsing errors
+    const cleanHeaders = new Headers(req.headers)
+    const originalCookie = req.headers.get('cookie')
+    
+    if (originalCookie) {
+      // Filter out non-Better Auth cookies to prevent hex parsing errors
+      const betterAuthCookies = originalCookie
+        .split(';')
+        .map(cookie => cookie.trim())
+        .filter(cookie => cookie.startsWith('better-auth'))
+        .join('; ')
+      
+      if (betterAuthCookies) {
+        cleanHeaders.set('cookie', betterAuthCookies)
+      } else {
+        cleanHeaders.delete('cookie')
+      }
+      
+      logger.debug('Cookie filtering:', {
+        original: originalCookie.substring(0, 100) + '...',
+        filtered: betterAuthCookies || '[removed]'
+      })
+    }
+
+    // Create a new request with filtered cookies
+    const cleanRequest = new Request(req.url, {
+      method: req.method,
+      headers: cleanHeaders,
+      body: req.body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await auth.handler(cleanRequest)
     
     logger.info(`Auth API ${method} response:`, {
       status: response.status,

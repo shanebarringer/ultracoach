@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           'Origin': `https://${process.env.VERCEL_URL}`,
           'Referer': `https://${process.env.VERCEL_URL}/auth/signin`,
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Debug/1.0'
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Debug/1.0',
+          // Don't include any cookie headers to avoid the hex parsing error
+          'Cookie': '' // Explicitly set empty cookie header
         },
         body: JSON.stringify({ email, password })
       })
