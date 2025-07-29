@@ -100,6 +100,14 @@ export default function DebugAuthPage() {
         >
           Test Auth Handler
         </button>
+        
+        <button
+          onClick={testCookieAnalysis}
+          disabled={loading}
+          className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded mr-4"
+        >
+          Test Cookie Analysis
+        </button>
       </div>
 
       <div className="bg-gray-100 p-4 rounded">
