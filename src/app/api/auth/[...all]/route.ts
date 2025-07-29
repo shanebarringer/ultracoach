@@ -59,6 +59,24 @@ async function handleAuthRequest(req: NextRequest, method: string) {
     
     return response
   } catch (error) {
+    // Special handling for the hex string error
+    if (error instanceof Error && error.message.includes('hex string expected')) {
+      logger.error('Better Auth hex parsing error:', {
+        error: error.message,
+        stack: error.stack,
+        url: req.url,
+        method: req.method,
+        originalCookies: req.headers.get('cookie')?.substring(0, 200),
+        cleanedCookies: cleanHeaders.get('cookie') || '[no cookies]'
+      })
+      
+      return NextResponse.json({
+        error: 'Session token parsing error',
+        message: 'Better Auth failed to parse session token',
+        timestamp: new Date().toISOString(),
+        debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }, { status: 500 })
+    }
     logger.error(`Auth API ${method} error:`, {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
