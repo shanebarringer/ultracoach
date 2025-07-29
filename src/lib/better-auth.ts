@@ -115,7 +115,7 @@ try {
 
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: process.env.NODE_ENV === 'production', // Enable email verification in production
+      requireEmailVerification: false, // Temporarily disable to test login issue
       minPasswordLength: 8,
       maxPasswordLength: 128,
     },
