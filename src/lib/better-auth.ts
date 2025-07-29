@@ -157,6 +157,7 @@ function getTrustedOrigins(): string[] {
   if (process.env.NODE_ENV === 'development' || process.env.VERCEL_GIT_COMMIT_REF) {
     // Add specific preview deployment URLs that are commonly used
     const previewUrls = [
+      'https://ultracoach-hawqljwys-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-fix-cors-error-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-main-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-develop-shane-hehims-projects.vercel.app',
