@@ -210,7 +210,9 @@ try {
     advanced: {
       useSecureCookies: process.env.NODE_ENV === 'production', // Force secure cookies in production
       cookiePrefix: 'better-auth', // Consistent cookie prefix
-      crossSubDomainCookies: false, // Disable for better security
+      crossSubDomainCookies: {
+        enabled: false, // Disable for better security
+      },
       generateId: true, // Let Better Auth generate IDs
     },
 
