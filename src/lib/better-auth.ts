@@ -201,7 +201,7 @@ try {
 
     // Production-optimized session configuration
     session: {
-      expirationTime: 60 * 60 * 24 * 14, // 14 days in seconds
+      expiresIn: 60 * 60 * 24 * 14, // 14 days in seconds
       freshAge: 60 * 60, // 1 hour
       updateAge: 60 * 60 * 24, // Update session once per day
     },
