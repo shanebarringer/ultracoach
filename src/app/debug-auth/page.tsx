@@ -172,7 +172,7 @@ export default function DebugAuthPage() {
         </div>
         <div className="mt-4 p-3 bg-blue-50 rounded">
           <p><strong>Test Credentials:</strong> testcoach@ultracoach.dev / password123</p>
-          <p><strong>Goal:</strong> Identify and fix "hex string expected, got undefined" error in production</p>
+          <p><strong>Goal:</strong> Identify and fix &quot;hex string expected, got undefined&quot; error in production</p>
           <p><strong>Status:</strong> Post-configuration cleanup with simplified handlers and production-optimized settings</p>
         </div>
       </div>

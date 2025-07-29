@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         baseURL: auth.$Infer.Options.baseURL,
         hasSecret: !!process.env.BETTER_AUTH_SECRET,
         secretLength: process.env.BETTER_AUTH_SECRET?.length || 0,
-        plugins: auth.$Infer.Options.plugins?.map((p: any) => p.id || 'unnamed') || [],
+        plugins: auth.$Infer.Options.plugins?.map((p: { id?: string }) => p.id || 'unnamed') || [],
         sessionConfig: {
           expirationTime: auth.$Infer.Options.session?.expirationTime,
           freshAge: auth.$Infer.Options.session?.freshAge,
@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
         passwordType: typeof password,
       },
       authFlowTest: {
-        step1_apiCall: { success: false, error: null as string | null, response: null as any },
-        step2_sessionCheck: { success: false, error: null as string | null, session: null as any },
+        step1_apiCall: { success: false, error: null as string | null, response: null as unknown },
+        step2_sessionCheck: { success: false, error: null as string | null, session: null as unknown },
         step3_cookieAnalysis: { cookiesSet: [] as string[], cookieCount: 0 },
       }
     }
