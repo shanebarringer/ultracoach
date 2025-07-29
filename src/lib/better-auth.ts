@@ -22,23 +22,67 @@ if (!process.env.BETTER_AUTH_SECRET) {
 
 const logger = createLogger('better-auth')
 
-// Create a dedicated database connection for Better Auth with optimized settings
+// Create a dedicated database connection for Better Auth with production-optimized settings
 let betterAuthPool: Pool
-try {
-  betterAuthPool = new Pool({
+
+function createSSLConfig() {
+  if (process.env.NODE_ENV === 'production') {
+    // Production SSL configuration for Supabase
+    return {
+      rejectUnauthorized: false, // Supabase manages certificates
+      sslmode: 'require', // Require SSL connection
+    }
+  }
+  // No SSL for local development
+  return false
+}
+
+function createPoolConfig() {
+  const baseConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' 
-      ? { rejectUnauthorized: false } // Supabase uses certificates that may trigger SELF_SIGNED_CERT_IN_CHAIN
-      : false, // No SSL in development
-    max: 5, // Reduced pool size to prevent connection limits
-    min: 1, // Keep fewer connections alive
-    idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
-    connectionTimeoutMillis: 60000, // 60 seconds connection timeout for Supabase
-    application_name: 'ultracoach-better-auth', // Help identify connections
-    keepAlive: true, // Keep connections alive
-    keepAliveInitialDelayMillis: 10000, // 10 seconds
+    ssl: createSSLConfig(),
+    application_name: 'ultracoach-better-auth',
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    // Production-optimized settings for Vercel serverless
+    return {
+      ...baseConfig,
+      max: 3, // Conservative pool size for serverless
+      min: 0, // No minimum connections in serverless
+      idleTimeoutMillis: 30000, // Shorter timeout for serverless
+      connectionTimeoutMillis: 10000, // Faster timeout for production
+      acquireTimeoutMillis: 10000, // Timeout for acquiring connections
+      createTimeoutMillis: 10000, // Timeout for creating connections
+      destroyTimeoutMillis: 5000, // Timeout for destroying connections
+      reapIntervalMillis: 1000, // More frequent connection reaping
+      createRetryIntervalMillis: 200, // Retry interval for failed connections
+      propagateCreateError: false, // Don't propagate creation errors immediately
+    }
+  } else {
+    // Development settings
+    return {
+      ...baseConfig,
+      max: 5,
+      min: 1,
+      idleTimeoutMillis: 300000, // 5 minutes
+      connectionTimeoutMillis: 60000, // 60 seconds
+    }
+  }
+}
+
+try {
+  const poolConfig = createPoolConfig()
+  betterAuthPool = new Pool(poolConfig)
+  
+  logger.info('Better Auth database pool initialized with configuration:', {
+    environment: process.env.NODE_ENV,
+    hasSSL: !!poolConfig.ssl,
+    maxConnections: poolConfig.max,
+    minConnections: poolConfig.min,
   })
-  logger.info('Better Auth database pool initialized successfully')
 } catch (error) {
   logger.error('Failed to initialize Better Auth database pool:', error)
   throw new Error(`Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -90,60 +134,55 @@ function getBetterAuthBaseUrl(): string {
   return fallback
 }
 
+// Simplified trusted origins configuration following Better Auth best practices
 function getTrustedOrigins(): string[] {
   const origins: string[] = []
   
-  // Development
-  origins.push('http://localhost:3000')
-  origins.push('http://localhost:3001')
+  // Development origins
+  if (process.env.NODE_ENV === 'development') {
+    origins.push('http://localhost:3000')
+    origins.push('http://localhost:3001')
+  }
   
-  // Production - add current Vercel URL
+  // Production - use VERCEL_URL if available (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     origins.push(`https://${process.env.VERCEL_URL}`)
   }
   
-  // Add any additional trusted origins from environment
+  // Add main production domain
+  origins.push('https://ultracoach.vercel.app')
+  
+  // Allow additional trusted origins from environment variable
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
-    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map(origin => origin.trim())
+    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
+      .split(',')
+      .map(origin => origin.trim())
+      .filter(Boolean)
     origins.push(...additionalOrigins)
   }
   
-  // Add common Vercel deployment patterns
-  // Note: Better Auth may not support wildcards, so we'll add specific patterns
-  origins.push('https://ultracoach.vercel.app')
-  origins.push('https://ultracoach-git-main-shane-hehims-projects.vercel.app')
-  origins.push('https://ultracoach-git-fix-cors-error-shane-hehims-projects.vercel.app')
-  
-  // Add pattern for any ultracoach deployment
-  if (process.env.VERCEL_URL && process.env.VERCEL_URL.includes('ultracoach')) {
-    // Add the specific current deployment URL
-    origins.push(`https://${process.env.VERCEL_URL}`)
-    
-    // Also add without the /api/auth suffix if it exists
-    const baseUrl = process.env.VERCEL_URL.replace('/api/auth', '')
-    if (baseUrl !== process.env.VERCEL_URL) {
-      origins.push(`https://${baseUrl}`)
-    }
-  }
-  
-  logger.info('Trusted origins:', origins)
+  logger.info('Trusted origins configured:', origins)
   return origins
 }
 
 const apiBaseUrl = getBetterAuthBaseUrl()
 const trustedOrigins = getTrustedOrigins()
 
-logger.info('Initializing Better Auth with baseURL:', apiBaseUrl)
+logger.info('Initializing Better Auth with configuration:', {
+  baseURL: apiBaseUrl,
+  trustedOriginsCount: trustedOrigins.length,
+  environment: process.env.NODE_ENV
+})
 
 let auth: ReturnType<typeof betterAuth>
 try {
-  logger.info('Initializing Better Auth with configuration:', {
+  logger.info('Better Auth initialization details:', {
     baseURL: apiBaseUrl,
-    trustedOrigins,
     hasSecret: !!process.env.BETTER_AUTH_SECRET,
     secretLength: process.env.BETTER_AUTH_SECRET?.length,
     nodeEnv: process.env.NODE_ENV,
-    vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined'
+    vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
+    trustedOriginsCount: trustedOrigins.length
   })
   
   auth = betterAuth({
@@ -159,33 +198,27 @@ try {
     baseURL: apiBaseUrl,
     secret: process.env.BETTER_AUTH_SECRET!,
     trustedOrigins,
-    
-    // Add error handling to catch and log authentication errors
-    onError: (error: Error) => {
-      logger.error('Better Auth error:', {
-        message: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
-      })
-    },
 
+    // Production-optimized session configuration
     session: {
       expirationTime: 60 * 60 * 24 * 14, // 14 days in seconds
       freshAge: 60 * 60, // 1 hour
+      updateAge: 60 * 60 * 24, // Update session once per day
+    },
+
+    // Production-optimized cookie configuration
+    advanced: {
+      useSecureCookies: process.env.NODE_ENV === 'production', // Force secure cookies in production
+      cookiePrefix: 'better-auth', // Consistent cookie prefix
+      crossSubDomainCookies: false, // Disable for better security
+      generateId: true, // Let Better Auth generate IDs
     },
 
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: false, // Temporarily disable to test login issue
+      requireEmailVerification: false, // Temporarily disable for testing
       minPasswordLength: 8,
       maxPasswordLength: 128,
-      // Add custom password validation to prevent hex string errors
-      validatePassword: async (password: string) => {
-        if (!password || typeof password !== 'string') {
-          throw new Error('Password must be a non-empty string')
-        }
-        return true
-      },
     },
 
     user: {
@@ -207,7 +240,7 @@ try {
     },
 
     plugins: [
-      nextCookies(), // This must be the last plugin - required for Next.js cookie handling
+      nextCookies(), // Must be last plugin - handles Next.js cookie integration
     ],
   })
   logger.info('Better Auth initialized successfully')

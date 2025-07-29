@@ -48,6 +48,39 @@ export default function DebugAuthPage() {
     setLoading(false)
   }
 
+  const testProductionAuth = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/debug/production-auth?token=debug123')
+      const data = await response.json()
+      setResults(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+    setLoading(false)
+  }
+
+  const testAuthFlow = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/debug/production-auth?token=debug123', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'testcoach@ultracoach.dev',
+          password: 'password123'
+        })
+      })
+      const data = await response.json()
+      setResults(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+    setLoading(false)
+  }
+
   const testSessionTokens = async () => {
     setLoading(true)
     try {
@@ -66,29 +99,45 @@ export default function DebugAuthPage() {
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">Better Auth Debug Tools</h1>
       
-      <div className="space-y-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <button
+          onClick={testProductionAuth}
+          disabled={loading}
+          className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
+        >
+          🔍 Production Config Analysis
+        </button>
+        
+        <button
+          onClick={testAuthFlow}
+          disabled={loading}
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        >
+          🚀 Test Complete Auth Flow
+        </button>
+        
         <button
           onClick={testSessionTokens}
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          Test Session Analysis (GET)
+          📊 Session Token Analysis
         </button>
         
         <button
           onClick={testDirectAuth}
           disabled={loading}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4"
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
         >
-          Test Direct Auth API
+          ⚡ Direct Auth API Test
         </button>
         
         <button
           onClick={testAuthHandler}
           disabled={loading}
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mr-4"
+          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
         >
-          Test Auth Handler
+          🔧 Auth Handler Test
         </button>
       </div>
 
@@ -102,13 +151,30 @@ export default function DebugAuthPage() {
       </div>
 
       <div className="mt-8 p-4 bg-yellow-100 rounded">
-        <h3 className="font-semibold mb-2">Test Details:</h3>
-        <ul className="text-sm space-y-1">
-          <li><strong>Email:</strong> testcoach@ultracoach.dev</li>
-          <li><strong>Password:</strong> password123</li>
-          <li><strong>Purpose:</strong> Debug why no Better Auth session cookie is being set</li>
-          <li><strong>Expected:</strong> Should reveal authentication flow details and cookie setting</li>
-        </ul>
+        <h3 className="font-semibold mb-2">Comprehensive Production Debugging Suite:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 className="font-medium text-indigo-600 mb-1">🔍 Production Config Analysis</h4>
+            <p>Analyzes environment variables, Better Auth configuration, SSL settings, and cookie configuration</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-red-600 mb-1">🚀 Complete Auth Flow Test</h4>
+            <p>Tests full authentication flow with detailed error tracking for hex parsing issues</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-blue-600 mb-1">📊 Session Token Analysis</h4>
+            <p>Examines session cookies and token parsing in production environment</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-green-600 mb-1">⚡ Direct Auth API Test</h4>
+            <p>Tests Better Auth API calls directly to isolate authentication logic</p>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-blue-50 rounded">
+          <p><strong>Test Credentials:</strong> testcoach@ultracoach.dev / password123</p>
+          <p><strong>Goal:</strong> Identify and fix "hex string expected, got undefined" error in production</p>
+          <p><strong>Status:</strong> Post-configuration cleanup with simplified handlers and production-optimized settings</p>
+        </div>
       </div>
     </div>
   )
