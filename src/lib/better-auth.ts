@@ -159,6 +159,15 @@ try {
     baseURL: apiBaseUrl,
     secret: process.env.BETTER_AUTH_SECRET!,
     trustedOrigins,
+    
+    // Add error handling to catch and log authentication errors
+    onError: (error: Error) => {
+      logger.error('Better Auth error:', {
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      })
+    },
 
     session: {
       expirationTime: 60 * 60 * 24 * 14, // 14 days in seconds
@@ -170,6 +179,13 @@ try {
       requireEmailVerification: false, // Temporarily disable to test login issue
       minPasswordLength: 8,
       maxPasswordLength: 128,
+      // Add custom password validation to prevent hex string errors
+      validatePassword: async (password: string) => {
+        if (!password || typeof password !== 'string') {
+          throw new Error('Password must be a non-empty string')
+        }
+        return true
+      },
     },
 
     user: {
