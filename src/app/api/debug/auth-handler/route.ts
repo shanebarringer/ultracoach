@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         error: null as string | null,
         responseStatus: 0,
         responseHeaders: {} as Record<string, string>,
-        responseBody: null as any,
+        responseBody: null as string | object | null,
         cookiesSet: [] as string[]
       }
     }

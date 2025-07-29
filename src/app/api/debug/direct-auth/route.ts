@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
       },
       directAuthTest: {
         baseURL: null as string | null,
-        requestDetails: null as any,
-        responseDetails: null as any,
+        requestDetails: null as object | null,
+        responseDetails: null as object | null,
         error: null as string | null,
         success: false
       }
