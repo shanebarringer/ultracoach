@@ -138,9 +138,8 @@ export const better_auth_accounts = pgTable('better_auth_accounts', {
 })
 
 export const better_auth_sessions = pgTable('better_auth_sessions', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey(), // This is the session token AND the primary key
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  token: text('token').notNull().unique(),
   userId: text('user_id')
     .notNull()
     .references(() => better_auth_users.id, { onDelete: 'cascade' }),

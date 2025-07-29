@@ -199,27 +199,6 @@ try {
     secret: process.env.BETTER_AUTH_SECRET!,
     trustedOrigins,
 
-    // Add error handling to catch hex parsing and other auth errors
-    onAPIError: {
-      throw: false, // Don't throw errors, handle them gracefully
-      onError: (error, ctx) => {
-        // Log the error for debugging
-        logger.error('Better Auth API error:', {
-          message: error.message,
-          stack: error.stack,
-          url: ctx.request?.url,
-          method: ctx.request?.method,
-        })
-        
-        // Handle specific hex parsing errors
-        if (error.message.includes('hex string expected')) {
-          logger.warn('Hex parsing error detected - likely malformed or missing session cookie')
-          // Continue processing instead of throwing
-          return
-        }
-      },
-    },
-
     // Production-optimized session configuration
     session: {
       expiresIn: 60 * 60 * 24 * 14, // 14 days in seconds
