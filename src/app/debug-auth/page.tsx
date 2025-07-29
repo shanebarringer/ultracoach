@@ -60,6 +60,18 @@ export default function DebugAuthPage() {
     setLoading(false)
   }
 
+  const testCookieAnalysis = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/debug/cookie-analysis?token=debug123')
+      const data = await response.json()
+      setResults(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+    setLoading(false)
+  }
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">Better Auth Debug Tools</h1>

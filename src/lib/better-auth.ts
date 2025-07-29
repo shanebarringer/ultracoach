@@ -90,13 +90,56 @@ function getBetterAuthBaseUrl(): string {
   return fallback
 }
 
+function getTrustedOrigins(): string[] {
+  const origins: string[] = []
+  
+  // Development
+  origins.push('http://localhost:3000')
+  origins.push('http://localhost:3001')
+  
+  // Production - add current Vercel URL
+  if (process.env.VERCEL_URL) {
+    origins.push(`https://${process.env.VERCEL_URL}`)
+  }
+  
+  // Add any additional trusted origins from environment
+  if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
+    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',').map(origin => origin.trim())
+    origins.push(...additionalOrigins)
+  }
+  
+  // Add common Vercel deployment patterns
+  // Note: Better Auth may not support wildcards, so we'll add specific patterns
+  origins.push('https://ultracoach.vercel.app')
+  origins.push('https://ultracoach-git-main-shane-hehims-projects.vercel.app')
+  origins.push('https://ultracoach-git-fix-cors-error-shane-hehims-projects.vercel.app')
+  
+  // Add pattern for any ultracoach deployment
+  if (process.env.VERCEL_URL && process.env.VERCEL_URL.includes('ultracoach')) {
+    // Add the specific current deployment URL
+    origins.push(`https://${process.env.VERCEL_URL}`)
+    
+    // Also add without the /api/auth suffix if it exists
+    const baseUrl = process.env.VERCEL_URL.replace('/api/auth', '')
+    if (baseUrl !== process.env.VERCEL_URL) {
+      origins.push(`https://${baseUrl}`)
+    }
+  }
+  
+  logger.info('Trusted origins:', origins)
+  return origins
+}
+
 const apiBaseUrl = getBetterAuthBaseUrl()
+const trustedOrigins = getTrustedOrigins()
+
 logger.info('Initializing Better Auth with baseURL:', apiBaseUrl)
 
 let auth: ReturnType<typeof betterAuth>
 try {
   logger.info('Initializing Better Auth with configuration:', {
     baseURL: apiBaseUrl,
+    trustedOrigins,
     hasSecret: !!process.env.BETTER_AUTH_SECRET,
     secretLength: process.env.BETTER_AUTH_SECRET?.length,
     nodeEnv: process.env.NODE_ENV,
@@ -115,6 +158,7 @@ try {
     }),
     baseURL: apiBaseUrl,
     secret: process.env.BETTER_AUTH_SECRET!,
+    trustedOrigins,
 
     session: {
       expirationTime: 60 * 60 * 24 * 14, // 14 days in seconds
