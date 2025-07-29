@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       // Check if secret is actually usable
       secretUsable: !!(process.env.BETTER_AUTH_SECRET && process.env.BETTER_AUTH_SECRET.length > 0)
     },
-    warnings: []
+    warnings: [] as string[]
   }
 
   // Add warnings for common issues
