@@ -93,6 +93,27 @@ export default function DebugAuthPage() {
     setLoading(false)
   }
 
+  const testRawAuth = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/debug/raw-auth-test?token=debug123', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'testcoach@ultracoach.dev',
+          password: 'password123'
+        })
+      })
+      const data = await response.json()
+      setResults(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+    setLoading(false)
+  }
+
 
 
   return (
@@ -139,6 +160,14 @@ export default function DebugAuthPage() {
         >
           🔧 Auth Handler Test
         </button>
+        
+        <button
+          onClick={testRawAuth}
+          disabled={loading}
+          className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+        >
+          🧪 Raw API Test
+        </button>
       </div>
 
       <div className="bg-gray-100 p-4 rounded">
@@ -168,6 +197,10 @@ export default function DebugAuthPage() {
           <div>
             <h4 className="font-medium text-green-600 mb-1">⚡ Direct Auth API Test</h4>
             <p>Tests Better Auth API calls directly to isolate authentication logic</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-yellow-600 mb-1">🧪 Raw API Test</h4>
+            <p>Direct auth.api.signInEmail call with detailed error logging to isolate the hex parsing issue</p>
           </div>
         </div>
         <div className="mt-4 p-3 bg-blue-50 rounded">
