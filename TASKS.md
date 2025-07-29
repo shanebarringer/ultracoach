@@ -58,7 +58,15 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Deployment scripts** - Automated validation and deployment preparation tools
 - [x] **Deployment checklist** - Complete step-by-step deployment guide created
 
-### Production Monitoring & Analytics (NEXT PRIORITY)
+### Database Schema Improvements (NEXT PRIORITY)
+
+- [ ] **Update database setup scripts** - Modify `./supabase/scripts/setup_enhanced_training.sh` to use correct Better Auth session schema
+- [ ] **Fix initial migration files** - Update existing migration files to create proper Better Auth session table (ID as token, no separate token field)
+- [ ] **Add Better Auth schema validation** - Create script to validate Better Auth schema matches official requirements
+- [ ] **Document schema requirements** - Add Better Auth schema requirements to setup documentation
+- [ ] **Test fresh database setup** - Verify clean database setup works with corrected Better Auth schema
+
+### Production Monitoring & Analytics (FUTURE PRIORITY)
 
 - [ ] **Error tracking setup** - Configure Sentry or similar for production error monitoring
 - [ ] **Performance monitoring** - Add application performance monitoring (APM) with metrics collection

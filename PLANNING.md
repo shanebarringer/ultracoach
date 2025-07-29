@@ -13,14 +13,14 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **UI Library**: HeroUI with custom Mountain Peak theme
 - **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
 - **State Management**: Jotai for atomic, granular state management
-- **Authentication**: NextAuth.js with custom credentials provider
+- **Authentication**: Better Auth with Drizzle adapter and PostgreSQL
 - **Real-time**: Supabase Realtime for live updates
 - **TypeScript**: Full TypeScript with strict mode for type safety
 
 ### Backend Architecture
 
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
-- **Authentication**: Supabase Auth integrated with NextAuth.js
+- **Authentication**: Better Auth with Drizzle ORM and Supabase PostgreSQL
 - **API**: Next.js API routes with RESTful design
 - **Real-time**: Supabase Realtime subscriptions
 - **File Storage**: Supabase Storage (future: workout photos, documents)
@@ -29,7 +29,10 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 
 #### Core Tables
 
-- **users**: Coach and runner accounts with roles
+- **better_auth_users**: Coach and runner accounts with roles (Better Auth managed)
+- **better_auth_sessions**: User sessions with proper schema (id as token)
+- **better_auth_accounts**: OAuth accounts for social authentication  
+- **better_auth_verification_tokens**: Email verification and password reset tokens
 - **training_plans**: Enhanced with race targeting and phase tracking
 - **workouts**: Enhanced with categorization and intensity tracking
 - **conversations/messages**: Real-time chat system
@@ -151,6 +154,15 @@ activeTrainingPlansAtom: Computed active plans
 - **Reset**: `./supabase/scripts/reset_database.sh`
 - **Backup**: `./supabase/scripts/backup_user_data.sh`
 
+### Better Auth Schema Requirements (CRITICAL)
+
+⚠️ **Important**: Better Auth has specific schema requirements that must be followed exactly:
+
+- **Session Table**: The `id` field IS the session token (no separate `token` field)
+- **Schema Generation**: Always use `npx @better-auth/cli generate` to create correct schemas  
+- **Manual Schema**: If creating manually, ensure session table uses `id` as both primary key AND token
+- **Validation**: Run schema validation before deploying to prevent "hex string expected" errors
+
 ### Supabase CLI Operations (Modern Approach)
 
 ```bash
@@ -257,7 +269,7 @@ ultracoach/
 │   ├── components/          # React components
 │   ├── lib/                 # Utilities and configurations
 │   │   ├── atoms.ts         # Jotai state atoms
-│   │   ├── auth.ts          # NextAuth configuration
+│   │   ├── better-auth.ts   # Better Auth configuration  
 │   │   └── supabase.ts      # Supabase client
 │   ├── hooks/               # Custom React hooks
 │   └── providers/           # Context providers (minimal with Jotai)
