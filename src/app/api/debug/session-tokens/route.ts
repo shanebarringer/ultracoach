@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 
 export async function GET(req: NextRequest) {
   // Only allow with debug token
@@ -61,7 +60,7 @@ export async function GET(req: NextRequest) {
       
       // Test hex parsing (what might be causing the error)
       try {
-        const hexTest = Buffer.from(sessionCookie.value, 'hex')
+        Buffer.from(sessionCookie.value, 'hex')
         debugInfo.sessionAnalysis.tokenParsing.isValidFormat = true
       } catch (error) {
         debugInfo.sessionAnalysis.tokenParsing.error = error instanceof Error ? error.message : 'Unknown hex parsing error'
@@ -70,7 +69,7 @@ export async function GET(req: NextRequest) {
 
     // Try to get Better Auth configuration
     try {
-      const { auth } = await import('../../../../lib/better-auth')
+      await import('../../../../lib/better-auth')
       // Try to construct the baseURL the same way Better Auth does
       if (process.env.VERCEL_URL) {
         debugInfo.betterAuthConfig.baseURL = `https://${process.env.VERCEL_URL}/api/auth`
@@ -125,7 +124,7 @@ export async function POST(req: NextRequest) {
         success: false,
         error: null as string | null,
         tokenGenerated: false,
-        tokenDetails: null as any
+        tokenDetails: null as { setCookieHeader: string; hasSessionToken: boolean } | null
       }
     }
 
