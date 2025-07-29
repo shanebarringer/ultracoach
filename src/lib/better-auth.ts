@@ -213,7 +213,7 @@ try {
       crossSubDomainCookies: {
         enabled: false, // Disable for better security
       },
-      generateId: true, // Let Better Auth generate IDs
+      // generateId removed - Better Auth handles ID generation by default
     },
 
     emailAndPassword: {
