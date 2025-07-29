@@ -4,7 +4,7 @@ export async function GET(req: NextRequest) {
   // Only allow in development or with a debug token
   const isDev = process.env.NODE_ENV === 'development'
   const debugToken = req.nextUrl.searchParams.get('token')
-  const validToken = process.env.DEBUG_TOKEN || 'debug123'
+  const validToken = 'debug123'
   
   if (!isDev && debugToken !== validToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

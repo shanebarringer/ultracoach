@@ -28,8 +28,8 @@ try {
   betterAuthPool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' 
-      ? { rejectUnauthorized: true } 
-      : { rejectUnauthorized: false }, // Only disable SSL verification in development
+      ? { rejectUnauthorized: false } // Supabase uses certificates that may trigger SELF_SIGNED_CERT_IN_CHAIN
+      : false, // No SSL in development
     max: 5, // Reduced pool size to prevent connection limits
     min: 1, // Keep fewer connections alive
     idleTimeoutMillis: 300000, // 5 minutes idle timeout (increased)
