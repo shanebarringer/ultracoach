@@ -95,6 +95,14 @@ logger.info('Initializing Better Auth with baseURL:', apiBaseUrl)
 
 let auth: ReturnType<typeof betterAuth>
 try {
+  logger.info('Initializing Better Auth with configuration:', {
+    baseURL: apiBaseUrl,
+    hasSecret: !!process.env.BETTER_AUTH_SECRET,
+    secretLength: process.env.BETTER_AUTH_SECRET?.length,
+    nodeEnv: process.env.NODE_ENV,
+    vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined'
+  })
+  
   auth = betterAuth({
     database: drizzleAdapter(betterAuthDb, {
       provider: 'pg',
@@ -111,6 +119,12 @@ try {
     session: {
       maxAge: 14 * 24 * 60 * 60, // 14 days
       freshAge: 60 * 60, // 1 hour
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60 // 5 minutes
+      },
+      cookieName: "better-auth.session_token", // Explicitly set cookie name
+      updateOnRefresh: false, // Prevent unnecessary token regeneration
     },
 
     emailAndPassword: {
@@ -141,6 +155,26 @@ try {
     plugins: [
       nextCookies(), // This must be the last plugin
     ],
+
+    // Add custom error handling for token parsing issues
+    hooks: {
+      after: [
+        {
+          matcher: (ctx) => ctx.path?.includes('/sign-in') || ctx.path?.includes('/session'),
+          handler: async (ctx) => {
+            if (ctx.response && ctx.response.status >= 400) {
+              logger.error('Better Auth request failed:', {
+                path: ctx.path,
+                method: ctx.method,
+                status: ctx.response.status,
+                headers: Object.fromEntries(ctx.request?.headers || []),
+                error: ctx.response.statusText
+              })
+            }
+          }
+        }
+      ]
+    },
   })
   logger.info('Better Auth initialized successfully')
 } catch (error) {
