@@ -30,7 +30,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 #### Core Tables
 
 - **better_auth_users**: Coach and runner accounts with roles (Better Auth managed)
-- **better_auth_sessions**: User sessions with proper schema (id as token)
+- **better_auth_sessions**: User sessions with correct schema (id AND token fields)
 - **better_auth_accounts**: OAuth accounts for social authentication  
 - **better_auth_verification_tokens**: Email verification and password reset tokens
 - **training_plans**: Enhanced with race targeting and phase tracking
@@ -149,19 +149,20 @@ activeTrainingPlansAtom: Computed active plans
 
 ### Database Management Scripts
 
-- **Setup**: `./supabase/scripts/setup_enhanced_training.sh`
-- **Seed**: `./supabase/scripts/seed_database.sh`
-- **Reset**: `./supabase/scripts/reset_database.sh`
-- **Backup**: `./supabase/scripts/backup_user_data.sh`
+- **TypeScript Seeding**: `pnpm db:seed` or `pnpm prod:db:seed` - Production-ready seeding with Better Auth integration
+- **Setup**: `./supabase/scripts/setup_enhanced_training.sh` - Initial database setup
+- **Reset**: `./supabase/scripts/reset_database.sh` - Development database reset
+- **Backup**: `./supabase/scripts/backup_user_data.sh` - User data backup utility
 
 ### Better Auth Schema Requirements (CRITICAL)
 
 ⚠️ **Important**: Better Auth has specific schema requirements that must be followed exactly:
 
-- **Session Table**: The `id` field IS the session token (no separate `token` field)
+- **Session Table**: Must have BOTH `id` field (primary key) AND separate `token` field (unique)
 - **Schema Generation**: Always use `npx @better-auth/cli generate` to create correct schemas  
-- **Manual Schema**: If creating manually, ensure session table uses `id` as both primary key AND token
+- **Manual Schema**: If creating manually, ensure session table has both `id` AND `token` columns
 - **Validation**: Run schema validation before deploying to prevent "hex string expected" errors
+- **Credential Accounts**: Users need proper `provider_id: 'credential'` records for password authentication
 
 ### Supabase CLI Operations (Modern Approach)
 
@@ -301,25 +302,25 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-### Current Development Status (Updated 2025-07-14)
+### Current Development Status (Updated 2025-07-29)
 
-- **Project Progress**: 90% complete (101/112 tasks) + Complete Design System + HeroUI Integration + Performance Optimization
-- **Active Milestone**: Enhanced Training Features (Milestone 3)
-- **Recent Completions**: Training-plans page performance optimization with split hook architecture and Axios integration
-- **Major Achievement**: Eliminated training-plans page flickering and multiple API calls - now demo-ready!
-- **Next Priorities**: Race management system, phase progression, and advanced workout planning features
-- **Performance**: Single API call per page load, smooth user experience, production-ready
+- **Project Progress**: 100% complete (222/222 tasks) + Authentication Crisis Resolution ✅ **COMPLETE**
+- **Active Milestone**: Production Readiness with Authentication Fixes
+- **Recent Completions**: Better Auth schema fixes, TypeScript database seeding, credential account creation
+- **Major Achievement**: Authentication system fully restored - users can now log in successfully!
+- **Next Priorities**: Production monitoring, user feedback systems, and Strava integration
+- **Performance**: Production build passes with zero TypeScript errors, authentication working
 
 ### Database Operations
 
 ```bash
-# Seed database with templates and test data
+# TypeScript database seeding (recommended)
+pnpm db:seed              # Development database
+pnpm prod:db:seed         # Production database
+
+# Legacy shell scripts (backup)
 ./supabase/scripts/seed_database.sh
-
-# Backup before major changes
 ./supabase/scripts/backup_user_data.sh
-
-# Reset database (development only)
 ./supabase/scripts/reset_database.sh
 ```
 
