@@ -152,6 +152,22 @@ function getTrustedOrigins(): string[] {
   // Add main production domain
   origins.push('https://ultracoach.vercel.app')
   
+  // More permissive approach for development/preview deployments
+  // Trust all Vercel deployments for this project
+  if (process.env.NODE_ENV === 'development' || process.env.VERCEL_GIT_COMMIT_REF) {
+    // Add specific preview deployment URLs that are commonly used
+    const previewUrls = [
+      'https://ultracoach-git-fix-cors-error-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-main-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-develop-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-feature-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-preview-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-staging-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-test-shane-hehims-projects.vercel.app',
+    ]
+    origins.push(...previewUrls)
+  }
+  
   // Allow additional trusted origins from environment variable
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
     const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
