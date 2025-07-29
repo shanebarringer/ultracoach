@@ -119,9 +119,10 @@ export async function POST(req: NextRequest) {
       debugInfo.authFlowTest.step1_apiCall.success = true
       debugInfo.authFlowTest.step1_apiCall.response = {
         hasUser: !!signInResponse.user,
-        hasSession: !!signInResponse.session,
+        hasToken: !!signInResponse.token,
+        redirect: signInResponse.redirect || false,
         userId: signInResponse.user?.id,
-        sessionId: signInResponse.session?.id,
+        token: signInResponse.token ? '[TOKEN_SET]' : 'NO_TOKEN',
       }
 
       // Step 2: Test session retrieval
@@ -132,9 +133,11 @@ export async function POST(req: NextRequest) {
         
         debugInfo.authFlowTest.step2_sessionCheck.success = !!session
         debugInfo.authFlowTest.step2_sessionCheck.session = session ? {
-          userId: session.user.id,
-          sessionId: session.session.id,
-          expiresAt: session.session.expiresAt,
+          hasUser: !!session.user,
+          hasSession: !!session.session,
+          userId: session.user?.id,
+          sessionId: session.session?.id,
+          expiresAt: session.session?.expiresAt,
         } : null
         
       } catch (sessionError) {
