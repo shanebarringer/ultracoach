@@ -24,9 +24,9 @@ async function createTestUser() {
     const hashedPassword = await bcrypt.hash(password, 10)
     
     // Fixed user ID for testing
-    const userId = '8e679919-9824-4733-a726-0bafbba146b3'
-    const email = 'coach1@ultracoach.dev'
-    const fullName = 'Sarah Mountain'
+    const userId = '9f789919-9824-4733-a726-0bafbba146b3'
+    const email = 'testcoach@ultracoach.dev'
+    const fullName = 'Alex Ridge'
     const role = 'coach'
     
     // Check if user already exists in Better Auth tables
