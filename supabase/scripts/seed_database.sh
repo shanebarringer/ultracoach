@@ -9,6 +9,15 @@ echo "🌱 Seeding UltraCoach Database..."
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUPABASE_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$SUPABASE_DIR")"
+
+# Load environment variables from .env.local
+if [ -f "$PROJECT_ROOT/.env.local" ]; then
+    echo "  📋 Loading environment variables from .env.local"
+    export $(grep -v '^#' "$PROJECT_ROOT/.env.local" | xargs)
+else
+    echo "  ⚠️  No .env.local file found"
+fi
 
 # Function to run SQL file
 run_sql() {
