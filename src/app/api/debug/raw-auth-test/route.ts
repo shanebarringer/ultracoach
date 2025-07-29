@@ -38,9 +38,10 @@ export async function POST(req: NextRequest) {
       const signInBody = { email, password }
       console.log('📤 Sign-in body:', { email, passwordLength: password.length })
 
-      // Call the API directly
+      // Call the API directly with empty headers to avoid session parsing
       const response = await auth.api.signInEmail({
-        body: signInBody
+        body: signInBody,
+        headers: new Headers() // Pass empty headers to prevent session cookie parsing
       })
       
       console.log('✅ Auth API call succeeded')
