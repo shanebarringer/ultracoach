@@ -13,13 +13,13 @@ import {
 export const better_auth_users = pgTable('better_auth_users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').default(false),
+  email_verified: boolean('email_verified').default(false),
   name: text('name'),
   image: text('image'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   role: text('role').default('runner').$type<'runner' | 'coach'>(),
-  fullName: text('full_name'),
+  full_name: text('full_name'),
 })
 
 export const training_plans = pgTable('training_plans', {
@@ -123,38 +123,38 @@ export const conversations = pgTable('conversations', {
 
 export const better_auth_accounts = pgTable('better_auth_accounts', {
   id: text('id').primaryKey(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  userId: text('user_id')
+  account_id: text('account_id').notNull(),
+  provider_id: text('provider_id').notNull(),
+  user_id: text('user_id')
     .notNull()
     .references(() => better_auth_users.id, { onDelete: 'cascade' }),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
-  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  access_token: text('access_token'),
+  refresh_token: text('refresh_token'),
+  id_token: text('id_token'),
+  expires_at: timestamp('expires_at', { withTimezone: true }),
   password: text('password'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
 export const better_auth_sessions = pgTable('better_auth_sessions', {
   id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
   token: text('token').notNull().unique(),
-  userId: text('user_id')
+  user_id: text('user_id')
     .notNull()
     .references(() => better_auth_users.id, { onDelete: 'cascade' }),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  ip_address: text('ip_address'),
+  user_agent: text('user_agent'),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
 export const better_auth_verification_tokens = pgTable('better_auth_verification_tokens', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   token: text('token').notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
