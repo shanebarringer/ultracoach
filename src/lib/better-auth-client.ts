@@ -1,4 +1,4 @@
-import { createAuthClient } from 'better-auth/client'
+import { createAuthClient } from 'better-auth/react'
 
 import type { Session, User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'

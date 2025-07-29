@@ -147,8 +147,7 @@ try {
     },
 
     plugins: [
-      // Temporarily disable nextCookies plugin to debug hex parsing error
-      // nextCookies(), // This must be the last plugin
+      nextCookies(), // This must be the last plugin - required for Next.js cookie handling
     ],
   })
   logger.info('Better Auth initialized successfully')
