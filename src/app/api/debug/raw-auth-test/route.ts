@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
       console.log('📥 Response keys:', Object.keys(response || {}))
       console.log('📥 Response user:', response?.user ? 'present' : 'missing')
       console.log('📥 Response token:', response?.token ? 'present' : 'missing')
-      console.log('📥 Response session:', response?.session ? 'present' : 'missing')
 
       return NextResponse.json({
         ...debugInfo,
@@ -55,10 +54,10 @@ export async function POST(req: NextRequest) {
         response: {
           hasUser: !!response?.user,
           hasToken: !!response?.token,
-          hasSession: !!response?.session,
           userId: response?.user?.id,
           userEmail: response?.user?.email,
           responseKeys: Object.keys(response || {}),
+          fullResponse: response
         }
       })
 
