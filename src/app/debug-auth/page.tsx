@@ -60,17 +60,7 @@ export default function DebugAuthPage() {
     setLoading(false)
   }
 
-  const testCookieAnalysis = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/cookie-analysis?token=debug123')
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
-  }
+
 
   return (
     <div className="container mx-auto p-8">
@@ -99,14 +89,6 @@ export default function DebugAuthPage() {
           className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mr-4"
         >
           Test Auth Handler
-        </button>
-        
-        <button
-          onClick={testCookieAnalysis}
-          disabled={loading}
-          className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded mr-4"
-        >
-          Test Cookie Analysis
         </button>
       </div>
 
