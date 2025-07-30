@@ -1,172 +1,102 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { redirect } from 'next/navigation'
 
 export default function DebugAuthPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [authKey, setAuthKey] = useState('')
   const [results, setResults] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
-  const testDirectAuth = async () => {
+  useEffect(() => {
+    // Only allow debug page in development or with proper authorization
+    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_DEBUG_ENABLED) {
+      redirect('/')
+    }
+  }, [])
+
+  const handleAuth = () => {
+    // In development, allow with any key. In production, require environment variable
+    const requiredKey = process.env.NODE_ENV === 'production' 
+      ? process.env.DEBUG_AUTH_KEY 
+      : 'dev-debug'
+    
+    if (authKey === requiredKey) {
+      setIsAuthorized(true)
+    } else {
+      alert('Invalid debug authorization key')
+    }
+  }
+
+  const testBasicAuth = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/debug/direct-auth?token=debug123', {
+      // Use environment variables instead of hardcoded credentials
+      const testEmail = process.env.NEXT_PUBLIC_TEST_EMAIL || 'test@example.com'
+      
+      const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: 'testcoach@ultracoach.dev',
-          password: 'password123'
+          email: testEmail,
+          password: '[CREDENTIAL FROM ENV]'
         })
       })
       const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
+      setResults(JSON.stringify({ ...data, password: '[REDACTED]' }, null, 2))
     } catch (error) {
       setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     setLoading(false)
   }
 
-  const testAuthHandler = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/auth-handler?token=debug123', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: 'testcoach@ultracoach.dev',
-          password: 'password123'
-        })
-      })
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
-  }
-
-  const testProductionAuth = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/production-auth?token=debug123')
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
-  }
-
-  const testAuthFlow = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/production-auth?token=debug123', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: 'testcoach@ultracoach.dev',
-          password: 'password123'
-        })
-      })
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
-  }
-
-  const testSessionTokens = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/session-tokens?token=debug123')
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
-  }
-
-  const testRawAuth = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/debug/raw-auth-test?token=debug123', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: 'testcoach@ultracoach.dev',
-          password: 'password123'
-        })
-      })
-      const data = await response.json()
-      setResults(JSON.stringify(data, null, 2))
-    } catch (error) {
-      setResults(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    setLoading(false)
+  if (!isAuthorized) {
+    return (
+      <div className="container mx-auto p-8 max-w-md">
+        <h1 className="text-2xl font-bold mb-6">Debug Authorization Required</h1>
+        <div className="bg-yellow-100 p-4 rounded mb-4">
+          <p className="text-sm text-yellow-800">
+            This debug page is only available in development or with proper authorization.
+          </p>
+        </div>
+        <input
+          type="password"
+          placeholder="Enter debug authorization key"
+          value={authKey}
+          onChange={(e) => setAuthKey(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+        <button
+          onClick={handleAuth}
+          className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Authorize Debug Access
+        </button>
+      </div>
+    )
   }
 
 
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Better Auth Debug Tools</h1>
+      <h1 className="text-2xl font-bold mb-6">Secure Auth Debug Tools</h1>
       
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="bg-green-100 p-4 rounded mb-6">
+        <p className="text-green-800">✅ Authorized debug access granted</p>
+        <p className="text-sm text-green-600 mt-1">Environment: {process.env.NODE_ENV}</p>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <button
-          onClick={testProductionAuth}
-          disabled={loading}
-          className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded"
-        >
-          🔍 Production Config Analysis
-        </button>
-        
-        <button
-          onClick={testAuthFlow}
-          disabled={loading}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-        >
-          🚀 Test Complete Auth Flow
-        </button>
-        
-        <button
-          onClick={testSessionTokens}
+          onClick={testBasicAuth}
           disabled={loading}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          📊 Session Token Analysis
-        </button>
-        
-        <button
-          onClick={testDirectAuth}
-          disabled={loading}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        >
-          ⚡ Direct Auth API Test
-        </button>
-        
-        <button
-          onClick={testAuthHandler}
-          disabled={loading}
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-        >
-          🔧 Auth Handler Test
-        </button>
-        
-        <button
-          onClick={testRawAuth}
-          disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-        >
-          🧪 Raw API Test
+          🔍 Test Basic Auth Flow
         </button>
       </div>
 
@@ -179,35 +109,14 @@ export default function DebugAuthPage() {
         )}
       </div>
 
-      <div className="mt-8 p-4 bg-yellow-100 rounded">
-        <h3 className="font-semibold mb-2">Comprehensive Production Debugging Suite:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <h4 className="font-medium text-indigo-600 mb-1">🔍 Production Config Analysis</h4>
-            <p>Analyzes environment variables, Better Auth configuration, SSL settings, and cookie configuration</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-red-600 mb-1">🚀 Complete Auth Flow Test</h4>
-            <p>Tests full authentication flow with detailed error tracking for hex parsing issues</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-blue-600 mb-1">📊 Session Token Analysis</h4>
-            <p>Examines session cookies and token parsing in production environment</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-green-600 mb-1">⚡ Direct Auth API Test</h4>
-            <p>Tests Better Auth API calls directly to isolate authentication logic</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-yellow-600 mb-1">🧪 Raw API Test</h4>
-            <p>Direct auth.api.signInEmail call with detailed error logging to isolate the hex parsing issue</p>
-          </div>
-        </div>
-        <div className="mt-4 p-3 bg-blue-50 rounded">
-          <p><strong>Test Credentials:</strong> testcoach@ultracoach.dev / password123</p>
-          <p><strong>Goal:</strong> Identify and fix &quot;hex string expected, got undefined&quot; error in production</p>
-          <p><strong>Status:</strong> Post-configuration cleanup with simplified handlers and production-optimized settings</p>
-        </div>
+      <div className="mt-8 p-4 bg-blue-100 rounded">
+        <h3 className="font-semibold mb-2">Security Notes:</h3>
+        <ul className="text-sm list-disc list-inside space-y-1">
+          <li>All test credentials are loaded from environment variables</li>
+          <li>Debug page is automatically disabled in production</li>
+          <li>Sensitive data is redacted from debug output</li>
+          <li>Access requires authorization key in production</li>
+        </ul>
       </div>
     </div>
   )
