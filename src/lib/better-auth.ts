@@ -16,11 +16,30 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required for Better Auth')
 }
 
-if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error('BETTER_AUTH_SECRET environment variable is required for Better Auth')
+// Validate and ensure proper Better Auth secret format
+function validateBetterAuthSecret(): string {
+  const secret = process.env.BETTER_AUTH_SECRET
+  
+  if (!secret) {
+    throw new Error('BETTER_AUTH_SECRET environment variable is required for Better Auth')
+  }
+  
+  // Better Auth expects a hex string or a sufficiently long random string
+  if (secret.length < 32) {
+    throw new Error('BETTER_AUTH_SECRET must be at least 32 characters long')
+  }
+  
+  // If it's not a hex string, that's still OK - Better Auth can handle various formats
+  logger.info('Better Auth secret validation passed', {
+    secretLength: secret.length,
+    isHexFormat: /^[0-9a-fA-F]+$/.test(secret)
+  })
+  
+  return secret
 }
 
 const logger = createLogger('better-auth')
+const betterAuthSecret = validateBetterAuthSecret()
 
 // Create a dedicated database connection for Better Auth with production-optimized settings
 let betterAuthPool: Pool
@@ -195,11 +214,13 @@ let auth: ReturnType<typeof betterAuth>
 try {
   logger.info('Better Auth initialization details:', {
     baseURL: apiBaseUrl,
-    hasSecret: !!process.env.BETTER_AUTH_SECRET,
-    secretLength: process.env.BETTER_AUTH_SECRET?.length,
+    hasSecret: !!betterAuthSecret,
+    secretLength: betterAuthSecret.length,
     nodeEnv: process.env.NODE_ENV,
     vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
-    trustedOriginsCount: trustedOrigins.length
+    trustedOriginsCount: trustedOrigins.length,
+    adapterProvider: 'pg',
+    drizzleSchemaCount: 4
   })
   
   auth = betterAuth({
@@ -212,16 +233,14 @@ try {
         verification: better_auth_verification_tokens,
       },
     }),
-    baseURL: apiBaseUrl,
-    secret: process.env.BETTER_AUTH_SECRET!,
-    trustedOrigins,
-
-    // Production-optimized session configuration
     session: {
       expiresIn: 60 * 60 * 24 * 14, // 14 days in seconds
       freshAge: 60 * 60, // 1 hour
       updateAge: 60 * 60 * 24, // Update session once per day
     },
+    baseURL: apiBaseUrl,
+    secret: betterAuthSecret,
+    trustedOrigins,
 
     // Production-optimized cookie configuration
     advanced: {
@@ -264,7 +283,20 @@ try {
   })
   logger.info('Better Auth initialized successfully')
 } catch (error) {
-  logger.error('Failed to initialize Better Auth:', error)
+  logger.error('Failed to initialize Better Auth:', {
+    error: error instanceof Error ? error.message : 'Unknown error',
+    stack: error instanceof Error ? error.stack : undefined,
+    baseURL: apiBaseUrl,
+    hasSecret: !!betterAuthSecret,
+    secretLength: betterAuthSecret?.length,
+    environment: process.env.NODE_ENV
+  })
+  
+  // Provide more specific error guidance
+  if (error instanceof Error && error.message.includes('hex string expected')) {
+    throw new Error(`Better Auth hex string error - this usually indicates a session token parsing issue. Check your BETTER_AUTH_SECRET format and database schema. Original error: ${error.message}`)
+  }
+  
   throw new Error(`Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
 }
 
