@@ -141,13 +141,13 @@ export const better_auth_sessions = pgTable('better_auth_sessions', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
     .references(() => better_auth_users.id, { onDelete: 'cascade' }),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 
 export const better_auth_verification_tokens = pgTable('better_auth_verification_tokens', {
@@ -155,6 +155,62 @@ export const better_auth_verification_tokens = pgTable('better_auth_verification
   identifier: text('identifier').notNull(),
   token: text('token').notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// Enhanced training system tables
+export const races = pgTable('races', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  date: timestamp('date', { withTimezone: true }),
+  distanceMiles: decimal('distance_miles', { precision: 6, scale: 2 }).notNull(),
+  distanceType: text('distance_type').notNull(),
+  location: text('location').notNull(),
+  elevationGainFeet: integer('elevation_gain_feet').default(0),
+  terrainType: text('terrain_type').default('trail'),
+  websiteUrl: text('website_url'),
+  notes: text('notes'),
+  createdBy: text('created_by').references(() => better_auth_users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const training_phases = pgTable('training_phases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description'),
+  focusAreas: text('focus_areas').array(),
+  typicalDurationWeeks: integer('typical_duration_weeks'),
+  phaseOrder: integer('phase_order'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const plan_templates = pgTable('plan_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description'),
+  distanceType: text('distance_type').notNull(),
+  durationWeeks: integer('duration_weeks').notNull(),
+  difficultyLevel: text('difficulty_level').default('intermediate'),
+  peakWeeklyMiles: decimal('peak_weekly_miles', { precision: 5, scale: 2 }),
+  minBaseMiles: decimal('min_base_miles', { precision: 5, scale: 2 }),
+  createdBy: text('created_by').references(() => better_auth_users.id, { onDelete: 'set null' }),
+  isPublic: boolean('is_public').default(false),
+  tags: text('tags').array(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const template_phases = pgTable('template_phases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  templateId: uuid('template_id').notNull().references(() => plan_templates.id, { onDelete: 'cascade' }),
+  phaseId: uuid('phase_id').notNull().references(() => training_phases.id, { onDelete: 'cascade' }),
+  phaseOrder: integer('phase_order').notNull(),
+  durationWeeks: integer('duration_weeks').notNull(),
+  targetWeeklyMiles: decimal('target_weekly_miles', { precision: 5, scale: 2 }),
+  description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })

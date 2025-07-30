@@ -51,3 +51,4 @@ test-users.txt
 test-results/
 playwright-report/
 debug-*.png
+supabase/migrations_old/

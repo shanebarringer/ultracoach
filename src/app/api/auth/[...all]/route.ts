@@ -1,27 +1,6 @@
-import { NextRequest } from 'next/server'
-
 import { auth } from '@/lib/better-auth'
+import { toNextJsHandler } from 'better-auth/next-js'
 
-export async function GET(req: NextRequest) {
-  return auth.handler(req)
-}
-
-export async function POST(req: NextRequest) {
-  return auth.handler(req)
-}
-
-export async function PUT(req: NextRequest) {
-  return auth.handler(req)
-}
-
-export async function DELETE(req: NextRequest) {
-  return auth.handler(req)
-}
-
-export async function PATCH(req: NextRequest) {
-  return auth.handler(req)
-}
-
-export async function OPTIONS(req: NextRequest) {
-  return auth.handler(req)
-}
+// Use the proper Next.js handler as recommended by Better Auth docs
+// toNextJsHandler only returns GET and POST methods
+export const { GET, POST } = toNextJsHandler(auth.handler)
