@@ -32,8 +32,15 @@ export default function DebugAuthPage() {
   const testBasicAuth = async () => {
     setLoading(true)
     try {
-      // Use environment variables instead of hardcoded credentials
-      const testEmail = process.env.NEXT_PUBLIC_TEST_EMAIL || 'test@example.com'
+      // Only run authentication test with proper configuration
+      const testEmail = process.env.NEXT_PUBLIC_TEST_EMAIL
+      const testPassword = process.env.NEXT_PUBLIC_TEST_PASSWORD
+      
+      if (!testEmail || !testPassword) {
+        setResults('Authentication test requires NEXT_PUBLIC_TEST_EMAIL and NEXT_PUBLIC_TEST_PASSWORD environment variables')
+        setLoading(false)
+        return
+      }
       
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
@@ -42,7 +49,7 @@ export default function DebugAuthPage() {
         },
         body: JSON.stringify({
           email: testEmail,
-          password: '[CREDENTIAL FROM ENV]'
+          password: testPassword
         })
       })
       const data = await response.json()

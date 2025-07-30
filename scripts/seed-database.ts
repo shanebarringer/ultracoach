@@ -348,10 +348,10 @@ async function main() {
     logger.info(`✅ Database seeding completed in ${duration}ms`)
     
     console.log(`
-    🎯 Ready to test authentication with:
-    • testcoach@ultracoach.dev (use TEST_COACH_PASSWORD env var)
-    • testrunner@ultracoach.dev (use TEST_RUNNER_PASSWORD env var)
-    • Note: If env vars not set, secure random passwords were generated during seeding
+    🎯 Database seeding completed successfully!
+    • Test users created with secure credentials
+    • Use environment variables TEST_COACH_PASSWORD and TEST_RUNNER_PASSWORD
+    • Credentials are not displayed for security reasons
     `)
 
     process.exit(0)
