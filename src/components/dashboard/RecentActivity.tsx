@@ -1,11 +1,10 @@
 'use client'
 
 import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline'
-import { Card, CardBody, CardHeader, Chip, Skeleton } from '@heroui/react'
+import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import { useAtom } from 'jotai'
 
-import { Suspense } from 'react'
-
+import { DashboardSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import { asyncWorkoutsAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
@@ -97,35 +96,6 @@ function RecentActivityContent({ title, subtitle, limit }: RecentActivityContent
   )
 }
 
-const LoadingFallback = ({ title }: { title: string }) => (
-  <Card className="hover:shadow-lg transition-shadow duration-300">
-    <CardHeader>
-      <div>
-        <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-        <Skeleton className="h-4 w-32 rounded-sm mt-1" />
-      </div>
-    </CardHeader>
-    <CardBody>
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="p-4 bg-content2 border-l-4 border-l-gray-300 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-24 rounded-sm" />
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-3 w-20 rounded-sm" />
-                  <Skeleton className="h-3 w-16 rounded-sm" />
-                </div>
-              </div>
-              <Skeleton className="h-6 w-16 rounded-full" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </CardBody>
-  </Card>
-)
-
 export default function RecentActivity({
   title = 'Recent Peaks Conquered',
   subtitle = 'Latest summit achievements',
@@ -135,18 +105,20 @@ export default function RecentActivity({
 }: RecentActivityProps) {
   if (useSuspense) {
     return (
-      <Suspense fallback={<LoadingFallback title={title} />}>
+      <DashboardSuspenseBoundary section="recent activity">
         <RecentActivityContent
           title={title}
           subtitle={subtitle}
           limit={limit}
           userRole={userRole}
         />
-      </Suspense>
+      </DashboardSuspenseBoundary>
     )
   }
 
-  // For backward compatibility, fall back to the component without Suspense
-  // This would require implementing traditional loading logic
-  return <LoadingFallback title={title} />
+  // Traditional loading pattern - return the component directly
+  // This allows the parent to handle loading states
+  return (
+    <RecentActivityContent title={title} subtitle={subtitle} limit={limit} userRole={userRole} />
+  )
 }
