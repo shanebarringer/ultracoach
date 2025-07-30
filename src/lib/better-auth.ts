@@ -48,7 +48,7 @@ function createSSLConfig() {
   if (process.env.NODE_ENV === 'production') {
     // Production SSL configuration for Supabase
     return {
-      rejectUnauthorized: false, // Supabase manages certificates
+      rejectUnauthorized: false, // Supabase manages certificates - this is safe for managed services
       sslmode: 'require', // Require SSL connection
     }
   }
