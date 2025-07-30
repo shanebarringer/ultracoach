@@ -140,14 +140,14 @@ export const better_auth_accounts = pgTable('better_auth_accounts', {
 export const better_auth_sessions = pgTable('better_auth_sessions', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  token: text('token').notNull().unique(), // Better Auth requires separate token field
+  token: text('token').notNull().unique(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
     .references(() => better_auth_users.id, { onDelete: 'cascade' }),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 })
 
 export const better_auth_verification_tokens = pgTable('better_auth_verification_tokens', {
