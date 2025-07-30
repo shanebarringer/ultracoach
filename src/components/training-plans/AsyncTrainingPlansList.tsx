@@ -80,13 +80,13 @@ const LoadingFallback = () => (
     {[...Array(6)].map((_, i) => (
       <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
         <div className="space-y-2">
-          <Skeleton className="h-4 w-3/4 rounded" />
-          <Skeleton className="h-3 w-full rounded" />
-          <Skeleton className="h-3 w-2/3 rounded" />
+          <Skeleton className="h-4 w-3/4 rounded-sm" />
+          <Skeleton className="h-3 w-full rounded-sm" />
+          <Skeleton className="h-3 w-2/3 rounded-sm" />
         </div>
         <div className="flex justify-between items-center">
           <Skeleton className="h-6 w-20 rounded-full" />
-          <Skeleton className="h-8 w-16 rounded" />
+          <Skeleton className="h-8 w-16 rounded-sm" />
         </div>
       </div>
     ))}

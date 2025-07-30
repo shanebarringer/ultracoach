@@ -202,7 +202,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 color="primary"
                 className="h-2"
                 classNames={{
-                  indicator: 'bg-gradient-to-r from-primary to-secondary',
+                  indicator: 'bg-linear-to-r from-primary to-secondary',
                 }}
               />
             </div>

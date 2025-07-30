@@ -265,7 +265,7 @@ export default function Header() {
         <NavbarBrand>
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🏔️</span>
-            <span className="font-black text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="font-black text-xl bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               UltraCoach
             </span>
           </Link>
@@ -312,7 +312,7 @@ export default function Header() {
               <DropdownTrigger>
                 <Avatar
                   name={session.user.name || 'User'}
-                  className="cursor-pointer bg-gradient-to-br from-primary to-secondary text-white"
+                  className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
                 />
               </DropdownTrigger>
               <DropdownMenu aria-label="User menu">
@@ -488,7 +488,7 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
                 color="primary"
                 className="h-2"
                 classNames={{
-                  indicator: "bg-gradient-to-r from-primary to-secondary"
+                  indicator: "bg-linear-to-r from-primary to-secondary"
                 }}
               />
             </div>
@@ -532,7 +532,7 @@ export default function TrainingPlanCard({ plan, userRole, onArchiveChange }: Tr
 // BEFORE - Standard HTML/Tailwind
 return (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow-sm p-6">
       <h3>Active Runners</h3>
       <p className="text-2xl font-bold">{stats.activeRunners}</p>
     </div>
@@ -640,7 +640,7 @@ export default function CoachDashboard() {
           </p>
         </div>
 
-        <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
+        <Card className="bg-linear-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
           <div className="text-center">
             <p className="text-xs text-warning font-medium mb-1">NEXT BIG RACE</p>
             <p className="font-bold text-foreground">Western States 100</p>
@@ -757,7 +757,7 @@ export default function CreateTrainingPlanModal({ isOpen, onClose, onSuccess }: 
       onClose={onClose}
       placement="center"
       classNames={{
-        backdrop: "bg-black/50 backdrop-blur-sm",
+        backdrop: "bg-black/50 backdrop-blur-xs",
         wrapper: "flex items-center justify-center",
         base: "border border-default-200",
         header: "border-b border-default-200",
@@ -848,7 +848,7 @@ export default function CreateTrainingPlanModal({ isOpen, onClose, onSuccess }: 
             <Button
               type="submit"
               color="primary"
-              className="bg-gradient-to-r from-primary to-secondary text-white font-medium"
+              className="bg-linear-to-r from-primary to-secondary text-white font-medium"
             >
               Create Plan
             </Button>
@@ -902,7 +902,7 @@ export default function CreateTrainingPlanModal({ isOpen, onClose, onSuccess }: 
 
   .progress-mountain::after {
     content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    @apply absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent;
     animation: shimmer 2s infinite;
   }
 
@@ -923,7 +923,7 @@ export default function CreateTrainingPlanModal({ isOpen, onClose, onSuccess }: 
 
   .metric-card-enhanced::before {
     content: '';
-    @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary;
+    @apply absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-primary to-secondary;
   }
 
   .metric-card-enhanced.primary::before {

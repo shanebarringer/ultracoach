@@ -87,12 +87,12 @@ export default function RunnersPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <Card className="mb-8 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
           <CardHeader>
             <div className="flex items-center gap-3">
               <UsersIcon className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                   🏔️ Expedition Team
                 </h1>
                 <p className="text-foreground-600 text-lg mt-1">
@@ -143,7 +143,7 @@ export default function RunnersPage() {
                     <Avatar
                       name={runner.full_name || 'User'}
                       size="lg"
-                      className="bg-gradient-to-br from-primary to-secondary text-white font-semibold"
+                      className="bg-linear-to-br from-primary to-secondary text-white font-semibold"
                     />
                     <div className="ml-4">
                       <h3 className="text-lg font-semibold text-foreground">

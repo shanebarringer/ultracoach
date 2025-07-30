@@ -112,7 +112,7 @@ export default function WorkoutsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
                 <MountainSnowIcon className="w-8 h-8 text-primary" />
                 Training Log
               </h1>
@@ -153,7 +153,7 @@ export default function WorkoutsPage() {
 
           {/* Feature Toggle: Demonstrate Suspense vs Traditional Loading */}
           <div className="mb-6">
-            <Card className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+            <Card className="p-4 bg-linear-to-r from-primary/5 to-secondary/5 border border-primary/20">
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>

@@ -47,7 +47,7 @@ export default function SignIn() {
       // Clean URL
       router.replace('/auth/signin', { scroll: false })
     }
-  }, [])
+  }, [router])
 
   // React Hook Form setup
   const {
@@ -95,7 +95,7 @@ export default function SignIn() {
         logger.info('Sign in successful, extracting user role from session')
 
         // Better Auth includes role directly in the user object
-        const userRole = ((authData.user as any).role as 'coach' | 'runner') || 'runner'
+        const userRole = ((authData.user as Record<string, unknown>).role as 'coach' | 'runner') || 'runner'
         
         logger.info('User role extracted from session:', { 
           userRole, 
@@ -126,14 +126,14 @@ export default function SignIn() {
 
   return (
     <ModernErrorBoundary>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <Card className="border-t-4 border-t-primary shadow-2xl">
             <CardHeader className="text-center pb-4">
               <div className="flex flex-col items-center space-y-3">
                 <MountainSnowIcon className="h-12 w-12 text-primary" />
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                     🏔️ UltraCoach
                   </h1>
                   <p className="text-lg text-foreground-600 mt-1">Base Camp Access</p>

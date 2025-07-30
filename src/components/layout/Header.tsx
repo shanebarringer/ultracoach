@@ -110,7 +110,7 @@ function Header() {
           <Link href="/" className="flex items-center gap-3">
             <span className="text-2xl">🏔️</span>
             <div className="flex flex-col">
-              <span className="font-black text-xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <span className="font-black text-xl bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                 UltraCoach
               </span>
               <span className="text-xs text-muted font-medium hidden md:block">
@@ -163,7 +163,7 @@ function Header() {
                 <DropdownTrigger>
                   <Avatar
                     name={(session.user?.name as string) || 'User'}
-                    className="cursor-pointer bg-gradient-to-br from-primary to-secondary text-white"
+                    className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
                   />
                 </DropdownTrigger>
                 <DropdownMenu aria-label="User menu">

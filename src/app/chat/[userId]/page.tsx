@@ -101,7 +101,7 @@ export default function ChatUserPage() {
           <div className="flex flex-1 min-h-0">
             {/* Desktop Sidebar */}
             <div className="hidden md:block w-1/3 lg:w-1/4 border-r border-divider flex flex-col">
-              <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-divider">
+              <CardHeader className="bg-linear-to-r from-primary/10 to-secondary/10 border-b border-divider">
                 <div className="flex items-center gap-2">
                   <MessageCircleIcon className="w-5 h-5 text-primary" />
                   <div>
@@ -124,7 +124,7 @@ export default function ChatUserPage() {
             {/* Chat Window */}
             <div className="flex-1 flex flex-col min-h-0">
               {/* Mobile Header with Sidebar Toggle */}
-              <div className="md:hidden flex items-center px-4 py-3 border-b border-divider bg-gradient-to-r from-primary/10 to-secondary/10">
+              <div className="md:hidden flex items-center px-4 py-3 border-b border-divider bg-linear-to-r from-primary/10 to-secondary/10">
                 <Button isIconOnly variant="light" onPress={onOpen} className="mr-3">
                   <MenuIcon className="w-5 h-5" />
                 </Button>

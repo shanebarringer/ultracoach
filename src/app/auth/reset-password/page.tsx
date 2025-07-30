@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Input } from '@heroui/react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
@@ -48,7 +49,9 @@ function ResetPasswordForm() {
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<ResetPasswordData>()
+  } = useForm<ResetPasswordData>({
+    resolver: zodResolver(resetPasswordSchema),
+  })
 
   const onSubmit = async (data: ResetPasswordData) => {
     if (!token) {
@@ -94,7 +97,7 @@ function ResetPasswordForm() {
 
   if (tokenError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
@@ -143,7 +146,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -166,7 +169,7 @@ function ResetPasswordForm() {
             autoComplete="new-password"
             endContent={
               <button
-                className="focus:outline-none"
+                className="focus:outline-hidden"
                 type="button"
                 onClick={() => setIsVisible(!isVisible)}
               >
@@ -190,7 +193,7 @@ function ResetPasswordForm() {
             autoComplete="new-password"
             endContent={
               <button
-                className="focus:outline-none"
+                className="focus:outline-hidden"
                 type="button"
                 onClick={() => setIsConfirmVisible(!isConfirmVisible)}
               >
@@ -232,7 +235,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     }>

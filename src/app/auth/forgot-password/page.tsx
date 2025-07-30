@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Input } from '@heroui/react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -25,7 +26,9 @@ export default function ForgotPasswordPage() {
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<ForgotPasswordData>()
+  } = useForm<ForgotPasswordData>({
+    resolver: zodResolver(forgotPasswordSchema),
+  })
 
   const onSubmit = async (data: ForgotPasswordData) => {
     setIsLoading(true)
@@ -58,7 +61,7 @@ export default function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
@@ -80,11 +83,11 @@ export default function ForgotPasswordPage() {
               Check Your Email
             </h1>
             <p className="text-slate-600 dark:text-slate-300">
-              We've sent a password reset link to your email address. Please check your inbox and
+              We&apos;ve sent a password reset link to your email address. Please check your inbox and
               follow the instructions to reset your password.
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Didn't receive the email? Check your spam folder or try again in a few minutes.
+              Didn&apos;t receive the email? Check your spam folder or try again in a few minutes.
             </p>
             <Button
               as="a"
@@ -101,14 +104,14 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             Reset Your Password
           </h1>
           <p className="text-slate-600 dark:text-slate-300">
-            Enter your email address and we'll send you a link to reset your password.
+            Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
         </div>
 

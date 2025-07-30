@@ -102,7 +102,7 @@ const LoadingFallback = ({ title }: { title: string }) => (
     <CardHeader>
       <div>
         <h3 className="text-xl font-semibold text-foreground">{title}</h3>
-        <Skeleton className="h-4 w-32 rounded mt-1" />
+        <Skeleton className="h-4 w-32 rounded-sm mt-1" />
       </div>
     </CardHeader>
     <CardBody>
@@ -111,10 +111,10 @@ const LoadingFallback = ({ title }: { title: string }) => (
           <div key={i} className="p-4 bg-content2 border-l-4 border-l-gray-300 rounded-lg">
             <div className="flex justify-between items-start">
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-24 rounded" />
+                <Skeleton className="h-4 w-24 rounded-sm" />
                 <div className="flex items-center gap-4">
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-3 w-16 rounded" />
+                  <Skeleton className="h-3 w-20 rounded-sm" />
+                  <Skeleton className="h-3 w-16 rounded-sm" />
                 </div>
               </div>
               <Skeleton className="h-6 w-16 rounded-full" />

@@ -254,13 +254,13 @@ export default function RacesPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <Card className="mb-8 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
           <CardHeader>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <FlagIcon className="w-8 h-8 text-primary" />
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                     🏔️ Race Expeditions
                   </h1>
                   <p className="text-foreground-600 text-lg mt-1">

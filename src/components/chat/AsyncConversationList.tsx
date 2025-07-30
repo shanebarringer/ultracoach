@@ -95,12 +95,12 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
               >
                 <div className="p-4">
                   <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 relative">
+                    <div className="shrink-0 relative">
                       <Avatar
                         name={partner?.full_name || 'User'}
                         size="md"
                         classNames={{
-                          base: 'bg-gradient-to-br from-primary to-secondary',
+                          base: 'bg-linear-to-br from-primary to-secondary',
                           name: 'text-white font-semibold',
                         }}
                       />
@@ -133,7 +133,7 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
                           )}
                         </div>
                         {lastMessageTime && (
-                          <div className="flex items-center gap-1 text-xs text-foreground-500 flex-shrink-0 ml-2">
+                          <div className="flex items-center gap-1 text-xs text-foreground-500 shrink-0 ml-2">
                             <ClockIcon className="w-3 h-3" />
                             {lastMessageTime}
                           </div>
@@ -173,8 +173,8 @@ const LoadingFallback = () => (
       <div key={i} className="flex items-center space-x-3">
         <Skeleton className="w-10 h-10 rounded-full" />
         <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-3/4 rounded" />
-          <Skeleton className="h-3 w-1/2 rounded" />
+          <Skeleton className="h-4 w-3/4 rounded-sm" />
+          <Skeleton className="h-3 w-1/2 rounded-sm" />
         </div>
       </div>
     ))}

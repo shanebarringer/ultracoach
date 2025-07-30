@@ -49,7 +49,7 @@ export default function TrainingPlansPage() {
   return (
     <Layout>
       <ModernErrorBoundary>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Training Plans</h1>
@@ -89,7 +89,7 @@ export default function TrainingPlansPage() {
 
           {/* Feature Toggle: Demonstrate Suspense vs Traditional Loading */}
           <div className="mb-6">
-            <Card className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+            <Card className="p-4 bg-linear-to-r from-primary/5 to-secondary/5 border border-primary/20">
               <CardBody>
                 <div className="flex items-center justify-between">
                   <div>

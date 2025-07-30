@@ -159,7 +159,7 @@ function CoachDashboard() {
           </p>
         </div>
 
-        <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
+        <Card className="bg-linear-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
           <div className="text-center">
             <p className="text-xs text-warning font-medium mb-1">CURRENT ALTITUDE</p>
             <p className="text-2xl font-bold text-foreground">8,847m</p>
@@ -230,7 +230,7 @@ function CoachDashboard() {
               as={Link}
               href="/training-plans"
               color="primary"
-              className="bg-gradient-to-r from-primary to-secondary text-white font-medium"
+              className="bg-linear-to-r from-primary to-secondary text-white font-medium"
             >
               ⛰️ Manage Plans
             </Button>
@@ -317,7 +317,7 @@ function CoachDashboard() {
                   className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
                       {(runner.full_name || 'U').charAt(0)}
                     </div>
                     <div>

@@ -106,14 +106,14 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <Card className="border-t-4 border-t-secondary shadow-2xl">
           <CardHeader className="text-center pb-4">
             <div className="flex flex-col items-center space-y-3">
               <MountainSnowIcon className="h-12 w-12 text-secondary" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                   🏔️ UltraCoach
                 </h1>
                 <p className="text-lg text-foreground-600 mt-1">Join the Expedition</p>
