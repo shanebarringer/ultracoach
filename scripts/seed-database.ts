@@ -167,11 +167,11 @@ async function seedStaticData(db: ReturnType<typeof drizzle>) {
 }
 
 async function seedTestUsers(db: ReturnType<typeof drizzle>) {
-  logger.info('👥 Creating test users directly in database...')
+  logger.info('👥 Creating test users with Better Auth API...')
 
-  // Import bcrypt for password hashing
-  const bcrypt = await import('bcrypt')
-
+  // Import auth only when needed, after environment variables are loaded
+  const { auth } = await import('../src/lib/better-auth')
+  
   for (const userData of testUsersData) {
     try {
       logger.info(`Creating user: ${userData.email}`)
@@ -184,53 +184,40 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      // Generate unique user ID
-      const userId = `user_${Math.random().toString(36).substring(2, 15)}`
-      
-      // Hash password for credential storage
-      const hashedPassword = await bcrypt.hash(userData.password, 12)
-
-      // Create user in better_auth_users table
-      await db.insert(schema.better_auth_users).values({
-        id: userId,
-        email: userData.email,
-        emailVerified: false,
-        name: userData.name,
-        image: null,
-        role: userData.role,
-        fullName: userData.fullName, // This matches the schema field name
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      // Use Better Auth API to create user properly (this handles password hashing correctly)
+      const result = await auth.api.signUpEmail({
+        body: {
+          email: userData.email,
+          password: userData.password,
+          name: userData.name,
+          callbackURL: '/dashboard',
+        },
       })
-
-      logger.info(`✅ Created user record: ${userData.email} (${userData.role}) with ID: ${userId}`)
-
-      // Create credential account in better_auth_accounts table
-      const accountId = `account_${Math.random().toString(36).substring(2, 15)}`
       
-      await db.insert(schema.better_auth_accounts).values({
-        id: accountId,
-        accountId: userData.email, // Use email as account identifier for credentials
-        providerId: 'credential', // This identifies it as a password-based account
-        userId: userId,
-        accessToken: null,
-        refreshToken: null,
-        idToken: null,
-        expiresAt: null,
-        password: hashedPassword, // Store hashed password
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-
-      logger.info(`✅ Created credential account for ${userData.email}`)
-
-      // Verify credential account was created
-      const credentialAccount = await db.select().from(schema.better_auth_accounts).where(eq(schema.better_auth_accounts.userId, userId)).limit(1)
-      
-      if (credentialAccount.length > 0) {
-        logger.info(`✅ Credential account verified for ${userData.email} - authentication should work`)
+      // Check if user creation was successful
+      if ('data' in result && result.data?.user?.id) {
+        const userId = result.data.user.id
+        logger.info(`✅ Created user via Better Auth API: ${userData.email} (ID: ${userId})`)
+        
+        // Update user with additional fields (role and fullName)
+        await db.update(schema.better_auth_users)
+          .set({ 
+            fullName: userData.fullName,
+            role: userData.role 
+          })
+          .where(eq(schema.better_auth_users.id, userId))
+        
+        logger.info(`✅ Updated user ${userData.email} with role: ${userData.role}`)
+        
+        // Verify the user was created correctly
+        const createdUser = await db.select().from(schema.better_auth_users).where(eq(schema.better_auth_users.id, userId)).limit(1)
+        
+        if (createdUser.length > 0) {
+          logger.info(`✅ User verification successful for ${userData.email}`)
+        }
+        
       } else {
-        logger.warn(`⚠️ Failed to verify credential account for ${userData.email}`)
+        logger.error(`Failed to create user ${userData.email}:`, result.error)
       }
 
     } catch (error) {
