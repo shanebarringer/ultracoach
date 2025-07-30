@@ -25,7 +25,8 @@ async function clearTestUsers() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true, // Require valid SSL certificates in production
+      ca: process.env.DATABASE_SSL_CERT, // Optional: specify CA certificate
     } : false,
   })
 

@@ -102,37 +102,49 @@ const planTemplatesData = [
   },
 ]
 
-// Test users data
-const testUsersData = [
-  {
-    email: 'testcoach@ultracoach.dev',
-    password: 'TestCoach123!',
-    name: 'Test Coach',
-    fullName: 'Test Coach User',
-    role: 'coach' as const,
-  },
-  {
-    email: 'coach2@ultracoach.dev', 
-    password: 'SarahMountain123!',
-    name: 'Sarah Mountain',
-    fullName: 'Sarah Mountain',
-    role: 'coach' as const,
-  },
-  {
-    email: 'testrunner@ultracoach.dev',
-    password: 'TestRunner123!',
-    name: 'Test Runner',
-    fullName: 'Test Runner User', 
-    role: 'runner' as const,
-  },
-  {
-    email: 'runner2@ultracoach.dev',
-    password: 'MikeTrail123!',
-    name: 'Mike Trailblazer',
-    fullName: 'Mike Trailblazer',
-    role: 'runner' as const,
-  },
-]
+// Test users data - using environment variables for security
+function getTestUsersData() {
+  // Generate secure random passwords if not provided
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    let result = ''
+    for (let i = 0; i < 16; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
+
+  return [
+    {
+      email: process.env.TEST_COACH_EMAIL || 'testcoach@ultracoach.dev',
+      password: process.env.TEST_COACH_PASSWORD || generateSecurePassword(),
+      name: 'Test Coach',
+      fullName: 'Test Coach User',
+      role: 'coach' as const,
+    },
+    {
+      email: process.env.TEST_COACH2_EMAIL || 'coach2@ultracoach.dev', 
+      password: process.env.TEST_COACH2_PASSWORD || generateSecurePassword(),
+      name: 'Sarah Mountain',
+      fullName: 'Sarah Mountain',
+      role: 'coach' as const,
+    },
+    {
+      email: process.env.TEST_RUNNER_EMAIL || 'testrunner@ultracoach.dev',
+      password: process.env.TEST_RUNNER_PASSWORD || generateSecurePassword(),
+      name: 'Test Runner',
+      fullName: 'Test Runner User', 
+      role: 'runner' as const,
+    },
+    {
+      email: process.env.TEST_RUNNER2_EMAIL || 'runner2@ultracoach.dev',
+      password: process.env.TEST_RUNNER2_PASSWORD || generateSecurePassword(),
+      name: 'Mike Trailblazer',
+      fullName: 'Mike Trailblazer',
+      role: 'runner' as const,
+    },
+  ]
+}
 
 async function createDatabase() {
   if (!process.env.DATABASE_URL) {
@@ -143,7 +155,8 @@ async function createDatabase() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false,
+      rejectUnauthorized: true, // Require valid SSL certificates in production
+      ca: process.env.DATABASE_SSL_CERT, // Optional: specify CA certificate
     } : false,
   })
 
@@ -169,8 +182,16 @@ async function seedStaticData(db: ReturnType<typeof drizzle>) {
 async function seedTestUsers(db: ReturnType<typeof drizzle>) {
   logger.info('👥 Creating test users with Better Auth API...')
 
+  // Security warning for production
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('⚠️  WARNING: Creating test users in production environment!')
+    logger.warn('⚠️  Ensure test user credentials are secure and monitored!')
+  }
+
   // Import auth only when needed, after environment variables are loaded
   const { auth } = await import('../src/lib/better-auth')
+  
+  const testUsersData = getTestUsersData()
   
   for (const userData of testUsersData) {
     try {
