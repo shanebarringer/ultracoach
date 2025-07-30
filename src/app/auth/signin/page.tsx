@@ -41,9 +41,11 @@ export default function SignIn() {
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const message = urlParams.get('message')
-    
+
     if (message === 'password-reset-success') {
-      setSuccessMessage('Your password has been reset successfully. Please sign in with your new password.')
+      setSuccessMessage(
+        'Your password has been reset successfully. Please sign in with your new password.'
+      )
       // Clean URL
       router.replace('/auth/signin', { scroll: false })
     }
@@ -95,12 +97,13 @@ export default function SignIn() {
         logger.info('Sign in successful, extracting user role from session')
 
         // Better Auth includes role directly in the user object
-        const userRole = ((authData.user as Record<string, unknown>).role as 'coach' | 'runner') || 'runner'
-        
-        logger.info('User role extracted from session:', { 
-          userRole, 
+        const userRole =
+          ((authData.user as Record<string, unknown>).role as 'coach' | 'runner') || 'runner'
+
+        logger.info('User role extracted from session:', {
+          userRole,
           userId: authData.user.id,
-          userObject: authData.user 
+          userObject: authData.user,
         })
 
         // Update user object (role should already be included from Better Auth)

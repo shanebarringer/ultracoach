@@ -1,8 +1,8 @@
 /**
  * @vitest-environment jsdom
  */
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { authClient } from '../better-auth-client'
 
 // Mock Better Auth client
@@ -66,7 +66,7 @@ describe('authClient', () => {
 
     it('should not expose unavailable methods', () => {
       // These methods were removed because they're not available in the current Better Auth version
-      expect(authClient.verifyEmail).toBeUndefined()
+      expect((authClient as Record<string, unknown>).verifyEmail).toBeUndefined()
       expect((authClient as Record<string, unknown>).linkAccount).toBeUndefined()
       expect((authClient as Record<string, unknown>).unlinkAccount).toBeUndefined()
     })

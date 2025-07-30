@@ -22,11 +22,7 @@
 
 @utility mountain-gradient {
   /* Mountain Peak Enhancement Classes */
-  background: linear-gradient(
-    135deg,
-    var(--alpine-blue-600),
-    var(--summit-gold-400)
-  );
+  background: linear-gradient(135deg, var(--alpine-blue-600), var(--summit-gold-400));
 }
 
 @utility metric-card-mountain {
@@ -215,7 +211,6 @@
 }
 
 @layer components {
-
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);

@@ -19,22 +19,22 @@ if (!process.env.DATABASE_URL) {
 // Validate and ensure proper Better Auth secret format
 function validateBetterAuthSecret(): string {
   const secret = process.env.BETTER_AUTH_SECRET
-  
+
   if (!secret) {
     throw new Error('BETTER_AUTH_SECRET environment variable is required for Better Auth')
   }
-  
+
   // Better Auth expects a hex string or a sufficiently long random string
   if (secret.length < 32) {
     throw new Error('BETTER_AUTH_SECRET must be at least 32 characters long')
   }
-  
+
   // If it's not a hex string, that's still OK - Better Auth can handle various formats
   logger.info('Better Auth secret validation passed', {
     secretLength: secret.length,
-    isHexFormat: /^[0-9a-fA-F]+$/.test(secret)
+    isHexFormat: /^[0-9a-fA-F]+$/.test(secret),
   })
-  
+
   return secret
 }
 
@@ -95,7 +95,7 @@ function createPoolConfig() {
 try {
   const poolConfig = createPoolConfig()
   betterAuthPool = new Pool(poolConfig)
-  
+
   logger.info('Better Auth database pool initialized with configuration:', {
     environment: process.env.NODE_ENV,
     hasSSL: !!poolConfig.ssl,
@@ -104,7 +104,9 @@ try {
   })
 } catch (error) {
   logger.error('Failed to initialize Better Auth database pool:', error)
-  throw new Error(`Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  throw new Error(
+    `Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+  )
 }
 
 // Add connection event handlers for monitoring
@@ -128,16 +130,16 @@ function getBetterAuthBaseUrl(): string {
   logger.debug('Environment variables:', {
     NODE_ENV: process.env.NODE_ENV,
     VERCEL_URL: process.env.VERCEL_URL ? '[SET]' : 'undefined',
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ? '[SET]' : 'undefined'
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ? '[SET]' : 'undefined',
   })
-  
+
   // Vercel best practice: Use VERCEL_URL in production (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     const url = `https://${process.env.VERCEL_URL}/api/auth`
     logger.info('Using VERCEL_URL for baseURL:', url)
     return url
   }
-  
+
   // Alternative: Use explicit BETTER_AUTH_URL if provided (takes precedence)
   if (process.env.BETTER_AUTH_URL) {
     const url = process.env.BETTER_AUTH_URL
@@ -146,7 +148,7 @@ function getBetterAuthBaseUrl(): string {
     logger.info('Using BETTER_AUTH_URL for baseURL:', finalUrl)
     return finalUrl
   }
-  
+
   // Development fallback
   const fallback = 'http://localhost:3001/api/auth'
   logger.info('Using fallback baseURL:', fallback)
@@ -156,21 +158,21 @@ function getBetterAuthBaseUrl(): string {
 // Simplified trusted origins configuration following Better Auth best practices
 function getTrustedOrigins(): string[] {
   const origins: string[] = []
-  
+
   // Development origins
   if (process.env.NODE_ENV === 'development') {
     origins.push('http://localhost:3000')
     origins.push('http://localhost:3001')
   }
-  
+
   // Production - use VERCEL_URL if available (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     origins.push(`https://${process.env.VERCEL_URL}`)
   }
-  
+
   // Add main production domain
   origins.push('https://ultracoach.vercel.app')
-  
+
   // More permissive approach for development/preview deployments
   // Trust all Vercel deployments for this project
   if (process.env.NODE_ENV === 'development' || process.env.VERCEL_GIT_COMMIT_REF) {
@@ -187,16 +189,15 @@ function getTrustedOrigins(): string[] {
     ]
     origins.push(...previewUrls)
   }
-  
+
   // Allow additional trusted origins from environment variable
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
-    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
-      .split(',')
+    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
       .map(origin => origin.trim())
       .filter(Boolean)
     origins.push(...additionalOrigins)
   }
-  
+
   logger.info('Trusted origins configured:', origins)
   return origins
 }
@@ -207,7 +208,7 @@ const trustedOrigins = getTrustedOrigins()
 logger.info('Initializing Better Auth with configuration:', {
   baseURL: apiBaseUrl,
   trustedOriginsCount: trustedOrigins.length,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
 })
 
 let auth: ReturnType<typeof betterAuth>
@@ -220,9 +221,9 @@ try {
     vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
     trustedOriginsCount: trustedOrigins.length,
     adapterProvider: 'pg',
-    drizzleSchemaCount: 4
+    drizzleSchemaCount: 4,
   })
-  
+
   auth = betterAuth({
     database: drizzleAdapter(betterAuthDb, {
       provider: 'pg',
@@ -265,7 +266,7 @@ try {
           logger.info('Password reset requested:', {
             email: user.email,
             resetUrl: url,
-            token: token.substring(0, 8) + '...' // Only log partial token for security
+            token: token.substring(0, 8) + '...', // Only log partial token for security
           })
           console.log(`
 === PASSWORD RESET EMAIL ===
@@ -322,15 +323,19 @@ This link will expire in 1 hour.
     baseURL: apiBaseUrl,
     hasSecret: !!betterAuthSecret,
     secretLength: betterAuthSecret?.length,
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
   })
-  
+
   // Provide more specific error guidance
   if (error instanceof Error && error.message.includes('hex string expected')) {
-    throw new Error(`Better Auth hex string error - this usually indicates a session token parsing issue. Check your BETTER_AUTH_SECRET format and database schema. Original error: ${error.message}`)
+    throw new Error(
+      `Better Auth hex string error - this usually indicates a session token parsing issue. Check your BETTER_AUTH_SECRET format and database schema. Original error: ${error.message}`
+    )
   }
-  
-  throw new Error(`Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+
+  throw new Error(
+    `Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+  )
 }
 
 export { auth }

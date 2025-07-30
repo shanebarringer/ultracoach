@@ -205,8 +205,12 @@ export const plan_templates = pgTable('plan_templates', {
 
 export const template_phases = pgTable('template_phases', {
   id: uuid('id').primaryKey().defaultRandom(),
-  templateId: uuid('template_id').notNull().references(() => plan_templates.id, { onDelete: 'cascade' }),
-  phaseId: uuid('phase_id').notNull().references(() => training_phases.id, { onDelete: 'cascade' }),
+  templateId: uuid('template_id')
+    .notNull()
+    .references(() => plan_templates.id, { onDelete: 'cascade' }),
+  phaseId: uuid('phase_id')
+    .notNull()
+    .references(() => training_phases.id, { onDelete: 'cascade' }),
   phaseOrder: integer('phase_order').notNull(),
   durationWeeks: integer('duration_weeks').notNull(),
   targetWeeklyMiles: decimal('target_weekly_miles', { precision: 5, scale: 2 }),

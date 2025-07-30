@@ -1,12 +1,14 @@
 'use client'
 
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { Button, Input } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { z } from 'zod'
+
 import { Suspense, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
@@ -70,7 +72,7 @@ function ResetPasswordForm() {
 
       if (error) {
         logger.error('Password reset failed:', error)
-        
+
         // Handle specific error cases
         if (error.message?.includes('token')) {
           setTokenError('This reset link has expired or is invalid. Please request a new one.')
@@ -81,7 +83,7 @@ function ResetPasswordForm() {
         }
       } else {
         logger.info('Password reset successful')
-        
+
         // Redirect to signin with success message
         router.push('/auth/signin?message=password-reset-success')
       }
@@ -118,24 +120,12 @@ function ResetPasswordForm() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Invalid Reset Link
             </h1>
-            <p className="text-slate-600 dark:text-slate-300">
-              {tokenError}
-            </p>
+            <p className="text-slate-600 dark:text-slate-300">{tokenError}</p>
             <div className="space-y-2">
-              <Button
-                as="a"
-                href="/auth/forgot-password"
-                color="primary"
-                className="w-full"
-              >
+              <Button as="a" href="/auth/forgot-password" color="primary" className="w-full">
                 Request New Reset Link
               </Button>
-              <Button
-                as="a"
-                href="/auth/signin"
-                variant="light"
-                className="w-full"
-              >
+              <Button as="a" href="/auth/signin" variant="light" className="w-full">
                 Back to Sign In
               </Button>
             </div>
@@ -149,12 +139,8 @@ function ResetPasswordForm() {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Set New Password
-          </h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            Enter your new password below.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Set New Password</h1>
+          <p className="text-slate-600 dark:text-slate-300">Enter your new password below.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -217,12 +203,7 @@ function ResetPasswordForm() {
           </Button>
 
           <div className="text-center">
-            <Button
-              as="a"
-              href="/auth/signin"
-              variant="light"
-              size="sm"
-            >
+            <Button as="a" href="/auth/signin" variant="light" size="sm">
               Back to Sign In
             </Button>
           </div>
@@ -234,11 +215,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   )

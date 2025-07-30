@@ -31,7 +31,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 
 - **better_auth_users**: Coach and runner accounts with roles (Better Auth managed)
 - **better_auth_sessions**: User sessions with correct schema (id AND token fields)
-- **better_auth_accounts**: OAuth accounts for social authentication  
+- **better_auth_accounts**: OAuth accounts for social authentication
 - **better_auth_verification_tokens**: Email verification and password reset tokens
 - **training_plans**: Enhanced with race targeting and phase tracking
 - **workouts**: Enhanced with categorization and intensity tracking
@@ -159,7 +159,7 @@ activeTrainingPlansAtom: Computed active plans
 ⚠️ **Important**: Better Auth has specific schema requirements that must be followed exactly:
 
 - **Session Table**: Must have BOTH `id` field (primary key) AND separate `token` field (unique)
-- **Schema Generation**: Always use `npx @better-auth/cli generate` to create correct schemas  
+- **Schema Generation**: Always use `npx @better-auth/cli generate` to create correct schemas
 - **Manual Schema**: If creating manually, ensure session table has both `id` AND `token` columns
 - **Validation**: Run schema validation before deploying to prevent "hex string expected" errors
 - **Credential Accounts**: Users need proper `provider_id: 'credential'` records for password authentication
@@ -270,7 +270,7 @@ ultracoach/
 │   ├── components/          # React components
 │   ├── lib/                 # Utilities and configurations
 │   │   ├── atoms.ts         # Jotai state atoms
-│   │   ├── better-auth.ts   # Better Auth configuration  
+│   │   ├── better-auth.ts   # Better Auth configuration
 │   │   └── supabase.ts      # Supabase client
 │   ├── hooks/               # Custom React hooks
 │   └── providers/           # Context providers (minimal with Jotai)

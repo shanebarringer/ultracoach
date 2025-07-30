@@ -2,9 +2,10 @@
 
 import { Button, Input } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
@@ -79,22 +80,15 @@ export default function ForgotPasswordPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Check Your Email
-            </h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Check Your Email</h1>
             <p className="text-slate-600 dark:text-slate-300">
-              We&apos;ve sent a password reset link to your email address. Please check your inbox and
-              follow the instructions to reset your password.
+              We&apos;ve sent a password reset link to your email address. Please check your inbox
+              and follow the instructions to reset your password.
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Didn&apos;t receive the email? Check your spam folder or try again in a few minutes.
             </p>
-            <Button
-              as="a"
-              href="/auth/signin"
-              variant="light"
-              className="w-full"
-            >
+            <Button as="a" href="/auth/signin" variant="light" className="w-full">
               Back to Sign In
             </Button>
           </div>
@@ -107,9 +101,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Reset Your Password
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Reset Your Password</h1>
           <p className="text-slate-600 dark:text-slate-300">
             Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
@@ -139,12 +131,7 @@ export default function ForgotPasswordPage() {
           </Button>
 
           <div className="text-center">
-            <Button
-              as="a"
-              href="/auth/signin"
-              variant="light"
-              size="sm"
-            >
+            <Button as="a" href="/auth/signin" variant="light" size="sm">
               Back to Sign In
             </Button>
           </div>

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     // Use secure middleware with RLS instead of admin client
     const auth = await secureMiddleware(request)
-    
+
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         .from('training_plans')
         .select('*, runners:runner_id(*)')
         .order('created_at', { ascending: false })
-      
+
       if (error) {
         logger.error('Failed to fetch training plans for coach', error)
         return NextResponse.json({ error: 'Failed to fetch training plans' }, { status: 500 })
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         .from('training_plans')
         .select('*, coaches:coach_id(*)')
         .order('created_at', { ascending: false })
-      
+
       if (error) {
         logger.error('Failed to fetch training plans for runner', error)
         return NextResponse.json({ error: 'Failed to fetch training plans' }, { status: 500 })
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     // Use secure middleware with RLS instead of admin client
     const auth = await secureMiddleware(request)
-    
+
     if (!auth.success) {
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const { title, description, runnerEmail, targetRaceDate, targetRaceDistance } =
       await request.json()
-    
+
     if (!title || !runnerEmail) {
       return NextResponse.json({ error: 'Title and runner email are required' }, { status: 400 })
     }
