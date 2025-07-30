@@ -9,12 +9,17 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
 2. **Check TASKS.md** to see current milestone, pending tasks, and priorities
 3. **Review this file** for project-specific guidance and context
-4. **Mark completed tasks** in TASKS.md immediately upon completion
+4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
+
+### MCP Instructions
+
+- When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
+-
 
 ## 📊 Project Overview
 
-UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
+UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-07-30)
 
@@ -62,4 +67,4 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ---
 
-_This file is updated at the end of each development session. Always check PLANNING.md and TASKS.md at the start of new conversations for current context and priorities._
+_This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._
