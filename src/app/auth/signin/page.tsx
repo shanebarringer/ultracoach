@@ -35,6 +35,19 @@ export default function SignIn() {
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
+
+  // Check for success messages from URL params
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const message = urlParams.get('message')
+    
+    if (message === 'password-reset-success') {
+      setSuccessMessage('Your password has been reset successfully. Please sign in with your new password.')
+      // Clean URL
+      router.replace('/auth/signin', { scroll: false })
+    }
+  }, [])
 
   // React Hook Form setup
   const {
@@ -79,40 +92,27 @@ export default function SignIn() {
         setSession(authData)
         setUser(authData.user)
 
-        logger.info('Sign in successful, fetching user role')
+        logger.info('Sign in successful, extracting user role from session')
 
-        // Fetch user role from database
-        try {
-          const roleResponse = await fetch(`/api/user/role?userId=${authData.user.id}`)
-          const roleData = await roleResponse.json()
-          const userRole = roleData.role || 'runner'
+        // Better Auth includes role directly in the user object
+        const userRole = ((authData.user as any).role as 'coach' | 'runner') || 'runner'
+        
+        logger.info('User role extracted from session:', { 
+          userRole, 
+          userId: authData.user.id,
+          userObject: authData.user 
+        })
 
-          logger.info('User role fetched:', { userRole })
+        // Update user object (role should already be included from Better Auth)
+        setUser({ ...authData.user, role: userRole })
 
-          // Update user object with role
-          setUser({ ...authData.user, role: userRole })
-
-          // Redirect based on user role
-          if (userRole === 'coach') {
-            router.push('/dashboard/coach')
-          } else {
-            router.push('/dashboard/runner')
-          }
-        } catch (error) {
-          logger.error('Error fetching user role:', error)
-
-          // Notify user of the issue but allow them to proceed
-          setError('email', {
-            message: 'Warning: Unable to verify your role. You will be logged in as a runner.',
-          })
-
-          // Default to runner role and proceed
-          setUser({ ...authData.user, role: 'runner' })
-
-          // Add a small delay to let user see the warning
-          setTimeout(() => {
-            router.push('/dashboard/runner')
-          }, 2000)
+        // Redirect based on user role
+        if (userRole === 'coach') {
+          logger.info('Redirecting coach to /dashboard/coach')
+          router.push('/dashboard/coach')
+        } else {
+          logger.info('Redirecting runner to /dashboard/runner')
+          router.push('/dashboard/runner')
         }
       }
     } catch (error) {
@@ -142,6 +142,11 @@ export default function SignIn() {
             </CardHeader>
             <Divider />
             <CardBody className="pt-6">
+              {successMessage && (
+                <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
+                </div>
+              )}
               <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                 <div className="space-y-4">
                   <Controller
@@ -192,6 +197,15 @@ export default function SignIn() {
                       />
                     )}
                   />
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-primary hover:text-primary-600 transition-colors"
+                  >
+                    Forgot your password?
+                  </Link>
                 </div>
 
                 <Button

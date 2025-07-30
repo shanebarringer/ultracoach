@@ -254,9 +254,42 @@ try {
 
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: false, // Temporarily disable for testing
+      requireEmailVerification: false, // Will be enabled once email provider is configured
       minPasswordLength: 8,
       maxPasswordLength: 128,
+      forgotPasswordEnabled: true, // Enable password reset functionality
+      sendResetPassword: async ({ user, url, token }) => {
+        // TODO: Configure email provider (Resend, SendGrid, etc.)
+        // For now, log to console in development
+        if (process.env.NODE_ENV === 'development') {
+          logger.info('Password reset requested:', {
+            email: user.email,
+            resetUrl: url,
+            token: token.substring(0, 8) + '...' // Only log partial token for security
+          })
+          console.log(`
+=== PASSWORD RESET EMAIL ===
+To: ${user.email}
+Subject: Reset Your UltraCoach Password
+
+Click the link below to reset your password:
+${url}
+
+This link will expire in 1 hour.
+============================
+          `)
+        } else {
+          // In production, this should send actual emails
+          // Example with Resend:
+          // await resend.emails.send({
+          //   from: 'UltraCoach <noreply@ultracoach.app>',
+          //   to: user.email,
+          //   subject: 'Reset Your UltraCoach Password',
+          //   html: passwordResetTemplate({ url, user })
+          // })
+          logger.warn('Email provider not configured - password reset email not sent')
+        }
+      },
     },
 
     user: {

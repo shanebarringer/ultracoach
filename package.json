@@ -29,7 +29,8 @@
     "prod:db:seed": "NODE_ENV=production tsx scripts/seed-database.ts",
     "prod:db:query": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c",
     "prod:db:status": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;\"",
-    "prod:db:users": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM better_auth_users ORDER BY created_at;\""
+    "prod:db:users": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM better_auth_users ORDER BY created_at;\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@better-auth/cli": "^1.2.12",
@@ -84,6 +85,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "tailwindcss": "^3.4.17",

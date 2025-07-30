@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# TypeScript type checking (fastest, fails early)
+echo "🔧 Type checking..."
+pnpm typecheck || {
+  echo "❌ TypeScript errors found. Please fix them before committing."
+  exit 1
+}
+
+# ESLint (quick syntax and style checks)
+echo "🧹 Linting..."
+pnpm lint || {
+  echo "❌ Linting errors found. Please fix them before committing."
+  exit 1
+}
+
+# Prettier formatting check (fast)
+echo "💅 Checking formatting..."
+pnpm format:check || {
+  echo "❌ Code formatting issues found. Run 'pnpm format' to fix them."
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed!"
