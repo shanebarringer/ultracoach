@@ -72,17 +72,12 @@ describe('Authentication Integration Tests', () => {
     it('should handle complete sign-up flow', async () => {
       // Mock successful sign-up response
       mockSignUp.mockResolvedValueOnce({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-            name: 'Test User',
-          },
-          session: {
-            id: 'test-session-id',
-            token: 'test-session-token',
-          },
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
         },
+        token: 'test-session-token',
       })
 
       // Mock user creation in database
@@ -119,18 +114,13 @@ describe('Authentication Integration Tests', () => {
     it('should handle complete sign-in flow', async () => {
       // Mock successful sign-in response
       mockSignIn.mockResolvedValueOnce({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-            name: 'Test User',
-            role: 'runner',
-          },
-          session: {
-            id: 'test-session-id',
-            token: 'test-session-token',
-          },
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          role: 'runner',
         },
+        token: 'test-session-token',
       })
 
       // Mock user exists in database
@@ -170,17 +160,15 @@ describe('Authentication Integration Tests', () => {
     it('should handle session validation', async () => {
       // Mock valid session response
       mockGetSession.mockResolvedValueOnce({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-            role: 'coach',
-          },
-          session: {
-            id: 'test-session-id',
-            token: 'test-session-token',
-            expiresAt: new Date(Date.now() + 86400000), // 24 hours from now
-          },
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+          role: 'coach',
+        },
+        session: {
+          id: 'test-session-id',
+          token: 'test-session-token',
+          expiresAt: new Date(Date.now() + 86400000), // 24 hours from now
         },
       })
 
@@ -201,7 +189,7 @@ describe('Authentication Integration Tests', () => {
     it('should handle sign-out flow', async () => {
       // Mock successful sign-out response
       mockSignOut.mockResolvedValueOnce({
-        data: { success: true },
+        success: true,
       })
 
       const { auth } = await import('../better-auth')
@@ -222,10 +210,8 @@ describe('Authentication Integration Tests', () => {
     it('should handle invalid credentials', async () => {
       // Mock failed sign-in response
       mockSignIn.mockResolvedValueOnce({
-        error: {
-          message: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS',
-        },
+        user: undefined,
+        token: null,
       })
 
       const { auth } = await import('../better-auth')
@@ -245,10 +231,8 @@ describe('Authentication Integration Tests', () => {
     it('should handle duplicate email registration', async () => {
       // Mock failed sign-up response for duplicate email
       mockSignUp.mockResolvedValueOnce({
-        error: {
-          message: 'Email already exists',
-          code: 'EMAIL_ALREADY_EXISTS',
-        },
+        user: undefined,
+        token: null,
       })
 
       const { auth } = await import('../better-auth')
