@@ -64,13 +64,11 @@ describe('authClient', () => {
       expect(authClient.resetPassword).toBeDefined()
     })
 
-    it('should expose email verification methods', () => {
-      expect(authClient.verifyEmail).toBeDefined()
-    })
-
-    it('should expose account linking methods', () => {
-      expect(authClient.linkAccount).toBeDefined()
-      expect(authClient.unlinkAccount).toBeDefined()
+    it('should not expose unavailable methods', () => {
+      // These methods were removed because they're not available in the current Better Auth version
+      expect(authClient.verifyEmail).toBeUndefined()
+      expect((authClient as any).linkAccount).toBeUndefined()
+      expect((authClient as any).unlinkAccount).toBeUndefined()
     })
 
     it('should provide access to underlying client', () => {
