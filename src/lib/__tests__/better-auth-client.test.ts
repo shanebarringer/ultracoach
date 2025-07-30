@@ -67,8 +67,8 @@ describe('authClient', () => {
     it('should not expose unavailable methods', () => {
       // These methods were removed because they're not available in the current Better Auth version
       expect(authClient.verifyEmail).toBeUndefined()
-      expect((authClient as any).linkAccount).toBeUndefined()
-      expect((authClient as any).unlinkAccount).toBeUndefined()
+      expect((authClient as Record<string, unknown>).linkAccount).toBeUndefined()
+      expect((authClient as Record<string, unknown>).unlinkAccount).toBeUndefined()
     })
 
     it('should provide access to underlying client', () => {

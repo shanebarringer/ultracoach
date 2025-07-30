@@ -80,6 +80,17 @@ function getAuthClient() {
  * const result = await client.someNewMethod()
  * ```
  * 
+ * ## Method Access Guidance:
+ * - **Core methods**: Available directly on `authClient` for common use cases
+ * - **Plugin methods**: Use `_getClient()` to access plugin-specific functionality
+ * - **New methods**: Better Auth updates add methods to the underlying client first
+ * - **Type safety**: All methods maintain full TypeScript support
+ * 
+ * ## Security Notes:
+ * - Client is lazily initialized to prevent SSR issues
+ * - Error logging excludes sensitive data
+ * - All authentication requests use HTTPS in production
+ * 
  * @see https://better-auth.com/docs/concepts/client
  */
 export const authClient = {

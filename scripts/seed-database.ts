@@ -349,8 +349,9 @@ async function main() {
     
     console.log(`
     🎯 Ready to test authentication with:
-    • testcoach@ultracoach.dev (password: TestCoach123!)
-    • testrunner@ultracoach.dev (password: TestRunner123!)
+    • testcoach@ultracoach.dev (use TEST_COACH_PASSWORD env var)
+    • testrunner@ultracoach.dev (use TEST_RUNNER_PASSWORD env var)
+    • Note: If env vars not set, secure random passwords were generated during seeding
     `)
 
     process.exit(0)
