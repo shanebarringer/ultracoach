@@ -216,8 +216,8 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
       })
       
       // Check if user creation was successful
-      if ('data' in result && result.data?.user?.id) {
-        const userId = result.data.user.id
+      if ('data' in result && (result as any).data?.user?.id) {
+        const userId = (result as any).data.user.id
         logger.info(`✅ Created user via Better Auth API: ${userData.email} (ID: ${userId})`)
         
         // Update user with additional fields (role and fullName)
@@ -238,7 +238,7 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         }
         
       } else {
-        logger.error(`Failed to create user ${userData.email}:`, result.error)
+        logger.error(`Failed to create user ${userData.email}:`, (result as any).error)
       }
 
     } catch (error) {

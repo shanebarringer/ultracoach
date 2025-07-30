@@ -70,9 +70,6 @@ function getAuthClient() {
  * - `changePassword` - Password management
  * - `forgetPassword` - Password reset initiation
  * - `resetPassword` - Password reset completion
- * - `verifyEmail` - Email verification
- * - `linkAccount` - Social account linking
- * - `unlinkAccount` - Social account unlinking
  * - `deleteUser` - Account deletion
  * 
  * ## Advanced Usage:
@@ -102,13 +99,6 @@ export const authClient = {
   get changePassword() { return getAuthClient().changePassword },
   get forgetPassword() { return getAuthClient().forgetPassword },
   get resetPassword() { return getAuthClient().resetPassword },
-  
-  // Email verification
-  get verifyEmail() { return getAuthClient().verifyEmail },
-  
-  // Account linking (for social authentication)
-  get linkAccount() { return getAuthClient().linkAccount },
-  get unlinkAccount() { return getAuthClient().unlinkAccount },
   
   /**
    * Get the underlying Better Auth client instance.

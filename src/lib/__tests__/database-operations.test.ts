@@ -91,7 +91,7 @@ describe('Database Operations', () => {
       delete process.env.DATABASE_URL
       
       // Mock process.exit to prevent actual exit during tests
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((_code) => {
         throw new Error(`DATABASE_URL environment variable is required`)
       })
       
@@ -174,7 +174,7 @@ describe('Database Operations', () => {
       // Mock environment for test user credentials
       process.env.TEST_COACH_PASSWORD = 'secure-test-password'
 
-      const { getTestUsersData } = await import('../../../scripts/seed-database')
+      await import('../../../scripts/seed-database')
       
       // Credentials should not appear in console output
       expect(consoleSpy).not.toHaveBeenCalledWith(
@@ -203,7 +203,7 @@ describe('Database Operations', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       // Import would trigger production warning
-      const { seedDatabase } = await import('../../../scripts/seed-database')
+      await import('../../../scripts/seed-database')
 
       consoleWarnSpy.mockRestore()
     })
