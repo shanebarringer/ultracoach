@@ -39,20 +39,92 @@ function getAuthClient() {
   return _authClient
 }
 
-// Replace Proxy pattern with explicit lazy-loaded methods for better performance
-// Only export methods that are commonly used to avoid TypeScript errors
+/**
+ * UltraCoach Better Auth Client
+ * 
+ * Provides a centralized, type-safe interface to Better Auth client methods.
+ * Uses lazy initialization to prevent SSR issues and improve performance.
+ * 
+ * ## Usage Examples:
+ * 
+ * ```typescript
+ * // Sign in
+ * const result = await authClient.signIn.email({
+ *   email: 'user@example.com',
+ *   password: 'password123'
+ * })
+ * 
+ * // Get current session
+ * const session = await authClient.getSession()
+ * 
+ * // Sign out
+ * await authClient.signOut()
+ * ```
+ * 
+ * ## Available Methods:
+ * - `signIn` - Authentication methods (email, social, etc.)
+ * - `signUp` - User registration methods
+ * - `signOut` - Session termination
+ * - `getSession` - Current session retrieval
+ * - `updateUser` - User profile updates
+ * - `changePassword` - Password management
+ * - `forgetPassword` - Password reset initiation
+ * - `resetPassword` - Password reset completion
+ * - `verifyEmail` - Email verification
+ * - `linkAccount` - Social account linking
+ * - `unlinkAccount` - Social account unlinking
+ * - `deleteUser` - Account deletion
+ * 
+ * ## Advanced Usage:
+ * For methods not explicitly listed above, use `_getClient()`:
+ * 
+ * ```typescript
+ * const client = authClient._getClient()
+ * const result = await client.someNewMethod()
+ * ```
+ * 
+ * @see https://better-auth.com/docs/concepts/client
+ */
 export const authClient = {
+  // Core authentication methods
   get signIn() { return getAuthClient().signIn },
   get signOut() { return getAuthClient().signOut },
   get signUp() { return getAuthClient().signUp },
+  
+  // Session management
   get getSession() { return getAuthClient().getSession },
+  
+  // User management
   get updateUser() { return getAuthClient().updateUser },
+  get deleteUser() { return getAuthClient().deleteUser },
+  
+  // Password management
   get changePassword() { return getAuthClient().changePassword },
   get forgetPassword() { return getAuthClient().forgetPassword },
   get resetPassword() { return getAuthClient().resetPassword },
+  
+  // Email verification
   get verifyEmail() { return getAuthClient().verifyEmail },
   
-  // Fallback for any other methods not explicitly listed
+  // Account linking (for social authentication)
+  get linkAccount() { return getAuthClient().linkAccount },
+  get unlinkAccount() { return getAuthClient().unlinkAccount },
+  
+  /**
+   * Get the underlying Better Auth client instance.
+   * 
+   * Use this method to access any Better Auth client methods that aren't
+   * explicitly exported above. This is particularly useful when Better Auth
+   * adds new methods or when you need to access plugin-specific methods.
+   * 
+   * @example
+   * ```typescript
+   * const client = authClient._getClient()
+   * const result = await client.someNewMethod()
+   * ```
+   * 
+   * @returns The complete Better Auth client instance
+   */
   _getClient() { return getAuthClient() }
 }
 
