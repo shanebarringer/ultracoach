@@ -11,7 +11,7 @@
 ## 📊 Progress Overview
 
 - **Next Phase**:
-  1. Fix Routing issues with Runners/Coaches on login - and Password Reset - and Playwright CI (currently failing on main)
+  1. Fix Routing issues with Runners/Coaches on login - and email Password Reset (maybe use Resend (free version) or setup password reset without email if possible) - and Playwright CI (currently failing on main)
   2. Fix Messaging Issues,
   3. Fix Notifications,
   4. Fix UI Issues,

@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { sessionAtom, signInFormAtom, userAtom } from '@/lib/atoms'
 import { authClient } from '@/lib/better-auth-client'
+import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('SignIn')
@@ -90,32 +91,35 @@ export default function SignIn() {
       }
 
       if (authData) {
-        // Update Jotai atoms
-        setSession(authData)
-        setUser(authData.user)
+        logger.info('Sign in successful, fetching complete session data')
 
-        logger.info('Sign in successful, extracting user role from session')
+        // Get the complete session data which includes the role
+        const sessionData = await authClient.getSession()
+        
+        if (sessionData?.data) {
+          // Update Jotai atoms with complete session data
+          setSession(sessionData.data)
+          setUser(sessionData.data.user)
 
-        // Better Auth includes role directly in the user object
-        const userRole =
-          ((authData.user as Record<string, unknown>).role as 'coach' | 'runner') || 'runner'
+          const userRole = (sessionData.data.user as User).role || 'runner'
 
-        logger.info('User role extracted from session:', {
-          userRole,
-          userId: authData.user.id,
-          userObject: authData.user,
-        })
+          logger.info('User role extracted from session:', {
+            userRole,
+            userId: sessionData.data.user.id,
+            userObject: sessionData.data.user,
+          })
 
-        // Update user object (role should already be included from Better Auth)
-        setUser({ ...authData.user, role: userRole })
-
-        // Redirect based on user role
-        if (userRole === 'coach') {
-          logger.info('Redirecting coach to /dashboard/coach')
-          router.push('/dashboard/coach')
+          // Redirect based on user role
+          if (userRole === 'coach') {
+            logger.info('Redirecting coach to /dashboard/coach')
+            router.push('/dashboard/coach')
+          } else {
+            logger.info('Redirecting runner to /dashboard/runner')
+            router.push('/dashboard/runner')
+          }
         } else {
-          logger.info('Redirecting runner to /dashboard/runner')
-          router.push('/dashboard/runner')
+          logger.error('Failed to get session data after sign in')
+          setError('email', { message: 'Login failed. Please try again.' })
         }
       }
     } catch (error) {

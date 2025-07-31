@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
+import { Resend } from 'resend'
 
 import { createLogger } from './logger'
 import {
@@ -40,6 +41,15 @@ function validateBetterAuthSecret(): string {
 
 const logger = createLogger('better-auth')
 const betterAuthSecret = validateBetterAuthSecret()
+
+// Initialize Resend client for email sending
+let resend: Resend | null = null
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY)
+  logger.info('Resend email service initialized')
+} else {
+  logger.warn('RESEND_API_KEY not found - email sending will be disabled in production')
+}
 
 // Create a dedicated database connection for Better Auth with production-optimized settings
 let betterAuthPool: Pool
@@ -260,35 +270,123 @@ try {
       maxPasswordLength: 128,
       forgotPasswordEnabled: true, // Enable password reset functionality
       sendResetPassword: async ({ user, url, token }) => {
-        // TODO: Configure email provider (Resend, SendGrid, etc.)
-        // For now, log to console in development
+        logger.info('Password reset requested:', {
+          email: user.email,
+          resetUrl: url,
+          token: token.substring(0, 8) + '...', // Only log partial token for security
+        })
+
+        // Generate HTML email template
+        const htmlTemplate = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your UltraCoach Password</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8fafc; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: bold; }
+        .content { padding: 40px 30px; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; text-align: center; margin: 20px 0; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .footer { background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
+        .security-note { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .mountain-icon { font-size: 48px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="mountain-icon">🏔️</div>
+            <h1>UltraCoach</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Mountain Training Platform</p>
+        </div>
+        
+        <div class="content">
+            <h2 style="color: #1e293b; margin-bottom: 20px;">Reset Your Password</h2>
+            <p>Hi ${user.name || 'there'},</p>
+            <p>We received a request to reset your UltraCoach password. Click the button below to set a new password:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${url}" class="btn">Reset My Password</a>
+            </div>
+            
+            <div class="security-note">
+                <strong>🔒 Security Notice:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>This link will expire in <strong>1 hour</strong></li>
+                    <li>If you didn't request this reset, please ignore this email</li>
+                    <li>Never share this link with anyone</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px; color: #64748b; font-size: 14px;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="${url}" style="color: #3b82f6; word-break: break-all;">${url}</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>UltraCoach</strong> - Conquer Your Mountain</p>
+            <p>If you have any questions, contact us at support@ultracoach.app</p>
+        </div>
+    </div>
+</body>
+</html>`
+
+        // Text version for email clients that don't support HTML
+        const textTemplate = `
+🏔️ UltraCoach - Password Reset
+
+Hi ${user.name || 'there'},
+
+We received a request to reset your UltraCoach password.
+
+Click this link to reset your password:
+${url}
+
+⚠️ SECURITY NOTICE:
+- This link will expire in 1 hour
+- If you didn't request this reset, please ignore this email
+- Never share this link with anyone
+
+If you have any questions, contact us at support@ultracoach.app
+
+---
+UltraCoach - Conquer Your Mountain
+        `
+
         if (process.env.NODE_ENV === 'development') {
-          logger.info('Password reset requested:', {
-            email: user.email,
-            resetUrl: url,
-            token: token.substring(0, 8) + '...', // Only log partial token for security
-          })
+          // In development, log to console
           console.log(`
 === PASSWORD RESET EMAIL ===
 To: ${user.email}
-Subject: Reset Your UltraCoach Password
+Subject: Reset Your UltraCoach Password 🏔️
 
-Click the link below to reset your password:
-${url}
-
-This link will expire in 1 hour.
+${textTemplate}
 ============================
           `)
+        } else if (resend) {
+          // In production, send actual email via Resend
+          try {
+            await resend.emails.send({
+              from: 'UltraCoach <noreply@ultracoach.app>',
+              to: user.email,
+              subject: 'Reset Your UltraCoach Password 🏔️',
+              html: htmlTemplate,
+              text: textTemplate,
+            })
+            logger.info('Password reset email sent successfully via Resend')
+          } catch (error) {
+            logger.error('Failed to send password reset email via Resend:', error)
+            throw new Error('Failed to send password reset email')
+          }
         } else {
-          // In production, this should send actual emails
-          // Example with Resend:
-          // await resend.emails.send({
-          //   from: 'UltraCoach <noreply@ultracoach.app>',
-          //   to: user.email,
-          //   subject: 'Reset Your UltraCoach Password',
-          //   html: passwordResetTemplate({ url, user })
-          // })
-          logger.warn('Email provider not configured - password reset email not sent')
+          logger.error('No email service configured - password reset email not sent')
+          throw new Error('Email service not configured')
         }
       },
     },

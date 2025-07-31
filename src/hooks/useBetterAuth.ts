@@ -85,10 +85,11 @@ export function useBetterAuth() {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, role?: 'runner' | 'coach') => {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }))
 
+      // First, sign up the user
       const { data, error } = await authClient.signUp.email({
         email,
         password,
@@ -106,7 +107,27 @@ export function useBetterAuth() {
         return { success: false, error: error.message }
       }
 
-      // For sign up, get the session after authentication
+      // Update the user's role via API call if specified and different from default
+      if (role && role !== 'runner' && data.user) {
+        try {
+          const response = await fetch('/api/user/role', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ role }),
+          })
+          
+          if (!response.ok) {
+            console.warn('Failed to set user role:', await response.text())
+          }
+        } catch (roleError) {
+          console.warn('Failed to set user role:', roleError)
+          // Don't fail the signup, just log the warning
+        }
+      }
+
+      // For sign up, get the session after authentication to get updated user data
       const sessionResult = await authClient.getSession()
       setAuthState({
         user: data.user as User,

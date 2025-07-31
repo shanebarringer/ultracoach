@@ -23,8 +23,7 @@ import { memo, useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
-import { useSession } from '@/hooks/useBetterSession'
-import { useBetterSession } from '@/hooks/useBetterSession'
+import { useBetterSession, useSession } from '@/hooks/useBetterSession'
 import { themeModeAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
