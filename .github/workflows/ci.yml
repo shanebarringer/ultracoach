@@ -9,6 +9,10 @@ on:
 jobs:
   vitest:
     runs-on: ubuntu-latest
+    env:
+      # Required for Better Auth tests
+      BETTER_AUTH_SECRET: test_secret_for_ci_environment_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+      NODE_ENV: test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,8 +64,8 @@ jobs:
       TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
       TEST_RUNNER_PASSWORD: TestRunner123!
 
-      # Auth configuration
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET_TEST }}
+      # Auth configuration - Generate test secret for CI
+      BETTER_AUTH_SECRET: test_secret_for_ci_environment_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
       BETTER_AUTH_URL: http://localhost:3001
 
       # Email configuration (test mode)
