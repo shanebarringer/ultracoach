@@ -29,7 +29,15 @@ export async function GET(request: NextRequest) {
       logger.error('Failed to fetch notifications', error)
       return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
     }
-    return NextResponse.json({ notifications: notifications || [] })
+
+    // Calculate unread count from the fetched notifications
+    const unreadCount = (notifications || []).filter(n => !n.read).length
+
+    return NextResponse.json({
+      notifications: notifications || [],
+      unreadCount,
+      total: notifications?.length || 0,
+    })
   } catch (error) {
     logger.error('API error in GET /notifications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

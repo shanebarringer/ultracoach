@@ -186,7 +186,10 @@ export const adminOperations = {
     const { data, error } = await query.single()
 
     if (error) {
-      logger.debug('User not found:', { email: email.substring(0, 3) + '***', error: error.message })
+      logger.debug('User not found:', {
+        email: email.substring(0, 3) + '***',
+        error: error.message,
+      })
       return null
     }
 
@@ -254,12 +257,12 @@ export const securityValidation = {
     try {
       // Attempt to access users table with anon client (should fail without proper RLS context)
       const { data } = await anonClient.from('better_auth_users').select('id').limit(1)
-      
+
       if (data && data.length > 0) {
         logger.warn('SECURITY WARNING: Anon client has unrestricted access to users table')
         return { secure: false, issue: 'RLS policies may not be properly configured' }
       }
-      
+
       return { secure: true, issue: null }
     } catch (error) {
       logger.debug('Service role validation check completed:', { error })
@@ -308,7 +311,7 @@ export const securityValidation = {
  * 4. Reduced risk of privilege escalation through minimal service role exposure
  * 5. Easier to monitor and secure with validation functions
  * 6. Defense-in-depth architecture with multiple security layers
- * 
+ *
  * SECURITY MONITORING:
  * - Use securityValidation.validateServiceRoleUsage() to check RLS configuration
  * - Monitor logger output for all service role operations (ADMIN OPERATION warnings)

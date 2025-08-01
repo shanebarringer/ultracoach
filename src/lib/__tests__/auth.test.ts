@@ -1,11 +1,10 @@
 /**
  * Basic authentication utility tests
- * 
+ *
  * These tests ensure the Vitest CI pipeline passes while providing
  * basic coverage for authentication utilities.
  */
-
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // Mock Better Auth client for testing
 const mockAuthClient = {
@@ -20,7 +19,7 @@ const mockAuthClient = {
       return { success: true, user: { id: '1', email: data.email, role: data.role } }
     }
     return { success: false, error: 'Invalid data' }
-  }
+  },
 }
 
 describe('Authentication Utilities', () => {
@@ -28,7 +27,7 @@ describe('Authentication Utilities', () => {
     it('should sign in with valid credentials', async () => {
       const result = await mockAuthClient.signIn({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       })
 
       expect(result.success).toBe(true)
@@ -38,7 +37,7 @@ describe('Authentication Utilities', () => {
     it('should fail sign in with invalid credentials', async () => {
       const result = await mockAuthClient.signIn({
         email: '',
-        password: ''
+        password: '',
       })
 
       expect(result.success).toBe(false)
@@ -49,7 +48,7 @@ describe('Authentication Utilities', () => {
       const result = await mockAuthClient.signUp({
         email: 'newuser@example.com',
         password: 'password123',
-        role: 'runner'
+        role: 'runner',
       })
 
       expect(result.success).toBe(true)
@@ -60,7 +59,7 @@ describe('Authentication Utilities', () => {
       const result = await mockAuthClient.signUp({
         email: '',
         password: '',
-        role: ''
+        role: '',
       })
 
       expect(result.success).toBe(false)
@@ -78,10 +77,10 @@ describe('Authentication Utilities', () => {
 
     it('should validate production auth URL format', () => {
       const authUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || 'http://localhost:3001'
-      
+
       // Should be a valid URL
       expect(() => new URL(authUrl)).not.toThrow()
-      
+
       // Should use HTTPS in production
       if (process.env.NODE_ENV === 'production') {
         expect(authUrl).toMatch(/^https:\/\//)
@@ -93,21 +92,21 @@ describe('Authentication Utilities', () => {
     it('should validate coach role', () => {
       const validRoles = ['coach', 'runner']
       const testRole = 'coach'
-      
+
       expect(validRoles).toContain(testRole)
     })
 
     it('should validate runner role', () => {
       const validRoles = ['coach', 'runner']
       const testRole = 'runner'
-      
+
       expect(validRoles).toContain(testRole)
     })
 
     it('should reject invalid roles', () => {
       const validRoles = ['coach', 'runner']
       const invalidRole = 'admin'
-      
+
       expect(validRoles).not.toContain(invalidRole)
     })
   })

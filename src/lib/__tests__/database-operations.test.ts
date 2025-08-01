@@ -1,8 +1,7 @@
 /**
  * @vitest-environment node
  */
-
-import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock pg module
 const mockQuery = vi.fn()
@@ -48,21 +47,21 @@ afterEach(() => {
 describe('Database Operations', () => {
   describe('SSL Configuration', () => {
     it('should use secure SSL in production', async () => {
-      process.env.NODE_ENV = 'production'
-      
+      vi.stubEnv('NODE_ENV', 'production')
+
       // Import a module that creates database connections
       const { seedDatabase } = await import('../../../scripts/seed-database')
-      
+
       // Verify pool is created (mocked)
       expect(mockPool).toBeDefined()
       expect(typeof seedDatabase).toBe('function')
     })
 
     it('should allow insecure SSL in development', async () => {
-      process.env.NODE_ENV = 'development'
-      
+      vi.stubEnv('NODE_ENV', 'development')
+
       const { seedDatabase } = await import('../../../scripts/seed-database')
-      
+
       expect(mockPool).toBeDefined()
       expect(typeof seedDatabase).toBe('function')
     })
@@ -72,14 +71,14 @@ describe('Database Operations', () => {
     it('should handle connection errors gracefully', async () => {
       // Should not throw during module import
       const { seedDatabase } = await import('../../../scripts/seed-database')
-      
+
       expect(mockPool).toBeDefined()
       expect(typeof seedDatabase).toBe('function')
     })
 
     it('should clean up connections properly', async () => {
       const { seedDatabase } = await import('../../../scripts/seed-database')
-      
+
       // Verify that pool cleanup is configured
       expect(mockEnd).toBeDefined()
       expect(typeof seedDatabase).toBe('function')
@@ -89,18 +88,18 @@ describe('Database Operations', () => {
   describe('Environment Validation', () => {
     it('should require DATABASE_URL', async () => {
       delete process.env.DATABASE_URL
-      
+
       // Mock process.exit to prevent actual exit during tests
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((_code) => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(_code => {
         throw new Error(`DATABASE_URL environment variable is required`)
       })
-      
+
       // Import should handle missing DATABASE_URL appropriately
       await expect(async () => {
         const { seedDatabase } = await import('../../../scripts/seed-database')
         await seedDatabase()
       }).rejects.toThrow('DATABASE_URL environment variable is required')
-      
+
       mockExit.mockRestore()
     })
 
@@ -111,10 +110,7 @@ describe('Database Operations', () => {
         'postgresql://user@host/db',
       ]
 
-      const invalidUrls = [
-        'invalid-connection-string',
-        'not-a-url',
-      ]
+      const invalidUrls = ['invalid-connection-string', 'not-a-url']
 
       validUrls.forEach(url => {
         process.env.DATABASE_URL = url
@@ -142,7 +138,7 @@ describe('Database Operations', () => {
           { table_name: 'better_auth_users' },
           { table_name: 'better_auth_sessions' },
           { table_name: 'better_auth_accounts' },
-        ]
+        ],
       })
 
       // Test that schema tables are properly checked
@@ -151,7 +147,9 @@ describe('Database Operations', () => {
       )
 
       expect(result.rows).toHaveLength(3)
-      expect(result.rows.map(r => r.table_name)).toContain('better_auth_users')
+      expect(result.rows.map((r: { table_name: string }) => r.table_name)).toContain(
+        'better_auth_users'
+      )
     })
 
     it('should handle migration operations safely', async () => {
@@ -175,11 +173,9 @@ describe('Database Operations', () => {
       process.env.TEST_COACH_PASSWORD = 'secure-test-password'
 
       await import('../../../scripts/seed-database')
-      
+
       // Credentials should not appear in console output
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('secure-test-password')
-      )
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining('secure-test-password'))
 
       consoleSpy.mockRestore()
       consoleWarnSpy.mockRestore()
@@ -192,14 +188,14 @@ describe('Database Operations', () => {
 
       // Test that seed database function exists and can be called
       const { seedDatabase } = await import('../../../scripts/seed-database')
-      
+
       // Should generate passwords of appropriate length
       // This would be tested by actually calling the function in a real test
       expect(typeof seedDatabase).toBe('function')
     })
 
     it('should warn when seeding in production', async () => {
-      process.env.NODE_ENV = 'production'
+      vi.stubEnv('NODE_ENV', 'production')
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       // Import would trigger production warning

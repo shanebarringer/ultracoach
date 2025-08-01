@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
+import { Resend } from 'resend'
 
 import { createLogger } from './logger'
 import {
@@ -19,27 +20,36 @@ if (!process.env.DATABASE_URL) {
 // Validate and ensure proper Better Auth secret format
 function validateBetterAuthSecret(): string {
   const secret = process.env.BETTER_AUTH_SECRET
-  
+
   if (!secret) {
     throw new Error('BETTER_AUTH_SECRET environment variable is required for Better Auth')
   }
-  
+
   // Better Auth expects a hex string or a sufficiently long random string
   if (secret.length < 32) {
     throw new Error('BETTER_AUTH_SECRET must be at least 32 characters long')
   }
-  
+
   // If it's not a hex string, that's still OK - Better Auth can handle various formats
   logger.info('Better Auth secret validation passed', {
     secretLength: secret.length,
-    isHexFormat: /^[0-9a-fA-F]+$/.test(secret)
+    isHexFormat: /^[0-9a-fA-F]+$/.test(secret),
   })
-  
+
   return secret
 }
 
 const logger = createLogger('better-auth')
 const betterAuthSecret = validateBetterAuthSecret()
+
+// Initialize Resend client for email sending
+let resend: Resend | null = null
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY)
+  logger.info('Resend email service initialized')
+} else {
+  logger.warn('RESEND_API_KEY not found - email sending will be disabled in production')
+}
 
 // Create a dedicated database connection for Better Auth with production-optimized settings
 let betterAuthPool: Pool
@@ -95,7 +105,7 @@ function createPoolConfig() {
 try {
   const poolConfig = createPoolConfig()
   betterAuthPool = new Pool(poolConfig)
-  
+
   logger.info('Better Auth database pool initialized with configuration:', {
     environment: process.env.NODE_ENV,
     hasSSL: !!poolConfig.ssl,
@@ -104,7 +114,9 @@ try {
   })
 } catch (error) {
   logger.error('Failed to initialize Better Auth database pool:', error)
-  throw new Error(`Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  throw new Error(
+    `Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+  )
 }
 
 // Add connection event handlers for monitoring
@@ -128,16 +140,16 @@ function getBetterAuthBaseUrl(): string {
   logger.debug('Environment variables:', {
     NODE_ENV: process.env.NODE_ENV,
     VERCEL_URL: process.env.VERCEL_URL ? '[SET]' : 'undefined',
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ? '[SET]' : 'undefined'
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ? '[SET]' : 'undefined',
   })
-  
+
   // Vercel best practice: Use VERCEL_URL in production (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     const url = `https://${process.env.VERCEL_URL}/api/auth`
     logger.info('Using VERCEL_URL for baseURL:', url)
     return url
   }
-  
+
   // Alternative: Use explicit BETTER_AUTH_URL if provided (takes precedence)
   if (process.env.BETTER_AUTH_URL) {
     const url = process.env.BETTER_AUTH_URL
@@ -146,7 +158,7 @@ function getBetterAuthBaseUrl(): string {
     logger.info('Using BETTER_AUTH_URL for baseURL:', finalUrl)
     return finalUrl
   }
-  
+
   // Development fallback
   const fallback = 'http://localhost:3001/api/auth'
   logger.info('Using fallback baseURL:', fallback)
@@ -156,21 +168,21 @@ function getBetterAuthBaseUrl(): string {
 // Simplified trusted origins configuration following Better Auth best practices
 function getTrustedOrigins(): string[] {
   const origins: string[] = []
-  
+
   // Development origins
   if (process.env.NODE_ENV === 'development') {
     origins.push('http://localhost:3000')
     origins.push('http://localhost:3001')
   }
-  
+
   // Production - use VERCEL_URL if available (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     origins.push(`https://${process.env.VERCEL_URL}`)
   }
-  
+
   // Add main production domain
   origins.push('https://ultracoach.vercel.app')
-  
+
   // More permissive approach for development/preview deployments
   // Trust all Vercel deployments for this project
   if (process.env.NODE_ENV === 'development' || process.env.VERCEL_GIT_COMMIT_REF) {
@@ -187,16 +199,15 @@ function getTrustedOrigins(): string[] {
     ]
     origins.push(...previewUrls)
   }
-  
+
   // Allow additional trusted origins from environment variable
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
-    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
-      .split(',')
+    const additionalOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',')
       .map(origin => origin.trim())
       .filter(Boolean)
     origins.push(...additionalOrigins)
   }
-  
+
   logger.info('Trusted origins configured:', origins)
   return origins
 }
@@ -207,7 +218,7 @@ const trustedOrigins = getTrustedOrigins()
 logger.info('Initializing Better Auth with configuration:', {
   baseURL: apiBaseUrl,
   trustedOriginsCount: trustedOrigins.length,
-  environment: process.env.NODE_ENV
+  environment: process.env.NODE_ENV,
 })
 
 let auth: ReturnType<typeof betterAuth>
@@ -220,9 +231,9 @@ try {
     vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
     trustedOriginsCount: trustedOrigins.length,
     adapterProvider: 'pg',
-    drizzleSchemaCount: 4
+    drizzleSchemaCount: 4,
   })
-  
+
   auth = betterAuth({
     database: drizzleAdapter(betterAuthDb, {
       provider: 'pg',
@@ -254,9 +265,132 @@ try {
 
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: false, // Temporarily disable for testing
+      requireEmailVerification: false, // Will be enabled once email provider is configured
       minPasswordLength: 8,
       maxPasswordLength: 128,
+      forgotPasswordEnabled: true, // Enable password reset functionality
+      sendResetPassword: async ({ user, url, token }) => {
+        logger.info('Password reset requested:', {
+          email: user.email,
+          resetUrl: url,
+          token: token.substring(0, 8) + '...', // Only log partial token for security
+        })
+
+        // Generate HTML email template
+        const htmlTemplate = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your UltraCoach Password</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8fafc; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: bold; }
+        .content { padding: 40px 30px; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; text-align: center; margin: 20px 0; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .footer { background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 14px; }
+        .security-note { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .mountain-icon { font-size: 48px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="mountain-icon">🏔️</div>
+            <h1>UltraCoach</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Mountain Training Platform</p>
+        </div>
+        
+        <div class="content">
+            <h2 style="color: #1e293b; margin-bottom: 20px;">Reset Your Password</h2>
+            <p>Hi ${user.name || 'there'},</p>
+            <p>We received a request to reset your UltraCoach password. Click the button below to set a new password:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${url}" class="btn">Reset My Password</a>
+            </div>
+            
+            <div class="security-note">
+                <strong>🔒 Security Notice:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>This link will expire in <strong>1 hour</strong></li>
+                    <li>If you didn't request this reset, please ignore this email</li>
+                    <li>Never share this link with anyone</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px; color: #64748b; font-size: 14px;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="${url}" style="color: #3b82f6; word-break: break-all;">${url}</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>UltraCoach</strong> - Conquer Your Mountain</p>
+            <p>If you have any questions, contact us at support@ultracoach.app</p>
+        </div>
+    </div>
+</body>
+</html>`
+
+        // Text version for email clients that don't support HTML
+        const textTemplate = `
+🏔️ UltraCoach - Password Reset
+
+Hi ${user.name || 'there'},
+
+We received a request to reset your UltraCoach password.
+
+Click this link to reset your password:
+${url}
+
+⚠️ SECURITY NOTICE:
+- This link will expire in 1 hour
+- If you didn't request this reset, please ignore this email
+- Never share this link with anyone
+
+If you have any questions, contact us at support@ultracoach.app
+
+---
+UltraCoach - Conquer Your Mountain
+        `
+
+        if (process.env.NODE_ENV === 'development') {
+          // In development, log to console
+          console.log(`
+=== PASSWORD RESET EMAIL ===
+To: ${user.email}
+Subject: Reset Your UltraCoach Password 🏔️
+
+${textTemplate}
+============================
+          `)
+        } else if (resend) {
+          // In production, send actual email via Resend
+          try {
+            const fromEmail = process.env.RESEND_FROM_EMAIL || 'UltraCoach <onboarding@resend.dev>'
+
+            await resend.emails.send({
+              from: fromEmail,
+              to: user.email,
+              subject: 'Reset Your UltraCoach Password 🏔️',
+              html: htmlTemplate,
+              text: textTemplate,
+            })
+            logger.info('Password reset email sent successfully via Resend')
+          } catch (error) {
+            logger.error('Failed to send password reset email via Resend:', error)
+            throw new Error('Failed to send password reset email')
+          }
+        } else {
+          logger.error('No email service configured - password reset email not sent')
+          throw new Error('Email service not configured')
+        }
+      },
     },
 
     user: {
@@ -289,15 +423,19 @@ try {
     baseURL: apiBaseUrl,
     hasSecret: !!betterAuthSecret,
     secretLength: betterAuthSecret?.length,
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
   })
-  
+
   // Provide more specific error guidance
   if (error instanceof Error && error.message.includes('hex string expected')) {
-    throw new Error(`Better Auth hex string error - this usually indicates a session token parsing issue. Check your BETTER_AUTH_SECRET format and database schema. Original error: ${error.message}`)
+    throw new Error(
+      `Better Auth hex string error - this usually indicates a session token parsing issue. Check your BETTER_AUTH_SECRET format and database schema. Original error: ${error.message}`
+    )
   }
-  
-  throw new Error(`Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+
+  throw new Error(
+    `Better Auth initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+  )
 }
 
 export { auth }

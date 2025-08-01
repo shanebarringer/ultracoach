@@ -1,10 +1,9 @@
 'use client'
 
-import { Skeleton } from '@heroui/react'
 import { useAtom } from 'jotai'
 
-import { Suspense } from 'react'
-
+import { TrainingPlanGridSkeleton } from '@/components/ui/LoadingSkeletons'
+import { DataListSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import { asyncTrainingPlansAtom, uiStateAtom } from '@/lib/atoms'
 import type { TrainingPlan } from '@/lib/supabase'
 
@@ -75,31 +74,13 @@ function TrainingPlansContent({ userRole, onArchiveChange }: TrainingPlansConten
   )
 }
 
-const LoadingFallback = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {[...Array(6)].map((_, i) => (
-      <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-3/4 rounded" />
-          <Skeleton className="h-3 w-full rounded" />
-          <Skeleton className="h-3 w-2/3 rounded" />
-        </div>
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-6 w-20 rounded-full" />
-          <Skeleton className="h-8 w-16 rounded" />
-        </div>
-      </div>
-    ))}
-  </div>
-)
-
 export default function AsyncTrainingPlansList({
   userRole,
   onArchiveChange,
 }: AsyncTrainingPlansListProps) {
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <DataListSuspenseBoundary itemType="training plans" fallback={<TrainingPlanGridSkeleton />}>
       <TrainingPlansContent userRole={userRole} onArchiveChange={onArchiveChange} />
-    </Suspense>
+    </DataListSuspenseBoundary>
   )
 }

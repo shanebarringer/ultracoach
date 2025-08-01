@@ -4,6 +4,8 @@ import { MountainSnowIcon } from 'lucide-react'
 
 import React from 'react'
 
+import { WorkoutListSkeleton } from '@/components/ui/LoadingSkeletons'
+import { DataListSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import WorkoutCard from '@/components/workouts/WorkoutCard'
 import { asyncWorkoutsAtom, uiStateAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
@@ -18,13 +20,15 @@ interface AsyncWorkoutsListProps {
   ) => 'success' | 'primary' | 'warning' | 'danger' | 'secondary'
 }
 
-export default function AsyncWorkoutsList({
+type WorkoutsContentProps = AsyncWorkoutsListProps
+
+function WorkoutsContent({
   onWorkoutPress,
   formatDate,
   getWorkoutStatusColor,
   getWorkoutTypeIcon,
   getWorkoutIntensityColor,
-}: AsyncWorkoutsListProps) {
+}: WorkoutsContentProps) {
   // This will suspend until workouts are loaded
   const [workouts] = useAtom(asyncWorkoutsAtom)
   const [uiState] = useAtom(uiStateAtom)
@@ -65,5 +69,13 @@ export default function AsyncWorkoutsList({
         />
       ))}
     </div>
+  )
+}
+
+export default function AsyncWorkoutsList(props: AsyncWorkoutsListProps) {
+  return (
+    <DataListSuspenseBoundary itemType="workouts" fallback={<WorkoutListSkeleton />}>
+      <WorkoutsContent {...props} />
+    </DataListSuspenseBoundary>
   )
 }

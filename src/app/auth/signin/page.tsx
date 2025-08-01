@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { sessionAtom, signInFormAtom, userAtom } from '@/lib/atoms'
+import type { User } from '@/lib/better-auth'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
@@ -35,6 +36,21 @@ export default function SignIn() {
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
+
+  // Check for success messages from URL params
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const message = urlParams.get('message')
+
+    if (message === 'password-reset-success') {
+      setSuccessMessage(
+        'Your password has been reset successfully. Please sign in with your new password.'
+      )
+      // Clean URL
+      router.replace('/auth/signin', { scroll: false })
+    }
+  }, [router])
 
   // React Hook Form setup
   const {
@@ -75,44 +91,66 @@ export default function SignIn() {
       }
 
       if (authData) {
-        // Update Jotai atoms
-        setSession(authData)
-        setUser(authData.user)
+        logger.info('Sign in successful, fetching complete session data')
 
-        logger.info('Sign in successful, fetching user role')
+        // Add delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 100))
 
-        // Fetch user role from database
-        try {
-          const roleResponse = await fetch(`/api/user/role?userId=${authData.user.id}`)
-          const roleData = await roleResponse.json()
-          const userRole = roleData.role || 'runner'
+        // Get the complete session data which includes the role
+        const sessionData = await authClient.getSession()
 
-          logger.info('User role fetched:', { userRole })
+        if (sessionData?.data) {
+          // Update Jotai atoms with complete session data
+          setSession(sessionData.data)
+          setUser(sessionData.data.user)
 
-          // Update user object with role
-          setUser({ ...authData.user, role: userRole })
+          // Enhanced role extraction with fallback API call
+          let userRole = (sessionData.data.user as User).role || 'runner'
 
-          // Redirect based on user role
-          if (userRole === 'coach') {
-            router.push('/dashboard/coach')
-          } else {
-            router.push('/dashboard/runner')
+          // If role is missing or undefined, fetch from API as fallback
+          if (!userRole || userRole === 'runner') {
+            try {
+              logger.info('Role unclear from session, fetching from API:', {
+                sessionRole: userRole,
+                userId: sessionData.data.user.id,
+              })
+
+              const roleResponse = await fetch(`/api/user/role?userId=${sessionData.data.user.id}`)
+              if (roleResponse.ok) {
+                const roleData = await roleResponse.json()
+                userRole = roleData.role || 'runner'
+                logger.info('Role fetched from API:', { apiRole: userRole })
+              }
+            } catch (roleError) {
+              logger.error('Failed to fetch role from API:', roleError)
+              // Continue with default role
+            }
           }
-        } catch (error) {
-          logger.error('Error fetching user role:', error)
 
-          // Notify user of the issue but allow them to proceed
-          setError('email', {
-            message: 'Warning: Unable to verify your role. You will be logged in as a runner.',
+          logger.info('Final user role determined:', {
+            userRole,
+            userId: sessionData.data.user.id,
+            sessionUser: sessionData.data.user,
+            fullSessionData: sessionData.data,
           })
 
-          // Default to runner role and proceed
-          setUser({ ...authData.user, role: 'runner' })
-
-          // Add a small delay to let user see the warning
-          setTimeout(() => {
+          // Redirect based on user role with explicit validation
+          if (userRole === 'coach') {
+            logger.info('✅ Redirecting COACH to /dashboard/coach', {
+              userRole,
+              userId: sessionData.data.user.id,
+            })
+            router.push('/dashboard/coach')
+          } else {
+            logger.info('✅ Redirecting RUNNER to /dashboard/runner', {
+              userRole,
+              userId: sessionData.data.user.id,
+            })
             router.push('/dashboard/runner')
-          }, 2000)
+          }
+        } else {
+          logger.error('Failed to get session data after sign in')
+          setError('email', { message: 'Login failed. Please try again.' })
         }
       }
     } catch (error) {
@@ -126,14 +164,14 @@ export default function SignIn() {
 
   return (
     <ModernErrorBoundary>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <Card className="border-t-4 border-t-primary shadow-2xl">
             <CardHeader className="text-center pb-4">
               <div className="flex flex-col items-center space-y-3">
                 <MountainSnowIcon className="h-12 w-12 text-primary" />
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                     🏔️ UltraCoach
                   </h1>
                   <p className="text-lg text-foreground-600 mt-1">Base Camp Access</p>
@@ -142,6 +180,11 @@ export default function SignIn() {
             </CardHeader>
             <Divider />
             <CardBody className="pt-6">
+              {successMessage && (
+                <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
+                </div>
+              )}
               <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                 <div className="space-y-4">
                   <Controller
@@ -192,6 +235,15 @@ export default function SignIn() {
                       />
                     )}
                   />
+                </div>
+
+                <div className="flex justify-end">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-primary hover:text-primary-600 transition-colors"
+                  >
+                    Forgot your password?
+                  </Link>
                 </div>
 
                 <Button

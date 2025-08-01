@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
 import { redirect } from 'next/navigation'
 
 export default function DebugAuthPage() {
@@ -18,10 +19,9 @@ export default function DebugAuthPage() {
 
   const handleAuth = () => {
     // In development, allow with any key. In production, require environment variable
-    const requiredKey = process.env.NODE_ENV === 'production' 
-      ? process.env.DEBUG_AUTH_KEY 
-      : 'dev-debug'
-    
+    const requiredKey =
+      process.env.NODE_ENV === 'production' ? process.env.DEBUG_AUTH_KEY : 'dev-debug'
+
     if (authKey === requiredKey) {
       setIsAuthorized(true)
     } else {
@@ -35,13 +35,15 @@ export default function DebugAuthPage() {
       // Only run authentication test with proper configuration
       const testEmail = process.env.NEXT_PUBLIC_TEST_EMAIL
       const testPassword = process.env.NEXT_PUBLIC_TEST_PASSWORD
-      
+
       if (!testEmail || !testPassword) {
-        setResults('Authentication test requires NEXT_PUBLIC_TEST_EMAIL and NEXT_PUBLIC_TEST_PASSWORD environment variables')
+        setResults(
+          'Authentication test requires NEXT_PUBLIC_TEST_EMAIL and NEXT_PUBLIC_TEST_PASSWORD environment variables'
+        )
         setLoading(false)
         return
       }
-      
+
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
@@ -49,8 +51,8 @@ export default function DebugAuthPage() {
         },
         body: JSON.stringify({
           email: testEmail,
-          password: testPassword
-        })
+          password: testPassword,
+        }),
       })
       const data = await response.json()
       setResults(JSON.stringify({ ...data, password: '[REDACTED]' }, null, 2))
@@ -64,7 +66,7 @@ export default function DebugAuthPage() {
     return (
       <div className="container mx-auto p-8 max-w-md">
         <h1 className="text-2xl font-bold mb-6">Debug Authorization Required</h1>
-        <div className="bg-yellow-100 p-4 rounded mb-4">
+        <div className="bg-yellow-100 p-4 rounded-sm mb-4">
           <p className="text-sm text-yellow-800">
             This debug page is only available in development or with proper authorization.
           </p>
@@ -73,12 +75,12 @@ export default function DebugAuthPage() {
           type="password"
           placeholder="Enter debug authorization key"
           value={authKey}
-          onChange={(e) => setAuthKey(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
+          onChange={e => setAuthKey(e.target.value)}
+          className="w-full p-2 border rounded-sm mb-4"
         />
         <button
           onClick={handleAuth}
-          className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-sm"
         >
           Authorize Debug Access
         </button>
@@ -86,28 +88,26 @@ export default function DebugAuthPage() {
     )
   }
 
-
-
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">Secure Auth Debug Tools</h1>
-      
-      <div className="bg-green-100 p-4 rounded mb-6">
+
+      <div className="bg-green-100 p-4 rounded-sm mb-6">
         <p className="text-green-800">✅ Authorized debug access granted</p>
         <p className="text-sm text-green-600 mt-1">Environment: {process.env.NODE_ENV}</p>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-4 mb-6">
         <button
           onClick={testBasicAuth}
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-sm"
         >
           🔍 Test Basic Auth Flow
         </button>
       </div>
 
-      <div className="bg-gray-100 p-4 rounded">
+      <div className="bg-gray-100 p-4 rounded-sm">
         <h2 className="text-lg font-semibold mb-4">Results:</h2>
         {loading ? (
           <p>Loading...</p>
@@ -116,7 +116,7 @@ export default function DebugAuthPage() {
         )}
       </div>
 
-      <div className="mt-8 p-4 bg-blue-100 rounded">
+      <div className="mt-8 p-4 bg-blue-100 rounded-sm">
         <h3 className="font-semibold mb-2">Security Notes:</h3>
         <ul className="text-sm list-disc list-inside space-y-1">
           <li>All test credentials are loaded from environment variables</li>

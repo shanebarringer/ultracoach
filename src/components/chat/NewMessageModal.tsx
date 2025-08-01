@@ -173,7 +173,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                     className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors text-left justify-start"
                     onClick={() => handleStartConversation(user.id)}
                   >
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium mr-3">
+                    <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium mr-3">
                       {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">

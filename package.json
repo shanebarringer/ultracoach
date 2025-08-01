@@ -29,7 +29,8 @@
     "prod:db:seed": "NODE_ENV=production tsx scripts/seed-database.ts",
     "prod:db:query": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c",
     "prod:db:status": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;\"",
-    "prod:db:users": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM better_auth_users ORDER BY created_at;\""
+    "prod:db:users": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM better_auth_users ORDER BY created_at;\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "@better-auth/cli": "^1.2.12",
@@ -59,6 +60,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
+    "resend": "^4.7.0",
     "tslog": "^4.9.3",
     "zod": "^4.0.7"
   },
@@ -66,6 +68,7 @@
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.4.4",
     "@playwright/test": "^1.54.1",
+    "@tailwindcss/postcss": "^4.1.11",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -76,7 +79,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.6.0",
-    "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.0",
     "drizzle-seed": "^0.3.1",
     "eslint": "^9",
@@ -84,9 +86,10 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.11",
     "tsx": "^4.20.3",
     "typescript": "^5",
     "vitest": "^3.2.4"

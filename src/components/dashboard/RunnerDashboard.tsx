@@ -82,12 +82,12 @@ function RunnerDashboard() {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <Card className="bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+      <Card className="bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
             <MountainSnowIcon className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Base Camp Dashboard
               </h1>
               <p className="text-foreground-600 text-lg mt-1">

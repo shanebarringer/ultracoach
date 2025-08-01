@@ -118,9 +118,7 @@ export default function NotificationBell() {
                   onPress={() => handleNotificationClick(notification.id, notification.read)}
                 >
                   <div className="flex gap-3 w-full">
-                    <div className="flex-shrink-0 text-xl">
-                      {getNotificationIcon(notification.type)}
-                    </div>
+                    <div className="shrink-0 text-xl">{getNotificationIcon(notification.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p
@@ -132,7 +130,7 @@ export default function NotificationBell() {
                           {notification.title}
                         </p>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-1" />
+                          <div className="w-2 h-2 bg-primary-500 rounded-full shrink-0 mt-1" />
                         )}
                       </div>
                       <p className="text-xs text-default-500 line-clamp-2 mt-1">

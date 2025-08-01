@@ -184,6 +184,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Create notification for the recipient about the new message
+    try {
+      const { data: senderData } = await supabaseAdmin
+        .from('better_auth_users')
+        .select('name, role')
+        .eq('id', session.user.id)
+        .single()
+
+      const senderName = senderData?.name || 'Someone'
+      const senderRole = senderData?.role || 'user'
+      const roleEmoji = senderRole === 'coach' ? '🏔️' : '🏃'
+
+      await supabaseAdmin.from('notifications').insert([
+        {
+          user_id: recipientId,
+          type: 'message',
+          title: `New message from ${roleEmoji} ${senderName}`,
+          message: content.length > 100 ? content.substring(0, 100) + '...' : content,
+          read: false,
+        },
+      ])
+
+      logger.info('Notification created for new message', {
+        recipientId,
+        senderId: session.user.id,
+        messageId: message.id,
+      })
+    } catch (notificationError) {
+      logger.error('Failed to create notification for new message', notificationError)
+      // Don't fail the message creation if notification fails
+    }
+
     return NextResponse.json({ message }, { status: 201 })
   } catch (error) {
     logger.error('API error in POST /messages', error)

@@ -8,7 +8,6 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
-import { supabase } from '@/lib/supabase'
 import type { Notification } from '@/lib/supabase'
 
 const logger = createLogger('useNotifications')
@@ -22,20 +21,21 @@ export function useNotifications() {
     if (!session?.user?.id) return
 
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(50)
+      const response = await fetch('/api/notifications', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-      if (error) {
-        logger.error('Error fetching notifications:', error)
+      if (!response.ok) {
+        logger.error('Error fetching notifications:', response.statusText)
         return
       }
 
-      setNotifications(data || [])
-      setUnreadCount((data || []).filter(n => !n.read).length)
+      const data = await response.json()
+      setNotifications(data.notifications || [])
+      setUnreadCount(data.unreadCount || 0)
     } catch (error) {
       logger.error('Error fetching notifications:', error)
     }
@@ -73,19 +73,19 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
-        .eq('user_id', session?.user?.id)
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds: [notificationId],
+          read: true,
+        }),
+      })
 
-      if (error) {
-        logger.error('Error marking notification as read:', {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        })
+      if (!response.ok) {
+        logger.error('Error marking notification as read:', response.statusText)
         return
       }
 
@@ -103,14 +103,23 @@ export function useNotifications() {
 
   const markAllAsRead = async () => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', session?.user?.id)
-        .eq('read', false)
+      const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
 
-      if (error) {
-        logger.error('Error marking all notifications as read:', error)
+      if (unreadIds.length === 0) return
+
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationIds: unreadIds,
+          read: true,
+        }),
+      })
+
+      if (!response.ok) {
+        logger.error('Error marking all notifications as read:', response.statusText)
         return
       }
 
@@ -126,10 +135,21 @@ export function useNotifications() {
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'created_at'>) => {
     try {
-      const { error } = await supabase.from('notifications').insert([notification])
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: notification.user_id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+        }),
+      })
 
-      if (error) {
-        logger.error('Error creating notification:', error)
+      if (!response.ok) {
+        logger.error('Error creating notification:', response.statusText)
       }
     } catch (error) {
       logger.error('Error creating notification:', error)
