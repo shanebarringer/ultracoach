@@ -87,11 +87,13 @@ jobs:
 
       - name: Set up test database schema
         run: |
-          # Apply database migrations/schema
-          # Note: This assumes you have a way to set up your database schema
-          # You may need to add migration scripts or use Supabase CLI
           echo "Setting up test database schema..."
-          # Add your schema setup commands here
+          # Apply all database migrations in order
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying migration: $migration"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration"
+          done
+          echo "Database schema setup complete"
 
       - name: Seed test database
         run: pnpm test:db:seed
