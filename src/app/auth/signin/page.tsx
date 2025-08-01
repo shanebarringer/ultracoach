@@ -14,8 +14,8 @@ import { useRouter } from 'next/navigation'
 
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { sessionAtom, signInFormAtom, userAtom } from '@/lib/atoms'
-import { authClient } from '@/lib/better-auth-client'
 import type { User } from '@/lib/better-auth'
+import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('SignIn')
@@ -93,28 +93,53 @@ export default function SignIn() {
       if (authData) {
         logger.info('Sign in successful, fetching complete session data')
 
+        // Add delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         // Get the complete session data which includes the role
         const sessionData = await authClient.getSession()
-        
+
         if (sessionData?.data) {
           // Update Jotai atoms with complete session data
           setSession(sessionData.data)
           setUser(sessionData.data.user)
 
-          const userRole = (sessionData.data.user as User).role || 'runner'
+          // Enhanced role extraction with fallback API call
+          let userRole = (sessionData.data.user as User).role || 'runner'
 
-          logger.info('User role extracted from session:', {
+          // If role is missing or undefined, fetch from API as fallback
+          if (!userRole || userRole === 'runner') {
+            try {
+              logger.info('Role unclear from session, fetching from API:', {
+                sessionRole: userRole,
+                userId: sessionData.data.user.id,
+              })
+
+              const roleResponse = await fetch(`/api/user/role?userId=${sessionData.data.user.id}`)
+              if (roleResponse.ok) {
+                const roleData = await roleResponse.json()
+                userRole = roleData.role || 'runner'
+                logger.info('Role fetched from API:', { apiRole: userRole })
+              }
+            } catch (roleError) {
+              logger.error('Failed to fetch role from API:', roleError)
+              // Continue with default role
+            }
+          }
+
+          logger.info('Final user role determined:', {
             userRole,
             userId: sessionData.data.user.id,
-            userObject: sessionData.data.user,
+            sessionUser: sessionData.data.user,
+            fullSessionData: sessionData.data,
           })
 
-          // Redirect based on user role
+          // Redirect based on user role with explicit validation
           if (userRole === 'coach') {
-            logger.info('Redirecting coach to /dashboard/coach')
+            logger.info('✅ Redirecting COACH to /dashboard/coach', { userRole, userId: sessionData.data.user.id })
             router.push('/dashboard/coach')
           } else {
-            logger.info('Redirecting runner to /dashboard/runner')
+            logger.info('✅ Redirecting RUNNER to /dashboard/runner', { userRole, userId: sessionData.data.user.id })
             router.push('/dashboard/runner')
           }
         } else {

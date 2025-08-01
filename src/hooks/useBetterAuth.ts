@@ -85,7 +85,12 @@ export function useBetterAuth() {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string, role?: 'runner' | 'coach') => {
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string,
+    role?: 'runner' | 'coach'
+  ) => {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }))
 
@@ -117,7 +122,7 @@ export function useBetterAuth() {
             },
             body: JSON.stringify({ role }),
           })
-          
+
           if (!response.ok) {
             console.warn('Failed to set user role:', await response.text())
           }

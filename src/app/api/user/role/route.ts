@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
     const { role } = body
 
     if (!role || !['runner', 'coach'].includes(role)) {
-      return NextResponse.json({ error: 'Valid role is required (runner or coach)' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Valid role is required (runner or coach)' },
+        { status: 400 }
+      )
     }
 
     // Update the user's role in the database
