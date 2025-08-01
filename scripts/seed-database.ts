@@ -8,39 +8,144 @@ import { Pool } from 'pg'
 import { createLogger } from '../src/lib/logger'
 import * as schema from '../src/lib/schema'
 
-// Load environment variables from .env.local FIRST
+// Load environment variables from .env.local BEFORE importing anything that uses them
 config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('database-seed')
 
-// --- Data Definitions ---
-const getTestUsersData = () => {
-  const generateSecurePassword = () => Math.random().toString(36).slice(-16)
+// Training phases data - using schema field names (camelCase)
+const trainingPhasesData = [
+  {
+    name: 'Base Building',
+    description:
+      'Aerobic base development with high volume, low intensity running. Focus on time on feet and building mitochondrial density.',
+    phaseOrder: 1,
+    typicalDurationWeeks: 8,
+    focusAreas: ['aerobic_base', 'volume', 'consistency', 'injury_prevention'],
+  },
+  {
+    name: 'Build Phase',
+    description:
+      'Introduction of race-specific workouts including tempo runs, intervals, and hill training. Maintain base while adding intensity.',
+    phaseOrder: 2,
+    typicalDurationWeeks: 6,
+    focusAreas: ['lactate_threshold', 'vo2_max', 'race_pace', 'strength'],
+  },
+  {
+    name: 'Peak Phase',
+    description:
+      'Highest training load with race simulation workouts. Practice race-day nutrition and pacing strategies.',
+    phaseOrder: 3,
+    typicalDurationWeeks: 3,
+    focusAreas: ['race_simulation', 'peak_fitness', 'race_practice', 'mental_preparation'],
+  },
+  {
+    name: 'Taper',
+    description:
+      'Reduce training volume while maintaining intensity. Allow body to recover and absorb training adaptations.',
+    phaseOrder: 4,
+    typicalDurationWeeks: 2,
+    focusAreas: ['recovery', 'race_readiness', 'mental_preparation', 'race_logistics'],
+  },
+  {
+    name: 'Recovery',
+    description:
+      'Post-race recovery with easy running or cross-training. Focus on physical and mental restoration.',
+    phaseOrder: 5,
+    typicalDurationWeeks: 2,
+    focusAreas: ['recovery', 'regeneration', 'reflection', 'planning'],
+  },
+]
+
+// Plan templates data (basic set) - using schema field names (camelCase)
+const planTemplatesData = [
+  {
+    name: '50K Training Plan - Beginner',
+    description:
+      'A 16-week beginner-friendly 50K ultramarathon training plan focusing on gradual volume increases and race preparation.',
+    distanceType: '50K',
+    durationWeeks: 16,
+    difficultyLevel: 'beginner',
+    peakWeeklyMiles: '45', // String for decimal type
+    minBaseMiles: '25', // String for decimal type
+    isPublic: true,
+    tags: ['50K', 'beginner', 'first_ultra'],
+  },
+  {
+    name: '50K Training Plan - Intermediate',
+    description:
+      'A 20-week intermediate 50K plan with structured workouts and hill training for experienced runners.',
+    distanceType: '50K',
+    durationWeeks: 20,
+    difficultyLevel: 'intermediate',
+    peakWeeklyMiles: '60',
+    minBaseMiles: '35',
+    isPublic: true,
+    tags: ['50K', 'intermediate', 'structured'],
+  },
+  {
+    name: '50M Training Plan - Intermediate',
+    description:
+      'A 24-week 50-mile training plan with back-to-back long runs and race-specific preparation.',
+    distanceType: '50M',
+    durationWeeks: 24,
+    difficultyLevel: 'intermediate',
+    peakWeeklyMiles: '75',
+    minBaseMiles: '45',
+    isPublic: true,
+    tags: ['50M', 'intermediate', 'back_to_back'],
+  },
+  {
+    name: '100K Training Plan - Advanced',
+    description:
+      'A 28-week advanced 100K plan with high volume, technical terrain training, and periodization.',
+    distanceType: '100K',
+    durationWeeks: 28,
+    difficultyLevel: 'advanced',
+    peakWeeklyMiles: '90',
+    minBaseMiles: '60',
+    isPublic: true,
+    tags: ['100K', 'advanced', 'high_volume'],
+  },
+]
+
+// Test users data - using environment variables for security
+function getTestUsersData() {
+  // Generate secure random passwords if not provided
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    let result = ''
+    for (let i = 0; i < 16; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
+
   return [
     {
-      email: 'coach1@ultracoach.dev',
+      email: process.env.TEST_COACH_EMAIL || 'coach1@ultracoach.dev',
       password: process.env.TEST_COACH_PASSWORD || generateSecurePassword(),
       name: 'Elena Rodriguez',
       fullName: 'Elena Rodriguez',
       role: 'coach' as const,
     },
     {
-      email: 'testrunner@ultracoach.dev',
+      email: process.env.TEST_COACH2_EMAIL || 'coach2@ultracoach.dev',
+      password: process.env.TEST_COACH2_PASSWORD || generateSecurePassword(),
+      name: 'Sarah Mountain',
+      fullName: 'Sarah Mountain',
+      role: 'coach' as const,
+    },
+    {
+      email: process.env.TEST_RUNNER_EMAIL || 'testrunner@ultracoach.dev',
       password: process.env.TEST_RUNNER_PASSWORD || generateSecurePassword(),
       name: 'Alex Trail',
       fullName: 'Alex Trail',
       role: 'runner' as const,
     },
     {
-      email: 'coach2@ultracoach.dev',
-      password: generateSecurePassword(),
-      name: 'Sarah Mountain',
-      fullName: 'Sarah Mountain',
-      role: 'coach' as const,
-    },
-    {
-      email: 'runner2@ultracoach.dev',
-      password: generateSecurePassword(),
+      email: process.env.TEST_RUNNER2_EMAIL || 'runner2@ultracoach.dev',
+      password: process.env.TEST_RUNNER2_PASSWORD || generateSecurePassword(),
       name: 'Mike Trailblazer',
       fullName: 'Mike Trailblazer',
       role: 'runner' as const,
@@ -53,25 +158,94 @@ async function createDatabase() {
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is required')
   }
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+
+  // Create database connection (reuse Better Auth pool configuration)
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? {
+            rejectUnauthorized: true, // Require valid SSL certificates in production
+            ca: process.env.DATABASE_SSL_CERT, // Optional: specify CA certificate
+          }
+        : false,
+  })
+
   const db = drizzle(pool, { schema })
+
   return { db, pool }
+}
+
+// --- Static Data Functions ---
+async function seedStaticData(db: ReturnType<typeof drizzle>) {
+  logger.info('📋 Seeding static data (training phases and plan templates)...')
+
+  // Seed training phases
+  for (const phaseData of trainingPhasesData) {
+    try {
+      const existingPhase = await db
+        .select()
+        .from(schema.training_phases)
+        .where(eq(schema.training_phases.name, phaseData.name))
+        .limit(1)
+
+      if (existingPhase.length > 0) {
+        logger.info(`Training phase "${phaseData.name}" already exists, skipping...`)
+        continue
+      }
+
+      await db.insert(schema.training_phases).values(phaseData)
+      logger.info(`✅ Created training phase: ${phaseData.name}`)
+    } catch (error) {
+      logger.error(`❌ Failed to create training phase "${phaseData.name}":`, error)
+    }
+  }
+
+  // Seed plan templates
+  for (const templateData of planTemplatesData) {
+    try {
+      const existingTemplate = await db
+        .select()
+        .from(schema.plan_templates)
+        .where(eq(schema.plan_templates.name, templateData.name))
+        .limit(1)
+
+      if (existingTemplate.length > 0) {
+        logger.info(`Plan template "${templateData.name}" already exists, skipping...`)
+        continue
+      }
+
+      await db.insert(schema.plan_templates).values(templateData)
+      logger.info(`✅ Created plan template: ${templateData.name}`)
+    } catch (error) {
+      logger.error(`❌ Failed to create plan template "${templateData.name}":`, error)
+    }
+  }
 }
 
 // --- Seeding Function ---
 async function seedTestUsers(db: ReturnType<typeof drizzle>) {
   logger.info('👥 Creating test users directly in database...')
 
+  // Security warning for production
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('⚠️  WARNING: Creating test users in production environment!')
+    logger.warn('⚠️  Ensure test user credentials are secure and monitored!')
+  }
+
   const testUsersData = getTestUsersData()
 
   for (const userData of testUsersData) {
     try {
       logger.info(`Creating user: ${userData.email}`)
+
+      // Check if user already exists first
       const existingUser = await db
         .select()
         .from(schema.better_auth_users)
         .where(eq(schema.better_auth_users.email, userData.email))
         .limit(1)
+
       if (existingUser.length > 0) {
         logger.info(`User ${userData.email} already exists, skipping...`)
         continue
@@ -113,11 +287,11 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
   }
 }
 
-// --- Training Plans & Relationships Seeding ---
-async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>) {
-  logger.info('🏃 Creating training plans and coach-runner relationships...')
+// --- Training Plans & Sample Data Seeding ---
+async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
+  logger.info('🏃 Creating sample training plans with coach-runner relationships...')
 
-  // Get all users
+  // Get coach and runners
   const users = await db.select().from(schema.better_auth_users)
   const coaches = users.filter(user => user.role === 'coach')
   const runners = users.filter(user => user.role === 'runner')
@@ -127,7 +301,7 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
     return
   }
 
-  // Create training plans with coach-runner relationships
+  // Create multiple training plans with proper relationships
   const trainingPlansData = [
     {
       title: '100 Mile Ultra Training - Spring Peak',
@@ -142,8 +316,8 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
       title: '50K Trail Race Preparation',
       description:
         '16-week plan focused on trail running techniques, elevation training, and race strategy.',
-      coach_id: coaches[1].id, // Sarah Mountain
-      runner_id: runners[1].id, // Mike Trailblazer
+      coach_id: coaches[1] ? coaches[1].id : coaches[0].id, // Sarah Mountain or Elena
+      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
       target_race_date: new Date('2025-07-20'),
       target_race_distance: '50K',
     },
@@ -152,7 +326,7 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
       description:
         'Foundation phase training plan for ultra distance preparation with gradual mileage increases.',
       coach_id: coaches[0].id, // Elena Rodriguez (coaches both runners)
-      runner_id: runners[1].id, // Mike Trailblazer
+      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
       target_race_date: new Date('2025-10-01'),
       target_race_distance: '50 miles',
     },
@@ -172,8 +346,10 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
       }
 
       const [newPlan] = await db.insert(schema.training_plans).values(planData).returning()
+      const coach = coaches.find(c => c.id === planData.coach_id)
+      const runner = runners.find(r => r.id === planData.runner_id)
       logger.info(
-        `✅ Created training plan: "${planData.title}" (Coach: ${coaches.find(c => c.id === planData.coach_id)?.email}, Runner: ${runners.find(r => r.id === planData.runner_id)?.email})`
+        `✅ Created training plan: "${planData.title}" (Coach: ${coach?.email}, Runner: ${runner?.email})`
       )
 
       // Create sample workouts for each training plan
@@ -285,21 +461,67 @@ async function seedConversations(db: ReturnType<typeof drizzle>) {
 // --- Main Execution ---
 async function main() {
   const startTime = Date.now()
-  logger.info('🌱 Starting UltraCoach database seeding...')
 
   try {
+    logger.info('🌱 Starting UltraCoach database seeding...')
+
     const { db, pool } = await createDatabase()
 
-    try {
-      await seedTestUsers(db)
-      await seedTrainingPlansAndRelationships(db)
-      await seedConversations(db)
-      logger.info('✅ Database seeding completed successfully!')
-    } finally {
-      await pool.end()
-      const duration = Date.now() - startTime
-      logger.info(`Seeding finished in ${duration}ms`)
-    }
+    // Seed static data first
+    await seedStaticData(db)
+
+    // Create test users
+    await seedTestUsers(db)
+
+    // Create sample training plans with relationships
+    await createSampleTrainingPlan(db)
+
+    // Create sample conversations
+    await seedConversations(db)
+
+    // Show summary
+    logger.info('📊 Database summary:')
+    const userCount = await db
+      .select()
+      .from(schema.better_auth_users)
+      .then(r => r.length)
+    const planCount = await db
+      .select()
+      .from(schema.training_plans)
+      .then(r => r.length)
+    const workoutCount = await db
+      .select()
+      .from(schema.workouts)
+      .then(r => r.length)
+    const phaseCount = await db
+      .select()
+      .from(schema.training_phases)
+      .then(r => r.length)
+    const templateCount = await db
+      .select()
+      .from(schema.plan_templates)
+      .then(r => r.length)
+
+    console.log(`
+    📊 Seeding Results:
+    ├── Users: ${userCount}
+    ├── Training Plans: ${planCount}
+    ├── Workouts: ${workoutCount}
+    ├── Training Phases: ${phaseCount}
+    └── Plan Templates: ${templateCount}
+    `)
+
+    await pool.end()
+
+    const duration = Date.now() - startTime
+    logger.info(`✅ Database seeding completed in ${duration}ms`)
+
+    console.log(`
+    🎯 Database seeding completed successfully!
+    • Test users created with secure credentials
+    • Coach-runner relationships established
+    • Training plans and sample workouts added
+    `)
   } catch (error) {
     logger.error('❌ Database seeding failed:', error)
     // In test environment, don't exit process

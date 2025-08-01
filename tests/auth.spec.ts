@@ -10,7 +10,6 @@ import {
 test.describe('Authentication Flow', () => {
   test('should display signin page', async ({ page }) => {
     await navigateAndWait(page, '/auth/signin')
-
     await expect(page.locator('h1')).toContainText('🏔️ UltraCoach')
     await expect(page.locator('input[type="email"]')).toBeVisible()
     await expect(page.locator('input[type="password"]')).toBeVisible()
