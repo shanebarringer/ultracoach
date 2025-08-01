@@ -75,6 +75,7 @@ function Header() {
         href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
         label: 'Dashboard',
       },
+      { href: '/calendar', label: 'Calendar' },
       { href: '/workouts', label: 'Workouts' },
       { href: '/chat', label: 'Messages' },
     ]
@@ -82,11 +83,12 @@ function Header() {
     if (session.user.role === 'coach') {
       return [
         baseItems[0], // Dashboard
+        baseItems[1], // Calendar
         { href: '/training-plans', label: 'Training Plans' },
         { href: '/runners', label: 'Runners' },
         { href: '/races', label: 'Races' },
         { href: '/weekly-planner', label: 'Weekly Planner' },
-        ...baseItems.slice(1), // Workouts, Messages
+        ...baseItems.slice(2), // Workouts, Messages
       ]
     }
 
