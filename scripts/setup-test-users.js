@@ -5,27 +5,27 @@ const testUsers = [
     email: 'testrunner@ultracoach.dev',
     password: 'password123',
     fullName: 'Test Runner',
-    role: 'runner'
+    role: 'runner',
   },
   {
-    email: 'testcoach@ultracoach.dev', 
+    email: 'testcoach@ultracoach.dev',
     password: 'password123',
     fullName: 'Test Coach',
-    role: 'coach'
-  }
-];
+    role: 'coach',
+  },
+]
 
 async function createTestUsers() {
-  console.log('🔧 Creating fresh test users for Playwright...');
-  
+  console.log('🔧 Creating fresh test users for Playwright...')
+
   // Wait for server to be ready
-  console.log('⏱️  Waiting for server to be ready...');
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
+  console.log('⏱️  Waiting for server to be ready...')
+  await new Promise(resolve => setTimeout(resolve, 2000))
+
   for (const user of testUsers) {
     try {
-      console.log(`\n👤 Creating user: ${user.email}`);
-      
+      console.log(`\n👤 Creating user: ${user.email}`)
+
       const response = await fetch('http://localhost:3001/api/auth/sign-up/email', {
         method: 'POST',
         headers: {
@@ -36,12 +36,12 @@ async function createTestUsers() {
           password: user.password,
           name: user.fullName,
         }),
-      });
-      
+      })
+
       if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ User ${user.email} created successfully`);
-        
+        const data = await response.json()
+        console.log(`✅ User ${user.email} created successfully`)
+
         // If this is a coach, we need to update their role
         if (user.role === 'coach') {
           // First, sign in to get a session
@@ -54,43 +54,45 @@ async function createTestUsers() {
               email: user.email,
               password: user.password,
             }),
-          });
-          
+          })
+
           if (signInResponse.ok) {
-            const signInData = await signInResponse.json();
-            const sessionCookie = signInResponse.headers.get('set-cookie');
-            
+            const signInData = await signInResponse.json()
+            const sessionCookie = signInResponse.headers.get('set-cookie')
+
             // Update role
             const roleResponse = await fetch('http://localhost:3001/api/user/role', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Cookie': sessionCookie || '',
+                Cookie: sessionCookie || '',
               },
               body: JSON.stringify({ role: 'coach' }),
-            });
-            
+            })
+
             if (roleResponse.ok) {
-              console.log(`✅ User ${user.email} role updated to coach`);
+              console.log(`✅ User ${user.email} role updated to coach`)
             } else {
-              console.log(`⚠️  Failed to update role for ${user.email}: ${await roleResponse.text()}`);
+              console.log(
+                `⚠️  Failed to update role for ${user.email}: ${await roleResponse.text()}`
+              )
             }
           }
         }
       } else {
-        const errorText = await response.text();
-        console.log(`❌ Failed to create user ${user.email}: ${errorText}`);
+        const errorText = await response.text()
+        console.log(`❌ Failed to create user ${user.email}: ${errorText}`)
       }
     } catch (error) {
-      console.error(`❌ Error creating user ${user.email}:`, error.message);
+      console.error(`❌ Error creating user ${user.email}:`, error.message)
     }
   }
-  
-  console.log('\n🎉 Test user setup completed!');
-  console.log('📋 Test credentials:');
+
+  console.log('\n🎉 Test user setup completed!')
+  console.log('📋 Test credentials:')
   testUsers.forEach(user => {
-    console.log(`   ${user.email} / password123 (${user.role})`);
-  });
+    console.log(`   ${user.email} / password123 (${user.role})`)
+  })
 }
 
-createTestUsers().catch(console.error);
+createTestUsers().catch(console.error)

@@ -104,7 +104,7 @@ export function useNotifications() {
   const markAllAsRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.read).map(n => n.id)
-      
+
       if (unreadIds.length === 0) return
 
       const response = await fetch('/api/notifications', {

@@ -33,10 +33,10 @@ export async function GET(request: NextRequest) {
     // Calculate unread count from the fetched notifications
     const unreadCount = (notifications || []).filter(n => !n.read).length
 
-    return NextResponse.json({ 
-      notifications: notifications || [], 
+    return NextResponse.json({
+      notifications: notifications || [],
       unreadCount,
-      total: notifications?.length || 0
+      total: notifications?.length || 0,
     })
   } catch (error) {
     logger.error('API error in GET /notifications', error)

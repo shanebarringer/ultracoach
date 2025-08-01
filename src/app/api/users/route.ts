@@ -45,18 +45,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Format users for frontend consumption
-    const formattedUsers = users?.map(user => ({
-      id: user.id,
-      email: user.email,
-      name: user.name || user.full_name || 'Unknown User',
-      role: user.role || 'runner',
-      full_name: user.full_name || user.name,
-      created_at: user.created_at,
-    })) || []
+    const formattedUsers =
+      users?.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.name || user.full_name || 'Unknown User',
+        role: user.role || 'runner',
+        full_name: user.full_name || user.name,
+        created_at: user.created_at,
+      })) || []
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       users: formattedUsers,
-      total: formattedUsers.length 
+      total: formattedUsers.length,
     })
   } catch (error) {
     console.error('API error in GET /users:', error)
