@@ -372,8 +372,10 @@ ${textTemplate}
         } else if (resend) {
           // In production, send actual email via Resend
           try {
+            const fromEmail = process.env.RESEND_FROM_EMAIL || 'UltraCoach <onboarding@resend.dev>'
+
             await resend.emails.send({
-              from: 'UltraCoach <noreply@ultracoach.app>',
+              from: fromEmail,
               to: user.email,
               subject: 'Reset Your UltraCoach Password 🏔️',
               html: htmlTemplate,
