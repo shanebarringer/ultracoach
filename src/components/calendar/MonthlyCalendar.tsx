@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@heroui/react'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
+import { format } from 'date-fns'
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -63,7 +64,8 @@ export default function MonthlyCalendar({
     let currentDate = startOfWeek
 
     while (currentDate.compare(endOfWeek) <= 0) {
-      const dateString = currentDate.toString()
+      // Format CalendarDate to YYYY-MM-DD to match workout data format
+      const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
       const dayWorkouts = workouts.filter(workout => workout.date === dateString)
       const todayDate = today(getLocalTimeZone())
 

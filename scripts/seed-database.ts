@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -367,28 +368,29 @@ async function seedSampleWorkouts(
   planTitle: string
 ) {
   const currentDate = new Date()
+
   const workoutsData = [
     {
       training_plan_id: trainingPlanId,
-      date: new Date(currentDate.getTime() + 1 * 24 * 60 * 60 * 1000), // Tomorrow
+      date: startOfDay(addDays(currentDate, 1)), // Tomorrow
       planned_distance: '5.00',
-      planned_duration: 2700, // 45 minutes
+      planned_duration: 45, // 45 minutes (stored as minutes)
       planned_type: 'Easy Run',
       status: 'planned' as const,
     },
     {
       training_plan_id: trainingPlanId,
-      date: new Date(currentDate.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      date: startOfDay(addDays(currentDate, 3)), // 3 days from now
       planned_distance: '8.00',
-      planned_duration: 3600, // 60 minutes
+      planned_duration: 60, // 60 minutes
       planned_type: 'Tempo Run',
       status: 'planned' as const,
     },
     {
       training_plan_id: trainingPlanId,
-      date: new Date(currentDate.getTime() + 6 * 24 * 60 * 60 * 1000), // 6 days from now
+      date: startOfDay(addDays(currentDate, 6)), // 6 days from now
       planned_distance: '12.00',
-      planned_duration: 5400, // 90 minutes
+      planned_duration: 90, // 90 minutes
       planned_type: 'Long Run',
       status: 'planned' as const,
     },
@@ -397,6 +399,9 @@ async function seedSampleWorkouts(
   try {
     await db.insert(schema.workouts).values(workoutsData)
     logger.info(`  ✅ Added ${workoutsData.length} sample workouts for "${planTitle}"`)
+    logger.info(
+      `  📅 Workout dates: ${workoutsData.map(w => format(w.date, 'yyyy-MM-dd')).join(', ')}`
+    )
   } catch (error) {
     logger.error(`  ❌ Failed to create sample workouts for "${planTitle}":`, error)
   }
