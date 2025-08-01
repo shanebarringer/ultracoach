@@ -84,13 +84,23 @@ activeTrainingPlansAtom: Computed active plans
 }
 ```
 
-### Strava Integration Dependencies
+### Third-Party Integration Dependencies
 
 ```json
 {
   "strava-v3": "^2.0.0",
   "node-cron": "^3.0.0",
   "date-fns": "^2.30.0"
+}
+```
+
+### Garmin Connect IQ Integration (Future Roadmap)
+
+```json
+{
+  "garmin-connect-iq": "^1.0.0",
+  "connect-iq-sdk": "^4.0.0",
+  "@internationalized/date": "^3.8.2"
 }
 ```
 
@@ -422,6 +432,149 @@ npx playwright install
 - [ ] Regular security audit of RLS policies
 - [ ] Monitor for suspicious database activity
 - [ ] Backup encryption and secure storage
+
+## 📱 Garmin Connect IQ Integration Roadmap
+
+### Phase 1: Foundation (Q2 2025)
+
+#### Garmin API Integration
+
+- **Connect IQ Store App**: Develop UltraCoach companion app for Garmin devices
+- **OAuth 2.0 Setup**: Implement Garmin Connect API authentication
+- **Device Compatibility**: Support for Fenix, Forerunner, Epix, and Enduro series
+- **Workout Sync**: Two-way sync between UltraCoach training plans and Garmin devices
+
+#### Core Features
+
+```typescript
+interface GarminWorkoutSync {
+  id: string
+  garmin_activity_id?: string
+  sync_status: 'pending' | 'synced' | 'failed'
+  device_model: string
+  sync_timestamp: string
+  workout_data: {
+    planned_intervals: GarminInterval[]
+    target_metrics: GarminTargets
+    navigation_course?: GPXData
+  }
+}
+
+interface GarminInterval {
+  duration_type: 'time' | 'distance' | 'heart_rate'
+  duration_value: number
+  target_type: 'pace' | 'heart_rate' | 'power'
+  target_zone: [number, number]
+  rest_interval?: GarminInterval
+}
+```
+
+### Phase 2: Advanced Features (Q3 2025)
+
+#### Smart Notifications
+
+- **Pre-Workout Alerts**: Send workout details to watch 24h before scheduled
+- **Real-Time Coaching**: Live pace/heart rate guidance during workouts
+- **Post-Workout Analysis**: Automatic upload and analysis of completed activities
+- **Coach Notifications**: Alert coaches when workouts are completed or missed
+
+#### Course Integration
+
+- **GPX Route Sync**: Upload trail running courses directly to Garmin devices
+- **Elevation Profiles**: Display elevation data for planned workouts
+- **Turn-by-Turn Navigation**: Integration with Garmin's navigation system
+- **Race Course Simulation**: Upload actual race courses for training
+
+### Phase 3: Advanced Analytics (Q4 2025)
+
+#### Physiological Monitoring
+
+- **Training Load Integration**: Sync with Garmin's Training Load metrics
+- **Recovery Metrics**: Use Body Battery and HRV data for plan adjustments
+- **Sleep Analysis**: Factor sleep quality into training recommendations
+- **Performance Condition**: Real-time performance indicator integration
+
+#### Adaptive Training
+
+```typescript
+interface GarminAdaptiveMetrics {
+  training_load: number
+  recovery_time: number // hours
+  vo2_max: number
+  lactate_threshold: number // bpm
+  running_power_threshold: number // watts
+  suggested_adjustments: TrainingAdjustment[]
+}
+
+interface TrainingAdjustment {
+  workout_id: string
+  adjustment_type: 'intensity' | 'duration' | 'rest'
+  original_value: number
+  suggested_value: number
+  reason: string
+  confidence: number // 0-1
+}
+```
+
+### Phase 4: Ecosystem Integration (2026)
+
+#### Connect IQ Store Features
+
+- **Data Fields**: Custom UltraCoach data fields for training metrics
+- **Watch Faces**: Training-focused watch faces showing next workout
+- **Widgets**: Quick access to training plan progress and metrics
+- **Apps**: Standalone UltraCoach app for offline workout access
+
+#### Third-Party Integrations
+
+- **Strava Integration**: Seamless sync between Garmin → UltraCoach → Strava
+- **TrainingPeaks**: Export UltraCoach plans to TrainingPeaks format
+- **Zwift Integration**: Indoor training session synchronization
+- **Nutrition Apps**: Integrate with MyFitnessPal, Cronometer
+
+### Technical Implementation
+
+#### API Integration Points
+
+```typescript
+// Garmin Connect API endpoints
+const GarminAPI = {
+  OAuth: 'https://connect.garmin.com/oauth/request_token',
+  Activities: 'https://connect.garmin.com/modern/proxy/activity-service/activity',
+  Workouts: 'https://connect.garmin.com/modern/proxy/workout-service/workout',
+  UserProfile: 'https://connect.garmin.com/modern/proxy/userprofile-service/userprofile',
+  Devices: 'https://connect.garmin.com/modern/proxy/device-service/device',
+}
+
+// Database schema additions
+interface GarminConnection {
+  id: string
+  user_id: string // FK to better_auth_users
+  garmin_user_id: string
+  access_token: string // encrypted
+  refresh_token: string // encrypted
+  token_expires_at: string
+  device_models: string[] // JSON array
+  sync_preferences: GarminSyncPreferences
+  created_at: string
+  updated_at: string
+}
+```
+
+#### Development Priorities
+
+1. **Security First**: OAuth tokens encrypted at rest, secure token refresh
+2. **Offline Capability**: Workout data cached on device for offline access
+3. **Battery Optimization**: Minimal battery impact during sync operations
+4. **User Experience**: Seamless setup and automatic sync with clear status
+5. **Error Handling**: Graceful degradation when devices are offline
+
+#### Success Metrics
+
+- **Sync Reliability**: >95% successful workout sync rate
+- **User Adoption**: 60% of users connect Garmin devices within 30 days
+- **Engagement**: 40% increase in workout completion rates with Garmin sync
+- **Performance**: <2 second sync time for typical workouts
 
 ## 🤖 AI-Enhanced Development Workflow
 
