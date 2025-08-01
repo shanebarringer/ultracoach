@@ -122,11 +122,12 @@ function getTestUsersData() {
   }
 
   return [
+    // Coaches (4 total)
     {
       email: process.env.TEST_COACH_EMAIL || 'coach1@ultracoach.dev',
       password: process.env.TEST_COACH_PASSWORD || generateSecurePassword(),
-      name: 'Test Coach',
-      fullName: 'Test Coach User',
+      name: 'Elena Rodriguez',
+      fullName: 'Elena Rodriguez',
       role: 'coach' as const,
     },
     {
@@ -137,10 +138,25 @@ function getTestUsersData() {
       role: 'coach' as const,
     },
     {
+      email: 'david.peaks@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'David Peaks',
+      fullName: 'David Peaks',
+      role: 'coach' as const,
+    },
+    {
+      email: 'maria.summit@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'Maria Summit',
+      fullName: 'Maria Summit',
+      role: 'coach' as const,
+    },
+    // Runners (6 total for better testing)
+    {
       email: process.env.TEST_RUNNER_EMAIL || 'testrunner@ultracoach.dev',
       password: process.env.TEST_RUNNER_PASSWORD || generateSecurePassword(),
-      name: 'Test Runner',
-      fullName: 'Test Runner User',
+      name: 'Alex Trail',
+      fullName: 'Alex Trail',
       role: 'runner' as const,
     },
     {
@@ -150,8 +166,94 @@ function getTestUsersData() {
       fullName: 'Mike Trailblazer',
       role: 'runner' as const,
     },
+    {
+      email: 'jessica.endurance@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'Jessica Endurance',
+      fullName: 'Jessica Endurance',
+      role: 'runner' as const,
+    },
+    {
+      email: 'tommy.ultra@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'Tommy Ultra',
+      fullName: 'Tommy Ultra',
+      role: 'runner' as const,
+    },
+    {
+      email: 'lisa.horizon@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'Lisa Horizon',
+      fullName: 'Lisa Horizon',
+      role: 'runner' as const,
+    },
+    {
+      email: 'chris.adventure@ultracoach.dev',
+      password: generateSecurePassword(),
+      name: 'Chris Adventure',
+      fullName: 'Chris Adventure',
+      role: 'runner' as const,
+    },
   ]
 }
+
+// Sample races data for target races
+const racesData = [
+  {
+    name: 'Western States 100',
+    date: new Date('2025-06-28'),
+    distanceMiles: '100.0',
+    distanceType: '100M',
+    location: 'Auburn, CA',
+    terrainType: 'trail',
+    elevationGainFeet: 18000,
+  },
+  {
+    name: 'Angeles Crest 100',
+    date: new Date('2025-08-09'),
+    distanceMiles: '100.0',
+    distanceType: '100M',
+    location: 'Wrightwood, CA',
+    terrainType: 'trail',
+    elevationGainFeet: 22000,
+  },
+  {
+    name: 'JFK 50 Mile',
+    date: new Date('2025-11-22'),
+    distanceMiles: '50.0',
+    distanceType: '50M',
+    location: 'Boonsboro, MD',
+    terrainType: 'mixed',
+    elevationGainFeet: 2500,
+  },
+  {
+    name: 'Lake Sonoma 50',
+    date: new Date('2025-04-12'),
+    distanceMiles: '31.1',
+    distanceType: '50K',
+    location: 'Healdsburg, CA',
+    terrainType: 'trail',
+    elevationGainFeet: 7000,
+  },
+  {
+    name: 'Leadville Trail 100',
+    date: new Date('2025-08-16'),
+    distanceMiles: '100.0',
+    distanceType: '100M',
+    location: 'Leadville, CO',
+    terrainType: 'trail',
+    elevationGainFeet: 15600,
+  },
+  {
+    name: 'Boston Marathon',
+    date: new Date('2025-04-21'),
+    distanceMiles: '26.2',
+    distanceType: 'Marathon',
+    location: 'Boston, MA',
+    terrainType: 'road',
+    elevationGainFeet: 500,
+  },
+]
 
 async function createDatabase() {
   if (!process.env.DATABASE_URL) {
@@ -185,6 +287,10 @@ async function seedStaticData(db: ReturnType<typeof drizzle>) {
   // Seed plan templates
   logger.info('📋 Seeding plan templates...')
   await db.insert(schema.plan_templates).values(planTemplatesData).onConflictDoNothing()
+
+  // Seed races
+  logger.info('🏃‍♂️ Seeding race data...')
+  await db.insert(schema.races).values(racesData).onConflictDoNothing()
 
   logger.info('✅ Static data seeded successfully')
 }
@@ -267,75 +373,143 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
   }
 }
 
-async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
-  logger.info('🏃‍♂️ Creating sample training plan...')
+async function createSampleTrainingPlans(db: ReturnType<typeof drizzle>) {
+  logger.info('🏃‍♂️ Creating sample training plans and workouts...')
 
   try {
-    // Get coach and runner
-    const [coach] = await db
+    // Get coaches and runners
+    const coaches = await db
       .select()
       .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testcoach@ultracoach.dev'))
-      .limit(1)
+      .where(eq(schema.better_auth_users.role, 'coach'))
 
-    const [runner] = await db
+    const runners = await db
       .select()
       .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testrunner@ultracoach.dev'))
-      .limit(1)
+      .where(eq(schema.better_auth_users.role, 'runner'))
 
-    if (!coach || !runner) {
-      logger.warn('Coach or runner not found, skipping sample training plan')
+    const races = await db.select().from(schema.races)
+
+    if (coaches.length === 0 || runners.length === 0) {
+      logger.warn('No coaches or runners found, skipping training plans')
       return
     }
 
-    // Create training plan
-    const [trainingPlan] = await db
-      .insert(schema.training_plans)
-      .values({
-        title: 'Sample 50K Training Plan',
-        description: 'A beginner-friendly 50K training plan for testing purposes',
-        coach_id: coach.id, // Use database column name
-        runner_id: runner.id, // Use database column name
-        target_race_date: new Date('2025-09-15'),
+    // Create multiple training plans
+    const trainingPlansData = [
+      {
+        title: 'Lake Sonoma 50K Training',
+        description: 'Trail-focused 50K preparation with hill training and technical terrain work',
+        coach_id: coaches[0].id,
+        runner_id: runners[0].id,
+        race_id: races.find(r => r.name === 'Lake Sonoma 50')?.id,
+        target_race_date: new Date('2025-04-12'),
         target_race_distance: '50K',
-      })
-      .returning()
-
-    // Create sample workouts
-    const today = new Date()
-    const workouts = [
-      {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 24 * 60 * 60 * 1000), // Tomorrow
-        planned_distance: '5.0', // Use database column name and string for decimal
-        planned_duration: 2400, // 40 minutes in seconds
-        planned_type: 'easy', // Use database column name
-        status: 'planned' as const,
+        goal_type: 'completion' as const,
+        plan_type: 'race_specific' as const,
       },
       {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-        planned_distance: '8.0', // Use database column name and string for decimal
-        planned_duration: 4800, // 80 minutes in seconds
-        planned_type: 'long_run', // Use database column name
-        status: 'planned' as const,
+        title: 'Western States 100 Preparation',
+        description: 'Advanced 100-mile training with heat adaptation and aid station practice',
+        coach_id: coaches[1]?.id || coaches[0].id,
+        runner_id: runners[1]?.id || runners[0].id,
+        race_id: races.find(r => r.name === 'Western States 100')?.id,
+        target_race_date: new Date('2025-06-28'),
+        target_race_distance: '100M',
+        goal_type: 'time' as const,
+        plan_type: 'race_specific' as const,
       },
       {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-        planned_distance: '3.0', // Use database column name and string for decimal
-        planned_duration: 1800, // 30 minutes in seconds
-        planned_type: 'recovery', // Use database column name
-        status: 'planned' as const,
+        title: 'Base Building Phase',
+        description: 'General aerobic base development for fall race preparation',
+        coach_id: coaches[0].id,
+        runner_id: runners[2]?.id || runners[0].id,
+        plan_type: 'base_building' as const,
+        goal_type: 'completion' as const,
       },
     ]
 
-    await db.insert(schema.workouts).values(workouts)
+    const today = new Date()
+    const createdPlans = []
 
-    logger.info(`✅ Created sample training plan: ${trainingPlan.title}`)
+    for (const planData of trainingPlansData) {
+      const [trainingPlan] = await db.insert(schema.training_plans).values(planData).returning()
+
+      createdPlans.push(trainingPlan)
+      logger.info(`✅ Created training plan: ${trainingPlan.title}`)
+    }
+
+    // Create diverse workout data
+    for (let planIndex = 0; planIndex < createdPlans.length; planIndex++) {
+      const plan = createdPlans[planIndex]
+      const workouts = []
+
+      // Create workouts for the past 2 weeks and next 4 weeks
+      for (let dayOffset = -14; dayOffset <= 28; dayOffset++) {
+        const workoutDate = new Date(today.getTime() + dayOffset * 24 * 60 * 60 * 1000)
+
+        // Skip some days (rest days)
+        if (dayOffset % 7 === 0 || (dayOffset + 2) % 7 === 0) continue
+
+        // Determine workout type based on day pattern
+        let workoutType = 'easy'
+        let distance = 5.0
+        let duration = 2400
+        let status: 'planned' | 'completed' | 'skipped' = 'planned'
+
+        // Past workouts should have status
+        if (dayOffset < 0) {
+          status = Math.random() > 0.8 ? 'skipped' : 'completed'
+        }
+
+        // Weekly pattern
+        const dayOfWeek = Math.abs(dayOffset) % 7
+        switch (dayOfWeek) {
+          case 0: // Long run day
+            workoutType = 'long_run'
+            distance = planIndex === 1 ? 18.0 : 12.0 // 100M plan gets longer runs
+            duration = distance * 600 // ~10 min/mile average
+            break
+          case 2: // Tempo day
+            workoutType = 'tempo'
+            distance = 6.0
+            duration = 3000
+            break
+          case 4: // Interval day
+            workoutType = 'interval'
+            distance = 4.0
+            duration = 2400
+            break
+          case 6: // Recovery day
+            workoutType = 'recovery'
+            distance = 3.0
+            duration = 2100
+            break
+          default: // Easy days
+            distance = 5.0 + Math.random() * 3
+            duration = distance * 540 // ~9 min/mile
+        }
+
+        const workout = {
+          training_plan_id: plan.id,
+          date: workoutDate, // Use Date object directly
+          planned_distance: distance.toFixed(1),
+          planned_duration: Math.round(duration),
+          planned_type: workoutType,
+          workout_notes: `${workoutType.replace('_', ' ')} run - moderate effort`,
+          status: status,
+        }
+
+        workouts.push(workout)
+      }
+
+      await db.insert(schema.workouts).values(workouts)
+      logger.info(`✅ Created ${workouts.length} workouts for plan: ${plan.title}`)
+    }
+
+    logger.info('✅ All sample training plans and workouts created successfully')
   } catch (error) {
-    logger.error('Failed to create sample training plan:', error)
+    logger.error('Failed to create sample training plans:', error)
   }
 }
 
@@ -353,8 +527,8 @@ async function main() {
     // Create test users through Better Auth
     await seedTestUsers(db)
 
-    // Create sample training plan
-    await createSampleTrainingPlan(db)
+    // Create sample training plans and workouts
+    await createSampleTrainingPlans(db)
 
     // Show summary
     logger.info('📊 Database summary:')
@@ -363,12 +537,14 @@ async function main() {
     const workoutCount = await db.$count(schema.workouts)
     const phaseCount = await db.$count(schema.training_phases)
     const templateCount = await db.$count(schema.plan_templates)
+    const raceCount = await db.$count(schema.races)
 
     console.log(`
     📊 Seeding Results:
-    ├── Users: ${userCount}
+    ├── Users: ${userCount} (4 coaches, 6 runners)
     ├── Training Plans: ${planCount}
     ├── Workouts: ${workoutCount}
+    ├── Races: ${raceCount}
     ├── Training Phases: ${phaseCount}
     └── Plan Templates: ${templateCount}
     `)
