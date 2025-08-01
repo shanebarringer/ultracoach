@@ -1,6 +1,4 @@
 #!/usr/bin/env tsx
-import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -62,35 +60,7 @@ async function createDatabase() {
 
 // --- Seeding Function ---
 async function seedTestUsers(db: ReturnType<typeof drizzle>) {
-  logger.info('👥 Creating test users with a script-safe auth instance...')
-
-  if (!process.env.BETTER_AUTH_SECRET) {
-    throw new Error('BETTER_AUTH_SECRET is required for seeding users.')
-  }
-
-  // Create a script-safe instance of BetterAuth that mirrors essential app config
-  const authForScript = betterAuth({
-    database: drizzleAdapter(db, {
-      provider: 'pg',
-      schema: {
-        user: schema.better_auth_users,
-        account: schema.better_auth_accounts,
-        session: schema.better_auth_sessions,
-        verification: schema.better_auth_verification_tokens,
-      },
-    }),
-    secret: process.env.BETTER_AUTH_SECRET,
-    emailAndPassword: {
-      enabled: true,
-    },
-    user: {
-      additionalFields: {
-        role: { type: 'string', required: true, defaultValue: 'runner', input: true, output: true },
-        fullName: { type: 'string', required: false, input: true, output: true },
-      },
-    },
-    plugins: [], // NO plugins that require a request context
-  })
+  logger.info('👥 Creating test users directly in database...')
 
   const testUsersData = getTestUsersData()
 
@@ -107,26 +77,36 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      const result = await authForScript.api.signUpEmail({
-        body: {
+      // Generate unique IDs
+      const userId = `seed_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+      const accountId = `account_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+
+      // Generate a simple hash for the password (not secure, just for seeding)
+      const hashedPassword = `hashed_${userData.password}_seed`
+
+      // Insert user directly into database
+      const [newUser] = await db
+        .insert(schema.better_auth_users)
+        .values({
+          id: userId,
           email: userData.email,
-          password: userData.password,
           name: userData.name,
-          // Pass additional fields directly
           role: userData.role,
           fullName: userData.fullName,
-        },
+          emailVerified: true, // Skip email verification for seeded users
+        })
+        .returning()
+
+      // Insert a basic account record for email/password auth
+      await db.insert(schema.better_auth_accounts).values({
+        id: accountId,
+        userId: newUser.id,
+        accountId: userData.email,
+        providerId: 'credential',
+        password: hashedPassword,
       })
 
-      const userId = result.user?.id
-      if (userId) {
-        logger.info(`✅ Created user: ${userData.email}`)
-      } else {
-        logger.error(`❌ Failed to create user ${userData.email}.`, {
-          error: (result as any).error,
-          result,
-        })
-      }
+      logger.info(`✅ Created user: ${userData.email}`)
     } catch (error) {
       logger.error(`🚨 EXCEPTION while creating user ${userData.email}:`, error)
     }
@@ -151,7 +131,8 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
   const trainingPlansData = [
     {
       title: '100 Mile Ultra Training - Spring Peak',
-      description: 'Comprehensive 24-week training plan targeting a 100-mile ultramarathon with periodized training phases.',
+      description:
+        'Comprehensive 24-week training plan targeting a 100-mile ultramarathon with periodized training phases.',
       coach_id: coaches[0].id, // Elena Rodriguez
       runner_id: runners[0].id, // Alex Trail
       target_race_date: new Date('2025-09-15'),
@@ -159,7 +140,8 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
     },
     {
       title: '50K Trail Race Preparation',
-      description: '16-week plan focused on trail running techniques, elevation training, and race strategy.',
+      description:
+        '16-week plan focused on trail running techniques, elevation training, and race strategy.',
       coach_id: coaches[1].id, // Sarah Mountain
       runner_id: runners[1].id, // Mike Trailblazer
       target_race_date: new Date('2025-07-20'),
@@ -167,7 +149,8 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
     },
     {
       title: 'Ultra Marathon Base Building',
-      description: 'Foundation phase training plan for ultra distance preparation with gradual mileage increases.',
+      description:
+        'Foundation phase training plan for ultra distance preparation with gradual mileage increases.',
       coach_id: coaches[0].id, // Elena Rodriguez (coaches both runners)
       runner_id: runners[1].id, // Mike Trailblazer
       target_race_date: new Date('2025-10-01'),
@@ -189,7 +172,9 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
       }
 
       const [newPlan] = await db.insert(schema.training_plans).values(planData).returning()
-      logger.info(`✅ Created training plan: "${planData.title}" (Coach: ${coaches.find(c => c.id === planData.coach_id)?.email}, Runner: ${runners.find(r => r.id === planData.runner_id)?.email})`)
+      logger.info(
+        `✅ Created training plan: "${planData.title}" (Coach: ${coaches.find(c => c.id === planData.coach_id)?.email}, Runner: ${runners.find(r => r.id === planData.runner_id)?.email})`
+      )
 
       // Create sample workouts for each training plan
       await seedSampleWorkouts(db, newPlan.id, planData.title)
@@ -200,7 +185,11 @@ async function seedTrainingPlansAndRelationships(db: ReturnType<typeof drizzle>)
 }
 
 // --- Sample Workouts Seeding ---
-async function seedSampleWorkouts(db: ReturnType<typeof drizzle>, trainingPlanId: string, planTitle: string) {
+async function seedSampleWorkouts(
+  db: ReturnType<typeof drizzle>,
+  trainingPlanId: string,
+  planTitle: string
+) {
   const currentDate = new Date()
   const workoutsData = [
     {
@@ -284,7 +273,9 @@ async function seedConversations(db: ReturnType<typeof drizzle>) {
       const [newConv] = await db.insert(schema.conversations).values(convData).returning()
       const coach = coaches.find(c => c.id === convData.coach_id)
       const runner = runners.find(r => r.id === convData.runner_id)
-      logger.info(`✅ Created conversation: "${convData.title}" (${coach?.name} ↔ ${runner?.name})`)
+      logger.info(
+        `✅ Created conversation: "${convData.title}" (${coach?.name} ↔ ${runner?.name})`
+      )
     } catch (error) {
       logger.error(`🚨 Failed to create conversation "${convData.title}":`, error)
     }
@@ -295,21 +286,34 @@ async function seedConversations(db: ReturnType<typeof drizzle>) {
 async function main() {
   const startTime = Date.now()
   logger.info('🌱 Starting UltraCoach database seeding...')
-  const { db, pool } = await createDatabase()
 
   try {
-    await seedTestUsers(db)
-    await seedTrainingPlansAndRelationships(db)
-    await seedConversations(db)
-    logger.info('✅ Database seeding completed successfully!')
+    const { db, pool } = await createDatabase()
+
+    try {
+      await seedTestUsers(db)
+      await seedTrainingPlansAndRelationships(db)
+      await seedConversations(db)
+      logger.info('✅ Database seeding completed successfully!')
+    } finally {
+      await pool.end()
+      const duration = Date.now() - startTime
+      logger.info(`Seeding finished in ${duration}ms`)
+    }
   } catch (error) {
     logger.error('❌ Database seeding failed:', error)
+    // In test environment, don't exit process
+    if (process.env.NODE_ENV === 'test') {
+      throw error
+    }
     process.exit(1)
-  } finally {
-    await pool.end()
-    const duration = Date.now() - startTime
-    logger.info(`Seeding finished in ${duration}ms`)
   }
 }
 
-main()
+// Only run main() if not in test environment or when required directly
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  main()
+}
+
+// Export for testing
+export { main as seedDatabase }
