@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -125,8 +126,8 @@ function getTestUsersData() {
     {
       email: process.env.TEST_COACH_EMAIL || 'coach1@ultracoach.dev',
       password: process.env.TEST_COACH_PASSWORD || generateSecurePassword(),
-      name: 'Test Coach',
-      fullName: 'Test Coach User',
+      name: 'Elena Rodriguez',
+      fullName: 'Elena Rodriguez',
       role: 'coach' as const,
     },
     {
@@ -139,8 +140,8 @@ function getTestUsersData() {
     {
       email: process.env.TEST_RUNNER_EMAIL || 'testrunner@ultracoach.dev',
       password: process.env.TEST_RUNNER_PASSWORD || generateSecurePassword(),
-      name: 'Test Runner',
-      fullName: 'Test Runner User',
+      name: 'Alex Trail',
+      fullName: 'Alex Trail',
       role: 'runner' as const,
     },
     {
@@ -153,6 +154,7 @@ function getTestUsersData() {
   ]
 }
 
+// --- Database Setup ---
 async function createDatabase() {
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL environment variable is required')
@@ -175,31 +177,62 @@ async function createDatabase() {
   return { db, pool }
 }
 
+// --- Static Data Functions ---
 async function seedStaticData(db: ReturnType<typeof drizzle>) {
-  logger.info('🌱 Seeding static data...')
+  logger.info('📋 Seeding static data (training phases and plan templates)...')
 
   // Seed training phases
-  logger.info('📊 Seeding training phases...')
-  await db.insert(schema.training_phases).values(trainingPhasesData).onConflictDoNothing()
+  for (const phaseData of trainingPhasesData) {
+    try {
+      const existingPhase = await db
+        .select()
+        .from(schema.training_phases)
+        .where(eq(schema.training_phases.name, phaseData.name))
+        .limit(1)
+
+      if (existingPhase.length > 0) {
+        logger.info(`Training phase "${phaseData.name}" already exists, skipping...`)
+        continue
+      }
+
+      await db.insert(schema.training_phases).values(phaseData)
+      logger.info(`✅ Created training phase: ${phaseData.name}`)
+    } catch (error) {
+      logger.error(`❌ Failed to create training phase "${phaseData.name}":`, error)
+    }
+  }
 
   // Seed plan templates
-  logger.info('📋 Seeding plan templates...')
-  await db.insert(schema.plan_templates).values(planTemplatesData).onConflictDoNothing()
+  for (const templateData of planTemplatesData) {
+    try {
+      const existingTemplate = await db
+        .select()
+        .from(schema.plan_templates)
+        .where(eq(schema.plan_templates.name, templateData.name))
+        .limit(1)
 
-  logger.info('✅ Static data seeded successfully')
+      if (existingTemplate.length > 0) {
+        logger.info(`Plan template "${templateData.name}" already exists, skipping...`)
+        continue
+      }
+
+      await db.insert(schema.plan_templates).values(templateData)
+      logger.info(`✅ Created plan template: ${templateData.name}`)
+    } catch (error) {
+      logger.error(`❌ Failed to create plan template "${templateData.name}":`, error)
+    }
+  }
 }
 
+// --- Seeding Function ---
 async function seedTestUsers(db: ReturnType<typeof drizzle>) {
-  logger.info('👥 Creating test users with Better Auth API...')
+  logger.info('👥 Creating test users directly in database...')
 
   // Security warning for production
   if (process.env.NODE_ENV === 'production') {
     logger.warn('⚠️  WARNING: Creating test users in production environment!')
     logger.warn('⚠️  Ensure test user credentials are secure and monitored!')
   }
-
-  // Import auth only when needed, after environment variables are loaded
-  const { auth } = await import('../src/lib/better-auth')
 
   const testUsersData = getTestUsersData()
 
@@ -219,126 +252,218 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      // Use Better Auth API to create user properly (this handles password hashing correctly)
-      const result = await auth.api.signUpEmail({
-        body: {
+      // Generate unique IDs
+      const userId = `seed_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+      const accountId = `account_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+
+      // Generate a simple hash for the password (not secure, just for seeding)
+      const hashedPassword = `hashed_${userData.password}_seed`
+
+      // Insert user directly into database
+      const [newUser] = await db
+        .insert(schema.better_auth_users)
+        .values({
+          id: userId,
           email: userData.email,
-          password: userData.password,
           name: userData.name,
-          callbackURL: '/dashboard',
-        },
+          role: userData.role,
+          fullName: userData.fullName,
+          emailVerified: true, // Skip email verification for seeded users
+        })
+        .returning()
+
+      // Insert a basic account record for email/password auth
+      await db.insert(schema.better_auth_accounts).values({
+        id: accountId,
+        userId: newUser.id,
+        accountId: userData.email,
+        providerId: 'credential',
+        password: hashedPassword,
       })
 
-      // Check if user creation was successful
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ('data' in result && (result as any).data?.user?.id) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userId = (result as any).data.user.id
-        logger.info(`✅ Created user via Better Auth API: ${userData.email} (ID: ${userId})`)
-
-        // Update user with additional fields (role and fullName)
-        await db
-          .update(schema.better_auth_users)
-          .set({
-            fullName: userData.fullName,
-            role: userData.role,
-          })
-          .where(eq(schema.better_auth_users.id, userId))
-
-        logger.info(`✅ Updated user ${userData.email} with role: ${userData.role}`)
-
-        // Verify the user was created correctly
-        const createdUser = await db
-          .select()
-          .from(schema.better_auth_users)
-          .where(eq(schema.better_auth_users.id, userId))
-          .limit(1)
-
-        if (createdUser.length > 0) {
-          logger.info(`✅ User verification successful for ${userData.email}`)
-        }
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        logger.error(`Failed to create user ${userData.email}:`, (result as any).error)
-      }
+      logger.info(`✅ Created user: ${userData.email}`)
     } catch (error) {
-      logger.error(`Error creating user ${userData.email}:`, error)
+      logger.error(`🚨 EXCEPTION while creating user ${userData.email}:`, error)
     }
   }
 }
 
+// --- Training Plans & Sample Data Seeding ---
 async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
-  logger.info('🏃‍♂️ Creating sample training plan...')
+  logger.info('🏃 Creating sample training plans with coach-runner relationships...')
+
+  // Get coach and runners
+  const users = await db.select().from(schema.better_auth_users)
+  const coaches = users.filter(user => user.role === 'coach')
+  const runners = users.filter(user => user.role === 'runner')
+
+  if (coaches.length === 0 || runners.length === 0) {
+    logger.warn('⚠️ No coaches or runners found - skipping training plan creation')
+    return
+  }
+
+  // Create multiple training plans with proper relationships
+  const trainingPlansData = [
+    {
+      title: '100 Mile Ultra Training - Spring Peak',
+      description:
+        'Comprehensive 24-week training plan targeting a 100-mile ultramarathon with periodized training phases.',
+      coach_id: coaches[0].id, // Elena Rodriguez
+      runner_id: runners[0].id, // Alex Trail
+      target_race_date: new Date('2025-09-15'),
+      target_race_distance: '100 miles',
+    },
+    {
+      title: '50K Trail Race Preparation',
+      description:
+        '16-week plan focused on trail running techniques, elevation training, and race strategy.',
+      coach_id: coaches[1] ? coaches[1].id : coaches[0].id, // Sarah Mountain or Elena
+      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
+      target_race_date: new Date('2025-07-20'),
+      target_race_distance: '50K',
+    },
+    {
+      title: 'Ultra Marathon Base Building',
+      description:
+        'Foundation phase training plan for ultra distance preparation with gradual mileage increases.',
+      coach_id: coaches[0].id, // Elena Rodriguez (coaches both runners)
+      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
+      target_race_date: new Date('2025-10-01'),
+      target_race_distance: '50 miles',
+    },
+  ]
+
+  for (const planData of trainingPlansData) {
+    try {
+      const existingPlan = await db
+        .select()
+        .from(schema.training_plans)
+        .where(eq(schema.training_plans.title, planData.title))
+        .limit(1)
+
+      if (existingPlan.length > 0) {
+        logger.info(`Training plan "${planData.title}" already exists, skipping...`)
+        continue
+      }
+
+      const [newPlan] = await db.insert(schema.training_plans).values(planData).returning()
+      const coach = coaches.find(c => c.id === planData.coach_id)
+      const runner = runners.find(r => r.id === planData.runner_id)
+      logger.info(
+        `✅ Created training plan: "${planData.title}" (Coach: ${coach?.email}, Runner: ${runner?.email})`
+      )
+
+      // Create sample workouts for each training plan
+      await seedSampleWorkouts(db, newPlan.id, planData.title)
+    } catch (error) {
+      logger.error(`🚨 Failed to create training plan "${planData.title}":`, error)
+    }
+  }
+}
+
+// --- Sample Workouts Seeding ---
+async function seedSampleWorkouts(
+  db: ReturnType<typeof drizzle>,
+  trainingPlanId: string,
+  planTitle: string
+) {
+  const currentDate = new Date()
+
+  const workoutsData = [
+    {
+      training_plan_id: trainingPlanId,
+      date: startOfDay(addDays(currentDate, 1)), // Tomorrow
+      planned_distance: '5.00',
+      planned_duration: 45, // 45 minutes (stored as minutes)
+      planned_type: 'Easy Run',
+      status: 'planned' as const,
+    },
+    {
+      training_plan_id: trainingPlanId,
+      date: startOfDay(addDays(currentDate, 3)), // 3 days from now
+      planned_distance: '8.00',
+      planned_duration: 60, // 60 minutes
+      planned_type: 'Tempo Run',
+      status: 'planned' as const,
+    },
+    {
+      training_plan_id: trainingPlanId,
+      date: startOfDay(addDays(currentDate, 6)), // 6 days from now
+      planned_distance: '12.00',
+      planned_duration: 90, // 90 minutes
+      planned_type: 'Long Run',
+      status: 'planned' as const,
+    },
+  ]
 
   try {
-    // Get coach and runner
-    const [coach] = await db
-      .select()
-      .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testcoach@ultracoach.dev'))
-      .limit(1)
-
-    const [runner] = await db
-      .select()
-      .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testrunner@ultracoach.dev'))
-      .limit(1)
-
-    if (!coach || !runner) {
-      logger.warn('Coach or runner not found, skipping sample training plan')
-      return
-    }
-
-    // Create training plan
-    const [trainingPlan] = await db
-      .insert(schema.training_plans)
-      .values({
-        title: 'Sample 50K Training Plan',
-        description: 'A beginner-friendly 50K training plan for testing purposes',
-        coach_id: coach.id, // Use database column name
-        runner_id: runner.id, // Use database column name
-        target_race_date: new Date('2025-09-15'),
-        target_race_distance: '50K',
-      })
-      .returning()
-
-    // Create sample workouts
-    const today = new Date()
-    const workouts = [
-      {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 24 * 60 * 60 * 1000), // Tomorrow
-        planned_distance: '5.0', // Use database column name and string for decimal
-        planned_duration: 2400, // 40 minutes in seconds
-        planned_type: 'easy', // Use database column name
-        status: 'planned' as const,
-      },
-      {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-        planned_distance: '8.0', // Use database column name and string for decimal
-        planned_duration: 4800, // 80 minutes in seconds
-        planned_type: 'long_run', // Use database column name
-        status: 'planned' as const,
-      },
-      {
-        training_plan_id: trainingPlan.id, // Use database column name
-        date: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-        planned_distance: '3.0', // Use database column name and string for decimal
-        planned_duration: 1800, // 30 minutes in seconds
-        planned_type: 'recovery', // Use database column name
-        status: 'planned' as const,
-      },
-    ]
-
-    await db.insert(schema.workouts).values(workouts)
-
-    logger.info(`✅ Created sample training plan: ${trainingPlan.title}`)
+    await db.insert(schema.workouts).values(workoutsData)
+    logger.info(`  ✅ Added ${workoutsData.length} sample workouts for "${planTitle}"`)
+    logger.info(
+      `  📅 Workout dates: ${workoutsData.map(w => format(w.date, 'yyyy-MM-dd')).join(', ')}`
+    )
   } catch (error) {
-    logger.error('Failed to create sample training plan:', error)
+    logger.error(`  ❌ Failed to create sample workouts for "${planTitle}":`, error)
   }
 }
 
+// --- Conversations Seeding ---
+async function seedConversations(db: ReturnType<typeof drizzle>) {
+  logger.info('💬 Creating sample conversations between coaches and runners...')
+
+  // Get all users and training plans
+  const users = await db.select().from(schema.better_auth_users)
+  const coaches = users.filter(user => user.role === 'coach')
+  const runners = users.filter(user => user.role === 'runner')
+  const trainingPlans = await db.select().from(schema.training_plans)
+
+  if (coaches.length === 0 || runners.length === 0 || trainingPlans.length === 0) {
+    logger.warn('⚠️ Insufficient data for conversations - skipping conversation creation')
+    return
+  }
+
+  // Create conversations
+  const conversationsData = [
+    {
+      coach_id: coaches[0].id, // Elena Rodriguez
+      runner_id: runners[0].id, // Alex Trail
+      training_plan_id: trainingPlans[0].id,
+      title: 'Training Progress Check-in',
+    },
+    {
+      coach_id: coaches[1].id, // Sarah Mountain
+      runner_id: runners[1].id, // Mike Trailblazer
+      training_plan_id: trainingPlans[1].id,
+      title: 'Trail Running Technique Discussion',
+    },
+  ]
+
+  for (const convData of conversationsData) {
+    try {
+      const existingConv = await db
+        .select()
+        .from(schema.conversations)
+        .where(eq(schema.conversations.title, convData.title))
+        .limit(1)
+
+      if (existingConv.length > 0) {
+        logger.info(`Conversation "${convData.title}" already exists, skipping...`)
+        continue
+      }
+
+      const [newConv] = await db.insert(schema.conversations).values(convData).returning()
+      const coach = coaches.find(c => c.id === convData.coach_id)
+      const runner = runners.find(r => r.id === convData.runner_id)
+      logger.info(
+        `✅ Created conversation: "${convData.title}" (${coach?.name} ↔ ${runner?.name})`
+      )
+    } catch (error) {
+      logger.error(`🚨 Failed to create conversation "${convData.title}":`, error)
+    }
+  }
+}
+
+// --- Main Execution ---
 async function main() {
   const startTime = Date.now()
 
@@ -350,19 +475,37 @@ async function main() {
     // Seed static data first
     await seedStaticData(db)
 
-    // Create test users through Better Auth
+    // Create test users
     await seedTestUsers(db)
 
-    // Create sample training plan
+    // Create sample training plans with relationships
     await createSampleTrainingPlan(db)
+
+    // Create sample conversations
+    await seedConversations(db)
 
     // Show summary
     logger.info('📊 Database summary:')
-    const userCount = await db.$count(schema.better_auth_users)
-    const planCount = await db.$count(schema.training_plans)
-    const workoutCount = await db.$count(schema.workouts)
-    const phaseCount = await db.$count(schema.training_phases)
-    const templateCount = await db.$count(schema.plan_templates)
+    const userCount = await db
+      .select()
+      .from(schema.better_auth_users)
+      .then(r => r.length)
+    const planCount = await db
+      .select()
+      .from(schema.training_plans)
+      .then(r => r.length)
+    const workoutCount = await db
+      .select()
+      .from(schema.workouts)
+      .then(r => r.length)
+    const phaseCount = await db
+      .select()
+      .from(schema.training_phases)
+      .then(r => r.length)
+    const templateCount = await db
+      .select()
+      .from(schema.plan_templates)
+      .then(r => r.length)
 
     console.log(`
     📊 Seeding Results:
@@ -381,20 +524,23 @@ async function main() {
     console.log(`
     🎯 Database seeding completed successfully!
     • Test users created with secure credentials
-    • Use environment variables TEST_COACH_PASSWORD and TEST_RUNNER_PASSWORD
-    • Credentials are not displayed for security reasons
+    • Coach-runner relationships established
+    • Training plans and sample workouts added
     `)
-
-    process.exit(0)
   } catch (error) {
     logger.error('❌ Database seeding failed:', error)
+    // In test environment, don't exit process
+    if (process.env.NODE_ENV === 'test') {
+      throw error
+    }
     process.exit(1)
   }
 }
 
-// Handle script execution
-if (require.main === module) {
+// Only run main() if not in test environment or when required directly
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
   main()
 }
 
+// Export for testing
 export { main as seedDatabase }

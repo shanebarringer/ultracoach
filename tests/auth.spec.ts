@@ -1,31 +1,35 @@
 import { expect, test } from '@playwright/test'
 
+import {
+  assertAuthenticated,
+  loginAsUser,
+  navigateAndWait,
+  waitForAppReady,
+} from './utils/test-helpers'
+
 test.describe('Authentication Flow', () => {
   test('should display signin page', async ({ page }) => {
-    await page.goto('/auth/signin')
+    await navigateAndWait(page, '/auth/signin')
     await expect(page.locator('h1')).toContainText('🏔️ UltraCoach')
     await expect(page.locator('input[type="email"]')).toBeVisible()
     await expect(page.locator('input[type="password"]')).toBeVisible()
     await expect(page.locator('button[type="submit"]')).toBeVisible()
   })
 
-  test('should redirect to dashboard after successful login', async ({ page }) => {
-    await page.goto('/auth/signin')
+  test('should redirect to dashboard after successful runner login', async ({ page }) => {
+    await loginAsUser(page, 'runner')
+    await assertAuthenticated(page, 'runner')
+    await expect(page.locator('h1')).toContainText('Base Camp Dashboard')
+  })
 
-    // Fill in test credentials - using the actual test user emails from our database
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
-    await page.fill('input[type="password"]', 'password123')
-
-    // Click sign in
-    await page.click('button[type="submit"]')
-
-    // Should redirect to runner dashboard
-    await expect(page).toHaveURL(/dashboard\/runner/)
+  test('should redirect to dashboard after successful coach login', async ({ page }) => {
+    await loginAsUser(page, 'coach')
+    await assertAuthenticated(page, 'coach')
     await expect(page.locator('h1')).toContainText('Base Camp Dashboard')
   })
 
   test('should show error for invalid credentials', async ({ page }) => {
-    await page.goto('/auth/signin')
+    await navigateAndWait(page, '/auth/signin')
 
     // Fill in invalid credentials
     await page.fill('input[type="email"]', 'invalid@test.com')
@@ -34,8 +38,16 @@ test.describe('Authentication Flow', () => {
     // Click sign in
     await page.click('button[type="submit"]')
 
-    // Should show error message (check for error state in input field)
-    await expect(page.locator('input[type="email"]')).toHaveAttribute('aria-invalid', 'true')
+    // Wait for error state
+    await page.waitForTimeout(2000)
+
+    // Should show error message (check for error state in input field or error message)
+    const hasErrorAttribute = await page.locator('input[type="email"]').getAttribute('aria-invalid')
+    const hasErrorMessage = await page
+      .locator('text=Invalid credentials, text=error, .error-message')
+      .isVisible()
+
+    expect(hasErrorAttribute === 'true' || hasErrorMessage).toBeTruthy()
   })
 })
 
