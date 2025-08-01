@@ -9,8 +9,6 @@ import { useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
-import AsyncDataProvider from '@/components/data/AsyncDataProvider'
-import AsyncWorkoutsList from '@/components/data/AsyncWorkoutsList'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import WorkoutCard from '@/components/workouts/WorkoutCard'
@@ -151,54 +149,8 @@ export default function WorkoutsPage() {
             </Tabs>
           </div>
 
-          {/* Feature Toggle: Demonstrate Suspense vs Traditional Loading */}
-          <div className="mb-6">
-            <Card className="p-4 bg-linear-to-r from-primary/5 to-secondary/5 border border-primary/20">
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-foreground">🔬 React Suspense Demo</h4>
-                    <p className="text-sm text-foreground-600">
-                      Toggle between traditional loading and React Suspense patterns
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground-600">Traditional</span>
-                    <button
-                      onClick={() =>
-                        setUiState(prev => ({ ...prev, useSuspense: !prev.useSuspense }))
-                      }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        uiState.useSuspense ? 'bg-primary' : 'bg-default-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          uiState.useSuspense ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-foreground-600">Suspense</span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Conditional rendering: Modern React vs Traditional */}
-          {uiState.useSuspense ? (
-            // Modern React 19 Pattern with Enhanced Error Boundaries
-            <AsyncDataProvider enableSuspenseDemo={true}>
-              <AsyncWorkoutsList
-                onWorkoutPress={handleWorkoutPress}
-                formatDate={formatDate}
-                getWorkoutStatusColor={getWorkoutStatusColor}
-                getWorkoutTypeIcon={getWorkoutTypeIcon}
-                getWorkoutIntensityColor={getWorkoutIntensityColor}
-              />
-            </AsyncDataProvider>
-          ) : // Traditional Loading Pattern (existing)
-          loadingStates.workouts ? (
+          {/* Workout List with Enhanced React Suspense Loading */}
+          {loadingStates.workouts ? (
             <div className="flex justify-center items-center h-64">
               <Spinner size="lg" color="primary" label="Loading your training history..." />
             </div>
