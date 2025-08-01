@@ -74,7 +74,7 @@ export default function SignUp() {
         role: data.role,
       })
 
-      const result = await signUp(data.email, data.password, data.fullName)
+      const result = await signUp(data.email, data.password, data.fullName, data.role)
 
       if (!result.success) {
         logger.error('Sign up failed:', result.error)

@@ -136,10 +136,16 @@ export default function SignIn() {
 
           // Redirect based on user role with explicit validation
           if (userRole === 'coach') {
-            logger.info('✅ Redirecting COACH to /dashboard/coach', { userRole, userId: sessionData.data.user.id })
+            logger.info('✅ Redirecting COACH to /dashboard/coach', {
+              userRole,
+              userId: sessionData.data.user.id,
+            })
             router.push('/dashboard/coach')
           } else {
-            logger.info('✅ Redirecting RUNNER to /dashboard/runner', { userRole, userId: sessionData.data.user.id })
+            logger.info('✅ Redirecting RUNNER to /dashboard/runner', {
+              userRole,
+              userId: sessionData.data.user.id,
+            })
             router.push('/dashboard/runner')
           }
         } else {
