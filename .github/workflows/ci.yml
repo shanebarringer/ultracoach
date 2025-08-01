@@ -1,13 +1,16 @@
 # CI Workflow for UltraCoach
 #
-# Prerequisites:
-# - Set BETTER_AUTH_SECRET in GitHub repository secrets (64+ char hex string)
-# - If not set, falls back to a test secret for CI (less secure but functional)
+# REQUIRED: Set BETTER_AUTH_SECRET in GitHub repository secrets
 #
 # To set the secret:
-# 1. Go to GitHub repo → Settings → Secrets and variables → Actions
-# 2. Add BETTER_AUTH_SECRET with a secure 64+ character hex string
-# 3. Generate with: openssl rand -hex 32
+# 1. Generate a secure secret: openssl rand -hex 32
+# 2. Go to GitHub repo → Settings → Secrets and variables → Actions
+# 3. Click "New repository secret"
+# 4. Name: BETTER_AUTH_SECRET
+# 5. Value: [your generated 64-character hex string]
+# 6. Click "Add secret"
+#
+# Without this secret, the CI will fail!
 
 name: CI
 
@@ -21,8 +24,8 @@ jobs:
   vitest:
     runs-on: ubuntu-latest
     env:
-      # Required for Better Auth tests - use GitHub secret or generate one for CI
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci_test_secret_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' }}
+      # Required for Better Auth tests - must be set in GitHub repository secrets
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       NODE_ENV: test
     steps:
       - name: Checkout repository
@@ -75,8 +78,8 @@ jobs:
       TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
       TEST_RUNNER_PASSWORD: TestRunner123!
 
-      # Auth configuration - use GitHub secret or generate one for CI
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci_test_secret_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' }}
+      # Auth configuration - must be set in GitHub repository secrets
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       BETTER_AUTH_URL: http://localhost:3001
 
       # Email configuration (test mode)
