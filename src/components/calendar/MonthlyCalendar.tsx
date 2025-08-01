@@ -129,7 +129,7 @@ export default function MonthlyCalendar({
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
-    <Card className={`w-full ${className}`} shadow="sm">
+    <Card className={`w-full ${className}`} shadow="sm" data-testid="monthly-calendar">
       <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <CalendarIcon className="w-6 h-6 text-primary" />
