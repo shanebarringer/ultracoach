@@ -1,7 +1,31 @@
 /**
  * @vitest-environment node
  */
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Define proper types for our tests
+type UserRole = 'runner' | 'coach'
+type SessionUser = {
+  id: string
+  email: string
+  role?: UserRole
+}
+type SessionData = {
+  user?: SessionUser
+  session?: { id: string }
+}
+type ApiResponse = {
+  role?: UserRole
+}
+
+// Helper function to safely extract role
+const extractUserRole = (sessionData: SessionData | null): UserRole => {
+  return sessionData?.user?.role ?? 'runner'
+}
+
+const extractApiRole = (apiResponse: ApiResponse | null): UserRole => {
+  return apiResponse?.role ?? 'runner'
+}
 
 describe('Authentication Redirect Logic Tests', () => {
   beforeEach(() => {
@@ -10,85 +34,100 @@ describe('Authentication Redirect Logic Tests', () => {
 
   describe('Role-Based Redirect Logic', () => {
     it('should correctly identify coach role and return coach dashboard path', () => {
-      const userRole: string = 'coach'
-      const expectedPath = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-      
+      const userRole: UserRole = 'coach'
+      const getRedirectPath = (role: UserRole): string => {
+        return role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+      }
+      const expectedPath = getRedirectPath(userRole)
+
       expect(expectedPath).toBe('/dashboard/coach')
     })
 
     it('should correctly identify runner role and return runner dashboard path', () => {
-      const userRole: string = 'runner'
-      const expectedPath = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-      
+      const userRole: UserRole = 'runner'
+      const getRedirectPath = (role: UserRole): string => {
+        return role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+      }
+      const expectedPath = getRedirectPath(userRole)
+
       expect(expectedPath).toBe('/dashboard/runner')
     })
 
     it('should default to runner dashboard for undefined role', () => {
-      const userRole: string | undefined = undefined
-      const safeRole = userRole || 'runner'
-      const expectedPath = safeRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-      
+      const userRole: UserRole | undefined = undefined
+      const safeRole: UserRole = userRole || 'runner'
+      const getRedirectPath = (role: UserRole): string => {
+        return role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+      }
+      const expectedPath = getRedirectPath(safeRole)
+
       expect(expectedPath).toBe('/dashboard/runner')
     })
 
     it('should default to runner dashboard for null role', () => {
-      const userRole: string | null = null
-      const safeRole = userRole || 'runner'
-      const expectedPath = safeRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-      
+      const userRole: UserRole | null = null
+      const safeRole: UserRole = userRole || 'runner'
+      const getRedirectPath = (role: UserRole): string => {
+        return role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+      }
+      const expectedPath = getRedirectPath(safeRole)
+
       expect(expectedPath).toBe('/dashboard/runner')
     })
 
     it('should handle empty string role as runner', () => {
-      const userRole: string = ''
-      const safeRole = userRole || 'runner'
-      const expectedPath = safeRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-      
+      const userRole = '' // empty string
+      const safeRole: UserRole = (userRole as UserRole) || 'runner'
+      const getRedirectPath = (role: UserRole): string => {
+        return role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+      }
+      const expectedPath = getRedirectPath(safeRole)
+
       expect(expectedPath).toBe('/dashboard/runner')
     })
   })
 
   describe('Session Data Extraction', () => {
     it('should extract role from session data correctly', () => {
-      const sessionData: any = {
+      const sessionData: SessionData = {
         user: {
           id: 'user-123',
           email: 'coach@example.com',
-          role: 'coach'
-        }
+          role: 'coach',
+        },
       }
 
-      const userRole = (sessionData.user as any).role || 'runner'
+      const userRole: UserRole = sessionData.user?.role || 'runner'
       expect(userRole).toBe('coach')
     })
 
     it('should handle missing role property in session data', () => {
-      const sessionData: any = {
+      const sessionData: SessionData = {
         user: {
           id: 'user-123',
-          email: 'user@example.com'
+          email: 'user@example.com',
           // role is missing
-        }
+        },
       }
 
-      const userRole = (sessionData.user as any).role || 'runner'
+      const userRole: UserRole = sessionData.user?.role || 'runner'
       expect(userRole).toBe('runner')
     })
 
     it('should handle malformed session data gracefully', () => {
-      const sessionData: any = null
+      const sessionData: SessionData | null = null
 
-      const userRole = (sessionData?.user as any)?.role || 'runner'
+      const userRole: UserRole = extractUserRole(sessionData)
       expect(userRole).toBe('runner')
     })
 
     it('should handle session with missing user', () => {
-      const sessionData: any = {
+      const sessionData: SessionData = {
         // user is missing
-        session: { id: 'session-123' }
+        session: { id: 'session-123' },
       }
 
-      const userRole = (sessionData?.user as any)?.role || 'runner'
+      const userRole: UserRole = extractUserRole(sessionData)
       expect(userRole).toBe('runner')
     })
   })
@@ -112,23 +151,23 @@ describe('Authentication Redirect Logic Tests', () => {
     it('should construct correct API URL for role lookup', () => {
       const userId = 'user-123'
       const expectedUrl = `/api/user/role?userId=${userId}`
-      
+
       expect(expectedUrl).toBe('/api/user/role?userId=user-123')
     })
 
     it('should handle API response correctly', () => {
-      const mockApiResponse: any = {
-        role: 'coach'
+      const mockApiResponse: ApiResponse = {
+        role: 'coach',
       }
 
-      const finalRole = mockApiResponse.role || 'runner'
+      const finalRole: UserRole = mockApiResponse.role || 'runner'
       expect(finalRole).toBe('coach')
     })
 
     it('should fallback to default role when API fails', () => {
-      const mockApiResponse: any = null // API failed or returned null
+      const mockApiResponse: ApiResponse | null = null // API failed or returned null
 
-      const finalRole = mockApiResponse?.role || 'runner'
+      const finalRole: UserRole = extractApiRole(mockApiResponse)
       expect(finalRole).toBe('runner')
     })
   })
@@ -137,16 +176,16 @@ describe('Authentication Redirect Logic Tests', () => {
     it('should handle potential XSS in role values', () => {
       const maliciousRole = '<script>alert("xss")</script>'
       const isValidRole = ['runner', 'coach'].includes(maliciousRole)
-      
+
       expect(isValidRole).toBe(false)
-      
+
       // Should default to runner for invalid roles
       const safeRole = isValidRole ? maliciousRole : 'runner'
       expect(safeRole).toBe('runner')
     })
 
     it('should validate role values before redirect', () => {
-      const testCases: any[] = [
+      const testCases: unknown[] = [
         'runner',
         'coach',
         'admin', // Invalid
@@ -154,13 +193,13 @@ describe('Authentication Redirect Logic Tests', () => {
         null,
         undefined,
         123, // Invalid type
-        {},  // Invalid type
+        {}, // Invalid type
       ]
 
-      testCases.forEach((role) => {
+      testCases.forEach(role => {
         const isValid = typeof role === 'string' && ['runner', 'coach'].includes(role)
-        const safeRole = isValid ? role : 'runner'
-        
+        const safeRole: UserRole = isValid ? (role as UserRole) : 'runner'
+
         expect(['runner', 'coach'].includes(safeRole)).toBe(true)
       })
     })
@@ -168,7 +207,7 @@ describe('Authentication Redirect Logic Tests', () => {
     it('should handle numeric user IDs safely', () => {
       const userId = 123456
       const apiUrl = `/api/user/role?userId=${userId}`
-      
+
       expect(apiUrl).toBe('/api/user/role?userId=123456')
       expect(typeof apiUrl).toBe('string')
     })
@@ -176,7 +215,7 @@ describe('Authentication Redirect Logic Tests', () => {
     it('should handle string user IDs safely', () => {
       const userId = 'user-abc-123'
       const apiUrl = `/api/user/role?userId=${userId}`
-      
+
       expect(apiUrl).toBe('/api/user/role?userId=user-abc-123')
     })
   })
@@ -184,48 +223,57 @@ describe('Authentication Redirect Logic Tests', () => {
   describe('Error Recovery', () => {
     it('should continue with default role when session fetch fails', () => {
       // Simulate session fetch failure
-      const sessionData: any = null
-      const userRole = sessionData?.user?.role || 'runner'
-      
+      const sessionData: SessionData | null = null
+      const userRole: UserRole = extractUserRole(sessionData)
+
       expect(userRole).toBe('runner')
     })
 
     it('should continue with session role when API fetch fails', () => {
-      const sessionRole: string = 'coach'
+      const sessionRole: UserRole = 'coach'
       const apiFailed = true
-      
-      const finalRole = apiFailed ? sessionRole : 'from-api'
+
+      const finalRole: UserRole = apiFailed ? sessionRole : 'runner'
       expect(finalRole).toBe('coach')
     })
 
     it('should have final fallback to runner', () => {
-      const sessionRole: string | null = null
-      const apiRole: string | null = null
-      
-      const finalRole = sessionRole || apiRole || 'runner'
+      const sessionRole: UserRole | null = null
+      const apiRole: UserRole | null = null
+
+      const finalRole: UserRole = sessionRole || apiRole || 'runner'
       expect(finalRole).toBe('runner')
     })
   })
 
   describe('Performance Considerations', () => {
     it('should minimize API calls for known coach users', () => {
-      const sessionRole: string = 'coach'
-      const shouldCallAPI = !sessionRole || sessionRole === 'runner'
-      
+      const sessionRole: UserRole = 'coach'
+      const needsAPICall = (role: UserRole | null | undefined): boolean => {
+        return !role || role === 'runner'
+      }
+      const shouldCallAPI = needsAPICall(sessionRole)
+
       expect(shouldCallAPI).toBe(false) // No API call needed for coach
     })
 
     it('should call API for uncertain runner users', () => {
-      const sessionRole: string = 'runner'
-      const shouldCallAPI = !sessionRole || sessionRole === 'runner'
-      
+      const sessionRole: UserRole = 'runner'
+      const needsAPICall = (role: UserRole | null | undefined): boolean => {
+        return !role || role === 'runner'
+      }
+      const shouldCallAPI = needsAPICall(sessionRole)
+
       expect(shouldCallAPI).toBe(true) // API call needed to confirm
     })
 
     it('should call API for missing role data', () => {
-      const sessionRole: string | undefined = undefined
-      const shouldCallAPI = !sessionRole || sessionRole === 'runner'
-      
+      const sessionRole: UserRole | undefined = undefined
+      const needsAPICall = (role: UserRole | null | undefined): boolean => {
+        return !role || role === 'runner'
+      }
+      const shouldCallAPI = needsAPICall(sessionRole)
+
       expect(shouldCallAPI).toBe(true) // API call needed
     })
   })
