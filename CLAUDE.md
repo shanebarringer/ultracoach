@@ -67,4 +67,38 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ---
 
+## 🚨 TypeScript Code Quality Standards (CRITICAL)
+
+**NEVER use `any` type - this is strictly forbidden**
+
+Instead, always:
+
+1. Define proper types and interfaces for all data structures
+2. Use specific union types (e.g., `'runner' | 'coach'`) instead of string
+3. Use `unknown` for truly unknown data, then type guard/validate it
+4. Create reusable type definitions at the top of test files
+5. Prefer type safety over convenience - proper types prevent bugs
+
+Example of CORRECT typing:
+
+```typescript
+// ✅ GOOD - Define proper types
+type UserRole = 'runner' | 'coach'
+type SessionUser = { id: string; email: string; role?: UserRole }
+type SessionData = { user?: SessionUser }
+
+// ✅ GOOD - Use proper types
+const userRole: UserRole = sessionData?.user?.role || 'runner'
+```
+
+Example of INCORRECT typing:
+
+```typescript
+// ❌ BAD - Never use any
+const sessionData: any = { user: { role: 'coach' } }
+const userRole = (sessionData.user as any).role || 'runner'
+```
+
+---
+
 _This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._
