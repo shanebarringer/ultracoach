@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@heroui/react'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
+import { format } from 'date-fns'
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -63,7 +64,8 @@ export default function MonthlyCalendar({
     let currentDate = startOfWeek
 
     while (currentDate.compare(endOfWeek) <= 0) {
-      const dateString = currentDate.toString()
+      // Format CalendarDate to YYYY-MM-DD to match workout data format
+      const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
       const dayWorkouts = workouts.filter(workout => workout.date === dateString)
       const todayDate = today(getLocalTimeZone())
 
@@ -127,7 +129,7 @@ export default function MonthlyCalendar({
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
-    <Card className={`w-full ${className}`} shadow="sm">
+    <Card className={`w-full ${className}`} shadow="sm" data-testid="monthly-calendar">
       <CardHeader className="flex flex-row items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <CalendarIcon className="w-6 h-6 text-primary" />

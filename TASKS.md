@@ -17,6 +17,7 @@
   4. Fix UI Issues,
   5. Add Monthly Calendar,
   6. UI enhancements,
+     6A. Setup staging DB for Vercel Previews, and supporting commands for setup/teardown/seeding - so we're not using Prod data AND cleanup prod db:reset commands in package.json scripts (and bash scripts)
   7. Strava integration,
   8. Production monitoring,
   9. user feedback systems,
