@@ -81,32 +81,38 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      // Create user through Better Auth API
-      const result = await auth.api.signUpEmail({
-        body: {
+      // Create test user directly in database with proper authentication
+      const userId = `test_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+      const accountId = `account_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+
+      // Import bcrypt for password hashing
+      const bcrypt = await import('bcrypt')
+      const saltRounds = 12
+      const hashedPassword = await bcrypt.hash(userData.password, saltRounds)
+
+      // Insert user directly into database
+      const [newUser] = await db
+        .insert(schema.better_auth_users)
+        .values({
+          id: userId,
           email: userData.email,
-          password: userData.password,
           name: userData.name,
-          callbackURL: '/dashboard',
-        },
+          role: userData.role,
+          fullName: userData.fullName,
+          emailVerified: true, // Skip email verification for test users
+        })
+        .returning()
+
+      // Insert credential account record for password authentication
+      await db.insert(schema.better_auth_accounts).values({
+        id: accountId,
+        userId: newUser.id,
+        accountId: userData.email,
+        providerId: 'credential',
+        password: hashedPassword,
       })
 
-      // Update user with role and full name
-      if ('data' in result && (result as any).data?.user?.id) {
-        const userId = (result as any).data.user.id
-
-        await db
-          .update(schema.better_auth_users)
-          .set({
-            fullName: userData.fullName,
-            role: userData.role,
-          })
-          .where(eq(schema.better_auth_users.id, userId))
-
-        logger.info(`✅ Created test user: ${userData.email} (Role: ${userData.role})`)
-      } else {
-        logger.error(`Failed to create user ${userData.email}:`, (result as any).error)
-      }
+      logger.info(`✅ Created test user with secure authentication: ${userData.email}`)
     } catch (error) {
       logger.error(`Error creating test user ${userData.email}:`, error)
     }
