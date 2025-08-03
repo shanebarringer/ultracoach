@@ -123,7 +123,7 @@ const MetricCard = memo(function MetricCard({
 })
 
 function CoachDashboard() {
-  const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
+  const { trainingPlans, runners, recentWorkouts, loading, relationships } = useDashboardData()
 
   // Memoize expensive computations and add logging
   const typedTrainingPlans = useMemo(() => {
@@ -298,43 +298,117 @@ function CoachDashboard() {
         className="hover:shadow-lg transition-shadow duration-300"
         data-testid="runners-section"
       >
-        <CardHeader>
+        <CardHeader className="flex justify-between items-center">
           <div>
             <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
-            <p className="text-sm text-foreground-600">Runners on their summit journey</p>
+            <p className="text-sm text-foreground-600">
+              Runners on their summit journey ({runners.length} connected)
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              as={Link}
+              href="/relationships"
+              size="sm"
+              variant="flat"
+              color="primary"
+              className="hidden sm:flex"
+            >
+              Find Athletes
+            </Button>
+            <Button
+              as={Link}
+              href="/relationships"
+              size="sm"
+              color="primary"
+              className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+            >
+              🏃‍♂️ Connect
+            </Button>
           </div>
         </CardHeader>
         <CardBody>
           {runners.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-foreground-500">No runners assigned yet.</p>
+            <div className="text-center py-12">
+              <div className="mx-auto h-16 w-16 bg-default-100 rounded-full flex items-center justify-center mb-4">
+                <UsersIcon className="h-8 w-8 text-default-400" />
+              </div>
+              <p className="text-foreground font-medium mb-2">No athletes connected yet</p>
+              <p className="text-sm text-foreground-500 mb-4">
+                Connect with runners to start their journey to peak performance.
+              </p>
+              <Button
+                as={Link}
+                href="/relationships"
+                color="primary"
+                className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+              >
+                Find Athletes to Coach
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {runners.map(runner => (
-                <div
-                  key={runner.id}
-                  className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
-                      {(runner.full_name || 'U').charAt(0)}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {runners.map(runner => {
+                  // Find the relationship for this runner to show status
+                  const relationship = relationships.find(rel => rel.other_party.id === runner.id)
+
+                  return (
+                    <div
+                      key={runner.id}
+                      className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
+                          {(runner.full_name || 'U').charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-foreground">
+                              {runner.full_name || 'User'}
+                            </h4>
+                            {relationship && (
+                              <Chip
+                                size="sm"
+                                color={relationship.status === 'active' ? 'success' : 'warning'}
+                                variant="flat"
+                                className="capitalize"
+                              >
+                                {relationship.status}
+                              </Chip>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground-600">{runner.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="flat" color="primary" className="flex-1">
+                          View Progress
+                        </Button>
+                        <Button size="sm" variant="flat" color="success" className="flex-1">
+                          Send Message
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-foreground">{runner.full_name || 'User'}</h4>
-                      <p className="text-sm text-foreground-600">{runner.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="flat" color="primary" className="flex-1">
-                      View Progress
-                    </Button>
-                    <Button size="sm" variant="flat" color="success" className="flex-1">
-                      Send Message
-                    </Button>
-                  </div>
+                  )
+                })}
+              </div>
+
+              {/* Show connection actions */}
+              <div className="pt-4 border-t border-divider">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-foreground-600">Want to coach more athletes?</p>
+                  <Button
+                    as={Link}
+                    href="/relationships"
+                    size="sm"
+                    variant="bordered"
+                    color="primary"
+                  >
+                    Browse Available Runners
+                  </Button>
                 </div>
-              ))}
+              </div>
             </div>
           )}
         </CardBody>

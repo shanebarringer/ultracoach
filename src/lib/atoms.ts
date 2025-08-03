@@ -48,6 +48,7 @@ export const loadingStatesAtom = atom({
   trainingPlans: false,
   notifications: false,
   messages: false,
+  relationships: false,
   conversations: false,
   runners: false,
 })

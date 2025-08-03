@@ -53,6 +53,9 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **Invitation system**: Coaches can invite runners via email with automatic account creation
 - **Bidirectional discovery**: Both coaches and runners can browse and connect with each other
 - **Relationship status tracking**: pending, active, inactive with proper state management
+- **API Integration**: 5 comprehensive endpoints for relationship CRUD and discovery
+- **UI Components**: CoachSelector, RunnerSelector, RelationshipsList for complete relationship management
+- **Dashboard Enhancement**: Relationship-aware dashboards showing connected vs available users
 
 ### State Management (Jotai)
 
