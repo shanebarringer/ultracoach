@@ -15,23 +15,52 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 ### MCP Instructions
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
--
+
+## 🗄️ Database Connection (IMPORTANT)
+
+**Always use the proper database scripts - NEVER try to connect directly as local user!**
+
+### Correct Database Commands:
+
+```bash
+# Connect to database
+pnpm db:connect
+
+# Run a query
+pnpm db:query "SELECT * FROM coach_runners LIMIT 5;"
+
+# Drizzle operations
+pnpm db:generate    # Generate migrations
+pnpm db:push        # Push schema changes (uses --force)
+pnpm db:migrate     # Apply migrations
+pnpm db:studio      # Open Drizzle Studio
+
+# Database seeding and setup
+pnpm db:seed        # Seed database with test data
+pnpm db:fresh       # Reset and seed database
+```
+
+### Database Philosophy:
+
+- **Use Drizzle for ALL database operations** (migrations, queries, schema changes)
+- Environment variables are properly loaded from `.env.local`
+- Scripts handle Supabase connection string correctly
+- NEVER use direct psql commands without proper environment loading
 
 ## 📊 Project Overview
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-07-30)
+### Current Status (Updated: 2025-08-03)
 
-- **Active Milestone**: React Suspense Integration & Code Quality Enhancement ✅ **COMPLETE!**
-- **Core Development**: 100% (222/222 tasks) ✅ **COMPLETE** - All performance optimizations and React patterns implemented
-- **Production Readiness**: All phases complete with comprehensive security, authentication, and UI modernization
-- **Latest Achievement**: React Suspense modernization, TypeScript test fixes, enhanced loading states, and comprehensive error boundaries
-- **Tech Stack Modernization**: Upgraded to Tailwind v4, modern Husky v10 hooks, and React Suspense integration
-- **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors
-- **React Patterns**: Modern Suspense boundaries, enhanced loading skeletons, and streaming-friendly error handling
-- **Code Quality**: All TypeScript errors resolved, comprehensive test suite with proper type safety
-- **Next Phase**: Production monitoring, user feedback systems, and Strava integration
+- **Active Milestone**: Coach-Runner Relationship System 🔄 **IN PROGRESS**
+- **Core Development**: All foundation work complete including authentication, routing fixes, and relationship seeding
+- **Latest Achievement**: Email password reset with Resend integration, 5 runners created per coach with proper Better Auth credentials
+- **Authentication System**: ✅ Fully stable with Better Auth, customSession plugin, and proper role management
+- **Database Relationships**: ✅ Basic coach-runner relationships established through conversations table
+- **Current Focus**: Implementing comprehensive coach-runner relationship system with Drizzle migrations and bidirectional discovery
+- **Tech Stack Status**: Better Auth integration complete, Drizzle ORM with PostgreSQL, HeroUI components, React Suspense patterns
+- **Next Priorities**: Drizzle migration for `coach_runners` table, API endpoints for relationship management, UI components for coach/runner discovery
 
 ## 🏗️ Architecture & Technology
 
@@ -54,14 +83,13 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
-- **React Suspense Integration & Code Quality (2025-07-30)**: Complete modernization of async data loading with Suspense boundaries, TypeScript test fixes, and enhanced error handling
-- **React Suspense Enhancement**: Implemented comprehensive SuspenseBoundary components with retry logic, specialized boundaries for data lists/dashboard/forms, and withSuspenseBoundary HOC
-- **Loading State Modernization**: Created enhanced skeleton components (WorkoutCardSkeleton, TrainingPlanCardSkeleton, etc.) for consistent loading UX across the application
-- **TypeScript Quality Improvements**: Resolved all compilation errors in test files, fixed Better Auth API compatibility issues, updated environment variable handling with vi.stubEnv
-- **Husky Modernization**: Updated to v10-compatible format removing deprecated scripts, preventing future failures and maintaining automated quality checks
-- **Component Architecture**: Updated AsyncTrainingPlansList, AsyncWorkoutsList, and RecentActivity with modern Suspense patterns and improved error boundaries
-- **Developer Experience**: Zero TypeScript compilation errors, comprehensive test coverage with proper type safety, and streamlined development workflow
-- **Previous Achievements**: Tailwind CSS v4 upgrade, password reset flow, pre-commit automation, and coach/runner routing fixes all completed successfully
+- **Coach-Runner Relationship System (2025-08-03)**: Implementing comprehensive bidirectional relationship system with proper Drizzle migrations and user discovery workflows
+- **Authentication & Routing Fixes (2025-08-03)**: Complete resolution of infinite routing loops, Better Auth customSession integration, and proper role-based access control
+- **Email Password Reset (2025-08-03)**: Fully implemented with Resend integration, beautiful HTML email templates, and development/production environment support
+- **Database Seeding Enhancement (2025-08-03)**: Created 5 runners per coach with proper Better Auth credentials and established relationships through conversations table
+- **Migration Strategy Update**: Moving from manual Supabase queries to Drizzle ORM for better type safety and consistency across API routes
+- **User Journey Planning**: Designed bidirectional discovery system where both coaches and runners can browse and connect, plus invitation system for email-based onboarding
+- **Previous Achievements**: React Suspense integration, TypeScript test fixes, Husky v10 modernization, and comprehensive error boundary implementation all completed successfully
 
 ---
 

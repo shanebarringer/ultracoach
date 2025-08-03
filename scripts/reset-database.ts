@@ -57,12 +57,12 @@ async function resetDatabase() {
     }
 
     logger.info('✅ All tables dropped successfully')
-    
+
     // Now push the schema to recreate all tables
     logger.info('🏗️ Recreating database schema...')
-    
+
     await pool.end()
-    
+
     console.log(`
 🎯 Database reset complete!
 • All tables have been dropped
@@ -72,7 +72,6 @@ Next steps:
 1. Run: pnpm drizzle-kit push
 2. Run: pnpm seed-database
     `)
-
   } catch (error) {
     logger.error('❌ Database reset failed:', error)
     await pool.end()

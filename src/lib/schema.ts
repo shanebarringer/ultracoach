@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
@@ -244,6 +245,36 @@ export const races = pgTable('races', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
+
+// Coach-Runner Relationships
+export const coach_runners = pgTable(
+  'coach_runners',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    coach_id: text('coach_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    runner_id: text('runner_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['pending', 'active', 'inactive'] })
+      .default('pending')
+      .notNull(),
+    relationship_type: text('relationship_type', { enum: ['standard', 'invited'] })
+      .default('standard')
+      .notNull(),
+    invited_by: text('invited_by', { enum: ['coach', 'runner'] }),
+    relationship_started_at: timestamp('relationship_started_at', {
+      withTimezone: true,
+    }).defaultNow(),
+    notes: text('notes'),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  table => ({
+    unique_coach_runner: unique().on(table.coach_id, table.runner_id),
+  })
+)
 
 // ===================================
 // LEGACY ALIASES (For Better Auth compatibility)

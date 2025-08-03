@@ -3,8 +3,8 @@ import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { createLogger } from '../src/lib/logger'
 import { db } from '../src/lib/database'
+import { createLogger } from '../src/lib/logger'
 import * as schema from '../src/lib/schema'
 
 // Load test environment variables
@@ -80,8 +80,8 @@ async function seedTestUsers() {
           data: {
             fullName: userData.fullName,
             emailVerified: true, // Skip email verification for test users
-          }
-        }
+          },
+        },
       })
 
       if (result.error) {
@@ -173,9 +173,18 @@ async function main() {
     await createMinimalTestData()
 
     // Show summary
-    const userCount = await db.select().from(schema.user).then(r => r.length)
-    const planCount = await db.select().from(schema.training_plans).then(r => r.length)
-    const workoutCount = await db.select().from(schema.workouts).then(r => r.length)
+    const userCount = await db
+      .select()
+      .from(schema.user)
+      .then(r => r.length)
+    const planCount = await db
+      .select()
+      .from(schema.training_plans)
+      .then(r => r.length)
+    const workoutCount = await db
+      .select()
+      .from(schema.workouts)
+      .then(r => r.length)
 
     console.log(`
     🧪 Test Database Seeding Results:

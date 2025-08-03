@@ -1,4 +1,6 @@
 #!/usr/bin/env tsx
+import { generateRandomString } from 'better-auth/crypto'
+import { scrypt } from 'crypto'
 import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
@@ -7,12 +9,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { resolve } from 'path'
 import { Pool } from 'pg'
-import { generateRandomString } from 'better-auth/crypto'
-import { scrypt } from 'crypto'
 import { promisify } from 'util'
 
-import { createLogger } from '../src/lib/logger'
 import { db } from '../src/lib/database'
+import { createLogger } from '../src/lib/logger'
 import * as schema from '../src/lib/schema'
 
 // Load environment variables from .env.local BEFORE importing anything that uses them
@@ -360,7 +360,7 @@ async function seedTestUsers() {
       // Use direct database insertion with Better Auth patterns
       // Generate a proper user ID
       const userId = generateRandomString(10)
-      
+
       // Insert user directly into database
       await db.insert(schema.user).values({
         id: userId,
@@ -378,11 +378,12 @@ async function seedTestUsers() {
       // Create credential account for password authentication
       // Import Better Auth instance to access password hashing
       const { auth } = await import('../src/lib/better-auth')
-      
+
       // Use Better Auth's internal password hashing
-      const hashedPassword = await auth.options.emailAndPassword?.password?.hash?.(userData.password) 
-        || await defaultHash(userData.password)
-      
+      const hashedPassword =
+        (await auth.options.emailAndPassword?.password?.hash?.(userData.password)) ||
+        (await defaultHash(userData.password))
+
       await db.insert(schema.account).values({
         id: generateRandomString(10),
         accountId: userId, // Link to the user
@@ -474,10 +475,7 @@ async function createSampleTrainingPlan() {
 }
 
 // --- Sample Workouts Seeding ---
-async function seedSampleWorkouts(
-  trainingPlanId: string,
-  planTitle: string
-) {
+async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
   // Use the unified database connection
   const currentDate = new Date()
 

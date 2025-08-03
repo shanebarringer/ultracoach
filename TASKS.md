@@ -2,32 +2,113 @@
 
 ## 📋 Current Status
 
-- **Active Milestone**: UI Modernization & Developer Experience Enhancement ✅ **COMPLETE!**
-- **Last Updated**: 2025-07-30
-- **Current Focus**: Tailwind CSS v4 upgrade, password reset flow, and pre-commit automation
-- **Recent Completion**: Coach/runner routing fix, password reset implementation, Husky pre-commit hooks, Tailwind v4 upgrade
-- **Major Achievement**: Modern development stack with automated quality checks and enhanced user authentication!
+- **Active Milestone**: Coach-Runner Relationship System 🔄 **IN PROGRESS**
+- **Last Updated**: 2025-08-03
+- **Current Focus**: Implementing bidirectional coach-runner relationships with proper Drizzle migrations and user discovery system
+- **Recent Completion**: Email password reset implementation, 5 runners created for each coach with proper relationships established
+- **Major Achievement**: Foundation for scalable coach-runner connection system with invitation workflows!
 
 ## 📊 Progress Overview
 
 - **Next Phase**:
-  1. Fix Routing issues with Runners/Coaches on login - and email Password Reset (maybe use Resend (free version) or setup password reset without email if possible) - and Playwright CI (currently failing on main)
-  2. Fix Messaging Issues,
-  3. Fix Notifications,
-  4. Fix UI Issues,
-  5. Add Monthly Calendar,
-  6. UI enhancements,
-     6A. Setup staging DB for Vercel Previews, and supporting commands for setup/teardown/seeding - so we're not using Prod data AND cleanup prod db:reset commands in package.json scripts (and bash scripts)
-  7. Strava integration,
-  8. Production monitoring,
-  9. user feedback systems,
-  10. Setup Playwright MCP Github action
+  1. ✅ ~~Fix Routing issues with Runners/Coaches on login~~ - **COMPLETED 2025-08-03**
+  2. Email Password Reset implementation (use Resend free version or passwordless approach)
+  3. Fix Playwright CI (currently failing on main)
+  4. Fix Messaging Issues,
+  5. Fix Notifications,
+  6. Fix UI Issues,
+  7. Add Monthly Calendar,
+  8. UI enhancements,
+     8A. Setup staging DB for Vercel Previews, and supporting commands for setup/teardown/seeding - so we're not using Prod data AND cleanup prod db:reset commands in package.json scripts (and bash scripts)
+  9. Strava integration,
+  10. Production monitoring,
+  11. User feedback systems,
+  12. Setup Playwright MCP Github action
 
 _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILESTONES.md)_
 
 ---
 
-## 🚀 Production Readiness Phase 3: Secure Environment Management (IN PROGRESS)
+## ✅ **Authentication & Routing Fixes Milestone (COMPLETED 2025-08-03)**
+
+### Critical Issues Resolved
+
+- [x] **Routing Loop Bug** - Fixed infinite redirect between runner/coach dashboards
+  - Created unified `DashboardRouter` component with proper state management
+  - Eliminated circular redirect logic that caused server crashes
+  - Added graceful handling of invalid/missing user roles
+
+- [x] **Better Auth Integration** - Fixed user role field mapping and session management
+  - Added `customSession` plugin for proper role handling
+  - Configured `customSessionClient` for TypeScript inference
+  - Updated existing user roles from `'user'` to proper `'coach'/'runner'` values
+
+- [x] **Database Seeding** - Replaced manual insertion with Better Auth sign-up API
+  - Created `scripts/seed-users-better-auth.ts` using proper Better Auth flow
+  - Automated `.env.local` credential updates during seeding
+  - Stored Better Auth best practices in `.context7-docs/better-auth/`
+
+### Files Modified
+
+- `src/components/dashboard/DashboardRouter.tsx` (NEW)
+- `src/app/dashboard/runner/page.tsx` (SIMPLIFIED)
+- `src/app/dashboard/coach/page.tsx` (SIMPLIFIED)
+- `src/lib/better-auth.ts` (Added customSession plugin)
+- `src/lib/better-auth-client.ts` (Added customSessionClient)
+- `scripts/seed-users-better-auth.ts` (NEW)
+- `.context7-docs/better-auth/` (NEW documentation)
+- `PLANNING.md` (Updated with auth architecture)
+- `TASKS.md` (This file)
+
+### Testing Results
+
+✅ **No more routing loops** - Users can login and stay on appropriate dashboard  
+✅ **Proper role-based access** - Coaches see coach features, runners see runner features  
+✅ **Better Auth best practices** - Following official patterns for stability  
+✅ **Reliable seeding** - Consistent test user creation with proper roles
+
+---
+
+## 🤝 **Coach-Runner Relationship System Milestone (IN PROGRESS 2025-08-03)**
+
+### User Journey Implementation
+
+- [ ] **Bidirectional Discovery System** - Both coaches and runners can browse and connect
+  - [ ] Add `coach_runners` table with proper Drizzle migration
+  - [ ] Create `/api/coaches/available` endpoint for runner discovery
+  - [ ] Create `/api/runners/available` endpoint for coach discovery
+  - [ ] Build `CoachSelector` component for runner use
+  - [ ] Build `RunnerSelector` component for coach use
+
+- [ ] **Invitation & Connection Flow** - Seamless relationship establishment
+  - [ ] Create `/api/coach-runners` for relationship management
+  - [ ] Create `/api/invitations` for invitation handling
+  - [ ] Build `RelationshipInviteModal` component
+  - [ ] Build `InviteUserModal` for email-based invitations
+  - [ ] Implement notification system for invitations
+
+- [ ] **Dashboard Integration** - Enhanced user experience
+  - [ ] Update CoachDashboard with "Find Runners" functionality
+  - [ ] Update RunnerDashboard with "Find a Coach" functionality
+  - [ ] Add relationship status indicators
+  - [ ] Create `CoachRunnerManagement` component
+
+- [ ] **Migration from Supabase to Drizzle** - Improve consistency and type safety
+  - [ ] Update existing `/api/coaches` route to use Drizzle ORM
+  - [ ] Update existing `/api/runners` route to use Drizzle ORM
+  - [ ] Add Drizzle migration scripts to package.json
+  - [ ] Replace Supabase Admin queries with typed Drizzle queries
+
+### Database Architecture
+
+- **New Table**: `coach_runners` with relationship status tracking
+- **Migration Strategy**: Use `drizzle-kit generate` and `supabase db push`
+- **Type Safety**: Full TypeScript inference with Drizzle ORM
+- **Relationship Types**: Standard, invited, pending with proper state management
+
+---
+
+## 🚀 Production Readiness Phase 3: Secure Environment Management (FUTURE PRIORITY)
 
 ### Production Monitoring & Analytics (FUTURE PRIORITY)
 

@@ -1,17 +1,12 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin } from 'better-auth/plugins'
 import { nextCookies } from 'better-auth/next-js'
+import { admin, customSession } from 'better-auth/plugins'
 import { Resend } from 'resend'
 
 import { db } from './database'
 import { createLogger } from './logger'
-import {
-  account,
-  session,
-  user,
-  verification,
-} from './schema'
+import { account, session, user, verification } from './schema'
 
 const logger = createLogger('better-auth')
 
@@ -326,6 +321,18 @@ ${textTemplate}
 
     plugins: [
       admin(), // Enable admin API for user management
+      customSession(async ({ user, session }) => {
+        // Ensure role is properly typed and available
+        const typedUser = user as typeof user & { role?: string; fullName?: string }
+        return {
+          user: {
+            ...user,
+            role: (typedUser.role as 'runner' | 'coach') || 'runner',
+            fullName: typedUser.fullName || null,
+          },
+          session,
+        }
+      }),
       nextCookies(), // Must be last plugin - handles Next.js cookie integration
     ],
   })

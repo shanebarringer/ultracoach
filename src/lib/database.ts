@@ -30,9 +30,9 @@ const client = postgres(process.env.DATABASE_URL, {
 })
 
 // Initialize Drizzle with the schema
-export const db = drizzle(client, { 
+export const db = drizzle(client, {
   schema,
-  logger: process.env.NODE_ENV === 'development'
+  logger: process.env.NODE_ENV === 'development',
 })
 
 // Export the client for Better Auth if needed

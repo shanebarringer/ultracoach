@@ -13,14 +13,14 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **UI Library**: HeroUI with custom Mountain Peak theme
 - **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
 - **State Management**: Jotai for atomic, granular state management
-- **Authentication**: Better Auth with Drizzle adapter and PostgreSQL
+- **Authentication**: Better Auth with Drizzle adapter, custom session management, and role-based access
 - **Real-time**: Supabase Realtime for live updates
 - **TypeScript**: Full TypeScript with strict mode for type safety
 
 ### Backend Architecture
 
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
-- **Authentication**: Better Auth with Drizzle ORM and Supabase PostgreSQL
+- **Authentication**: Better Auth with custom fields (role, fullName), customSession plugin, and proper TypeScript inference
 - **API**: Next.js API routes with RESTful design
 - **Real-time**: Supabase Realtime subscriptions
 - **File Storage**: Supabase Storage (future: workout photos, documents)
@@ -45,6 +45,14 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **plan_phases**: Training plan phase progression tracking
 - **plan_templates**: Reusable templates for common distances (50K-100M)
 - **template_phases**: Phase structure definitions for templates
+
+### Coach-Runner Relationship System (NEW 2025-08-03)
+
+- **coach_runners**: Direct coach-runner relationships with status management and bidirectional connections
+- **Support for multiple relationship types**: Standard coaching, invited connections, pending relationships
+- **Invitation system**: Coaches can invite runners via email with automatic account creation
+- **Bidirectional discovery**: Both coaches and runners can browse and connect with each other
+- **Relationship status tracking**: pending, active, inactive with proper state management
 
 ### State Management (Jotai)
 
@@ -238,6 +246,15 @@ supabase db pull              # Sync schema changes
 - Enhanced analytics combining planned vs actual performance data
 - Coach insights dashboard with execution vs planning analysis
 
+### Coach-Runner Relationship Management (NEW 2025-08-03)
+
+- **Bidirectional Discovery**: Runners can browse available coaches, coaches can browse available runners
+- **Flexible Connection Flow**: Both parties can initiate relationships for optimal user experience
+- **Invitation System**: Coaches can create accounts for runners via email and invite them to join
+- **Relationship Status Management**: pending, active, inactive states with proper lifecycle management
+- **Multi-Coach Support**: Runners can potentially work with multiple coaches (future enhancement)
+- **Relationship History**: Track when relationships started, notes, and relationship metadata
+
 ### Real-time Communication
 
 - Coach-runner chat with typing indicators and smart auto-scroll
@@ -293,6 +310,45 @@ ultracoach/
 └── TASKS.md                # Milestone-based task tracking
 ```
 
+## 🔧 Recent Authentication Fixes (2025-08-03)
+
+### Critical Issues Resolved
+
+1. **Routing Loop Bug (FIXED)** ✅
+   - **Issue**: Infinite redirect loop between `/dashboard/runner` and `/dashboard/coach`
+   - **Root Cause**: Circular redirect logic when user role didn't match expected route
+   - **Solution**: Created unified `DashboardRouter` component with proper state handling
+   - **Files**: `src/components/dashboard/DashboardRouter.tsx`, updated dashboard pages
+
+2. **Better Auth Role Integration (FIXED)** ✅
+   - **Issue**: User roles stored as `'user'` instead of `'coach'/'runner'`
+   - **Root Cause**: Manual database insertion bypassing Better Auth validation
+   - **Solution**: Added `customSession` plugin and `customSessionClient` for proper type inference
+   - **Files**: `src/lib/better-auth.ts`, `src/lib/better-auth-client.ts`
+
+3. **Database Schema Standardization (IMPROVED)** ✅
+   - **Issue**: Inconsistent field naming and role values
+   - **Solution**: Updated existing user roles and created Better Auth-compliant seeding script
+   - **Files**: `scripts/seed-users-better-auth.ts`, database role updates
+
+### Better Auth Integration Best Practices
+
+- ✅ Use Better Auth sign-up API instead of manual user insertion
+- ✅ Configure `customSession` plugin for proper session data transformation
+- ✅ Add `customSessionClient` for client-side type inference
+- ✅ Implement unified dashboard routing to prevent circular redirects
+- ✅ Store Better Auth documentation in `.context7-docs/better-auth/`
+
+### New Seeding Approach
+
+```bash
+# Use Better Auth-compliant seeding (recommended)
+pnpm tsx scripts/seed-users-better-auth.ts
+
+# Old manual seeding (deprecated)
+pnpm run db:seed
+```
+
 ## 🚀 Development Commands
 
 ### Getting Started
@@ -327,6 +383,12 @@ pnpm dev
 # TypeScript database seeding (recommended)
 pnpm db:seed              # Development database
 pnpm prod:db:seed         # Production database
+
+# Drizzle Migration Management (NEW 2025-08-03)
+pnpm db:generate          # Generate migrations from schema changes
+pnpm db:migrate           # Apply migrations to database
+pnpm db:studio            # Launch Drizzle Studio for database visualization
+pnpm db:drop              # Drop migration (use with caution)
 
 # Legacy shell scripts (backup)
 ./supabase/scripts/seed_database.sh
