@@ -1,11 +1,10 @@
 #!/usr/bin/env tsx
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/node-postgres'
 import { resolve } from 'path'
-import { Pool } from 'pg'
 
 import { createLogger } from '../src/lib/logger'
+import { db } from '../src/lib/database'
 import * as schema from '../src/lib/schema'
 
 // Load test environment variables
@@ -45,22 +44,12 @@ const testUsers = [
   },
 ]
 
-async function createTestDatabase() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required for tests')
-  }
+// Use the unified database connection from our main database module
+// This ensures consistency with Better Auth and the rest of the application
 
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: false, // Local test database doesn't need SSL
-  })
-
-  const db = drizzle(pool, { schema })
-  return { db, pool }
-}
-
-async function seedTestUsers(db: ReturnType<typeof drizzle>) {
-  logger.info('👥 Creating test users for CI...')
+async function seedTestUsers() {
+  // Use the unified database connection
+  logger.info('👥 Creating test users for CI using Better Auth Admin API...')
 
   // Import auth only when needed
   const { auth } = await import('../src/lib/better-auth')
@@ -72,8 +61,8 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
       // Check if user already exists
       const existingUser = await db
         .select()
-        .from(schema.better_auth_users)
-        .where(eq(schema.better_auth_users.email, userData.email))
+        .from(schema.user)
+        .where(eq(schema.user.email, userData.email))
         .limit(1)
 
       if (existingUser.length > 0) {
@@ -81,59 +70,48 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      // Create test user directly in database with proper authentication
-      const userId = `test_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
-      const accountId = `account_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
-
-      // Import bcrypt for password hashing
-      const bcrypt = await import('bcrypt')
-      const saltRounds = 12
-      const hashedPassword = await bcrypt.hash(userData.password, saltRounds)
-
-      // Insert user directly into database
-      const [newUser] = await db
-        .insert(schema.better_auth_users)
-        .values({
-          id: userId,
+      // Use Better Auth Admin API to create user properly
+      const result = await auth.api.adminCreateUser({
+        body: {
           email: userData.email,
+          password: userData.password,
           name: userData.name,
           role: userData.role,
-          fullName: userData.fullName,
-          emailVerified: true, // Skip email verification for test users
-        })
-        .returning()
-
-      // Insert credential account record for password authentication
-      await db.insert(schema.better_auth_accounts).values({
-        id: accountId,
-        userId: newUser.id,
-        accountId: userData.email,
-        providerId: 'credential',
-        password: hashedPassword,
+          data: {
+            fullName: userData.fullName,
+            emailVerified: true, // Skip email verification for test users
+          }
+        }
       })
 
-      logger.info(`✅ Created test user with secure authentication: ${userData.email}`)
+      if (result.error) {
+        logger.error(`Failed to create test user ${userData.email}:`, result.error)
+        continue
+      }
+
+      logger.info(`✅ Created test user with Better Auth API: ${userData.email}`)
     } catch (error) {
       logger.error(`Error creating test user ${userData.email}:`, error)
     }
   }
 }
 
-async function createMinimalTestData(db: ReturnType<typeof drizzle>) {
+async function createMinimalTestData() {
+  // Use the unified database connection
   logger.info('🏃‍♂️ Creating minimal test data...')
 
   try {
     // Get test users
     const coach = await db
       .select()
-      .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testcoach@ultracoach.dev'))
+      .from(schema.user)
+      .where(eq(schema.user.email, 'testcoach@ultracoach.dev'))
       .limit(1)
 
     const runner = await db
       .select()
-      .from(schema.better_auth_users)
-      .where(eq(schema.better_auth_users.email, 'testrunner@ultracoach.dev'))
+      .from(schema.user)
+      .where(eq(schema.user.email, 'testrunner@ultracoach.dev'))
       .limit(1)
 
     if (coach.length === 0 || runner.length === 0) {
@@ -188,18 +166,16 @@ async function main() {
   try {
     logger.info('🧪 Starting test database seeding...')
 
-    const { db, pool } = await createTestDatabase()
-
     // Create test users
-    await seedTestUsers(db)
+    await seedTestUsers()
 
     // Create minimal test data
-    await createMinimalTestData(db)
+    await createMinimalTestData()
 
     // Show summary
-    const userCount = await db.$count(schema.better_auth_users)
-    const planCount = await db.$count(schema.training_plans)
-    const workoutCount = await db.$count(schema.workouts)
+    const userCount = await db.select().from(schema.user).then(r => r.length)
+    const planCount = await db.select().from(schema.training_plans).then(r => r.length)
+    const workoutCount = await db.select().from(schema.workouts).then(r => r.length)
 
     console.log(`
     🧪 Test Database Seeding Results:
@@ -208,7 +184,7 @@ async function main() {
     └── Workouts: ${workoutCount}
     `)
 
-    await pool.end()
+    // Database connection will be cleaned up automatically by the unified database module
 
     const duration = Date.now() - startTime
     logger.info(`✅ Test database seeding completed in ${duration}ms`)

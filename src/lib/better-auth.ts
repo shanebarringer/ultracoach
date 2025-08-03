@@ -1,21 +1,19 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { admin } from 'better-auth/plugins'
 import { nextCookies } from 'better-auth/next-js'
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { Pool } from 'pg'
 import { Resend } from 'resend'
 
+import { db } from './database'
 import { createLogger } from './logger'
 import {
-  better_auth_accounts,
-  better_auth_sessions,
-  better_auth_users,
-  better_auth_verification_tokens,
+  account,
+  session,
+  user,
+  verification,
 } from './schema'
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required for Better Auth')
-}
+const logger = createLogger('better-auth')
 
 // Validate and ensure proper Better Auth secret format
 function validateBetterAuthSecret(): string {
@@ -39,7 +37,6 @@ function validateBetterAuthSecret(): string {
   return secret
 }
 
-const logger = createLogger('better-auth')
 const betterAuthSecret = validateBetterAuthSecret()
 
 // Initialize Resend client for email sending
@@ -50,90 +47,6 @@ if (process.env.RESEND_API_KEY) {
 } else {
   logger.warn('RESEND_API_KEY not found - email sending will be disabled in production')
 }
-
-// Create a dedicated database connection for Better Auth with production-optimized settings
-let betterAuthPool: Pool
-
-function createSSLConfig() {
-  if (process.env.NODE_ENV === 'production') {
-    // Production SSL configuration for Supabase
-    return {
-      rejectUnauthorized: false, // Supabase manages certificates - this is safe for managed services
-      sslmode: 'require', // Require SSL connection
-    }
-  }
-  // No SSL for local development
-  return false
-}
-
-function createPoolConfig() {
-  const baseConfig = {
-    connectionString: process.env.DATABASE_URL,
-    ssl: createSSLConfig(),
-    application_name: 'ultracoach-better-auth',
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    // Production-optimized settings for Vercel serverless
-    return {
-      ...baseConfig,
-      max: 3, // Conservative pool size for serverless
-      min: 0, // No minimum connections in serverless
-      idleTimeoutMillis: 30000, // Shorter timeout for serverless
-      connectionTimeoutMillis: 10000, // Faster timeout for production
-      acquireTimeoutMillis: 10000, // Timeout for acquiring connections
-      createTimeoutMillis: 10000, // Timeout for creating connections
-      destroyTimeoutMillis: 5000, // Timeout for destroying connections
-      reapIntervalMillis: 1000, // More frequent connection reaping
-      createRetryIntervalMillis: 200, // Retry interval for failed connections
-      propagateCreateError: false, // Don't propagate creation errors immediately
-    }
-  } else {
-    // Development settings
-    return {
-      ...baseConfig,
-      max: 5,
-      min: 1,
-      idleTimeoutMillis: 300000, // 5 minutes
-      connectionTimeoutMillis: 60000, // 60 seconds
-    }
-  }
-}
-
-try {
-  const poolConfig = createPoolConfig()
-  betterAuthPool = new Pool(poolConfig)
-
-  logger.info('Better Auth database pool initialized with configuration:', {
-    environment: process.env.NODE_ENV,
-    hasSSL: !!poolConfig.ssl,
-    maxConnections: poolConfig.max,
-    minConnections: poolConfig.min,
-  })
-} catch (error) {
-  logger.error('Failed to initialize Better Auth database pool:', error)
-  throw new Error(
-    `Database pool initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-  )
-}
-
-// Add connection event handlers for monitoring
-betterAuthPool.on('connect', () => {
-  logger.info('Database connection established')
-})
-
-betterAuthPool.on('error', err => {
-  logger.error('Database pool error:', err)
-  // Don't exit the process, just log the error
-})
-
-betterAuthPool.on('remove', () => {
-  logger.debug('Client removed from pool')
-})
-
-const betterAuthDb = drizzle(betterAuthPool)
 
 // Construct proper Better Auth base URL following Vercel best practices
 function getBetterAuthBaseUrl(): string {
@@ -235,13 +148,13 @@ try {
   })
 
   auth = betterAuth({
-    database: drizzleAdapter(betterAuthDb, {
+    database: drizzleAdapter(db, {
       provider: 'pg',
       schema: {
-        user: better_auth_users,
-        account: better_auth_accounts,
-        session: better_auth_sessions,
-        verification: better_auth_verification_tokens,
+        user: user,
+        account: account,
+        session: session,
+        verification: verification,
       },
     }),
     session: {
@@ -412,6 +325,7 @@ ${textTemplate}
     },
 
     plugins: [
+      admin(), // Enable admin API for user management
       nextCookies(), // Must be last plugin - handles Next.js cookie integration
     ],
   })
@@ -445,19 +359,6 @@ export type User = typeof auth.$Infer.Session.user & {
   role: 'runner' | 'coach'
   fullName?: string | null
 }
-
-// Graceful shutdown handling
-const gracefulShutdown = (signal: string) => {
-  logger.info(`Received ${signal}, closing database connections...`)
-  betterAuthPool.end(() => {
-    logger.info('Database pool connections closed')
-    process.exit(0)
-  })
-}
-
-// Handle process termination
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
-process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 
 // Type definitions for the application
 declare module 'better-auth' {

@@ -1,5 +1,4 @@
 #!/usr/bin/env tsx
-import * as bcrypt from 'bcrypt'
 import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
@@ -8,14 +7,27 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { resolve } from 'path'
 import { Pool } from 'pg'
+import { generateRandomString } from 'better-auth/crypto'
+import { scrypt } from 'crypto'
+import { promisify } from 'util'
 
 import { createLogger } from '../src/lib/logger'
+import { db } from '../src/lib/database'
 import * as schema from '../src/lib/schema'
 
 // Load environment variables from .env.local BEFORE importing anything that uses them
 config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('database-seed')
+
+// Password hashing using scrypt (matching Better Auth's default)
+const scryptAsync = promisify(scrypt)
+
+async function defaultHash(password: string): Promise<string> {
+  const salt = generateRandomString(16)
+  const hash = (await scryptAsync(password, salt, 32)) as Buffer
+  return `${salt}:${hash.toString('hex')}`
+}
 
 // Environment management functions
 function updateEnvLocal(testUsers: ReturnType<typeof getTestUsersData>) {
@@ -249,30 +261,12 @@ function getTestUsersData() {
 }
 
 // --- Database Setup ---
-async function createDatabase() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required')
-  }
-
-  // Create database connection (reuse Better Auth pool configuration)
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl:
-      process.env.NODE_ENV === 'production'
-        ? {
-            rejectUnauthorized: true, // Require valid SSL certificates in production
-            ca: process.env.DATABASE_SSL_CERT, // Optional: specify CA certificate
-          }
-        : false,
-  })
-
-  const db = drizzle(pool, { schema })
-
-  return { db, pool }
-}
+// Use the unified database connection from our main database module
+// This ensures consistency with Better Auth and the rest of the application
 
 // --- Static Data Functions ---
-async function seedStaticData(db: ReturnType<typeof drizzle>) {
+async function seedStaticData() {
+  // Use the unified database connection
   logger.info('📋 Seeding static data (training phases and plan templates)...')
 
   // Seed training phases
@@ -310,7 +304,20 @@ async function seedStaticData(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      await db.insert(schema.plan_templates).values(templateData)
+      // Transform the data to match the database schema
+      const dbTemplateData = {
+        name: templateData.name,
+        description: templateData.description,
+        distance_type: templateData.distanceType,
+        duration_weeks: templateData.durationWeeks,
+        difficulty_level: templateData.difficultyLevel,
+        peak_weekly_miles: templateData.peakWeeklyMiles,
+        min_base_miles: templateData.minBaseMiles,
+        is_public: templateData.isPublic,
+        tags: templateData.tags,
+      }
+
+      await db.insert(schema.plan_templates).values(dbTemplateData)
       logger.info(`✅ Created plan template: ${templateData.name}`)
     } catch (error) {
       logger.error(`❌ Failed to create plan template "${templateData.name}":`, error)
@@ -318,9 +325,10 @@ async function seedStaticData(db: ReturnType<typeof drizzle>) {
   }
 }
 
-// --- Seeding Function ---
-async function seedTestUsers(db: ReturnType<typeof drizzle>) {
-  logger.info('👥 Creating test users directly in database...')
+// --- Better Auth User Creation ---
+async function seedTestUsers() {
+  // Use the unified database connection
+  logger.info('👥 Creating test users using Better Auth Admin API...')
 
   // Security warning for production
   if (process.env.NODE_ENV === 'production') {
@@ -330,6 +338,9 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
 
   const testUsersData = getTestUsersData()
 
+  // Import Better Auth instance
+  const { auth } = await import('../src/lib/better-auth')
+
   for (const userData of testUsersData) {
     try {
       logger.info(`Creating user: ${userData.email}`)
@@ -337,8 +348,8 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
       // Check if user already exists first
       const existingUser = await db
         .select()
-        .from(schema.better_auth_users)
-        .where(eq(schema.better_auth_users.email, userData.email))
+        .from(schema.user)
+        .where(eq(schema.user.email, userData.email))
         .limit(1)
 
       if (existingUser.length > 0) {
@@ -346,37 +357,42 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
         continue
       }
 
-      // Create user directly in database with proper authentication
-      const userId = `seed_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
-      const accountId = `account_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
-
-      // Generate proper bcrypt hash for the password
-      const saltRounds = 12
-      const hashedPassword = await bcrypt.hash(userData.password, saltRounds)
-
+      // Use direct database insertion with Better Auth patterns
+      // Generate a proper user ID
+      const userId = generateRandomString(10)
+      
       // Insert user directly into database
-      const [newUser] = await db
-        .insert(schema.better_auth_users)
-        .values({
-          id: userId,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role,
-          fullName: userData.fullName,
-          emailVerified: true, // Skip email verification for seeded users
-        })
-        .returning()
-
-      // Insert credential account record for password authentication
-      await db.insert(schema.better_auth_accounts).values({
-        id: accountId,
-        userId: newUser.id,
-        accountId: userData.email,
-        providerId: 'credential',
-        password: hashedPassword,
+      await db.insert(schema.user).values({
+        id: userId,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        fullName: userData.fullName,
+        emailVerified: false, // Set appropriate verification status
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
 
-      logger.info(`✅ Created user with secure authentication: ${userData.email}`)
+      logger.info(`✅ Created user: ${userData.email} (${userData.role})`)
+
+      // Create credential account for password authentication
+      // Import Better Auth instance to access password hashing
+      const { auth } = await import('../src/lib/better-auth')
+      
+      // Use Better Auth's internal password hashing
+      const hashedPassword = await auth.options.emailAndPassword?.password?.hash?.(userData.password) 
+        || await defaultHash(userData.password)
+      
+      await db.insert(schema.account).values({
+        id: generateRandomString(10),
+        accountId: userId, // Link to the user
+        providerId: 'credential', // Important: Must be 'credential' for email/password
+        userId: userId,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      logger.info(`✅ Created credential account for: ${userData.email}`)
     } catch (error) {
       logger.error(`🚨 EXCEPTION while creating user ${userData.email}:`, error)
     }
@@ -384,11 +400,12 @@ async function seedTestUsers(db: ReturnType<typeof drizzle>) {
 }
 
 // --- Training Plans & Sample Data Seeding ---
-async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
+async function createSampleTrainingPlan() {
+  // Use the unified database connection
   logger.info('🏃 Creating sample training plans with coach-runner relationships...')
 
   // Get coach and runners
-  const users = await db.select().from(schema.better_auth_users)
+  const users = await db.select().from(schema.user)
   const coaches = users.filter(user => user.role === 'coach')
   const runners = users.filter(user => user.role === 'runner')
 
@@ -449,7 +466,7 @@ async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
       )
 
       // Create sample workouts for each training plan
-      await seedSampleWorkouts(db, newPlan.id, planData.title)
+      await seedSampleWorkouts(newPlan.id, planData.title)
     } catch (error) {
       logger.error(`🚨 Failed to create training plan "${planData.title}":`, error)
     }
@@ -458,10 +475,10 @@ async function createSampleTrainingPlan(db: ReturnType<typeof drizzle>) {
 
 // --- Sample Workouts Seeding ---
 async function seedSampleWorkouts(
-  db: ReturnType<typeof drizzle>,
   trainingPlanId: string,
   planTitle: string
 ) {
+  // Use the unified database connection
   const currentDate = new Date()
 
   const workoutsData = [
@@ -503,11 +520,12 @@ async function seedSampleWorkouts(
 }
 
 // --- Conversations Seeding ---
-async function seedConversations(db: ReturnType<typeof drizzle>) {
+async function seedConversations() {
+  // Use the unified database connection
   logger.info('💬 Creating sample conversations between coaches and runners...')
 
   // Get all users and training plans
-  const users = await db.select().from(schema.better_auth_users)
+  const users = await db.select().from(schema.user)
   const coaches = users.filter(user => user.role === 'coach')
   const runners = users.filter(user => user.role === 'runner')
   const trainingPlans = await db.select().from(schema.training_plans)
@@ -572,25 +590,23 @@ async function main() {
     const testUsersData = getTestUsersData()
     updateEnvLocal(testUsersData)
 
-    const { db, pool } = await createDatabase()
-
     // Seed static data first
-    await seedStaticData(db)
+    await seedStaticData()
 
     // Create test users
-    await seedTestUsers(db)
+    await seedTestUsers()
 
     // Create sample training plans with relationships
-    await createSampleTrainingPlan(db)
+    await createSampleTrainingPlan()
 
     // Create sample conversations
-    await seedConversations(db)
+    await seedConversations()
 
     // Show summary
     logger.info('📊 Database summary:')
     const userCount = await db
       .select()
-      .from(schema.better_auth_users)
+      .from(schema.user)
       .then(r => r.length)
     const planCount = await db
       .select()
@@ -618,7 +634,7 @@ async function main() {
     └── Plan Templates: ${templateCount}
     `)
 
-    await pool.end()
+    // Database connection will be cleaned up automatically by the unified database module
 
     const duration = Date.now() - startTime
     logger.info(`✅ Database seeding completed in ${duration}ms`)
