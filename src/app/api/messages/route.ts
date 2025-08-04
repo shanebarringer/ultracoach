@@ -6,7 +6,15 @@ import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
-import { coach_runners, message_workout_links, messages, notifications, training_plans, user, workouts } from '@/lib/schema'
+import {
+  coach_runners,
+  message_workout_links,
+  messages,
+  notifications,
+  training_plans,
+  user,
+  workouts,
+} from '@/lib/schema'
 
 const logger = createLogger('api-messages')
 
@@ -100,7 +108,9 @@ export async function GET(request: NextRequest) {
     users.forEach(u => userMap.set(u.id, u))
 
     // Get workout IDs from messages for batch fetching
-    const workoutIds = [...new Set(rawMessages.filter(msg => msg.workout_id).map(msg => msg.workout_id!))]
+    const workoutIds = [
+      ...new Set(rawMessages.filter(msg => msg.workout_id).map(msg => msg.workout_id!)),
+    ]
 
     // Fetch workout data if any messages have workout context
     const workoutMap = new Map()

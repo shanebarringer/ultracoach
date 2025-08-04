@@ -137,8 +137,9 @@ export async function GET(request: NextRequest) {
       // Update last message if this message is more recent
       if (
         !conversation.lastMessage ||
-        (message.created_at && (!conversation.lastMessage.created_at || 
-         new Date(message.created_at) > new Date(conversation.lastMessage.created_at)))
+        (message.created_at &&
+          (!conversation.lastMessage.created_at ||
+            new Date(message.created_at) > new Date(conversation.lastMessage.created_at)))
       ) {
         conversation.lastMessage = message
       }
@@ -155,7 +156,8 @@ export async function GET(request: NextRequest) {
       if (!a.lastMessage) return 1
       if (!b.lastMessage) return -1
       return (
-        new Date(b.lastMessage.created_at || 0).getTime() - new Date(a.lastMessage.created_at || 0).getTime()
+        new Date(b.lastMessage.created_at || 0).getTime() -
+        new Date(a.lastMessage.created_at || 0).getTime()
       )
     })
 
