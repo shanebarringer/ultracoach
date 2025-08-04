@@ -2,24 +2,54 @@ import { and, asc, eq, gte, lte } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import { auth } from '@/lib/better-auth'
+import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
-import { training_plans, user, workouts } from '@/lib/schema'
-import { getServerSession } from '@/lib/server-auth'
+import { coach_runners, training_plans, user, workouts } from '@/lib/schema'
 
 const logger = createLogger('api-workouts')
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
-    if (!session?.user) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sessionUser = session.user as User
 
     const { searchParams } = new URL(request.url)
     const runnerId = searchParams.get('runnerId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+
+    // First, get active coach-runner relationships for authorization
+    let authorizedUserIds: string[] = []
+    if (sessionUser.role === 'coach') {
+      const relationships = await db
+        .select({ runner_id: coach_runners.runner_id })
+        .from(coach_runners)
+        .where(and(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.status, 'active')))
+      authorizedUserIds = relationships.map(rel => rel.runner_id)
+    } else {
+      const relationships = await db
+        .select({ coach_id: coach_runners.coach_id })
+        .from(coach_runners)
+        .where(and(eq(coach_runners.runner_id, sessionUser.id), eq(coach_runners.status, 'active')))
+      authorizedUserIds = relationships.map(rel => rel.coach_id)
+    }
+
+    if (authorizedUserIds.length === 0) {
+      logger.info('No active relationships found', {
+        userId: sessionUser.id,
+        role: sessionUser.role,
+      })
+      return NextResponse.json({ workouts: [] })
+    }
 
     // Build the base query with training plan join
     const baseQuery = db
@@ -44,15 +74,33 @@ export async function GET(request: NextRequest) {
       .from(workouts)
       .innerJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
 
-    // Apply role-based filtering
+    // Apply role-based and relationship-based filtering
     const conditions = []
-    if (session.user.role === 'coach') {
-      conditions.push(eq(training_plans.coach_id, session.user.id))
-      if (runnerId) {
-        conditions.push(eq(training_plans.runner_id, runnerId))
+    if (sessionUser.role === 'coach') {
+      // Coach can only see workouts for runners they have active relationships with
+      conditions.push(eq(training_plans.coach_id, sessionUser.id))
+      // Ensure the training plan runner is in the authorized relationships
+      conditions.push(
+        eq(
+          training_plans.runner_id,
+          authorizedUserIds.length === 1 ? authorizedUserIds[0] : runnerId || authorizedUserIds[0]
+        )
+      )
+      if (runnerId && !authorizedUserIds.includes(runnerId)) {
+        logger.warn('Coach attempted to access unauthorized runner workouts', {
+          coachId: sessionUser.id,
+          requestedRunnerId: runnerId,
+          authorizedRunnerIds: authorizedUserIds,
+        })
+        return NextResponse.json({ workouts: [] })
       }
     } else {
-      conditions.push(eq(training_plans.runner_id, session.user.id))
+      // Runner can only see their own workouts from authorized coaches
+      conditions.push(eq(training_plans.runner_id, sessionUser.id))
+      // Ensure the training plan coach is in the authorized relationships
+      if (authorizedUserIds.length > 0) {
+        conditions.push(eq(training_plans.coach_id, authorizedUserIds[0])) // For now, just use first authorized coach
+      }
     }
 
     // Apply date filtering
@@ -84,9 +132,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
-    if (!session?.user || session.user.role !== 'coach') {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const sessionUser = session.user as User
+
+    if (sessionUser.role !== 'coach') {
+      return NextResponse.json({ error: 'Only coaches can create workouts' }, { status: 403 })
     }
 
     const {
@@ -113,15 +170,44 @@ export async function POST(request: NextRequest) {
 
     // Verify the coach owns this training plan
     const [plan] = await db
-      .select()
+      .select({
+        id: training_plans.id,
+        coach_id: training_plans.coach_id,
+        runner_id: training_plans.runner_id,
+      })
       .from(training_plans)
       .where(
-        and(eq(training_plans.id, trainingPlanId), eq(training_plans.coach_id, session.user.id))
+        and(eq(training_plans.id, trainingPlanId), eq(training_plans.coach_id, sessionUser.id))
       )
       .limit(1)
 
     if (!plan) {
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+    }
+
+    // Verify the coach has an active relationship with the runner
+    const hasActiveRelationship = await db
+      .select()
+      .from(coach_runners)
+      .where(
+        and(
+          eq(coach_runners.coach_id, sessionUser.id),
+          eq(coach_runners.runner_id, plan.runner_id),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
+
+    if (hasActiveRelationship.length === 0) {
+      logger.warn('Coach attempted to create workout without active relationship', {
+        coachId: sessionUser.id,
+        runnerId: plan.runner_id,
+        trainingPlanId,
+      })
+      return NextResponse.json(
+        { error: 'No active relationship found with this runner' },
+        { status: 403 }
+      )
     }
 
     // Create the workout
@@ -154,7 +240,7 @@ export async function POST(request: NextRequest) {
       const [coach] = await db
         .select({ fullName: user.fullName })
         .from(user)
-        .where(eq(user.id, session.user.id))
+        .where(eq(user.id, sessionUser.id))
         .limit(1)
 
       if (runner) {
