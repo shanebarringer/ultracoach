@@ -37,6 +37,7 @@ export default function SignIn() {
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
+  const [isRedirecting, setIsRedirecting] = React.useState(false)
 
   // Check for success messages from URL params
   React.useEffect(() => {
@@ -134,6 +135,9 @@ export default function SignIn() {
             fullSessionData: sessionData.data,
           })
 
+          // Set redirecting state for smooth transition
+          setIsRedirecting(true)
+
           // Redirect based on user role with explicit validation
           if (userRole === 'coach') {
             logger.info('✅ Redirecting COACH to /dashboard/coach', {
@@ -150,19 +154,61 @@ export default function SignIn() {
           }
         } else {
           logger.error('Failed to get session data after sign in')
+          setIsRedirecting(false)
           setError('email', { message: 'Login failed. Please try again.' })
         }
       } else {
         logger.info('No authData received')
+        setIsRedirecting(false)
         setError('email', { message: 'Login failed. Please try again.' })
       }
     } catch (error) {
       logger.error('SignIn exception:', error)
       // Sanitize error message for security
+      setIsRedirecting(false)
       setError('email', { message: 'Login failed. Please try again.' })
     } finally {
       setFormState(prev => ({ ...prev, loading: false }))
     }
+  }
+
+  // Show redirecting state instead of login form during transition
+  if (isRedirecting) {
+    return (
+      <ModernErrorBoundary>
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 via-background to-secondary/10 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full">
+            <Card className="border-t-4 border-t-primary shadow-2xl">
+              <CardBody className="text-center py-12">
+                <div className="flex flex-col items-center space-y-4">
+                  <MountainSnowIcon className="h-12 w-12 text-primary animate-pulse" />
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground">Welcome to Base Camp!</h2>
+                    <p className="text-foreground-600 mt-2">
+                      Taking you to your expedition dashboard...
+                    </p>
+                  </div>
+                  <div className="flex space-x-1 mt-4">
+                    <div
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                      style={{ animationDelay: '0ms' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                      style={{ animationDelay: '150ms' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                      style={{ animationDelay: '300ms' }}
+                    ></div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+      </ModernErrorBoundary>
+    )
   }
 
   return (
