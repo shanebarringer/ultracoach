@@ -10,17 +10,15 @@
  * - Sample training plans for connected coach-runner pairs
  * - Realistic workout data for testing
  */
-import { generateRandomString } from 'better-auth/crypto'
 import { randomUUID } from 'crypto'
-import { scrypt } from 'crypto'
 import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import * as fs from 'fs'
 import * as path from 'path'
 import { resolve } from 'path'
-import { promisify } from 'util'
 
+import { auth } from '../src/lib/better-auth'
 import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
 import {
@@ -36,15 +34,6 @@ import {
 config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('comprehensive-seed')
-
-// Password hashing using scrypt (matching Better Auth's default)
-const scryptAsync = promisify(scrypt)
-
-async function hashPassword(password: string): Promise<string> {
-  const salt = generateRandomString(16)
-  const hash = (await scryptAsync(password, salt, 32)) as Buffer
-  return `${salt}:${hash.toString('hex')}`
-}
 
 // Coach data
 const coaches = [
@@ -217,85 +206,96 @@ async function clearExistingData() {
 }
 
 async function createUsers() {
-  logger.info('👥 Creating coaches and runners...')
+  logger.info('👥 Creating coaches and runners using Better Auth admin API...')
 
   const createdUsers: Array<{ id: string; role: 'coach' | 'runner'; name: string; email: string }> =
     []
 
-  // Create coaches
+  // Get Better Auth context for admin operations
+  const ctx = await auth.$context
+
+  // Create coaches using Better Auth admin API
   for (const coach of coaches) {
-    const userId = randomUUID()
-    const hashedPassword = await hashPassword(coach.password)
+    try {
+      const newUser = await ctx.adapter.create({
+        model: 'user',
+        data: {
+          name: coach.name,
+          email: coach.email,
+          emailVerified: false,
+          role: 'coach',
+          fullName: coach.fullName,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
 
-    // Create user
-    await db.insert(user).values({
-      id: userId,
-      name: coach.name,
-      email: coach.email,
-      emailVerified: false,
-      role: 'coach',
-      fullName: coach.fullName,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
+      // Create credential account with properly hashed password
+      const hashedPassword = await ctx.password.hash(coach.password)
+      await ctx.adapter.create({
+        model: 'account',
+        data: {
+          userId: newUser.id,
+          accountId: newUser.id,
+          providerId: 'credential',
+          password: hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
 
-    // Create credential account for login
-    await db.insert(account).values({
-      id: randomUUID(),
-      userId: userId,
-      accountId: userId,
-      providerId: 'credential',
-      accessToken: hashedPassword,
-      refreshToken: null,
-      idToken: null,
-      accessTokenExpiresAt: null,
-      refreshTokenExpiresAt: null,
-      scope: null,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-
-    createdUsers.push({ id: userId, role: 'coach', name: coach.name, email: coach.email })
-    logger.info(`✅ Created coach: ${coach.name} (${coach.email})`)
+      createdUsers.push({
+        id: newUser.id,
+        role: 'coach',
+        name: coach.name,
+        email: coach.email,
+      })
+      logger.info(`✅ Created coach: ${coach.name} (${coach.email})`)
+    } catch (error) {
+      logger.error(`❌ Failed to create coach ${coach.name}:`, error)
+    }
   }
 
-  // Create runners
+  // Create runners using Better Auth admin API
   for (const runner of runners) {
-    const userId = randomUUID()
-    const hashedPassword = await hashPassword('RunnerPass2025!')
+    try {
+      const newUser = await ctx.adapter.create({
+        model: 'user',
+        data: {
+          name: runner.name,
+          email: runner.email,
+          emailVerified: false,
+          role: 'runner',
+          fullName: runner.fullName,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
 
-    // Create user
-    await db.insert(user).values({
-      id: userId,
-      name: runner.name,
-      email: runner.email,
-      emailVerified: false,
-      role: 'runner',
-      fullName: runner.fullName,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
+      // Create credential account with properly hashed password
+      const hashedPassword = await ctx.password.hash('RunnerPass2025!')
+      await ctx.adapter.create({
+        model: 'account',
+        data: {
+          userId: newUser.id,
+          accountId: newUser.id,
+          providerId: 'credential',
+          password: hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
 
-    // Create credential account for login
-    await db.insert(account).values({
-      id: randomUUID(),
-      userId: userId,
-      accountId: userId,
-      providerId: 'credential',
-      accessToken: hashedPassword,
-      refreshToken: null,
-      idToken: null,
-      accessTokenExpiresAt: null,
-      refreshTokenExpiresAt: null,
-      scope: null,
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-
-    createdUsers.push({ id: userId, role: 'runner', name: runner.name, email: runner.email })
-    logger.info(`✅ Created runner: ${runner.name} (${runner.email})`)
+      createdUsers.push({
+        id: newUser.id,
+        role: 'runner',
+        name: runner.name,
+        email: runner.email,
+      })
+      logger.info(`✅ Created runner: ${runner.name} (${runner.email})`)
+    } catch (error) {
+      logger.error(`❌ Failed to create runner ${runner.name}:`, error)
+    }
   }
 
   return createdUsers

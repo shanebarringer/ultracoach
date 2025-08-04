@@ -57,7 +57,7 @@ export const loadingStatesAtom = atom({
 export const createTrainingPlanFormAtom = atom({
   title: '',
   description: '',
-  runnerEmail: '',
+  runnerId: '',
   race_id: null as string | null,
   goal_type: null as 'completion' | 'time' | 'placement' | null,
   plan_type: null as 'race_specific' | 'base_building' | 'bridge' | 'recovery' | null,

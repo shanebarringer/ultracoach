@@ -58,6 +58,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Progress Tracking Dashboard** - Coach sees all their runners' progress in one view
 - [ ] **Calendar Integration** - Coach sees combined calendar of all their runners
 - [ ] **Navigation & UX Improvements** - Role-based menus and relationship context throughout app
+- [ ] **Toast Notification System** - Add success/error/info toast notifications for user feedback
 
 ---
 
