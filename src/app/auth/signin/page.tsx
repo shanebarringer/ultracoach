@@ -152,6 +152,9 @@ export default function SignIn() {
           logger.error('Failed to get session data after sign in')
           setError('email', { message: 'Login failed. Please try again.' })
         }
+      } else {
+        logger.info('No authData received')
+        setError('email', { message: 'Login failed. Please try again.' })
       }
     } catch (error) {
       logger.error('SignIn exception:', error)

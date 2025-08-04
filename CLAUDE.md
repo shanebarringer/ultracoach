@@ -51,13 +51,14 @@ pnpm db:fresh       # Reset and seed database
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-08-03)
+### Current Status (Updated: 2025-08-04)
 
 - **Active Milestone**: Dashboard & Relationship Enhancement System 🔄 **IN PROGRESS**
 - **Core Development**: 100% (222/222 tasks) ✅ **COMPLETE** - All performance optimizations and React patterns implemented
 - **Coach-Runner Relationship System**: ✅ **COMPLETE** - Comprehensive bidirectional relationship system with API layer and UI components
-- **Latest Achievement**: Complete coach-runner relationship foundation with database migration, API endpoints, and management UI
-- **Current Focus**: Dashboard integration fixes, fresh data seeding, and invitation system implementation
+- **Authentication System**: ✅ **RESTORED** - Better Auth login working properly, comprehensive seeding with proper password hashing
+- **Latest Achievement**: Complete authentication restoration, dashboard integration, and relationship-aware training plan creation
+- **Current Focus**: UX improvements (smooth login transitions), invitation system implementation, and RunnerSelector authorization fixes
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Jotai state management with coach-runner relationship architecture
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors
 - **Database**: Comprehensive relationship system with proper constraints, type safety, and bidirectional discovery
@@ -84,14 +85,15 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
-- **Dashboard & Relationship Enhancement (2025-08-03)**: Fixing dashboard runner display issues and implementing fresh data seeding with proper coach-runner relationships
+- **Authentication System Restoration (2025-08-04)**: ✅ **COMPLETED** - Fixed Better Auth login issues, resolved Next.js asset serving problems, and restored full authentication functionality
+- **Dashboard & Relationship Integration (2025-08-04)**: ✅ **COMPLETED** - Dashboard now uses relationship-based data fetching, training plan creation is relationship-aware, comprehensive seeding implemented
 - **Coach-Runner Relationship System (2025-08-03)**: ✅ **COMPLETED** - Comprehensive bidirectional relationship system with database migration, API endpoints, UI components, and management interface
-- **Technical Infrastructure**: Complete Drizzle migration system, 5 API endpoints for relationship CRUD operations, TypeScript test fixes, and pre-commit automation
+- **Technical Infrastructure**: Complete Drizzle migration system, 5 API endpoints for relationship CRUD operations, Better Auth password hashing fixes, pre-commit automation
 - **Database Architecture**: `coach_runners` table with proper foreign key constraints, unique relationship enforcement, and status management (pending, active, inactive)
-- **API Layer**: `/api/coach-runners`, `/api/my-relationships`, `/api/coaches/available`, `/api/runners/available` endpoints with comprehensive relationship management
-- **UI Components**: CoachSelector, RunnerSelector, RelationshipsList components with search functionality and real-time filtering
-- **Current Work**: Fixing dashboard data fetching to use relationship system instead of training-plan-derived runner data
-- **Next Priorities**: Fresh data seeding, email system verification, invitation workflows, and app-wide relationship context integration
+- **API Layer**: `/api/coach-runners`, `/api/my-relationships`, `/api/coaches/available`, `/api/runners/available`, `/api/training-plans` (relationship-aware) endpoints
+- **UI Components**: CoachSelector, RunnerSelector, RelationshipsList, CreateTrainingPlanModal (relationship-based) components with search functionality and real-time filtering
+- **Current Work**: UX improvements (smooth login transitions), RunnerSelector authorization fixes, and invitation system implementation
+- **Next Priorities**: Login transition animations, toast notifications, authorization debugging, and email invitation workflows
 
 ---
 
