@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 
 import { useEffect, useState } from 'react'
 
+import { useSession } from '@/hooks/useBetterSession'
+
 interface Runner {
   id: string
   name: string
@@ -19,6 +21,7 @@ interface RunnerSelectorProps {
 }
 
 export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
+  const { data: session, status } = useSession()
   const [runners, setRunners] = useState<Runner[]>([])
   const [filteredRunners, setFilteredRunners] = useState<Runner[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,8 +29,14 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    // Only fetch when session is ready and user is a coach
+    if (status === 'loading') return
+    if (!session?.user || session.user.role !== 'coach') {
+      setLoading(false)
+      return
+    }
     fetchAvailableRunners()
-  }, [])
+  }, [session, status])
 
   useEffect(() => {
     // Filter runners based on search term
@@ -43,9 +52,16 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const fetchAvailableRunners = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/runners/available')
+      const response = await fetch('/api/runners/available', {
+        credentials: 'include', // Ensure cookies are sent with the request
+      })
 
       if (!response.ok) {
+        console.error('RunnerSelector fetch error:', {
+          status: response.status,
+          statusText: response.statusText,
+          requestUrl: '/api/runners/available',
+        })
         throw new Error('Failed to fetch available runners')
       }
 
@@ -60,6 +76,12 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   }
 
   const handleConnectToRunner = async (runnerId: string) => {
+    // Verify session before attempting connection
+    if (!session?.user || session.user.role !== 'coach') {
+      toast.error('You must be logged in as a coach to connect with runners')
+      return
+    }
+
     setConnectingIds(prev => new Set(prev).add(runnerId))
 
     try {
@@ -68,6 +90,7 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Ensure cookies are sent with the request
         body: JSON.stringify({
           target_user_id: runnerId,
           relationship_type: 'standard',
@@ -76,6 +99,13 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
 
       if (!response.ok) {
         const error = await response.json()
+        console.error('RunnerSelector connection error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: error,
+          runnerId,
+          requestUrl: '/api/coach-runners',
+        })
         throw new Error(error.error || 'Failed to connect to runner')
       }
 
@@ -96,6 +126,37 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
         return newSet
       })
     }
+  }
+
+  // Show loading while session is being fetched
+  if (status === 'loading') {
+    return (
+      <Card className="w-full">
+        <CardBody className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="h-6 w-6 bg-primary-200 rounded animate-pulse mx-auto mb-2" />
+              <p className="text-sm text-default-600">Checking authentication...</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  // Show unauthorized message if not a coach
+  if (!session?.user || session.user.role !== 'coach') {
+    return (
+      <Card className="w-full">
+        <CardBody className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-sm text-default-600">Only coaches can browse for runners</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    )
   }
 
   if (loading) {
