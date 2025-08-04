@@ -15,6 +15,11 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required')
 }
 
+// Safety check: Prevent production from using localhost database
+if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL!.includes('127.0.0.1')) {
+  throw new Error('Production DATABASE_URL still points to localhost!')
+}
+
 // Create postgres client with optimized settings for Supabase
 const client = postgres(process.env.DATABASE_URL, {
   // Supabase specific optimizations
