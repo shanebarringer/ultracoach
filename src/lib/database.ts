@@ -15,8 +15,11 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required')
 }
 
-// Safety check: Prevent production from using localhost database
-if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL!.includes('127.0.0.1')) {
+// Safety check: Prevent production deployment from using localhost database
+// Allow localhost during builds (CI/development) but not in actual production deployment
+const isProductionDeployment =
+  process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production'
+if (isProductionDeployment && process.env.DATABASE_URL!.includes('127.0.0.1')) {
   throw new Error('Production DATABASE_URL still points to localhost!')
 }
 
