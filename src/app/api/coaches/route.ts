@@ -1,37 +1,79 @@
+import { and, eq } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { auth } from '@/lib/better-auth'
+import type { User } from '@/lib/better-auth'
+import { db } from '@/lib/database'
+import { coach_runners, user } from '@/lib/schema'
+
+interface CoachWithStats {
+  id: string
+  email: string
+  full_name: string | null
+  role: string
+  created_at: string
+  stats?: {
+    trainingPlans: number
+    completedWorkouts: number
+    upcomingWorkouts: number
+  }
+  relationship_status: 'pending' | 'active' | 'inactive'
+  connected_at: string | null
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
-    if (!session?.user || session.user.role !== 'runner') {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    // Get all coaches who have training plans with this runner
-    const { data: trainingPlans, error: plansError } = await supabaseAdmin
-      .from('training_plans')
-      .select('coaches:coach_id(*)')
-      .eq('runner_id', session.user.id)
-    if (plansError) {
-      console.error('Failed to fetch coaches', plansError)
-      return NextResponse.json({ error: 'Failed to fetch coaches' }, { status: 500 })
-    }
-    // Extract unique coaches
-    const uniqueCoaches: unknown[] = []
 
-    if (trainingPlans) {
-      for (const plan of trainingPlans) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const coaches = (plan as any).coaches
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (coaches && !uniqueCoaches.find((c: any) => c.id === coaches.id)) {
-          uniqueCoaches.push(coaches)
-        }
-      }
+    const sessionUser = session.user as User
+
+    if (sessionUser.role !== 'runner') {
+      return NextResponse.json({ error: 'Only runners can access coaches' }, { status: 403 })
     }
-    return NextResponse.json({ coaches: uniqueCoaches })
+
+    // Get all coaches with active relationships to this runner
+    const relationships = await db
+      .select({
+        coach_id: coach_runners.coach_id,
+        status: coach_runners.status,
+        created_at: coach_runners.created_at,
+        coach: {
+          id: user.id,
+          email: user.email,
+          full_name: user.fullName,
+          role: user.role,
+          created_at: user.createdAt,
+        },
+      })
+      .from(coach_runners)
+      .innerJoin(user, eq(coach_runners.coach_id, user.id))
+      .where(and(eq(coach_runners.runner_id, sessionUser.id), eq(coach_runners.status, 'active')))
+
+    // Transform the data to include relationship context
+    const coachesWithStats: CoachWithStats[] = relationships.map(rel => ({
+      id: rel.coach.id,
+      email: rel.coach.email,
+      full_name: rel.coach.full_name,
+      role: rel.coach.role,
+      created_at: rel.coach.created_at?.toISOString() || '',
+      relationship_status: rel.status,
+      connected_at: rel.created_at?.toISOString() || null,
+      // TODO: Add actual stats calculation in future enhancement
+      stats: {
+        trainingPlans: 0,
+        completedWorkouts: 0,
+        upcomingWorkouts: 0,
+      },
+    }))
+
+    return NextResponse.json({ coaches: coachesWithStats })
   } catch (error) {
     console.error('API error in GET /coaches', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
