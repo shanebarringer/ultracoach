@@ -169,9 +169,8 @@ export const asyncWorkoutsAtom = atom(async get => {
     const response = await fetch('/api/workouts', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -196,9 +195,8 @@ export const asyncTrainingPlansAtom = atom(async get => {
     const response = await fetch('/api/training-plans', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -223,9 +221,8 @@ export const asyncNotificationsAtom = atom(async get => {
     const response = await fetch('/api/notifications', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -250,9 +247,8 @@ export const asyncConversationsAtom = atom(async get => {
     const response = await fetch('/api/conversations', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {

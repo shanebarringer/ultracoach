@@ -45,7 +45,7 @@ export function useNotifications() {
     if (session?.user?.id) {
       fetchNotifications()
     }
-  }, [session?.user?.id, fetchNotifications])
+  }, [session?.user?.id]) // Remove fetchNotifications from dependencies since it's memoized with stable deps
 
   // Real-time updates for notifications
   useSupabaseRealtime({

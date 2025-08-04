@@ -28,30 +28,10 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    // Only fetch when session is ready and user is a coach
-    if (status === 'loading') return
-    if (!session?.user || session.user.role !== 'coach') {
-      setLoading(false)
-      return
-    }
-    fetchAvailableRunners()
-  }, [session, status])
-
-  useEffect(() => {
-    // Filter runners based on search term
-    const filtered = runners.filter(
-      runner =>
-        runner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setFilteredRunners(filtered)
-  }, [runners, searchTerm])
-
   const fetchAvailableRunners = async () => {
     try {
       setLoading(true)
+      console.log('RunnerSelector: Fetching available runners...')
       const response = await fetch('/api/runners/available', {
         credentials: 'include', // Ensure cookies are sent with the request
       })
@@ -74,6 +54,27 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // Only fetch when session is ready and user is a coach
+    if (status === 'loading') return
+    if (!session?.user || session.user.role !== 'coach') {
+      setLoading(false)
+      return
+    }
+    fetchAvailableRunners()
+  }, [status, session?.user?.id, session?.user?.role]) // Use primitive values instead of session object
+
+  useEffect(() => {
+    // Filter runners based on search term
+    const filtered = runners.filter(
+      runner =>
+        runner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        runner.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    setFilteredRunners(filtered)
+  }, [runners, searchTerm])
 
   const handleConnectToRunner = async (runnerId: string) => {
     // Verify session before attempting connection

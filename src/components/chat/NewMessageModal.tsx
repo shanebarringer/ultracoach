@@ -95,7 +95,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     if (isOpen && session?.user) {
       fetchAvailableUsers()
     }
-  }, [isOpen, session?.user, fetchAvailableUsers])
+  }, [isOpen, session?.user?.id]) // Remove fetchAvailableUsers from dependencies since it's memoized with stable deps
 
   useEffect(() => {
     if (isOpen) {

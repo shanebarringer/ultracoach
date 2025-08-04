@@ -96,7 +96,7 @@ export function useWorkouts() {
     if (session?.user?.id) {
       fetchWorkouts()
     }
-  }, [session?.user?.id, fetchWorkouts])
+  }, [session?.user?.id]) // Remove fetchWorkouts from dependencies since it's memoized with stable deps
 
   return {
     workouts,

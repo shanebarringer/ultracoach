@@ -37,7 +37,7 @@ export default function WorkoutsPage() {
       router.push('/auth/signin')
       return
     }
-  }, [session, status, router])
+  }, [status, session?.user?.id]) // Remove router from dependencies since it's stable, use primitive values for session
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))

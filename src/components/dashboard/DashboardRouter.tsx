@@ -50,7 +50,7 @@ export default function DashboardRouter() {
       router.push('/dashboard/runner')
       return
     }
-  }, [session, status, router])
+  }, [status, session?.user?.role]) // Remove router from dependencies since it's stable, use primitive values for session
 
   if (status === 'loading') {
     return (

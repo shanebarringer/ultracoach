@@ -71,7 +71,7 @@ export default function WeeklyPlannerPage() {
     }
 
     fetchRunners()
-  }, [session, status, router, fetchRunners])
+  }, [status, session?.user?.id, session?.user?.role]) // Remove router and fetchRunners from dependencies, use primitive values for session
 
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)

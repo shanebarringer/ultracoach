@@ -122,7 +122,7 @@ export default function RacesPage() {
     }
 
     fetchRaces()
-  }, [session, status, router, fetchRaces])
+  }, [status, session?.user?.id]) // Remove router and fetchRaces from dependencies, use primitive values for session
 
   const handleOpenModal = (race?: Race) => {
     if (race) {

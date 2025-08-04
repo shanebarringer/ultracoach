@@ -31,7 +31,7 @@ export default function Home() {
         router.push('/dashboard/runner')
       }
     }
-  }, [session, status, router])
+  }, [status, session?.user?.role]) // Remove router from dependencies since it's stable, use primitive values for session
 
   // Show loading state while checking authentication
   if (status === 'loading') {

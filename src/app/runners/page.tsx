@@ -84,7 +84,7 @@ export default function RunnersPage() {
     }
 
     fetchRunners()
-  }, [session, status, router, fetchRunners])
+  }, [status, session?.user?.id, session?.user?.role]) // Remove router and fetchRunners from dependencies, use primitive values for session
 
   if (status === 'loading') {
     return (

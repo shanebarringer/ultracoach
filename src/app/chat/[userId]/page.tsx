@@ -54,7 +54,7 @@ export default function ChatUserPage() {
     } finally {
       setLoading(false)
     }
-  }, [userId, router])
+  }, [userId]) // Remove router from dependencies since it's stable
 
   useEffect(() => {
     if (status === 'loading') return
@@ -65,7 +65,7 @@ export default function ChatUserPage() {
     }
 
     fetchRecipient()
-  }, [session, status, router, userId, fetchRecipient])
+  }, [status, session?.user?.id, userId]) // Remove router and fetchRecipient from dependencies, use primitive values for session
 
   if (status === 'loading' || loading) {
     return (

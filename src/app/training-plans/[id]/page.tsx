@@ -92,7 +92,7 @@ export default function TrainingPlanDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id, planId, router])
+  }, [session?.user?.id, planId]) // Remove router from dependencies since it's stable
 
   useEffect(() => {
     if (status === 'loading') return
@@ -103,7 +103,7 @@ export default function TrainingPlanDetailPage() {
     }
 
     fetchTrainingPlanDetails()
-  }, [session, status, router, planId, fetchTrainingPlanDetails])
+  }, [status, session?.user?.id, planId]) // Remove router and fetchTrainingPlanDetails from dependencies, use primitive values for session
 
   const handleAddWorkoutSuccess = () => {
     fetchTrainingPlanDetails()
