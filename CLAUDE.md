@@ -11,6 +11,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 3. **Review this file** for project-specific guidance and context
 4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
+6. Always use tslog library and utilities for logging (no console.log)
 
 ### MCP Instructions
 
@@ -43,7 +44,7 @@ pnpm db:fresh       # Reset and seed database
 ### Database Philosophy:
 
 - **Use Drizzle for ALL database operations** (migrations, queries, schema changes)
-- Environment variables are properly loaded from `.env.local`
+- Environment variables are properly loaded from `.env.local` for local dev
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
 
@@ -53,20 +54,11 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ### Current Status (Updated: 2025-08-05)
 
-- **Active Milestone**: MVP Beta Testing Readiness ✅ **COMPLETED**
-- **Core Development**: 100% (222/222 tasks) ✅ **COMPLETE** - All performance optimizations and React patterns implemented
-- **Coach-Runner Relationship System**: ✅ **COMPLETE** - Comprehensive bidirectional relationship system with API layer and UI components
-- **Authentication System**: ✅ **COMPLETE** - Better Auth login working properly, comprehensive seeding with proper password hashing
-- **Chat/Messaging Integration**: ✅ **COMPLETE** - Full migration to Drizzle with relationship-based authorization for secure communication
-- **Workout Management Integration**: ✅ **COMPLETE** - All workout APIs migrated to Drizzle with comprehensive relationship verification
-- **Dashboard & Relationship Enhancement**: ✅ **COMPLETE** - Dashboard integration and relationship management system fully functional
-- **MVP Beta Testing Readiness**: ✅ **COMPLETE** - All ESLint warnings fixed (20/20 files), HeroUI toast system implemented, calendar functionality enhanced, production database ready
-- **Latest Achievement**: MVP Beta Testing Readiness milestone achieved - all core functionality working with professional UX, zero ESLint warnings, comprehensive error handling
-- **Current Focus**: Planning next development milestone - advanced features or production monitoring
+- **Current Focus**: Planning next development milestone - UI updates, advanced features, then production monitoring
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Jotai state management with comprehensive relationship-based authorization
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
 - **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
-- **Next Phase**: Advanced features (Strava integration, production monitoring, enhanced analytics) or user testing preparation
+- **Next Phase**: UI Cleanup, Advanced features (Strava integration, production monitoring, enhanced analytics) or user testing preparation
 
 ## 🏗️ Architecture & Technology
 
@@ -90,15 +82,6 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 ## 📝 Recent Project Notes
 
 - **Calendar Functionality Enhancement (2025-08-05)**: ✅ **COMPLETED** - Enhanced calendar with loading states, error handling, date format compatibility, and improved UX
-- **Code Quality & Toast System (2025-08-05)**: ✅ **COMPLETED** - All ESLint warnings fixed (20/20 files), comprehensive HeroUI toast notification system implemented
-- **Email System & Production Database (2025-08-05)**: ✅ **COMPLETED** - Production database successfully updated with 18 users, 3 relationships, 15 workouts. Email system (Resend) verified working with successful test email and password reset functionality
-- **Dashboard & Relationship Enhancement (2025-08-04)**: ✅ **COMPLETED** - Dashboard integration and relationship management system fully functional
-- **Chat/Messaging System Migration (2025-08-04)**: ✅ **COMPLETED** - Complete migration from Supabase to Drizzle with comprehensive relationship-based authorization
-- **Workout Management System Migration (2025-08-04)**: ✅ **COMPLETED** - All workout APIs migrated to Drizzle with relationship verification
-- **Better Auth Integration (2025-08-04)**: ✅ **COMPLETED** - All messaging and workout APIs now use Better Auth instead of legacy session handling
-- **Security Enhancement (2025-08-04)**: ✅ **COMPLETED** - Multi-layer authorization: session → role → active relationship verification across all endpoints
-- **Database Architecture**: `coach_runners` table with proper foreign key constraints, unique relationship enforcement, and status management
-- **Secure API Layer**: 11 endpoints with relationship-based authorization: messaging, workouts, coach-runner management, training plans
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
 - **Current Work**: ESLint fixes, navigation audit, core functionality testing, toast notification implementation
 - **Next Priorities**: Complete code quality improvements, verify navigation, test core features, prepare for beta user testing

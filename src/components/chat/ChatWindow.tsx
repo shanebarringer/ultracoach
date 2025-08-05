@@ -65,17 +65,19 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
   // Filter messages by workout if filter is active
   const filteredMessages = chatUiState.filterWorkoutId
-    ? messages.filter(msg => msg.workout_id === chatUiState.filterWorkoutId)
+    ? messages.filter(
+        (msg: { workout_id: string | null }) => msg.workout_id === chatUiState.filterWorkoutId
+      )
     : messages
 
   // Get workout for filter display
   const filterWorkout = chatUiState.filterWorkoutId
-    ? workouts.find(w => w.id === chatUiState.filterWorkoutId)
+    ? workouts.find((w: { id: string | null }) => w.id === chatUiState.filterWorkoutId)
     : null
 
   // Get workouts that have messages for filtering options
-  const workoutsWithMessages = workouts.filter(workout =>
-    messages.some(msg => msg.workout_id === workout.id)
+  const workoutsWithMessages = workouts.filter((workout: { id: string | null }) =>
+    messages.some((msg: { workout_id: string | null }) => msg.workout_id === workout.id)
   )
 
   if (loading) {

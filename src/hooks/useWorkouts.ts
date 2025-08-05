@@ -5,7 +5,12 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, workoutsAtom } from '@/lib/atoms'
+import { 
+  loadingStatesAtom, 
+  workoutsAtom, 
+  workoutLoadableAtom,
+  refreshWorkoutsActionAtom 
+} from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
@@ -14,29 +19,21 @@ const logger = createLogger('useWorkouts')
 export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
-  const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
+  const [loadingStates] = useAtom(loadingStatesAtom)
+  
+  // Use loadable pattern for better async UX
+  const [workoutsLoadable] = useAtom(workoutLoadableAtom)
+  const [, refreshWorkouts] = useAtom(refreshWorkoutsActionAtom)
 
   const fetchWorkouts = useCallback(async () => {
     if (!session?.user?.id) return
-
-    setLoadingStates(prev => ({ ...prev, workouts: true }))
-
+    
     try {
-      const response = await fetch('/api/workouts')
-
-      if (!response.ok) {
-        logger.error('Failed to fetch workouts:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setWorkouts(data.workouts || [])
+      await refreshWorkouts()
     } catch (error) {
-      logger.error('Error fetching workouts:', error)
-    } finally {
-      setLoadingStates(prev => ({ ...prev, workouts: false }))
+      logger.error('Error refreshing workouts:', error)
     }
-  }, [session?.user?.id, setWorkouts, setLoadingStates])
+  }, [session?.user?.id, refreshWorkouts])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
@@ -98,11 +95,27 @@ export function useWorkouts() {
     }
   }, [session?.user?.id, fetchWorkouts])
 
+  // Get workouts and loading state from loadable atom
+  const getWorkouts = () => {
+    if (workoutsLoadable.state === 'hasData') {
+      return workoutsLoadable.data || []
+    }
+    return workouts // Fallback to basic atom
+  }
+
+  const getLoadingState = () => {
+    if (workoutsLoadable.state === 'loading') {
+      return true
+    }
+    return loadingStates.workouts
+  }
+
   return {
-    workouts,
-    loading: loadingStates.workouts,
+    workouts: getWorkouts(),
+    loading: getLoadingState(),
     fetchWorkouts,
     updateWorkout,
     deleteWorkout,
+    error: workoutsLoadable.state === 'hasError' ? workoutsLoadable.error : null,
   }
 }

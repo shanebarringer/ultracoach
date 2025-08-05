@@ -11,6 +11,8 @@ import {
   currentConversationIdAtom,
   loadingStatesAtom,
   messagesAtom,
+  messagesByConversationLoadableFamily,
+  sendMessageActionAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Message, MessageWithUser } from '@/lib/supabase'
@@ -23,6 +25,14 @@ export function useMessages(recipientId?: string) {
   const [currentConversationId, setCurrentConversationId] = useAtom(currentConversationIdAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
+  
+  // Use atomFamily for conversation-specific messages
+  const [conversationMessages] = useAtom(
+    recipientId ? messagesByConversationLoadableFamily(recipientId) : messagesAtom
+  )
+  
+  // Use action atom for sending messages
+  const [, sendMessageAction] = useAtom(sendMessageActionAtom)
 
   // Set current conversation when recipientId changes
   useEffect(() => {
@@ -129,80 +139,21 @@ export function useMessages(recipientId?: string) {
   const sendMessage = useCallback(
     async (content: string, workoutId?: string, targetRecipientId?: string) => {
       const targetId = targetRecipientId || recipientId
-      if (!session?.user?.id || !targetId) return false
-
-      // Create optimistic message to show immediately
-      const optimisticMessage: MessageWithUser = {
-        id: `temp-${Date.now()}`, // Temporary ID
-        conversation_id: '', // Will be set by server
-        content,
-        sender_id: session.user.id,
-        recipient_id: targetId,
-        workout_id: workoutId || null,
-        read: false,
-        created_at: new Date().toISOString(),
-        sender: {
-          id: session.user.id,
-          full_name: session.user.name || 'You',
-          email: session.user.email || '',
-          role: session.user.role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      }
-
-      // Add optimistic message immediately
-      setMessages(prev => [...prev, optimisticMessage])
+      if (!targetId) return false
 
       try {
-        const response = await fetch('/api/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content,
-            recipientId: targetId,
-            workoutId,
-          }),
+        await sendMessageAction({
+          recipientId: targetId,
+          content,
+          workoutId,
         })
-
-        if (!response.ok) {
-          // Remove optimistic message on failure
-          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
-          logger.error('Error sending message:', response.statusText)
-          return false
-        }
-
-        const result = await response.json()
-
-        // Replace optimistic message with real message
-        if (result.message) {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === optimisticMessage.id
-                ? { ...result.message, sender: optimisticMessage.sender }
-                : msg
-            )
-          )
-        }
-
         return true
       } catch (error) {
-        // Remove optimistic message on error
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
         logger.error('Error sending message:', error)
         return false
       }
     },
-    [
-      session?.user?.id,
-      session?.user?.name,
-      session?.user?.email,
-      session?.user?.role,
-      recipientId,
-      setMessages,
-    ]
+    [recipientId, sendMessageAction]
   )
 
   // Real-time updates for messages with error handling
@@ -324,20 +275,40 @@ export function useMessages(recipientId?: string) {
     fetchMessages,
   ])
 
-  // Get messages for current conversation
-  const conversationMessages = messages.filter(message => {
-    if (!recipientId || !session?.user?.id) return false
-
-    return (
+  // Get messages for current conversation using loadable pattern
+  const getConversationMessages = () => {
+    if (!recipientId) return []
+    
+    if (conversationMessages && typeof conversationMessages === 'object' && 'state' in conversationMessages) {
+      // Using loadable atom
+      if (conversationMessages.state === 'hasData') {
+        return conversationMessages.data || []
+      }
+      return []
+    }
+    
+    // Fallback to filtering global messages
+    if (!session?.user?.id) return []
+    return messages.filter(message => 
       (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
       (message.sender_id === recipientId && message.recipient_id === session.user.id)
     )
-  })
+  }
+
+  const getLoadingState = () => {
+    if (!recipientId) return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
+    
+    if (conversationMessages && typeof conversationMessages === 'object' && 'state' in conversationMessages) {
+      return conversationMessages.state === 'loading'
+    }
+    
+    return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
+  }
 
   return {
-    messages: conversationMessages,
+    messages: getConversationMessages(),
     allMessages: messages,
-    loading: loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages, // Only show loading if we haven't loaded initially
+    loading: getLoadingState(),
     sendMessage,
     fetchMessages,
     markMessagesAsRead,

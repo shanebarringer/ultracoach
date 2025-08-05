@@ -1,5 +1,5 @@
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
+import { atomWithStorage, atomWithRefresh, loadable, unwrap, atomFamily } from 'jotai/utils'
 
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
@@ -36,6 +36,31 @@ export const trainingPlansAtom = atom<TrainingPlan[]>([])
 export const runnersAtom = atom<User[]>([])
 export const racesAtom = atom<Race[]>([])
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
+
+// Refreshable training plans atom using atomWithRefresh
+export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
+  try {
+    console.log('🔄 Fetching training plans...')
+    const response = await fetch('/api/training-plans', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch training plans: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch training plans: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('✅ Training plans fetched:', data.trainingPlans?.length || 0)
+    return data.trainingPlans || []
+  } catch (error) {
+    console.error('❌ Error fetching training plans:', error)
+    return []
+  }
+})
 
 // Chat atoms
 export const messagesAtom = atom<MessageWithUser[]>([])
@@ -307,6 +332,25 @@ export const filteredWorkoutsAtom = atom(get => {
   return workouts.filter(w => w.status === filter)
 })
 
+// Calendar-specific derived atoms for better performance
+export const workoutStatsAtom = atom(get => {
+  const workouts = get(filteredWorkoutsAtom) || []
+  
+  return {
+    total: workouts.length,
+    completed: workouts.filter(w => w.status === 'completed').length,
+    planned: workouts.filter(w => w.status === 'planned').length,
+    skipped: workouts.filter(w => w.status === 'skipped').length,
+    plannedDistance: workouts.reduce((sum, w) => sum + (w.planned_distance || 0), 0),
+    completedDistance: workouts
+      .filter(w => w.status === 'completed')
+      .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0),
+    avgIntensity: workouts.length > 0 
+      ? workouts.reduce((sum, w) => sum + (w.intensity || 0), 0) / workouts.length
+      : 0
+  }
+})
+
 export const activeTrainingPlansAtom = atom(get => {
   const plans = get(trainingPlansAtom)
   const showArchived = get(uiStateAtom).showArchived
@@ -314,12 +358,12 @@ export const activeTrainingPlansAtom = atom(get => {
   return showArchived ? plans : plans.filter(p => !p.archived)
 })
 
-export const filteredTrainingPlansAtom = atom(get => {
-  const plans = get(trainingPlansAtom)
+export const filteredTrainingPlansAtom = atom(async get => {
+  const plans = await get(refreshableTrainingPlansAtom)
   const uiState = get(uiStateAtom)
 
   // Filter by archived status
-  const filtered = uiState.showArchived ? plans : plans.filter(p => !p.archived)
+  const filtered = uiState.showArchived ? plans : plans.filter((p: { archived?: boolean }) => !p.archived)
 
   // Add additional filters here as needed
   // Could filter by plan type, status, etc.
@@ -356,4 +400,142 @@ export const currentConversationMessagesAtom = atom(get => {
 export const totalUnreadMessagesAtom = atom(get => {
   const conversations = get(conversationsAtom)
   return conversations.reduce((total, conv) => total + conv.unreadCount, 0)
+})
+
+// =====================================
+// ADVANCED JOTAI PATTERNS - PHASE 1
+// =====================================
+
+// 1. Loadable utilities for better async UX (no Suspense needed)
+export const workoutLoadableAtom = loadable(asyncWorkoutsAtom)
+export const trainingPlansLoadableAtom = loadable(refreshableTrainingPlansAtom)
+export const notificationsLoadableAtom = loadable(asyncNotificationsAtom)
+export const conversationsLoadableAtom = loadable(asyncConversationsAtom)
+
+// 2. Unwrap utilities for sync fallbacks with defaults
+export const workoutsWithFallbackAtom = unwrap(asyncWorkoutsAtom, () => [])
+export const notificationsWithFallbackAtom = unwrap(asyncNotificationsAtom, () => [])
+
+// 3. AtomFamily for dynamic message conversations
+export const messagesByConversationFamily = atomFamily((conversationId: string) =>
+  atomWithRefresh(async (get, { signal }) => {
+    const session = get(sessionAtom)
+    if (!session) return []
+
+    try {
+      const response = await fetch(`/api/messages?recipientId=${conversationId}`, { 
+        signal,
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      return data.messages || []
+    } catch (error) {
+      logger.error(`Error fetching messages for conversation ${conversationId}:`, error)
+      return []
+    }
+  })
+)
+
+// 4. Loadable message conversations for better UX
+export const messagesByConversationLoadableFamily = atomFamily((conversationId: string) =>
+  loadable(messagesByConversationFamily(conversationId))
+)
+
+// 5. Action atoms for cleaner API patterns
+export const sendMessageActionAtom = atom(null, async (get, set, payload: { 
+  recipientId: string; 
+  content: string; 
+  workoutId?: string 
+}) => {
+  const session = get(sessionAtom) as { user: { id: string; name: string; email: string; role: string } } | null
+  if (!session?.user?.id) throw new Error('No session available')
+
+  const { recipientId, content, workoutId } = payload
+
+  // Create optimistic message
+  const optimisticMessage: MessageWithUser = {
+    id: `temp-${Date.now()}`,
+    conversation_id: '',
+    content,
+    sender_id: session.user.id,
+    recipient_id: recipientId,
+    workout_id: workoutId || null,
+    read: false,
+    created_at: new Date().toISOString(),
+    sender: {
+      id: session.user.id,
+      full_name: session.user.name || 'You',
+      email: session.user.email || '',
+      role: session.user.role as 'runner' | 'coach',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  }
+
+  // Add optimistic message immediately
+  set(messagesAtom, prev => [...prev, optimisticMessage])
+
+  try {
+    const response = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, recipientId, workoutId }),
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to send message: ${response.statusText}`)
+    }
+
+    const result = await response.json()
+
+    // Replace optimistic with real message
+    if (result.message) {
+      set(messagesAtom, prev =>
+        prev.map(msg =>
+          msg.id === optimisticMessage.id
+            ? { ...result.message, sender: optimisticMessage.sender }
+            : msg
+        )
+      )
+    }
+
+    return true
+  } catch (error) {
+    // Remove optimistic message on error
+    set(messagesAtom, prev => 
+      prev.filter(msg => msg.id !== optimisticMessage.id)
+    )
+    throw error
+  }
+})
+
+// 6. Refresh action atoms for manual data refetch
+export const refreshWorkoutsActionAtom = atom(null, async (get, set) => {
+  set(workoutsRefreshTriggerAtom, prev => prev + 1)
+})
+
+export const refreshTrainingPlansActionAtom = atom(null, async (get, set) => {
+  // Force refresh by incrementing a trigger atom
+  set(workoutsRefreshTriggerAtom, prev => prev + 1)
+})
+
+// 7. Enhanced derived atoms with better performance
+export const activeConversationsAtom = atom(get => {
+  const conversations = get(conversationsAtom) || []
+  return conversations.filter(conv => conv.unreadCount > 0 || conv.last_message_at)
+})
+
+export const conversationStatsAtom = atom(get => {
+  const conversations = get(conversationsAtom) || []
+  return {
+    total: conversations.length,
+    unread: conversations.filter(conv => conv.unreadCount > 0).length,
+    totalUnreadMessages: conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)
+  }
 })

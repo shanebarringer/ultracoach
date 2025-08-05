@@ -69,7 +69,7 @@ export default function MonthlyCalendar({
       while (currentDate.compare(endOfWeek) <= 0) {
         // Format CalendarDate to YYYY-MM-DD to match workout data format
         const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
-        const dayWorkouts = workouts.filter(workout => {
+        const dayWorkouts = (workouts || []).filter(workout => {
           // Handle different date formats that might come from the API
           const workoutDate = workout.date
           if (typeof workoutDate === 'string') {
