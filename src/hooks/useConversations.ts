@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -18,10 +18,21 @@ export function useConversations() {
   const [conversations, setConversations] = useAtom(conversationsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
+  
+  // Debounce fetch to prevent race conditions
+  const [lastFetchTime, setLastFetchTime] = useState(0)
 
   const fetchConversations = useCallback(
     async (isInitialLoad = false) => {
       if (!session?.user?.id) return
+      
+      // Debounce: prevent multiple fetches within 2 seconds
+      const now = Date.now()
+      if (!isInitialLoad && now - lastFetchTime < 2000) {
+        logger.debug('Skipping fetch due to debouncing')
+        return
+      }
+      setLastFetchTime(now)
 
       // Only show loading spinner on initial load, not on background updates
       if (isInitialLoad) {
@@ -89,6 +100,8 @@ export function useConversations() {
       setConversations,
       setLoadingStates,
       setChatUiState,
+      lastFetchTime,
+      setLastFetchTime,
     ]
   )
 
@@ -173,11 +186,12 @@ export function useConversations() {
       // Initial load with loading spinner
       fetchConversations(true)
 
-      // Polling fallback - refresh conversations every 10 seconds (background updates)
+      // Polling fallback - refresh conversations every 30 seconds (background updates)
       // This ensures conversation list stays updated even if real-time fails
+      // Reduced frequency to minimize flickering
       const pollInterval = setInterval(() => {
         fetchConversations(false) // Background update, no loading spinner
-      }, 10000)
+      }, 30000)
 
       return () => clearInterval(pollInterval)
     }

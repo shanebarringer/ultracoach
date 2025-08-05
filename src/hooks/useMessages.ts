@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -12,6 +12,7 @@ import {
   loadingStatesAtom,
   messagesAtom,
   messagesByConversationLoadableFamily,
+  selectedRecipientAtom,
   sendMessageActionAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
@@ -25,6 +26,10 @@ export function useMessages(recipientId?: string) {
   const [currentConversationId, setCurrentConversationId] = useAtom(currentConversationIdAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
+  const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
+  
+  // Debounce message fetching to prevent race conditions
+  const [lastMessagesFetchTime, setLastMessagesFetchTime] = useState(0)
 
   // Use atomFamily for conversation-specific messages
   const [conversationMessages] = useAtom(
@@ -38,13 +43,22 @@ export function useMessages(recipientId?: string) {
   useEffect(() => {
     if (recipientId && recipientId !== currentConversationId) {
       setCurrentConversationId(recipientId)
+      setSelectedRecipient(recipientId) // Sync with global state
     }
-  }, [recipientId, currentConversationId, setCurrentConversationId])
+  }, [recipientId, currentConversationId, setCurrentConversationId, setSelectedRecipient])
 
   const fetchMessages = useCallback(
     async (targetRecipientId?: string, isInitialLoad = false) => {
       const targetId = targetRecipientId || recipientId
       if (!session?.user?.id || !targetId) return
+      
+      // Debounce: prevent multiple fetches within 1 second
+      const now = Date.now()
+      if (!isInitialLoad && now - lastMessagesFetchTime < 1000) {
+        logger.debug('Skipping messages fetch due to debouncing')
+        return
+      }
+      setLastMessagesFetchTime(now)
 
       // Only show loading spinner on initial load, not on background updates
       if (isInitialLoad) {
@@ -106,7 +120,7 @@ export function useMessages(recipientId?: string) {
         }
       }
     },
-    [session?.user?.id, recipientId, setMessages, setLoadingStates, setChatUiState]
+    [session?.user?.id, recipientId, setMessages, setLoadingStates, setChatUiState, lastMessagesFetchTime, setLastMessagesFetchTime]
   )
 
   const markMessagesAsRead = useCallback(

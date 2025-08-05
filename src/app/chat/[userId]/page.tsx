@@ -22,7 +22,10 @@ import ChatWindow from '@/components/chat/ChatWindow'
 import ConversationList from '@/components/chat/ConversationList'
 import Layout from '@/components/layout/Layout'
 import { useSession } from '@/hooks/useBetterSession'
+import { selectedRecipientAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
+
+import { useAtom } from 'jotai'
 
 export default function ChatUserPage() {
   const { data: session, status } = useSession()
@@ -33,6 +36,9 @@ export default function ChatUserPage() {
   const [recipient, setRecipient] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  
+  // Use selected recipient atom for proper state management
+  const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
 
   const fetchRecipient = useCallback(async () => {
     if (!userId) return
@@ -48,13 +54,15 @@ export default function ChatUserPage() {
 
       const data = await response.json()
       setRecipient(data.user)
+      // Update selected recipient in global state
+      setSelectedRecipient(userId)
     } catch (error) {
       console.error('Error fetching recipient:', error)
       router.push('/chat')
     } finally {
       setLoading(false)
     }
-  }, [userId, router]) // Include router dependency as required by ESLint
+  }, [userId, router, setSelectedRecipient]) // Include setSelectedRecipient dependency
 
   useEffect(() => {
     if (status === 'loading') return
@@ -66,6 +74,13 @@ export default function ChatUserPage() {
 
     fetchRecipient()
   }, [status, session, userId, fetchRecipient, router]) // Include all dependencies as required by ESLint
+  
+  // Cleanup: Clear selected recipient when component unmounts
+  useEffect(() => {
+    return () => {
+      setSelectedRecipient(null)
+    }
+  }, [setSelectedRecipient])
 
   if (status === 'loading' || loading) {
     return (

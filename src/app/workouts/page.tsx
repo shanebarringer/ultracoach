@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardBody, Spinner, Tab, Tabs } from '@heroui/react'
+import { Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Mountain } from 'lucide-react'
 
@@ -11,10 +11,10 @@ import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import PerformantWorkoutsList from '@/components/workouts/PerformantWorkoutsList'
+import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useSession } from '@/hooks/useBetterSession'
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { filteredWorkoutsAtom, loadingStatesAtom, uiStateAtom } from '@/lib/atoms'
+import { loadingStatesAtom, uiStateAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
@@ -28,7 +28,6 @@ export default function WorkoutsPage() {
   useWorkouts() // Initialize workouts data
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
-  const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -82,56 +81,18 @@ export default function WorkoutsPage() {
             </div>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="mb-8">
-            <Tabs
-              aria-label="Training filter"
-              color="primary"
-              variant="underlined"
-              selectedKey={uiState.workoutFilter}
-              onSelectionChange={key =>
-                setUiState(prev => ({
-                  ...prev,
-                  workoutFilter: key as 'all' | 'planned' | 'completed' | 'skipped',
-                }))
-              }
-              classNames={{
-                tabList: 'gap-8 w-full relative rounded-none p-0 border-b border-divider',
-                cursor: 'bg-primary',
-                tab: 'max-w-fit px-0 h-12',
-                tabContent: 'group-data-[selected=true]:text-primary font-medium',
-              }}
-            >
-              <Tab key="all" title="All Expeditions" />
-              <Tab key="planned" title="Planned" />
-              <Tab key="completed" title="Conquered" />
-              <Tab key="skipped" title="Deferred" />
-            </Tabs>
-          </div>
+          {/* Note: Filtering is now handled by the enhanced workouts list component */}
 
-          {/* Workout List with Enhanced React Suspense Loading */}
+          {/* Enhanced Workout List with Advanced Filtering */}
           {loadingStates.workouts ? (
             <div className="flex justify-center items-center h-64">
               <Spinner size="lg" color="primary" label="Loading your training history..." />
             </div>
-          ) : filteredWorkouts.length === 0 ? (
-            <Card className="py-12">
-              <CardBody className="text-center">
-                <Mountain className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No training sessions found
-                </h3>
-                <p className="text-foreground-600">
-                  {uiState.workoutFilter === 'all'
-                    ? 'Your training journey begins here. Plan your first expedition!'
-                    : `No ${uiState.workoutFilter} sessions found. Adjust your view or plan new training.`}
-                </p>
-              </CardBody>
-            </Card>
           ) : (
-            <PerformantWorkoutsList
+            <EnhancedWorkoutsList
               userRole={session?.user?.role as 'runner' | 'coach'}
               onLogWorkout={handleWorkoutPress}
+              variant="default"
             />
           )}
 

@@ -74,6 +74,19 @@ export const messagesAtom = atom<MessageWithUser[]>([])
 export const conversationsAtom = atom<ConversationWithUser[]>([])
 export const currentConversationIdAtom = atom<string | null>(null)
 
+// Derived atom to sync recipient selection with chat UI state
+export const selectedRecipientAtom = atom(
+  (get) => get(chatUiStateAtom).currentRecipientId,
+  (get, set, recipientId: string | null) => {
+    set(chatUiStateAtom, prev => ({
+      ...prev,
+      currentRecipientId: recipientId,
+      selectedConversationId: recipientId, // Sync conversation selection
+    }))
+    set(currentConversationIdAtom, recipientId)
+  }
+)
+
 // UI state atoms - Don't persist loading states to avoid stuck spinners
 export const loadingStatesAtom = atom({
   workouts: false,
@@ -152,6 +165,7 @@ export const chatUiStateAtom = atom({
   hasInitiallyLoadedMessages: false,
   hasInitiallyLoadedConversations: false,
   currentRecipientId: null as string | null,
+  selectedConversationId: null as string | null,
   sending: false,
   filterWorkoutId: null as string | null,
   showNewMessage: false,

@@ -9,6 +9,7 @@ import Link from 'next/link'
 
 import { useConversations } from '@/hooks/useConversations'
 import { createLogger } from '@/lib/logger'
+import type { ConversationWithUser } from '@/lib/supabase'
 
 import AsyncConversationList from './AsyncConversationList'
 
@@ -54,6 +55,100 @@ const getRoleColor = (role: string) => {
   }
 }
 
+// Individual conversation item component for better performance
+const ConversationItem = memo(({ conversation, selectedUserId }: { 
+  conversation: ConversationWithUser
+  selectedUserId?: string 
+}) => {
+  const partner = conversation.recipient
+  const unreadCount = conversation.unreadCount
+  const partnerId = partner?.id
+  const partnerName = partner?.full_name || 'Unknown Explorer'
+  const lastMessageContent = conversation.last_message_at
+    ? 'Last message sent'
+    : `Begin your expedition dialogue with ${partner?.full_name || 'this explorer'}`
+  const lastMessageTime = conversation.last_message_at
+    ? formatLastMessageTime(conversation.last_message_at)
+    : ''
+
+  return (
+    <Link
+      href={`/chat/${partnerId}`}
+      className={`block hover:bg-content2/50 transition-all duration-200 ${
+        selectedUserId === partnerId ? 'bg-primary/10 border-r-2 border-r-primary' : ''
+      }`}
+    >
+      <div className="p-4">
+        <div className="flex items-center space-x-3">
+          <div className="shrink-0 relative">
+            <Avatar
+              name={partner?.full_name || 'User'}
+              size="md"
+              classNames={{
+                base: 'bg-linear-to-br from-primary to-secondary',
+                name: 'text-white font-semibold',
+              }}
+            />
+            {partner?.role && (
+              <Chip
+                size="sm"
+                color={getRoleColor(partner.role)}
+                variant="solid"
+                className="absolute -bottom-1 -right-1 min-w-unit-5 h-unit-5 text-tiny"
+              >
+                {partner.role === 'coach' ? '🏔️' : '🏃'}
+              </Chip>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-foreground truncate">
+                  {partnerName}
+                </h3>
+                {partner?.role && (
+                  <Chip
+                    size="sm"
+                    color={getRoleColor(partner.role)}
+                    variant="flat"
+                    className="text-tiny capitalize"
+                  >
+                    {partner.role}
+                  </Chip>
+                )}
+              </div>
+              {lastMessageTime && (
+                <div className="flex items-center gap-1 text-xs text-foreground-500 shrink-0 ml-2">
+                  <ClockIcon className="w-3 h-3" />
+                  {lastMessageTime}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-sm text-foreground-600 truncate">
+                {truncateMessage(lastMessageContent)}
+              </p>
+              {unreadCount > 0 && (
+                <Badge
+                  content={unreadCount}
+                  color="danger"
+                  size="sm"
+                  variant="solid"
+                  className="ml-2"
+                >
+                  <div className="w-6 h-6" />
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+})
+
+ConversationItem.displayName = 'ConversationItem'
+
 interface ConversationListProps {
   selectedUserId?: string
   useSuspense?: boolean
@@ -63,8 +158,8 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
   // Call hooks at the top level always
   const { conversations, loading } = useConversations()
 
-  // Log when conversations data changes
-  useMemo(() => {
+  // Memoize conversations to prevent unnecessary renders
+  const memoizedConversations = useMemo(() => {
     logger.debug('Conversations updated:', {
       conversationCount: conversations.length,
       selectedUserId,
@@ -96,7 +191,7 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
 
   return (
     <div className="overflow-y-auto">
-      {conversations.length === 0 ? (
+      {memoizedConversations.length === 0 ? (
         <div className="p-6 text-center">
           <MessageCircleIcon className="mx-auto h-8 w-8 text-foreground-400 mb-3" />
           <p className="text-foreground-600 text-sm">No expedition communications yet</p>
@@ -106,94 +201,13 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
         </div>
       ) : (
         <div className="divide-y divide-divider/50">
-          {conversations.map(conversation => {
-            const partner = conversation.recipient
-            const unreadCount = conversation.unreadCount
-            const partnerId = partner?.id
-            const partnerName = partner?.full_name || 'Unknown Explorer'
-            const lastMessageContent = conversation.last_message_at
-              ? 'Last message sent'
-              : `Begin your expedition dialogue with ${partner?.full_name || 'this explorer'}`
-            const lastMessageTime = conversation.last_message_at
-              ? formatLastMessageTime(conversation.last_message_at)
-              : ''
-
-            return (
-              <Link
-                key={partnerId}
-                href={`/chat/${partnerId}`}
-                className={`block hover:bg-content2/50 transition-all duration-200 ${
-                  selectedUserId === partnerId ? 'bg-primary/10 border-r-2 border-r-primary' : ''
-                }`}
-              >
-                <div className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="shrink-0 relative">
-                      <Avatar
-                        name={partner?.full_name || 'User'}
-                        size="md"
-                        classNames={{
-                          base: 'bg-linear-to-br from-primary to-secondary',
-                          name: 'text-white font-semibold',
-                        }}
-                      />
-                      {partner?.role && (
-                        <Chip
-                          size="sm"
-                          color={getRoleColor(partner.role)}
-                          variant="solid"
-                          className="absolute -bottom-1 -right-1 min-w-unit-5 h-unit-5 text-tiny"
-                        >
-                          {partner.role === 'coach' ? '🏔️' : '🏃'}
-                        </Chip>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-foreground truncate">
-                            {partnerName}
-                          </h3>
-                          {partner?.role && (
-                            <Chip
-                              size="sm"
-                              color={getRoleColor(partner.role)}
-                              variant="flat"
-                              className="text-tiny capitalize"
-                            >
-                              {partner.role}
-                            </Chip>
-                          )}
-                        </div>
-                        {lastMessageTime && (
-                          <div className="flex items-center gap-1 text-xs text-foreground-500 shrink-0 ml-2">
-                            <ClockIcon className="w-3 h-3" />
-                            {lastMessageTime}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-sm text-foreground-600 truncate">
-                          {truncateMessage(lastMessageContent)}
-                        </p>
-                        {unreadCount > 0 && (
-                          <Badge
-                            content={unreadCount}
-                            color="danger"
-                            size="sm"
-                            variant="solid"
-                            className="ml-2"
-                          >
-                            <div className="w-6 h-6" />
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
+          {memoizedConversations.map(conversation => (
+            <ConversationItem
+              key={conversation.recipient?.id}
+              conversation={conversation}
+              selectedUserId={selectedUserId}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -201,10 +215,4 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
 }
 
 // Memoize the component to prevent unnecessary re-renders
-export default memo(ConversationList, (prevProps, nextProps) => {
-  // Custom comparison function for better memoization
-  return (
-    prevProps.selectedUserId === nextProps.selectedUserId &&
-    prevProps.useSuspense === nextProps.useSuspense
-  )
-})
+export default memo(ConversationList)
