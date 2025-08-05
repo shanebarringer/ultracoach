@@ -51,37 +51,51 @@ export default function MonthlyCalendar({
 
   // Generate calendar grid for the current month
   const calendarDays = useMemo(() => {
-    const startOfMonth = currentMonth.set({ day: 1 })
-    const endOfMonth = currentMonth.set({ day: currentMonth.calendar.getDaysInMonth(currentMonth) })
+    try {
+      const startOfMonth = currentMonth.set({ day: 1 })
+      const endOfMonth = currentMonth.set({ day: currentMonth.calendar.getDaysInMonth(currentMonth) })
 
-    // Get the first day of the week for the month view
-    const startDayOfWeek = startOfMonth.toDate(getLocalTimeZone()).getDay()
-    const endDayOfWeek = endOfMonth.toDate(getLocalTimeZone()).getDay()
-    const startOfWeek = startOfMonth.subtract({ days: startDayOfWeek })
-    const endOfWeek = endOfMonth.add({ days: 6 - endDayOfWeek })
+      // Get the first day of the week for the month view
+      const startDayOfWeek = startOfMonth.toDate(getLocalTimeZone()).getDay()
+      const endDayOfWeek = endOfMonth.toDate(getLocalTimeZone()).getDay()
+      const startOfWeek = startOfMonth.subtract({ days: startDayOfWeek })
+      const endOfWeek = endOfMonth.add({ days: 6 - endDayOfWeek })
 
-    const days: WorkoutDay[] = []
-    let currentDate = startOfWeek
+      const days: WorkoutDay[] = []
+      let currentDate = startOfWeek
 
-    while (currentDate.compare(endOfWeek) <= 0) {
-      // Format CalendarDate to YYYY-MM-DD to match workout data format
-      const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
-      const dayWorkouts = workouts.filter(workout => workout.date === dateString)
-      const todayDate = today(getLocalTimeZone())
+      while (currentDate.compare(endOfWeek) <= 0) {
+        // Format CalendarDate to YYYY-MM-DD to match workout data format
+        const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
+        const dayWorkouts = workouts.filter(workout => {
+          // Handle different date formats that might come from the API
+          const workoutDate = workout.date
+          if (typeof workoutDate === 'string') {
+            // Extract just the date part if it's a full datetime string
+            const datePart = workoutDate.split('T')[0]
+            return datePart === dateString
+          }
+          return workoutDate === dateString
+        })
+        const todayDate = today(getLocalTimeZone())
 
-      days.push({
-        date: currentDate,
-        workouts: dayWorkouts,
-        hasWorkouts: dayWorkouts.length > 0,
-        isPastDue:
-          currentDate.compare(todayDate) < 0 && dayWorkouts.some(w => w.status === 'planned'),
-        isToday: currentDate.compare(todayDate) === 0,
-      })
+        days.push({
+          date: currentDate,
+          workouts: dayWorkouts,
+          hasWorkouts: dayWorkouts.length > 0,
+          isPastDue:
+            currentDate.compare(todayDate) < 0 && dayWorkouts.some(w => w.status === 'planned'),
+          isToday: currentDate.compare(todayDate) === 0,
+        })
 
-      currentDate = currentDate.add({ days: 1 })
+        currentDate = currentDate.add({ days: 1 })
+      }
+
+      return days
+    } catch (error) {
+      console.error('Error generating calendar days:', error)
+      return []
     }
-
-    return days
   }, [currentMonth, workouts])
 
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
@@ -178,8 +192,18 @@ export default function MonthlyCalendar({
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {calendarDays.map((day, index) => {
+        {calendarDays.length === 0 ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-content2 rounded-full flex items-center justify-center">
+                <CalendarIcon className="w-8 h-8 text-foreground-400" />
+              </div>
+              <p className="text-foreground-600">Unable to load calendar</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((day, index) => {
             const isCurrentMonth = day.date.month === currentMonth.month
             const dayNumber = day.date.day
 
@@ -283,8 +307,9 @@ export default function MonthlyCalendar({
                 </div>
               </div>
             )
-          })}
-        </div>
+            })}
+          </div>
+        )}
 
         {/* Legend */}
         <div className="mt-4 pt-4 border-t border-divider">
