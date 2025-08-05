@@ -47,7 +47,7 @@ export default function WorkoutLinkSelector({
   const [searchTerm, setSearchTerm] = useState('')
 
   // Filter workouts for the current conversation context
-  const filteredWorkouts = workouts.filter(workout => {
+  const filteredWorkouts = workouts.filter((workout: Workout) => {
     const matchesSearch =
       searchTerm === '' ||
       workout.planned_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,7 +57,10 @@ export default function WorkoutLinkSelector({
 
   // Group workouts by date (recent first)
   const groupedWorkouts = filteredWorkouts
-    .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
+    .sort(
+      (a: Workout, b: Workout) =>
+        new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
+    )
     .slice(0, 20) // Limit to recent 20 workouts
 
   const getWorkoutStatusColor = (status: string) => {
@@ -144,7 +147,7 @@ export default function WorkoutLinkSelector({
                 <p className="text-small text-default-400">Try adjusting your search</p>
               </div>
             ) : (
-              groupedWorkouts.map(workout => (
+              groupedWorkouts.map((workout: Workout) => (
                 <Card
                   key={workout.id}
                   isPressable

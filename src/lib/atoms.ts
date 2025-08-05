@@ -1,5 +1,5 @@
 import { atom } from 'jotai'
-import { atomWithStorage, atomWithRefresh, loadable, unwrap, atomFamily } from 'jotai/utils'
+import { atomFamily, atomWithRefresh, atomWithStorage, loadable, unwrap, splitAtom } from 'jotai/utils'
 
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
@@ -335,7 +335,7 @@ export const filteredWorkoutsAtom = atom(get => {
 // Calendar-specific derived atoms for better performance
 export const workoutStatsAtom = atom(get => {
   const workouts = get(filteredWorkoutsAtom) || []
-  
+
   return {
     total: workouts.length,
     completed: workouts.filter(w => w.status === 'completed').length,
@@ -345,9 +345,10 @@ export const workoutStatsAtom = atom(get => {
     completedDistance: workouts
       .filter(w => w.status === 'completed')
       .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0),
-    avgIntensity: workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.intensity || 0), 0) / workouts.length
-      : 0
+    avgIntensity:
+      workouts.length > 0
+        ? workouts.reduce((sum, w) => sum + (w.intensity || 0), 0) / workouts.length
+        : 0,
   }
 })
 
@@ -363,7 +364,9 @@ export const filteredTrainingPlansAtom = atom(async get => {
   const uiState = get(uiStateAtom)
 
   // Filter by archived status
-  const filtered = uiState.showArchived ? plans : plans.filter((p: { archived?: boolean }) => !p.archived)
+  const filtered = uiState.showArchived
+    ? plans
+    : plans.filter((p: { archived?: boolean }) => !p.archived)
 
   // Add additional filters here as needed
   // Could filter by plan type, status, etc.
@@ -423,15 +426,15 @@ export const messagesByConversationFamily = atomFamily((conversationId: string) 
     if (!session) return []
 
     try {
-      const response = await fetch(`/api/messages?recipientId=${conversationId}`, { 
+      const response = await fetch(`/api/messages?recipientId=${conversationId}`, {
         signal,
-        credentials: 'include'
+        credentials: 'include',
       })
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch messages: ${response.statusText}`)
       }
-      
+
       const data = await response.json()
       return data.messages || []
     } catch (error) {
@@ -447,73 +450,80 @@ export const messagesByConversationLoadableFamily = atomFamily((conversationId: 
 )
 
 // 5. Action atoms for cleaner API patterns
-export const sendMessageActionAtom = atom(null, async (get, set, payload: { 
-  recipientId: string; 
-  content: string; 
-  workoutId?: string 
-}) => {
-  const session = get(sessionAtom) as { user: { id: string; name: string; email: string; role: string } } | null
-  if (!session?.user?.id) throw new Error('No session available')
+export const sendMessageActionAtom = atom(
+  null,
+  async (
+    get,
+    set,
+    payload: {
+      recipientId: string
+      content: string
+      workoutId?: string
+    }
+  ) => {
+    const session = get(sessionAtom) as {
+      user: { id: string; name: string; email: string; role: string }
+    } | null
+    if (!session?.user?.id) throw new Error('No session available')
 
-  const { recipientId, content, workoutId } = payload
+    const { recipientId, content, workoutId } = payload
 
-  // Create optimistic message
-  const optimisticMessage: MessageWithUser = {
-    id: `temp-${Date.now()}`,
-    conversation_id: '',
-    content,
-    sender_id: session.user.id,
-    recipient_id: recipientId,
-    workout_id: workoutId || null,
-    read: false,
-    created_at: new Date().toISOString(),
-    sender: {
-      id: session.user.id,
-      full_name: session.user.name || 'You',
-      email: session.user.email || '',
-      role: session.user.role as 'runner' | 'coach',
+    // Create optimistic message
+    const optimisticMessage: MessageWithUser = {
+      id: `temp-${Date.now()}`,
+      conversation_id: '',
+      content,
+      sender_id: session.user.id,
+      recipient_id: recipientId,
+      workout_id: workoutId || null,
+      read: false,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  }
-
-  // Add optimistic message immediately
-  set(messagesAtom, prev => [...prev, optimisticMessage])
-
-  try {
-    const response = await fetch('/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, recipientId, workoutId }),
-      credentials: 'include'
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to send message: ${response.statusText}`)
+      sender: {
+        id: session.user.id,
+        full_name: session.user.name || 'You',
+        email: session.user.email || '',
+        role: session.user.role as 'runner' | 'coach',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
     }
 
-    const result = await response.json()
+    // Add optimistic message immediately
+    set(messagesAtom, prev => [...prev, optimisticMessage])
 
-    // Replace optimistic with real message
-    if (result.message) {
-      set(messagesAtom, prev =>
-        prev.map(msg =>
-          msg.id === optimisticMessage.id
-            ? { ...result.message, sender: optimisticMessage.sender }
-            : msg
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, recipientId, workoutId }),
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
+      // Replace optimistic with real message
+      if (result.message) {
+        set(messagesAtom, prev =>
+          prev.map(msg =>
+            msg.id === optimisticMessage.id
+              ? { ...result.message, sender: optimisticMessage.sender }
+              : msg
+          )
         )
-      )
-    }
+      }
 
-    return true
-  } catch (error) {
-    // Remove optimistic message on error
-    set(messagesAtom, prev => 
-      prev.filter(msg => msg.id !== optimisticMessage.id)
-    )
-    throw error
+      return true
+    } catch (error) {
+      // Remove optimistic message on error
+      set(messagesAtom, prev => prev.filter(msg => msg.id !== optimisticMessage.id))
+      throw error
+    }
   }
-})
+)
 
 // 6. Refresh action atoms for manual data refetch
 export const refreshWorkoutsActionAtom = atom(null, async (get, set) => {
@@ -536,6 +546,120 @@ export const conversationStatsAtom = atom(get => {
   return {
     total: conversations.length,
     unread: conversations.filter(conv => conv.unreadCount > 0).length,
-    totalUnreadMessages: conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)
+    totalUnreadMessages: conversations.reduce((sum, conv) => sum + conv.unreadCount, 0),
+  }
+})
+
+// =====================================
+// ADVANCED JOTAI PATTERNS - PHASE 2
+// Performance Optimizations
+// =====================================
+
+// 1. SplitAtom for large lists - Each item gets its own atom
+export const messagesAtomsAtom = splitAtom(messagesAtom)
+export const workoutsAtomsAtom = splitAtom(workoutsAtom)
+export const conversationsAtomsAtom = splitAtom(conversationsAtom)
+export const notificationsAtomsAtom = splitAtom(notificationsAtom)
+
+// 2. Split filtered atoms for performance
+export const filteredWorkoutsAtomsAtom = splitAtom(filteredWorkoutsAtom)
+
+// 3. Conversation-specific message atoms (for granular performance)
+export const conversationMessagesAtomsFamily = atomFamily((conversationId: string) =>
+  splitAtom(
+    atom(get => {
+      const messages = get(messagesAtom) || []
+      return messages.filter(message => {
+        return (
+          (message.sender_id === conversationId || message.recipient_id === conversationId)
+        )
+      })
+    })
+  )
+)
+
+// 4. Performance-optimized derived atoms
+export const messagesByRecipientAtomFamily = atomFamily((recipientId: string) =>
+  atom(get => {
+    const messages = get(messagesAtom) || []
+    return messages.filter(message => 
+      message.sender_id === recipientId || message.recipient_id === recipientId
+    )
+  })
+)
+
+// 5. Granular workout atoms for individual workout management
+export const workoutAtomFamily = atomFamily((workoutId: string) =>
+  atom(
+    get => {
+      const workouts = get(workoutsAtom) || []
+      return workouts.find(w => w.id === workoutId) || null
+    },
+    (get, set, newWorkout) => {
+      if (!newWorkout) return
+      set(workoutsAtom, prev => 
+        prev.map(w => w.id === workoutId ? { ...w, ...newWorkout } : w)
+      )
+    }
+  )
+)
+
+// 6. Optimized stats atoms with memoization
+export const workoutStatsByTypeAtom = atom(get => {
+  const workouts = get(filteredWorkoutsAtom) || []
+  
+  // Group by workout type for better performance insights
+  const statsByType = workouts.reduce((acc, workout) => {
+    const type = workout.planned_type || 'unknown'
+    if (!acc[type]) {
+      acc[type] = {
+        total: 0,
+        completed: 0,
+        planned: 0,
+        totalDistance: 0,
+        completedDistance: 0
+      }
+    }
+    
+    acc[type].total++
+    if (workout.status === 'completed') {
+      acc[type].completed++
+      acc[type].completedDistance += workout.actual_distance || workout.planned_distance || 0
+    }
+    if (workout.status === 'planned') {
+      acc[type].planned++
+    }
+    acc[type].totalDistance += workout.planned_distance || 0
+    
+    return acc
+  }, {} as Record<string, {
+    total: number
+    completed: number
+    planned: number
+    totalDistance: number
+    completedDistance: number
+  }>)
+  
+  return statsByType
+})
+
+// 7. Lazy-loaded atoms for expensive computations
+export const expensiveWorkoutAnalyticsAtom = atom(async get => {
+  const workouts = get(filteredWorkoutsAtom) || []
+  
+  // Simulate expensive computation
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  return {
+    totalWorkouts: workouts.length,
+    avgWeeklyDistance: workouts.length > 0 
+      ? workouts.reduce((sum, w) => sum + (w.planned_distance || 0), 0) / Math.max(workouts.length / 7, 1)
+      : 0,
+    consistency: workouts.length > 0
+      ? workouts.filter(w => w.status === 'completed').length / workouts.length
+      : 0,
+    lastWorkoutDate: workouts.length > 0 
+      ? Math.max(...workouts.map(w => new Date(w.date || '').getTime()))
+      : null
   }
 })

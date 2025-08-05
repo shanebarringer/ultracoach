@@ -193,21 +193,15 @@ export default function CalendarPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed:</span>
-                    <span className="font-medium text-success">
-                      {workoutStats.completed}
-                    </span>
+                    <span className="font-medium text-success">{workoutStats.completed}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned:</span>
-                    <span className="font-medium text-primary">
-                      {workoutStats.planned}
-                    </span>
+                    <span className="font-medium text-primary">{workoutStats.planned}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Missed:</span>
-                    <span className="font-medium text-danger">
-                      {workoutStats.skipped}
-                    </span>
+                    <span className="font-medium text-danger">{workoutStats.skipped}</span>
                   </div>
                 </div>
               </div>
@@ -229,9 +223,7 @@ export default function CalendarPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
-                    <span className="font-medium">
-                      {workoutStats.avgIntensity.toFixed(1)}
-                    </span>
+                    <span className="font-medium">{workoutStats.avgIntensity.toFixed(1)}</span>
                   </div>
                 </div>
               </div>

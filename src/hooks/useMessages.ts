@@ -25,12 +25,12 @@ export function useMessages(recipientId?: string) {
   const [currentConversationId, setCurrentConversationId] = useAtom(currentConversationIdAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
-  
+
   // Use atomFamily for conversation-specific messages
   const [conversationMessages] = useAtom(
     recipientId ? messagesByConversationLoadableFamily(recipientId) : messagesAtom
   )
-  
+
   // Use action atom for sending messages
   const [, sendMessageAction] = useAtom(sendMessageActionAtom)
 
@@ -278,30 +278,39 @@ export function useMessages(recipientId?: string) {
   // Get messages for current conversation using loadable pattern
   const getConversationMessages = () => {
     if (!recipientId) return []
-    
-    if (conversationMessages && typeof conversationMessages === 'object' && 'state' in conversationMessages) {
+
+    if (
+      conversationMessages &&
+      typeof conversationMessages === 'object' &&
+      'state' in conversationMessages
+    ) {
       // Using loadable atom
       if (conversationMessages.state === 'hasData') {
         return conversationMessages.data || []
       }
       return []
     }
-    
+
     // Fallback to filtering global messages
     if (!session?.user?.id) return []
-    return messages.filter(message => 
-      (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
-      (message.sender_id === recipientId && message.recipient_id === session.user.id)
+    return messages.filter(
+      message =>
+        (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
+        (message.sender_id === recipientId && message.recipient_id === session.user.id)
     )
   }
 
   const getLoadingState = () => {
     if (!recipientId) return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
-    
-    if (conversationMessages && typeof conversationMessages === 'object' && 'state' in conversationMessages) {
+
+    if (
+      conversationMessages &&
+      typeof conversationMessages === 'object' &&
+      'state' in conversationMessages
+    ) {
       return conversationMessages.state === 'loading'
     }
-    
+
     return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
   }
 

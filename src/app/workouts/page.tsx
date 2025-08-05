@@ -2,16 +2,16 @@
 
 import { Card, CardBody, Spinner, Tab, Tabs } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { ClockIcon, MapPinIcon, MountainSnowIcon, TrendingUpIcon } from 'lucide-react'
 
 import { useCallback, useEffect } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { Mountain } from 'lucide-react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import WorkoutCard from '@/components/workouts/WorkoutCard'
+import PerformantWorkoutsList from '@/components/workouts/PerformantWorkoutsList'
 import { useSession } from '@/hooks/useBetterSession'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { filteredWorkoutsAtom, loadingStatesAtom, uiStateAtom } from '@/lib/atoms'
@@ -43,45 +43,6 @@ export default function WorkoutsPage() {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
   }, [setUiState])
 
-  const formatDate = useCallback((dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }, [])
-
-  const getWorkoutStatusColor = useCallback((status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success'
-      case 'skipped':
-        return 'danger'
-      default:
-        return 'warning'
-    }
-  }, [])
-
-  const getWorkoutTypeIcon = useCallback((type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'long_run':
-        return <MountainSnowIcon className="w-4 h-4" />
-      case 'interval':
-        return <TrendingUpIcon className="w-4 h-4" />
-      case 'tempo':
-        return <ClockIcon className="w-4 h-4" />
-      default:
-        return <MapPinIcon className="w-4 h-4" />
-    }
-  }, [])
-
-  const getWorkoutIntensityColor = useCallback((intensity: number) => {
-    if (intensity <= 2) return 'success' // Zone 1-2: Recovery/Aerobic
-    if (intensity <= 4) return 'primary' // Zone 3-4: Aerobic/Tempo
-    if (intensity <= 6) return 'warning' // Zone 5-6: Tempo/Threshold
-    if (intensity <= 8) return 'danger' // Zone 7-8: Threshold/VO2Max
-    return 'secondary' // Zone 9-10: Neuromuscular
-  }, [])
 
   const handleWorkoutPress = useCallback(
     (workout: Workout) => {
@@ -111,7 +72,7 @@ export default function WorkoutsPage() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
-                <MountainSnowIcon className="w-8 h-8 text-primary" />
+                <Mountain className="w-8 h-8 text-primary" />
                 Training Log
               </h1>
               <p className="text-foreground-600 mt-2 text-lg">
@@ -157,7 +118,7 @@ export default function WorkoutsPage() {
           ) : filteredWorkouts.length === 0 ? (
             <Card className="py-12">
               <CardBody className="text-center">
-                <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
+                <Mountain className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   No training sessions found
                 </h3>
@@ -169,19 +130,10 @@ export default function WorkoutsPage() {
               </CardBody>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {filteredWorkouts.map(workout => (
-                <WorkoutCard
-                  key={workout.id}
-                  workout={workout}
-                  onPress={handleWorkoutPress}
-                  formatDate={formatDate}
-                  getWorkoutStatusColor={getWorkoutStatusColor}
-                  getWorkoutTypeIcon={getWorkoutTypeIcon}
-                  getWorkoutIntensityColor={getWorkoutIntensityColor}
-                />
-              ))}
-            </div>
+            <PerformantWorkoutsList
+              userRole={session?.user?.role as 'runner' | 'coach'}
+              onLogWorkout={handleWorkoutPress}
+            />
           )}
 
           {uiState.selectedWorkout && (

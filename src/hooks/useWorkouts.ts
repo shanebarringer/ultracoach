@@ -5,11 +5,11 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { 
-  loadingStatesAtom, 
-  workoutsAtom, 
+import {
+  loadingStatesAtom,
+  refreshWorkoutsActionAtom,
   workoutLoadableAtom,
-  refreshWorkoutsActionAtom 
+  workoutsAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -20,14 +20,14 @@ export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
-  
+
   // Use loadable pattern for better async UX
   const [workoutsLoadable] = useAtom(workoutLoadableAtom)
   const [, refreshWorkouts] = useAtom(refreshWorkoutsActionAtom)
 
   const fetchWorkouts = useCallback(async () => {
     if (!session?.user?.id) return
-    
+
     try {
       await refreshWorkouts()
     } catch (error) {

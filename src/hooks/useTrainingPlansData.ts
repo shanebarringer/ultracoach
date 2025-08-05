@@ -18,34 +18,37 @@ export function useTrainingPlansData() {
   const setLoadingStates = useSetAtom(loadingStatesAtom)
   const lastSessionIdRef = useRef<string | null>(null)
 
-  const fetchTrainingPlans = useCallback(async (force = false) => {
-    if (!session?.user?.id) {
-      logger.debug('No session, skipping fetch')
-      return
-    }
+  const fetchTrainingPlans = useCallback(
+    async (force = false) => {
+      if (!session?.user?.id) {
+        logger.debug('No session, skipping fetch')
+        return
+      }
 
-    // If we already have training plans and it's not a forced refresh, skip
-    if (trainingPlans.length > 0 && !force) {
-      logger.debug('Training plans already loaded, skipping fetch')
-      return
-    }
+      // If we already have training plans and it's not a forced refresh, skip
+      if (trainingPlans.length > 0 && !force) {
+        logger.debug('Training plans already loaded, skipping fetch')
+        return
+      }
 
-    logger.debug('fetchTrainingPlans: Called via useTrainingPlansData', { force })
-    setLoadingStates(prev => ({ ...prev, trainingPlans: true }))
+      logger.debug('fetchTrainingPlans: Called via useTrainingPlansData', { force })
+      setLoadingStates(prev => ({ ...prev, trainingPlans: true }))
 
-    try {
-      const response = await axios.get('/api/training-plans')
+      try {
+        const response = await axios.get('/api/training-plans')
 
-      logger.debug('setTrainingPlans: Data updated', response.data.trainingPlans?.length)
-      setTrainingPlans(response.data.trainingPlans || [])
-    } catch (error) {
-      logger.error('Error fetching training plans:', error)
-      // Reset trainingPlans on error to allow retry
-      setTrainingPlans([])
-    } finally {
-      setLoadingStates(prev => ({ ...prev, trainingPlans: false }))
-    }
-  }, [session?.user?.id, trainingPlans.length, setTrainingPlans, setLoadingStates])
+        logger.debug('setTrainingPlans: Data updated', response.data.trainingPlans?.length)
+        setTrainingPlans(response.data.trainingPlans || [])
+      } catch (error) {
+        logger.error('Error fetching training plans:', error)
+        // Reset trainingPlans on error to allow retry
+        setTrainingPlans([])
+      } finally {
+        setLoadingStates(prev => ({ ...prev, trainingPlans: false }))
+      }
+    },
+    [session?.user?.id, trainingPlans.length, setTrainingPlans, setLoadingStates]
+  )
 
   useEffect(() => {
     logger.debug('useEffect: Running')
@@ -57,7 +60,7 @@ export function useTrainingPlansData() {
     // If the session has changed (different user), force a refresh
     const currentSessionId = session.user.id
     const shouldForceRefresh = lastSessionIdRef.current !== currentSessionId
-    
+
     if (shouldForceRefresh) {
       logger.debug('Session changed, forcing refresh')
       lastSessionIdRef.current = currentSessionId

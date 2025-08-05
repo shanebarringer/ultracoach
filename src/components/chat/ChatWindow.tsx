@@ -23,7 +23,7 @@ import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 
 import MessageInput from './MessageInput'
-import MessageList from './MessageList'
+import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
 
 interface ChatWindowProps {
@@ -63,12 +63,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
     [session?.user?.id, chatUiState.sending, sendMessage, setChatUiState]
   )
 
-  // Filter messages by workout if filter is active
-  const filteredMessages = chatUiState.filterWorkoutId
-    ? messages.filter(
-        (msg: { workout_id: string | null }) => msg.workout_id === chatUiState.filterWorkoutId
-      )
-    : messages
+  // Note: Message filtering is now handled by the PerformantMessageList component
 
   // Get workout for filter display
   const filterWorkout = chatUiState.filterWorkoutId
@@ -148,12 +143,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                         </DropdownItem>,
                       ]
                     : []),
-                  ...workoutsWithMessages.map(workout => (
-                    <DropdownItem key={workout.id}>
-                      {workout.planned_type || 'Workout'} -{' '}
-                      {new Date(workout.date || '').toLocaleDateString()}
-                    </DropdownItem>
-                  )),
+                  ...workoutsWithMessages.map(
+                    (workout: { id: string; planned_type?: string; date?: string }) => (
+                      <DropdownItem key={workout.id}>
+                        {workout.planned_type || 'Workout'} -{' '}
+                        {new Date(workout.date || '').toLocaleDateString()}
+                      </DropdownItem>
+                    )
+                  ),
                 ]}
               </DropdownMenu>
             </Dropdown>
@@ -163,8 +160,9 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
       {/* Messages */}
       <div className="flex-1 flex flex-col min-h-0">
-        <MessageList
-          messages={filteredMessages}
+        {/* Use performant message list for better performance with splitAtom */}
+        <PerformantMessageList
+          recipientId={recipientId}
           currentUserId={(session?.user?.id as string) || ''}
         />
 

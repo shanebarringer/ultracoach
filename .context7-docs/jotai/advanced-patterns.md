@@ -3,6 +3,7 @@
 ## Key Patterns from Context7 Research
 
 ### 1. atomFamily for Dynamic Atoms
+
 Create atoms dynamically based on parameters with automatic caching:
 
 ```typescript
@@ -21,6 +22,7 @@ const conversationAtom = messagesByConversationFamily('user-123')
 ```
 
 ### 2. loadable() for Better Loading States
+
 Convert async atoms to handle loading/error states without Suspense:
 
 ```typescript
@@ -36,6 +38,7 @@ if (workoutsLoadable.state === 'hasError') return <Error />
 ```
 
 ### 3. unwrap() for Async to Sync Conversion
+
 ```typescript
 import { unwrap } from 'jotai/utils'
 
@@ -44,6 +47,7 @@ const unwrappedWorkoutsAtom = unwrap(asyncWorkoutsAtom, []) // fallback to []
 ```
 
 ### 4. Write-Only Action Atoms
+
 Separate concerns with action-only atoms:
 
 ```typescript
@@ -57,6 +61,7 @@ const [, refreshWorkouts] = useAtom(refreshWorkoutsAtom)
 ```
 
 ### 5. splitAtom for Large Lists
+
 Convert array atoms to individual item atoms:
 
 ```typescript
@@ -68,6 +73,7 @@ const workoutsAtomsAtom = splitAtom(workoutsAtom)
 ```
 
 ### 6. Signal-based Cancellation
+
 Add AbortSignal support to prevent race conditions:
 
 ```typescript
@@ -78,6 +84,7 @@ const userAtom = atom(async (get, { signal }) => {
 ```
 
 ### 7. Performance: Component Granularity
+
 Break down large components:
 
 ```typescript
@@ -97,6 +104,7 @@ const AgeComponent = () => {
 ```
 
 ### 8. Heavy Computation Optimization
+
 Move expensive operations out of render:
 
 ```typescript
@@ -110,16 +118,19 @@ const expensiveComputationAtom = atom(null, async (get, set) => {
 ## UltraCoach Implementation Strategy
 
 ### Phase 1: Core Data Atoms
+
 1. Convert useWorkouts to refreshable async atom
 2. Implement message atomFamily
 3. Add loadable wrappers for better UX
 
 ### Phase 2: Performance
+
 1. Split large lists with splitAtom
 2. Break down components for granular subscriptions
 3. Add lazy initialization for expensive atoms
 
-### Phase 3: Advanced Features  
+### Phase 3: Advanced Features
+
 1. Action atoms for cleaner API
 2. Serialization for state backup/restore
 3. Enhanced debugging with debugLabels

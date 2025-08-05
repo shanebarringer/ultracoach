@@ -86,10 +86,10 @@ function Header() {
         baseItems[0], // Dashboard
         baseItems[1], // Relationships
         baseItems[2], // Calendar
-        { href: '/training-plans', label: 'Training Plans' },
         { href: '/runners', label: 'Runners' },
         { href: '/races', label: 'Races' },
         { href: '/weekly-planner', label: 'Weekly Planner' },
+        { href: '/training-plans', label: 'Training Plans' },
         ...baseItems.slice(3), // Workouts, Messages
       ]
     }
