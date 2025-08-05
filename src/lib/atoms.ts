@@ -1,5 +1,12 @@
 import { atom } from 'jotai'
-import { atomFamily, atomWithRefresh, atomWithStorage, loadable, unwrap, splitAtom } from 'jotai/utils'
+import {
+  atomFamily,
+  atomWithRefresh,
+  atomWithStorage,
+  loadable,
+  splitAtom,
+  unwrap,
+} from 'jotai/utils'
 
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
@@ -570,9 +577,7 @@ export const conversationMessagesAtomsFamily = atomFamily((conversationId: strin
     atom(get => {
       const messages = get(messagesAtom) || []
       return messages.filter(message => {
-        return (
-          (message.sender_id === conversationId || message.recipient_id === conversationId)
-        )
+        return message.sender_id === conversationId || message.recipient_id === conversationId
       })
     })
   )
@@ -582,8 +587,8 @@ export const conversationMessagesAtomsFamily = atomFamily((conversationId: strin
 export const messagesByRecipientAtomFamily = atomFamily((recipientId: string) =>
   atom(get => {
     const messages = get(messagesAtom) || []
-    return messages.filter(message => 
-      message.sender_id === recipientId || message.recipient_id === recipientId
+    return messages.filter(
+      message => message.sender_id === recipientId || message.recipient_id === recipientId
     )
   })
 )
@@ -597,9 +602,7 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
     },
     (get, set, newWorkout) => {
       if (!newWorkout) return
-      set(workoutsAtom, prev => 
-        prev.map(w => w.id === workoutId ? { ...w, ...newWorkout } : w)
-      )
+      set(workoutsAtom, prev => prev.map(w => (w.id === workoutId ? { ...w, ...newWorkout } : w)))
     }
   )
 )
@@ -607,59 +610,67 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
 // 6. Optimized stats atoms with memoization
 export const workoutStatsByTypeAtom = atom(get => {
   const workouts = get(filteredWorkoutsAtom) || []
-  
+
   // Group by workout type for better performance insights
-  const statsByType = workouts.reduce((acc, workout) => {
-    const type = workout.planned_type || 'unknown'
-    if (!acc[type]) {
-      acc[type] = {
-        total: 0,
-        completed: 0,
-        planned: 0,
-        totalDistance: 0,
-        completedDistance: 0
+  const statsByType = workouts.reduce(
+    (acc, workout) => {
+      const type = workout.planned_type || 'unknown'
+      if (!acc[type]) {
+        acc[type] = {
+          total: 0,
+          completed: 0,
+          planned: 0,
+          totalDistance: 0,
+          completedDistance: 0,
+        }
       }
-    }
-    
-    acc[type].total++
-    if (workout.status === 'completed') {
-      acc[type].completed++
-      acc[type].completedDistance += workout.actual_distance || workout.planned_distance || 0
-    }
-    if (workout.status === 'planned') {
-      acc[type].planned++
-    }
-    acc[type].totalDistance += workout.planned_distance || 0
-    
-    return acc
-  }, {} as Record<string, {
-    total: number
-    completed: number
-    planned: number
-    totalDistance: number
-    completedDistance: number
-  }>)
-  
+
+      acc[type].total++
+      if (workout.status === 'completed') {
+        acc[type].completed++
+        acc[type].completedDistance += workout.actual_distance || workout.planned_distance || 0
+      }
+      if (workout.status === 'planned') {
+        acc[type].planned++
+      }
+      acc[type].totalDistance += workout.planned_distance || 0
+
+      return acc
+    },
+    {} as Record<
+      string,
+      {
+        total: number
+        completed: number
+        planned: number
+        totalDistance: number
+        completedDistance: number
+      }
+    >
+  )
+
   return statsByType
 })
 
 // 7. Lazy-loaded atoms for expensive computations
 export const expensiveWorkoutAnalyticsAtom = atom(async get => {
   const workouts = get(filteredWorkoutsAtom) || []
-  
+
   // Simulate expensive computation
   await new Promise(resolve => setTimeout(resolve, 100))
-  
+
   return {
     totalWorkouts: workouts.length,
-    avgWeeklyDistance: workouts.length > 0 
-      ? workouts.reduce((sum, w) => sum + (w.planned_distance || 0), 0) / Math.max(workouts.length / 7, 1)
-      : 0,
-    consistency: workouts.length > 0
-      ? workouts.filter(w => w.status === 'completed').length / workouts.length
-      : 0,
-    lastWorkoutDate: workouts.length > 0 
-      ? Math.max(...workouts.map(w => new Date(w.date || '').getTime()))
-      : null
+    avgWeeklyDistance:
+      workouts.length > 0
+        ? workouts.reduce((sum, w) => sum + (w.planned_distance || 0), 0) /
+          Math.max(workouts.length / 7, 1)
+        : 0,
+    consistency:
+      workouts.length > 0
+        ? workouts.filter(w => w.status === 'completed').length / workouts.length
+        : 0,
+    lastWorkoutDate:
+      workouts.length > 0 ? Math.max(...workouts.map(w => new Date(w.date || '').getTime())) : null,
   }
 })

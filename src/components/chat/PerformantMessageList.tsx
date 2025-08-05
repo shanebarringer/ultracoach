@@ -1,6 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
+
 import { memo, useEffect, useRef } from 'react'
 
 import { conversationMessagesAtomsFamily } from '@/lib/atoms'
@@ -15,7 +16,7 @@ interface PerformantMessageListProps {
 // High-performance message list using splitAtom pattern
 const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMessageListProps) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  
+
   // Get split atoms for this conversation - each message gets its own atom
   const [messageAtoms] = useAtom(conversationMessagesAtomsFamily(recipientId))
 

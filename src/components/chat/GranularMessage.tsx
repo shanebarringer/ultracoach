@@ -1,6 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
+
 import { memo } from 'react'
 
 import { workoutsAtom } from '@/lib/atoms'
@@ -60,33 +61,28 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
             {senderName}
           </div>
         )}
-        
+
         {/* Message content */}
         <div className="whitespace-pre-wrap break-words">{message.content}</div>
 
         {/* Workout context if linked */}
-        {message.workout_id && (() => {
-          const workout = workouts.find((w: { id: string }) => w.id === message.workout_id)
-          if (workout) {
-            return (
-              <div className="mt-2">
-                <WorkoutContext
-                  workout={workout}
-                  linkType={'reference'}
-                  className="text-xs"
-                />
-              </div>
-            )
-          }
-          return null
-        })()}
+        {message.workout_id &&
+          (() => {
+            const workout = workouts.find((w: { id: string }) => w.id === message.workout_id)
+            if (workout) {
+              return (
+                <div className="mt-2">
+                  <WorkoutContext workout={workout} linkType={'reference'} className="text-xs" />
+                </div>
+              )
+            }
+            return null
+          })()}
 
         {/* Timestamp */}
         <div
           className={`text-xs mt-2 ${
-            isFromCurrentUser
-              ? 'text-blue-200'
-              : 'text-gray-500 dark:text-gray-400'
+            isFromCurrentUser ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'
           }`}
         >
           {formatTime(message.created_at)}

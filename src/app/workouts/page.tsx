@@ -2,12 +2,12 @@
 
 import { Card, CardBody, Spinner, Tab, Tabs } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { Mountain } from 'lucide-react'
 
 import { useCallback, useEffect } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { Mountain } from 'lucide-react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
@@ -42,7 +42,6 @@ export default function WorkoutsPage() {
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
   }, [setUiState])
-
 
   const handleWorkoutPress = useCallback(
     (workout: Workout) => {

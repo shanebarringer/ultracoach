@@ -1,10 +1,10 @@
 'use client'
 
+import { Badge, Button, Card, CardBody, CardFooter, CardHeader } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Calendar, Clock, MapPin, Target } from 'lucide-react'
-import { memo } from 'react'
 
-import { Badge, Button, Card, CardBody, CardFooter, CardHeader } from '@heroui/react'
+import { memo } from 'react'
 
 import { workoutAtomFamily } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
@@ -18,11 +18,11 @@ interface GranularWorkoutCardProps {
   onLog?: (workout: Workout) => void
 }
 
-// Individual workout name component - only re-renders when name changes  
+// Individual workout name component - only re-renders when name changes
 const WorkoutName = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
   const [workout] = useAtom(workoutAtom)
   if (!workout) return null
-  
+
   return (
     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
       {workout.planned_type || 'Workout'}
@@ -38,16 +38,21 @@ const WorkoutStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'success'
-      case 'planned': return 'primary'
-      case 'skipped': return 'warning'
-      default: return 'default'
+      case 'completed':
+        return 'success'
+      case 'planned':
+        return 'primary'
+      case 'skipped':
+        return 'warning'
+      default:
+        return 'default'
     }
   }
 
   return (
     <Badge color={getStatusColor(workout.status || 'planned')} variant="flat">
-      {(workout.status || 'planned').charAt(0).toUpperCase() + (workout.status || 'planned').slice(1)}
+      {(workout.status || 'planned').charAt(0).toUpperCase() +
+        (workout.status || 'planned').slice(1)}
     </Badge>
   )
 })
@@ -118,68 +123,60 @@ const WorkoutIntensity = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) =>
 WorkoutIntensity.displayName = 'WorkoutIntensity'
 
 // Main granular workout card - uses individual components for optimal performance
-const GranularWorkoutCard = memo(({ workoutId, userRole: _userRole, onEdit, onLog }: GranularWorkoutCardProps) => {
-  const workoutAtom = workoutAtomFamily(workoutId)
-  const [workout] = useAtom(workoutAtom)
+const GranularWorkoutCard = memo(
+  ({ workoutId, userRole: _userRole, onEdit, onLog }: GranularWorkoutCardProps) => {
+    const workoutAtom = workoutAtomFamily(workoutId)
+    const [workout] = useAtom(workoutAtom)
 
-  if (!workout) {
+    if (!workout) {
+      return (
+        <Card className="w-full">
+          <CardBody>
+            <div className="text-center text-gray-500 dark:text-gray-400">Workout not found</div>
+          </CardBody>
+        </Card>
+      )
+    }
+
     return (
-      <Card className="w-full">
-        <CardBody>
-          <div className="text-center text-gray-500 dark:text-gray-400">
-            Workout not found
+      <Card className="w-full hover:shadow-lg transition-shadow duration-200">
+        <CardHeader className="flex justify-between items-start">
+          <div className="flex-1">
+            <WorkoutName workoutAtom={workoutAtom} />
+            <WorkoutDate workoutAtom={workoutAtom} />
           </div>
+          <WorkoutStatus workoutAtom={workoutAtom} />
+        </CardHeader>
+
+        <CardBody className="space-y-2">
+          <WorkoutDistance workoutAtom={workoutAtom} />
+          <WorkoutDuration workoutAtom={workoutAtom} />
+          <WorkoutIntensity workoutAtom={workoutAtom} />
+
+          {/* Notes preview */}
+          {workout.workout_notes && (
+            <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+              <p className="line-clamp-2">{workout.workout_notes}</p>
+            </div>
+          )}
         </CardBody>
+
+        <CardFooter className="gap-2">
+          {onEdit && (
+            <Button size="sm" variant="bordered" onPress={() => onEdit(workout)}>
+              Edit
+            </Button>
+          )}
+          {onLog && workout.status !== 'completed' && (
+            <Button size="sm" color="primary" onPress={() => onLog(workout)}>
+              Log Workout
+            </Button>
+          )}
+        </CardFooter>
       </Card>
     )
   }
-
-  return (
-    <Card className="w-full hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="flex justify-between items-start">
-        <div className="flex-1">
-          <WorkoutName workoutAtom={workoutAtom} />
-          <WorkoutDate workoutAtom={workoutAtom} />
-        </div>
-        <WorkoutStatus workoutAtom={workoutAtom} />
-      </CardHeader>
-
-      <CardBody className="space-y-2">
-        <WorkoutDistance workoutAtom={workoutAtom} />
-        <WorkoutDuration workoutAtom={workoutAtom} />
-        <WorkoutIntensity workoutAtom={workoutAtom} />
-        
-        {/* Notes preview */}
-        {workout.workout_notes && (
-          <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-            <p className="line-clamp-2">{workout.workout_notes}</p>
-          </div>
-        )}
-      </CardBody>
-
-      <CardFooter className="gap-2">
-        {onEdit && (
-          <Button
-            size="sm"
-            variant="bordered"
-            onPress={() => onEdit(workout)}
-          >
-            Edit
-          </Button>
-        )}
-        {onLog && workout.status !== 'completed' && (
-          <Button
-            size="sm"
-            color="primary"
-            onPress={() => onLog(workout)}
-          >
-            Log Workout
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
-  )
-})
+)
 
 GranularWorkoutCard.displayName = 'GranularWorkoutCard'
 
