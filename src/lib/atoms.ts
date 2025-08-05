@@ -48,6 +48,7 @@ export const loadingStatesAtom = atom({
   trainingPlans: false,
   notifications: false,
   messages: false,
+  relationships: false,
   conversations: false,
   runners: false,
 })
@@ -56,7 +57,7 @@ export const loadingStatesAtom = atom({
 export const createTrainingPlanFormAtom = atom({
   title: '',
   description: '',
-  runnerEmail: '',
+  runnerId: '',
   race_id: null as string | null,
   goal_type: null as 'completion' | 'time' | 'placement' | null,
   plan_type: null as 'race_specific' | 'base_building' | 'bridge' | 'recovery' | null,
@@ -168,9 +169,8 @@ export const asyncWorkoutsAtom = atom(async get => {
     const response = await fetch('/api/workouts', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -195,9 +195,8 @@ export const asyncTrainingPlansAtom = atom(async get => {
     const response = await fetch('/api/training-plans', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -222,9 +221,8 @@ export const asyncNotificationsAtom = atom(async get => {
     const response = await fetch('/api/notifications', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {
@@ -249,9 +247,8 @@ export const asyncConversationsAtom = atom(async get => {
     const response = await fetch('/api/conversations', {
       headers: {
         'Content-Type': 'application/json',
-        // Better Auth uses cookie-based authentication automatically
-        // Authorization headers would be added here if tokens were available
       },
+      credentials: 'include', // Ensure cookies are sent with the request
     })
 
     if (!response.ok) {

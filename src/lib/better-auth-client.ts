@@ -1,5 +1,7 @@
+import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
+import type { auth } from '@/lib/better-auth'
 import type { Session, User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 
@@ -19,6 +21,9 @@ function getAuthClient() {
     // Better Auth automatically uses window.location.origin + '/api/auth'
     _authClient = createAuthClient({
       // baseURL is omitted - Better Auth will use current domain + /api/auth
+      plugins: [
+        customSessionClient<typeof auth>(), // Enable custom session inference
+      ],
       fetchOptions: {
         onError(context) {
           logger.error('Better Auth client error:', {

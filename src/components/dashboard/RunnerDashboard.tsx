@@ -13,6 +13,8 @@ import {
 
 import { memo, useMemo } from 'react'
 
+import Link from 'next/link'
+
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
@@ -50,7 +52,7 @@ const getWorkoutTypeIcon = (type: string) => {
 
 function RunnerDashboard() {
   const { data: session } = useSession()
-  const { trainingPlans, upcomingWorkouts, loading } = useDashboardData()
+  const { trainingPlans, upcomingWorkouts, loading, relationships } = useDashboardData()
 
   // Memoize expensive computations and add logging
   const thisWeekWorkouts = useMemo(() => {
@@ -169,6 +171,90 @@ function RunnerDashboard() {
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* My Coaches Section */}
+        <Card className="h-fit" data-testid="coaches-section">
+          <CardHeader className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <MountainSnowIcon className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold text-foreground">My Guides</h2>
+            </div>
+            <Button
+              as={Link}
+              href="/relationships"
+              size="sm"
+              color="primary"
+              variant="flat"
+              className="text-xs"
+            >
+              Find Coach
+            </Button>
+          </CardHeader>
+          <CardBody>
+            {relationships.filter(rel => rel.other_party.role === 'coach').length === 0 ? (
+              <div className="text-center py-8">
+                <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No guide assigned</h3>
+                <p className="text-foreground-600 mb-4">
+                  Connect with an experienced coach to guide your summit journey
+                </p>
+                <Button
+                  as={Link}
+                  href="/relationships"
+                  color="primary"
+                  size="sm"
+                  className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+                >
+                  Find Your Guide
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {relationships
+                  .filter(rel => rel.other_party.role === 'coach')
+                  .map(relationship => (
+                    <Card
+                      key={relationship.id}
+                      className="border border-divider hover:shadow-md transition-shadow"
+                    >
+                      <CardBody className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
+                            {(relationship.other_party.full_name || 'C').charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">
+                                {relationship.other_party.full_name}
+                              </h3>
+                              <Chip
+                                size="sm"
+                                color={relationship.status === 'active' ? 'success' : 'warning'}
+                                variant="flat"
+                                className="capitalize"
+                              >
+                                {relationship.status}
+                              </Chip>
+                            </div>
+                            <p className="text-sm text-foreground-600">
+                              {relationship.other_party.email}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="flat" color="primary" className="flex-1">
+                            View Profile
+                          </Button>
+                          <Button size="sm" variant="flat" color="success" className="flex-1">
+                            Send Message
+                          </Button>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
         {/* Training Plans */}
         <Card className="h-fit" data-testid="training-plans-section">
           <CardHeader>

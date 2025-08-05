@@ -45,7 +45,7 @@ export function useNotifications() {
     if (session?.user?.id) {
       fetchNotifications()
     }
-  }, [session?.user?.id, fetchNotifications])
+  }, [session?.user?.id, fetchNotifications]) // Include fetchNotifications dependency as required by ESLint
 
   // Real-time updates for notifications
   useSupabaseRealtime({

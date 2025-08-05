@@ -71,7 +71,7 @@ export default function WeeklyPlannerPage() {
     }
 
     fetchRunners()
-  }, [session, status, router, fetchRunners])
+  }, [status, session, router, fetchRunners])
 
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)

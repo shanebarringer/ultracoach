@@ -54,7 +54,7 @@ export default function ChatUserPage() {
     } finally {
       setLoading(false)
     }
-  }, [userId, router])
+  }, [userId, router]) // Include router dependency as required by ESLint
 
   useEffect(() => {
     if (status === 'loading') return
@@ -65,7 +65,7 @@ export default function ChatUserPage() {
     }
 
     fetchRecipient()
-  }, [session, status, router, userId, fetchRecipient])
+  }, [status, session, userId, fetchRecipient, router]) // Include all dependencies as required by ESLint
 
   if (status === 'loading' || loading) {
     return (

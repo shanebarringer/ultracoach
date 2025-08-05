@@ -27,7 +27,7 @@ export default function ChatPage() {
       router.push('/auth/signin')
       return
     }
-  }, [session, status, router])
+  }, [status, session, router]) // Include all dependencies as required by ESLint
 
   if (status === 'loading') {
     return (

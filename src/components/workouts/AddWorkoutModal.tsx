@@ -15,6 +15,8 @@ import {
 
 import { useState } from 'react'
 
+import { commonToasts } from '@/lib/toast'
+
 interface AddWorkoutModalProps {
   isOpen: boolean
   onClose: () => void
@@ -89,14 +91,24 @@ export default function AddWorkoutModal({
           terrain: '',
           elevationGain: '',
         })
+
+        // Show success toast
+        commonToasts.workoutSaved()
+
         onSuccess()
         onClose()
       } else {
         const data = await response.json()
         setError(data.error || 'Failed to add workout')
+
+        // Show error toast
+        commonToasts.workoutError(data.error || 'Failed to add workout')
       }
     } catch {
       setError('An error occurred. Please try again.')
+
+      // Show error toast
+      commonToasts.workoutError('An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }

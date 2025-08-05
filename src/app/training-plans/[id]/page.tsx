@@ -11,6 +11,7 @@ import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
+import { commonToasts } from '@/lib/toast'
 
 type TrainingPlanWithUsers = TrainingPlan & {
   runners?: User
@@ -103,7 +104,7 @@ export default function TrainingPlanDetailPage() {
     }
 
     fetchTrainingPlanDetails()
-  }, [session, status, router, planId, fetchTrainingPlanDetails])
+  }, [status, session, router, fetchTrainingPlanDetails])
 
   const handleAddWorkoutSuccess = () => {
     fetchTrainingPlanDetails()
@@ -132,14 +133,15 @@ export default function TrainingPlanDetailPage() {
         method: 'DELETE',
       })
       if (response.ok) {
+        commonToasts.trainingPlanDeleted()
         router.push('/training-plans')
       } else {
         const errorData = await response.json()
-        alert(errorData.error || 'Failed to delete training plan')
+        commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
       }
     } catch (error) {
       console.error('Error deleting training plan:', error)
-      alert('Failed to delete training plan')
+      commonToasts.trainingPlanError('Failed to delete training plan')
     } finally {
       setIsDeleting(false)
     }

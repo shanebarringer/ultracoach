@@ -1,13 +1,11 @@
 'use client'
 
-import { Card, CardBody } from '@heroui/react'
 import { useAtom } from 'jotai'
 
 import React from 'react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import AsyncTrainingPlansList from '@/components/training-plans/AsyncTrainingPlansList'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
 import { useSession } from '@/hooks/useBetterSession'
@@ -87,49 +85,8 @@ export default function TrainingPlansPage() {
             </div>
           </div>
 
-          {/* Feature Toggle: Demonstrate Suspense vs Traditional Loading */}
-          <div className="mb-6">
-            <Card className="p-4 bg-linear-to-r from-primary/5 to-secondary/5 border border-primary/20">
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-foreground">🔬 React Suspense Demo</h4>
-                    <p className="text-sm text-foreground-600">
-                      Toggle between traditional loading and React Suspense patterns
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground-600">Traditional</span>
-                    <button
-                      onClick={() =>
-                        setUiState(prev => ({ ...prev, useSuspense: !prev.useSuspense }))
-                      }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        uiState.useSuspense ? 'bg-primary' : 'bg-default-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          uiState.useSuspense ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-foreground-600">Suspense</span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Conditional rendering: Modern React vs Traditional */}
-          {uiState.useSuspense ? (
-            // Modern React 19 Pattern with Suspense
-            <AsyncTrainingPlansList
-              userRole={session.user.role as 'runner' | 'coach'}
-              onArchiveChange={handleArchiveChange}
-            />
-          ) : // Traditional Loading Pattern (existing)
-          loadingStates.trainingPlans ? (
+          {/* Training Plans Display */}
+          {loadingStates.trainingPlans ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>

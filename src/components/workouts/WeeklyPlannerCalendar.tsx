@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import type { User, Workout } from '@/lib/supabase'
+import { commonToasts } from '@/lib/toast'
 
 interface DayWorkout {
   date: Date
@@ -501,16 +502,16 @@ export default function WeeklyPlannerCalendar({
       setHasChanges(false)
       onWeekUpdate()
 
-      // Show success message - using alert for now but should integrate with notification system
-      alert(
-        `⛰️ Successfully planned ${workoutsToCreate.length} summit ascents for ${runner.full_name}!`
-      )
+      // Show success toast with mountain theme
+      commonToasts.workoutSaved()
 
       // Refresh existing workouts
       fetchExistingWorkouts()
     } catch (error) {
       console.error('Error saving week plan:', error)
-      alert(error instanceof Error ? error.message : 'Failed to save expedition plan')
+      commonToasts.workoutError(
+        error instanceof Error ? error.message : 'Failed to save expedition plan'
+      )
     } finally {
       setSaving(false)
     }

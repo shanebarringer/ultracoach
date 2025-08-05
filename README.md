@@ -43,8 +43,9 @@ pnpm install
 2. Set up environment variables:
 
 ```bash
-cp .env.example .env.local
-# Add your Supabase credentials (local development will use defaults)
+cp .env.local.example .env.local
+# Edit .env.local and set DATABASE_URL to your local Supabase instance
+# For local development, use: DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ```
 
 3. Start the local development environment:
@@ -52,6 +53,10 @@ cp .env.example .env.local
 ```bash
 # Start Supabase services (database, auth, API)
 supabase start
+
+# After supabase start completes, copy the DB URL from the output
+# and set DATABASE_URL in your .env.local file accordingly
+# The default local DB URL is: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
 # In a separate terminal, start the Next.js development server
 pnpm dev

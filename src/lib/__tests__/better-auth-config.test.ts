@@ -18,8 +18,8 @@ afterEach(() => {
 describe('Better Auth Configuration', () => {
   describe('Environment Variable Validation', () => {
     it('should require BETTER_AUTH_SECRET', async () => {
-      delete process.env.BETTER_AUTH_SECRET
-      process.env.DATABASE_URL = 'postgresql://test'
+      vi.stubEnv('BETTER_AUTH_SECRET', '')
+      vi.stubEnv('DATABASE_URL', 'postgresql://test')
 
       await expect(async () => {
         await import('../better-auth')
@@ -27,8 +27,8 @@ describe('Better Auth Configuration', () => {
     })
 
     it('should require DATABASE_URL', async () => {
-      delete process.env.DATABASE_URL
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      vi.stubEnv('DATABASE_URL', '')
+      vi.stubEnv('BETTER_AUTH_SECRET', 'a'.repeat(64))
 
       await expect(async () => {
         await import('../better-auth')
@@ -36,8 +36,8 @@ describe('Better Auth Configuration', () => {
     })
 
     it('should validate BETTER_AUTH_SECRET length', async () => {
-      process.env.BETTER_AUTH_SECRET = 'short'
-      process.env.DATABASE_URL = 'postgresql://test'
+      vi.stubEnv('BETTER_AUTH_SECRET', 'short')
+      vi.stubEnv('DATABASE_URL', 'postgresql://test')
 
       await expect(async () => {
         await import('../better-auth')
@@ -45,8 +45,8 @@ describe('Better Auth Configuration', () => {
     })
 
     it('should accept valid BETTER_AUTH_SECRET', async () => {
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
-      process.env.DATABASE_URL = 'postgresql://test'
+      vi.stubEnv('BETTER_AUTH_SECRET', 'a'.repeat(64))
+      vi.stubEnv('DATABASE_URL', 'postgresql://test')
 
       // Should not throw an error during import
       await expect(async () => {

@@ -122,7 +122,7 @@ export default function RacesPage() {
     }
 
     fetchRaces()
-  }, [session, status, router, fetchRaces])
+  }, [status, session, router, fetchRaces])
 
   const handleOpenModal = (race?: Race) => {
     if (race) {

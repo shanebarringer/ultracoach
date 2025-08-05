@@ -16,12 +16,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { createTrainingPlanFormAtom, planTemplatesAtom, racesAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, Race } from '@/lib/supabase'
+import type { PlanTemplate, Race, User } from '@/lib/supabase'
+import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
 
@@ -32,7 +33,7 @@ const createTrainingPlanSchema = z.object({
     .min(1, 'Plan title is required')
     .max(100, 'Title must be less than 100 characters'),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
-  runnerEmail: z.string().email('Please enter a valid email address'),
+  runnerId: z.string().min(1, 'Please select a runner'),
   race_id: z.string().nullable(),
   goal_type: z.enum(['completion', 'time', 'placement']).nullable(),
   plan_type: z.enum(['race_specific', 'base_building', 'bridge', 'recovery']).nullable(),
@@ -57,6 +58,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const [connectedRunners, setConnectedRunners] = useState<User[]>([])
+  const [loadingRunners, setLoadingRunners] = useState(false)
 
   // React Hook Form setup
   const {
@@ -71,7 +74,7 @@ export default function CreateTrainingPlanModal({
     defaultValues: {
       title: '',
       description: '',
-      runnerEmail: '',
+      runnerId: '',
       race_id: null,
       goal_type: null,
       plan_type: null,
@@ -100,6 +103,37 @@ export default function CreateTrainingPlanModal({
   useEffect(() => {
     if (isOpen) {
       const fetchInitialData = async () => {
+        // Fetch connected runners
+        setLoadingRunners(true)
+        try {
+          const runnersResponse = await fetch('/api/my-relationships?status=active')
+          if (runnersResponse.ok) {
+            const runnersData = await runnersResponse.json()
+            const runners = runnersData.relationships
+              .filter((rel: { other_party: { role: string } }) => rel.other_party.role === 'runner')
+              .map(
+                (rel: {
+                  other_party: { id: string; email: string; role: string; full_name: string }
+                }) => ({
+                  id: rel.other_party.id,
+                  email: rel.other_party.email,
+                  role: rel.other_party.role,
+                  full_name: rel.other_party.full_name,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                })
+              )
+            setConnectedRunners(runners)
+          } else {
+            console.error('Failed to fetch connected runners', runnersResponse.statusText)
+          }
+        } catch (err) {
+          console.error('Error fetching connected runners:', err)
+        } finally {
+          setLoadingRunners(false)
+        }
+
+        // Fetch races
         if (races.length === 0) {
           try {
             const response = await fetch('/api/races')
@@ -113,6 +147,8 @@ export default function CreateTrainingPlanModal({
             console.error('Error fetching races:', err)
           }
         }
+
+        // Fetch plan templates
         if (planTemplates.length === 0) {
           try {
             const response = await fetch('/api/training-plans/templates')
@@ -153,9 +189,14 @@ export default function CreateTrainingPlanModal({
       })
 
       if (response.ok) {
-        logger.info('Training plan created successfully')
+        const responseData = await response.json()
+        logger.info('Training plan created successfully', responseData)
         setFormState(prev => ({ ...prev, loading: false, error: '' }))
         reset() // Reset form with react-hook-form
+
+        // Show success toast
+        commonToasts.trainingPlanCreated()
+
         onSuccess()
         onClose()
       } else {
@@ -166,6 +207,9 @@ export default function CreateTrainingPlanModal({
           loading: false,
           error: errorData.error || 'Failed to create training plan',
         }))
+
+        // Show error toast
+        commonToasts.trainingPlanError(errorData.error || 'Failed to create training plan')
       }
     } catch (error) {
       logger.error('Error creating training plan:', error)
@@ -174,6 +218,9 @@ export default function CreateTrainingPlanModal({
         loading: false,
         error: 'An error occurred. Please try again.',
       }))
+
+      // Show error toast
+      commonToasts.trainingPlanError('An error occurred. Please try again.')
     }
   }
 
@@ -250,18 +297,29 @@ export default function CreateTrainingPlanModal({
             />
 
             <Controller
-              name="runnerEmail"
+              name="runnerId"
               control={control}
               render={({ field, fieldState }) => (
-                <Input
+                <Select
                   {...field}
-                  type="email"
-                  label="Runner Email"
-                  placeholder="runner@example.com"
+                  label="Select Runner"
+                  placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
                   isRequired
                   isInvalid={!!fieldState.error}
                   errorMessage={fieldState.error?.message}
-                />
+                  isLoading={loadingRunners}
+                  selectedKeys={field.value ? [field.value] : []}
+                  onSelectionChange={keys => {
+                    const selectedKey = Array.from(keys)[0] as string
+                    field.onChange(selectedKey || '')
+                  }}
+                >
+                  {connectedRunners.map(runner => (
+                    <SelectItem key={runner.id}>
+                      {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
+                    </SelectItem>
+                  ))}
+                </Select>
               )}
             />
 

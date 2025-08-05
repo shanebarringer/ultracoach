@@ -37,7 +37,7 @@ export default function WorkoutsPage() {
       router.push('/auth/signin')
       return
     }
-  }, [session, status, router])
+  }, [status, session, router]) // Include all dependencies as required by ESLint
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))

@@ -318,10 +318,10 @@ export function useMessages(recipientId?: string) {
     }
   }, [
     recipientId,
-    fetchMessages,
     chatUiState.currentRecipientId,
     chatUiState.hasInitiallyLoadedMessages,
     setChatUiState,
+    fetchMessages,
   ])
 
   // Get messages for current conversation

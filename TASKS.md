@@ -2,32 +2,75 @@
 
 ## 📋 Current Status
 
-- **Active Milestone**: UI Modernization & Developer Experience Enhancement ✅ **COMPLETE!**
-- **Last Updated**: 2025-07-30
-- **Current Focus**: Tailwind CSS v4 upgrade, password reset flow, and pre-commit automation
-- **Recent Completion**: Coach/runner routing fix, password reset implementation, Husky pre-commit hooks, Tailwind v4 upgrade
-- **Major Achievement**: Modern development stack with automated quality checks and enhanced user authentication!
+- **Active Milestone**: MVP Beta Testing Readiness 🔄 **IN PROGRESS**
+- **Last Updated**: 2025-08-05
+- **Current Focus**: Code quality improvements, ESLint fixes, core functionality verification, and user experience polish for beta testing
+- **Recent Completion**: ESLint warning fixes (4/20 files completed), comprehensive beta testing readiness plan approved
+- **Major Achievement**: Systematic approach established for MVP readiness - focusing on user-blocking issues and professional UX!
 
 ## 📊 Progress Overview
 
-- **Next Phase**:
-  1. Fix Routing issues with Runners/Coaches on login - and email Password Reset (maybe use Resend (free version) or setup password reset without email if possible) - and Playwright CI (currently failing on main)
-  2. Fix Messaging Issues,
-  3. Fix Notifications,
-  4. Fix UI Issues,
-  5. Add Monthly Calendar,
-  6. UI enhancements,
-     6A. Setup staging DB for Vercel Previews, and supporting commands for setup/teardown/seeding - so we're not using Prod data AND cleanup prod db:reset commands in package.json scripts (and bash scripts)
-  7. Strava integration,
-  8. Production monitoring,
-  9. user feedback systems,
-  10. Setup Playwright MCP Github action
+- **Previous Milestones**:
+  1. ✅ ~~Coach-Runner Relationship System~~ - **COMPLETED 2025-08-03**
+  2. ✅ ~~Dashboard & Relationship Enhancement~~ - **COMPLETED 2025-08-04**
+
+- **Current Milestone**: 3. 🔄 **MVP Beta Testing Readiness** - **IN PROGRESS 2025-08-05**
+
+- **Future Milestones**: 4. Email System Verification & Invitation System 5. App-Wide Coach-Runner Interaction Audit 6. Production Monitoring & User Feedback Systems
 
 _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILESTONES.md)_
 
 ---
 
-## 🚀 Production Readiness Phase 3: Secure Environment Management (IN PROGRESS)
+## 🚀 **MVP Beta Testing Readiness Milestone (IN PROGRESS 2025-08-05)**
+
+### Phase 1: Code Quality & ESLint Fixes (HIGH PRIORITY)
+
+- [x] **Fix ESLint warnings in signin page** - Missing router dependency fixed
+- [x] **Fix ESLint warnings in calendar page** - Missing router and session dependencies fixed
+- [x] **Fix ESLint warnings in chat pages** - Missing router and fetchRecipient dependencies fixed
+- [ ] **Fix remaining ESLint warnings** - 16 more files need dependency fixes (pages, hooks, components)
+- [ ] **Verify all fixes don't cause infinite re-renders** - Test all affected components
+
+### Phase 2: Site Audit & Navigation Improvements (HIGH PRIORITY)
+
+- [ ] **Audit all navigation links** - Ensure all Header menu items lead to working pages
+- [ ] **Fix broken routes** - Verify all routes work for both coach and runner roles
+- [ ] **Improve navigation organization** - Group related features logically
+- [ ] **Fix loading state issues** - Add proper loading indicators across the app
+- [ ] **Consider sidebar navigation** - Better UX for feature grouping (future enhancement)
+
+### Phase 3: Core Functionality Fixes (HIGH PRIORITY)
+
+- [ ] **Fix calendar functionality** - Investigate and resolve calendar display/interaction issues
+- [ ] **Fix training plan saving** - Ensure success alerts reflect actual saves to database
+- [ ] **Test all CRUD operations** - Verify Create, Read, Update, Delete across the app
+- [ ] **Test coach-runner relationship features** - Ensure all relationship workflows work properly
+
+### Phase 4: Toast Notification System (MEDIUM PRIORITY)
+
+- [ ] **Implement sonner toast notifications** - Replace alert-based feedback
+- [ ] **Add success/error feedback** - For all user actions (saves, creates, updates, deletes)
+- [ ] **Add loading indicators** - Where currently missing throughout the app
+- [ ] **Test notification UX** - Ensure professional user feedback experience
+
+### Phase 5: Email Configuration (MEDIUM PRIORITY)
+
+- [ ] **Complete Resend email setup** - Verify all environment variables configured
+- [ ] **Test password reset emails** - Ensure delivery and proper template rendering
+- [ ] **Add email logging** - For debugging and delivery tracking
+- [ ] **Test invitation system** - For coach-runner connections via email
+
+### Phase 6: Database & Deployment (MEDIUM PRIORITY)
+
+- [ ] **Setup staging environment** - For Vercel preview deployments
+- [ ] **Update production database** - With latest schema changes safely
+- [ ] **Create migration strategy** - For safe production updates
+- [ ] **Add backup procedures** - Database backup and recovery processes
+
+---
+
+## 🚀 Production Readiness Phase 4: User Experience & Advanced Features (FUTURE)
 
 ### Production Monitoring & Analytics (FUTURE PRIORITY)
 
@@ -40,16 +83,16 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 ### User Feedback Systems (FUTURE)
 
 - [ ] **Feedback collection system** - In-app feedback forms and user survey capabilities
-- [ ] **User testing infrastructure** - A/B testing framework and feature flag system (low priority)
+- [ ] **User testing infrastructure** - A/B testing framework and feature flag system
 - [ ] **Beta user program** - Controlled rollout system for new features
-- [ ] **Support ticket system** - User support and issue tracking integration (low priority)
+- [ ] **Support ticket system** - User support and issue tracking integration
 - [ ] **Usage analytics** - Detailed analytics on training plan usage and coach-runner interactions
 
 ---
 
-## 🏃‍♂️ Milestone 12: Strava Integration & Data Sync (PLANNED)
+## 🏃‍♂️ Milestone 13: Strava Integration & Data Sync (PLANNED)
 
-**Status**: 📋 Planned | **Target**: 2025-07-26
+**Status**: 📋 Planned | **Target**: Future
 **Goal**: Seamless integration with Strava for workout sync, performance tracking, and enhanced analytics
 
 ### Strava API Integration
@@ -66,67 +109,9 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Route Integration** - Sync workout routes and GPS data
 - [ ] **Real-time Updates** - Webhook integration for instant sync
 
-### Enhanced Analytics
-
-- [ ] **Training Load Analysis** - Combine UltraCoach planning with Strava execution data
-- [ ] **Performance Trends** - Historical performance analysis across platforms
-- [ ] **Coach Insights** - Give coaches access to actual vs planned workout data
-- [ ] **Progress Tracking** - Enhanced progress visualization with real execution data
-
-### User Experience
-
-- [ ] **Seamless Integration** - One-click Strava connection in user settings
-- [ ] **Conflict Resolution** - Handle discrepancies between planned and actual workouts
-- [ ] **Privacy Controls** - User control over what data is shared and synced
-- [ ] **Offline Mode** - Graceful handling when Strava is unavailable
-
-### Testing & Validation
-
-- [ ] **OAuth Flow Testing** - Test Strava authentication and authorization
-- [ ] **Sync Reliability** - Test sync accuracy and error handling
-- [ ] **Performance Impact** - Ensure sync doesn't impact app performance
-- [ ] **Edge Cases** - Test with various Strava activity types and data formats
-
 ---
 
 ## 🚀 Advanced Features & Polish (FUTURE MILESTONES)
-
-### Phase Progression System (PLANNED)
-
-- [ ] **Phase transition management**
-  - [ ] Automatic phase progression logic
-  - [ ] Manual phase transition controls
-  - [ ] Phase completion criteria
-  - [ ] Phase transition notifications
-- [ ] **Phase visualization**
-  - [ ] Training phase timeline display
-  - [ ] Progress indicators and milestones
-  - [ ] Phase-specific metrics and targets
-  - [ ] Historical phase progression tracking
-
-### Plan Sequencing & Progression (PLANNED)
-
-- [ ] **Multi-race planning**
-  - [ ] Plan sequencing workflow (50K → 50M → 100K)
-  - [ ] Automatic plan transitions
-  - [ ] Bridge plan recommendations
-  - [ ] Rest and recovery period management
-- [ ] **Base building periods**
-  - [ ] Off-season base building plans
-  - [ ] Maintenance period management
-  - [ ] Fitness level tracking between races
-  - [ ] Return-to-training protocols
-
-### Advanced Workout Features (PLANNED)
-
-- [ ] **Workout intelligence**
-  - [ ] Weather-based workout modifications
-  - [ ] Terrain-specific recommendations
-  - [ ] Recovery tracking and recommendations
-  - [ ] Training load management
-- [ ] **Workout planning tools**
-  - [ ] Workout template system
-  - [ ] Workout copying and modification
 
 ### Training Visualization (PLANNED)
 
@@ -135,11 +120,20 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Training zone visualization** and trends
 - [ ] **Race countdown** and timeline displays
 
-### Advanced Features (PLANNED)
+### Advanced Workout Features (PLANNED)
 
-- [ ] **K-bar command palette** for power users
-- [ ] **Dynamic plan adjustments** based on performance
-- [ ] **Coach analytics** and runner performance insights
+- [ ] **Workout intelligence** - Weather-based modifications, terrain-specific recommendations
+- [ ] **Recovery tracking** and recommendations
+- [ ] **Training load management** - Automatic load balancing
+- [ ] **Workout template system** - Reusable workout patterns
+
+### System Maintenance (ONGOING)
+
+- [ ] **Fix Playwright CI tests** currently failing on main branch
+- [ ] **Fix messaging system issues** - Improve real-time functionality
+- [ ] **Fix notification system issues** - Enhance notification delivery
+- [ ] **Fix UI issues and enhancements** - Continuous UX improvements
+- [ ] **Setup staging database** for Vercel previews with supporting commands
 
 ---
 
@@ -164,43 +158,44 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 ### Priority Levels
 
-- **Critical**: Blocking other work or production issues
-- **High**: Important for current milestone completion
+- **High**: Critical for current milestone completion
 - **Medium**: Should be completed in current milestone
 - **Low**: Nice to have, can be deferred
-
-### Task Categories
-
-- **Feature**: New functionality implementation
-- **Bug**: Issue fix or correction
-- **Refactor**: Code improvement without new functionality
-- **Test**: Testing and quality assurance
-- **Docs**: Documentation updates
-- **Infra**: Infrastructure and tooling changes
 
 ---
 
 ## 📊 Current Progress Summary
 
-### Production Readiness Status
+### MVP Beta Testing Readiness Status
 
-- **Phase 1**: ✅ Complete - Local development setup and database migration
-- **Phase 2**: ✅ Complete - Database migration workflows and Better Auth integration
-- **Phase 3**: ✅ Authentication Crisis Resolution Complete - Ready for production deployment
+- **Milestone 1-11**: ✅ Complete - Full application infrastructure, optimization, and relationship system
+- **Milestone 12**: ✅ Complete - Dashboard & Relationship Enhancement (2025-08-04)
+- **Milestone 13**: 🔄 In Progress - MVP Beta Testing Readiness (2025-08-05)
+
+### Success Criteria for Beta Testing Readiness
+
+✅ Zero ESLint warnings (4/20 files completed)  
+⏳ All navigation links work and lead to functional pages  
+⏳ Toast notifications provide clear user feedback  
+⏳ Calendar displays and functions correctly  
+⏳ Training plans save successfully to database  
+⏳ Email system works for password resets  
+⏳ Clean, professional user experience throughout app
 
 ### Next Priorities
 
-1. **Production Monitoring** - Error tracking, performance monitoring, and analytics setup
-2. **User Feedback Systems** - Beta testing infrastructure and feedback collection
-3. **Strava Integration** - Complete workout sync and performance analytics
-4. **Advanced Training Features** - Phase progression and plan sequencing
+1. **Complete ESLint Fixes** - Fix remaining 16 files with React hook dependency warnings
+2. **Navigation Audit** - Ensure all Header links work and verify route functionality
+3. **Core Feature Testing** - Calendar functionality, training plan saving, CRUD operations
+4. **User Experience Polish** - Toast notifications, loading states, error handling
 
 ### Technical Health
 
-- **Build Status**: ✅ Clean builds with zero warnings
+- **Build Status**: ✅ Clean builds with ESLint warnings (being fixed)
 - **Code Quality**: ✅ Full TypeScript coverage, structured logging, modern React patterns
-- **Security**: ✅ Production-ready authentication with proper credential accounts and schema compliance
+- **Security**: ✅ Production-ready authentication with Better Auth integration
 - **Performance**: ✅ Optimized React components with memoization and atomic state management
+- **Database**: ✅ Comprehensive relationship system with proper constraints and type safety
 
 ---
 
