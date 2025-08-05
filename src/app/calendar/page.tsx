@@ -13,8 +13,8 @@ import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { useSession } from '@/hooks/useBetterSession'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { filteredWorkoutsAtom, uiStateAtom } from '@/lib/atoms'
-import { toast } from '@/lib/toast'
 import type { Workout } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
@@ -183,99 +183,99 @@ export default function CalendarPage() {
           {/* Training Summary */}
           {filteredWorkouts.length > 0 && (
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-content1 rounded-lg p-6 border border-divider">
-              <h3 className="text-lg font-semibold text-foreground mb-2">This Month</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Total Workouts:</span>
-                  <span className="font-medium">{filteredWorkouts.length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Completed:</span>
-                  <span className="font-medium text-success">
-                    {filteredWorkouts.filter(w => w.status === 'completed').length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Planned:</span>
-                  <span className="font-medium text-primary">
-                    {filteredWorkouts.filter(w => w.status === 'planned').length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Missed:</span>
-                  <span className="font-medium text-danger">
-                    {filteredWorkouts.filter(w => w.status === 'skipped').length}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-content1 rounded-lg p-6 border border-divider">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Weekly Volume</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Planned Distance:</span>
-                  <span className="font-medium">
-                    {filteredWorkouts
-                      .reduce((sum, w) => sum + (w.planned_distance || 0), 0)
-                      .toFixed(1)}{' '}
-                    mi
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Completed Distance:</span>
-                  <span className="font-medium text-success">
-                    {filteredWorkouts
-                      .filter(w => w.status === 'completed')
-                      .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0)
-                      .toFixed(1)}{' '}
-                    mi
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground-600">Avg Intensity:</span>
-                  <span className="font-medium">
-                    {filteredWorkouts.length > 0
-                      ? (
-                          filteredWorkouts.reduce((sum, w) => sum + (w.intensity || 0), 0) /
-                          filteredWorkouts.length
-                        ).toFixed(1)
-                      : '0.0'}
-                  </span>
+              <div className="bg-content1 rounded-lg p-6 border border-divider">
+                <h3 className="text-lg font-semibold text-foreground mb-2">This Month</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Total Workouts:</span>
+                    <span className="font-medium">{filteredWorkouts.length}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Completed:</span>
+                    <span className="font-medium text-success">
+                      {filteredWorkouts.filter(w => w.status === 'completed').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Planned:</span>
+                    <span className="font-medium text-primary">
+                      {filteredWorkouts.filter(w => w.status === 'planned').length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Missed:</span>
+                    <span className="font-medium text-danger">
+                      {filteredWorkouts.filter(w => w.status === 'skipped').length}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-content1 rounded-lg p-6 border border-divider">
-              <h3 className="text-lg font-semibold text-foreground mb-2">Quick Actions</h3>
-              <div className="space-y-3">
-                <button
-                  className="w-full text-left p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
-                  onClick={() => router.push('/workouts')}
-                >
-                  <div className="text-sm font-medium text-primary">View All Workouts</div>
-                  <div className="text-xs text-foreground-600">See detailed workout list</div>
-                </button>
-                <button
-                  className="w-full text-left p-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors"
-                  onClick={() => router.push('/training-plans')}
-                >
-                  <div className="text-sm font-medium text-secondary">Training Plans</div>
-                  <div className="text-xs text-foreground-600">Manage your training plans</div>
-                </button>
-                {session.user.role === 'coach' && (
+              <div className="bg-content1 rounded-lg p-6 border border-divider">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Weekly Volume</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Planned Distance:</span>
+                    <span className="font-medium">
+                      {filteredWorkouts
+                        .reduce((sum, w) => sum + (w.planned_distance || 0), 0)
+                        .toFixed(1)}{' '}
+                      mi
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Completed Distance:</span>
+                    <span className="font-medium text-success">
+                      {filteredWorkouts
+                        .filter(w => w.status === 'completed')
+                        .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0)
+                        .toFixed(1)}{' '}
+                      mi
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground-600">Avg Intensity:</span>
+                    <span className="font-medium">
+                      {filteredWorkouts.length > 0
+                        ? (
+                            filteredWorkouts.reduce((sum, w) => sum + (w.intensity || 0), 0) /
+                            filteredWorkouts.length
+                          ).toFixed(1)
+                        : '0.0'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-content1 rounded-lg p-6 border border-divider">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Quick Actions</h3>
+                <div className="space-y-3">
                   <button
-                    className="w-full text-left p-2 rounded-lg bg-success/10 hover:bg-success/20 transition-colors"
-                    onClick={() => router.push('/runners')}
+                    className="w-full text-left p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                    onClick={() => router.push('/workouts')}
                   >
-                    <div className="text-sm font-medium text-success">Your Athletes</div>
-                    <div className="text-xs text-foreground-600">View athlete progress</div>
+                    <div className="text-sm font-medium text-primary">View All Workouts</div>
+                    <div className="text-xs text-foreground-600">See detailed workout list</div>
                   </button>
-                )}
+                  <button
+                    className="w-full text-left p-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                    onClick={() => router.push('/training-plans')}
+                  >
+                    <div className="text-sm font-medium text-secondary">Training Plans</div>
+                    <div className="text-xs text-foreground-600">Manage your training plans</div>
+                  </button>
+                  {session.user.role === 'coach' && (
+                    <button
+                      className="w-full text-left p-2 rounded-lg bg-success/10 hover:bg-success/20 transition-colors"
+                      onClick={() => router.push('/runners')}
+                    >
+                      <div className="text-sm font-medium text-success">Your Athletes</div>
+                      <div className="text-xs text-foreground-600">View athlete progress</div>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           )}
         </div>
       </ModernErrorBoundary>

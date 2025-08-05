@@ -53,7 +53,9 @@ export default function MonthlyCalendar({
   const calendarDays = useMemo(() => {
     try {
       const startOfMonth = currentMonth.set({ day: 1 })
-      const endOfMonth = currentMonth.set({ day: currentMonth.calendar.getDaysInMonth(currentMonth) })
+      const endOfMonth = currentMonth.set({
+        day: currentMonth.calendar.getDaysInMonth(currentMonth),
+      })
 
       // Get the first day of the week for the month view
       const startDayOfWeek = startOfMonth.toDate(getLocalTimeZone()).getDay()
@@ -204,109 +206,109 @@ export default function MonthlyCalendar({
         ) : (
           <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((day, index) => {
-            const isCurrentMonth = day.date.month === currentMonth.month
-            const dayNumber = day.date.day
+              const isCurrentMonth = day.date.month === currentMonth.month
+              const dayNumber = day.date.day
 
-            return (
-              <div
-                key={index}
-                className={`
+              return (
+                <div
+                  key={index}
+                  className={`
                   relative min-h-[80px] p-1 border border-divider rounded-md transition-colors cursor-pointer
                   ${isCurrentMonth ? 'bg-background hover:bg-content1' : 'bg-content1/50 text-foreground-400'}
                   ${day.isToday ? 'ring-2 ring-primary ring-offset-1' : ''}
                   ${day.isPastDue ? 'bg-danger-50 dark:bg-danger-50/20' : ''}
                 `}
-                onClick={() => onDateClick?.(day.date)}
-              >
-                {/* Day number */}
-                <div
-                  className={`
+                  onClick={() => onDateClick?.(day.date)}
+                >
+                  {/* Day number */}
+                  <div
+                    className={`
                   text-sm font-medium mb-1
                   ${day.isToday ? 'text-primary font-bold' : ''}
                   ${!isCurrentMonth ? 'text-foreground-400' : 'text-foreground-700'}
                 `}
-                >
-                  {dayNumber}
-                </div>
+                  >
+                    {dayNumber}
+                  </div>
 
-                {/* Workouts */}
-                <div className="space-y-1">
-                  {day.workouts.slice(0, 2).map(workout => (
-                    <Popover key={workout.id} placement="top">
-                      <PopoverTrigger>
-                        <div
-                          className={`
+                  {/* Workouts */}
+                  <div className="space-y-1">
+                    {day.workouts.slice(0, 2).map(workout => (
+                      <Popover key={workout.id} placement="top">
+                        <PopoverTrigger>
+                          <div
+                            className={`
                             px-1.5 py-0.5 rounded text-xs cursor-pointer transition-transform hover:scale-105
                             ${getWorkoutColor(workout) === 'success' ? 'bg-success-100 dark:bg-success-100/20 text-success-700 dark:text-success-400' : ''}
                             ${getWorkoutColor(workout) === 'danger' ? 'bg-danger-100 dark:bg-danger-100/20 text-danger-700 dark:text-danger-400' : ''}
                             ${getWorkoutColor(workout) === 'warning' ? 'bg-warning-100 dark:bg-warning-100/20 text-warning-700 dark:text-warning-400' : ''}
                             ${getWorkoutColor(workout) === 'primary' ? 'bg-primary-100 dark:bg-primary-100/20 text-primary-700 dark:text-primary-400' : ''}
                           `}
-                          onClick={e => {
-                            e.stopPropagation()
-                            onWorkoutClick?.(workout)
-                          }}
-                        >
-                          <div className="flex items-center gap-1 truncate">
-                            {getWorkoutIcon(workout.planned_type)}
-                            <span className="truncate">
-                              {workout.planned_type?.replace('_', ' ') || 'Workout'}
-                            </span>
+                            onClick={e => {
+                              e.stopPropagation()
+                              onWorkoutClick?.(workout)
+                            }}
+                          >
+                            <div className="flex items-center gap-1 truncate">
+                              {getWorkoutIcon(workout.planned_type)}
+                              <span className="truncate">
+                                {workout.planned_type?.replace('_', ' ') || 'Workout'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </PopoverTrigger>
+                        </PopoverTrigger>
 
-                      <PopoverContent className="max-w-xs">
-                        <div className="p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-sm">
-                              {workout.planned_type?.replace('_', ' ').toUpperCase()}
-                            </h4>
-                            {workout.intensity && (
-                              <Chip
-                                size="sm"
-                                color={getIntensityColor(workout.intensity)}
-                                variant="flat"
-                              >
-                                Zone {workout.intensity}
+                        <PopoverContent className="max-w-xs">
+                          <div className="p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-semibold text-sm">
+                                {workout.planned_type?.replace('_', ' ').toUpperCase()}
+                              </h4>
+                              {workout.intensity && (
+                                <Chip
+                                  size="sm"
+                                  color={getIntensityColor(workout.intensity)}
+                                  variant="flat"
+                                >
+                                  Zone {workout.intensity}
+                                </Chip>
+                              )}
+                            </div>
+
+                            <div className="space-y-1 text-xs">
+                              {workout.planned_distance && (
+                                <div>Distance: {workout.planned_distance} miles</div>
+                              )}
+                              {workout.planned_duration && (
+                                <div>Duration: {workout.planned_duration} min</div>
+                              )}
+                              {workout.workout_notes && (
+                                <div className="text-foreground-600">{workout.workout_notes}</div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs">
+                              <Chip size="sm" color={getWorkoutColor(workout)} variant="flat">
+                                {workout.status || 'planned'}
                               </Chip>
-                            )}
+                              {workout.terrain && (
+                                <span className="text-foreground-600">{workout.terrain}</span>
+                              )}
+                            </div>
                           </div>
+                        </PopoverContent>
+                      </Popover>
+                    ))}
 
-                          <div className="space-y-1 text-xs">
-                            {workout.planned_distance && (
-                              <div>Distance: {workout.planned_distance} miles</div>
-                            )}
-                            {workout.planned_duration && (
-                              <div>Duration: {workout.planned_duration} min</div>
-                            )}
-                            {workout.workout_notes && (
-                              <div className="text-foreground-600">{workout.workout_notes}</div>
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs">
-                            <Chip size="sm" color={getWorkoutColor(workout)} variant="flat">
-                              {workout.status || 'planned'}
-                            </Chip>
-                            {workout.terrain && (
-                              <span className="text-foreground-600">{workout.terrain}</span>
-                            )}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ))}
-
-                  {/* Show "+X more" if there are additional workouts */}
-                  {day.workouts.length > 2 && (
-                    <div className="text-xs text-foreground-500 px-1.5">
-                      +{day.workouts.length - 2} more
-                    </div>
-                  )}
+                    {/* Show "+X more" if there are additional workouts */}
+                    {day.workouts.length > 2 && (
+                      <div className="text-xs text-foreground-500 px-1.5">
+                        +{day.workouts.length - 2} more
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
+              )
             })}
           </div>
         )}
