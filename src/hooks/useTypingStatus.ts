@@ -22,13 +22,10 @@ export function useTypingStatus(recipientId: string) {
 
   const { isTyping, isRecipientTyping } = conversationStatus
 
-  // Send typing status to server (disabled until typing_status table is created)
+  // Send typing status to server
   const sendTypingStatus = useCallback(
     async (typing: boolean) => {
       if (!session?.user?.id || !recipientId) return
-
-      // Temporarily disabled - uncomment when typing_status table is created
-      return
 
       console.log('⌨️ Sending typing status:', { typing, recipientId })
 
@@ -145,8 +142,8 @@ export function useTypingStatus(recipientId: string) {
       }
     }
 
-    // Check typing status every 1 second
-    const pollInterval = setInterval(checkTypingStatus, 1000)
+    // Check typing status every 3 seconds (reduced from 1 second for better performance)
+    const pollInterval = setInterval(checkTypingStatus, 3000)
     return () => clearInterval(pollInterval)
   }, [session?.user?.id, recipientId, isRecipientTyping, setTypingStatuses])
 

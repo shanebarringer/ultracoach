@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
+import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
@@ -12,6 +12,7 @@ import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { chatUiStateAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 
 import MessageInput from './MessageInput'
 import MessageList from './MessageList'
@@ -39,11 +40,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       try {
         const success = await sendMessage(content, workoutId, contextType)
         if (!success) {
-          alert('Failed to send message. Please try again.')
+          toast.error('Message Failed', 'Unable to send message. Please try again.')
+        } else {
+          // Optional: Show success toast for sent messages (can be removed if too noisy)
+          // toast.success('Message Sent', 'Your message has been delivered.')
         }
       } catch (error) {
         console.error('Error sending message:', error)
-        alert('Failed to send message. Please try again.')
+        toast.error('Message Failed', 'Unable to send message. Please try again.')
       } finally {
         setChatUiState(prev => ({ ...prev, sending: false }))
       }
@@ -69,7 +73,10 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center gap-3">
+          <Spinner size="lg" color="primary" />
+          <p className="text-sm text-foreground-600">Loading conversation...</p>
+        </div>
       </div>
     )
   }

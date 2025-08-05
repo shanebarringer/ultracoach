@@ -1,0 +1,1 @@
+ALTER TABLE "typing_status" ADD CONSTRAINT "typing_status_user_id_recipient_id_unique" UNIQUE("user_id","recipient_id");

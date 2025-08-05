@@ -95,7 +95,7 @@ export function useSupabaseRealtime({
         )
       }
 
-      // Subscribe to the channel with enhanced error handling
+      // Subscribe to the channel with enhanced error handling and retry logic
       channel.subscribe((status, err) => {
         console.log(`📡 Realtime ${table} subscription status:`, status)
         if (status === 'SUBSCRIBED') {
@@ -110,16 +110,13 @@ export function useSupabaseRealtime({
             err.message.includes('mismatch between server and client bindings')
           ) {
             console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
-            // The component will still work, just without real-time updates
-            return
+          } else {
+            console.warn(`⚠️ Real-time connection error for ${table}, components will use polling fallback`)
           }
-
-          // For other errors, also continue gracefully
-          console.warn(`⚠️ Real-time updates disabled for ${table}, components will still function`)
         } else if (status === 'TIMED_OUT') {
-          console.warn(`⏰ Subscription to ${table} timed out, retrying...`)
+          console.warn(`⏰ Subscription to ${table} timed out - polling fallback will handle updates`)
         } else if (status === 'CLOSED') {
-          console.warn(`🔒 Subscription to ${table} was closed`)
+          console.warn(`🔒 Subscription to ${table} was closed - polling fallback will handle updates`)
         }
       })
 

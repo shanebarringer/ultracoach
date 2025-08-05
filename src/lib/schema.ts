@@ -157,6 +157,25 @@ export const messages = pgTable('messages', {
   }),
 })
 
+// Typing Status
+export const typing_status = pgTable(
+  'typing_status',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    user_id: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    recipient_id: text('recipient_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    is_typing: boolean('is_typing').default(false).notNull(),
+    last_updated: timestamp('last_updated', { withTimezone: true }).defaultNow().notNull(),
+  },
+  t => ({
+    userRecipientUnique: unique().on(t.user_id, t.recipient_id),
+  })
+)
+
 // Message Workout Links
 export const message_workout_links = pgTable('message_workout_links', {
   id: uuid('id').primaryKey().defaultRandom(),

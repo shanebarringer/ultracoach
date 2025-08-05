@@ -1,7 +1,9 @@
+import { and, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { db } from '@/lib/db'
+import { typing_status } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,26 +21,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if recipient is typing to current user
-    const { data: typingStatus, error } = await supabaseAdmin
-      .from('typing_status')
-      .select('is_typing, last_updated')
-      .eq('user_id', recipientId)
-      .eq('recipient_id', session.user.id)
-      .single()
+    const typingStatusResult = await db
+      .select({
+        is_typing: typing_status.is_typing,
+        last_updated: typing_status.last_updated,
+      })
+      .from(typing_status)
+      .where(
+        and(
+          eq(typing_status.user_id, recipientId),
+          eq(typing_status.recipient_id, session.user.id)
+        )
+      )
+      .limit(1)
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = no rows found
-      console.error('Error fetching typing status:', error)
-      return NextResponse.json({ error: 'Failed to fetch typing status' }, { status: 500 })
-    }
+    const typingStatusData = typingStatusResult[0] || null
 
     // Check if typing status is recent (within last 5 seconds)
     const isRecent =
-      typingStatus?.last_updated &&
-      new Date().getTime() - new Date(typingStatus.last_updated).getTime() < 5000
+      typingStatusData?.last_updated &&
+      new Date().getTime() - new Date(typingStatusData.last_updated).getTime() < 5000
 
     return NextResponse.json({
-      isTyping: (typingStatus?.is_typing && isRecent) || false,
+      isTyping: (typingStatusData?.is_typing && isRecent) || false,
     })
   } catch (error) {
     console.error('API error in GET /typing:', error)
@@ -56,17 +61,22 @@ export async function POST(request: NextRequest) {
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
-    // Update or insert typing status
-    const { error } = await supabaseAdmin.from('typing_status').upsert({
-      user_id: session.user.id,
-      recipient_id: recipientId,
-      is_typing: isTyping,
-      last_updated: new Date().toISOString(),
-    })
-    if (error) {
-      console.error('Failed to update typing status', error)
-      return NextResponse.json({ error: 'Failed to update typing status' }, { status: 500 })
-    }
+    // Update or insert typing status using upsert-like functionality
+    await db
+      .insert(typing_status)
+      .values({
+        user_id: session.user.id,
+        recipient_id: recipientId,
+        is_typing: isTyping,
+        last_updated: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [typing_status.user_id, typing_status.recipient_id],
+        set: {
+          is_typing: isTyping,
+          last_updated: new Date(),
+        },
+      })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('API error in POST /typing', error)

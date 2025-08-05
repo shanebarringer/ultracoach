@@ -308,11 +308,11 @@ export function useMessages(recipientId?: string) {
         fetchMessages(recipientId, true)
       }
 
-      // Polling fallback - refresh messages every 5 seconds (background updates)
-      // This ensures chat works even if real-time fails
+      // Polling fallback - refresh messages every 10 seconds (background updates)
+      // This ensures chat works even if real-time fails, reduced frequency for better performance
       const pollInterval = setInterval(() => {
         fetchMessages(recipientId, false) // Background update, no loading spinner
-      }, 5000)
+      }, 10000)
 
       return () => clearInterval(pollInterval)
     }
