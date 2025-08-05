@@ -1,6 +1,14 @@
 'use client'
 
-import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Spinner } from '@heroui/react'
+import {
+  Button,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Spinner,
+} from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 

@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
@@ -28,10 +29,7 @@ export async function GET(request: NextRequest) {
       })
       .from(typing_status)
       .where(
-        and(
-          eq(typing_status.user_id, recipientId),
-          eq(typing_status.recipient_id, session.user.id)
-        )
+        and(eq(typing_status.user_id, recipientId), eq(typing_status.recipient_id, session.user.id))
       )
       .limit(1)
 

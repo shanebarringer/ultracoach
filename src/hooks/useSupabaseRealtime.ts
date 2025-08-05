@@ -111,12 +111,18 @@ export function useSupabaseRealtime({
           ) {
             console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
           } else {
-            console.warn(`⚠️ Real-time connection error for ${table}, components will use polling fallback`)
+            console.warn(
+              `⚠️ Real-time connection error for ${table}, components will use polling fallback`
+            )
           }
         } else if (status === 'TIMED_OUT') {
-          console.warn(`⏰ Subscription to ${table} timed out - polling fallback will handle updates`)
+          console.warn(
+            `⏰ Subscription to ${table} timed out - polling fallback will handle updates`
+          )
         } else if (status === 'CLOSED') {
-          console.warn(`🔒 Subscription to ${table} was closed - polling fallback will handle updates`)
+          console.warn(
+            `🔒 Subscription to ${table} was closed - polling fallback will handle updates`
+          )
         }
       })
 
