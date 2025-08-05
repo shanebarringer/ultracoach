@@ -18,14 +18,14 @@ export function useConversations() {
   const [conversations, setConversations] = useAtom(conversationsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
-  
+
   // Debounce fetch to prevent race conditions
   const [lastFetchTime, setLastFetchTime] = useState(0)
 
   const fetchConversations = useCallback(
     async (isInitialLoad = false) => {
       if (!session?.user?.id) return
-      
+
       // Debounce: prevent multiple fetches within 2 seconds
       const now = Date.now()
       if (!isInitialLoad && now - lastFetchTime < 2000) {

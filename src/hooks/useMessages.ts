@@ -27,7 +27,7 @@ export function useMessages(recipientId?: string) {
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
   const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
-  
+
   // Debounce message fetching to prevent race conditions
   const [lastMessagesFetchTime, setLastMessagesFetchTime] = useState(0)
 
@@ -51,7 +51,7 @@ export function useMessages(recipientId?: string) {
     async (targetRecipientId?: string, isInitialLoad = false) => {
       const targetId = targetRecipientId || recipientId
       if (!session?.user?.id || !targetId) return
-      
+
       // Debounce: prevent multiple fetches within 1 second
       const now = Date.now()
       if (!isInitialLoad && now - lastMessagesFetchTime < 1000) {
@@ -120,7 +120,15 @@ export function useMessages(recipientId?: string) {
         }
       }
     },
-    [session?.user?.id, recipientId, setMessages, setLoadingStates, setChatUiState, lastMessagesFetchTime, setLastMessagesFetchTime]
+    [
+      session?.user?.id,
+      recipientId,
+      setMessages,
+      setLoadingStates,
+      setChatUiState,
+      lastMessagesFetchTime,
+      setLastMessagesFetchTime,
+    ]
   )
 
   const markMessagesAsRead = useCallback(

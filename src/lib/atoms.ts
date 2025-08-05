@@ -76,7 +76,7 @@ export const currentConversationIdAtom = atom<string | null>(null)
 
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
-  (get) => get(chatUiStateAtom).currentRecipientId,
+  get => get(chatUiStateAtom).currentRecipientId,
   (get, set, recipientId: string | null) => {
     set(chatUiStateAtom, prev => ({
       ...prev,
@@ -688,3 +688,376 @@ export const expensiveWorkoutAnalyticsAtom = atom(async get => {
       workouts.length > 0 ? Math.max(...workouts.map(w => new Date(w.date || '').getTime())) : null,
   }
 })
+
+// ==========================================
+// PHASE 3: ADVANCED STATE MANAGEMENT PATTERNS
+// ==========================================
+
+// 1. Action Atoms for Centralized Operations
+export const workoutActionsAtom = atom(
+  null,
+  (get, set, action: { type: string; payload?: unknown }) => {
+    const currentWorkouts = get(workoutsAtom)
+
+    switch (action.type) {
+      case 'CREATE_WORKOUT': {
+        const payload = action.payload as Partial<Workout>
+        const newWorkout = {
+          id: `workout-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          status: 'planned',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...payload,
+        } as Workout
+
+        set(workoutsAtom, [...currentWorkouts, newWorkout])
+
+        // Log the action for debugging
+        logger.info('🏃 Workout created:', { id: newWorkout.id, type: newWorkout.planned_type })
+        break
+      }
+
+      case 'UPDATE_WORKOUT': {
+        const { id, updates } = action.payload as { id: string; updates: Partial<Workout> }
+        const updatedWorkouts = currentWorkouts.map(workout =>
+          workout.id === id
+            ? { ...workout, ...updates, updated_at: new Date().toISOString() }
+            : workout
+        )
+
+        set(workoutsAtom, updatedWorkouts)
+        logger.info('📝 Workout updated:', { id, updates })
+        break
+      }
+
+      case 'DELETE_WORKOUT': {
+        const { id } = action.payload as { id: string }
+        const filteredWorkouts = currentWorkouts.filter(workout => workout.id !== id)
+
+        set(workoutsAtom, filteredWorkouts)
+        logger.info('🗑️ Workout deleted:', { id })
+        break
+      }
+
+      case 'COMPLETE_WORKOUT': {
+        const { id, completionData } = action.payload as {
+          id: string
+          completionData: {
+            distance?: number
+            duration?: number
+            notes?: string
+            intensity?: number
+          }
+        }
+        const updatedWorkouts = currentWorkouts.map(workout =>
+          workout.id === id
+            ? {
+                ...workout,
+                status: 'completed' as const,
+                actual_distance: completionData.distance || workout.planned_distance,
+                actual_duration: completionData.duration || workout.planned_duration,
+                workout_notes: completionData.notes || workout.workout_notes,
+                completed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }
+            : workout
+        )
+
+        set(workoutsAtom, updatedWorkouts)
+        logger.info('✅ Workout completed:', { id, completionData })
+        break
+      }
+
+      case 'BULK_UPDATE_STATUS': {
+        const { workoutIds, status } = action.payload as {
+          workoutIds: string[]
+          status: 'planned' | 'completed' | 'skipped'
+        }
+        const updatedWorkouts = currentWorkouts.map(workout =>
+          workoutIds.includes(workout.id)
+            ? { ...workout, status, updated_at: new Date().toISOString() }
+            : workout
+        )
+
+        set(workoutsAtom, updatedWorkouts)
+        logger.info('📋 Bulk status update:', { count: workoutIds.length, status })
+        break
+      }
+
+      default:
+        logger.warn('Unknown workout action:', action.type)
+    }
+  }
+)
+
+export const messageActionsAtom = atom(
+  null,
+  (get, set, action: { type: string; payload?: unknown }) => {
+    const currentMessages = get(messagesAtom)
+    const currentConversations = get(conversationsAtom)
+
+    switch (action.type) {
+      case 'SEND_MESSAGE': {
+        const { content, recipientId, workoutId, senderId } = action.payload as {
+          content: string
+          recipientId: string
+          workoutId?: string
+          senderId: string
+        }
+        const newMessage = {
+          id: `msg-${Date.now()}`,
+          content,
+          sender_id: senderId,
+          recipient_id: recipientId,
+          workout_id: workoutId || null,
+          created_at: new Date().toISOString(),
+          read: false,
+          sender: null, // Will be populated by the server
+        } as unknown as MessageWithUser
+
+        // Optimistically add message
+        set(messagesAtom, [...currentMessages, newMessage])
+
+        // Update conversation last message time
+        const updatedConversations = currentConversations.map(conv =>
+          conv.recipient.id === recipientId || conv.sender.id === recipientId
+            ? { ...conv, last_message_at: newMessage.created_at }
+            : conv
+        )
+        set(conversationsAtom, updatedConversations)
+
+        logger.info('💬 Message sent optimistically:', { recipientId, hasWorkout: !!workoutId })
+        break
+      }
+
+      case 'MARK_MESSAGES_READ': {
+        const { senderId, recipientId } = action.payload as {
+          senderId: string
+          recipientId: string
+        }
+        const updatedMessages = currentMessages.map(message =>
+          message.sender_id === senderId && message.recipient_id === recipientId && !message.read
+            ? { ...message, read: true }
+            : message
+        )
+
+        set(messagesAtom, updatedMessages)
+
+        // Update conversation unread count
+        const updatedConversations = currentConversations.map(conv =>
+          conv.recipient.id === senderId || conv.sender.id === senderId
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+        set(conversationsAtom, updatedConversations)
+
+        logger.info('📖 Messages marked as read:', { senderId, recipientId })
+        break
+      }
+
+      case 'DELETE_MESSAGE': {
+        const { messageId } = action.payload as { messageId: string }
+        const filteredMessages = currentMessages.filter(message => message.id !== messageId)
+
+        set(messagesAtom, filteredMessages)
+        logger.info('🗑️ Message deleted:', { messageId })
+        break
+      }
+
+      default:
+        logger.warn('Unknown message action:', action.type)
+    }
+  }
+)
+
+// 2. State Serialization and Persistence
+export const persistedStateAtom = atomWithStorage('ultracoach-state', {
+  theme: 'dark' as 'light' | 'dark',
+  workoutFilter: 'all' as 'all' | 'planned' | 'completed' | 'skipped',
+  chatSettings: {
+    notifications: true,
+    soundEnabled: true,
+  },
+  uiPreferences: {
+    workoutCardVariant: 'default' as 'default' | 'compact' | 'detailed',
+    sidebarCollapsed: false,
+    lastVisitedPage: '/' as string,
+  },
+  lastSync: new Date().toISOString(),
+})
+
+// 3. Optimistic Updates with Rollback
+export const optimisticOperationAtom = atom(
+  null,
+  (
+    get,
+    set,
+    operation: {
+      type: 'workout' | 'message'
+      action: string
+      payload: unknown
+      rollback?: () => void
+    }
+  ) => {
+    const { type, action, payload } = operation
+
+    // Store current state for potential rollback
+    const currentWorkouts = get(workoutsAtom)
+    const currentMessages = get(messagesAtom)
+
+    // Create rollback function
+    const rollback = () => {
+      if (type === 'workout') {
+        set(workoutsAtom, currentWorkouts)
+        logger.warn('🔄 Rolled back workout operation:', action)
+      } else if (type === 'message') {
+        set(messagesAtom, currentMessages)
+        logger.warn('🔄 Rolled back message operation:', action)
+      }
+    }
+
+    // Perform optimistic update
+    try {
+      if (type === 'workout') {
+        set(workoutActionsAtom, { type: action, payload })
+      } else if (type === 'message') {
+        set(messageActionsAtom, { type: action, payload })
+      }
+
+      // Store rollback function in case of server error
+      operation.rollback = rollback
+
+      logger.info('⚡ Optimistic operation applied:', { type, action })
+    } catch (error) {
+      logger.error('❌ Optimistic operation failed, rolling back:', error)
+      rollback()
+    }
+  }
+)
+
+// 4. Advanced Analytics with Derived State
+export const workoutAnalyticsAtom = atom(get => {
+  const workouts = get(workoutsAtom) || []
+  const now = new Date()
+
+  // Weekly analytics
+  const thisWeek = workouts.filter(w => {
+    const workoutDate = new Date(w.date || '')
+    const daysDiff = Math.floor((now.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24))
+    return daysDiff >= 0 && daysDiff < 7
+  })
+
+  // Monthly analytics
+  const thisMonth = workouts.filter(w => {
+    const workoutDate = new Date(w.date || '')
+    return (
+      workoutDate.getMonth() === now.getMonth() && workoutDate.getFullYear() === now.getFullYear()
+    )
+  })
+
+  // Streak calculation
+  const sortedWorkouts = [...workouts]
+    .filter(w => w.status === 'completed')
+    .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
+
+  let currentStreak = 0
+  let lastDate = new Date()
+
+  for (const workout of sortedWorkouts) {
+    const workoutDate = new Date(workout.date || '')
+    const daysDiff = Math.floor(
+      (lastDate.getTime() - workoutDate.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    if (daysDiff <= 1) {
+      currentStreak++
+      lastDate = workoutDate
+    } else {
+      break
+    }
+  }
+
+  return {
+    total: workouts.length,
+    completed: workouts.filter(w => w.status === 'completed').length,
+    completionRate:
+      workouts.length > 0
+        ? (workouts.filter(w => w.status === 'completed').length / workouts.length) * 100
+        : 0,
+
+    thisWeek: {
+      total: thisWeek.length,
+      completed: thisWeek.filter(w => w.status === 'completed').length,
+      totalDistance: thisWeek.reduce(
+        (sum, w) => sum + (w.actual_distance || w.planned_distance || 0),
+        0
+      ),
+    },
+
+    thisMonth: {
+      total: thisMonth.length,
+      completed: thisMonth.filter(w => w.status === 'completed').length,
+      totalDistance: thisMonth.reduce(
+        (sum, w) => sum + (w.actual_distance || w.planned_distance || 0),
+        0
+      ),
+    },
+
+    streak: {
+      current: currentStreak,
+      best: currentStreak, // Simplified - could track historical best
+    },
+
+    byType: workouts.reduce(
+      (acc, workout) => {
+        const type = workout.planned_type || 'Unknown'
+        if (!acc[type]) {
+          acc[type] = { total: 0, completed: 0 }
+        }
+        acc[type].total++
+        if (workout.status === 'completed') {
+          acc[type].completed++
+        }
+        return acc
+      },
+      {} as Record<string, { total: number; completed: number }>
+    ),
+
+    lastUpdated: new Date().toISOString(),
+  }
+})
+
+// 5. Error Handling and Recovery
+export const errorRecoveryAtom = atom(
+  null,
+  (get, set, error: { type: string; message: string; context?: unknown; timestamp?: string }) => {
+    const errorWithTimestamp = {
+      ...error,
+      timestamp: error.timestamp || new Date().toISOString(),
+    }
+
+    logger.error('🚨 Error captured by recovery atom:', errorWithTimestamp)
+
+    // Could implement specific recovery strategies based on error type
+    switch (error.type) {
+      case 'FETCH_FAILED':
+        // Could trigger a retry or show offline mode
+        logger.info('🔄 Attempting to recover from fetch failure')
+        break
+
+      case 'OPTIMISTIC_UPDATE_FAILED':
+        // Rollback handled by optimistic operation atom
+        logger.info('⏪ Optimistic update failure handled')
+        break
+
+      case 'SYNC_CONFLICT':
+        // Could implement conflict resolution
+        logger.info('⚠️ Sync conflict detected, manual resolution needed')
+        break
+
+      default:
+        logger.info('❓ Unknown error type, using default recovery')
+    }
+  }
+)
