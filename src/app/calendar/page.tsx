@@ -29,7 +29,7 @@ export default function CalendarPage() {
       router.push('/auth/signin')
       return
     }
-  }, [status, session?.user?.id]) // Remove router from dependencies since it's stable, use primitive values for session
+  }, [status, session, router]) // Include all dependencies as required by ESLint
 
   const handleWorkoutClick = useCallback(
     (workout: Workout) => {

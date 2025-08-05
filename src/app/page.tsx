@@ -31,7 +31,7 @@ export default function Home() {
         router.push('/dashboard/runner')
       }
     }
-  }, [status, session?.user?.role]) // Remove router from dependencies since it's stable, use primitive values for session
+  }, [status, session?.user, router]) // Include all dependencies as required by ESLint
 
   // Show loading state while checking authentication
   if (status === 'loading') {

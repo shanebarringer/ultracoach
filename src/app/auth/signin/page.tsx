@@ -51,7 +51,7 @@ export default function SignIn() {
       // Clean URL
       router.replace('/auth/signin', { scroll: false })
     }
-  }, []) // Remove router from dependencies since it's stable
+  }, [router]) // Include router dependency as required by ESLint
 
   // React Hook Form setup
   const {

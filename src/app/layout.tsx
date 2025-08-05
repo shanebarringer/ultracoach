@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
+import { Toaster } from '@/components/ui/toast'
 import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
@@ -34,7 +35,10 @@ export default function RootLayout({
         <JotaiProvider>
           <BetterAuthProvider>
             <HeroUIProvider>
-              <ThemeWrapper>{children}</ThemeWrapper>
+              <ThemeWrapper>
+                {children}
+                <Toaster />
+              </ThemeWrapper>
             </HeroUIProvider>
           </BetterAuthProvider>
         </JotaiProvider>

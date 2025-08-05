@@ -50,7 +50,7 @@ export default function DashboardRouter() {
       router.push('/dashboard/runner')
       return
     }
-  }, [status, session?.user?.role]) // Remove router from dependencies since it's stable, use primitive values for session
+  }, [status, session, router]) // Include all dependencies as required by ESLint
 
   if (status === 'loading') {
     return (

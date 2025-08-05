@@ -63,7 +63,7 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
       return
     }
     fetchAvailableRunners()
-  }, [status, session?.user?.id, session?.user?.role]) // Use primitive values instead of session object
+  }, [status, session])
 
   useEffect(() => {
     // Filter runners based on search term

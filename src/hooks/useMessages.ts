@@ -321,7 +321,8 @@ export function useMessages(recipientId?: string) {
     chatUiState.currentRecipientId,
     chatUiState.hasInitiallyLoadedMessages,
     setChatUiState,
-  ]) // Remove fetchMessages from dependencies since it's memoized with stable deps
+    fetchMessages,
+  ])
 
   // Get messages for current conversation
   const conversationMessages = messages.filter(message => {

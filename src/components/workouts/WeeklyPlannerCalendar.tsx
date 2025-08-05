@@ -319,7 +319,7 @@ export default function WeeklyPlannerCalendar({
     setWeekWorkouts(days)
     setHasChanges(false)
     fetchExistingWorkouts()
-  }, [weekStart]) // Remove generateWeekDays and fetchExistingWorkouts from dependencies since they're memoized with stable deps
+  }, [weekStart, generateWeekDays, fetchExistingWorkouts])
 
   // Merge existing workouts with week structure
   useEffect(() => {

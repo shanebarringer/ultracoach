@@ -77,7 +77,7 @@ export function useDashboardData() {
     if (session?.user?.id) {
       fetchDashboardData()
     }
-  }, [session?.user?.id]) // Remove fetchDashboardData from dependencies since it's memoized with stable deps
+  }, [session?.user?.id, fetchDashboardData])
 
   // Get runners from relationships (primary source) with fallback to training plans
   const runners = relationships

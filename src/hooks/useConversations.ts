@@ -181,7 +181,7 @@ export function useConversations() {
 
       return () => clearInterval(pollInterval)
     }
-  }, [session?.user?.id]) // Remove fetchConversations from dependencies since it's memoized with stable deps
+  }, [session?.user?.id, fetchConversations])
 
   // Real-time updates for messages (which affect conversations) with error handling
   useSupabaseRealtime({
