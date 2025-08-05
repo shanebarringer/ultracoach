@@ -22,6 +22,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { createTrainingPlanFormAtom, planTemplatesAtom, racesAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
+import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
 
@@ -188,9 +189,14 @@ export default function CreateTrainingPlanModal({
       })
 
       if (response.ok) {
-        logger.info('Training plan created successfully')
+        const responseData = await response.json()
+        logger.info('Training plan created successfully', responseData)
         setFormState(prev => ({ ...prev, loading: false, error: '' }))
         reset() // Reset form with react-hook-form
+
+        // Show success toast
+        commonToasts.trainingPlanCreated()
+
         onSuccess()
         onClose()
       } else {
@@ -201,6 +207,9 @@ export default function CreateTrainingPlanModal({
           loading: false,
           error: errorData.error || 'Failed to create training plan',
         }))
+
+        // Show error toast
+        commonToasts.trainingPlanError(errorData.error || 'Failed to create training plan')
       }
     } catch (error) {
       logger.error('Error creating training plan:', error)
@@ -209,6 +218,9 @@ export default function CreateTrainingPlanModal({
         loading: false,
         error: 'An error occurred. Please try again.',
       }))
+
+      // Show error toast
+      commonToasts.trainingPlanError('An error occurred. Please try again.')
     }
   }
 

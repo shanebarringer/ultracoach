@@ -20,6 +20,7 @@ import Link from 'next/link'
 import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
 import { createLogger } from '@/lib/logger'
 import type { Race, TrainingPlan, User } from '@/lib/supabase'
+import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('TrainingPlanCard')
 
@@ -79,9 +80,16 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
       await archiveTrainingPlan(plan.id)
       onArchiveChange?.()
       logger.info('Successfully toggled archive status')
+
+      // Show success toast
+      if (plan.archived) {
+        commonToasts.trainingPlanSaved() // Plan was restored
+      } else {
+        commonToasts.trainingPlanSaved() // Plan was archived
+      }
     } catch (error) {
       logger.error('Error toggling archive status:', error)
-      alert('Failed to update training plan')
+      commonToasts.trainingPlanError('Failed to update training plan')
     } finally {
       setIsArchiving(false)
     }
@@ -100,9 +108,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
       await deleteTrainingPlan(plan.id)
       onArchiveChange?.()
       logger.info('Successfully deleted training plan')
+
+      // Show success toast
+      commonToasts.trainingPlanDeleted()
     } catch (error) {
       logger.error('Error deleting training plan:', error)
-      alert('Failed to delete training plan')
+      commonToasts.trainingPlanError('Failed to delete training plan')
     } finally {
       setIsDeleting(false)
     }
