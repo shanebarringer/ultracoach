@@ -33,28 +33,15 @@ import {
   TrendingUpIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { useSession } from '@/hooks/useBetterSession'
-import { racesAtom } from '@/lib/atoms'
+import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
-
-interface Race {
-  id: string
-  name: string
-  date: string
-  distance_miles: number
-  distance_type: string
-  location: string
-  elevation_gain_feet: number
-  terrain_type: string
-  website_url?: string
-  notes?: string
-  created_by: string
-}
+import type { Race } from '@/lib/supabase'
 
 const DISTANCE_TYPES = [
   { key: '50K', label: '50K (31.07 miles)' },
@@ -75,9 +62,11 @@ export default function RacesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [races, refreshRaces] = useAtom(racesAtom)
-  const [loading, setLoading] = useState(true)
-  const [selectedRace, setSelectedRace] = useState<Race | null>(null)
+  const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
   const logger = createLogger('RacesPage')
+
+  // Derive loading state from atom data
+  const loading = useMemo(() => races.length === 0, [races.length])
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -100,8 +89,6 @@ export default function RacesPage() {
       await refreshRaces()
     } catch (error) {
       logger.error('Error refreshing races:', error)
-    } finally {
-      setLoading(false)
     }
   }, [session?.user?.id, refreshRaces, logger])
 
@@ -118,8 +105,7 @@ export default function RacesPage() {
       return
     }
 
-    // Set initial loading false since atom handles the loading
-    setLoading(false)
+    // Fetch races data using atom
     fetchRaces()
   }, [status, session, router, fetchRaces])
 
@@ -154,6 +140,11 @@ export default function RacesPage() {
     onOpen()
   }
 
+  const handleCloseModal = () => {
+    setSelectedRace(null)
+    onClose()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -176,7 +167,7 @@ export default function RacesPage() {
 
       if (response.ok) {
         await fetchRaces()
-        onClose()
+        handleCloseModal()
         logger.info(`Race ${selectedRace ? 'updated' : 'created'} successfully`)
       } else {
         logger.error('Failed to save race:', response.statusText)
@@ -282,7 +273,7 @@ export default function RacesPage() {
         </Card>
 
         {/* Race Management Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+        <Modal isOpen={isOpen} onClose={handleCloseModal} size="2xl" scrollBehavior="inside">
           <ModalContent>
             <form onSubmit={handleSubmit}>
               <ModalHeader className="flex items-center gap-2">
@@ -403,7 +394,7 @@ export default function RacesPage() {
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+                <Button variant="light" onPress={handleCloseModal}>
                   Cancel
                 </Button>
                 <Button

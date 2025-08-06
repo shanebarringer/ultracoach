@@ -15,6 +15,7 @@ import type {
   MessageWithUser,
   Notification,
   PlanTemplate,
+  Race,
   TrainingPlan,
   User,
   Workout,
@@ -74,6 +75,9 @@ export const racesAtom = atomWithRefresh(async () => {
     return []
   }
 })
+
+// Selected race atom for race management UI
+export const selectedRaceAtom = atom<Race | null>(null)
 
 // Connected runners atom (for coaches to see their connected runners with stats)
 export const connectedRunnersAtom = atomWithRefresh(async () => {

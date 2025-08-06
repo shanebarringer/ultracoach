@@ -25,11 +25,16 @@ export interface Race {
   id: string
   name: string
   date: string
-  distance: string
+  distance_miles: number
+  distance_type: string
   location: string
-  terrain: string
-  elevation_gain?: number
-  created_at: string
+  elevation_gain_feet: number
+  terrain_type: string
+  website_url?: string
+  notes?: string
+  created_by: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface TrainingPlan {
