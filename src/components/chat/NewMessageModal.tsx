@@ -5,14 +5,15 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { z } from 'zod'
 
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { newMessageModalAtom } from '@/lib/atoms'
+import { connectedRunnersAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import type { User } from '@/lib/supabase'
 
 const logger = createLogger('NewMessageModal')
 
@@ -31,7 +32,7 @@ interface NewMessageModalProps {
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [newMessageState, setNewMessageState] = useAtom(newMessageModalAtom)
+  const [connectedRunners] = useAtom(connectedRunnersAtom)
 
   // React Hook Form setup
   const { control, watch, reset } = useForm<SearchForm>({
@@ -43,59 +44,8 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
 
   const searchTerm = watch('searchTerm') || ''
 
-  const fetchAvailableUsers = useCallback(async () => {
-    if (!session?.user) {
-      logger.debug('No session user available, skipping fetch')
-      return
-    }
-
-    setNewMessageState(prev => ({ ...prev, loading: true }))
-
-    try {
-      let endpoint = ''
-      if (session.user.role === 'coach') {
-        // Coaches can message their runners
-        endpoint = '/api/runners'
-      } else {
-        // Runners can message their coaches
-        endpoint = '/api/coaches'
-      }
-
-      logger.info('Fetching available users:', { userRole: session.user.role, endpoint })
-
-      const response = await fetch(endpoint)
-      if (response.ok) {
-        const data = await response.json()
-        const users = data.runners || data.coaches || []
-
-        logger.info('Successfully fetched available users:', {
-          userCount: users.length,
-          userRole: session.user.role,
-        })
-
-        setNewMessageState(prev => ({
-          ...prev,
-          availableUsers: users,
-          loading: false,
-        }))
-      } else {
-        logger.error('Failed to fetch available users:', {
-          status: response.status,
-          statusText: response.statusText,
-        })
-        setNewMessageState(prev => ({ ...prev, loading: false }))
-      }
-    } catch (error) {
-      logger.error('Error fetching available users:', error)
-      setNewMessageState(prev => ({ ...prev, loading: false }))
-    }
-  }, [session?.user, setNewMessageState])
-
-  useEffect(() => {
-    if (isOpen && session?.user?.id) {
-      fetchAvailableUsers()
-    }
-  }, [isOpen, session?.user?.id, fetchAvailableUsers])
+  // Directly derive available users from atoms - no useState needed
+  const availableUsers = session?.user?.role === 'coach' ? connectedRunners || [] : []
 
   useEffect(() => {
     if (isOpen) {
@@ -109,8 +59,8 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = newMessageState.availableUsers.filter(
-    user =>
+  const filteredUsers = availableUsers.filter(
+    (user: User) =>
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -134,11 +84,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
             )}
           />
           <div className="max-h-64 overflow-y-auto mt-4">
-            {newMessageState.loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : filteredUsers.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <svg
                   className="mx-auto h-12 w-12 text-gray-400"
@@ -166,7 +112,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredUsers.map(user => (
+                {filteredUsers.map((user: User) => (
                   <Button
                     key={user.id}
                     variant="light"
