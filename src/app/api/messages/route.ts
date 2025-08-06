@@ -229,22 +229,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
       }
 
-      // Get the training plan to check access
-      const trainingPlan = await db
-        .select({
-          coach_id: training_plans.coach_id,
-          runner_id: training_plans.runner_id,
-        })
-        .from(training_plans)
-        .where(eq(training_plans.id, workout[0].training_plan_id))
-        .limit(1)
+      // Check access to workout - if it has a training plan, check through that; otherwise allow access
+      let hasAccess = false
 
-      if (trainingPlan.length === 0) {
-        return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+      if (workout[0].training_plan_id) {
+        // Workout has a training plan - check access through the plan
+        const trainingPlan = await db
+          .select({
+            coach_id: training_plans.coach_id,
+            runner_id: training_plans.runner_id,
+          })
+          .from(training_plans)
+          .where(eq(training_plans.id, workout[0].training_plan_id))
+          .limit(1)
+
+        if (trainingPlan.length === 0) {
+          return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+        }
+
+        hasAccess =
+          trainingPlan[0].coach_id === sessionUser.id ||
+          trainingPlan[0].runner_id === sessionUser.id
+      } else {
+        // Workout doesn't have a training plan - allow access for any authenticated user
+        // In a more complex system, you might want to check if the user created the workout
+        hasAccess = true
       }
 
-      const hasAccess =
-        trainingPlan[0].coach_id === sessionUser.id || trainingPlan[0].runner_id === sessionUser.id
       if (!hasAccess) {
         return NextResponse.json({ error: 'Access denied to workout' }, { status: 403 })
       }

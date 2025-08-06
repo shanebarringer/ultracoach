@@ -102,9 +102,9 @@ export const training_plans = pgTable('training_plans', {
 // Workouts
 export const workouts = pgTable('workouts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  training_plan_id: uuid('training_plan_id')
-    .notNull()
-    .references(() => training_plans.id, { onDelete: 'cascade' }),
+  training_plan_id: uuid('training_plan_id').references(() => training_plans.id, {
+    onDelete: 'cascade',
+  }),
   date: timestamp('date').notNull(),
   planned_distance: decimal('planned_distance', { precision: 5, scale: 2 }),
   planned_duration: integer('planned_duration'),
