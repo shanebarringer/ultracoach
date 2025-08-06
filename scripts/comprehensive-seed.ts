@@ -411,7 +411,7 @@ async function createSampleWorkouts(
         : addDays(new Date(), workoutIndex * 2) // Future dates for planned
 
       const enhancement = workoutEnhancements[workoutType as keyof typeof workoutEnhancements]
-      
+
       await db.insert(workouts).values({
         id: randomUUID(),
         training_plan_id: plan.id,

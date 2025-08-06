@@ -190,7 +190,7 @@ function RunnerDashboard() {
             </Button>
           </CardHeader>
           <CardBody>
-            {relationships.filter(rel => rel.other_party.role === 'coach').length === 0 ? (
+            {relationships.filter((rel: { other_party: { role: string } }) => rel.other_party.role === 'coach').length === 0 ? (
               <div className="text-center py-8">
                 <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No guide assigned</h3>
@@ -210,8 +210,8 @@ function RunnerDashboard() {
             ) : (
               <div className="space-y-3">
                 {relationships
-                  .filter(rel => rel.other_party.role === 'coach')
-                  .map(relationship => (
+                  .filter((rel: { other_party: { role: string } }) => rel.other_party.role === 'coach')
+                  .map((relationship: { id: string; status: string; other_party: { full_name?: string; name: string; email: string } }) => (
                     <Card
                       key={relationship.id}
                       className="border border-divider hover:shadow-md transition-shadow"

@@ -13,13 +13,18 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { createTrainingPlanFormAtom, planTemplatesAtom, racesAtom } from '@/lib/atoms'
+import {
+  connectedRunnersAtom,
+  createTrainingPlanFormAtom,
+  planTemplatesAtom,
+  racesAtom,
+} from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -58,8 +63,11 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, refreshRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const [connectedRunners, setConnectedRunners] = useState<User[]>([])
-  const [loadingRunners, setLoadingRunners] = useState(false)
+  // Use Jotai atom instead of local state
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
+
+  // Derive loading state from the atom's data
+  const loadingRunners = connectedRunners.length === 0
 
   // React Hook Form setup
   const {
@@ -103,36 +111,6 @@ export default function CreateTrainingPlanModal({
   useEffect(() => {
     if (isOpen) {
       const fetchInitialData = async () => {
-        // Fetch connected runners
-        setLoadingRunners(true)
-        try {
-          const runnersResponse = await fetch('/api/my-relationships?status=active')
-          if (runnersResponse.ok) {
-            const runnersData = await runnersResponse.json()
-            const runners = runnersData.relationships
-              .filter((rel: { other_party: { role: string } }) => rel.other_party.role === 'runner')
-              .map(
-                (rel: {
-                  other_party: { id: string; email: string; role: string; full_name: string }
-                }) => ({
-                  id: rel.other_party.id,
-                  email: rel.other_party.email,
-                  role: rel.other_party.role,
-                  full_name: rel.other_party.full_name,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                })
-              )
-            setConnectedRunners(runners)
-          } else {
-            console.error('Failed to fetch connected runners', runnersResponse.statusText)
-          }
-        } catch (err) {
-          console.error('Error fetching connected runners:', err)
-        } finally {
-          setLoadingRunners(false)
-        }
-
         // Fetch races using atom refresh
         if (races.length === 0) {
           try {
@@ -308,7 +286,7 @@ export default function CreateTrainingPlanModal({
                     field.onChange(selectedKey || '')
                   }}
                 >
-                  {connectedRunners.map(runner => (
+                  {connectedRunners.map((runner: User) => (
                     <SelectItem key={runner.id}>
                       {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
                     </SelectItem>
