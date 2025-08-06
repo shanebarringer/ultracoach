@@ -4,7 +4,10 @@ import { useEffect, useRef } from 'react'
 
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
+import { createLogger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
+
+const logger = createLogger('useSupabaseRealtime')
 
 interface UseSupabaseRealtimeProps {
   table: string
@@ -97,11 +100,11 @@ export function useSupabaseRealtime({
 
       // Subscribe to the channel with enhanced error handling and retry logic
       channel.subscribe((status, err) => {
-        console.log(`📡 Realtime ${table} subscription status:`, status)
+        logger.debug(`Realtime ${table} subscription status:`, status)
         if (status === 'SUBSCRIBED') {
-          console.log(`✅ Successfully subscribed to ${table} realtime updates`)
+          logger.info(`Successfully subscribed to ${table} realtime updates`)
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`❌ Error subscribing to ${table} realtime updates:`, err)
+          logger.error(`Error subscribing to ${table} realtime updates:`, err)
 
           // Handle schema mismatch errors gracefully
           if (

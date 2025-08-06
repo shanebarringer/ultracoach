@@ -13,22 +13,27 @@ import {
   TrendingUpIcon,
   UsersIcon,
 } from 'lucide-react'
+import { useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
+import { connectedRunnersAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
+
+// Create loadable atom for better UX
+const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
 export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [runners, setRunners] = useState<User[]>([])
+  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
   const [selectedRunner, setSelectedRunner] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
   const [currentWeek, setCurrentWeek] = useState(() => {
     // Get current week's Monday
     const today = new Date()
@@ -37,25 +42,10 @@ export default function WeeklyPlannerPage() {
     return monday
   })
 
-  const fetchRunners = useCallback(async () => {
-    if (!session?.user?.id || session.user.role !== 'coach') return
-
-    try {
-      const response = await fetch('/api/runners')
-
-      if (!response.ok) {
-        console.error('Failed to fetch runners:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRunners(data.runners || [])
-    } catch (error) {
-      console.error('Error fetching runners:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id, session?.user?.role])
+  // Handle loading and error states from Jotai loadable
+  const loading = runnersLoadable.state === 'loading'
+  const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   useEffect(() => {
     if (status === 'loading') return
@@ -69,9 +59,7 @@ export default function WeeklyPlannerPage() {
       router.push('/dashboard')
       return
     }
-
-    fetchRunners()
-  }, [status, session, router, fetchRunners])
+  }, [status, session, router])
 
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)
@@ -112,6 +100,24 @@ export default function WeeklyPlannerPage() {
 
   if (!session || session.user.role !== 'coach') {
     return null
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-[1600px] mx-auto px-8 py-8">
+          <Card className="border-danger-200 bg-danger-50">
+            <CardBody className="text-center py-12">
+              <div className="text-danger-600 mb-4">Failed to load runners</div>
+              <Button color="primary" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -159,7 +165,7 @@ export default function WeeklyPlannerPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {runners.map(runner => (
+                {runners.map((runner: User) => (
                   <Card
                     key={runner.id}
                     isPressable
@@ -269,8 +275,7 @@ export default function WeeklyPlannerPage() {
             runner={selectedRunner}
             weekStart={currentWeek}
             onWeekUpdate={() => {
-              // Refresh runner's data or show success message
-              console.log('Week updated successfully!')
+              // Week updated successfully - data will be automatically refreshed
             }}
           />
         )}

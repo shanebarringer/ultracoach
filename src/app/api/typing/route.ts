@@ -1,9 +1,9 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
-import { typing_status } from '@/lib/schema'
+import { coach_runners, typing_status } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
 
 export async function GET(request: NextRequest) {
@@ -19,6 +19,25 @@ export async function GET(request: NextRequest) {
 
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
+    }
+
+    // SECURITY: Verify active relationship exists before allowing typing status access
+    const relationship = await db
+      .select()
+      .from(coach_runners)
+      .where(
+        and(
+          or(
+            and(eq(coach_runners.coach_id, session.user.id), eq(coach_runners.runner_id, recipientId)),
+            and(eq(coach_runners.runner_id, session.user.id), eq(coach_runners.coach_id, recipientId))
+          ),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
+
+    if (!relationship[0]) {
+      return NextResponse.json({ error: 'No active relationship found' }, { status: 403 })
     }
 
     // Check if recipient is typing to current user
@@ -59,6 +78,26 @@ export async function POST(request: NextRequest) {
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
+
+    // SECURITY: Verify active relationship exists before allowing typing status updates
+    const relationship = await db
+      .select()
+      .from(coach_runners)
+      .where(
+        and(
+          or(
+            and(eq(coach_runners.coach_id, session.user.id), eq(coach_runners.runner_id, recipientId)),
+            and(eq(coach_runners.runner_id, session.user.id), eq(coach_runners.coach_id, recipientId))
+          ),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
+
+    if (!relationship[0]) {
+      return NextResponse.json({ error: 'No active relationship found' }, { status: 403 })
+    }
+
     // Update or insert typing status using upsert-like functionality
     await db
       .insert(typing_status)

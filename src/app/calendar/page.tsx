@@ -13,8 +13,11 @@ import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { useSession } from '@/hooks/useBetterSession'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { filteredWorkoutsAtom, uiStateAtom, workoutStatsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+
+const logger = createLogger('CalendarPage')
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
@@ -35,7 +38,7 @@ export default function CalendarPage() {
 
   const handleWorkoutClick = useCallback(
     (workout: Workout) => {
-      console.log('Workout clicked:', workout)
+      logger.debug('Workout clicked:', workout)
       setUiState(prev => ({ ...prev, selectedWorkout: workout }))
       toast.info('Workout Details', 'Workout detail modal coming soon!')
     },
@@ -43,7 +46,7 @@ export default function CalendarPage() {
   )
 
   const handleDateClick = useCallback((date: CalendarDate) => {
-    console.log('Date clicked:', date.toString())
+    logger.debug('Date clicked:', date.toString())
     toast.info('Add Workout', 'Add workout modal coming soon!')
   }, [])
 

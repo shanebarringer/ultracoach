@@ -21,8 +21,11 @@ import { ClockIcon, MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } fro
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { createLogger } from '@/lib/logger'
 import type { User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+
+const logger = createLogger('WeeklyPlannerCalendar')
 
 interface DayWorkout {
   date: Date
@@ -325,7 +328,7 @@ export default function WeeklyPlannerCalendar({
   // Merge existing workouts with week structure
   useEffect(() => {
     // Debug log: print all workout dates and week days
-    console.log(
+    logger.debug(
       'existingWorkouts:',
       existingWorkouts.map(w => w.date)
     )
@@ -347,7 +350,7 @@ export default function WeeklyPlannerCalendar({
           return workoutIso === dayIso
         })
         if (existingWorkout) {
-          console.log(`Matched workout for ${dayIso}:`, existingWorkout)
+          logger.debug(`Matched workout for ${dayIso}:`, existingWorkout)
         }
         if (existingWorkout) {
           return {

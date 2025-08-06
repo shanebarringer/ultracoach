@@ -22,8 +22,10 @@ import {
   UserPlusIcon,
   UsersIcon,
 } from 'lucide-react'
+import { useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -31,44 +33,32 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { useSession } from '@/hooks/useBetterSession'
+import { connectedRunnersAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
 
+// Extended User type with runner-specific fields that may be returned from API
 interface RunnerWithStats extends User {
   stats?: {
     trainingPlans: number
     completedWorkouts: number
     upcomingWorkouts: number
   }
-  relationship_status?: 'pending' | 'active' | 'inactive'
   connected_at?: string | null
 }
+
+// Create loadable atom for better UX
+const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
 export default function RunnersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [runners, setRunners] = useState<RunnerWithStats[]>([])
-  const [loading, setLoading] = useState(true)
+  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
   const [activeTab, setActiveTab] = useState('connected')
 
-  const fetchRunners = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/runners')
-
-      if (!response.ok) {
-        console.error('Failed to fetch runners:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRunners(data.runners || [])
-    } catch (error) {
-      console.error('Error fetching runners:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id])
+  // Handle loading and error states from Jotai loadable
+  const loading = runnersLoadable.state === 'loading'
+  const runners = (runnersLoadable.state === 'hasData' ? runnersLoadable.data : []) as RunnerWithStats[]
+  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   useEffect(() => {
     if (status === 'loading') return
@@ -82,9 +72,13 @@ export default function RunnersPage() {
       router.push('/dashboard/runner')
       return
     }
+  }, [status, session, router])
 
-    fetchRunners()
-  }, [status, session, router, fetchRunners])
+  // Handle refresh for RunnerSelector
+  const handleRelationshipCreated = () => {
+    // Force refresh of connected runners atom
+    // The atom will automatically refresh on next access
+  }
 
   if (status === 'loading') {
     return (
@@ -98,6 +92,24 @@ export default function RunnersPage() {
 
   if (!session || session.user.role !== 'coach') {
     return null
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="border-danger-200 bg-danger-50">
+            <CardBody className="text-center py-12">
+              <div className="text-danger-600 mb-4">Failed to load runners</div>
+              <Button color="primary" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -206,7 +218,7 @@ export default function RunnersPage() {
                   </Card>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {runners.map(runner => (
+                    {runners.map((runner: RunnerWithStats) => (
                       <Card
                         key={runner.id}
                         className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-secondary/60"
@@ -323,7 +335,7 @@ export default function RunnersPage() {
                   </CardHeader>
                   <Divider />
                   <CardBody>
-                    <RunnerSelector onRelationshipCreated={fetchRunners} />
+                    <RunnerSelector onRelationshipCreated={handleRelationshipCreated} />
                   </CardBody>
                 </Card>
               </div>

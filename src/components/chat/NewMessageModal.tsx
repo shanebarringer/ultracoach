@@ -92,10 +92,10 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   }, [session?.user, setNewMessageState])
 
   useEffect(() => {
-    if (isOpen && session?.user) {
+    if (isOpen && session?.user?.id) {
       fetchAvailableUsers()
     }
-  }, [isOpen, session?.user, fetchAvailableUsers])
+  }, [isOpen, session?.user?.id, fetchAvailableUsers])
 
   useEffect(() => {
     if (isOpen) {

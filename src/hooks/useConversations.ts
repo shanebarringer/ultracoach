@@ -92,16 +92,13 @@ export function useConversations() {
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       session?.user?.id,
       session?.user?.email,
       session?.user?.name,
       session?.user?.role,
-      setConversations,
-      setLoadingStates,
-      setChatUiState,
-      lastFetchTime,
-      setLastFetchTime,
+      // Intentionally omitting lastFetchTime, setLastFetchTime, and Jotai setters to prevent infinite loops
     ]
   )
 
@@ -145,7 +142,8 @@ export function useConversations() {
         }
       })
     },
-    [session?.user?.id, setConversations]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session?.user?.id] // Intentionally omitting setConversations as it's a stable Jotai setter
   )
 
   const markConversationAsRead = useCallback(
@@ -177,7 +175,8 @@ export function useConversations() {
         logger.error('Error marking conversation as read:', error)
       }
     },
-    [session?.user?.id, setConversations]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session?.user?.id] // Intentionally omitting setConversations as it's a stable Jotai setter
   )
 
   // Fetch conversations on mount and when session changes, with polling fallback

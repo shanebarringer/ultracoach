@@ -3,78 +3,53 @@
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
 import { toast } from 'sonner'
+import { useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 
-import { useEffect, useState } from 'react'
+import { useState, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { availableRunnersAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 
-interface Runner {
-  id: string
-  name: string
-  fullName: string | null
-  email: string
-  createdAt: string
-}
+const logger = createLogger('RunnerSelector')
 
 interface RunnerSelectorProps {
   onRelationshipCreated?: () => void
 }
 
+// Create loadable atom for better UX
+const availableRunnersLoadableAtom = loadable(availableRunnersAtom)
+
 export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const { data: session, status } = useSession()
-  const [runners, setRunners] = useState<Runner[]>([])
-  const [filteredRunners, setFilteredRunners] = useState<Runner[]>([])
-  const [loading, setLoading] = useState(true)
+  const runnersLoadable = useAtomValue(availableRunnersLoadableAtom)
   const [searchTerm, setSearchTerm] = useState('')
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 
-  const fetchAvailableRunners = async () => {
-    try {
-      setLoading(true)
-      console.log('RunnerSelector: Fetching available runners...')
-      const response = await fetch('/api/runners/available', {
-        credentials: 'include', // Ensure cookies are sent with the request
-      })
+  // Handle loading and error states from Jotai loadable
+  const loading = runnersLoadable.state === 'loading'
+  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
-      if (!response.ok) {
-        console.error('RunnerSelector fetch error:', {
-          status: response.status,
-          statusText: response.statusText,
-          requestUrl: '/api/runners/available',
-        })
-        throw new Error('Failed to fetch available runners')
-      }
-
-      const data = await response.json()
-      setRunners(data.runners)
-    } catch (error) {
-      console.error('Error fetching runners:', error)
-      toast.error('Failed to load available runners')
-    } finally {
-      setLoading(false)
+  // Filter runners based on search term using useMemo for performance
+  const filteredRunners = useMemo(() => {
+    const availableRunners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+    if (!Array.isArray(availableRunners)) return []
+    
+    interface Runner {
+      id: string
+      name?: string
+      fullName?: string
+      email?: string
     }
-  }
-
-  useEffect(() => {
-    // Only fetch when session is ready and user is a coach
-    if (status === 'loading') return
-    if (!session?.user || session.user.role !== 'coach') {
-      setLoading(false)
-      return
-    }
-    fetchAvailableRunners()
-  }, [status, session])
-
-  useEffect(() => {
-    // Filter runners based on search term
-    const filtered = runners.filter(
-      runner =>
-        runner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    
+    return (availableRunners as Runner[]).filter(
+      (runner: Runner) =>
+        runner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.email.toLowerCase().includes(searchTerm.toLowerCase())
+        runner.email?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    setFilteredRunners(filtered)
-  }, [runners, searchTerm])
+  }, [runnersLoadable, searchTerm])
 
   const handleConnectToRunner = async (runnerId: string) => {
     // Verify session before attempting connection
@@ -100,7 +75,7 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
 
       if (!response.ok) {
         const error = await response.json()
-        console.error('RunnerSelector connection error:', {
+        logger.error('Failed to connect to runner:', {
           status: response.status,
           statusText: response.statusText,
           error: error,
@@ -110,15 +85,13 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
         throw new Error(error.error || 'Failed to connect to runner')
       }
 
+      logger.info('Connection request sent successfully', { runnerId })
       toast.success('Connection request sent to runner!')
 
-      // Remove the runner from the available list
-      setRunners(prev => prev.filter(runner => runner.id !== runnerId))
-
-      // Notify parent component
+      // Notify parent component to refresh connected runners
       onRelationshipCreated?.()
     } catch (error) {
-      console.error('Error connecting to runner:', error)
+      logger.error('Error connecting to runner:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to connect to runner')
     } finally {
       setConnectingIds(prev => {
@@ -153,6 +126,24 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <p className="text-sm text-default-600">Only coaches can browse for runners</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardBody className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <p className="text-sm text-danger-600 mb-4">Failed to load available runners</p>
+              <Button color="primary" size="sm" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
             </div>
           </div>
         </CardBody>

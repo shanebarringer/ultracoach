@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { typingStatusAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useTypingStatus')
 
 export function useTypingStatus(recipientId: string) {
   const { data: session } = useSession()
@@ -27,7 +30,7 @@ export function useTypingStatus(recipientId: string) {
     async (typing: boolean) => {
       if (!session?.user?.id || !recipientId) return
 
-      console.log('⌨️ Sending typing status:', { typing, recipientId })
+      logger.debug('Sending typing status:', { typing, recipientId })
 
       try {
         const response = await fetch('/api/typing', {
@@ -42,12 +45,12 @@ export function useTypingStatus(recipientId: string) {
         })
 
         if (!response.ok) {
-          console.error('❌ Failed to send typing status:', response.statusText)
+          logger.error('Failed to send typing status:', response.statusText)
         } else {
-          console.log('✅ Typing status sent successfully')
+          logger.debug('Typing status sent successfully')
         }
       } catch (error) {
-        console.error('❌ Error sending typing status:', error)
+        logger.error('Error sending typing status:', error)
       }
     },
     [session?.user?.id, recipientId]
@@ -75,7 +78,7 @@ export function useTypingStatus(recipientId: string) {
 
   // Start typing indicator
   const startTyping = useCallback(() => {
-    console.log('⌨️ Start typing called, current isTyping:', isTyping)
+    logger.debug('Start typing called, current isTyping:', isTyping)
     if (isTyping) return
 
     setTypingStatuses(prev => ({
@@ -96,20 +99,37 @@ export function useTypingStatus(recipientId: string) {
 
     // Auto-stop typing after 3 seconds of inactivity
     sendTypingTimeoutRef.current = setTimeout(() => {
-      stopTyping()
+      if (sendTypingTimeoutRef.current) {
+        stopTyping()
+      }
     }, 3000)
   }, [isTyping, recipientId, setTypingStatuses, sendTypingStatus, stopTyping])
 
-  // Polling-based typing status check (fallback since real-time has issues)
+  // Optimized polling-based typing status check with exponential backoff and Page Visibility API
   useEffect(() => {
     if (!session?.user?.id || !recipientId) return
 
+    let currentInterval = 3000 // Start at 3 seconds
+    let pollTimeout: NodeJS.Timeout | null = null
+    let consecutiveEmptyChecks = 0
+
     const checkTypingStatus = async () => {
+      // Skip polling when tab is not visible
+      if (document.hidden) {
+        scheduleNextCheck()
+        return
+      }
+
       try {
         const response = await fetch(`/api/typing?recipientId=${recipientId}`)
         if (response.ok) {
           const data = await response.json()
+          
           if (data.isTyping !== isRecipientTyping) {
+            // Reset interval on activity
+            currentInterval = 3000
+            consecutiveEmptyChecks = 0
+            
             setTypingStatuses(prev => ({
               ...prev,
               [recipientId]: {
@@ -125,26 +145,60 @@ export function useTypingStatus(recipientId: string) {
                 clearTimeout(typingTimeoutRef.current)
               }
               typingTimeoutRef.current = setTimeout(() => {
-                setTypingStatuses(prev => ({
-                  ...prev,
-                  [recipientId]: {
-                    ...prev[recipientId],
-                    isRecipientTyping: false,
-                    lastTypingUpdate: Date.now(),
-                  },
-                }))
+                if (typingTimeoutRef.current) {
+                  setTypingStatuses(prev => ({
+                    ...prev,
+                    [recipientId]: {
+                      ...prev[recipientId],
+                      isRecipientTyping: false,
+                      lastTypingUpdate: Date.now(),
+                    },
+                  }))
+                }
               }, 5000)
+            }
+          } else {
+            // No change detected - implement exponential backoff
+            consecutiveEmptyChecks++
+            if (consecutiveEmptyChecks >= 3) {
+              currentInterval = Math.min(currentInterval * 1.5, 10000) // Max 10 seconds
             }
           }
         }
       } catch (error) {
-        console.error('Error checking typing status:', error)
+        logger.error('Error checking typing status:', error)
+        // On error, also implement backoff
+        consecutiveEmptyChecks++
+        currentInterval = Math.min(currentInterval * 1.5, 10000)
+      }
+      
+      scheduleNextCheck()
+    }
+
+    const scheduleNextCheck = () => {
+      pollTimeout = setTimeout(checkTypingStatus, currentInterval)
+    }
+
+    // Handle page visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Reset interval when tab becomes visible
+        currentInterval = 3000
+        consecutiveEmptyChecks = 0
       }
     }
 
-    // Check typing status every 3 seconds (reduced from 1 second for better performance)
-    const pollInterval = setInterval(checkTypingStatus, 3000)
-    return () => clearInterval(pollInterval)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Start polling
+    scheduleNextCheck()
+
+    return () => {
+      if (pollTimeout) {
+        clearTimeout(pollTimeout)
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [session?.user?.id, recipientId, isRecipientTyping, setTypingStatuses])
 
   // Cleanup on unmount

@@ -21,7 +21,7 @@ import type {
   Workout,
 } from './supabase'
 
-// Authentication atoms
+// Authentication atoms - Better Auth session structure (flexible to match actual API)
 export const sessionAtom = atom<Record<string, unknown> | null>(null)
 export const userAtom = atom<Record<string, unknown> | null>(null)
 export const authLoadingAtom = atom<boolean>(true)
@@ -44,10 +44,63 @@ export const runnersAtom = atom<User[]>([])
 export const racesAtom = atom<Race[]>([])
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
 
+// Connected runners atom (for coaches to see their connected runners with stats)
+export const connectedRunnersAtom = atomWithRefresh(async () => {
+  const logger = createLogger('ConnectedRunnersAtom')
+  try {
+    logger.debug('Fetching connected runners...')
+    const response = await fetch('/api/runners', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch connected runners: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch connected runners: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Connected runners fetched successfully', { count: data.runners?.length || 0 })
+    return data.runners || []
+  } catch (error) {
+    logger.error('Error fetching connected runners:', error)
+    return []
+  }
+})
+
+// Available runners atom (for coaches to discover new runners to connect with)
+export const availableRunnersAtom = atomWithRefresh(async () => {
+  const logger = createLogger('AvailableRunnersAtom')
+  try {
+    logger.debug('Fetching available runners...')
+    const response = await fetch('/api/runners/available', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch available runners: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch available runners: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Available runners fetched successfully', { count: data.runners?.length || 0 })
+    return data.runners || []
+  } catch (error) {
+    logger.error('Error fetching available runners:', error)
+    return []
+  }
+})
+
 // Refreshable training plans atom using atomWithRefresh
 export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
+  const logger = createLogger('TrainingPlansAtom')
   try {
-    console.log('🔄 Fetching training plans...')
+    logger.debug('Fetching training plans...')
     const response = await fetch('/api/training-plans', {
       headers: {
         'Content-Type': 'application/json',
@@ -56,15 +109,15 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
     })
 
     if (!response.ok) {
-      console.error(`❌ Failed to fetch training plans: ${response.status} ${response.statusText}`)
+      logger.error(`Failed to fetch training plans: ${response.status} ${response.statusText}`)
       throw new Error(`Failed to fetch training plans: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('✅ Training plans fetched:', data.trainingPlans?.length || 0)
+    logger.info('Training plans fetched successfully', { count: data.trainingPlans?.length || 0 })
     return data.trainingPlans || []
   } catch (error) {
-    console.error('❌ Error fetching training plans:', error)
+    logger.error('Error fetching training plans:', error)
     return []
   }
 })
@@ -287,7 +340,13 @@ export const asyncNotificationsAtom = atom(async get => {
 
 export const asyncConversationsAtom = atom(async get => {
   const session = get(sessionAtom)
-  if (!session) throw new Error('No session available')
+  // Type guard and validation for Better Auth session
+  if (!session || typeof session !== 'object' || !session.user || typeof session.user !== 'object') {
+    throw new Error('No session available')
+  }
+  
+  const user = session.user as { id: string; email: string; name?: string; role?: string }
+  if (!user.id) throw new Error('No user ID available')
 
   try {
     const response = await fetch('/api/conversations', {
@@ -305,8 +364,7 @@ export const asyncConversationsAtom = atom(async get => {
     const data = await response.json()
     const fetchedConversations = data.conversations || []
 
-    // Map API response to ConversationWithUser structure - access session from user object
-    const user = session as { user: { id: string; email: string; role: string; name: string } }
+    // Map API response to ConversationWithUser structure - Better Auth session structure
     const mappedConversations = fetchedConversations.map(
       (conv: {
         user: User
@@ -315,15 +373,15 @@ export const asyncConversationsAtom = atom(async get => {
       }) => ({
         id: conv.lastMessage?.conversation_id || '',
         sender: {
-          id: user.user.id,
-          email: user.user.email,
-          role: user.user.role,
-          full_name: user.user.name || '',
+          id: user.id,
+          email: user.email,
+          role: user.role || 'runner',
+          full_name: user.name || '',
           created_at: '',
           updated_at: '',
         },
         recipient: conv.user,
-        sender_id: user.user.id,
+        sender_id: user.id,
         recipient_id: conv.user.id,
         last_message_at: conv.lastMessage?.created_at || '',
         created_at: conv.lastMessage?.created_at || '',
@@ -482,10 +540,14 @@ export const sendMessageActionAtom = atom(
       workoutId?: string
     }
   ) => {
-    const session = get(sessionAtom) as {
-      user: { id: string; name: string; email: string; role: string }
-    } | null
-    if (!session?.user?.id) throw new Error('No session available')
+    const session = get(sessionAtom)
+    // Type guard and validation for Better Auth session
+    if (!session || typeof session !== 'object' || !session.user || typeof session.user !== 'object') {
+      throw new Error('No session available')
+    }
+    
+    const user = session.user as { id: string; email: string; name?: string; role?: string }
+    if (!user.id) throw new Error('No user ID available')
 
     const { recipientId, content, workoutId } = payload
 
@@ -494,16 +556,16 @@ export const sendMessageActionAtom = atom(
       id: `temp-${Date.now()}`,
       conversation_id: '',
       content,
-      sender_id: session.user.id,
+      sender_id: user.id,
       recipient_id: recipientId,
       workout_id: workoutId || null,
       read: false,
       created_at: new Date().toISOString(),
       sender: {
-        id: session.user.id,
-        full_name: session.user.name || 'You',
-        email: session.user.email || '',
-        role: session.user.role as 'runner' | 'coach',
+        id: user.id,
+        full_name: user.name || 'You',
+        email: user.email || '',
+        role: (user.role || 'runner') as 'runner' | 'coach',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
