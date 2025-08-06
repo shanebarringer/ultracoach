@@ -56,7 +56,7 @@ export default function CreateTrainingPlanModal({
   onSuccess,
 }: CreateTrainingPlanModalProps) {
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
-  const [races, setRaces] = useAtom(racesAtom)
+  const [races, refreshRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
   const [connectedRunners, setConnectedRunners] = useState<User[]>([])
   const [loadingRunners, setLoadingRunners] = useState(false)
@@ -133,16 +133,10 @@ export default function CreateTrainingPlanModal({
           setLoadingRunners(false)
         }
 
-        // Fetch races
+        // Fetch races using atom refresh
         if (races.length === 0) {
           try {
-            const response = await fetch('/api/races')
-            if (response.ok) {
-              const data = await response.json()
-              setRaces(data.races)
-            } else {
-              console.error('Failed to fetch races', response.statusText)
-            }
+            await refreshRaces()
           } catch (err) {
             console.error('Error fetching races:', err)
           }
@@ -165,7 +159,7 @@ export default function CreateTrainingPlanModal({
       }
       fetchInitialData()
     }
-  }, [isOpen, races.length, setRaces, planTemplates.length, setPlanTemplates])
+  }, [isOpen, races.length, refreshRaces, planTemplates.length, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))

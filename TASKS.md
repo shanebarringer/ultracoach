@@ -34,7 +34,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 - [x] **Create centralized Jotai atoms for runners data** - Added connectedRunnersAtom and availableRunnersAtom
 - [x] **Migrate runners/page.tsx to Jotai atoms** - Eliminated direct API calls, added proper loading/error states
-- [x] **Migrate weekly-planner/page.tsx to Jotai atoms** - Consistent state management across components  
+- [x] **Migrate weekly-planner/page.tsx to Jotai atoms** - Consistent state management across components
 - [x] **Migrate RunnerSelector.tsx to Jotai atoms** - Centralized data fetching with proper error handling
 
 ### ⚡ Performance & Bug Fixes (✅ COMPLETED)

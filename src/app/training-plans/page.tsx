@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
@@ -21,6 +21,13 @@ export default function TrainingPlansPage() {
 
   // Initialize the refreshable training plans
   const { refreshTrainingPlans } = useRefreshableTrainingPlans()
+
+  // Trigger initial fetch on mount
+  useEffect(() => {
+    if (session && status !== 'loading') {
+      refreshTrainingPlans()
+    }
+  }, [session, status, refreshTrainingPlans])
 
   // Get plans and loading state from loadable
   const getPlans = () => {

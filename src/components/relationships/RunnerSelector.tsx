@@ -2,11 +2,11 @@
 
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
-import { toast } from 'sonner'
 import { useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
+import { toast } from 'sonner'
 
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { availableRunnersAtom } from '@/lib/atoms'
@@ -35,14 +35,14 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const filteredRunners = useMemo(() => {
     const availableRunners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
     if (!Array.isArray(availableRunners)) return []
-    
+
     interface Runner {
       id: string
       name?: string
       fullName?: string
       email?: string
     }
-    
+
     return (availableRunners as Runner[]).filter(
       (runner: Runner) =>
         runner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

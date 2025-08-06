@@ -28,8 +28,14 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           or(
-            and(eq(coach_runners.coach_id, session.user.id), eq(coach_runners.runner_id, recipientId)),
-            and(eq(coach_runners.runner_id, session.user.id), eq(coach_runners.coach_id, recipientId))
+            and(
+              eq(coach_runners.coach_id, session.user.id),
+              eq(coach_runners.runner_id, recipientId)
+            ),
+            and(
+              eq(coach_runners.runner_id, session.user.id),
+              eq(coach_runners.coach_id, recipientId)
+            )
           ),
           eq(coach_runners.status, 'active')
         )
@@ -86,8 +92,14 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           or(
-            and(eq(coach_runners.coach_id, session.user.id), eq(coach_runners.runner_id, recipientId)),
-            and(eq(coach_runners.runner_id, session.user.id), eq(coach_runners.coach_id, recipientId))
+            and(
+              eq(coach_runners.coach_id, session.user.id),
+              eq(coach_runners.runner_id, recipientId)
+            ),
+            and(
+              eq(coach_runners.runner_id, session.user.id),
+              eq(coach_runners.coach_id, recipientId)
+            )
           ),
           eq(coach_runners.status, 'active')
         )

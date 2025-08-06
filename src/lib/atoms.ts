@@ -15,11 +15,13 @@ import type {
   MessageWithUser,
   Notification,
   PlanTemplate,
-  Race,
   TrainingPlan,
   User,
   Workout,
 } from './supabase'
+
+// Environment check - prevents atoms from executing during build/SSR
+const isBrowser = typeof window !== 'undefined'
 
 // Authentication atoms - Better Auth session structure (flexible to match actual API)
 export const sessionAtom = atom<Record<string, unknown> | null>(null)
@@ -41,11 +43,43 @@ export const unreadNotificationsCountAtom = atom<number>(0)
 export const workoutsAtom = atom<Workout[]>([])
 export const trainingPlansAtom = atom<TrainingPlan[]>([])
 export const runnersAtom = atom<User[]>([])
-export const racesAtom = atom<Race[]>([])
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
+
+// Races atom for coach races management
+export const racesAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
+  const logger = createLogger('RacesAtom')
+
+  try {
+    logger.debug('Fetching races...')
+    const response = await fetch('/api/races', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch races: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch races: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Races fetched successfully', { count: data.races?.length || 0 })
+    return data.races || []
+  } catch (error) {
+    logger.error('Error fetching races:', error)
+    return []
+  }
+})
 
 // Connected runners atom (for coaches to see their connected runners with stats)
 export const connectedRunnersAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const logger = createLogger('ConnectedRunnersAtom')
   try {
     logger.debug('Fetching connected runners...')
@@ -72,6 +106,9 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
 
 // Available runners atom (for coaches to discover new runners to connect with)
 export const availableRunnersAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const logger = createLogger('AvailableRunnersAtom')
   try {
     logger.debug('Fetching available runners...')
@@ -98,6 +135,9 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
 
 // Refreshable training plans atom using atomWithRefresh
 export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const logger = createLogger('TrainingPlansAtom')
   try {
     logger.debug('Fetching training plans...')
@@ -118,6 +158,66 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
     return data.trainingPlans || []
   } catch (error) {
     logger.error('Error fetching training plans:', error)
+    return []
+  }
+})
+
+// Available coaches atom for runner-coach connections
+export const availableCoachesAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
+  const logger = createLogger('AvailableCoachesAtom')
+
+  try {
+    logger.debug('Fetching available coaches...')
+    const response = await fetch('/api/coaches/available', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch available coaches: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch available coaches: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Available coaches fetched successfully', { count: data.coaches?.length || 0 })
+    return data.coaches || []
+  } catch (error) {
+    logger.error('Error fetching available coaches:', error)
+    return []
+  }
+})
+
+// Relationships atom for coach-runner relationships management
+export const relationshipsAtom = atomWithRefresh(async () => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
+  const logger = createLogger('RelationshipsAtom')
+
+  try {
+    logger.debug('Fetching relationships...')
+    const response = await fetch('/api/coach-runners', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch relationships: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch relationships: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Relationships fetched successfully', { count: data.relationships?.length || 0 })
+    return data.relationships || []
+  } catch (error) {
+    logger.error('Error fetching relationships:', error)
     return []
   }
 })
@@ -258,6 +358,9 @@ const logger = createLogger('AsyncAtoms')
 export const workoutsRefreshTriggerAtom = atom(0)
 
 export const asyncWorkoutsAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const session = get(sessionAtom)
   const refreshTrigger = get(workoutsRefreshTriggerAtom) // Dependency for invalidation
   // refreshTrigger is used as a dependency to force atom re-evaluation
@@ -287,6 +390,9 @@ export const asyncWorkoutsAtom = atom(async get => {
 })
 
 export const asyncTrainingPlansAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const session = get(sessionAtom)
   if (!session) throw new Error('No session available')
 
@@ -313,6 +419,9 @@ export const asyncTrainingPlansAtom = atom(async get => {
 })
 
 export const asyncNotificationsAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const session = get(sessionAtom)
   if (!session) throw new Error('No session available')
 
@@ -339,12 +448,20 @@ export const asyncNotificationsAtom = atom(async get => {
 })
 
 export const asyncConversationsAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const session = get(sessionAtom)
   // Type guard and validation for Better Auth session
-  if (!session || typeof session !== 'object' || !session.user || typeof session.user !== 'object') {
+  if (
+    !session ||
+    typeof session !== 'object' ||
+    !session.user ||
+    typeof session.user !== 'object'
+  ) {
     throw new Error('No session available')
   }
-  
+
   const user = session.user as { id: string; email: string; name?: string; role?: string }
   if (!user.id) throw new Error('No user ID available')
 
@@ -439,6 +556,9 @@ export const activeTrainingPlansAtom = atom(get => {
 })
 
 export const filteredTrainingPlansAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) return []
+
   const plans = await get(refreshableTrainingPlansAtom)
   const uiState = get(uiStateAtom)
 
@@ -542,10 +662,15 @@ export const sendMessageActionAtom = atom(
   ) => {
     const session = get(sessionAtom)
     // Type guard and validation for Better Auth session
-    if (!session || typeof session !== 'object' || !session.user || typeof session.user !== 'object') {
+    if (
+      !session ||
+      typeof session !== 'object' ||
+      !session.user ||
+      typeof session.user !== 'object'
+    ) {
       throw new Error('No session available')
     }
-    
+
     const user = session.user as { id: string; email: string; name?: string; role?: string }
     if (!user.id) throw new Error('No user ID available')
 
@@ -730,6 +855,17 @@ export const workoutStatsByTypeAtom = atom(get => {
 
 // 7. Lazy-loaded atoms for expensive computations
 export const expensiveWorkoutAnalyticsAtom = atom(async get => {
+  // Only execute on client-side to prevent build-time fetch errors
+  if (!isBrowser) {
+    return {
+      totalWorkouts: 0,
+      completedThisWeek: 0,
+      avgDistancePerWorkout: 0,
+      totalDistance: 0,
+      streakDays: 0,
+    }
+  }
+
   const workouts = get(filteredWorkoutsAtom) || []
 
   // Simulate expensive computation

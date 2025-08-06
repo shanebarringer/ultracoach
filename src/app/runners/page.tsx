@@ -12,6 +12,8 @@ import {
   Tab,
   Tabs,
 } from '@heroui/react'
+import { useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 import {
   FlagIcon,
   MapPinIcon,
@@ -22,8 +24,6 @@ import {
   UserPlusIcon,
   UsersIcon,
 } from 'lucide-react'
-import { useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 
 import { useEffect, useState } from 'react'
 
@@ -57,7 +57,9 @@ export default function RunnersPage() {
 
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
-  const runners = (runnersLoadable.state === 'hasData' ? runnersLoadable.data : []) as RunnerWithStats[]
+  const runners = (
+    runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+  ) as RunnerWithStats[]
   const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   useEffect(() => {

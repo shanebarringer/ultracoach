@@ -19,6 +19,7 @@ import {
   Textarea,
   useDisclosure,
 } from '@heroui/react'
+import { useAtom } from 'jotai'
 import {
   CalendarIcon,
   EditIcon,
@@ -38,6 +39,8 @@ import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { useSession } from '@/hooks/useBetterSession'
+import { racesAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 
 interface Race {
   id: string
@@ -71,9 +74,10 @@ const TERRAIN_TYPES = [
 export default function RacesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [races, setRaces] = useState<Race[]>([])
+  const [races, refreshRaces] = useAtom(racesAtom)
   const [loading, setLoading] = useState(true)
   const [selectedRace, setSelectedRace] = useState<Race | null>(null)
+  const logger = createLogger('RacesPage')
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -92,21 +96,14 @@ export default function RacesPage() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/races')
-
-      if (!response.ok) {
-        console.error('Failed to fetch races:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRaces(data.races || [])
+      logger.debug('Triggering races refresh')
+      await refreshRaces()
     } catch (error) {
-      console.error('Error fetching races:', error)
+      logger.error('Error refreshing races:', error)
     } finally {
       setLoading(false)
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, refreshRaces, logger])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -121,6 +118,8 @@ export default function RacesPage() {
       return
     }
 
+    // Set initial loading false since atom handles the loading
+    setLoading(false)
     fetchRaces()
   }, [status, session, router, fetchRaces])
 
@@ -178,11 +177,12 @@ export default function RacesPage() {
       if (response.ok) {
         await fetchRaces()
         onClose()
+        logger.info(`Race ${selectedRace ? 'updated' : 'created'} successfully`)
       } else {
-        console.error('Failed to save race:', response.statusText)
+        logger.error('Failed to save race:', response.statusText)
       }
     } catch (error) {
-      console.error('Error saving race:', error)
+      logger.error('Error saving race:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -198,11 +198,12 @@ export default function RacesPage() {
 
       if (response.ok) {
         await fetchRaces()
+        logger.info('Race deleted successfully', { raceId })
       } else {
-        console.error('Failed to delete race:', response.statusText)
+        logger.error('Failed to delete race:', response.statusText)
       }
     } catch (error) {
-      console.error('Error deleting race:', error)
+      logger.error('Error deleting race:', error)
     }
   }
 
@@ -449,7 +450,7 @@ export default function RacesPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {races.map(race => (
+            {races.map((race: Race) => (
               <Card
                 key={race.id}
                 className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-primary/60"

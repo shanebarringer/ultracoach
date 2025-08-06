@@ -124,12 +124,12 @@ export function useTypingStatus(recipientId: string) {
         const response = await fetch(`/api/typing?recipientId=${recipientId}`)
         if (response.ok) {
           const data = await response.json()
-          
+
           if (data.isTyping !== isRecipientTyping) {
             // Reset interval on activity
             currentInterval = 3000
             consecutiveEmptyChecks = 0
-            
+
             setTypingStatuses(prev => ({
               ...prev,
               [recipientId]: {
@@ -171,7 +171,7 @@ export function useTypingStatus(recipientId: string) {
         consecutiveEmptyChecks++
         currentInterval = Math.min(currentInterval * 1.5, 10000)
       }
-      
+
       scheduleNextCheck()
     }
 
@@ -189,7 +189,7 @@ export function useTypingStatus(recipientId: string) {
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     // Start polling
     scheduleNextCheck()
 
