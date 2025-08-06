@@ -487,6 +487,11 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
       planned_duration: 45, // 45 minutes (stored as minutes)
       planned_type: 'Easy Run',
       status: 'planned' as const,
+      // Enhanced workout fields
+      category: 'easy',
+      intensity: 3,
+      terrain: 'road',
+      elevation_gain: 100,
     },
     {
       training_plan_id: trainingPlanId,
@@ -495,6 +500,11 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
       planned_duration: 60, // 60 minutes
       planned_type: 'Tempo Run',
       status: 'planned' as const,
+      // Enhanced workout fields
+      category: 'tempo',
+      intensity: 7,
+      terrain: 'road',
+      elevation_gain: 200,
     },
     {
       training_plan_id: trainingPlanId,
@@ -503,6 +513,11 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
       planned_duration: 90, // 90 minutes
       planned_type: 'Long Run',
       status: 'planned' as const,
+      // Enhanced workout fields
+      category: 'long_run',
+      intensity: 5,
+      terrain: 'trail',
+      elevation_gain: 500,
     },
   ]
 

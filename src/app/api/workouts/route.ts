@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
     const conditions = []
-    
+
     if (sessionUser.role === 'coach') {
       // Check runnerId authorization first
       if (runnerId && !authorizedUserIds.includes(runnerId)) {
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
         })
         return NextResponse.json({ workouts: [] })
       }
-      
+
       // Coach can see workouts where:
       // 1. They own the training plan AND the runner is in their authorized relationships
       // 2. OR the workout has no training plan (allow for standalone workouts)
@@ -100,16 +100,16 @@ export async function GET(request: NextRequest) {
         // Has training plan and coach owns it and runner is authorized
         and(
           eq(training_plans.coach_id, sessionUser.id),
-          runnerId 
+          runnerId
             ? eq(training_plans.runner_id, runnerId)
-            : authorizedUserIds.length > 0 
+            : authorizedUserIds.length > 0
               ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
               : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
         // OR workout has no training plan (workout.training_plan_id is null)
         isNull(workouts.training_plan_id)
       )
-      
+
       conditions.push(coachAccessCondition)
     } else {
       // Runner can see workouts where:
@@ -119,14 +119,14 @@ export async function GET(request: NextRequest) {
         // Has training plan and runner is the user and coach is authorized
         and(
           eq(training_plans.runner_id, sessionUser.id),
-          authorizedUserIds.length > 0 
+          authorizedUserIds.length > 0
             ? or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
             : eq(training_plans.coach_id, training_plans.coach_id) // Always true if no authorized coaches
         ),
-        // OR workout has no training plan  
+        // OR workout has no training plan
         isNull(workouts.training_plan_id)
       )
-      
+
       conditions.push(runnerAccessCondition)
     }
 
@@ -152,8 +152,8 @@ export async function GET(request: NextRequest) {
         planned_type: r.planned_type,
         training_plan_id: r.training_plan_id,
         coach_id: r.coach_id,
-        plan_runner_id: r.plan_runner_id
-      }))
+        plan_runner_id: r.plan_runner_id,
+      })),
     })
 
     // Remove the extra fields we only needed for authorization
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
       ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
     )
 
-    logger.debug('Successfully fetched workouts', { 
+    logger.debug('Successfully fetched workouts', {
       count: cleanedWorkouts.length,
       sessionUser: sessionUser.id,
       sessionRole: sessionUser.role,
@@ -171,8 +171,8 @@ export async function GET(request: NextRequest) {
         id: w.id,
         date: w.date,
         planned_type: w.planned_type,
-        training_plan_id: w.training_plan_id
-      }))
+        training_plan_id: w.training_plan_id,
+      })),
     })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {

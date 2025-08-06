@@ -269,7 +269,7 @@ export default function WeeklyPlannerCalendar({
   logger.debug('WeeklyPlannerCalendar component rendered:', {
     runnerId: runner.id,
     runnerName: runner.full_name,
-    weekStart: weekStart.toISOString()
+    weekStart: weekStart.toISOString(),
   })
 
   const { data: session } = useSession()
@@ -305,13 +305,13 @@ export default function WeeklyPlannerCalendar({
     logger.debug('fetchExistingWorkouts called:', {
       hasSession: !!session?.user?.id,
       runnerId: runner.id,
-      weekStart: weekStart.toISOString()
+      weekStart: weekStart.toISOString(),
     })
-    
+
     if (!session?.user?.id || !runner.id) {
       logger.warn('Missing session or runner data', {
         hasSession: !!session?.user?.id,
-        runnerId: runner.id
+        runnerId: runner.id,
       })
       return
     }
@@ -329,7 +329,7 @@ export default function WeeklyPlannerCalendar({
         sessionUserRole: session.user.role,
         runnerId: runner.id,
         startDate,
-        endDate: endDateStr
+        endDate: endDateStr,
       })
 
       const response = await fetch(url)
@@ -337,7 +337,7 @@ export default function WeeklyPlannerCalendar({
       logger.debug('Received response from workouts API:', {
         ok: response.ok,
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
       })
 
       if (response.ok) {
@@ -345,23 +345,24 @@ export default function WeeklyPlannerCalendar({
         logger.debug('Parsed response data:', { data })
         logger.debug('Setting existingWorkouts:', {
           count: data.workouts?.length || 0,
-          workouts: data.workouts?.map((w: Workout) => ({
-            id: w.id,
-            date: w.date,
-            training_plan_id: w.training_plan_id,
-            planned_type: w.planned_type,
-            category: w.category,
-            intensity: w.intensity,
-            terrain: w.terrain,
-            elevation_gain: w.elevation_gain
-          })) || []
+          workouts:
+            data.workouts?.map((w: Workout) => ({
+              id: w.id,
+              date: w.date,
+              training_plan_id: w.training_plan_id,
+              planned_type: w.planned_type,
+              category: w.category,
+              intensity: w.intensity,
+              terrain: w.terrain,
+              elevation_gain: w.elevation_gain,
+            })) || [],
         })
         setExistingWorkouts(data.workouts || [])
         logger.debug('existingWorkouts state updated')
       } else {
         logger.error('Failed to fetch workouts:', {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
         })
       }
     } catch (error) {
@@ -374,9 +375,9 @@ export default function WeeklyPlannerCalendar({
     logger.debug('useEffect triggered - initializing week days and fetching workouts:', {
       weekStart: weekStart.toISOString(),
       hasSession: !!session?.user?.id,
-      runnerId: runner.id
+      runnerId: runner.id,
     })
-    
+
     const days = generateWeekDays(weekStart)
     setWeekWorkouts(days)
     setHasChanges(false)
@@ -391,10 +392,10 @@ export default function WeeklyPlannerCalendar({
         id: w.id,
         date: w.date,
         planned_type: w.planned_type,
-        training_plan_id: w.training_plan_id
+        training_plan_id: w.training_plan_id,
       })),
       weekStart: weekStart.toISOString(),
-      weekWorkoutsCount: weekWorkouts.length
+      weekWorkoutsCount: weekWorkouts.length,
     })
     // Sort workouts by date ascending (ISO string)
     const sortedWorkouts = [...existingWorkouts].sort((a, b) => {
@@ -412,8 +413,10 @@ export default function WeeklyPlannerCalendar({
           // Handle both string and Date objects for workout dates
           const workoutDate = new Date(w.date).toISOString()
           const workoutIso = workoutDate.split('T')[0]
-          
-          logger.debug(`Comparing dates: day=${dayIso} vs workout=${workoutIso} (original: ${w.date})`)
+
+          logger.debug(
+            `Comparing dates: day=${dayIso} vs workout=${workoutIso} (original: ${w.date})`
+          )
           return workoutIso === dayIso
         })
         if (existingWorkout) {
@@ -440,7 +443,7 @@ export default function WeeklyPlannerCalendar({
     setWeekWorkouts(prevDays => {
       const mappedDays = mapped(prevDays)
       const sortedDays = [...mappedDays].sort((a, b) => a.date.getTime() - b.date.getTime())
-      
+
       logger.debug('Final weekWorkouts after merge:', {
         count: sortedDays.length,
         days: sortedDays.map(day => ({
@@ -449,10 +452,10 @@ export default function WeeklyPlannerCalendar({
           hasWorkout: !!day.workout,
           workoutType: day.workout?.type,
           workoutDistance: day.workout?.distance,
-          workoutDuration: day.workout?.duration
-        }))
+          workoutDuration: day.workout?.duration,
+        })),
       })
-      
+
       return sortedDays
     })
   }, [existingWorkouts])
