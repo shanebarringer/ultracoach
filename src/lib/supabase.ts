@@ -56,7 +56,7 @@ export interface TrainingPlan {
 
 export interface Workout {
   id: string
-  training_plan_id: string
+  training_plan_id: string | null
   date: string
   planned_distance?: number
   planned_duration?: number

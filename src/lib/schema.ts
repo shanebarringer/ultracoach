@@ -116,6 +116,11 @@ export const workouts = pgTable('workouts', {
   workout_notes: text('workout_notes'),
   coach_feedback: text('coach_feedback'),
   status: text('status').default('planned').notNull(),
+  // Enhanced workout fields
+  category: text('category'), // 'easy', 'tempo', 'interval', 'long_run', etc.
+  intensity: integer('intensity'), // 1-10 scale
+  terrain: text('terrain'), // 'road', 'trail', 'track', 'treadmill'
+  elevation_gain: integer('elevation_gain'), // feet
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
