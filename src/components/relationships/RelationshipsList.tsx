@@ -41,7 +41,7 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
   // Use Jotai atoms instead of local state
   const relationships = useAtomValue(relationshipsAtom)
   const [, refreshRelationships] = useAtom(relationshipsAtom)
-  
+
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'active' | 'inactive'>('all')
 

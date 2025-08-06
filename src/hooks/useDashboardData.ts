@@ -3,7 +3,7 @@ import { useAtom, useAtomValue } from 'jotai'
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, trainingPlansAtom, workoutsAtom, relationshipsAtom } from '@/lib/atoms'
+import { loadingStatesAtom, relationshipsAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }

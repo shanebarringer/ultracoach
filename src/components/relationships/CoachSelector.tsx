@@ -26,7 +26,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
   const coaches = useAtomValue(availableCoachesAtom)
   const [, refreshRelationships] = useAtom(relationshipsAtom)
   const [, refreshAvailableCoaches] = useAtom(availableCoachesAtom)
-  
+
   const [searchTerm, setSearchTerm] = useState('')
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 

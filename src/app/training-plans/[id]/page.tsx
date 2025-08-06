@@ -1,17 +1,18 @@
 'use client'
 
-import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
-import { useAtom, useAtomValue } from 'jotai'
 
 import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { refreshableTrainingPlansAtom, asyncWorkoutsAtom } from '@/lib/atoms'
+import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
@@ -77,9 +78,9 @@ export default function TrainingPlanDetailPage() {
       const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`)
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
-        setExtendedPlanData(prev => ({ 
-          ...prev, 
-          plan_phases: phasesData.plan_phases || [] 
+        setExtendedPlanData(prev => ({
+          ...prev,
+          plan_phases: phasesData.plan_phases || [],
         }))
       } else {
         console.error('Failed to fetch plan phases:', phasesResponse.statusText)
@@ -87,14 +88,12 @@ export default function TrainingPlanDetailPage() {
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.previous_plan_id}`
-        )
+        const prevPlanResponse = await fetch(`/api/training-plans/${trainingPlan.previous_plan_id}`)
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
-          setExtendedPlanData(prev => ({ 
-            ...prev, 
-            previous_plan: prevPlanData.trainingPlan 
+          setExtendedPlanData(prev => ({
+            ...prev,
+            previous_plan: prevPlanData.trainingPlan,
           }))
         } else {
           console.error('Failed to fetch previous plan:', prevPlanResponse.statusText)
@@ -102,14 +101,12 @@ export default function TrainingPlanDetailPage() {
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.next_plan_id}`
-        )
+        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`)
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
-          setExtendedPlanData(prev => ({ 
-            ...prev, 
-            next_plan: nextPlanData.trainingPlan 
+          setExtendedPlanData(prev => ({
+            ...prev,
+            next_plan: nextPlanData.trainingPlan,
           }))
         } else {
           console.error('Failed to fetch next plan:', nextPlanResponse.statusText)
@@ -137,7 +134,16 @@ export default function TrainingPlanDetailPage() {
     if (planId && allTrainingPlans.length > 0 && !trainingPlan) {
       router.push('/training-plans')
     }
-  }, [status, session, router, trainingPlan, extendedPlanData, fetchExtendedPlanData, planId, allTrainingPlans.length])
+  }, [
+    status,
+    session,
+    router,
+    trainingPlan,
+    extendedPlanData,
+    fetchExtendedPlanData,
+    planId,
+    allTrainingPlans.length,
+  ])
 
   const handleAddWorkoutSuccess = () => {
     // Refresh both atoms to get updated data
@@ -217,7 +223,10 @@ export default function TrainingPlanDetailPage() {
 
   const currentPhase = calculateCurrentPhase()
 
-  const groupWorkoutsByPhase = useCallback((): { grouped: Record<string, Workout[]>; ungrouped: Workout[] } => {
+  const groupWorkoutsByPhase = useCallback((): {
+    grouped: Record<string, Workout[]>
+    ungrouped: Workout[]
+  } => {
     if (
       !extendedTrainingPlan?.plan_phases ||
       extendedTrainingPlan.plan_phases.length === 0 ||
@@ -455,7 +464,9 @@ export default function TrainingPlanDetailPage() {
             </h1>
 
             {extendedTrainingPlan.description && (
-              <p className="text-gray-600 dark:text-gray-300 mb-6">{extendedTrainingPlan.description}</p>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                {extendedTrainingPlan.description}
+              </p>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -469,7 +480,9 @@ export default function TrainingPlanDetailPage() {
               {extendedTrainingPlan.race && (
                 <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
                   <h3 className="font-semibold text-green-900 dark:text-green-100">Target Race</h3>
-                  <p className="text-green-700 dark:text-green-300">{extendedTrainingPlan.race.name}</p>
+                  <p className="text-green-700 dark:text-green-300">
+                    {extendedTrainingPlan.race.name}
+                  </p>
                   <p className="text-green-700 dark:text-green-300 text-sm">
                     {formatDate(extendedTrainingPlan.race.date)}
                   </p>
