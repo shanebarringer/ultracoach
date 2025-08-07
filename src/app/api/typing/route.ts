@@ -3,8 +3,11 @@ import { and, eq, or } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
+import { createLogger } from '@/lib/logger'
 import { coach_runners, typing_status } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
+
+const logger = createLogger('api-typing')
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,7 +72,7 @@ export async function GET(request: NextRequest) {
       isTyping: (typingStatusData?.is_typing && isRecent) || false,
     })
   } catch (error) {
-    console.error('API error in GET /typing:', error)
+    logger.error('API error in GET /typing:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -128,7 +131,7 @@ export async function POST(request: NextRequest) {
       })
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('API error in POST /typing', error)
+    logger.error('API error in POST /typing', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

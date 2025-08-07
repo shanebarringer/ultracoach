@@ -2,6 +2,9 @@ import { useAtom } from 'jotai'
 
 import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms'
 import { authClient } from '@/lib/better-auth-client'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useBetterSession')
 
 export function useBetterSession() {
   const [session, setSession] = useAtom(sessionAtom)
@@ -14,7 +17,7 @@ export function useBetterSession() {
       const { error } = await authClient.signOut()
 
       if (error) {
-        console.error('Sign out error:', error)
+        logger.error('Sign out failed:', error)
         return { success: false, error: error.message }
       }
 
@@ -24,7 +27,7 @@ export function useBetterSession() {
 
       return { success: true }
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out exception:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Sign out failed' }
     } finally {
       setLoading(false)
@@ -36,7 +39,7 @@ export function useBetterSession() {
       const { data: session, error } = await authClient.getSession()
 
       if (error) {
-        console.error('Session refresh error:', error)
+        logger.error('Session refresh failed:', error)
         setSession(null)
         setUser(null)
         return { success: false, error: error.message }
@@ -47,7 +50,7 @@ export function useBetterSession() {
 
       return { success: true, session }
     } catch (error) {
-      console.error('Session refresh error:', error)
+      logger.error('Session refresh exception:', error)
       setSession(null)
       setUser(null)
       return {

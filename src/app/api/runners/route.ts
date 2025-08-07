@@ -3,8 +3,11 @@ import { and, eq } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/database'
+import { createLogger } from '@/lib/logger'
 import { coach_runners, user } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
+
+const logger = createLogger('api-runners')
 
 interface RunnerWithStats {
   id: string
@@ -65,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ runners: runnersWithStats })
   } catch (error) {
-    console.error('API error in GET /runners', error)
+    logger.error('API error in GET /runners', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

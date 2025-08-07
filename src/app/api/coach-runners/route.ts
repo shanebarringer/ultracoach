@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ relationship: newRelationship[0] }, { status: 201 })
   } catch (error) {
-    console.error('Error creating coach-runner relationship:', error)
+    logger.error('Error creating coach-runner relationship:', error)
     return NextResponse.json({ error: 'Failed to create relationship' }, { status: 500 })
   }
 }

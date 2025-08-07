@@ -32,7 +32,7 @@ export function useSupabaseRealtime({
   useEffect(() => {
     // Check if real-time is available
     if (!supabase.realtime) {
-      console.warn('🚫 Supabase real-time not available')
+      logger.warn('Supabase real-time not available')
       return
     }
 
@@ -66,7 +66,7 @@ export function useSupabaseRealtime({
                   break
               }
             } catch (error) {
-              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+              logger.error(`Error handling ${payload.eventType} for ${table}:`, error)
             }
           }
         )
@@ -92,7 +92,7 @@ export function useSupabaseRealtime({
                   break
               }
             } catch (error) {
-              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+              logger.error(`Error handling ${payload.eventType} for ${table}:`, error)
             }
           }
         )
@@ -112,27 +112,21 @@ export function useSupabaseRealtime({
             err.message &&
             err.message.includes('mismatch between server and client bindings')
           ) {
-            console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
+            logger.warn(`Schema mismatch detected for ${table}, falling back to polling`, { error: err })
           } else {
-            console.warn(
-              `⚠️ Real-time connection error for ${table}, components will use polling fallback`
-            )
+            logger.warn(`Real-time connection error for ${table}, components will use polling fallback`, { error: err })
           }
         } else if (status === 'TIMED_OUT') {
-          console.warn(
-            `⏰ Subscription to ${table} timed out - polling fallback will handle updates`
-          )
+          logger.warn(`Subscription to ${table} timed out - polling fallback will handle updates`)
         } else if (status === 'CLOSED') {
-          console.warn(
-            `🔒 Subscription to ${table} was closed - polling fallback will handle updates`
-          )
+          logger.warn(`Subscription to ${table} was closed - polling fallback will handle updates`)
         }
       })
 
       channelRef.current = channel
     } catch (error) {
       // Catch any realtime setup errors and continue gracefully
-      console.warn(`🔄 Realtime setup failed for ${table}, falling back to polling:`, error)
+      logger.warn(`Realtime setup failed for ${table}, falling back to polling`, { error })
 
       // If error message contains schema mismatch, provide specific guidance
       if (
@@ -142,8 +136,9 @@ export function useSupabaseRealtime({
         typeof error.message === 'string' &&
         error.message.includes('mismatch between server and client bindings')
       ) {
-        console.warn(
-          `📊 Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`
+        logger.warn(
+          `Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`,
+          { error }
         )
       }
     }

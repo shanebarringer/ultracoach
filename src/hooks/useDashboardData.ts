@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { loadingStatesAtom, relationshipsAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+
+const logger = createLogger('useDashboardData')
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
@@ -57,7 +60,7 @@ export function useDashboardData() {
 
       // Relationships are now handled by the relationshipsAtom automatically
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      logger.error('Failed to fetch dashboard data:', error)
     } finally {
       setLoadingStates(prev => ({
         ...prev,

@@ -19,8 +19,11 @@ import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { chatUiStateAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+
+const logger = createLogger('ChatWindow')
 
 import MessageInput from './MessageInput'
 import PerformantMessageList from './PerformantMessageList'
@@ -54,7 +57,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
           // toast.success('Message Sent', 'Your message has been delivered.')
         }
       } catch (error) {
-        console.error('Error sending message:', error)
+        logger.error('Error sending message:', error)
         toast.error('Message Failed', 'Unable to send message. Please try again.')
       } finally {
         setChatUiState(prev => ({ ...prev, sending: false }))
