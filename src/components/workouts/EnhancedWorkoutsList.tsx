@@ -4,9 +4,15 @@ import { Button, Card, CardBody, Input, Select, SelectItem } from '@heroui/react
 import { useAtom } from 'jotai'
 import { Calendar, Filter, Search, SortAsc, SortDesc } from 'lucide-react'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 
-import { filteredWorkoutsAtom } from '@/lib/atoms'
+import {
+  filteredWorkoutsAtom,
+  workoutSearchTermAtom,
+  workoutSortByAtom,
+  workoutStatusFilterAtom,
+  workoutTypeFilterAtom,
+} from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
@@ -24,11 +30,11 @@ const EnhancedWorkoutsList = memo(
   ({ userRole, onEditWorkout, onLogWorkout, variant = 'default' }: EnhancedWorkoutsListProps) => {
     const [workouts] = useAtom(filteredWorkoutsAtom)
 
-    // Local filtering and sorting state
-    const [searchTerm, setSearchTerm] = useState('')
-    const [sortBy, setSortBy] = useState<SortOption>('date-desc')
-    const [typeFilter, setTypeFilter] = useState<string>('all')
-    const [statusFilter, setStatusFilter] = useState<string>('all')
+    // Centralized filtering and sorting state using atoms
+    const [searchTerm, setSearchTerm] = useAtom(workoutSearchTermAtom)
+    const [sortBy, setSortBy] = useAtom(workoutSortByAtom)
+    const [typeFilter, setTypeFilter] = useAtom(workoutTypeFilterAtom)
+    const [statusFilter, setStatusFilter] = useAtom(workoutStatusFilterAtom)
     // Note: viewMode functionality removed for simplicity - could be added back later
 
     // Filter and sort workouts

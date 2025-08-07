@@ -358,6 +358,14 @@ export const workoutLinkSelectorSearchAtom = atom<string>('')
 export const typingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
 export const sendTypingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
 
+// EnhancedWorkoutsList filter states
+export const workoutSearchTermAtom = atom<string>('')
+export const workoutSortByAtom = atom<'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'>(
+  'date-desc'
+)
+export const workoutTypeFilterAtom = atom<string>('all')
+export const workoutStatusFilterAtom = atom<string>('all')
+
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,
   showLogWorkout: false,
