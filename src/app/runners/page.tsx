@@ -12,7 +12,7 @@ import {
   Tab,
   Tabs,
 } from '@heroui/react'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
 import {
   FlagIcon,
@@ -25,15 +25,15 @@ import {
   UsersIcon,
 } from 'lucide-react'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms'
+import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
@@ -52,8 +52,9 @@ const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 export default function RunnersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
-  const [activeTab, setActiveTab] = useState('connected')
+  const [activeTab, setActiveTab] = useAtom(runnersPageTabAtom)
 
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
@@ -61,6 +62,25 @@ export default function RunnersPage() {
     runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
   ) as RunnerWithStats[]
   const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
+
+  // Sync URL with atom state
+  useEffect(() => {
+    const urlTab = searchParams.get('tab')
+    if (urlTab === 'discover' || urlTab === 'connected') {
+      setActiveTab(urlTab)
+    }
+  }, [searchParams, setActiveTab])
+
+  // Handle tab changes with URL updates
+  const handleTabChange = (newTab: string) => {
+    const tab = newTab as 'connected' | 'discover'
+    setActiveTab(tab)
+
+    // Update URL without page reload
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('tab', tab)
+    router.replace(newUrl.pathname + newUrl.search)
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -133,7 +153,7 @@ export default function RunnersPage() {
                 </div>
               </div>
               <Button
-                onClick={() => setActiveTab('discover')}
+                onClick={() => handleTabChange('discover')}
                 color="primary"
                 variant="bordered"
                 startContent={<PlusIcon className="w-4 h-4" />}
@@ -187,7 +207,7 @@ export default function RunnersPage() {
         ) : (
           <Tabs
             selectedKey={activeTab}
-            onSelectionChange={key => setActiveTab(key as string)}
+            onSelectionChange={key => handleTabChange(key as string)}
             className="w-full"
             variant="underlined"
             color="primary"
@@ -209,7 +229,7 @@ export default function RunnersPage() {
                         Connect with runners to start building your expedition team
                       </p>
                       <Button
-                        onClick={() => setActiveTab('discover')}
+                        onClick={() => handleTabChange('discover')}
                         color="primary"
                         size="lg"
                         startContent={<UserPlusIcon className="w-5 h-5" />}
