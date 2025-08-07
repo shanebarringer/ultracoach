@@ -2,14 +2,14 @@
 
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
 import { toast } from 'sonner'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { availableRunnersAtom } from '@/lib/atoms'
+import { availableRunnersAtom, connectingRunnerIdsAtom, runnerSearchTermAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('RunnerSelector')
@@ -24,8 +24,8 @@ const availableRunnersLoadableAtom = loadable(availableRunnersAtom)
 export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const { data: session, status } = useSession()
   const runnersLoadable = useAtomValue(availableRunnersLoadableAtom)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
+  const [searchTerm, setSearchTerm] = useAtom(runnerSearchTermAtom)
+  const [connectingIds, setConnectingIds] = useAtom(connectingRunnerIdsAtom)
 
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
@@ -58,7 +58,7 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
       return
     }
 
-    setConnectingIds(prev => new Set(prev).add(runnerId))
+    setConnectingIds((prev: Set<string>) => new Set(prev).add(runnerId))
 
     try {
       const response = await fetch('/api/coach-runners', {
@@ -94,7 +94,7 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
       logger.error('Error connecting to runner:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to connect to runner')
     } finally {
-      setConnectingIds(prev => {
+      setConnectingIds((prev: Set<string>) => {
         const newSet = new Set(prev)
         newSet.delete(runnerId)
         return newSet

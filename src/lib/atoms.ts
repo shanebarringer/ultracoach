@@ -346,6 +346,10 @@ export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme
 // Runners page active tab atom
 export const runnersPageTabAtom = atom<'connected' | 'discover'>('connected')
 
+// RunnerSelector search and connecting states
+export const runnerSearchTermAtom = atom<string>('')
+export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
+
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,
   showLogWorkout: false,
