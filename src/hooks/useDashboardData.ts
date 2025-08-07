@@ -75,8 +75,17 @@ export function useDashboardData() {
 
   // Use useMemo for better performance when computing derived data
   const runners = useMemo(() => {
+    // Add safety check for other_party and role
     const relationshipRunners = relationships
-      .filter((rel: RelationshipData) => rel.other_party.role === 'runner')
+      .filter((rel: RelationshipData) => {
+        if (!rel.other_party) {
+          return false
+        }
+        if (!rel.other_party.role) {
+          return false
+        }
+        return rel.other_party.role === 'runner'
+      })
       .map(
         (rel: RelationshipData) =>
           ({

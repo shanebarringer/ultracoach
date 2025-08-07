@@ -5,12 +5,7 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import {
-  loadingStatesAtom,
-  refreshWorkoutsActionAtom,
-  workoutLoadableAtom,
-  workoutsAtom,
-} from '@/lib/atoms'
+import { loadingStatesAtom, workoutsAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
@@ -19,21 +14,49 @@ const logger = createLogger('useWorkouts')
 export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
-  const [loadingStates] = useAtom(loadingStatesAtom)
-
-  // Use loadable pattern for better async UX
-  const [workoutsLoadable] = useAtom(workoutLoadableAtom)
-  const [, refreshWorkouts] = useAtom(refreshWorkoutsActionAtom)
+  const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
 
   const fetchWorkouts = useCallback(async () => {
-    if (!session?.user?.id) return
+    if (!session?.user?.id) {
+      logger.debug('No session user ID, skipping workout fetch')
+      return
+    }
+
+    setLoadingStates(prev => ({ ...prev, workouts: true }))
+    logger.debug('Fetching workouts for user', { userId: session.user.id, role: session.user.role })
 
     try {
-      await refreshWorkouts()
+      const response = await fetch('/api/workouts', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        logger.error(`Failed to fetch workouts: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch workouts: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      logger.debug('Successfully fetched workouts', {
+        count: data.workouts?.length || 0,
+        workouts: data.workouts?.slice(0, 3)?.map((w: Workout) => ({
+          id: w.id,
+          date: w.date,
+          planned_type: w.planned_type,
+          training_plan_id: w.training_plan_id,
+        })),
+      })
+
+      setWorkouts(data.workouts || [])
     } catch (error) {
-      logger.error('Error refreshing workouts:', error)
+      logger.error('Error fetching workouts:', error)
+      setWorkouts([])
+    } finally {
+      setLoadingStates(prev => ({ ...prev, workouts: false }))
     }
-  }, [session?.user?.id, refreshWorkouts])
+  }, [session?.user?.id, session?.user?.role, setWorkouts, setLoadingStates])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
@@ -95,27 +118,12 @@ export function useWorkouts() {
     }
   }, [session?.user?.id, fetchWorkouts])
 
-  // Get workouts and loading state from loadable atom
-  const getWorkouts = () => {
-    if (workoutsLoadable.state === 'hasData') {
-      return workoutsLoadable.data || []
-    }
-    return workouts // Fallback to basic atom
-  }
-
-  const getLoadingState = () => {
-    if (workoutsLoadable.state === 'loading') {
-      return true
-    }
-    return loadingStates.workouts
-  }
-
   return {
-    workouts: getWorkouts(),
-    loading: getLoadingState(),
+    workouts,
+    loading: loadingStates.workouts,
     fetchWorkouts,
     updateWorkout,
     deleteWorkout,
-    error: workoutsLoadable.state === 'hasError' ? workoutsLoadable.error : null,
+    error: null,
   }
 }

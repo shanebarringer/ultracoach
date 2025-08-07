@@ -388,11 +388,16 @@ export const asyncWorkoutsAtom = atom(async get => {
   // Only execute on client-side to prevent build-time fetch errors
   if (!isBrowser) return []
 
-  const session = get(sessionAtom)
+  const authState = get(authStateAtom)
   const refreshTrigger = get(workoutsRefreshTriggerAtom) // Dependency for invalidation
   // refreshTrigger is used as a dependency to force atom re-evaluation
   void refreshTrigger // Silence ESLint warning
-  if (!session) throw new Error('No session available')
+
+  // Check if we have a valid session from Better Auth
+  if (!authState.user || authState.loading) {
+    logger.debug('No session or still loading, returning empty workouts')
+    return []
+  }
 
   try {
     const response = await fetch('/api/workouts', {

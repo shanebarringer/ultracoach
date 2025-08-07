@@ -368,7 +368,7 @@ export default function WeeklyPlannerCalendar({
     } catch (error) {
       logger.error('Error fetching existing workouts:', error)
     }
-  }, [session?.user?.id, runner.id, weekStart])
+  }, [session?.user?.id, session?.user?.role, runner.id, weekStart])
 
   // Initialize week days and fetch existing workouts
   useEffect(() => {
@@ -382,7 +382,7 @@ export default function WeeklyPlannerCalendar({
     setWeekWorkouts(days)
     setHasChanges(false)
     fetchExistingWorkouts()
-  }, [weekStart, generateWeekDays, fetchExistingWorkouts])
+  }, [weekStart, generateWeekDays, fetchExistingWorkouts, runner.id, session?.user?.id])
 
   // Merge existing workouts with week structure
   useEffect(() => {
@@ -458,7 +458,7 @@ export default function WeeklyPlannerCalendar({
 
       return sortedDays
     })
-  }, [existingWorkouts])
+  }, [existingWorkouts, weekStart, weekWorkouts.length])
 
   const updateDayWorkout = (
     dayIndex: number,

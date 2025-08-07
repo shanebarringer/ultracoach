@@ -1,11 +1,14 @@
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
+import { createLogger } from '@/lib/logger'
 import { coach_runners, user } from '@/lib/schema'
+
+const logger = createLogger('api-coach-runners')
 
 // GET /api/coach-runners - Get relationships for the authenticated user
 export async function GET(request: NextRequest) {
@@ -22,12 +25,34 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 
-    // Build query to get relationships where user is either coach or runner
-    const baseQuery = db
+    logger.debug('Fetching relationships for user', {
+      userId: sessionUser.id,
+      role: sessionUser.role,
+      statusFilter: status,
+    })
+
+    // We need to do two separate queries to get both coach and runner relationships
+    // with proper user data for the "other party"
+
+    // Build conditions based on status filter
+    const coachConditions = status
+      ? and(
+          eq(coach_runners.coach_id, sessionUser.id),
+          eq(coach_runners.status, status as 'pending' | 'active' | 'inactive')
+        )
+      : eq(coach_runners.coach_id, sessionUser.id)
+
+    const runnerConditions = status
+      ? and(
+          eq(coach_runners.runner_id, sessionUser.id),
+          eq(coach_runners.status, status as 'pending' | 'active' | 'inactive')
+        )
+      : eq(coach_runners.runner_id, sessionUser.id)
+
+    // Query 1: Relationships where current user is a coach
+    const finalCoachQuery = db
       .select({
         id: coach_runners.id,
-        coach_id: coach_runners.coach_id,
-        runner_id: coach_runners.runner_id,
         status: coach_runners.status,
         relationship_type: coach_runners.relationship_type,
         invited_by: coach_runners.invited_by,
@@ -35,31 +60,86 @@ export async function GET(request: NextRequest) {
         notes: coach_runners.notes,
         created_at: coach_runners.created_at,
         updated_at: coach_runners.updated_at,
+        // Other party is the runner
+        other_party_id: user.id,
+        other_party_name: user.name,
+        other_party_full_name: user.fullName,
+        other_party_email: user.email,
+        other_party_role: user.role,
       })
       .from(coach_runners)
+      .innerJoin(user, eq(coach_runners.runner_id, user.id))
+      .where(coachConditions)
 
-    let query = baseQuery.where(
-      or(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.runner_id, sessionUser.id))
-    )
+    // Query 2: Relationships where current user is a runner
+    const finalRunnerQuery = db
+      .select({
+        id: coach_runners.id,
+        status: coach_runners.status,
+        relationship_type: coach_runners.relationship_type,
+        invited_by: coach_runners.invited_by,
+        relationship_started_at: coach_runners.relationship_started_at,
+        notes: coach_runners.notes,
+        created_at: coach_runners.created_at,
+        updated_at: coach_runners.updated_at,
+        // Other party is the coach
+        other_party_id: user.id,
+        other_party_name: user.name,
+        other_party_full_name: user.fullName,
+        other_party_email: user.email,
+        other_party_role: user.role,
+      })
+      .from(coach_runners)
+      .innerJoin(user, eq(coach_runners.coach_id, user.id))
+      .where(runnerConditions)
 
-    // Add status filter if provided
-    if (status) {
-      query = baseQuery.where(
-        and(
-          or(
-            eq(coach_runners.coach_id, sessionUser.id),
-            eq(coach_runners.runner_id, sessionUser.id)
-          ),
-          eq(coach_runners.status, status as 'pending' | 'active' | 'inactive')
-        )
-      )
-    }
+    const [coachRelationships, runnerRelationships] = await Promise.all([
+      finalCoachQuery,
+      finalRunnerQuery,
+    ])
 
-    const relationships = await query
+    // Combine and format the results with proper structure expected by frontend
+    const allRelationships = [...coachRelationships, ...runnerRelationships]
 
-    return NextResponse.json({ relationships })
+    const formattedRelationships = allRelationships.map(rel => {
+      // Determine if current user is coach or runner based on which query returned this relationship
+      const isFromCoachQuery = coachRelationships.includes(rel as never)
+
+      return {
+        id: rel.id,
+        status: rel.status,
+        relationship_type: rel.relationship_type,
+        // If from coach query, current user is coach; if from runner query, current user is runner
+        is_coach: isFromCoachQuery,
+        is_runner: !isFromCoachQuery,
+        other_party: {
+          id: rel.other_party_id,
+          name: rel.other_party_name,
+          full_name: rel.other_party_full_name,
+          email: rel.other_party_email,
+          role: rel.other_party_role,
+        },
+        invited_by: rel.invited_by,
+        relationship_started_at: rel.relationship_started_at,
+        notes: rel.notes,
+        created_at: rel.created_at,
+        updated_at: rel.updated_at,
+      }
+    })
+
+    logger.debug('Successfully fetched relationships', {
+      count: formattedRelationships.length,
+      relationships: formattedRelationships.map(r => ({
+        id: r.id,
+        status: r.status,
+        other_party_role: r.other_party.role,
+        other_party_email: r.other_party.email,
+      })),
+    })
+
+    return NextResponse.json({ relationships: formattedRelationships })
   } catch (error) {
-    console.error('Error fetching coach-runner relationships:', error)
+    logger.error('Error fetching coach-runner relationships:', error)
     return NextResponse.json({ error: 'Failed to fetch relationships' }, { status: 500 })
   }
 }

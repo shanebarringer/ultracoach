@@ -35,16 +35,35 @@ export async function GET(request: NextRequest) {
         .from(coach_runners)
         .where(and(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.runner_id)
+      logger.debug('Coach authorized runner IDs', {
+        coachId: sessionUser.id,
+        authorizedRunnerIds: authorizedUserIds,
+      })
     } else {
       const relationships = await db
         .select({ coach_id: coach_runners.coach_id })
         .from(coach_runners)
         .where(and(eq(coach_runners.runner_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.coach_id)
+      logger.debug('Runner authorized coach IDs', {
+        runnerId: sessionUser.id,
+        authorizedCoachIds: authorizedUserIds,
+      })
     }
 
-    if (authorizedUserIds.length === 0) {
-      logger.info('No active relationships found', {
+    // Allow runners to see workouts even if they don't have active relationships yet
+    // This handles the case where workouts exist but relationships might not be set up properly
+    if (authorizedUserIds.length === 0 && sessionUser.role === 'runner') {
+      logger.info(
+        'No active relationships found for runner, but allowing access to their own workouts',
+        {
+          userId: sessionUser.id,
+          role: sessionUser.role,
+        }
+      )
+      // Don't return empty - continue to allow runner to see their workouts
+    } else if (authorizedUserIds.length === 0 && sessionUser.role === 'coach') {
+      logger.info('No active relationships found for coach', {
         userId: sessionUser.id,
         role: sessionUser.role,
       })
@@ -113,19 +132,30 @@ export async function GET(request: NextRequest) {
       conditions.push(coachAccessCondition)
     } else {
       // Runner can see workouts where:
-      // 1. They are the runner in a training plan from an authorized coach
-      // 2. OR the workout has no training plan (allow standalone workouts for the user)
-      const runnerAccessCondition = or(
-        // Has training plan and runner is the user and coach is authorized
-        and(
+      // 1. They are the runner in a training plan (from any coach - simplified for now)
+      // 2. OR the workout has no training plan (standalone workouts)
+      let runnerAccessCondition
+
+      if (authorizedUserIds.length > 0) {
+        // Has active relationships - use normal authorization
+        runnerAccessCondition = or(
+          // Has training plan and runner is the user and coach is authorized
+          and(
+            eq(training_plans.runner_id, sessionUser.id),
+            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
+          ),
+          // OR workout has no training plan
+          isNull(workouts.training_plan_id)
+        )
+      } else {
+        // No active relationships - allow runner to see workouts assigned to them in training plans
+        runnerAccessCondition = or(
+          // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          authorizedUserIds.length > 0
-            ? or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
-            : eq(training_plans.coach_id, training_plans.coach_id) // Always true if no authorized coaches
-        ),
-        // OR workout has no training plan
-        isNull(workouts.training_plan_id)
-      )
+          // OR workout has no training plan
+          isNull(workouts.training_plan_id)
+        )
+      }
 
       conditions.push(runnerAccessCondition)
     }
