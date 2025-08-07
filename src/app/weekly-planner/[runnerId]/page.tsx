@@ -44,9 +44,24 @@ export default function WeeklyPlannerRunnerPage() {
   const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
   const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
-  // Derive selectedRunner directly from URL and Jotai atom - no useState needed
-  const selectedRunner =
-    runnerId && runners.length > 0 ? runners.find((r: User) => r.id === runnerId) || null : null
+  // Derive selectedRunner directly from URL and session
+  const selectedRunner = (() => {
+    if (session?.user?.role === 'runner' && session.user.id === runnerId) {
+      // Runner viewing their own training - use session data
+      return {
+        id: session.user.id,
+        email: session.user.email,
+        full_name: session.user.name,
+        role: session.user.role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as User
+    }
+    // Coach viewing runner's training - find from connected runners
+    return runnerId && runners.length > 0
+      ? runners.find((r: User) => r.id === runnerId) || null
+      : null
+  })()
 
   useEffect(() => {
     if (status === 'loading') return
@@ -56,19 +71,26 @@ export default function WeeklyPlannerRunnerPage() {
       return
     }
 
-    if (session.user.role !== 'coach') {
+    // Allow both coaches and runners
+    if (session.user.role !== 'coach' && session.user.role !== 'runner') {
       router.push('/dashboard')
       return
     }
-  }, [status, session, router])
 
-  // Handle runner not found - redirect to main weekly planner
+    // If runner, ensure they can only view their own training
+    if (session.user.role === 'runner' && session.user.id !== runnerId) {
+      router.push(`/weekly-planner/${session.user.id}`)
+      return
+    }
+  }, [status, session, router, runnerId])
+
+  // Handle runner not found - redirect based on role
   useEffect(() => {
-    if (runners.length > 0 && runnerId && !selectedRunner) {
-      // Runner not found in connected runners, redirect to main weekly planner
+    if (session?.user?.role === 'coach' && runners.length > 0 && runnerId && !selectedRunner) {
+      // Coach: Runner not found in connected runners, redirect to main weekly planner
       router.push('/weekly-planner')
     }
-  }, [runners.length, runnerId, selectedRunner, router])
+  }, [runners.length, runnerId, selectedRunner, router, session?.user?.role])
 
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)
@@ -97,17 +119,17 @@ export default function WeeklyPlannerRunnerPage() {
     setCurrentWeek(monday)
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || (session?.user?.role === 'coach' && loading)) {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" color="primary" label="Loading expedition planning..." />
+          <Spinner size="lg" color="primary" label="Loading training schedule..." />
         </div>
       </Layout>
     )
   }
 
-  if (!session || session.user.role !== 'coach') {
+  if (!session || (session.user.role !== 'coach' && session.user.role !== 'runner')) {
     return null
   }
 
@@ -157,20 +179,27 @@ export default function WeeklyPlannerRunnerPage() {
                 <CalendarDaysIcon className="w-8 h-8 text-primary" />
                 <div>
                   <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    🏔️ Weekly Expedition Planner
+                    🏔️{' '}
+                    {session?.user?.role === 'runner'
+                      ? 'My Training Schedule'
+                      : 'Weekly Expedition Planner'}
                   </h1>
                   <p className="text-foreground/70 mt-1 text-lg">
-                    Planning for {selectedRunner.full_name || selectedRunner.email}
+                    {session?.user?.role === 'runner'
+                      ? 'Your weekly training overview'
+                      : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
                   </p>
                 </div>
               </div>
-              <Button
-                variant="flat"
-                onClick={() => router.push('/weekly-planner')}
-                className="bg-secondary/20 text-secondary hover:bg-secondary/30"
-              >
-                Change Runner
-              </Button>
+              {session?.user?.role === 'coach' && (
+                <Button
+                  variant="flat"
+                  onClick={() => router.push('/weekly-planner')}
+                  className="bg-secondary/20 text-secondary hover:bg-secondary/30"
+                >
+                  Change Runner
+                </Button>
+              )}
             </div>
           </CardHeader>
         </Card>
@@ -264,6 +293,7 @@ export default function WeeklyPlannerRunnerPage() {
         <WeeklyPlannerCalendar
           runner={selectedRunner}
           weekStart={currentWeek}
+          readOnly={session?.user?.role === 'runner'}
           onWeekUpdate={() => {
             // Week updated successfully - data will be automatically refreshed
           }}

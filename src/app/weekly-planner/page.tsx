@@ -43,6 +43,12 @@ export default function WeeklyPlannerPage() {
       return
     }
 
+    if (session.user.role === 'runner') {
+      // Runners see their own weekly training view
+      router.push(`/weekly-planner/${session.user.id}`)
+      return
+    }
+
     if (session.user.role !== 'coach') {
       router.push('/dashboard')
       return

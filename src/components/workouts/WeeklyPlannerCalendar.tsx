@@ -54,6 +54,7 @@ interface DayWorkout {
 interface WeeklyPlannerCalendarProps {
   runner: User
   weekStart: Date
+  readOnly?: boolean
   onWeekUpdate: () => void
 }
 
@@ -264,6 +265,7 @@ const WORKOUT_TYPE_TO_CATEGORY: Record<string, string> = {
 export default function WeeklyPlannerCalendar({
   runner,
   weekStart,
+  // readOnly = false,
   onWeekUpdate,
 }: WeeklyPlannerCalendarProps) {
   logger.debug('WeeklyPlannerCalendar component rendered:', {

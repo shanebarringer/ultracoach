@@ -94,7 +94,11 @@ function Header() {
       ]
     }
 
-    return baseItems
+    return [
+      ...baseItems.slice(0, 3), // Dashboard, Relationships, Calendar
+      { href: '/weekly-planner', label: 'My Training' }, // Read-only weekly planner for runners
+      ...baseItems.slice(3), // Workouts, Messages
+    ]
   }, [session])
 
   return (

@@ -25,7 +25,7 @@ import {
   UsersIcon,
 } from 'lucide-react'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -49,7 +49,8 @@ interface RunnerWithStats extends User {
 // Create loadable atom for better UX
 const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
-export default function RunnersPage() {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function RunnersPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -366,5 +367,25 @@ export default function RunnersPage() {
         )}
       </div>
     </Layout>
+  )
+}
+
+// Loading fallback component
+function RunnersPageFallback() {
+  return (
+    <Layout>
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="lg" color="primary" label="Loading expedition team..." />
+      </div>
+    </Layout>
+  )
+}
+
+// Main export with Suspense boundary
+export default function RunnersPage() {
+  return (
+    <Suspense fallback={<RunnersPageFallback />}>
+      <RunnersPageContent />
+    </Suspense>
   )
 }
