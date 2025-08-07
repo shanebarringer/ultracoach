@@ -350,6 +350,14 @@ export const runnersPageTabAtom = atom<'connected' | 'discover'>('connected')
 export const runnerSearchTermAtom = atom<string>('')
 export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
 
+// Debouncing atoms for hooks and performance optimization
+export const messagesFetchTimestampAtom = atom<number>(0)
+export const workoutLinkSelectorSearchAtom = atom<string>('')
+
+// Typing status debouncing atoms
+export const typingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
+export const sendTypingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
+
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,
   showLogWorkout: false,

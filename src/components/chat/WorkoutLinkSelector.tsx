@@ -14,11 +14,13 @@ import {
   Select,
   SelectItem,
 } from '@heroui/react'
+import { useAtom } from 'jotai'
 import { Calendar, Link2, MapPin, Target } from 'lucide-react'
 
 import React, { useState } from 'react'
 
 import { useWorkouts } from '@/hooks/useWorkouts'
+import { workoutLinkSelectorSearchAtom } from '@/lib/atoms'
 import { Workout } from '@/lib/supabase'
 
 interface WorkoutLinkSelectorProps {
@@ -44,7 +46,7 @@ export default function WorkoutLinkSelector({
   const { workouts, loading } = useWorkouts()
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [linkType, setLinkType] = useState('reference')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useAtom(workoutLinkSelectorSearchAtom)
 
   // Filter workouts for the current conversation context
   const filteredWorkouts = workouts.filter((workout: Workout) => {

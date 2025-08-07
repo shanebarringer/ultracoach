@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -12,6 +12,7 @@ import {
   loadingStatesAtom,
   messagesAtom,
   messagesByConversationLoadableFamily,
+  messagesFetchTimestampAtom,
   selectedRecipientAtom,
   sendMessageActionAtom,
 } from '@/lib/atoms'
@@ -28,8 +29,8 @@ export function useMessages(recipientId?: string) {
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
   const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
 
-  // Debounce message fetching to prevent race conditions
-  const [lastMessagesFetchTime, setLastMessagesFetchTime] = useState(0)
+  // Debounce message fetching to prevent race conditions using atoms
+  const [lastMessagesFetchTime, setLastMessagesFetchTime] = useAtom(messagesFetchTimestampAtom)
 
   // Use atomFamily for conversation-specific messages
   const [conversationMessages] = useAtom(

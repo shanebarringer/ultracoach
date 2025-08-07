@@ -2,10 +2,10 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { typingStatusAtom } from '@/lib/atoms'
+import { sendTypingTimeoutRefsAtom, typingStatusAtom, typingTimeoutRefsAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useTypingStatus')
@@ -13,8 +13,31 @@ const logger = createLogger('useTypingStatus')
 export function useTypingStatus(recipientId: string) {
   const { data: session } = useSession()
   const [typingStatuses, setTypingStatuses] = useAtom(typingStatusAtom)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const sendTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [typingTimeoutRefs, setTypingTimeoutRefs] = useAtom(typingTimeoutRefsAtom)
+  const [sendTypingTimeoutRefs, setSendTypingTimeoutRefs] = useAtom(sendTypingTimeoutRefsAtom)
+
+  // Helper functions to manage timeouts in atoms
+  const getTypingTimeout = useCallback(
+    (id: string) => typingTimeoutRefs[id] || null,
+    [typingTimeoutRefs]
+  )
+  const setTypingTimeout = useCallback(
+    (id: string, timeout: NodeJS.Timeout | null) => {
+      setTypingTimeoutRefs(prev => ({ ...prev, [id]: timeout }))
+    },
+    [setTypingTimeoutRefs]
+  )
+
+  const getSendTypingTimeout = useCallback(
+    (id: string) => sendTypingTimeoutRefs[id] || null,
+    [sendTypingTimeoutRefs]
+  )
+  const setSendTypingTimeout = useCallback(
+    (id: string, timeout: NodeJS.Timeout | null) => {
+      setSendTypingTimeoutRefs(prev => ({ ...prev, [id]: timeout }))
+    },
+    [setSendTypingTimeoutRefs]
+  )
 
   // Get typing status for this specific conversation
   const conversationStatus = typingStatuses[recipientId] || {
@@ -71,10 +94,19 @@ export function useTypingStatus(recipientId: string) {
 
     sendTypingStatus(false)
 
-    if (sendTypingTimeoutRef.current) {
-      clearTimeout(sendTypingTimeoutRef.current)
+    const currentTimeout = getSendTypingTimeout(recipientId)
+    if (currentTimeout) {
+      clearTimeout(currentTimeout)
+      setSendTypingTimeout(recipientId, null)
     }
-  }, [isTyping, recipientId, setTypingStatuses, sendTypingStatus])
+  }, [
+    isTyping,
+    recipientId,
+    setTypingStatuses,
+    sendTypingStatus,
+    getSendTypingTimeout,
+    setSendTypingTimeout,
+  ])
 
   // Start typing indicator
   const startTyping = useCallback(() => {
@@ -93,17 +125,28 @@ export function useTypingStatus(recipientId: string) {
     sendTypingStatus(true)
 
     // Clear any existing timeout
-    if (sendTypingTimeoutRef.current) {
-      clearTimeout(sendTypingTimeoutRef.current)
+    const existingTimeout = getSendTypingTimeout(recipientId)
+    if (existingTimeout) {
+      clearTimeout(existingTimeout)
     }
 
     // Auto-stop typing after 3 seconds of inactivity
-    sendTypingTimeoutRef.current = setTimeout(() => {
-      if (sendTypingTimeoutRef.current) {
+    const newTimeout = setTimeout(() => {
+      const currentTimeoutCheck = getSendTypingTimeout(recipientId)
+      if (currentTimeoutCheck) {
         stopTyping()
       }
     }, 3000)
-  }, [isTyping, recipientId, setTypingStatuses, sendTypingStatus, stopTyping])
+    setSendTypingTimeout(recipientId, newTimeout)
+  }, [
+    isTyping,
+    recipientId,
+    setTypingStatuses,
+    sendTypingStatus,
+    stopTyping,
+    getSendTypingTimeout,
+    setSendTypingTimeout,
+  ])
 
   // Optimized polling-based typing status check with exponential backoff and Page Visibility API
   useEffect(() => {
@@ -141,11 +184,13 @@ export function useTypingStatus(recipientId: string) {
 
             // Auto-clear after 5 seconds
             if (data.isTyping) {
-              if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current)
+              const existingTypingTimeout = getTypingTimeout(recipientId)
+              if (existingTypingTimeout) {
+                clearTimeout(existingTypingTimeout)
               }
-              typingTimeoutRef.current = setTimeout(() => {
-                if (typingTimeoutRef.current) {
+              const newTypingTimeout = setTimeout(() => {
+                const currentTypingTimeout = getTypingTimeout(recipientId)
+                if (currentTypingTimeout) {
                   setTypingStatuses(prev => ({
                     ...prev,
                     [recipientId]: {
@@ -156,6 +201,7 @@ export function useTypingStatus(recipientId: string) {
                   }))
                 }
               }, 5000)
+              setTypingTimeout(recipientId, newTypingTimeout)
             }
           } else {
             // No change detected - implement exponential backoff
@@ -199,23 +245,43 @@ export function useTypingStatus(recipientId: string) {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [session?.user?.id, recipientId, isRecipientTyping, setTypingStatuses])
+  }, [
+    session?.user?.id,
+    recipientId,
+    isRecipientTyping,
+    setTypingStatuses,
+    getTypingTimeout,
+    setTypingTimeout,
+  ])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
+      const typingTimeout = getTypingTimeout(recipientId)
+      const sendTimeout = getSendTypingTimeout(recipientId)
+
+      if (typingTimeout) {
+        clearTimeout(typingTimeout)
+        setTypingTimeout(recipientId, null)
       }
-      if (sendTypingTimeoutRef.current) {
-        clearTimeout(sendTypingTimeoutRef.current)
+      if (sendTimeout) {
+        clearTimeout(sendTimeout)
+        setSendTypingTimeout(recipientId, null)
       }
       // Stop typing when component unmounts
       if (isTyping) {
         sendTypingStatus(false)
       }
     }
-  }, [isTyping, sendTypingStatus])
+  }, [
+    isTyping,
+    sendTypingStatus,
+    recipientId,
+    getTypingTimeout,
+    getSendTypingTimeout,
+    setTypingTimeout,
+    setSendTypingTimeout,
+  ])
 
   return {
     isRecipientTyping,
