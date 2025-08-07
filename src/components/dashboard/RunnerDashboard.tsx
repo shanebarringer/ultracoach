@@ -1,21 +1,21 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
+import classNames from 'classnames'
 import {
+  ActivityIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
   CalendarIcon,
+  CheckCircleIcon,
   ClockIcon,
   FlagIcon,
   MapPinIcon,
+  MessageSquareIcon,
   MountainSnowIcon,
   RouteIcon,
   TrendingUpIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  MessageSquareIcon,
-  ActivityIcon,
-  CheckCircleIcon,
 } from 'lucide-react'
-import classNames from 'classnames'
 
 import { memo, useMemo } from 'react'
 
@@ -153,19 +153,22 @@ const calculateCompletionRate = (workouts: Workout[]) => {
 const calculateWeeklyDistance = (workouts: Workout[]) => {
   const today = new Date()
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-  
+
   return workouts
     .filter(w => {
       const workoutDate = new Date(w.date)
       return workoutDate >= weekAgo && workoutDate <= today && w.status === 'completed'
     })
-    .reduce((total, workout) => total + (workout.actual_distance || workout.planned_distance || 0), 0)
+    .reduce(
+      (total, workout) => total + (workout.actual_distance || workout.planned_distance || 0),
+      0
+    )
 }
 
 const calculateRecentActivity = (workouts: Workout[]) => {
   const today = new Date()
   const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
-  
+
   return workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= twoWeeksAgo && w.status === 'completed'
@@ -187,7 +190,8 @@ const getWorkoutTypeIcon = (type: string) => {
 
 function RunnerDashboard() {
   const { data: session } = useSession()
-  const { trainingPlans, upcomingWorkouts, loading, relationships, recentWorkouts } = useDashboardData()
+  const { trainingPlans, upcomingWorkouts, loading, relationships, recentWorkouts } =
+    useDashboardData()
 
   // Memoize expensive computations and add logging
   const dashboardMetrics = useMemo(() => {
@@ -376,12 +380,12 @@ function RunnerDashboard() {
                             <Button size="sm" variant="flat" color="primary" className="flex-1">
                               View Profile
                             </Button>
-                            <Button 
+                            <Button
                               as={Link}
                               href={`/messages?user=${relationship.other_party.id}`}
-                              size="sm" 
-                              variant="flat" 
-                              color="success" 
+                              size="sm"
+                              variant="flat"
+                              color="success"
                               className="flex-1"
                               startContent={<MessageSquareIcon className="w-4 h-4" />}
                             >
@@ -516,32 +520,32 @@ function RunnerDashboard() {
                               </div>
                             </div>
                           </div>
-                          <Chip 
-                            size="sm" 
-                            color={workout.status === 'completed' ? "success" : "warning"} 
+                          <Chip
+                            size="sm"
+                            color={workout.status === 'completed' ? 'success' : 'warning'}
                             variant="flat"
-                            startContent={workout.status === 'completed' ? <CheckCircleIcon className="w-3 h-3" /> : undefined}
+                            startContent={
+                              workout.status === 'completed' ? (
+                                <CheckCircleIcon className="w-3 h-3" />
+                              ) : undefined
+                            }
                           >
-                            {workout.status === 'completed' ? "Completed" : "Planned"}
+                            {workout.status === 'completed' ? 'Completed' : 'Planned'}
                           </Chip>
                         </div>
-                        
+
                         {workout.status === 'planned' && (
                           <div className="flex gap-2 pt-2">
-                            <Button 
-                              size="sm" 
-                              variant="flat" 
-                              color="success" 
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="success"
                               className="flex-1"
                               startContent={<CheckCircleIcon className="w-4 h-4" />}
                             >
                               Mark Complete
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="bordered" 
-                              className="flex-1"
-                            >
+                            <Button size="sm" variant="bordered" className="flex-1">
                               Log Details
                             </Button>
                           </div>
