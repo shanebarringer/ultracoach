@@ -273,7 +273,7 @@ UltraCoach - Conquer Your Mountain
             to: user.email,
             subject: 'Reset Your UltraCoach Password 🏔️',
             resetUrl: url,
-            textPreview: textTemplate.substring(0, 200) + '...'
+            textPreview: textTemplate.substring(0, 200) + '...',
           })
         } else if (resend) {
           // In production, send actual email via Resend

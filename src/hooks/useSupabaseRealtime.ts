@@ -112,9 +112,14 @@ export function useSupabaseRealtime({
             err.message &&
             err.message.includes('mismatch between server and client bindings')
           ) {
-            logger.warn(`Schema mismatch detected for ${table}, falling back to polling`, { error: err })
+            logger.warn(`Schema mismatch detected for ${table}, falling back to polling`, {
+              error: err,
+            })
           } else {
-            logger.warn(`Real-time connection error for ${table}, components will use polling fallback`, { error: err })
+            logger.warn(
+              `Real-time connection error for ${table}, components will use polling fallback`,
+              { error: err }
+            )
           }
         } else if (status === 'TIMED_OUT') {
           logger.warn(`Subscription to ${table} timed out - polling fallback will handle updates`)

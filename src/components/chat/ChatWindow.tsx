@@ -23,11 +23,11 @@ import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 
-const logger = createLogger('ChatWindow')
-
 import MessageInput from './MessageInput'
 import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
+
+const logger = createLogger('ChatWindow')
 
 interface ChatWindowProps {
   recipientId: string
