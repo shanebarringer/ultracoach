@@ -15,12 +15,13 @@ import { useAtom } from 'jotai'
 import { FlagIcon, LockIcon, MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 import { z } from 'zod'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { signUpFormAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
@@ -45,6 +46,7 @@ type SignUpForm = z.infer<typeof signUpSchema>
 
 export default function SignUp() {
   const [formState, setFormState] = useAtom(signUpFormAtom)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const router = useRouter()
   const { signUp } = useBetterAuth()
 
@@ -87,14 +89,9 @@ export default function SignUp() {
         setError('email', { message: sanitizedError })
       } else {
         logger.info('Sign up successful:', { userRole: data.role })
-        // Redirect based on user role
-        const userRole = (result.data?.user as { role?: string })?.role || data.role
-        if (userRole === 'coach') {
-          router.push('/dashboard/coach')
-        } else {
-          router.push('/dashboard/runner')
-        }
-        // Keep loading true during redirect
+        // Show onboarding flow after successful signup
+        setFormState(prev => ({ ...prev, loading: false }))
+        setShowOnboarding(true)
       }
     } catch (error) {
       logger.error('Sign up exception:', error)
@@ -103,6 +100,23 @@ export default function SignUp() {
     } finally {
       setFormState(prev => ({ ...prev, loading: false }))
     }
+  }
+
+  const handleOnboardingComplete = () => {
+    logger.info('Onboarding completed, redirecting to dashboard')
+    // Redirect based on user role - get role from form data since we just signed up
+    const userRole = formState.role || 'runner'
+    if (userRole === 'coach') {
+      router.push('/dashboard/coach')
+    } else {
+      router.push('/dashboard/runner')
+    }
+  }
+
+  const handleOnboardingClose = () => {
+    // If user closes onboarding without completing, still redirect them
+    logger.info('Onboarding closed, redirecting to dashboard')
+    handleOnboardingComplete()
   }
 
   return (
@@ -268,6 +282,13 @@ export default function SignUp() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Onboarding Flow */}
+      <OnboardingFlow
+        isOpen={showOnboarding}
+        onClose={handleOnboardingClose}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   )
 }

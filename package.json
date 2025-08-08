@@ -25,6 +25,7 @@
     "db:setup": "./supabase/scripts/setup_with_env.sh",
     "db:seed": "tsx scripts/seed-database.ts",
     "db:seed:comprehensive": "tsx scripts/comprehensive-seed.ts",
+    "db:seed:onboarding": "tsx scripts/seed-onboarding-steps.ts",
     "db:reset": "./supabase/scripts/reset_database.sh",
     "db:fresh": "./supabase/scripts/reset_database.sh && tsx scripts/seed-database.ts",
     "db:fresh:comprehensive": "tsx scripts/comprehensive-seed.ts",
