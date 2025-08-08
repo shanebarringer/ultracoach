@@ -2,20 +2,25 @@ import { and, eq, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { db } from '@/lib/db'
+import { auth } from '@/lib/better-auth'
+import type { User } from '@/lib/better-auth'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { coach_runners, typing_status } from '@/lib/schema'
-import { getServerSession } from '@/lib/server-auth'
 
 const logger = createLogger('api-typing')
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
 
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sessionUser = session.user as User
 
     const { searchParams } = new URL(request.url)
     const recipientId = searchParams.get('recipientId')
@@ -32,11 +37,11 @@ export async function GET(request: NextRequest) {
         and(
           or(
             and(
-              eq(coach_runners.coach_id, session.user.id),
+              eq(coach_runners.coach_id, sessionUser.id),
               eq(coach_runners.runner_id, recipientId)
             ),
             and(
-              eq(coach_runners.runner_id, session.user.id),
+              eq(coach_runners.runner_id, sessionUser.id),
               eq(coach_runners.coach_id, recipientId)
             )
           ),
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
       })
       .from(typing_status)
       .where(
-        and(eq(typing_status.user_id, recipientId), eq(typing_status.recipient_id, session.user.id))
+        and(eq(typing_status.user_id, recipientId), eq(typing_status.recipient_id, sessionUser.id))
       )
       .limit(1)
 
@@ -79,10 +84,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
-    if (!session?.user) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sessionUser = session.user as User
     const { recipientId, isTyping } = await request.json()
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
@@ -96,11 +105,11 @@ export async function POST(request: NextRequest) {
         and(
           or(
             and(
-              eq(coach_runners.coach_id, session.user.id),
+              eq(coach_runners.coach_id, sessionUser.id),
               eq(coach_runners.runner_id, recipientId)
             ),
             and(
-              eq(coach_runners.runner_id, session.user.id),
+              eq(coach_runners.runner_id, sessionUser.id),
               eq(coach_runners.coach_id, recipientId)
             )
           ),
@@ -117,7 +126,7 @@ export async function POST(request: NextRequest) {
     await db
       .insert(typing_status)
       .values({
-        user_id: session.user.id,
+        user_id: sessionUser.id,
         recipient_id: recipientId,
         is_typing: isTyping,
         last_updated: new Date(),

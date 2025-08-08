@@ -23,6 +23,7 @@ import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 
+import ConnectionStatus from './ConnectionStatus'
 import MessageInput from './MessageInput'
 import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
@@ -90,7 +91,8 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 relative">
+      <ConnectionStatus />
       {/* Chat Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
         <div className="flex items-center space-x-3">

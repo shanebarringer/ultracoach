@@ -377,6 +377,7 @@ export const uiStateAtom = atom({
   currentWeek: new Date(),
   useSuspense: false, // Toggle for demonstrating Suspense vs traditional loading
   defaultToComplete: false,
+  connectionStatus: 'connected' as 'connected' | 'reconnecting' | 'disconnected',
 })
 
 // Async atoms for data fetching with Suspense support

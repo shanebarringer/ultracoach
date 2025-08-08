@@ -15,6 +15,7 @@ import {
   messagesFetchTimestampAtom,
   selectedRecipientAtom,
   sendMessageActionAtom,
+  uiStateAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Message, MessageWithUser } from '@/lib/supabase'
@@ -28,6 +29,7 @@ export function useMessages(recipientId?: string) {
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
   const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
+  const [, setUiState] = useAtom(uiStateAtom)
 
   // Debounce message fetching to prevent race conditions using atoms
   const [lastMessagesFetchTime, setLastMessagesFetchTime] = useAtom(messagesFetchTimestampAtom)
@@ -77,11 +79,17 @@ export function useMessages(recipientId?: string) {
         const data = await response.json()
         const fetchedMessages = data.messages || []
 
-        // Update messages atom with new messages, filtering out duplicates
+        // Enhanced message deduplication and sorting
         setMessages(prev => {
           const existingIds = new Set(prev.map(m => m.id))
           const newMessages = fetchedMessages.filter((m: MessageWithUser) => !existingIds.has(m.id))
-          return [...prev, ...newMessages]
+          
+          // Merge and sort by creation time to ensure proper order
+          const merged = [...prev, ...newMessages].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+          
+          return merged
         })
         // Mark messages as read - call directly to avoid circular dependency
         if (targetId) {
@@ -263,7 +271,7 @@ export function useMessages(recipientId?: string) {
     },
   })
 
-  // Fetch messages when recipientId changes and set up polling fallback
+  // Enhanced polling with exponential backoff and error recovery
   useEffect(() => {
     if (recipientId) {
       // Only trigger initial load if we haven't loaded this conversation before
@@ -282,13 +290,44 @@ export function useMessages(recipientId?: string) {
         fetchMessages(recipientId, true)
       }
 
-      // Polling fallback - refresh messages every 10 seconds (background updates)
-      // This ensures chat works even if real-time fails, reduced frequency for better performance
-      const pollInterval = setInterval(() => {
-        fetchMessages(recipientId, false) // Background update, no loading spinner
-      }, 10000)
+      // Enhanced polling with exponential backoff for better performance
+      let currentInterval = 5000 // Start at 5 seconds
+      let consecutiveErrors = 0
+      let pollTimeout: NodeJS.Timeout | null = null
 
-      return () => clearInterval(pollInterval)
+      const pollMessages = async () => {
+        try {
+          await fetchMessages(recipientId, false) // Background update, no loading spinner
+          // Reset on successful fetch
+          currentInterval = 5000
+          consecutiveErrors = 0
+          setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
+        } catch (error) {
+          logger.error('Error in message polling:', error)
+          consecutiveErrors++
+          // Exponential backoff on errors, max 60 seconds
+          currentInterval = Math.min(currentInterval * Math.pow(2, consecutiveErrors), 60000)
+          
+          // Update connection status based on error count
+          if (consecutiveErrors >= 3) {
+            setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
+          } else {
+            setUiState(prev => ({ ...prev, connectionStatus: 'reconnecting' }))
+          }
+        }
+
+        // Schedule next poll with current interval
+        pollTimeout = setTimeout(pollMessages, currentInterval)
+      }
+
+      // Start polling
+      pollTimeout = setTimeout(pollMessages, currentInterval)
+
+      return () => {
+        if (pollTimeout) {
+          clearTimeout(pollTimeout)
+        }
+      }
     }
   }, [
     recipientId,
@@ -296,6 +335,7 @@ export function useMessages(recipientId?: string) {
     chatUiState.hasInitiallyLoadedMessages,
     setChatUiState,
     fetchMessages,
+    setUiState,
   ])
 
   // Get messages for current conversation using loadable pattern
