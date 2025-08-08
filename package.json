@@ -38,12 +38,13 @@
     "db:drop": "drizzle-kit drop",
     "db:connect": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\"",
     "db:query": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c",
-    "prod:db:reset": "supabase db reset",
+    "prod:db:reset": "tsx scripts/reset-production-database.ts",
     "prod:db:push": "supabase db push",
-    "prod:db:seed": "NODE_ENV=production tsx scripts/seed-database.ts",
-    "prod:db:query": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c",
-    "prod:db:status": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;\"",
-    "prod:db:users": "export $(grep -v '^#' .env.local | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM better_auth_users ORDER BY created_at;\"",
+    "prod:db:seed": "tsx scripts/seed-production-local-logic.ts",
+    "prod:db:fresh": "tsx scripts/reset-production-database.ts && tsx scripts/seed-production-local-logic.ts",
+    "prod:db:query": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c",
+    "prod:db:status": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;\"",
+    "prod:db:users": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM \\\"user\\\" ORDER BY created_at;\"",
     "prepare": "husky"
   },
   "dependencies": {
