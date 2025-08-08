@@ -638,28 +638,29 @@ async function main() {
       .from(schema.plan_templates)
       .then(r => r.length)
 
-    console.log(`
-    📊 Seeding Results:
-    ├── Users: ${userCount}
-    ├── Training Plans: ${planCount}
-    ├── Workouts: ${workoutCount}
-    ├── Training Phases: ${phaseCount}
-    └── Plan Templates: ${templateCount}
-    `)
+    logger.info('📊 Seeding Results:', {
+      users: userCount,
+      trainingPlans: planCount,
+      workouts: workoutCount,
+      trainingPhases: phaseCount,
+      planTemplates: templateCount,
+    })
 
     // Database connection will be cleaned up automatically by the unified database module
 
     const duration = Date.now() - startTime
     logger.info(`✅ Database seeding completed in ${duration}ms`)
 
-    console.log(`
-    🎯 Database seeding completed successfully!
-    • Test users created with secure credentials
-    • Coach-runner relationships established
-    • Training plans and sample workouts added
-    • Credentials saved to .env.local for easy testing
-    • Old password files cleaned up for security
-    `)
+    logger.info('🎯 Database seeding completed successfully!', {
+      status: 'complete',
+      features: [
+        'Test users created with secure credentials',
+        'Coach-runner relationships established',
+        'Training plans and sample workouts added',
+        'Credentials saved to .env.local for easy testing',
+        'Old password files cleaned up for security',
+      ],
+    })
   } catch (error) {
     logger.error('❌ Database seeding failed:', error)
     // In test environment, don't exit process

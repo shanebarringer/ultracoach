@@ -11,8 +11,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Opt out of parallel tests on CI and use fewer workers for better stability */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
   /* Global timeout for each test */
@@ -88,6 +88,17 @@ export default defineConfig({
     timeout: 120000, // 2 minutes to start server
     env: {
       NODE_ENV: 'test',
+      // Load test environment variables
+      DATABASE_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+      BETTER_AUTH_SECRET: '8a331d20825d0f81e658e4ce162d6cef854572c10f5106d9b2143aa13b50774b',
+      BETTER_AUTH_URL: 'http://localhost:3001',
+      NEXT_PUBLIC_BASE_URL: 'http://localhost:3001',
+      PORT: '3001',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://ccnbzjpccmlribljugve.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_dgTQ49np8fz3PWFkIylwnQ_ddafgm_3',
+      SUPABASE_SERVICE_ROLE_KEY: 'sb_secret__NwMijRypyrKzVn_y2DP9g_o_5EyDZR',
+      RESEND_API_KEY: '',
+      NEXTAUTH_URL: 'http://localhost:3001',
       ...(process.env.CI &&
         {
           // CI-specific environment variables will be set by GitHub Actions
