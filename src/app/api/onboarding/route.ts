@@ -1,10 +1,11 @@
+import { and, eq, or } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, or } from 'drizzle-orm'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
-import { user_onboarding, onboarding_steps } from '@/lib/schema'
+import { onboarding_steps, user_onboarding } from '@/lib/schema'
 
 const logger = createLogger('api/onboarding')
 
@@ -46,10 +47,7 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(onboarding_steps.is_active, true),
-          or(
-            eq(onboarding_steps.role, userRole),
-            eq(onboarding_steps.role, 'both')
-          )
+          or(eq(onboarding_steps.role, userRole), eq(onboarding_steps.role, 'both'))
         )
       )
       .orderBy(onboarding_steps.step_number)
@@ -85,10 +83,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error fetching onboarding data:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch onboarding data' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch onboarding data' }, { status: 500 })
   }
 }
 
@@ -120,14 +115,11 @@ export async function POST(request: NextRequest) {
       .where(eq(user_onboarding.user_id, session.user.id))
 
     if (!existingOnboarding) {
-      return NextResponse.json(
-        { error: 'Onboarding record not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Onboarding record not found' }, { status: 404 })
     }
 
     // Merge step data with existing data
-    const currentStepData = existingOnboarding.step_data as Record<string, unknown> || {}
+    const currentStepData = (existingOnboarding.step_data as Record<string, unknown>) || {}
     const updatedStepData = {
       ...currentStepData,
       [`step_${stepNumber}`]: stepData,
@@ -176,10 +168,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error updating onboarding progress:', error)
-    return NextResponse.json(
-      { error: 'Failed to update onboarding progress' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update onboarding progress' }, { status: 500 })
   }
 }
 
@@ -212,9 +201,6 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error skipping onboarding:', error)
-    return NextResponse.json(
-      { error: 'Failed to skip onboarding' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to skip onboarding' }, { status: 500 })
   }
 }

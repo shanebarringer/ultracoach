@@ -1,14 +1,6 @@
 'use client'
 
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Divider,
-  Skeleton,
-  Tab,
-  Tabs,
-} from '@heroui/react'
+import { Card, CardBody, CardHeader, Divider, Skeleton, Tab, Tabs } from '@heroui/react'
 import {
   BellIcon,
   MessageSquareIcon,
@@ -42,7 +34,7 @@ export default function SettingsPage() {
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
-        
+
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-64">
             <Skeleton className="h-96 w-full" />
@@ -67,9 +59,7 @@ export default function SettingsPage() {
               <h2 className="text-xl font-semibold text-danger-800 mb-2">
                 Failed to Load Settings
               </h2>
-              <p className="text-danger-700">
-                {error}
-              </p>
+              <p className="text-danger-700">{error}</p>
             </div>
           </CardBody>
         </Card>
@@ -142,7 +132,7 @@ export default function SettingsPage() {
             <CardBody className="p-2">
               <Tabs
                 selectedKey={activeTab}
-                onSelectionChange={(key) => setActiveTab(key as string)}
+                onSelectionChange={key => setActiveTab(key as string)}
                 variant="light"
                 classNames={{
                   tabList: 'w-full flex-col',
@@ -150,7 +140,7 @@ export default function SettingsPage() {
                   tabContent: 'group-data-[selected=true]:text-primary',
                 }}
               >
-                {settingsTabs.map((tab) => (
+                {settingsTabs.map(tab => (
                   <Tab
                     key={tab.key}
                     title={
@@ -172,15 +162,11 @@ export default function SettingsPage() {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 {activeTabData?.icon}
-                <h2 className="text-2xl font-semibold">
-                  {activeTabData?.title} Settings
-                </h2>
+                <h2 className="text-2xl font-semibold">{activeTabData?.title} Settings</h2>
               </div>
             </CardHeader>
             <Divider />
-            <CardBody className="pt-6">
-              {activeTabData?.component}
-            </CardBody>
+            <CardBody className="pt-6">{activeTabData?.component}</CardBody>
           </Card>
         </div>
       </div>

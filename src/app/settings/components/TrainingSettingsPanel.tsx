@@ -5,19 +5,19 @@ import {
   Card,
   CardBody,
   CardHeader,
-  CheckboxGroup,
   Checkbox,
+  CheckboxGroup,
   Divider,
   Input,
   Select,
   SelectItem,
   Switch,
 } from '@heroui/react'
-import { TargetIcon, CalendarIcon, ClockIcon } from 'lucide-react'
+import { CalendarIcon, ClockIcon, TargetIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface TrainingSettingsPanelProps {
   settings: UserSettings | null
@@ -50,7 +50,6 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
 
   const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(trainingPrefs)
 
-
   return (
     <div className="space-y-6">
       <Card>
@@ -65,9 +64,12 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
           <Select
             label="Default Workout View"
             selectedKeys={[localSettings.default_workout_view]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
-              setLocalSettings(prev => ({ ...prev, default_workout_view: value as 'calendar' | 'list' | 'timeline' }))
+              setLocalSettings(prev => ({
+                ...prev,
+                default_workout_view: value as 'calendar' | 'list' | 'timeline',
+              }))
             }}
             description="How you prefer to view your training schedule"
           >
@@ -79,19 +81,21 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.show_completed_workouts}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, show_completed_workouts: value }))
               }
             >
               <div>
                 <p className="font-medium">Show Completed Workouts</p>
-                <p className="text-sm text-foreground-500">Display past workouts in your calendar</p>
+                <p className="text-sm text-foreground-500">
+                  Display past workouts in your calendar
+                </p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.show_weather_info}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, show_weather_info: value }))
               }
             >
@@ -116,7 +120,7 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
           <CheckboxGroup
             label="Preferred Training Times"
             value={localSettings.preferred_training_times}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, preferred_training_times: value }))
             }
             description="When do you usually prefer to work out?"
@@ -131,7 +135,7 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
           <CheckboxGroup
             label="Preferred Rest Days"
             value={localSettings.rest_day_preferences}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, rest_day_preferences: value }))
             }
             description="Which days do you prefer for rest or recovery?"
@@ -150,7 +154,7 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
             type="number"
             label="Workout Reminder (minutes)"
             value={localSettings.workout_reminder_time.toString()}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, workout_reminder_time: parseInt(value) || 60 }))
             }
             description="How many minutes before a workout should you be reminded?"
@@ -172,19 +176,21 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.auto_sync_devices}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, auto_sync_devices: value }))
               }
             >
               <div>
                 <p className="font-medium">Auto-Sync Devices</p>
-                <p className="text-sm text-foreground-500">Automatically sync fitness device data</p>
+                <p className="text-sm text-foreground-500">
+                  Automatically sync fitness device data
+                </p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.track_heart_rate}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, track_heart_rate: value }))
               }
             >
@@ -196,21 +202,19 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
 
             <Switch
               isSelected={localSettings.track_cadence}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, track_cadence: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, track_cadence: value }))}
             >
               <div>
                 <p className="font-medium">Track Cadence</p>
-                <p className="text-sm text-foreground-500">Monitor running cadence (steps per minute)</p>
+                <p className="text-sm text-foreground-500">
+                  Monitor running cadence (steps per minute)
+                </p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.track_power}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, track_power: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, track_power: value }))}
             >
               <div>
                 <p className="font-medium">Track Power</p>
@@ -223,11 +227,7 @@ export default function TrainingSettingsPanel({ settings }: TrainingSettingsPane
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Training Settings'}
           </Button>
         </div>

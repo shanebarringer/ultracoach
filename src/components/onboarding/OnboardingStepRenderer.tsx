@@ -5,24 +5,24 @@ import {
   Card,
   CardBody,
   Checkbox,
+  CheckboxGroup,
   Input,
   Select,
   SelectItem,
   Textarea,
-  CheckboxGroup,
 } from '@heroui/react'
 import {
+  ClockIcon,
   HeartIcon,
   MapPinIcon,
+  MountainIcon,
+  RocketIcon,
+  TargetIcon,
   TrophyIcon,
   UsersIcon,
-  TargetIcon,
-  ClockIcon,
-  RocketIcon,
-  MountainIcon,
 } from 'lucide-react'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface OnboardingField {
   name: string
@@ -88,11 +88,11 @@ export default function OnboardingStepRenderer({
       <div>
         <h2 className="text-2xl font-bold mb-2">Welcome to UltraCoach!</h2>
         <p className="text-lg text-foreground-600 max-w-md mx-auto leading-relaxed">
-          Your journey to peak performance starts here. We&apos;ll help you set up your profile 
-          and preferences to create the perfect training experience.
+          Your journey to peak performance starts here. We&apos;ll help you set up your profile and
+          preferences to create the perfect training experience.
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
         <Card className="p-4">
           <CardBody className="text-center">
@@ -101,7 +101,7 @@ export default function OnboardingStepRenderer({
             <p className="text-sm text-foreground-500">Set and track your training objectives</p>
           </CardBody>
         </Card>
-        
+
         <Card className="p-4">
           <CardBody className="text-center">
             <UsersIcon className="w-8 h-8 text-primary mx-auto mb-2" />
@@ -109,7 +109,7 @@ export default function OnboardingStepRenderer({
             <p className="text-sm text-foreground-500">Find coaches or runners to train with</p>
           </CardBody>
         </Card>
-        
+
         <Card className="p-4">
           <CardBody className="text-center">
             <RocketIcon className="w-8 h-8 text-success mx-auto mb-2" />
@@ -133,14 +133,14 @@ export default function OnboardingStepRenderer({
           label="First Name"
           placeholder="Enter your first name"
           value={getString('firstName')}
-          onValueChange={(value) => handleInputChange('firstName', value)}
+          onValueChange={value => handleInputChange('firstName', value)}
         />
-        
+
         <Input
           label="Last Name"
           placeholder="Enter your last name"
           value={getString('lastName')}
-          onValueChange={(value) => handleInputChange('lastName', value)}
+          onValueChange={value => handleInputChange('lastName', value)}
         />
       </div>
 
@@ -150,14 +150,14 @@ export default function OnboardingStepRenderer({
           label="Age"
           placeholder="Your age"
           value={getString('age')}
-          onValueChange={(value) => handleInputChange('age', value)}
+          onValueChange={value => handleInputChange('age', value)}
         />
-        
+
         <Select
           label="Gender"
           placeholder="Select gender"
           selectedKeys={getString('gender') ? [getString('gender')] : []}
-          onSelectionChange={(keys) => {
+          onSelectionChange={keys => {
             const value = Array.from(keys)[0] as string
             handleInputChange('gender', value || '')
           }}
@@ -174,15 +174,15 @@ export default function OnboardingStepRenderer({
           label="Location"
           placeholder="City, State/Country"
           value={getString('location')}
-          onValueChange={(value) => handleInputChange('location', value)}
+          onValueChange={value => handleInputChange('location', value)}
           startContent={<MapPinIcon className="w-4 h-4 text-foreground-400" />}
         />
-        
+
         <Select
           label="Time Zone"
           placeholder="Select your time zone"
           selectedKeys={getString('timeZone') ? [getString('timeZone')] : []}
-          onSelectionChange={(keys) => {
+          onSelectionChange={keys => {
             const value = Array.from(keys)[0] as string
             handleInputChange('timeZone', value || '')
           }}
@@ -208,9 +208,9 @@ export default function OnboardingStepRenderer({
       <div className="space-y-4">
         <Select
           label="Primary Goal"
-          placeholder="What&apos;s your main objective?"
+          placeholder="What's your main objective?"
           selectedKeys={getString('primaryGoal') ? [getString('primaryGoal')] : []}
-          onSelectionChange={(keys) => {
+          onSelectionChange={keys => {
             const value = Array.from(keys)[0] as string
             handleInputChange('primaryGoal', value || '')
           }}
@@ -228,7 +228,7 @@ export default function OnboardingStepRenderer({
           label="Experience Level"
           placeholder="How would you describe your running experience?"
           selectedKeys={getString('experienceLevel') ? [getString('experienceLevel')] : []}
-          onSelectionChange={(keys) => {
+          onSelectionChange={keys => {
             const value = Array.from(keys)[0] as string
             handleInputChange('experienceLevel', value || '')
           }}
@@ -244,7 +244,7 @@ export default function OnboardingStepRenderer({
             label="Current Weekly Miles"
             placeholder="Average miles per week"
             selectedKeys={getString('weeklyMiles') ? [getString('weeklyMiles')] : []}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('weeklyMiles', value || '')
             }}
@@ -260,7 +260,7 @@ export default function OnboardingStepRenderer({
             label="Target Race Distance"
             placeholder="What distance interests you?"
             selectedKeys={getString('targetDistance') ? [getString('targetDistance')] : []}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('targetDistance', value || '')
             }}
@@ -275,9 +275,9 @@ export default function OnboardingStepRenderer({
 
         <Textarea
           label="Additional Goals (Optional)"
-          placeholder="Tell us about any specific goals, challenges, or areas you&apos;d like to focus on..."
+          placeholder="Tell us about any specific goals, challenges, or areas you'd like to focus on..."
           value={getString('additionalGoals')}
-          onValueChange={(value) => handleInputChange('additionalGoals', value)}
+          onValueChange={value => handleInputChange('additionalGoals', value)}
           minRows={3}
         />
       </div>
@@ -295,7 +295,7 @@ export default function OnboardingStepRenderer({
         <CheckboxGroup
           label="Preferred Training Times"
           value={getStringArray('preferredTimes')}
-          onValueChange={(value) => handleInputChange('preferredTimes', value)}
+          onValueChange={value => handleInputChange('preferredTimes', value)}
           orientation="horizontal"
         >
           <Checkbox value="early-morning">Early Morning (5-8 AM)</Checkbox>
@@ -308,7 +308,7 @@ export default function OnboardingStepRenderer({
         <CheckboxGroup
           label="Preferred Terrain"
           value={getStringArray('preferredTerrain')}
-          onValueChange={(value) => handleInputChange('preferredTerrain', value)}
+          onValueChange={value => handleInputChange('preferredTerrain', value)}
           orientation="horizontal"
         >
           <Checkbox value="road">Road</Checkbox>
@@ -322,7 +322,7 @@ export default function OnboardingStepRenderer({
             label="Training Days per Week"
             placeholder="How many days do you want to train?"
             selectedKeys={getString('trainingDays') ? [getString('trainingDays')] : []}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('trainingDays', value || '')
             }}
@@ -338,7 +338,7 @@ export default function OnboardingStepRenderer({
             label="Preferred Units"
             placeholder="Miles or kilometers?"
             selectedKeys={getString('units') ? [getString('units')] : []}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('units', value || '')
             }}
@@ -351,7 +351,7 @@ export default function OnboardingStepRenderer({
         <CheckboxGroup
           label="Areas of Interest (Optional)"
           value={getStringArray('interests')}
-          onValueChange={(value) => handleInputChange('interests', value)}
+          onValueChange={value => handleInputChange('interests', value)}
         >
           <Checkbox value="nutrition">Nutrition guidance</Checkbox>
           <Checkbox value="strength-training">Strength training</Checkbox>
@@ -375,21 +375,23 @@ export default function OnboardingStepRenderer({
         <Card className="p-4 border border-primary-200 bg-primary-50/50">
           <CardBody>
             <p className="text-sm text-foreground-700 mb-4">
-              UltraCoach is more than just training plans - it&apos;s about building connections 
-              that help you succeed. Connect with experienced coaches or fellow runners 
-              who share your goals.
+              UltraCoach is more than just training plans - it&apos;s about building connections
+              that help you succeed. Connect with experienced coaches or fellow runners who share
+              your goals.
             </p>
 
             <CheckboxGroup
-              label="I&apos;m interested in:"
+              label="I'm interested in:"
               value={getStringArray('connectionInterests')}
-              onValueChange={(value) => handleInputChange('connectionInterests', value)}
+              onValueChange={value => handleInputChange('connectionInterests', value)}
             >
               <Checkbox value="find-coach">Finding a coach to guide my training</Checkbox>
               <Checkbox value="training-partners">Connecting with training partners</Checkbox>
               <Checkbox value="mentor-others">Helping and mentoring other runners</Checkbox>
               <Checkbox value="join-groups">Joining training groups or challenges</Checkbox>
-              <Checkbox value="share-progress">Sharing progress and celebrating achievements</Checkbox>
+              <Checkbox value="share-progress">
+                Sharing progress and celebrating achievements
+              </Checkbox>
             </CheckboxGroup>
           </CardBody>
         </Card>
@@ -399,7 +401,7 @@ export default function OnboardingStepRenderer({
             label="Tell us about yourself (Optional)"
             placeholder="Share a bit about your running journey, what motivates you, or what kind of support you're looking for..."
             value={getString('bio')}
-            onValueChange={(value) => handleInputChange('bio', value)}
+            onValueChange={value => handleInputChange('bio', value)}
             minRows={3}
             description="This will help others connect with you and understand your goals."
           />
@@ -411,8 +413,8 @@ export default function OnboardingStepRenderer({
             <div className="text-sm">
               <p className="font-medium text-success-800 mb-1">Privacy & Safety</p>
               <p className="text-success-700">
-                Your profile information will only be visible to verified coaches and runners. 
-                You control who can message you and what information you share.
+                Your profile information will only be visible to verified coaches and runners. You
+                control who can message you and what information you share.
               </p>
             </div>
           </div>
@@ -424,12 +426,12 @@ export default function OnboardingStepRenderer({
   const renderCompletionStep = () => (
     <div className="text-center space-y-6 py-8">
       <div className="text-6xl mb-4">🎉</div>
-      
+
       <div>
         <h2 className="text-2xl font-bold mb-2">You&apos;re All Set!</h2>
         <p className="text-lg text-foreground-600 max-w-md mx-auto leading-relaxed">
-          Welcome to the UltraCoach community! Your profile is ready, and we&apos;re excited 
-          to help you achieve your ultramarathon goals.
+          Welcome to the UltraCoach community! Your profile is ready, and we&apos;re excited to help
+          you achieve your ultramarathon goals.
         </p>
       </div>
 
@@ -443,7 +445,7 @@ export default function OnboardingStepRenderer({
             </p>
           </CardBody>
         </Card>
-        
+
         <Card className="p-4 bg-gradient-to-br from-success-50 to-primary-50 border-success-200">
           <CardBody className="text-center">
             <UsersIcon className="w-8 h-8 text-success mx-auto mb-2" />
@@ -483,14 +485,10 @@ export default function OnboardingStepRenderer({
   return (
     <div>
       {renderStepContent()}
-      
+
       {step.step_type !== 'welcome' && step.step_type !== 'completion' && (
         <div className="mt-8 pt-4 border-t border-default-200">
-          <Button
-            color="primary"
-            onPress={handleSubmit}
-            className="w-full md:w-auto"
-          >
+          <Button color="primary" onPress={handleSubmit} className="w-full md:w-auto">
             Continue
           </Button>
         </div>

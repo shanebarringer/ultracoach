@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
+
+import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
@@ -46,10 +47,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error fetching user settings:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch user settings' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch user settings' }, { status: 500 })
   }
 }
 
@@ -153,10 +151,7 @@ export async function PUT(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error updating user settings:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user settings' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update user settings' }, { status: 500 })
   }
 }
 
@@ -175,10 +170,7 @@ export async function PATCH(request: NextRequest) {
     const { section, settings } = body
 
     if (!section || !settings) {
-      return NextResponse.json(
-        { error: 'Section and settings are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Section and settings are required' }, { status: 400 })
     }
 
     // Validate section name
@@ -213,15 +205,14 @@ export async function PATCH(request: NextRequest) {
         [section]: settings,
       }
 
-      const [newSettings] = await db
-        .insert(user_settings)
-        .values(newSettingsData)
-        .returning()
+      const [newSettings] = await db.insert(user_settings).values(newSettingsData).returning()
 
       updatedSettings = newSettings
     } else {
       // Merge with existing settings for the section
-      const currentSectionSettings = (existingSettings[section as keyof typeof existingSettings] as Record<string, unknown>) || {}
+      const currentSectionSettings =
+        (existingSettings[section as keyof typeof existingSettings] as Record<string, unknown>) ||
+        {}
       const mergedSettings = { ...currentSectionSettings, ...settings }
 
       const [updated] = await db
@@ -247,9 +238,6 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error updating user settings section:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user settings section' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update user settings section' }, { status: 500 })
   }
 }

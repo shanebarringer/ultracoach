@@ -1,19 +1,11 @@
 'use client'
 
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Divider,
-  Select,
-  SelectItem,
-} from '@heroui/react'
-import { RulerIcon, ThermometerIcon, ClockIcon, CalendarIcon } from 'lucide-react'
+import { Button, Card, CardBody, CardHeader, Divider, Select, SelectItem } from '@heroui/react'
+import { CalendarIcon, ClockIcon, RulerIcon, ThermometerIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface UnitSettingsPanelProps {
   settings: UserSettings | null
@@ -58,7 +50,7 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
             <Select
               label="Distance Units"
               selectedKeys={[localSettings.distance]}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
                 setLocalSettings(prev => ({ ...prev, distance: value as 'miles' | 'kilometers' }))
               }}
@@ -71,7 +63,7 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
             <Select
               label="Elevation Units"
               selectedKeys={[localSettings.elevation]}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
                 setLocalSettings(prev => ({ ...prev, elevation: value as 'feet' | 'meters' }))
               }}
@@ -85,9 +77,12 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
           <Select
             label="Pace Format"
             selectedKeys={[localSettings.pace_format]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
-              setLocalSettings(prev => ({ ...prev, pace_format: value as 'min_per_mile' | 'min_per_km' | 'mph' | 'kmh' }))
+              setLocalSettings(prev => ({
+                ...prev,
+                pace_format: value as 'min_per_mile' | 'min_per_km' | 'mph' | 'kmh',
+              }))
             }}
             description="How to display running pace and speed"
           >
@@ -112,9 +107,12 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
           <Select
             label="Temperature Units"
             selectedKeys={[localSettings.temperature]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
-              setLocalSettings(prev => ({ ...prev, temperature: value as 'fahrenheit' | 'celsius' }))
+              setLocalSettings(prev => ({
+                ...prev,
+                temperature: value as 'fahrenheit' | 'celsius',
+              }))
             }}
             description="Unit for weather and temperature displays"
           >
@@ -138,7 +136,7 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
             <Select
               label="Time Format"
               selectedKeys={[localSettings.time_format]}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
                 setLocalSettings(prev => ({ ...prev, time_format: value as '12h' | '24h' }))
               }}
@@ -152,9 +150,12 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
             <Select
               label="Date Format"
               selectedKeys={[localSettings.date_format]}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
-                setLocalSettings(prev => ({ ...prev, date_format: value as 'MM/dd/yyyy' | 'dd/MM/yyyy' | 'yyyy-MM-dd' }))
+                setLocalSettings(prev => ({
+                  ...prev,
+                  date_format: value as 'MM/dd/yyyy' | 'dd/MM/yyyy' | 'yyyy-MM-dd',
+                }))
               }}
               description="How dates are displayed throughout the app"
               startContent={<CalendarIcon className="w-4 h-4" />}
@@ -178,18 +179,29 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
             <div>
               <p className="font-medium text-foreground-700 mb-2">Distance & Pace:</p>
               <p>• 10 {localSettings.distance === 'miles' ? 'miles' : 'kilometers'} run</p>
-              <p>• {localSettings.pace_format === 'min_per_mile' ? '8:30/mi pace' : 
-                      localSettings.pace_format === 'min_per_km' ? '5:17/km pace' :
-                      localSettings.pace_format === 'mph' ? '7.1 mph speed' :
-                      '11.4 km/h speed'}</p>
+              <p>
+                •{' '}
+                {localSettings.pace_format === 'min_per_mile'
+                  ? '8:30/mi pace'
+                  : localSettings.pace_format === 'min_per_km'
+                    ? '5:17/km pace'
+                    : localSettings.pace_format === 'mph'
+                      ? '7.1 mph speed'
+                      : '11.4 km/h speed'}
+              </p>
               <p>• 1,200 {localSettings.elevation === 'feet' ? 'ft' : 'm'} elevation gain</p>
             </div>
             <div>
               <p className="font-medium text-foreground-700 mb-2">Time & Weather:</p>
               <p>• Workout at {localSettings.time_format === '12h' ? '6:30 AM' : '06:30'}</p>
-              <p>• Date: {localSettings.date_format === 'MM/dd/yyyy' ? '12/25/2024' :
-                          localSettings.date_format === 'dd/MM/yyyy' ? '25/12/2024' :
-                          '2024-12-25'}</p>
+              <p>
+                • Date:{' '}
+                {localSettings.date_format === 'MM/dd/yyyy'
+                  ? '12/25/2024'
+                  : localSettings.date_format === 'dd/MM/yyyy'
+                    ? '25/12/2024'
+                    : '2024-12-25'}
+              </p>
               <p>• Temperature: 45{localSettings.temperature === 'fahrenheit' ? '°F' : '°C'}</p>
             </div>
           </div>
@@ -199,11 +211,7 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
       {/* Save Button */}
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Unit Settings'}
           </Button>
         </div>

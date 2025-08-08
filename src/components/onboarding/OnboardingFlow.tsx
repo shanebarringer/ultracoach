@@ -5,12 +5,12 @@ import {
   Card,
   CardBody,
   CardHeader,
-  Progress,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Progress,
 } from '@heroui/react'
 import {
   ArrowLeftIcon,
@@ -83,7 +83,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     try {
       setLoading(true)
       const response = await fetch('/api/onboarding')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch onboarding data')
       }
@@ -116,7 +116,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     if (!onboarding || !currentStepData) return
 
     setSaving(true)
-    
+
     try {
       const response = await fetch('/api/onboarding', {
         method: 'POST',
@@ -135,16 +135,13 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       }
 
       const result = await response.json()
-      
+
       if (moveToNext) {
         // Move to next step
-        const nextStepNumber = Math.min(
-          currentStepData.step_number + 1,
-          onboarding.total_steps
-        )
-        
+        const nextStepNumber = Math.min(currentStepData.step_number + 1, onboarding.total_steps)
+
         const nextStep = steps.find(s => s.step_number === nextStepNumber)
-        
+
         if (nextStep) {
           setCurrentStepData(nextStep)
           setStepAnswers({}) // Reset answers for next step
@@ -188,8 +185,11 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
         throw new Error('Failed to complete onboarding')
       }
 
-      toast.success('🎉 Welcome to UltraCoach!', 'Your onboarding is complete. Let&apos;s start training!')
-      
+      toast.success(
+        '🎉 Welcome to UltraCoach!',
+        'Your onboarding is complete. Let&apos;s start training!'
+      )
+
       logger.info('Onboarding completed successfully')
       onComplete()
     } catch (error) {
@@ -213,7 +213,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       }
 
       toast.success('⏭️ Onboarding Skipped', 'You can always complete setup later in your profile.')
-      
+
       logger.info('Onboarding skipped')
       setShowSkipConfirm(false)
       onComplete()
@@ -230,14 +230,14 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
     const prevStepNumber = currentStepData.step_number - 1
     const prevStep = steps.find(s => s.step_number === prevStepNumber)
-    
+
     if (prevStep) {
       setCurrentStepData(prevStep)
-      
+
       // Load previous step answers
       const prevStepKey = `step_${prevStepNumber}`
-      const prevStepData = onboarding.step_data as Record<string, unknown> || {}
-      const prevAnswers = prevStepData[prevStepKey] as Record<string, unknown> || {}
+      const prevStepData = (onboarding.step_data as Record<string, unknown>) || {}
+      const prevAnswers = (prevStepData[prevStepKey] as Record<string, unknown>) || {}
       setStepAnswers(prevAnswers)
     }
   }
@@ -248,7 +248,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
   const isFirstStep = currentStepData?.step_number === 1
   const isLastStep = currentStepData?.step_number === onboarding?.total_steps
-  const progressPercentage = onboarding ? (currentStepData?.step_number || 1) / onboarding.total_steps * 100 : 0
+  const progressPercentage = onboarding
+    ? ((currentStepData?.step_number || 1) / onboarding.total_steps) * 100
+    : 0
 
   if (loading) {
     return (
@@ -267,11 +269,11 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
   return (
     <>
-      <Modal 
-        isOpen={isOpen} 
-        onClose={onClose} 
-        size="3xl" 
-        hideCloseButton 
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="3xl"
+        hideCloseButton
         isDismissable={false}
         scrollBehavior="inside"
       >
@@ -294,20 +296,22 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
                 <XIcon className="w-5 h-5" />
               </Button>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-foreground-500">
-                <span>Step {currentStepData?.step_number || 1} of {onboarding?.total_steps || 5}</span>
+                <span>
+                  Step {currentStepData?.step_number || 1} of {onboarding?.total_steps || 5}
+                </span>
                 <span>{Math.round(progressPercentage)}% Complete</span>
               </div>
-              <Progress 
-                value={progressPercentage} 
+              <Progress
+                value={progressPercentage}
                 color="primary"
                 classNames={{
                   track: 'drop-shadow-md border border-default',
                   indicator: 'bg-gradient-to-r from-primary-500 to-secondary-500',
                   label: 'tracking-wider font-medium text-default-600',
-                  value: 'text-foreground/60'
+                  value: 'text-foreground/60',
                 }}
               />
             </div>
@@ -327,7 +331,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
                     step={currentStepData}
                     answers={stepAnswers}
                     onChange={handleStepDataChange}
-                    onSubmit={(data) => saveStepProgress(data, true)}
+                    onSubmit={data => saveStepProgress(data, true)}
                   />
                 </CardBody>
               </Card>
@@ -353,7 +357,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
                 >
                   Skip
                 </Button>
-                
+
                 {isLastStep ? (
                   <Button
                     color="success"
@@ -385,27 +389,19 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
           <ModalHeader>
             <h3 className="text-lg font-semibold">Skip Onboarding?</h3>
           </ModalHeader>
-          
+
           <ModalBody>
             <p className="text-foreground-700">
-              Are you sure you want to skip the setup process? You can always complete it later 
-              in your profile settings, but it helps us provide you with a better experience.
+              Are you sure you want to skip the setup process? You can always complete it later in
+              your profile settings, but it helps us provide you with a better experience.
             </p>
           </ModalBody>
-          
+
           <ModalFooter>
-            <Button 
-              variant="flat" 
-              onPress={() => setShowSkipConfirm(false)}
-            >
+            <Button variant="flat" onPress={() => setShowSkipConfirm(false)}>
               Continue Setup
             </Button>
-            <Button
-              color="warning"
-              variant="flat"
-              onPress={skipOnboarding}
-              isLoading={saving}
-            >
+            <Button color="warning" variant="flat" onPress={skipOnboarding} isLoading={saving}>
               {saving ? 'Skipping...' : 'Skip for Now'}
             </Button>
           </ModalFooter>

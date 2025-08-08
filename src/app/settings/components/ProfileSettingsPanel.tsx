@@ -11,7 +11,7 @@ import {
   SelectItem,
   Textarea,
 } from '@heroui/react'
-import { UserIcon, MailIcon, MapPinIcon } from 'lucide-react'
+import { MailIcon, MapPinIcon, UserIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
@@ -48,8 +48,9 @@ export default function ProfileSettingsPanel() {
     }
   }
 
-  const hasChanges = profileData.fullName !== (session?.user?.name || '') ||
-                    profileData.email !== (session?.user?.email || '')
+  const hasChanges =
+    profileData.fullName !== (session?.user?.name || '') ||
+    profileData.email !== (session?.user?.email || '')
 
   return (
     <div className="space-y-6">
@@ -66,9 +67,7 @@ export default function ProfileSettingsPanel() {
             <Input
               label="Full Name"
               value={profileData.fullName}
-              onValueChange={(value) => 
-                setProfileData(prev => ({ ...prev, fullName: value }))
-              }
+              onValueChange={value => setProfileData(prev => ({ ...prev, fullName: value }))}
               startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="Enter your full name"
             />
@@ -77,9 +76,7 @@ export default function ProfileSettingsPanel() {
               label="Email Address"
               type="email"
               value={profileData.email}
-              onValueChange={(value) => 
-                setProfileData(prev => ({ ...prev, email: value }))
-              }
+              onValueChange={value => setProfileData(prev => ({ ...prev, email: value }))}
               startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="your@email.com"
               description="Used for account access and notifications"
@@ -90,9 +87,7 @@ export default function ProfileSettingsPanel() {
             <Input
               label="Location"
               value={profileData.location}
-              onValueChange={(value) => 
-                setProfileData(prev => ({ ...prev, location: value }))
-              }
+              onValueChange={value => setProfileData(prev => ({ ...prev, location: value }))}
               startContent={<MapPinIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="City, State/Country"
               description="Help others find training partners nearby"
@@ -101,7 +96,7 @@ export default function ProfileSettingsPanel() {
             <Select
               label="Time Zone"
               selectedKeys={profileData.timeZone ? [profileData.timeZone] : []}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
                 setProfileData(prev => ({ ...prev, timeZone: value || '' }))
               }}
@@ -119,9 +114,7 @@ export default function ProfileSettingsPanel() {
           <Textarea
             label="Bio"
             value={profileData.bio}
-            onValueChange={(value) => 
-              setProfileData(prev => ({ ...prev, bio: value }))
-            }
+            onValueChange={value => setProfileData(prev => ({ ...prev, bio: value }))}
             placeholder="Tell others about your running journey, goals, or what motivates you..."
             description="This helps coaches and other runners connect with you"
             minRows={3}
@@ -166,11 +159,7 @@ export default function ProfileSettingsPanel() {
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Profile'}
           </Button>
         </div>

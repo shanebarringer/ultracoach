@@ -1,5 +1,6 @@
+import { and, eq, or } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, or } from 'drizzle-orm'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
@@ -34,14 +35,11 @@ export async function GET(request: NextRequest) {
     const roleFilter = searchParams.get('role') as 'runner' | 'coach' | null
 
     const baseCondition = eq(onboarding_steps.is_active, true)
-    
+
     const whereCondition = roleFilter
       ? and(
           baseCondition,
-          or(
-            eq(onboarding_steps.role, roleFilter),
-            eq(onboarding_steps.role, 'both')
-          )
+          or(eq(onboarding_steps.role, roleFilter), eq(onboarding_steps.role, 'both'))
         )
       : baseCondition
 
@@ -54,10 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ steps })
   } catch (error) {
     logger.error('Error fetching onboarding steps:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch onboarding steps' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch onboarding steps' }, { status: 500 })
   }
 }
 
@@ -93,8 +88,8 @@ export async function POST(request: NextRequest) {
 
     if (!step_number || !role || !title || !description || !step_type) {
       return NextResponse.json(
-        { 
-          error: 'Missing required fields: step_number, role, title, description, step_type' 
+        {
+          error: 'Missing required fields: step_number, role, title, description, step_type',
         },
         { status: 400 }
       )
@@ -122,9 +117,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error creating onboarding step:', error)
-    return NextResponse.json(
-      { error: 'Failed to create onboarding step' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create onboarding step' }, { status: 500 })
   }
 }

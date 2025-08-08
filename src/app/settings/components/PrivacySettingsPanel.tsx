@@ -10,11 +10,11 @@ import {
   SelectItem,
   Switch,
 } from '@heroui/react'
-import { ShieldIcon, EyeIcon, UsersIcon } from 'lucide-react'
+import { EyeIcon, ShieldIcon, UsersIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface PrivacySettingsPanelProps {
   settings: UserSettings | null
@@ -59,9 +59,12 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
           <Select
             label="Who can see your profile"
             selectedKeys={[localSettings.profile_visibility]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
-              setLocalSettings(prev => ({ ...prev, profile_visibility: value as 'public' | 'coaches_only' | 'private' }))
+              setLocalSettings(prev => ({
+                ...prev,
+                profile_visibility: value as 'public' | 'coaches_only' | 'private',
+              }))
             }}
             description="Control who can view your profile information"
           >
@@ -73,19 +76,21 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.show_activity_stats}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, show_activity_stats: value }))
               }
             >
               <div>
                 <p className="font-medium">Show Activity Stats</p>
-                <p className="text-sm text-foreground-500">Display your running metrics and progress</p>
+                <p className="text-sm text-foreground-500">
+                  Display your running metrics and progress
+                </p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.show_training_calendar}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, show_training_calendar: value }))
               }
             >
@@ -97,9 +102,7 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
 
             <Switch
               isSelected={localSettings.show_location}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, show_location: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, show_location: value }))}
             >
               <div>
                 <p className="font-medium">Show Location</p>
@@ -109,9 +112,7 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
 
             <Switch
               isSelected={localSettings.show_age}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, show_age: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, show_age: value }))}
             >
               <div>
                 <p className="font-medium">Show Age</p>
@@ -134,19 +135,21 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.allow_coach_invitations}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, allow_coach_invitations: value }))
               }
             >
               <div>
                 <p className="font-medium">Allow Coach Invitations</p>
-                <p className="text-sm text-foreground-500">Let coaches send you training invitations</p>
+                <p className="text-sm text-foreground-500">
+                  Let coaches send you training invitations
+                </p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.allow_runner_connections}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, allow_runner_connections: value }))
               }
             >
@@ -170,7 +173,7 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
         <CardBody>
           <Switch
             isSelected={localSettings.data_sharing_analytics}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, data_sharing_analytics: value }))
             }
           >
@@ -185,8 +188,8 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
           {!localSettings.data_sharing_analytics && (
             <div className="mt-3 p-3 bg-info-50 border border-info-200 rounded-lg">
               <p className="text-sm text-info-700">
-                Disabling analytics helps protect your privacy but may limit our ability to 
-                improve features and fix issues you encounter.
+                Disabling analytics helps protect your privacy but may limit our ability to improve
+                features and fix issues you encounter.
               </p>
             </div>
           )}
@@ -195,11 +198,7 @@ export default function PrivacySettingsPanel({ settings }: PrivacySettingsPanelP
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Privacy Settings'}
           </Button>
         </div>

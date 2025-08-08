@@ -1,19 +1,11 @@
 'use client'
 
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Divider,
-  Input,
-  Switch,
-} from '@heroui/react'
-import { MessageSquareIcon, BellOffIcon, VolumeXIcon } from 'lucide-react'
+import { Button, Card, CardBody, CardHeader, Divider, Input, Switch } from '@heroui/react'
+import { BellOffIcon, MessageSquareIcon, VolumeXIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface CommunicationSettingsPanelProps {
   settings: UserSettings | null
@@ -58,7 +50,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.message_sound_enabled}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, message_sound_enabled: value }))
               }
             >
@@ -70,7 +62,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
 
             <Switch
               isSelected={localSettings.typing_indicators_enabled}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, typing_indicators_enabled: value }))
               }
             >
@@ -94,7 +86,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
         <CardBody className="space-y-4">
           <Switch
             isSelected={localSettings.quiet_hours_enabled}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, quiet_hours_enabled: value }))
             }
           >
@@ -113,16 +105,16 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
                   type="time"
                   label="Quiet Hours Start"
                   value={localSettings.quiet_hours_start}
-                  onValueChange={(value) => 
+                  onValueChange={value =>
                     setLocalSettings(prev => ({ ...prev, quiet_hours_start: value }))
                   }
                 />
-                
+
                 <Input
                   type="time"
                   label="Quiet Hours End"
                   value={localSettings.quiet_hours_end}
-                  onValueChange={(value) => 
+                  onValueChange={value =>
                     setLocalSettings(prev => ({ ...prev, quiet_hours_end: value }))
                   }
                 />
@@ -130,7 +122,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
 
               <Switch
                 isSelected={localSettings.weekend_quiet_mode}
-                onValueChange={(value) => 
+                onValueChange={value =>
                   setLocalSettings(prev => ({ ...prev, weekend_quiet_mode: value }))
                 }
               >
@@ -157,7 +149,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
         <CardBody className="space-y-4">
           <Switch
             isSelected={localSettings.auto_responses_enabled}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, auto_responses_enabled: value }))
             }
           >
@@ -174,7 +166,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
               label="Auto-Response Message"
               placeholder="Thanks for your message. I'll get back to you soon!"
               value={localSettings.auto_response_message}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, auto_response_message: value }))
               }
               description="This message will be sent automatically to new conversations"
@@ -186,11 +178,7 @@ export default function CommunicationSettingsPanel({ settings }: CommunicationSe
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Communication Settings'}
           </Button>
         </div>

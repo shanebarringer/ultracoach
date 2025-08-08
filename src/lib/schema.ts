@@ -336,10 +336,10 @@ export const onboarding_steps = pgTable('onboarding_steps', {
   role: text('role', { enum: ['runner', 'coach', 'both'] }).notNull(),
   title: text('title').notNull(),
   description: text('description').notNull(),
-  step_type: text('step_type', { 
-    enum: ['welcome', 'profile', 'preferences', 'goals', 'connections', 'completion'] 
+  step_type: text('step_type', {
+    enum: ['welcome', 'profile', 'preferences', 'goals', 'connections', 'completion'],
   }).notNull(),
-  fields: json('fields').$defaultFn(() => ([])), // Form fields configuration
+  fields: json('fields').$defaultFn(() => []), // Form fields configuration
   is_required: boolean('is_required').default(true).notNull(),
   is_active: boolean('is_active').default(true).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
@@ -378,7 +378,7 @@ export const user_settings = pgTable('user_settings', {
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' })
     .unique(),
-  
+
   // Notification Preferences
   notification_preferences: json('notification_preferences').$defaultFn(() => ({
     // In-app notifications
@@ -388,8 +388,8 @@ export const user_settings = pgTable('user_settings', {
     races: true,
     reminders: true,
     system_updates: true,
-    
-    // Email notifications  
+
+    // Email notifications
     email_enabled: false,
     email_frequency: 'daily', // 'immediate', 'daily', 'weekly', 'never'
     email_messages: false,
@@ -398,24 +398,24 @@ export const user_settings = pgTable('user_settings', {
     email_races: false,
     email_reminders: false,
     email_weekly_summary: false,
-    
+
     // Push notifications (for future mobile app)
     push_enabled: false,
     push_messages: false,
     push_workouts: false,
     push_reminders: false,
   })),
-  
+
   // Display Preferences
   display_preferences: json('display_preferences').$defaultFn(() => ({
     theme: 'system', // 'light', 'dark', 'system'
-    density: 'comfortable', // 'compact', 'comfortable', 'spacious'  
+    density: 'comfortable', // 'compact', 'comfortable', 'spacious'
     sidebar_collapsed: false,
     show_tips: true,
     animations_enabled: true,
     reduced_motion: false,
   })),
-  
+
   // Unit Preferences
   unit_preferences: json('unit_preferences').$defaultFn(() => ({
     distance: 'miles', // 'miles', 'kilometers'
@@ -425,7 +425,7 @@ export const user_settings = pgTable('user_settings', {
     time_format: '12h', // '12h', '24h'
     date_format: 'MM/dd/yyyy', // 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd'
   })),
-  
+
   // Privacy Settings
   privacy_settings: json('privacy_settings').$defaultFn(() => ({
     profile_visibility: 'coaches_only', // 'public', 'coaches_only', 'private'
@@ -437,7 +437,7 @@ export const user_settings = pgTable('user_settings', {
     show_age: true,
     data_sharing_analytics: true,
   })),
-  
+
   // Communication Settings
   communication_settings: json('communication_settings').$defaultFn(() => ({
     auto_responses_enabled: false,
@@ -449,7 +449,7 @@ export const user_settings = pgTable('user_settings', {
     message_sound_enabled: true,
     typing_indicators_enabled: true,
   })),
-  
+
   // Workout & Training Preferences
   training_preferences: json('training_preferences').$defaultFn(() => ({
     default_workout_view: 'calendar', // 'calendar', 'list', 'timeline'
@@ -463,7 +463,7 @@ export const user_settings = pgTable('user_settings', {
     track_cadence: false,
     track_power: false,
   })),
-  
+
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })

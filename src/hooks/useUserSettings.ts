@@ -16,8 +16,8 @@ export interface NotificationPreferences extends Record<string, unknown> {
   races: boolean
   reminders: boolean
   system_updates: boolean
-  
-  // Email notifications  
+
+  // Email notifications
   email_enabled: boolean
   email_frequency: 'immediate' | 'daily' | 'weekly' | 'never'
   email_messages: boolean
@@ -26,7 +26,7 @@ export interface NotificationPreferences extends Record<string, unknown> {
   email_races: boolean
   email_reminders: boolean
   email_weekly_summary: boolean
-  
+
   // Push notifications (for future mobile app)
   push_enabled: boolean
   push_messages: boolean
@@ -105,7 +105,10 @@ interface UseUserSettingsReturn {
   loading: boolean
   error: string | null
   updateSettings: (settingsUpdate: Partial<UserSettings>) => Promise<boolean>
-  updateSettingsSection: (section: keyof UserSettings, sectionSettings: Record<string, unknown>) => Promise<boolean>
+  updateSettingsSection: (
+    section: keyof UserSettings,
+    sectionSettings: Record<string, unknown>
+  ) => Promise<boolean>
   refreshSettings: () => Promise<void>
 }
 
@@ -118,19 +121,19 @@ export function useUserSettings(): UseUserSettingsReturn {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/settings')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch user settings')
       }
-      
+
       const data = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch user settings')
       }
-      
+
       setSettings(data.settings)
       logger.info('User settings fetched successfully')
     } catch (err) {
@@ -148,85 +151,91 @@ export function useUserSettings(): UseUserSettingsReturn {
     fetchSettings()
   }, [fetchSettings])
 
-  const updateSettings = useCallback(async (settingsUpdate: Partial<UserSettings>): Promise<boolean> => {
-    try {
-      setError(null)
-      
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settingsUpdate),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update user settings')
-      }
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to update user settings')
-      }
-      
-      setSettings(data.settings)
-      logger.info('User settings updated successfully')
-      toast.success('✅ Settings Updated', 'Your preferences have been saved.')
-      
-      return true
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error occurred'
-      logger.error('Error updating user settings:', err)
-      setError(message)
-      toast.error('❌ Update Failed', 'Failed to save your settings. Please try again.')
-      
-      return false
-    }
-  }, [])
+  const updateSettings = useCallback(
+    async (settingsUpdate: Partial<UserSettings>): Promise<boolean> => {
+      try {
+        setError(null)
 
-  const updateSettingsSection = useCallback(async (
-    section: keyof UserSettings, 
-    sectionSettings: Record<string, unknown>
-  ): Promise<boolean> => {
-    try {
-      setError(null)
-      
-      const response = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          section,
-          settings: sectionSettings,
-        }),
-      })
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update ${section}`)
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settingsUpdate),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update user settings')
+        }
+
+        const data = await response.json()
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to update user settings')
+        }
+
+        setSettings(data.settings)
+        logger.info('User settings updated successfully')
+        toast.success('✅ Settings Updated', 'Your preferences have been saved.')
+
+        return true
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error occurred'
+        logger.error('Error updating user settings:', err)
+        setError(message)
+        toast.error('❌ Update Failed', 'Failed to save your settings. Please try again.')
+
+        return false
       }
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        throw new Error(data.error || `Failed to update ${section}`)
+    },
+    []
+  )
+
+  const updateSettingsSection = useCallback(
+    async (
+      section: keyof UserSettings,
+      sectionSettings: Record<string, unknown>
+    ): Promise<boolean> => {
+      try {
+        setError(null)
+
+        const response = await fetch('/api/settings', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            section,
+            settings: sectionSettings,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to update ${section}`)
+        }
+
+        const data = await response.json()
+
+        if (!data.success) {
+          throw new Error(data.error || `Failed to update ${section}`)
+        }
+
+        setSettings(data.settings)
+        logger.info(`User settings section ${section} updated successfully`)
+        toast.success('✅ Settings Updated', 'Your preferences have been saved.')
+
+        return true
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error occurred'
+        logger.error(`Error updating user settings section ${section}:`, err)
+        setError(message)
+        toast.error('❌ Update Failed', `Failed to save ${section}. Please try again.`)
+
+        return false
       }
-      
-      setSettings(data.settings)
-      logger.info(`User settings section ${section} updated successfully`)
-      toast.success('✅ Settings Updated', 'Your preferences have been saved.')
-      
-      return true
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error occurred'
-      logger.error(`Error updating user settings section ${section}:`, err)
-      setError(message)
-      toast.error('❌ Update Failed', `Failed to save ${section}. Please try again.`)
-      
-      return false
-    }
-  }, [])
+    },
+    []
+  )
 
   const refreshSettings = useCallback(async () => {
     await fetchSettings()

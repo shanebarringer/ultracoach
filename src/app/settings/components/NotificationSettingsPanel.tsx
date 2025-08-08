@@ -15,7 +15,7 @@ import { BellIcon, MailIcon, SmartphoneIcon } from 'lucide-react'
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface NotificationSettingsPanelProps {
   settings: UserSettings | null
@@ -33,8 +33,8 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
     races: true,
     reminders: true,
     system_updates: true,
-    
-    // Email notifications  
+
+    // Email notifications
     email_enabled: false,
     email_frequency: 'daily',
     email_messages: false,
@@ -43,7 +43,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
     email_races: false,
     email_reminders: false,
     email_weekly_summary: false,
-    
+
     // Push notifications (for future mobile app)
     push_enabled: false,
     push_messages: false,
@@ -76,9 +76,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Switch
               isSelected={localSettings.messages}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, messages: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, messages: value }))}
             >
               <div>
                 <p className="font-medium">New Messages</p>
@@ -90,9 +88,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
             <Switch
               isSelected={localSettings.workouts}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, workouts: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, workouts: value }))}
             >
               <div>
                 <p className="font-medium">Workout Updates</p>
@@ -104,7 +100,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
             <Switch
               isSelected={localSettings.training_plans}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, training_plans: value }))
               }
             >
@@ -118,9 +114,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
             <Switch
               isSelected={localSettings.races}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, races: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, races: value }))}
             >
               <div>
                 <p className="font-medium">Race Events</p>
@@ -132,21 +126,17 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
             <Switch
               isSelected={localSettings.reminders}
-              onValueChange={(value) => 
-                setLocalSettings(prev => ({ ...prev, reminders: value }))
-              }
+              onValueChange={value => setLocalSettings(prev => ({ ...prev, reminders: value }))}
             >
               <div>
                 <p className="font-medium">Workout Reminders</p>
-                <p className="text-sm text-foreground-500">
-                  Reminders about scheduled workouts
-                </p>
+                <p className="text-sm text-foreground-500">Reminders about scheduled workouts</p>
               </div>
             </Switch>
 
             <Switch
               isSelected={localSettings.system_updates}
-              onValueChange={(value) => 
+              onValueChange={value =>
                 setLocalSettings(prev => ({ ...prev, system_updates: value }))
               }
             >
@@ -173,9 +163,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
         <CardBody className="space-y-4">
           <Switch
             isSelected={localSettings.email_enabled}
-            onValueChange={(value) => 
-              setLocalSettings(prev => ({ ...prev, email_enabled: value }))
-            }
+            onValueChange={value => setLocalSettings(prev => ({ ...prev, email_enabled: value }))}
           >
             <div>
               <p className="font-medium">Enable Email Notifications</p>
@@ -190,9 +178,12 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
               <Select
                 label="Email Frequency"
                 selectedKeys={[localSettings.email_frequency]}
-                onSelectionChange={(keys) => {
+                onSelectionChange={keys => {
                   const value = Array.from(keys)[0] as string
-                  setLocalSettings(prev => ({ ...prev, email_frequency: value as 'immediate' | 'daily' | 'weekly' | 'never' }))
+                  setLocalSettings(prev => ({
+                    ...prev,
+                    email_frequency: value as 'immediate' | 'daily' | 'weekly' | 'never',
+                  }))
                 }}
                 description="How often you want to receive email digests"
               >
@@ -206,11 +197,11 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
                 <p className="text-sm font-medium text-foreground-700">
                   What to include in email notifications:
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Checkbox
                     isSelected={localSettings.email_messages}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_messages: value }))
                     }
                   >
@@ -219,7 +210,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
                   <Checkbox
                     isSelected={localSettings.email_workouts}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_workouts: value }))
                     }
                   >
@@ -228,7 +219,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
                   <Checkbox
                     isSelected={localSettings.email_training_plans}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_training_plans: value }))
                     }
                   >
@@ -237,7 +228,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
                   <Checkbox
                     isSelected={localSettings.email_races}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_races: value }))
                     }
                   >
@@ -246,7 +237,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
                   <Checkbox
                     isSelected={localSettings.email_reminders}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_reminders: value }))
                     }
                   >
@@ -255,7 +246,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
 
                   <Checkbox
                     isSelected={localSettings.email_weekly_summary}
-                    onValueChange={(value) => 
+                    onValueChange={value =>
                       setLocalSettings(prev => ({ ...prev, email_weekly_summary: value }))
                     }
                   >
@@ -282,8 +273,8 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
         <Divider />
         <CardBody>
           <p className="text-foreground-500 text-sm">
-            Push notifications will be available when the UltraCoach mobile app launches.
-            Configure your preferences here for when that happens.
+            Push notifications will be available when the UltraCoach mobile app launches. Configure
+            your preferences here for when that happens.
           </p>
         </CardBody>
       </Card>
@@ -291,11 +282,7 @@ export default function NotificationSettingsPanel({ settings }: NotificationSett
       {/* Save Button */}
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Notification Settings'}
           </Button>
         </div>

@@ -14,7 +14,7 @@ import { MonitorIcon, MoonIcon, PaletteIcon, SunIcon, ZapIcon } from 'lucide-rea
 
 import { useState } from 'react'
 
-import { useUserSettings, UserSettings } from '@/hooks/useUserSettings'
+import { UserSettings, useUserSettings } from '@/hooks/useUserSettings'
 
 interface DisplaySettingsPanelProps {
   settings: UserSettings | null
@@ -70,20 +70,15 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
           <Select
             label="Color Theme"
             selectedKeys={[localSettings.theme]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               setLocalSettings(prev => ({ ...prev, theme: value as 'light' | 'dark' | 'system' }))
             }}
             description="Choose your preferred color scheme"
-            startContent={
-              themeOptions.find(option => option.key === localSettings.theme)?.icon
-            }
+            startContent={themeOptions.find(option => option.key === localSettings.theme)?.icon}
           >
-            {themeOptions.map((option) => (
-              <SelectItem 
-                key={option.key} 
-                startContent={option.icon}
-              >
+            {themeOptions.map(option => (
+              <SelectItem key={option.key} startContent={option.icon}>
                 {option.label}
               </SelectItem>
             ))}
@@ -92,17 +87,17 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
           <Select
             label="Interface Density"
             selectedKeys={[localSettings.density]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
-              setLocalSettings(prev => ({ ...prev, density: value as 'compact' | 'comfortable' | 'spacious' }))
+              setLocalSettings(prev => ({
+                ...prev,
+                density: value as 'compact' | 'comfortable' | 'spacious',
+              }))
             }}
             description="Adjust the spacing and size of interface elements"
           >
-            {densityOptions.map((option) => (
-              <SelectItem 
-                key={option.key}
-                textValue={option.label}
-              >
+            {densityOptions.map(option => (
+              <SelectItem key={option.key} textValue={option.label}>
                 <div>
                   <div className="font-medium">{option.label}</div>
                   <div className="text-sm text-foreground-500">{option.description}</div>
@@ -125,7 +120,7 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
         <CardBody className="space-y-4">
           <Switch
             isSelected={!localSettings.sidebar_collapsed}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, sidebar_collapsed: !value }))
             }
           >
@@ -139,9 +134,7 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
 
           <Switch
             isSelected={localSettings.show_tips}
-            onValueChange={(value) => 
-              setLocalSettings(prev => ({ ...prev, show_tips: value }))
-            }
+            onValueChange={value => setLocalSettings(prev => ({ ...prev, show_tips: value }))}
           >
             <div>
               <p className="font-medium">Show Helpful Tips</p>
@@ -165,7 +158,7 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
         <CardBody className="space-y-4">
           <Switch
             isSelected={localSettings.animations_enabled}
-            onValueChange={(value) => 
+            onValueChange={value =>
               setLocalSettings(prev => ({ ...prev, animations_enabled: value }))
             }
           >
@@ -179,9 +172,7 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
 
           <Switch
             isSelected={localSettings.reduced_motion}
-            onValueChange={(value) => 
-              setLocalSettings(prev => ({ ...prev, reduced_motion: value }))
-            }
+            onValueChange={value => setLocalSettings(prev => ({ ...prev, reduced_motion: value }))}
           >
             <div>
               <p className="font-medium">Reduce Motion</p>
@@ -194,8 +185,8 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
           {localSettings.reduced_motion && (
             <div className="p-3 bg-info-50 border border-info-200 rounded-lg">
               <p className="text-sm text-info-700">
-                <strong>Accessibility Note:</strong> Reduced motion is enabled, which will 
-                minimize animations and transitions throughout the app to prevent motion sensitivity issues.
+                <strong>Accessibility Note:</strong> Reduced motion is enabled, which will minimize
+                animations and transitions throughout the app to prevent motion sensitivity issues.
               </p>
             </div>
           )}
@@ -205,11 +196,7 @@ export default function DisplaySettingsPanel({ settings }: DisplaySettingsPanelP
       {/* Save Button */}
       {hasChanges && (
         <div className="flex justify-end">
-          <Button
-            color="primary"
-            onPress={handleSave}
-            isLoading={saving}
-          >
+          <Button color="primary" onPress={handleSave} isLoading={saving}>
             {saving ? 'Saving...' : 'Save Display Settings'}
           </Button>
         </div>
