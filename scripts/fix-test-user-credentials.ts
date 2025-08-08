@@ -1,17 +1,16 @@
 #!/usr/bin/env tsx
-
 /**
  * Fix Test User Credentials Script
- * 
+ *
  * This script adds credential accounts to existing test users so they can authenticate
  * with password via Better Auth for Playwright E2E testing.
  */
-
 import { hash } from 'bcrypt'
 import { eq, inArray } from 'drizzle-orm'
+
 import { db } from '../src/lib/database'
-import { user, account } from '../src/lib/schema'
 import { createLogger } from '../src/lib/logger'
+import { account, user } from '../src/lib/schema'
 
 const logger = createLogger('fix-test-credentials')
 
@@ -22,7 +21,7 @@ const TEST_CREDENTIALS = [
     password: 'TestCoach123!',
   },
   {
-    email: 'testcoach2@ultracoach.dev', 
+    email: 'testcoach2@ultracoach.dev',
     password: 'TestCoach456!',
   },
   {
@@ -31,7 +30,7 @@ const TEST_CREDENTIALS = [
   },
   {
     email: 'testrunner2@ultracoach.dev',
-    password: 'TestRunner456!', 
+    password: 'TestRunner456!',
   },
 ]
 
@@ -71,23 +70,21 @@ async function fixTestUserCredentials() {
         const passwordHash = await hash(testCred.password, 12)
 
         // Create credential account
-        await db
-          .insert(account)
-          .values({
-            id: crypto.randomUUID(),
-            accountId: 'credential',
-            providerId: 'credential', 
-            userId: userId,
-            password: passwordHash,
-            accessToken: null,
-            refreshToken: null,
-            idToken: null,
-            accessTokenExpiresAt: null,
-            refreshTokenExpiresAt: null,
-            scope: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
+        await db.insert(account).values({
+          id: crypto.randomUUID(),
+          accountId: 'credential',
+          providerId: 'credential',
+          userId: userId,
+          password: passwordHash,
+          accessToken: null,
+          refreshToken: null,
+          idToken: null,
+          accessTokenExpiresAt: null,
+          refreshTokenExpiresAt: null,
+          scope: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
 
         logger.info(`✅ Created credential account for: ${testCred.email}`)
       } catch (error) {
@@ -104,19 +101,18 @@ async function fixTestUserCredentials() {
       .select({
         email: user.email,
         userId: user.id,
-        hasAccount: account.id
+        hasAccount: account.id,
       })
       .from(user)
       .leftJoin(account, eq(user.id, account.userId))
       .where(inArray(user.email, testEmails))
 
     logger.info('📊 Test user credential verification:', {
-      users: verifyQuery.map(u => ({ 
-        email: u.email, 
-        hasCredentials: u.hasAccount !== null 
-      }))
+      users: verifyQuery.map(u => ({
+        email: u.email,
+        hasCredentials: u.hasAccount !== null,
+      })),
     })
-
   } catch (error) {
     logger.error('💥 Test user credential fixing failed:', error)
     process.exit(1)
@@ -130,7 +126,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
       logger.info('✨ Test user credential fix script completed')
       process.exit(0)
     })
-    .catch((error) => {
+    .catch(error => {
       logger.error('💥 Test user credential fix script failed:', error)
       process.exit(1)
     })

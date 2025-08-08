@@ -48,6 +48,35 @@ pnpm db:fresh       # Reset and seed database
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
 
+## 🔐 Better Auth Password Hashing (CRITICAL)
+
+**IMPORTANT**: Better Auth uses its own password hashing format that is incompatible with bcrypt!
+
+### Key Issues to Avoid:
+
+- **NEVER** use bcrypt to hash passwords for Better Auth users
+- **NEVER** manually create account records with bcrypt-generated password hashes
+- Better Auth expects hex-formatted password hashes from its internal hashing system
+- Using bcrypt hashes will cause "User not found" errors during authentication
+
+### Correct Approaches:
+
+1. **For test users**: Use the automated creation script: `pnpm tsx scripts/create-test-users-automated.ts`
+2. **For production**: Always use Better Auth's sign-up API or web interface
+3. **For migrations**: If users exist with wrong hash format, delete and recreate through Better Auth
+
+### Scripts Available:
+
+- `scripts/fresh-test-user-setup.ts` - Cleans existing test users
+- `scripts/create-test-users-automated.ts` - Creates test users via browser automation
+- `scripts/test-better-auth-signin.ts` - Tests sign-in functionality
+
+### Error Symptoms:
+
+- "User not found" during sign-in with correct credentials
+- "hex string expected, got undefined" in Better Auth verification
+- Authentication timeouts in Playwright tests
+
 ## 📊 Project Overview
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
@@ -60,6 +89,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
 - **State Management**: Advanced Jotai patterns implemented - atomFamily, loadable, unwrap, splitAtom for granular performance
 - **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
+- **Authentication**: Better Auth with critical password hash compatibility requirement (see Auth section below)
 - **Next Phase**: Playwright test fixes, workout completion functionality, and comprehensive quality assurance
 
 ## 🏗️ Architecture & Technology

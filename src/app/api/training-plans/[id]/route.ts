@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const logger = createLogger('TrainingPlanAPI')
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .eq('training_plan_id', id)
       .order('date', { ascending: true })
     if (workoutsError) {
-      console.error('Failed to fetch workouts for training plan', workoutsError)
+      logger.error('Failed to fetch workouts for training plan', workoutsError)
       return NextResponse.json({ error: 'Failed to fetch workouts' }, { status: 500 })
     }
     return NextResponse.json({
@@ -39,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       workouts: workouts || [],
     })
   } catch (error) {
-    console.error('Internal server error in GET', error)
+    logger.error('Internal server error in GET', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -73,12 +76,12 @@ export async function DELETE(
     // Delete the plan
     const { error: deleteError } = await supabaseAdmin.from('training_plans').delete().eq('id', id)
     if (deleteError) {
-      console.error('Failed to delete training plan', deleteError)
+      logger.error('Failed to delete training plan', deleteError)
       return NextResponse.json({ error: 'Failed to delete training plan' }, { status: 500 })
     }
     return NextResponse.json({ message: 'Training plan deleted successfully' }, { status: 200 })
   } catch (error) {
-    console.error('Internal server error in DELETE', error)
+    logger.error('Internal server error in DELETE', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

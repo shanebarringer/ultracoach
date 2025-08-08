@@ -1,12 +1,10 @@
 #!/usr/bin/env tsx
-
 /**
  * Better Auth Test User Creation Script
- * 
+ *
  * This script creates test users using Better Auth's sign-up API to ensure
  * proper authentication works for Playwright E2E testing.
  */
-
 import { auth } from '../src/lib/better-auth'
 import { createLogger } from '../src/lib/logger'
 
@@ -22,7 +20,7 @@ const TEST_USERS = [
     role: 'coach' as const,
   },
   {
-    email: 'testcoach2@ultracoach.dev', 
+    email: 'testcoach2@ultracoach.dev',
     password: 'TestCoach456!',
     name: 'Test Coach 2',
     fullName: 'Test Coach Two',
@@ -37,7 +35,7 @@ const TEST_USERS = [
   },
   {
     email: 'testrunner2@ultracoach.dev',
-    password: 'TestRunner456!', 
+    password: 'TestRunner456!',
     name: 'Test Runner 2',
     fullName: 'Test Runner Two',
     role: 'runner' as const,
@@ -76,7 +74,6 @@ async function createTestUsers() {
         } else {
           logger.warn(`⚠️  User creation may have failed for ${testUser.email}:`, result)
         }
-
       } catch (error: any) {
         if (error.message && error.message.includes('User already exists')) {
           logger.info(`Test user ${testUser.email} already exists, skipping...`)
@@ -88,7 +85,6 @@ async function createTestUsers() {
     }
 
     logger.info('🎉 Better Auth test user creation completed!')
-
   } catch (error) {
     logger.error('💥 Better Auth test user creation failed:', error)
     process.exit(1)
@@ -102,7 +98,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
       logger.info('✨ Better Auth test user creation script completed')
       process.exit(0)
     })
-    .catch((error) => {
+    .catch(error => {
       logger.error('💥 Better Auth test user creation script failed:', error)
       process.exit(1)
     })

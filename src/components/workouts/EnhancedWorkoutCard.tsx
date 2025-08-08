@@ -261,9 +261,20 @@ const EnhancedWorkoutCard = memo(
                 color="primary"
                 onPress={() => onLog(workout)}
                 className="flex-1"
+                startContent={<CheckCircle2 className="h-4 w-4" />}
+              >
+                Mark Complete
+              </Button>
+            )}
+            {onLog && workout.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="flat"
+                onPress={() => onLog(workout)}
+                className="flex-1"
                 startContent={<TrendingUp className="h-4 w-4" />}
               >
-                Log Workout
+                View Details
               </Button>
             )}
           </div>

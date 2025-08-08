@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { useMemo, useState } from 'react'
 
 import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('CoachSelector')
 
 interface Coach {
   id: string
@@ -74,7 +77,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
       // Notify parent component
       onRelationshipCreated?.()
     } catch (error) {
-      console.error('Error connecting to coach:', error)
+      logger.error('Error connecting to coach:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to connect to coach')
     } finally {
       setConnectingIds(prev => {

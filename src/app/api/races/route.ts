@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const logger = createLogger('RacesAPI')
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,13 +44,13 @@ export async function GET(request: NextRequest) {
     const { data: races, error } = await query
 
     if (error) {
-      console.error('Error fetching races:', error)
+      logger.error('Error fetching races:', error)
       return NextResponse.json({ error: 'Failed to fetch races' }, { status: 500 })
     }
 
     return NextResponse.json({ races })
   } catch (error) {
-    console.error('Error in GET /api/races:', error)
+    logger.error('Error in GET /api/races:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -96,13 +99,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating race:', error)
+      logger.error('Error creating race:', error)
       return NextResponse.json({ error: 'Failed to create race' }, { status: 500 })
     }
 
     return NextResponse.json({ race }, { status: 201 })
   } catch (error) {
-    console.error('Error in POST /api/races:', error)
+    logger.error('Error in POST /api/races:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

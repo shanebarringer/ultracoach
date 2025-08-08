@@ -24,7 +24,10 @@ import {
 
 import { useCallback, useMemo, useState } from 'react'
 
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
+
+const logger = createLogger('MonthlyCalendar')
 
 interface MonthlyCalendarProps {
   workouts: Workout[]
@@ -95,7 +98,7 @@ export default function MonthlyCalendar({
 
       return days
     } catch (error) {
-      console.error('Error generating calendar days:', error)
+      logger.error('Error generating calendar days:', error)
       return []
     }
   }, [currentMonth, workouts])

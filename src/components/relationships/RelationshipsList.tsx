@@ -14,6 +14,9 @@ import { toast } from 'sonner'
 import { useMemo, useState } from 'react'
 
 import { relationshipsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('RelationshipsList')
 
 interface Relationship {
   id: string
@@ -78,7 +81,7 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
       toast.success(`Relationship ${newStatus === 'active' ? 'accepted' : 'declined'}!`)
       onRelationshipUpdated?.()
     } catch (error) {
-      console.error('Error updating relationship:', error)
+      logger.error('Error updating relationship:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update relationship')
     } finally {
       setUpdatingIds(prev => {

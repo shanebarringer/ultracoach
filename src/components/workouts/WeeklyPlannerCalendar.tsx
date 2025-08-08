@@ -597,7 +597,7 @@ export default function WeeklyPlannerCalendar({
       // Refresh existing workouts
       fetchExistingWorkouts()
     } catch (error) {
-      console.error('Error saving week plan:', error)
+      logger.error('Error saving week plan:', error)
       commonToasts.workoutError(
         error instanceof Error ? error.message : 'Failed to save expedition plan'
       )

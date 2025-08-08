@@ -1,17 +1,16 @@
 #!/usr/bin/env tsx
-
 /**
  * Test Database Seeding Script
- * 
+ *
  * This script creates test users for Playwright E2E testing.
  * It uses Better Auth's sign-up API to ensure users are created properly.
  */
-
 import { hash } from 'bcrypt'
 import { eq, inArray } from 'drizzle-orm'
+
 import { db } from '../src/lib/database'
-import { user } from '../src/lib/schema'
 import { createLogger } from '../src/lib/logger'
+import { user } from '../src/lib/schema'
 
 const logger = createLogger('seed-test-database')
 
@@ -25,7 +24,7 @@ const TEST_USERS = [
     role: 'coach' as const,
   },
   {
-    email: 'testcoach2@ultracoach.dev', 
+    email: 'testcoach2@ultracoach.dev',
     password: 'TestCoach456!',
     name: 'Test Coach 2',
     fullName: 'Test Coach Two',
@@ -40,7 +39,7 @@ const TEST_USERS = [
   },
   {
     email: 'testrunner2@ultracoach.dev',
-    password: 'TestRunner456!', 
+    password: 'TestRunner456!',
     name: 'Test Runner 2',
     fullName: 'Test Runner Two',
     role: 'runner' as const,
@@ -103,9 +102,9 @@ async function seedTestUsers() {
     // Verify all test users exist and can be queried
     const testEmails = TEST_USERS.map(u => u.email)
     const createdUsers = await db
-      .select({ 
+      .select({
         id: user.id,
-        email: user.email, 
+        email: user.email,
         role: user.role,
         name: user.name,
       })
@@ -115,13 +114,12 @@ async function seedTestUsers() {
     logger.info('📊 Test users verification:', {
       expected: TEST_USERS.length,
       created: createdUsers.length,
-      users: createdUsers.map(u => ({ email: u.email, role: u.role }))
+      users: createdUsers.map(u => ({ email: u.email, role: u.role })),
     })
 
     if (createdUsers.length !== TEST_USERS.length) {
       throw new Error(`Expected ${TEST_USERS.length} test users but found ${createdUsers.length}`)
     }
-
   } catch (error) {
     logger.error('💥 Test database seeding failed:', error)
     process.exit(1)
@@ -135,7 +133,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
       logger.info('✨ Test database seeding script completed')
       process.exit(0)
     })
-    .catch((error) => {
+    .catch(error => {
       logger.error('💥 Test database seeding script failed:', error)
       process.exit(1)
     })

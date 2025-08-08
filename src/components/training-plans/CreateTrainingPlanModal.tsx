@@ -116,7 +116,7 @@ export default function CreateTrainingPlanModal({
           try {
             await refreshRaces()
           } catch (err) {
-            console.error('Error fetching races:', err)
+            logger.error('Error fetching races:', err)
           }
         }
 
@@ -128,10 +128,10 @@ export default function CreateTrainingPlanModal({
               const data = await response.json()
               setPlanTemplates(data.templates)
             } else {
-              console.error('Failed to fetch plan templates', response.statusText)
+              logger.error('Failed to fetch plan templates', response.statusText)
             }
           } catch (err) {
-            console.error('Error fetching plan templates:', err)
+            logger.error('Error fetching plan templates:', err)
           }
         }
       }
