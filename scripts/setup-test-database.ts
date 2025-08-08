@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
+import { and, eq } from 'drizzle-orm'
 
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { account, user } from '@/lib/schema'
-import { db } from '@/lib/database'
-import { eq, and } from 'drizzle-orm'
 
 const logger = createLogger('setup-test-database')
 
@@ -32,7 +32,7 @@ const TEST_USERS: TestUser[] = [
     role: 'runner',
   },
   {
-    email: 'testcoach@ultracoach.dev', 
+    email: 'testcoach@ultracoach.dev',
     password: 'password123',
     name: 'Test Coach',
     role: 'coach',
@@ -55,13 +55,13 @@ async function setupTestDatabase() {
 
       if (existingUser.length > 0) {
         const userId = existingUser[0].id
-        
+
         // Delete account records
         await db.delete(account).where(eq(account.userId, userId))
-        
-        // Delete user record  
+
+        // Delete user record
         await db.delete(user).where(eq(user.id, userId))
-        
+
         logger.info(`Cleaned up existing user: ${testUser.email}`)
       }
     }
@@ -92,7 +92,6 @@ async function setupTestDatabase() {
 
         const result = await response.json()
         logger.info(`✅ Created test user via API: ${testUser.email} (${testUser.role})`)
-        
       } catch (error) {
         logger.error(`Failed to create test user ${testUser.email}:`, error)
         continue
@@ -104,7 +103,6 @@ async function setupTestDatabase() {
     for (const testUser of TEST_USERS) {
       logger.info(`  - ${testUser.email} (${testUser.role}) - password: ${testUser.password}`)
     }
-
   } catch (error) {
     logger.error('Failed to set up test database:', error)
     process.exit(1)
@@ -118,7 +116,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       logger.info('Setup completed successfully')
       process.exit(0)
     })
-    .catch((error) => {
+    .catch(error => {
       logger.error('Setup failed:', error)
       process.exit(1)
     })

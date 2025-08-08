@@ -41,11 +41,11 @@ test.describe('Authentication Flow', () => {
 
     // Check that we're still on signin page (not redirected to dashboard)
     await expect(page).toHaveURL('/auth/signin')
-    
+
     // Look for various error indicators
     const hasErrorAttribute = await page.locator('input[type="email"]').getAttribute('aria-invalid')
     const hasErrorMessage = await page.locator('text=Invalid').isVisible()
-    const hasErrorClass = await page.locator('.error, [data-testid*="error"]').count() > 0
+    const hasErrorClass = (await page.locator('.error, [data-testid*="error"]').count()) > 0
     const stillOnSigninPage = page.url().includes('/auth/signin')
 
     // At minimum, we should still be on signin page if credentials were invalid

@@ -12,6 +12,7 @@ openssl rand -hex 32
 ```
 
 Then add it to GitHub:
+
 1. Go to your repo → **Settings** → **Secrets and variables** → **Actions**
 2. Click **"New repository secret"**
 3. Name: `BETTER_AUTH_SECRET`
@@ -21,6 +22,7 @@ Then add it to GitHub:
 ### 2. Test the CI Pipeline
 
 The CI will automatically run on:
+
 - ✅ Push to `main` branch
 - ✅ Pull requests to `main` branch
 - ✅ Push to `fix/playwright-ci-tests` branch (for testing)

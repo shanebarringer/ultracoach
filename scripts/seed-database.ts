@@ -643,7 +643,7 @@ async function main() {
       trainingPlans: planCount,
       workouts: workoutCount,
       trainingPhases: phaseCount,
-      planTemplates: templateCount
+      planTemplates: templateCount,
     })
 
     // Database connection will be cleaned up automatically by the unified database module
@@ -658,8 +658,8 @@ async function main() {
         'Coach-runner relationships established',
         'Training plans and sample workouts added',
         'Credentials saved to .env.local for easy testing',
-        'Old password files cleaned up for security'
-      ]
+        'Old password files cleaned up for security',
+      ],
     })
   } catch (error) {
     logger.error('❌ Database seeding failed:', error)

@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
+import { eq } from 'drizzle-orm'
 
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { account, user } from '@/lib/schema'
-import { db } from '@/lib/database'
-import { eq } from 'drizzle-orm'
 
 const logger = createLogger('create-test-users-via-api')
 
@@ -22,7 +22,7 @@ const TEST_USERS: TestUser[] = [
     role: 'runner',
   },
   {
-    email: 'testcoach@ultracoach.dev', 
+    email: 'testcoach@ultracoach.dev',
     password: 'TestCoach123!',
     name: 'Test Coach',
     role: 'coach',
@@ -34,7 +34,7 @@ const TEST_USERS: TestUser[] = [
     role: 'runner',
   },
   {
-    email: 'testcoach2@ultracoach.dev', 
+    email: 'testcoach2@ultracoach.dev',
     password: 'TestCoach456!',
     name: 'Test Coach 2',
     role: 'coach',
@@ -99,16 +99,12 @@ async function createTestUsers() {
 
         const result = await response.json()
         logger.info(`✅ Created test user: ${testUser.email} (${testUser.role})`)
-        
+
         // Fix: Better Auth may not be setting custom role field properly during signup
         // Let's manually update the role in the database as a workaround
-        await db
-          .update(user)
-          .set({ role: testUser.role })
-          .where(eq(user.email, testUser.email))
-        
+        await db.update(user).set({ role: testUser.role }).where(eq(user.email, testUser.email))
+
         logger.info(`🔧 Updated role for ${testUser.email} to ${testUser.role}`)
-        
       } catch (error) {
         logger.error(`Failed to create test user ${testUser.email}:`, error)
         continue
@@ -120,7 +116,6 @@ async function createTestUsers() {
     for (const testUser of TEST_USERS) {
       logger.info(`  - ${testUser.email} (${testUser.role}) - password: ${testUser.password}`)
     }
-
   } catch (error) {
     logger.error('Failed to create test users:', error)
     process.exit(1)
@@ -134,7 +129,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       logger.info('Test user creation completed successfully')
       process.exit(0)
     })
-    .catch((error) => {
+    .catch(error => {
       logger.error('Test user creation failed:', error)
       process.exit(1)
     })

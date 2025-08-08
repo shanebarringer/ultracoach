@@ -3,7 +3,7 @@
 # ⚠️  SETUP REQUIRED: GitHub Repository Secrets
 #
 # You MUST set this secret before CI will work:
-# 
+#
 # 1. BETTER_AUTH_SECRET (required for authentication)
 #    Generate: openssl rand -hex 32
 #    Location: GitHub repo → Settings → Secrets → Actions → New repository secret
@@ -14,7 +14,7 @@
 # CI Architecture:
 # ├── PostgreSQL service container (postgres:15)
 # ├── Database schema from supabase/migrations/*.sql
-# ├── Next.js app (built and started on port 3001)  
+# ├── Next.js app (built and started on port 3001)
 # ├── Test user creation via Better Auth API
 # └── Playwright E2E tests (with screenshots/videos on failure)
 
@@ -83,7 +83,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
 
-      # Test user credentials  
+      # Test user credentials
       TEST_COACH_EMAIL: testcoach@ultracoach.dev
       TEST_COACH_PASSWORD: TestCoach123!
       TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
