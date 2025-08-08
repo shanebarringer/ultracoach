@@ -46,21 +46,21 @@ export default function ConnectionStatus() {
           color: 'warning' as const,
           icon: <Loader2 className="h-3 w-3 animate-spin" />,
           text: 'Reconnecting...',
-          description: 'Real-time updates may be delayed'
+          description: 'Real-time updates may be delayed',
         }
       case 'disconnected':
         return {
           color: 'danger' as const,
           icon: <WifiOff className="h-3 w-3" />,
           text: 'Disconnected',
-          description: 'Using offline mode. Messages will sync when reconnected.'
+          description: 'Using offline mode. Messages will sync when reconnected.',
         }
       default:
         return {
           color: 'success' as const,
           icon: <Wifi className="h-3 w-3" />,
           text: 'Connected',
-          description: 'Real-time updates active'
+          description: 'Real-time updates active',
         }
     }
   }

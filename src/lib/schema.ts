@@ -2,6 +2,7 @@ import {
   boolean,
   decimal,
   integer,
+  json,
   pgTable,
   text,
   timestamp,
@@ -34,6 +35,16 @@ export const user = pgTable('user', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   fullName: text('full_name'),
+  notification_preferences: json('notification_preferences')
+    .$defaultFn(() => ({
+      messages: true,
+      workouts: true,
+      training_plans: true,
+      races: true,
+      reminders: true,
+      toast_notifications: true,
+      email_notifications: false,
+    })),
 })
 
 export const session = pgTable('session', {

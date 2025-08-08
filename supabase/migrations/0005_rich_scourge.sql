@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "notification_preferences" json;

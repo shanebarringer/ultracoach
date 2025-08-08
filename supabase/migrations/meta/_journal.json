@@ -36,6 +36,13 @@
       "when": 1754497227901,
       "tag": "0004_wooden_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1754613252751,
+      "tag": "0005_rich_scourge",
+      "breakpoints": true
     }
   ]
 }

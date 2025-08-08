@@ -83,12 +83,12 @@ export function useMessages(recipientId?: string) {
         setMessages(prev => {
           const existingIds = new Set(prev.map(m => m.id))
           const newMessages = fetchedMessages.filter((m: MessageWithUser) => !existingIds.has(m.id))
-          
+
           // Merge and sort by creation time to ensure proper order
-          const merged = [...prev, ...newMessages].sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          const merged = [...prev, ...newMessages].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           )
-          
+
           return merged
         })
         // Mark messages as read - call directly to avoid circular dependency
@@ -307,7 +307,7 @@ export function useMessages(recipientId?: string) {
           consecutiveErrors++
           // Exponential backoff on errors, max 60 seconds
           currentInterval = Math.min(currentInterval * Math.pow(2, consecutiveErrors), 60000)
-          
+
           // Update connection status based on error count
           if (consecutiveErrors >= 3) {
             setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
