@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const logger = createLogger('migrate-better-auth')
 
 export async function POST() {
   try {
-    console.log('Starting Better Auth migration...')
+    logger.info('Starting Better Auth migration...')
 
     // Create better_auth_users table
     const { error: usersError } = await supabaseAdmin.rpc('exec_sql', {
@@ -24,7 +27,7 @@ export async function POST() {
     })
 
     if (usersError) {
-      console.error('Failed to create better_auth_users table:', usersError)
+      logger.error('Failed to create better_auth_users table:', usersError)
       return NextResponse.json(
         { error: 'Failed to create users table', details: usersError },
         { status: 500 }
@@ -52,7 +55,7 @@ export async function POST() {
     })
 
     if (accountsError) {
-      console.error('Failed to create better_auth_accounts table:', accountsError)
+      logger.error('Failed to create better_auth_accounts table:', accountsError)
       return NextResponse.json(
         { error: 'Failed to create accounts table', details: accountsError },
         { status: 500 }
@@ -74,7 +77,7 @@ export async function POST() {
     })
 
     if (sessionsError) {
-      console.error('Failed to create better_auth_sessions table:', sessionsError)
+      logger.error('Failed to create better_auth_sessions table:', sessionsError)
       return NextResponse.json(
         { error: 'Failed to create sessions table', details: sessionsError },
         { status: 500 }
@@ -97,7 +100,7 @@ export async function POST() {
     })
 
     if (tokensError) {
-      console.error('Failed to create better_auth_verification_tokens table:', tokensError)
+      logger.error('Failed to create better_auth_verification_tokens table:', tokensError)
       return NextResponse.json(
         { error: 'Failed to create verification tokens table', details: tokensError },
         { status: 500 }
@@ -116,25 +119,25 @@ export async function POST() {
     })
 
     if (indexesError) {
-      console.log('Index creation failed (might already exist):', indexesError)
+      logger.warn('Index creation failed (might already exist):', indexesError)
     }
 
     // Migrate existing users
     const { data: existingUsers, error: fetchError } = await supabaseAdmin.from('users').select('*')
 
     if (fetchError) {
-      console.error('Failed to fetch existing users:', fetchError)
+      logger.error('Failed to fetch existing users:', fetchError)
       return NextResponse.json(
         { error: 'Failed to fetch existing users', details: fetchError },
         { status: 500 }
       )
     }
 
-    console.log(`Found ${existingUsers.length} existing users to migrate`)
+    logger.info(`Found ${existingUsers.length} existing users to migrate`)
 
     // Migrate users
     for (const user of existingUsers) {
-      console.log(`Migrating user: ${user.email}`)
+      logger.debug(`Migrating user: ${user.email}`)
 
       // Insert user into better_auth_users
       const { error: userError } = await supabaseAdmin.from('better_auth_users').upsert({
@@ -148,7 +151,7 @@ export async function POST() {
       })
 
       if (userError) {
-        console.error(`Failed to migrate user ${user.email}:`, userError)
+        logger.error(`Failed to migrate user ${user.email}:`, userError)
         continue
       }
 
@@ -165,7 +168,7 @@ export async function POST() {
         })
 
         if (accountError && !accountError.message.includes('duplicate key')) {
-          console.error(`Failed to create account for ${user.email}:`, accountError)
+          logger.error(`Failed to create account for ${user.email}:`, accountError)
         }
       }
     }
@@ -189,7 +192,7 @@ export async function POST() {
       },
     })
   } catch (error) {
-    console.error('Migration error:', error)
+    logger.error('Migration error:', error)
     return NextResponse.json(
       {
         error: 'Migration failed',

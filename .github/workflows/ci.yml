@@ -1,16 +1,22 @@
 # CI Workflow for UltraCoach
 #
-# REQUIRED: Set BETTER_AUTH_SECRET in GitHub repository secrets
+# ⚠️  SETUP REQUIRED: GitHub Repository Secrets
 #
-# To set the secret:
-# 1. Generate a secure secret: openssl rand -hex 32
-# 2. Go to GitHub repo → Settings → Secrets and variables → Actions
-# 3. Click "New repository secret"
-# 4. Name: BETTER_AUTH_SECRET
-# 5. Value: [your generated 64-character hex string]
-# 6. Click "Add secret"
+# You MUST set this secret before CI will work:
+# 
+# 1. BETTER_AUTH_SECRET (required for authentication)
+#    Generate: openssl rand -hex 32
+#    Location: GitHub repo → Settings → Secrets → Actions → New repository secret
 #
-# Without this secret, the CI will fail!
+# The workflow creates a test PostgreSQL database automatically via Docker
+# and seeds it with test users through Better Auth API calls.
+#
+# CI Architecture:
+# ├── PostgreSQL service container (postgres:15)
+# ├── Database schema from supabase/migrations/*.sql
+# ├── Next.js app (built and started on port 3001)  
+# ├── Test user creation via Better Auth API
+# └── Playwright E2E tests (with screenshots/videos on failure)
 
 name: CI
 
@@ -72,7 +78,12 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
       NODE_ENV: test
 
-      # Test user credentials
+      # Supabase configuration for testing (use DATABASE_URL instead)
+      NEXT_PUBLIC_SUPABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
+      SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
+
+      # Test user credentials  
       TEST_COACH_EMAIL: testcoach@ultracoach.dev
       TEST_COACH_PASSWORD: TestCoach123!
       TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
@@ -81,6 +92,7 @@ jobs:
       # Auth configuration - must be set in GitHub repository secrets
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       BETTER_AUTH_URL: http://localhost:3001
+      NEXT_PUBLIC_BASE_URL: http://localhost:3001
 
       # Email configuration (test mode)
       RESEND_API_KEY: test-key
@@ -113,14 +125,46 @@ jobs:
           done
           echo "Database schema setup complete"
 
-      - name: Seed test database
-        run: pnpm test:db:seed
+      - name: Build Next.js app
+        run: pnpm build
+
+      - name: Start Next.js app in background
+        run: |
+          pnpm start &
+          echo $! > .next_pid
+        env:
+          PORT: 3001
+
+      - name: Wait for app to be ready
+        run: |
+          echo "Waiting for Next.js app to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001/api/health 2>/dev/null; then
+              echo "App is ready!"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "App failed to start!"
+          exit 1
+
+      - name: Create test users via Better Auth API
+        run: pnpm tsx scripts/create-test-users-via-api.ts
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Run Playwright tests
         run: pnpm test:e2e
+
+      - name: Stop Next.js app
+        if: always()
+        run: |
+          if [ -f .next_pid ]; then
+            kill $(cat .next_pid) || true
+            rm .next_pid
+          fi
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
