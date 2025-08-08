@@ -1,12 +1,11 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
-import classNames from 'classnames'
+// Removed classNames import since we're using dynamic routes
+import { useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 import {
   CalendarDaysIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ClockIcon,
   FlagIcon,
   MapPinIcon,
   RouteIcon,
@@ -14,48 +13,27 @@ import {
   UsersIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
-import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
+import { connectedRunnersAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
+
+// Create loadable atom for better UX
+const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
 export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [runners, setRunners] = useState<User[]>([])
-  const [selectedRunner, setSelectedRunner] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    // Get current week's Monday
-    const today = new Date()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
-    return monday
-  })
-
-  const fetchRunners = useCallback(async () => {
-    if (!session?.user?.id || session.user.role !== 'coach') return
-
-    try {
-      const response = await fetch('/api/runners')
-
-      if (!response.ok) {
-        console.error('Failed to fetch runners:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRunners(data.runners || [])
-    } catch (error) {
-      console.error('Error fetching runners:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.user?.id, session?.user?.role])
+  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  // Remove selectedRunner since we're now using dynamic routes
+  // Handle loading and error states from Jotai loadable
+  const loading = runnersLoadable.state === 'loading'
+  const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   useEffect(() => {
     if (status === 'loading') return
@@ -65,40 +43,17 @@ export default function WeeklyPlannerPage() {
       return
     }
 
+    if (session.user.role === 'runner') {
+      // Runners see their own weekly training view
+      router.push(`/weekly-planner/${session.user.id}`)
+      return
+    }
+
     if (session.user.role !== 'coach') {
       router.push('/dashboard')
       return
     }
-
-    fetchRunners()
-  }, [status, session, router, fetchRunners])
-
-  const formatWeekRange = (monday: Date) => {
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
-
-    return `${monday.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })} - ${sunday.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })}`
-  }
-
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = new Date(currentWeek)
-    newWeek.setDate(newWeek.getDate() + (direction === 'next' ? 7 : -7))
-    setCurrentWeek(newWeek)
-  }
-
-  const goToCurrentWeek = () => {
-    const today = new Date()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
-    setCurrentWeek(monday)
-  }
+  }, [status, session, router])
 
   if (status === 'loading') {
     return (
@@ -112,6 +67,24 @@ export default function WeeklyPlannerPage() {
 
   if (!session || session.user.role !== 'coach') {
     return null
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-[1600px] mx-auto px-8 py-8">
+          <Card className="border-danger-200 bg-danger-50">
+            <CardBody className="text-center py-12">
+              <div className="text-danger-600 mb-4">Failed to load runners</div>
+              <Button color="primary" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -159,17 +132,12 @@ export default function WeeklyPlannerPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {runners.map(runner => (
+                {runners.map((runner: User) => (
                   <Card
                     key={runner.id}
                     isPressable
-                    onPress={() => setSelectedRunner(runner)}
-                    className={classNames(
-                      'transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer',
-                      selectedRunner?.id === runner.id
-                        ? 'ring-2 ring-primary bg-linear-to-br from-primary/10 to-secondary/10 border-l-4 border-l-primary'
-                        : 'hover:bg-linear-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent'
-                    )}
+                    onPress={() => router.push(`/weekly-planner/${runner.id}`)}
+                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-linear-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent"
                   >
                     <CardBody className="p-4">
                       <div className="flex items-center gap-3">
@@ -211,71 +179,7 @@ export default function WeeklyPlannerPage() {
           </CardBody>
         </Card>
 
-        {/* Week Navigation */}
-        {selectedRunner && (
-          <Card className="mb-6 bg-linear-to-br from-warning/10 to-primary/10 border-t-4 border-t-warning">
-            <CardHeader>
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <ClockIcon className="w-6 h-6 text-warning" />
-                  <div>
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Training Week: {formatWeekRange(currentWeek)}
-                    </h2>
-                    <p className="text-foreground/70 text-sm">
-                      Planning expedition for {selectedRunner.full_name}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigateWeek('prev')}
-                    className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
-                  >
-                    <ChevronLeftIcon className="w-5 h-5" />
-                  </Button>
-
-                  <Button
-                    variant="flat"
-                    size="sm"
-                    onClick={goToCurrentWeek}
-                    className="bg-warning/20 text-warning hover:bg-warning/30"
-                  >
-                    Current Week
-                  </Button>
-
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigateWeek('next')}
-                    className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
-                  >
-                    <ChevronRightIcon className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
-
-        {/* Weekly Calendar */}
-        {selectedRunner && (
-          <WeeklyPlannerCalendar
-            runner={selectedRunner}
-            weekStart={currentWeek}
-            onWeekUpdate={() => {
-              // Refresh runner's data or show success message
-              console.log('Week updated successfully!')
-            }}
-          />
-        )}
-
-        {!selectedRunner && !loading && runners.length > 0 && (
+        {!loading && runners.length > 0 && (
           <Card className="bg-linear-to-br from-default/10 to-secondary/10 border-t-4 border-t-default">
             <CardBody className="text-center py-12">
               <CalendarDaysIcon className="mx-auto w-16 h-16 text-default-400 mb-4" />

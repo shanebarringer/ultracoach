@@ -268,15 +268,13 @@ UltraCoach - Conquer Your Mountain
         `
 
         if (process.env.NODE_ENV === 'development') {
-          // In development, log to console
-          console.log(`
-=== PASSWORD RESET EMAIL ===
-To: ${user.email}
-Subject: Reset Your UltraCoach Password 🏔️
-
-${textTemplate}
-============================
-          `)
+          // In development, log password reset details
+          logger.info('Password reset email (development mode)', {
+            to: user.email,
+            subject: 'Reset Your UltraCoach Password 🏔️',
+            resetUrl: url,
+            textPreview: textTemplate.substring(0, 200) + '...',
+          })
         } else if (resend) {
           // In production, send actual email via Resend
           try {

@@ -1,10 +1,13 @@
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import { loadingStatesAtom, relationshipsAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+
+const logger = createLogger('useDashboardData')
 
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
@@ -25,10 +28,11 @@ interface RelationshipData {
 
 export function useDashboardData() {
   const { data: session } = useSession()
+  // Use Jotai atoms for centralized state management
   const [trainingPlans, setTrainingPlans] = useAtom(trainingPlansAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
-  const [relationships, setRelationships] = useState<RelationshipData[]>([])
+  const relationships = useAtomValue(relationshipsAtom)
 
   const fetchDashboardData = useCallback(async () => {
     if (!session?.user?.id) return
@@ -37,7 +41,6 @@ export function useDashboardData() {
       ...prev,
       trainingPlans: true,
       workouts: true,
-      relationships: true,
     }))
 
     try {
@@ -55,20 +58,14 @@ export function useDashboardData() {
         setWorkouts(workoutsData.workouts || [])
       }
 
-      // Fetch relationships (new!)
-      const relationshipsResponse = await fetch('/api/my-relationships?status=active')
-      if (relationshipsResponse.ok) {
-        const relationshipsData = await relationshipsResponse.json()
-        setRelationships(relationshipsData.relationships || [])
-      }
+      // Relationships are now handled by the relationshipsAtom automatically
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      logger.error('Failed to fetch dashboard data:', error)
     } finally {
       setLoadingStates(prev => ({
         ...prev,
         trainingPlans: false,
         workouts: false,
-        relationships: false,
       }))
     }
   }, [session?.user?.id, setTrainingPlans, setWorkouts, setLoadingStates])
@@ -79,46 +76,62 @@ export function useDashboardData() {
     }
   }, [session?.user?.id, fetchDashboardData])
 
-  // Get runners from relationships (primary source) with fallback to training plans
-  const runners = relationships
-    .filter(rel => rel.other_party.role === 'runner')
-    .map(
-      rel =>
-        ({
-          id: rel.other_party.id,
-          email: rel.other_party.email,
-          role: rel.other_party.role,
-          full_name: rel.other_party.full_name,
-          created_at: new Date().toISOString(), // Default value for compatibility
-          updated_at: new Date().toISOString(), // Default value for compatibility
-        }) as User
-    )
+  // Use useMemo for better performance when computing derived data
+  const runners = useMemo(() => {
+    // Add safety check for other_party and role
+    const relationshipRunners = relationships
+      .filter((rel: RelationshipData) => {
+        if (!rel.other_party) {
+          return false
+        }
+        if (!rel.other_party.role) {
+          return false
+        }
+        return rel.other_party.role === 'runner'
+      })
+      .map(
+        (rel: RelationshipData) =>
+          ({
+            id: rel.other_party.id,
+            email: rel.other_party.email,
+            role: rel.other_party.role,
+            full_name: rel.other_party.full_name,
+            created_at: new Date().toISOString(), // Default value for compatibility
+            updated_at: new Date().toISOString(), // Default value for compatibility
+          }) as User
+      )
 
-  // If no runners from relationships, fall back to training plan runners
-  const fallbackRunners =
-    runners.length === 0
-      ? (trainingPlans as TrainingPlanWithRunner[]).reduce((acc: User[], plan) => {
-          if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
-            acc.push(plan.runners)
-          }
-          return acc
-        }, [])
-      : []
+    // If no runners from relationships, fall back to training plan runners
+    const fallbackRunners =
+      relationshipRunners.length === 0
+        ? (trainingPlans as TrainingPlanWithRunner[]).reduce((acc: User[], plan) => {
+            if (plan.runners && !acc.find(r => r.id === plan.runners.id)) {
+              acc.push(plan.runners)
+            }
+            return acc
+          }, [])
+        : []
 
-  const allRunners = runners.length > 0 ? runners : fallbackRunners
+    return relationshipRunners.length > 0 ? relationshipRunners : fallbackRunners
+  }, [relationships, trainingPlans])
 
-  const recentWorkouts = workouts.filter((w: Workout) => w.status === 'completed').slice(0, 5)
+  const recentWorkouts = useMemo(
+    () => workouts.filter((w: Workout) => w.status === 'completed').slice(0, 5),
+    [workouts]
+  )
 
-  const upcomingWorkouts = workouts
-    .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
-    .slice(0, 5)
+  const upcomingWorkouts = useMemo(() => {
+    return workouts
+      .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
+      .slice(0, 5)
+  }, [workouts])
 
   return {
     trainingPlans,
-    runners: allRunners,
+    runners,
     recentWorkouts,
     upcomingWorkouts,
     relationships,
-    loading: loadingStates.trainingPlans || loadingStates.workouts || loadingStates.relationships,
+    loading: loadingStates.trainingPlans || loadingStates.workouts || relationships.length === 0,
   }
 }

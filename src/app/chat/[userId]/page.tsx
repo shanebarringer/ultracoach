@@ -11,9 +11,10 @@ import {
   Spinner,
   useDisclosure,
 } from '@heroui/react'
+import { useAtom } from 'jotai'
 import { ArrowLeftIcon, MenuIcon, MessageCircleIcon, MountainSnowIcon } from 'lucide-react'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
@@ -22,7 +23,11 @@ import ChatWindow from '@/components/chat/ChatWindow'
 import ConversationList from '@/components/chat/ConversationList'
 import Layout from '@/components/layout/Layout'
 import { useSession } from '@/hooks/useBetterSession'
+import { selectedRecipientAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
+
+const logger = createLogger('ChatUserPage')
 
 export default function ChatUserPage() {
   const { data: session, status } = useSession()
@@ -30,31 +35,14 @@ export default function ChatUserPage() {
   const params = useParams()
   const userId = params.userId as string
 
-  const [recipient, setRecipient] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  const fetchRecipient = useCallback(async () => {
-    if (!userId) return
+  // Use selected recipient atom for proper state management
+  const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
 
-    try {
-      const response = await fetch(`/api/users/${userId}`)
-
-      if (!response.ok) {
-        console.error('Error fetching recipient:', response.statusText)
-        router.push('/chat')
-        return
-      }
-
-      const data = await response.json()
-      setRecipient(data.user)
-    } catch (error) {
-      console.error('Error fetching recipient:', error)
-      router.push('/chat')
-    } finally {
-      setLoading(false)
-    }
-  }, [userId, router]) // Include router dependency as required by ESLint
+  // Derive recipient from API call - no local state needed
+  const [recipient, setRecipient] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -64,8 +52,48 @@ export default function ChatUserPage() {
       return
     }
 
+    if (!userId) {
+      logger.warn('No userId provided, redirecting to chat')
+      router.push('/chat')
+      return
+    }
+
+    const fetchRecipient = async () => {
+      try {
+        const response = await fetch(`/api/users/${userId}`)
+
+        if (!response.ok) {
+          logger.error('Error fetching recipient:', {
+            status: response.status,
+            statusText: response.statusText,
+          })
+          router.push('/chat')
+          return
+        }
+
+        const data = await response.json()
+        setRecipient(data.user)
+        setSelectedRecipient(userId)
+        logger.info('Recipient loaded successfully', {
+          userId,
+          recipientName: data.user?.full_name,
+        })
+      } catch (error) {
+        logger.error('Error fetching recipient:', error)
+        router.push('/chat')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    setLoading(true)
     fetchRecipient()
-  }, [status, session, userId, fetchRecipient, router]) // Include all dependencies as required by ESLint
+
+    // Cleanup: Clear selected recipient when component unmounts
+    return () => {
+      setSelectedRecipient(null)
+    }
+  }, [status, session, userId, router, setSelectedRecipient])
 
   if (status === 'loading' || loading) {
     return (

@@ -11,6 +11,11 @@ import {
   currentConversationIdAtom,
   loadingStatesAtom,
   messagesAtom,
+  messagesByConversationLoadableFamily,
+  messagesFetchTimestampAtom,
+  selectedRecipientAtom,
+  sendMessageActionAtom,
+  uiStateAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Message, MessageWithUser } from '@/lib/supabase'
@@ -23,18 +28,40 @@ export function useMessages(recipientId?: string) {
   const [currentConversationId, setCurrentConversationId] = useAtom(currentConversationIdAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
+  const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
+  const [, setUiState] = useAtom(uiStateAtom)
+
+  // Debounce message fetching to prevent race conditions using atoms
+  const [lastMessagesFetchTime, setLastMessagesFetchTime] = useAtom(messagesFetchTimestampAtom)
+
+  // Use atomFamily for conversation-specific messages
+  const [conversationMessages] = useAtom(
+    recipientId ? messagesByConversationLoadableFamily(recipientId) : messagesAtom
+  )
+
+  // Use action atom for sending messages
+  const [, sendMessageAction] = useAtom(sendMessageActionAtom)
 
   // Set current conversation when recipientId changes
   useEffect(() => {
     if (recipientId && recipientId !== currentConversationId) {
       setCurrentConversationId(recipientId)
+      setSelectedRecipient(recipientId) // Sync with global state
     }
-  }, [recipientId, currentConversationId, setCurrentConversationId])
+  }, [recipientId, currentConversationId, setCurrentConversationId, setSelectedRecipient])
 
   const fetchMessages = useCallback(
     async (targetRecipientId?: string, isInitialLoad = false) => {
       const targetId = targetRecipientId || recipientId
       if (!session?.user?.id || !targetId) return
+
+      // Debounce: prevent multiple fetches within 1 second
+      const now = Date.now()
+      if (!isInitialLoad && now - lastMessagesFetchTime < 1000) {
+        logger.debug('Skipping messages fetch due to debouncing')
+        return
+      }
+      setLastMessagesFetchTime(now)
 
       // Only show loading spinner on initial load, not on background updates
       if (isInitialLoad) {
@@ -52,11 +79,17 @@ export function useMessages(recipientId?: string) {
         const data = await response.json()
         const fetchedMessages = data.messages || []
 
-        // Update messages atom with new messages, filtering out duplicates
+        // Enhanced message deduplication and sorting
         setMessages(prev => {
           const existingIds = new Set(prev.map(m => m.id))
           const newMessages = fetchedMessages.filter((m: MessageWithUser) => !existingIds.has(m.id))
-          return [...prev, ...newMessages]
+
+          // Merge and sort by creation time to ensure proper order
+          const merged = [...prev, ...newMessages].sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+
+          return merged
         })
         // Mark messages as read - call directly to avoid circular dependency
         if (targetId) {
@@ -96,7 +129,15 @@ export function useMessages(recipientId?: string) {
         }
       }
     },
-    [session?.user?.id, recipientId, setMessages, setLoadingStates, setChatUiState]
+    [
+      session?.user?.id,
+      recipientId,
+      setMessages,
+      setLoadingStates,
+      setChatUiState,
+      lastMessagesFetchTime,
+      setLastMessagesFetchTime,
+    ]
   )
 
   const markMessagesAsRead = useCallback(
@@ -129,80 +170,21 @@ export function useMessages(recipientId?: string) {
   const sendMessage = useCallback(
     async (content: string, workoutId?: string, targetRecipientId?: string) => {
       const targetId = targetRecipientId || recipientId
-      if (!session?.user?.id || !targetId) return false
-
-      // Create optimistic message to show immediately
-      const optimisticMessage: MessageWithUser = {
-        id: `temp-${Date.now()}`, // Temporary ID
-        conversation_id: '', // Will be set by server
-        content,
-        sender_id: session.user.id,
-        recipient_id: targetId,
-        workout_id: workoutId || null,
-        read: false,
-        created_at: new Date().toISOString(),
-        sender: {
-          id: session.user.id,
-          full_name: session.user.name || 'You',
-          email: session.user.email || '',
-          role: session.user.role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      }
-
-      // Add optimistic message immediately
-      setMessages(prev => [...prev, optimisticMessage])
+      if (!targetId) return false
 
       try {
-        const response = await fetch('/api/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content,
-            recipientId: targetId,
-            workoutId,
-          }),
+        await sendMessageAction({
+          recipientId: targetId,
+          content,
+          workoutId,
         })
-
-        if (!response.ok) {
-          // Remove optimistic message on failure
-          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
-          logger.error('Error sending message:', response.statusText)
-          return false
-        }
-
-        const result = await response.json()
-
-        // Replace optimistic message with real message
-        if (result.message) {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === optimisticMessage.id
-                ? { ...result.message, sender: optimisticMessage.sender }
-                : msg
-            )
-          )
-        }
-
         return true
       } catch (error) {
-        // Remove optimistic message on error
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
         logger.error('Error sending message:', error)
         return false
       }
     },
-    [
-      session?.user?.id,
-      session?.user?.name,
-      session?.user?.email,
-      session?.user?.role,
-      recipientId,
-      setMessages,
-    ]
+    [recipientId, sendMessageAction]
   )
 
   // Real-time updates for messages with error handling
@@ -289,7 +271,7 @@ export function useMessages(recipientId?: string) {
     },
   })
 
-  // Fetch messages when recipientId changes and set up polling fallback
+  // Enhanced polling with exponential backoff and error recovery
   useEffect(() => {
     if (recipientId) {
       // Only trigger initial load if we haven't loaded this conversation before
@@ -308,13 +290,44 @@ export function useMessages(recipientId?: string) {
         fetchMessages(recipientId, true)
       }
 
-      // Polling fallback - refresh messages every 5 seconds (background updates)
-      // This ensures chat works even if real-time fails
-      const pollInterval = setInterval(() => {
-        fetchMessages(recipientId, false) // Background update, no loading spinner
-      }, 5000)
+      // Enhanced polling with exponential backoff for better performance
+      let currentInterval = 5000 // Start at 5 seconds
+      let consecutiveErrors = 0
+      let pollTimeout: NodeJS.Timeout | null = null
 
-      return () => clearInterval(pollInterval)
+      const pollMessages = async () => {
+        try {
+          await fetchMessages(recipientId, false) // Background update, no loading spinner
+          // Reset on successful fetch
+          currentInterval = 5000
+          consecutiveErrors = 0
+          setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
+        } catch (error) {
+          logger.error('Error in message polling:', error)
+          consecutiveErrors++
+          // Exponential backoff on errors, max 60 seconds
+          currentInterval = Math.min(currentInterval * Math.pow(2, consecutiveErrors), 60000)
+
+          // Update connection status based on error count
+          if (consecutiveErrors >= 3) {
+            setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
+          } else {
+            setUiState(prev => ({ ...prev, connectionStatus: 'reconnecting' }))
+          }
+        }
+
+        // Schedule next poll with current interval
+        pollTimeout = setTimeout(pollMessages, currentInterval)
+      }
+
+      // Start polling
+      pollTimeout = setTimeout(pollMessages, currentInterval)
+
+      return () => {
+        if (pollTimeout) {
+          clearTimeout(pollTimeout)
+        }
+      }
     }
   }, [
     recipientId,
@@ -322,22 +335,52 @@ export function useMessages(recipientId?: string) {
     chatUiState.hasInitiallyLoadedMessages,
     setChatUiState,
     fetchMessages,
+    setUiState,
   ])
 
-  // Get messages for current conversation
-  const conversationMessages = messages.filter(message => {
-    if (!recipientId || !session?.user?.id) return false
+  // Get messages for current conversation using loadable pattern
+  const getConversationMessages = () => {
+    if (!recipientId) return []
 
-    return (
-      (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
-      (message.sender_id === recipientId && message.recipient_id === session.user.id)
+    if (
+      conversationMessages &&
+      typeof conversationMessages === 'object' &&
+      'state' in conversationMessages
+    ) {
+      // Using loadable atom
+      if (conversationMessages.state === 'hasData') {
+        return conversationMessages.data || []
+      }
+      return []
+    }
+
+    // Fallback to filtering global messages
+    if (!session?.user?.id) return []
+    return messages.filter(
+      message =>
+        (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
+        (message.sender_id === recipientId && message.recipient_id === session.user.id)
     )
-  })
+  }
+
+  const getLoadingState = () => {
+    if (!recipientId) return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
+
+    if (
+      conversationMessages &&
+      typeof conversationMessages === 'object' &&
+      'state' in conversationMessages
+    ) {
+      return conversationMessages.state === 'loading'
+    }
+
+    return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
+  }
 
   return {
-    messages: conversationMessages,
+    messages: getConversationMessages(),
     allMessages: messages,
-    loading: loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages, // Only show loading if we haven't loaded initially
+    loading: getLoadingState(),
     sendMessage,
     fetchMessages,
     markMessagesAsRead,

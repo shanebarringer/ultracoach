@@ -15,6 +15,55 @@
       "when": 1754241242207,
       "tag": "0001_brainy_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754400495480,
+      "tag": "0002_wise_speedball",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754402752181,
+      "tag": "0003_uneven_demogoblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1754497227901,
+      "tag": "0004_wooden_whizzer",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1754613252751,
+      "tag": "0005_rich_scourge",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1754617588281,
+      "tag": "0006_friendly_namor",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1754672989902,
+      "tag": "0007_wooden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1754673404106,
+      "tag": "0008_nice_kingpin",
+      "breakpoints": true
     }
   ]
 }

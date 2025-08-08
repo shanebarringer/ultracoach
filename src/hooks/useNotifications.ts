@@ -2,13 +2,14 @@
 
 import { useAtom, useSetAtom } from 'jotai'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Notification } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 
 const logger = createLogger('useNotifications')
 
@@ -16,6 +17,15 @@ export function useNotifications() {
   const { data: session } = useSession()
   const [notifications, setNotifications] = useAtom(notificationsAtom)
   const setUnreadCount = useSetAtom(unreadNotificationsCountAtom)
+  const [preferences, setPreferences] = useState<{
+    toast_notifications?: boolean
+    messages?: boolean
+    workouts?: boolean
+    training_plans?: boolean
+    races?: boolean
+    reminders?: boolean
+    email_notifications?: boolean
+  } | null>(null)
 
   const fetchNotifications = useCallback(async () => {
     if (!session?.user?.id) return
@@ -41,18 +51,47 @@ export function useNotifications() {
     }
   }, [session?.user?.id, setNotifications, setUnreadCount])
 
+  // Fetch user preferences
+  const fetchPreferences = useCallback(async () => {
+    if (!session?.user?.id) return
+
+    try {
+      const response = await fetch('/api/user/notification-preferences')
+      if (response.ok) {
+        const data = await response.json()
+        setPreferences(data.preferences)
+      }
+    } catch (error) {
+      logger.error('Error fetching notification preferences:', error)
+      // Set default preferences if fetch fails
+      setPreferences({
+        toast_notifications: true,
+        messages: true,
+        workouts: true,
+        training_plans: true,
+        races: true,
+        reminders: true,
+      })
+    }
+  }, [session?.user?.id])
+
   useEffect(() => {
     if (session?.user?.id) {
       fetchNotifications()
+      fetchPreferences()
     }
-  }, [session?.user?.id, fetchNotifications]) // Include fetchNotifications dependency as required by ESLint
+  }, [session?.user?.id, fetchNotifications, fetchPreferences])
 
-  // Real-time updates for notifications
+  // Enhanced real-time updates with toast notifications
   useSupabaseRealtime({
     table: 'notifications',
     filter: `user_id=eq.${session?.user?.id}`,
     onInsert: payload => {
       const newNotification = payload.new as Notification
+
+      // Show toast for new notification
+      showNotificationToast(newNotification)
+
       setNotifications(prev => {
         const updated = [newNotification, ...prev.slice(0, 49)]
         setUnreadCount(updated.filter(n => !n.read).length)
@@ -70,6 +109,53 @@ export function useNotifications() {
       })
     },
   })
+
+  // Helper function to show toast notifications with preference filtering
+  const showNotificationToast = (notification: Notification) => {
+    // Check if toast notifications are enabled
+    if (!preferences?.toast_notifications) return
+
+    // Map notification types to preference keys
+    const getPreferenceKey = (type: string) => {
+      switch (type) {
+        case 'message':
+          return 'messages'
+        case 'workout':
+          return 'workouts'
+        case 'training_plan':
+          return 'training_plans'
+        case 'race':
+          return 'races'
+        default:
+          return null
+      }
+    }
+
+    const preferenceKey = getPreferenceKey(notification.type)
+    if (preferenceKey && preferences?.[preferenceKey as keyof typeof preferences] === false) {
+      return
+    }
+
+    const getNotificationIcon = (type: string) => {
+      switch (type) {
+        case 'workout':
+          return '🏃'
+        case 'training_plan':
+          return '📋'
+        case 'message':
+          return '💬'
+        case 'race':
+          return '🏁'
+        default:
+          return '📢'
+      }
+    }
+
+    const icon = getNotificationIcon(notification.type)
+    const title = `${icon} ${notification.title}`
+
+    toast.info(title, notification.message)
+  }
 
   const markAsRead = async (notificationId: string) => {
     try {

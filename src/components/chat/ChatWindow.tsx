@@ -1,6 +1,14 @@
 'use client'
 
-import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
+import {
+  Button,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Spinner,
+} from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
@@ -11,11 +19,16 @@ import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { chatUiStateAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
 
+import ConnectionStatus from './ConnectionStatus'
 import MessageInput from './MessageInput'
-import MessageList from './MessageList'
+import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
+
+const logger = createLogger('ChatWindow')
 
 interface ChatWindowProps {
   recipientId: string
@@ -39,11 +52,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       try {
         const success = await sendMessage(content, workoutId, contextType)
         if (!success) {
-          alert('Failed to send message. Please try again.')
+          toast.error('Message Failed', 'Unable to send message. Please try again.')
+        } else {
+          // Optional: Show success toast for sent messages (can be removed if too noisy)
+          // toast.success('Message Sent', 'Your message has been delivered.')
         }
       } catch (error) {
-        console.error('Error sending message:', error)
-        alert('Failed to send message. Please try again.')
+        logger.error('Error sending message:', error)
+        toast.error('Message Failed', 'Unable to send message. Please try again.')
       } finally {
         setChatUiState(prev => ({ ...prev, sending: false }))
       }
@@ -51,31 +67,32 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
     [session?.user?.id, chatUiState.sending, sendMessage, setChatUiState]
   )
 
-  // Filter messages by workout if filter is active
-  const filteredMessages = chatUiState.filterWorkoutId
-    ? messages.filter(msg => msg.workout_id === chatUiState.filterWorkoutId)
-    : messages
+  // Note: Message filtering is now handled by the PerformantMessageList component
 
   // Get workout for filter display
   const filterWorkout = chatUiState.filterWorkoutId
-    ? workouts.find(w => w.id === chatUiState.filterWorkoutId)
+    ? workouts.find((w: { id: string | null }) => w.id === chatUiState.filterWorkoutId)
     : null
 
   // Get workouts that have messages for filtering options
-  const workoutsWithMessages = workouts.filter(workout =>
-    messages.some(msg => msg.workout_id === workout.id)
+  const workoutsWithMessages = workouts.filter((workout: { id: string | null }) =>
+    messages.some((msg: { workout_id: string | null }) => msg.workout_id === workout.id)
   )
 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center gap-3">
+          <Spinner size="lg" color="primary" />
+          <p className="text-sm text-foreground-600">Loading conversation...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 relative">
+      <ConnectionStatus />
       {/* Chat Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
         <div className="flex items-center space-x-3">
@@ -131,12 +148,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                         </DropdownItem>,
                       ]
                     : []),
-                  ...workoutsWithMessages.map(workout => (
-                    <DropdownItem key={workout.id}>
-                      {workout.planned_type || 'Workout'} -{' '}
-                      {new Date(workout.date || '').toLocaleDateString()}
-                    </DropdownItem>
-                  )),
+                  ...workoutsWithMessages.map(
+                    (workout: { id: string; planned_type?: string; date?: string }) => (
+                      <DropdownItem key={workout.id}>
+                        {workout.planned_type || 'Workout'} -{' '}
+                        {new Date(workout.date || '').toLocaleDateString()}
+                      </DropdownItem>
+                    )
+                  ),
                 ]}
               </DropdownMenu>
             </Dropdown>
@@ -146,8 +165,9 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
       {/* Messages */}
       <div className="flex-1 flex flex-col min-h-0">
-        <MessageList
-          messages={filteredMessages}
+        {/* Use performant message list for better performance with splitAtom */}
+        <PerformantMessageList
+          recipientId={recipientId}
           currentUserId={(session?.user?.id as string) || ''}
         />
 

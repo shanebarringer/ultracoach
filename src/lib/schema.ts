@@ -2,6 +2,7 @@ import {
   boolean,
   decimal,
   integer,
+  json,
   pgTable,
   text,
   timestamp,
@@ -34,6 +35,15 @@ export const user = pgTable('user', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   fullName: text('full_name'),
+  notification_preferences: json('notification_preferences').$defaultFn(() => ({
+    messages: true,
+    workouts: true,
+    training_plans: true,
+    races: true,
+    reminders: true,
+    toast_notifications: true,
+    email_notifications: false,
+  })),
 })
 
 export const session = pgTable('session', {
@@ -102,9 +112,9 @@ export const training_plans = pgTable('training_plans', {
 // Workouts
 export const workouts = pgTable('workouts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  training_plan_id: uuid('training_plan_id')
-    .notNull()
-    .references(() => training_plans.id, { onDelete: 'cascade' }),
+  training_plan_id: uuid('training_plan_id').references(() => training_plans.id, {
+    onDelete: 'cascade',
+  }),
   date: timestamp('date').notNull(),
   planned_distance: decimal('planned_distance', { precision: 5, scale: 2 }),
   planned_duration: integer('planned_duration'),
@@ -116,6 +126,11 @@ export const workouts = pgTable('workouts', {
   workout_notes: text('workout_notes'),
   coach_feedback: text('coach_feedback'),
   status: text('status').default('planned').notNull(),
+  // Enhanced workout fields
+  category: text('category'), // 'easy', 'tempo', 'interval', 'long_run', etc.
+  intensity: integer('intensity'), // 1-10 scale
+  terrain: text('terrain'), // 'road', 'trail', 'track', 'treadmill'
+  elevation_gain: integer('elevation_gain'), // feet
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
@@ -156,6 +171,25 @@ export const messages = pgTable('messages', {
     onDelete: 'set null',
   }),
 })
+
+// Typing Status
+export const typing_status = pgTable(
+  'typing_status',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    user_id: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    recipient_id: text('recipient_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    is_typing: boolean('is_typing').default(false).notNull(),
+    last_updated: timestamp('last_updated', { withTimezone: true }).defaultNow().notNull(),
+  },
+  t => ({
+    userRecipientUnique: unique().on(t.user_id, t.recipient_id),
+  })
+)
 
 // Message Workout Links
 export const message_workout_links = pgTable('message_workout_links', {
@@ -275,6 +309,164 @@ export const coach_runners = pgTable(
     unique_coach_runner: unique().on(table.coach_id, table.runner_id),
   })
 )
+
+// User Onboarding
+export const user_onboarding = pgTable('user_onboarding', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' })
+    .unique(),
+  role: text('role', { enum: ['runner', 'coach'] }).notNull(),
+  current_step: integer('current_step').default(1).notNull(),
+  total_steps: integer('total_steps').default(5).notNull(),
+  completed: boolean('completed').default(false).notNull(),
+  step_data: json('step_data').$defaultFn(() => ({})), // Store answers and progress for each step
+  started_at: timestamp('started_at', { withTimezone: true }).defaultNow(),
+  completed_at: timestamp('completed_at', { withTimezone: true }),
+  skipped_at: timestamp('skipped_at', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// Onboarding Steps Template
+export const onboarding_steps = pgTable('onboarding_steps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  step_number: integer('step_number').notNull(),
+  role: text('role', { enum: ['runner', 'coach', 'both'] }).notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  step_type: text('step_type', {
+    enum: ['welcome', 'profile', 'preferences', 'goals', 'connections', 'completion'],
+  }).notNull(),
+  fields: json('fields').$defaultFn(() => []), // Form fields configuration
+  is_required: boolean('is_required').default(true).notNull(),
+  is_active: boolean('is_active').default(true).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// User Feedback
+export const user_feedback = pgTable('user_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  feedback_type: text('feedback_type', {
+    enum: ['bug_report', 'feature_request', 'general_feedback', 'complaint', 'compliment'],
+  }).notNull(),
+  category: text('category'), // 'ui_ux', 'performance', 'functionality', 'content', 'other'
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).default('medium'),
+  status: text('status', { enum: ['open', 'in_progress', 'resolved', 'closed'] }).default('open'),
+  user_email: text('user_email'), // In case user wants follow-up
+  browser_info: json('browser_info'), // User agent, screen size, etc.
+  page_url: text('page_url'), // Where the feedback was submitted from
+  screenshots: text('screenshots').array(), // URLs to uploaded screenshots
+  admin_notes: text('admin_notes'), // Internal notes for admins
+  resolved_by: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
+  resolved_at: timestamp('resolved_at', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// User Settings - Comprehensive user preferences and account settings
+export const user_settings = pgTable('user_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' })
+    .unique(),
+
+  // Notification Preferences
+  notification_preferences: json('notification_preferences').$defaultFn(() => ({
+    // In-app notifications
+    messages: true,
+    workouts: true,
+    training_plans: true,
+    races: true,
+    reminders: true,
+    system_updates: true,
+
+    // Email notifications
+    email_enabled: false,
+    email_frequency: 'daily', // 'immediate', 'daily', 'weekly', 'never'
+    email_messages: false,
+    email_workouts: false,
+    email_training_plans: false,
+    email_races: false,
+    email_reminders: false,
+    email_weekly_summary: false,
+
+    // Push notifications (for future mobile app)
+    push_enabled: false,
+    push_messages: false,
+    push_workouts: false,
+    push_reminders: false,
+  })),
+
+  // Display Preferences
+  display_preferences: json('display_preferences').$defaultFn(() => ({
+    theme: 'system', // 'light', 'dark', 'system'
+    density: 'comfortable', // 'compact', 'comfortable', 'spacious'
+    sidebar_collapsed: false,
+    show_tips: true,
+    animations_enabled: true,
+    reduced_motion: false,
+  })),
+
+  // Unit Preferences
+  unit_preferences: json('unit_preferences').$defaultFn(() => ({
+    distance: 'miles', // 'miles', 'kilometers'
+    elevation: 'feet', // 'feet', 'meters'
+    temperature: 'fahrenheit', // 'fahrenheit', 'celsius'
+    pace_format: 'min_per_mile', // 'min_per_mile', 'min_per_km', 'mph', 'kmh'
+    time_format: '12h', // '12h', '24h'
+    date_format: 'MM/dd/yyyy', // 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy-MM-dd'
+  })),
+
+  // Privacy Settings
+  privacy_settings: json('privacy_settings').$defaultFn(() => ({
+    profile_visibility: 'coaches_only', // 'public', 'coaches_only', 'private'
+    show_activity_stats: true,
+    show_training_calendar: true,
+    allow_coach_invitations: true,
+    allow_runner_connections: true,
+    show_location: true,
+    show_age: true,
+    data_sharing_analytics: true,
+  })),
+
+  // Communication Settings
+  communication_settings: json('communication_settings').$defaultFn(() => ({
+    auto_responses_enabled: false,
+    auto_response_message: '',
+    quiet_hours_enabled: false,
+    quiet_hours_start: '22:00',
+    quiet_hours_end: '07:00',
+    weekend_quiet_mode: false,
+    message_sound_enabled: true,
+    typing_indicators_enabled: true,
+  })),
+
+  // Workout & Training Preferences
+  training_preferences: json('training_preferences').$defaultFn(() => ({
+    default_workout_view: 'calendar', // 'calendar', 'list', 'timeline'
+    show_completed_workouts: true,
+    auto_sync_devices: false,
+    preferred_training_times: [],
+    rest_day_preferences: ['sunday'],
+    workout_reminder_time: 60, // minutes before workout
+    show_weather_info: true,
+    track_heart_rate: true,
+    track_cadence: false,
+    track_power: false,
+  })),
+
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
 
 // ===================================
 // LEGACY ALIASES (For Better Auth compatibility)

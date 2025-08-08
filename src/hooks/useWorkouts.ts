@@ -17,26 +17,46 @@ export function useWorkouts() {
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
 
   const fetchWorkouts = useCallback(async () => {
-    if (!session?.user?.id) return
+    if (!session?.user?.id) {
+      logger.debug('No session user ID, skipping workout fetch')
+      return
+    }
 
     setLoadingStates(prev => ({ ...prev, workouts: true }))
+    logger.debug('Fetching workouts for user', { userId: session.user.id, role: session.user.role })
 
     try {
-      const response = await fetch('/api/workouts')
+      const response = await fetch('/api/workouts', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
 
       if (!response.ok) {
-        logger.error('Failed to fetch workouts:', response.statusText)
-        return
+        logger.error(`Failed to fetch workouts: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch workouts: ${response.statusText}`)
       }
 
       const data = await response.json()
+      logger.debug('Successfully fetched workouts', {
+        count: data.workouts?.length || 0,
+        workouts: data.workouts?.slice(0, 3)?.map((w: Workout) => ({
+          id: w.id,
+          date: w.date,
+          planned_type: w.planned_type,
+          training_plan_id: w.training_plan_id,
+        })),
+      })
+
       setWorkouts(data.workouts || [])
     } catch (error) {
       logger.error('Error fetching workouts:', error)
+      setWorkouts([])
     } finally {
       setLoadingStates(prev => ({ ...prev, workouts: false }))
     }
-  }, [session?.user?.id, setWorkouts, setLoadingStates])
+  }, [session?.user?.id, session?.user?.role, setWorkouts, setLoadingStates])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
@@ -104,5 +124,6 @@ export function useWorkouts() {
     fetchWorkouts,
     updateWorkout,
     deleteWorkout,
+    error: null,
   }
 }

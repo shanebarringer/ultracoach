@@ -1,0 +1,62 @@
+'use client'
+
+import { useAtom } from 'jotai'
+
+import { memo, useEffect, useRef } from 'react'
+
+import { conversationMessagesAtomsFamily } from '@/lib/atoms'
+
+import GranularMessage from './GranularMessage'
+
+interface PerformantMessageListProps {
+  recipientId: string
+  currentUserId: string
+}
+
+// High-performance message list using splitAtom pattern
+const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMessageListProps) => {
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Get split atoms for this conversation - each message gets its own atom
+  const [messageAtoms] = useAtom(conversationMessagesAtomsFamily(recipientId))
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
+  }, [messageAtoms.length])
+
+  // If no messages, show empty state
+  if (messageAtoms.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <p className="text-lg mb-2">No messages yet</p>
+          <p className="text-sm">Start the conversation!</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={messagesContainerRef}
+      className="flex-1 overflow-y-auto p-4 space-y-2"
+      style={{ maxHeight: 'calc(100vh - 200px)' }}
+    >
+      {/* Each message atom renders independently - only re-renders when that specific message changes */}
+      {messageAtoms.map((messageAtom, index) => (
+        <GranularMessage
+          key={index} // Use index as key since atom identity is stable
+          messageAtom={messageAtom}
+          currentUserId={currentUserId}
+        />
+      ))}
+    </div>
+  )
+})
+
+PerformantMessageList.displayName = 'PerformantMessageList'
+
+export default PerformantMessageList

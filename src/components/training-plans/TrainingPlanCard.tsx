@@ -181,7 +181,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
               </div>
               <div className="flex items-center gap-1 text-foreground-600">
                 <MapPinIcon className="w-4 h-4" />
-                <span>{plan.race.distance || 'Ultra'}</span>
+                <span>{plan.race.distance_type || 'Ultra'}</span>
               </div>
             </div>
           )}

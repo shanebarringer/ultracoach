@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -19,9 +19,20 @@ export function useConversations() {
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
 
+  // Debounce fetch to prevent race conditions
+  const [lastFetchTime, setLastFetchTime] = useState(0)
+
   const fetchConversations = useCallback(
     async (isInitialLoad = false) => {
       if (!session?.user?.id) return
+
+      // Debounce: prevent multiple fetches within 2 seconds
+      const now = Date.now()
+      if (!isInitialLoad && now - lastFetchTime < 2000) {
+        logger.debug('Skipping fetch due to debouncing')
+        return
+      }
+      setLastFetchTime(now)
 
       // Only show loading spinner on initial load, not on background updates
       if (isInitialLoad) {
@@ -81,14 +92,13 @@ export function useConversations() {
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       session?.user?.id,
       session?.user?.email,
       session?.user?.name,
       session?.user?.role,
-      setConversations,
-      setLoadingStates,
-      setChatUiState,
+      // Intentionally omitting lastFetchTime, setLastFetchTime, and Jotai setters to prevent infinite loops
     ]
   )
 
@@ -132,7 +142,8 @@ export function useConversations() {
         }
       })
     },
-    [session?.user?.id, setConversations]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session?.user?.id] // Intentionally omitting setConversations as it's a stable Jotai setter
   )
 
   const markConversationAsRead = useCallback(
@@ -164,7 +175,8 @@ export function useConversations() {
         logger.error('Error marking conversation as read:', error)
       }
     },
-    [session?.user?.id, setConversations]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session?.user?.id] // Intentionally omitting setConversations as it's a stable Jotai setter
   )
 
   // Fetch conversations on mount and when session changes, with polling fallback
@@ -173,11 +185,12 @@ export function useConversations() {
       // Initial load with loading spinner
       fetchConversations(true)
 
-      // Polling fallback - refresh conversations every 10 seconds (background updates)
+      // Polling fallback - refresh conversations every 30 seconds (background updates)
       // This ensures conversation list stays updated even if real-time fails
+      // Reduced frequency to minimize flickering
       const pollInterval = setInterval(() => {
         fetchConversations(false) // Background update, no loading spinner
-      }, 10000)
+      }, 30000)
 
       return () => clearInterval(pollInterval)
     }

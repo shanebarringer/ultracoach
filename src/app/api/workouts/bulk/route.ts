@@ -134,13 +134,13 @@ export async function POST(request: NextRequest) {
       planned_duration: workoutData.plannedDuration || null,
       workout_notes: workoutData.notes || null,
       status: 'planned' as const,
+      // Enhanced workout fields
+      category: workoutData.category || null,
+      intensity: workoutData.intensity || null,
+      terrain: workoutData.terrain || null,
+      elevation_gain: workoutData.elevationGain || null,
       created_at: new Date(),
       updated_at: new Date(),
-      // Note: Some fields like workout_category are not in current schema
-      // workout_category: workout.category,
-      // intensity_level: workout.intensity,
-      // terrain_type: workout.terrain,
-      // elevation_gain_feet: workout.elevationGain,
     }))
 
     // Bulk insert workouts

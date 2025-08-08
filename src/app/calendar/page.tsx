@@ -12,15 +12,19 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { useSession } from '@/hooks/useBetterSession'
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { filteredWorkoutsAtom, uiStateAtom } from '@/lib/atoms'
+import { filteredWorkoutsAtom, uiStateAtom, workoutStatsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+
+const logger = createLogger('CalendarPage')
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
   const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
+  const [workoutStats] = useAtom(workoutStatsAtom)
   const [, setUiState] = useAtom(uiStateAtom)
 
   useEffect(() => {
@@ -34,7 +38,7 @@ export default function CalendarPage() {
 
   const handleWorkoutClick = useCallback(
     (workout: Workout) => {
-      console.log('Workout clicked:', workout)
+      logger.debug('Workout clicked:', workout)
       setUiState(prev => ({ ...prev, selectedWorkout: workout }))
       toast.info('Workout Details', 'Workout detail modal coming soon!')
     },
@@ -42,7 +46,7 @@ export default function CalendarPage() {
   )
 
   const handleDateClick = useCallback((date: CalendarDate) => {
-    console.log('Date clicked:', date.toString())
+    logger.debug('Date clicked:', date.toString())
     toast.info('Add Workout', 'Add workout modal coming soon!')
   }, [])
 
@@ -138,7 +142,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Empty State */}
-          {!workoutsLoading && filteredWorkouts.length === 0 && (
+          {!workoutsLoading && (filteredWorkouts || []).length === 0 && (
             <div className="mt-8 text-center py-12">
               <div className="w-24 h-24 mx-auto mb-6 bg-content2 rounded-full flex items-center justify-center">
                 <svg
@@ -181,32 +185,26 @@ export default function CalendarPage() {
           )}
 
           {/* Training Summary */}
-          {filteredWorkouts.length > 0 && (
+          {(filteredWorkouts || []).length > 0 && (
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-content1 rounded-lg p-6 border border-divider">
                 <h3 className="text-lg font-semibold text-foreground mb-2">This Month</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Total Workouts:</span>
-                    <span className="font-medium">{filteredWorkouts.length}</span>
+                    <span className="font-medium">{workoutStats.total}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed:</span>
-                    <span className="font-medium text-success">
-                      {filteredWorkouts.filter(w => w.status === 'completed').length}
-                    </span>
+                    <span className="font-medium text-success">{workoutStats.completed}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned:</span>
-                    <span className="font-medium text-primary">
-                      {filteredWorkouts.filter(w => w.status === 'planned').length}
-                    </span>
+                    <span className="font-medium text-primary">{workoutStats.planned}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Missed:</span>
-                    <span className="font-medium text-danger">
-                      {filteredWorkouts.filter(w => w.status === 'skipped').length}
-                    </span>
+                    <span className="font-medium text-danger">{workoutStats.skipped}</span>
                   </div>
                 </div>
               </div>
@@ -217,32 +215,18 @@ export default function CalendarPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned Distance:</span>
                     <span className="font-medium">
-                      {filteredWorkouts
-                        .reduce((sum, w) => sum + (w.planned_distance || 0), 0)
-                        .toFixed(1)}{' '}
-                      mi
+                      {workoutStats.plannedDistance.toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>
                     <span className="font-medium text-success">
-                      {filteredWorkouts
-                        .filter(w => w.status === 'completed')
-                        .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0)
-                        .toFixed(1)}{' '}
-                      mi
+                      {workoutStats.completedDistance.toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
-                    <span className="font-medium">
-                      {filteredWorkouts.length > 0
-                        ? (
-                            filteredWorkouts.reduce((sum, w) => sum + (w.intensity || 0), 0) /
-                            filteredWorkouts.length
-                          ).toFixed(1)
-                        : '0.0'}
-                    </span>
+                    <span className="font-medium">{workoutStats.avgIntensity.toFixed(1)}</span>
                   </div>
                 </div>
               </div>

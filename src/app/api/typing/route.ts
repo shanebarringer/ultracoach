@@ -1,15 +1,26 @@
+import { and, eq, or } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
-import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { auth } from '@/lib/better-auth'
+import type { User } from '@/lib/better-auth'
+import { db } from '@/lib/database'
+import { createLogger } from '@/lib/logger'
+import { coach_runners, typing_status } from '@/lib/schema'
+
+const logger = createLogger('api-typing')
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
 
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sessionUser = session.user as User
 
     const { searchParams } = new URL(request.url)
     const recipientId = searchParams.get('recipientId')
@@ -18,58 +29,118 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
 
-    // Check if recipient is typing to current user
-    const { data: typingStatus, error } = await supabaseAdmin
-      .from('typing_status')
-      .select('is_typing, last_updated')
-      .eq('user_id', recipientId)
-      .eq('recipient_id', session.user.id)
-      .single()
+    // SECURITY: Verify active relationship exists before allowing typing status access
+    const relationship = await db
+      .select()
+      .from(coach_runners)
+      .where(
+        and(
+          or(
+            and(
+              eq(coach_runners.coach_id, sessionUser.id),
+              eq(coach_runners.runner_id, recipientId)
+            ),
+            and(
+              eq(coach_runners.runner_id, sessionUser.id),
+              eq(coach_runners.coach_id, recipientId)
+            )
+          ),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = no rows found
-      console.error('Error fetching typing status:', error)
-      return NextResponse.json({ error: 'Failed to fetch typing status' }, { status: 500 })
+    if (!relationship[0]) {
+      return NextResponse.json({ error: 'No active relationship found' }, { status: 403 })
     }
+
+    // Check if recipient is typing to current user
+    const typingStatusResult = await db
+      .select({
+        is_typing: typing_status.is_typing,
+        last_updated: typing_status.last_updated,
+      })
+      .from(typing_status)
+      .where(
+        and(eq(typing_status.user_id, recipientId), eq(typing_status.recipient_id, sessionUser.id))
+      )
+      .limit(1)
+
+    const typingStatusData = typingStatusResult[0] || null
 
     // Check if typing status is recent (within last 5 seconds)
     const isRecent =
-      typingStatus?.last_updated &&
-      new Date().getTime() - new Date(typingStatus.last_updated).getTime() < 5000
+      typingStatusData?.last_updated &&
+      new Date().getTime() - new Date(typingStatusData.last_updated).getTime() < 5000
 
     return NextResponse.json({
-      isTyping: (typingStatus?.is_typing && isRecent) || false,
+      isTyping: (typingStatusData?.is_typing && isRecent) || false,
     })
   } catch (error) {
-    console.error('API error in GET /typing:', error)
+    logger.error('API error in GET /typing:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
-    if (!session?.user) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    })
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const sessionUser = session.user as User
     const { recipientId, isTyping } = await request.json()
     if (!recipientId) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
-    // Update or insert typing status
-    const { error } = await supabaseAdmin.from('typing_status').upsert({
-      user_id: session.user.id,
-      recipient_id: recipientId,
-      is_typing: isTyping,
-      last_updated: new Date().toISOString(),
-    })
-    if (error) {
-      console.error('Failed to update typing status', error)
-      return NextResponse.json({ error: 'Failed to update typing status' }, { status: 500 })
+
+    // SECURITY: Verify active relationship exists before allowing typing status updates
+    const relationship = await db
+      .select()
+      .from(coach_runners)
+      .where(
+        and(
+          or(
+            and(
+              eq(coach_runners.coach_id, sessionUser.id),
+              eq(coach_runners.runner_id, recipientId)
+            ),
+            and(
+              eq(coach_runners.runner_id, sessionUser.id),
+              eq(coach_runners.coach_id, recipientId)
+            )
+          ),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
+
+    if (!relationship[0]) {
+      return NextResponse.json({ error: 'No active relationship found' }, { status: 403 })
     }
+
+    // Update or insert typing status using upsert-like functionality
+    await db
+      .insert(typing_status)
+      .values({
+        user_id: sessionUser.id,
+        recipient_id: recipientId,
+        is_typing: isTyping,
+        last_updated: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [typing_status.user_id, typing_status.recipient_id],
+        set: {
+          is_typing: isTyping,
+          last_updated: new Date(),
+        },
+      })
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('API error in POST /typing', error)
+    logger.error('API error in POST /typing', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

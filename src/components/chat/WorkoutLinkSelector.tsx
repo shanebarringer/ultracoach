@@ -14,11 +14,13 @@ import {
   Select,
   SelectItem,
 } from '@heroui/react'
+import { useAtom } from 'jotai'
 import { Calendar, Link2, MapPin, Target } from 'lucide-react'
 
 import React, { useState } from 'react'
 
 import { useWorkouts } from '@/hooks/useWorkouts'
+import { workoutLinkSelectorSearchAtom } from '@/lib/atoms'
 import { Workout } from '@/lib/supabase'
 
 interface WorkoutLinkSelectorProps {
@@ -44,10 +46,10 @@ export default function WorkoutLinkSelector({
   const { workouts, loading } = useWorkouts()
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [linkType, setLinkType] = useState('reference')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useAtom(workoutLinkSelectorSearchAtom)
 
   // Filter workouts for the current conversation context
-  const filteredWorkouts = workouts.filter(workout => {
+  const filteredWorkouts = workouts.filter((workout: Workout) => {
     const matchesSearch =
       searchTerm === '' ||
       workout.planned_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,7 +59,10 @@ export default function WorkoutLinkSelector({
 
   // Group workouts by date (recent first)
   const groupedWorkouts = filteredWorkouts
-    .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
+    .sort(
+      (a: Workout, b: Workout) =>
+        new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
+    )
     .slice(0, 20) // Limit to recent 20 workouts
 
   const getWorkoutStatusColor = (status: string) => {
@@ -144,7 +149,7 @@ export default function WorkoutLinkSelector({
                 <p className="text-small text-default-400">Try adjusting your search</p>
               </div>
             ) : (
-              groupedWorkouts.map(workout => (
+              groupedWorkouts.map((workout: Workout) => (
                 <Card
                   key={workout.id}
                   isPressable

@@ -1,22 +1,24 @@
 'use client'
 
 import { Card, CardBody } from '@heroui/react'
+import { useAtom } from 'jotai'
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
 import { CoachSelector } from '@/components/relationships/CoachSelector'
 import { RelationshipsList } from '@/components/relationships/RelationshipsList'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
+import { relationshipsAtom } from '@/lib/atoms'
 
 export function RelationshipsPageContent() {
   const { user } = useBetterAuth()
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [, refreshRelationships] = useAtom(relationshipsAtom)
 
   const handleRelationshipChange = useCallback(() => {
-    // Force refresh of relationships list
-    setRefreshKey(prev => prev + 1)
-  }, [])
+    // Refresh relationships atom to get updated data
+    refreshRelationships()
+  }, [refreshRelationships])
 
   if (!user) {
     return (
@@ -32,10 +34,7 @@ export function RelationshipsPageContent() {
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left Column - Existing Relationships */}
       <div className="space-y-6">
-        <RelationshipsList
-          key={`relationships-${refreshKey}`}
-          onRelationshipUpdated={handleRelationshipChange}
-        />
+        <RelationshipsList onRelationshipUpdated={handleRelationshipChange} />
       </div>
 
       {/* Right Column - Find New Connections */}

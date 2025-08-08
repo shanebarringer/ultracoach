@@ -2,9 +2,15 @@
 
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
+import { useAtom, useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
+
+import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('CoachSelector')
 
 interface Coach {
   id: string
@@ -19,45 +25,28 @@ interface CoachSelectorProps {
 }
 
 export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
-  const [coaches, setCoaches] = useState<Coach[]>([])
-  const [filteredCoaches, setFilteredCoaches] = useState<Coach[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use Jotai atoms instead of local state
+  const coaches = useAtomValue(availableCoachesAtom)
+  const [, refreshRelationships] = useAtom(relationshipsAtom)
+  const [, refreshAvailableCoaches] = useAtom(availableCoachesAtom)
+
   const [searchTerm, setSearchTerm] = useState('')
   const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 
-  useEffect(() => {
-    fetchAvailableCoaches()
-  }, [])
+  // Derive loading state from the atom's loadable state
+  const loading = coaches.length === 0
 
-  useEffect(() => {
-    // Filter coaches based on search term
-    const filtered = coaches.filter(
-      coach =>
+  // Use useMemo for filtered coaches for better performance
+  const filteredCoaches = useMemo(() => {
+    return coaches.filter(
+      (coach: Coach) =>
         coach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coach.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coach.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    setFilteredCoaches(filtered)
   }, [coaches, searchTerm])
 
-  const fetchAvailableCoaches = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/coaches/available')
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch available coaches')
-      }
-
-      const data = await response.json()
-      setCoaches(data.coaches)
-    } catch (error) {
-      console.error('Error fetching coaches:', error)
-      toast.error('Failed to load available coaches')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Remove fetchAvailableCoaches - the atom handles this automatically
 
   const handleConnectToCoach = async (coachId: string) => {
     setConnectingIds(prev => new Set(prev).add(coachId))
@@ -81,13 +70,14 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
 
       toast.success('Connection request sent to coach!')
 
-      // Remove the coach from the available list
-      setCoaches(prev => prev.filter(coach => coach.id !== coachId))
+      // Refresh both available coaches and relationships atoms
+      refreshRelationships()
+      refreshAvailableCoaches()
 
       // Notify parent component
       onRelationshipCreated?.()
     } catch (error) {
-      console.error('Error connecting to coach:', error)
+      logger.error('Error connecting to coach:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to connect to coach')
     } finally {
       setConnectingIds(prev => {
@@ -157,7 +147,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredCoaches.map(coach => (
+              {filteredCoaches.map((coach: Coach) => (
                 <div
                   key={coach.id}
                   className="flex items-center gap-4 p-4 bg-default-50 hover:bg-default-100 rounded-lg transition-colors"

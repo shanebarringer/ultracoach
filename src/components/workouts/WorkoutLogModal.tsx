@@ -64,6 +64,7 @@ interface WorkoutLogModalProps {
   onClose: () => void
   onSuccess: () => void
   workout: Workout
+  defaultToComplete?: boolean
 }
 
 export default function WorkoutLogModal({
@@ -71,6 +72,7 @@ export default function WorkoutLogModal({
   onClose,
   onSuccess,
   workout,
+  defaultToComplete = false,
 }: WorkoutLogModalProps) {
   const [formState, setFormState] = useAtom(workoutLogFormAtom)
 
@@ -84,7 +86,10 @@ export default function WorkoutLogModal({
   } = useForm<WorkoutLogForm>({
     resolver: zodResolver(workoutLogSchema),
     defaultValues: {
-      status: workout.status || 'planned',
+      status:
+        defaultToComplete && workout.status !== 'completed'
+          ? 'completed'
+          : workout.status || 'planned',
       actualType: workout.actual_type || workout.planned_type || '',
       category: workout.category || undefined,
       intensity: workout.intensity || undefined,
@@ -102,7 +107,10 @@ export default function WorkoutLogModal({
   useEffect(() => {
     if (isOpen) {
       reset({
-        status: workout.status || 'planned',
+        status:
+          defaultToComplete && workout.status !== 'completed'
+            ? 'completed'
+            : workout.status || 'planned',
         actualType: workout.actual_type || workout.planned_type || '',
         category: workout.category || undefined,
         intensity: workout.intensity || undefined,
@@ -114,7 +122,7 @@ export default function WorkoutLogModal({
         injuryNotes: workout.injury_notes || '',
       })
     }
-  }, [workout, isOpen, reset])
+  }, [workout, isOpen, reset, defaultToComplete])
 
   const onSubmit = async (data: WorkoutLogForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))

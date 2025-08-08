@@ -19,6 +19,7 @@ import {
   Textarea,
   useDisclosure,
 } from '@heroui/react'
+import { useAtom } from 'jotai'
 import {
   CalendarIcon,
   EditIcon,
@@ -32,26 +33,15 @@ import {
   TrendingUpIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { useSession } from '@/hooks/useBetterSession'
-
-interface Race {
-  id: string
-  name: string
-  date: string
-  distance_miles: number
-  distance_type: string
-  location: string
-  elevation_gain_feet: number
-  terrain_type: string
-  website_url?: string
-  notes?: string
-  created_by: string
-}
+import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+import type { Race } from '@/lib/supabase'
 
 const DISTANCE_TYPES = [
   { key: '50K', label: '50K (31.07 miles)' },
@@ -71,9 +61,12 @@ const TERRAIN_TYPES = [
 export default function RacesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [races, setRaces] = useState<Race[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedRace, setSelectedRace] = useState<Race | null>(null)
+  const [races, refreshRaces] = useAtom(racesAtom)
+  const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
+  const logger = createLogger('RacesPage')
+
+  // Derive loading state from atom data
+  const loading = useMemo(() => races.length === 0, [races.length])
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -92,21 +85,12 @@ export default function RacesPage() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/races')
-
-      if (!response.ok) {
-        console.error('Failed to fetch races:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRaces(data.races || [])
+      logger.debug('Triggering races refresh')
+      await refreshRaces()
     } catch (error) {
-      console.error('Error fetching races:', error)
-    } finally {
-      setLoading(false)
+      logger.error('Error refreshing races:', error)
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, refreshRaces, logger])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -121,6 +105,7 @@ export default function RacesPage() {
       return
     }
 
+    // Fetch races data using atom
     fetchRaces()
   }, [status, session, router, fetchRaces])
 
@@ -155,6 +140,11 @@ export default function RacesPage() {
     onOpen()
   }
 
+  const handleCloseModal = () => {
+    setSelectedRace(null)
+    onClose()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -177,12 +167,13 @@ export default function RacesPage() {
 
       if (response.ok) {
         await fetchRaces()
-        onClose()
+        handleCloseModal()
+        logger.info(`Race ${selectedRace ? 'updated' : 'created'} successfully`)
       } else {
-        console.error('Failed to save race:', response.statusText)
+        logger.error('Failed to save race:', response.statusText)
       }
     } catch (error) {
-      console.error('Error saving race:', error)
+      logger.error('Error saving race:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -198,11 +189,12 @@ export default function RacesPage() {
 
       if (response.ok) {
         await fetchRaces()
+        logger.info('Race deleted successfully', { raceId })
       } else {
-        console.error('Failed to delete race:', response.statusText)
+        logger.error('Failed to delete race:', response.statusText)
       }
     } catch (error) {
-      console.error('Error deleting race:', error)
+      logger.error('Error deleting race:', error)
     }
   }
 
@@ -281,7 +273,7 @@ export default function RacesPage() {
         </Card>
 
         {/* Race Management Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+        <Modal isOpen={isOpen} onClose={handleCloseModal} size="2xl" scrollBehavior="inside">
           <ModalContent>
             <form onSubmit={handleSubmit}>
               <ModalHeader className="flex items-center gap-2">
@@ -402,7 +394,7 @@ export default function RacesPage() {
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+                <Button variant="light" onPress={handleCloseModal}>
                   Cancel
                 </Button>
                 <Button
@@ -449,7 +441,7 @@ export default function RacesPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {races.map(race => (
+            {races.map((race: Race) => (
               <Card
                 key={race.id}
                 className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-primary/60"

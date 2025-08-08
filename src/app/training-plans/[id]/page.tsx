@@ -1,6 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -10,6 +12,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
+import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
@@ -28,72 +31,91 @@ export default function TrainingPlanDetailPage() {
   const params = useParams()
   const planId = params.id as string
 
-  const [trainingPlan, setTrainingPlan] = useState<TrainingPlanWithUsers | null>(null)
-  const [workouts, setWorkouts] = useState<Workout[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use Jotai atoms for centralized state management
+  const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
+  const allWorkouts = useAtomValue(asyncWorkoutsAtom)
+  const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+
+  // Derive the specific training plan from the centralized atom
+  const trainingPlan = useMemo(() => {
+    return allTrainingPlans.find((plan: TrainingPlan) => plan.id === planId) || null
+  }, [allTrainingPlans, planId])
+
+  // Filter workouts for this specific training plan
+  const workouts = useMemo(() => {
+    return allWorkouts.filter((workout: Workout) => workout.training_plan_id === planId)
+  }, [allWorkouts, planId])
+
+  // Local UI state (keep these as useState since they're UI-specific)
   const [showAddWorkout, setShowAddWorkout] = useState(false)
   const [showLogWorkout, setShowLogWorkout] = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [extendedPlanData, setExtendedPlanData] = useState<{
+    plan_phases?: PlanPhase[]
+    race?: Race
+    previous_plan?: TrainingPlan
+    next_plan?: TrainingPlan
+  }>({})
 
-  const fetchTrainingPlanDetails = useCallback(async () => {
-    if (!session?.user?.id || !planId) return
+  // Derive loading state
+  const loading = allTrainingPlans.length === 0 || (planId && !trainingPlan)
+
+  // Create extended training plan object by combining base plan with extended data
+  const extendedTrainingPlan = useMemo(() => {
+    if (!trainingPlan) return null
+    return {
+      ...trainingPlan,
+      ...extendedPlanData,
+    } as TrainingPlanWithUsers
+  }, [trainingPlan, extendedPlanData])
+
+  const fetchExtendedPlanData = useCallback(async () => {
+    if (!session?.user?.id || !planId || !trainingPlan) return
 
     try {
-      const response = await fetch(`/api/training-plans/${planId}`)
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          router.push('/training-plans')
-          return
-        }
-        console.error('Failed to fetch training plan:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setTrainingPlan(data.trainingPlan)
-      setWorkouts(data.workouts || [])
-
       // Fetch plan phases
       const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`)
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
-        setTrainingPlan(prev => ({ ...prev!, plan_phases: phasesData.plan_phases || [] }))
+        setExtendedPlanData(prev => ({
+          ...prev,
+          plan_phases: phasesData.plan_phases || [],
+        }))
       } else {
         console.error('Failed to fetch plan phases:', phasesResponse.statusText)
       }
 
       // Fetch previous and next plans if they exist
-      if (data.trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${data.trainingPlan.previous_plan_id}`
-        )
+      if (trainingPlan.previous_plan_id) {
+        const prevPlanResponse = await fetch(`/api/training-plans/${trainingPlan.previous_plan_id}`)
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
-          setTrainingPlan(prev => ({ ...prev!, previous_plan: prevPlanData.trainingPlan }))
+          setExtendedPlanData(prev => ({
+            ...prev,
+            previous_plan: prevPlanData.trainingPlan,
+          }))
         } else {
           console.error('Failed to fetch previous plan:', prevPlanResponse.statusText)
         }
       }
 
-      if (data.trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(
-          `/api/training-plans/${data.trainingPlan.next_plan_id}`
-        )
+      if (trainingPlan.next_plan_id) {
+        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`)
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
-          setTrainingPlan(prev => ({ ...prev!, next_plan: nextPlanData.trainingPlan }))
+          setExtendedPlanData(prev => ({
+            ...prev,
+            next_plan: nextPlanData.trainingPlan,
+          }))
         } else {
           console.error('Failed to fetch next plan:', nextPlanResponse.statusText)
         }
       }
     } catch (error) {
-      console.error('Error fetching training plan details:', error)
-    } finally {
-      setLoading(false)
+      console.error('Error fetching extended plan data:', error)
     }
-  }, [session?.user?.id, planId, router])
+  }, [session?.user?.id, planId, trainingPlan])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -103,15 +125,34 @@ export default function TrainingPlanDetailPage() {
       return
     }
 
-    fetchTrainingPlanDetails()
-  }, [status, session, router, fetchTrainingPlanDetails])
+    // If plan is found but extended data hasn't been fetched, fetch it
+    if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
+      fetchExtendedPlanData()
+    }
+
+    // If plan ID is provided but plan not found in atom, it might not exist
+    if (planId && allTrainingPlans.length > 0 && !trainingPlan) {
+      router.push('/training-plans')
+    }
+  }, [
+    status,
+    session,
+    router,
+    trainingPlan,
+    extendedPlanData,
+    fetchExtendedPlanData,
+    planId,
+    allTrainingPlans.length,
+  ])
 
   const handleAddWorkoutSuccess = () => {
-    fetchTrainingPlanDetails()
+    // Refresh both atoms to get updated data
+    refreshTrainingPlans()
   }
 
   const handleLogWorkoutSuccess = () => {
-    fetchTrainingPlanDetails()
+    // Refresh atoms and clear selected workout
+    refreshTrainingPlans()
     setSelectedWorkout(null)
   }
 
@@ -157,18 +198,18 @@ export default function TrainingPlanDetailPage() {
 
   const calculateCurrentPhase = useCallback(() => {
     if (
-      !trainingPlan?.start_date ||
-      !trainingPlan.plan_phases ||
-      trainingPlan.plan_phases.length === 0
+      !extendedTrainingPlan?.start_date ||
+      !extendedTrainingPlan.plan_phases ||
+      extendedTrainingPlan.plan_phases.length === 0
     ) {
       return null
     }
 
-    const startDate = new Date(trainingPlan.start_date)
+    const startDate = new Date(extendedTrainingPlan.start_date)
     const today = new Date()
     let totalWeeks = 0
 
-    for (const phase of trainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
+    for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
       const phaseEndDate = new Date(startDate)
       phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
 
@@ -178,25 +219,28 @@ export default function TrainingPlanDetailPage() {
       totalWeeks += phase.duration_weeks
     }
     return null
-  }, [trainingPlan])
+  }, [extendedTrainingPlan])
 
   const currentPhase = calculateCurrentPhase()
 
-  const groupWorkoutsByPhase = useCallback(() => {
+  const groupWorkoutsByPhase = useCallback((): {
+    grouped: Record<string, Workout[]>
+    ungrouped: Workout[]
+  } => {
     if (
-      !trainingPlan?.plan_phases ||
-      trainingPlan.plan_phases.length === 0 ||
-      !trainingPlan.start_date
+      !extendedTrainingPlan?.plan_phases ||
+      extendedTrainingPlan.plan_phases.length === 0 ||
+      !extendedTrainingPlan.start_date
     ) {
       return { grouped: {}, ungrouped: workouts }
     }
 
     const grouped: Record<string, Workout[]> = {}
     const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = new Date(trainingPlan.start_date)
+    const planStartDate = new Date(extendedTrainingPlan.start_date)
     let currentWeekOffset = 0
 
-    trainingPlan.plan_phases
+    extendedTrainingPlan.plan_phases
       .sort((a, b) => a.order - b.order)
       .forEach(phase => {
         const phaseStartDate = new Date(planStartDate)
@@ -211,7 +255,7 @@ export default function TrainingPlanDetailPage() {
 
     const ungrouped: Workout[] = []
 
-    workouts.forEach(workout => {
+    workouts.forEach((workout: Workout) => {
       const workoutDate = new Date(workout.date)
       let foundPhase = false
       for (const phaseId in phaseDates) {
@@ -233,7 +277,7 @@ export default function TrainingPlanDetailPage() {
     }
 
     return { grouped, ungrouped }
-  }, [trainingPlan, workouts])
+  }, [extendedTrainingPlan, workouts])
 
   const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = groupWorkoutsByPhase()
 
@@ -258,7 +302,7 @@ export default function TrainingPlanDetailPage() {
     )
   }
 
-  if (!session || !trainingPlan) {
+  if (!session || !extendedTrainingPlan) {
     return null
   }
 
@@ -294,9 +338,9 @@ export default function TrainingPlanDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
               Training Phases
             </h2>
-            {trainingPlan.plan_phases && trainingPlan.plan_phases.length > 0 ? (
+            {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trainingPlan.plan_phases
+                {extendedTrainingPlan.plan_phases
                   .sort((a, b) => a.order - b.order)
                   .map(phase => (
                     <div
@@ -325,9 +369,9 @@ export default function TrainingPlanDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
               Training Phases
             </h2>
-            {trainingPlan.plan_phases && trainingPlan.plan_phases.length > 0 ? (
+            {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trainingPlan.plan_phases
+                {extendedTrainingPlan.plan_phases
                   .sort((a, b) => a.order - b.order)
                   .map(phase => (
                     <div
@@ -358,15 +402,15 @@ export default function TrainingPlanDetailPage() {
           </div>
 
           {/* Plan Sequencing Navigation */}
-          {(trainingPlan.previous_plan || trainingPlan.next_plan) && (
+          {(extendedTrainingPlan.previous_plan || extendedTrainingPlan.next_plan) && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Plan Sequence
               </h2>
               <div className="flex justify-between items-center">
-                {trainingPlan.previous_plan ? (
+                {extendedTrainingPlan.previous_plan ? (
                   <Link
-                    href={`/training-plans/${trainingPlan.previous_plan.id}`}
+                    href={`/training-plans/${extendedTrainingPlan.previous_plan.id}`}
                     className="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     <svg
@@ -382,17 +426,17 @@ export default function TrainingPlanDetailPage() {
                         d="M15 19l-7-7 7-7"
                       />
                     </svg>
-                    {trainingPlan.previous_plan.title}
+                    {extendedTrainingPlan.previous_plan.title}
                   </Link>
                 ) : (
                   <div />
                 )}
-                {trainingPlan.next_plan ? (
+                {extendedTrainingPlan.next_plan ? (
                   <Link
-                    href={`/training-plans/${trainingPlan.next_plan.id}`}
+                    href={`/training-plans/${extendedTrainingPlan.next_plan.id}`}
                     className="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    {trainingPlan.next_plan.title}
+                    {extendedTrainingPlan.next_plan.title}
                     <svg
                       className="w-5 h-5 ml-2"
                       fill="none"
@@ -416,45 +460,49 @@ export default function TrainingPlanDetailPage() {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              {trainingPlan.title}
+              {extendedTrainingPlan.title}
             </h1>
 
-            {trainingPlan.description && (
-              <p className="text-gray-600 dark:text-gray-300 mb-6">{trainingPlan.description}</p>
+            {extendedTrainingPlan.description && (
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                {extendedTrainingPlan.description}
+              </p>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 dark:text-blue-100">Created</h3>
                 <p className="text-blue-700 dark:text-blue-300">
-                  {formatDate(trainingPlan.created_at)}
+                  {formatDate(extendedTrainingPlan.created_at)}
                 </p>
               </div>
 
-              {trainingPlan.race && (
+              {extendedTrainingPlan.race && (
                 <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
                   <h3 className="font-semibold text-green-900 dark:text-green-100">Target Race</h3>
-                  <p className="text-green-700 dark:text-green-300">{trainingPlan.race.name}</p>
+                  <p className="text-green-700 dark:text-green-300">
+                    {extendedTrainingPlan.race.name}
+                  </p>
                   <p className="text-green-700 dark:text-green-300 text-sm">
-                    {formatDate(trainingPlan.race.date)}
+                    {formatDate(extendedTrainingPlan.race.date)}
                   </p>
                 </div>
               )}
 
-              {trainingPlan.goal_type && (
+              {extendedTrainingPlan.goal_type && (
                 <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
                   <h3 className="font-semibold text-purple-900 dark:text-purple-100">Goal Type</h3>
                   <p className="text-purple-700 capitalize dark:text-purple-300">
-                    {trainingPlan.goal_type.replace('_', ' ')}
+                    {extendedTrainingPlan.goal_type.replace('_', ' ')}
                   </p>
                 </div>
               )}
 
-              {trainingPlan.plan_type && (
+              {extendedTrainingPlan.plan_type && (
                 <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
                   <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">Plan Type</h3>
                   <p className="text-yellow-700 capitalize dark:text-yellow-300">
-                    {trainingPlan.plan_type.replace('_', ' ')}
+                    {extendedTrainingPlan.plan_type.replace('_', ' ')}
                   </p>
                 </div>
               )}
@@ -465,8 +513,8 @@ export default function TrainingPlanDetailPage() {
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
                   {session.user.role === 'coach'
-                    ? trainingPlan.runners?.full_name
-                    : trainingPlan.coaches?.full_name}
+                    ? extendedTrainingPlan.runners?.full_name
+                    : extendedTrainingPlan.coaches?.full_name}
                 </p>
               </div>
             </div>
@@ -512,16 +560,16 @@ export default function TrainingPlanDetailPage() {
             </div>
           ) : (
             <div className="space-y-8">
-              {trainingPlan?.plan_phases
+              {extendedTrainingPlan?.plan_phases
                 ?.sort((a, b) => a.order - b.order)
                 .map(phase => (
                   <div key={phase.id}>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       {phase.phase_name}
                     </h3>
-                    {workoutsByPhase[phase.id] && workoutsByPhase[phase.id].length > 0 ? (
+                    {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
                       <div className="space-y-4">
-                        {workoutsByPhase[phase.id].map(workout => (
+                        {workoutsByPhase[phase.id]?.map((workout: Workout) => (
                           <div
                             key={workout.id}
                             className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
@@ -630,7 +678,7 @@ export default function TrainingPlanDetailPage() {
                     Other Workouts
                   </h3>
                   <div className="space-y-4">
-                    {ungroupedWorkouts.map(workout => (
+                    {ungroupedWorkouts.map((workout: Workout) => (
                       <div
                         key={workout.id}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
@@ -722,12 +770,12 @@ export default function TrainingPlanDetailPage() {
           )}
         </div>
 
-        {trainingPlan && (
+        {extendedTrainingPlan && (
           <AddWorkoutModal
             isOpen={showAddWorkout}
             onClose={() => setShowAddWorkout(false)}
             onSuccess={handleAddWorkoutSuccess}
-            trainingPlanId={trainingPlan.id}
+            trainingPlanId={extendedTrainingPlan.id}
           />
         )}
 

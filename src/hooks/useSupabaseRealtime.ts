@@ -4,7 +4,10 @@ import { useEffect, useRef } from 'react'
 
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
+import { createLogger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
+
+const logger = createLogger('useSupabaseRealtime')
 
 interface UseSupabaseRealtimeProps {
   table: string
@@ -29,7 +32,7 @@ export function useSupabaseRealtime({
   useEffect(() => {
     // Check if real-time is available
     if (!supabase.realtime) {
-      console.warn('🚫 Supabase real-time not available')
+      logger.warn('Supabase real-time not available')
       return
     }
 
@@ -63,7 +66,7 @@ export function useSupabaseRealtime({
                   break
               }
             } catch (error) {
-              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+              logger.error(`Error handling ${payload.eventType} for ${table}:`, error)
             }
           }
         )
@@ -89,19 +92,19 @@ export function useSupabaseRealtime({
                   break
               }
             } catch (error) {
-              console.error(`Error handling ${payload.eventType} for ${table}:`, error)
+              logger.error(`Error handling ${payload.eventType} for ${table}:`, error)
             }
           }
         )
       }
 
-      // Subscribe to the channel with enhanced error handling
+      // Subscribe to the channel with enhanced error handling and retry logic
       channel.subscribe((status, err) => {
-        console.log(`📡 Realtime ${table} subscription status:`, status)
+        logger.debug(`Realtime ${table} subscription status:`, status)
         if (status === 'SUBSCRIBED') {
-          console.log(`✅ Successfully subscribed to ${table} realtime updates`)
+          logger.info(`Successfully subscribed to ${table} realtime updates`)
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`❌ Error subscribing to ${table} realtime updates:`, err)
+          logger.error(`Error subscribing to ${table} realtime updates:`, err)
 
           // Handle schema mismatch errors gracefully
           if (
@@ -109,24 +112,26 @@ export function useSupabaseRealtime({
             err.message &&
             err.message.includes('mismatch between server and client bindings')
           ) {
-            console.warn(`🔄 Schema mismatch detected for ${table}, falling back to polling...`)
-            // The component will still work, just without real-time updates
-            return
+            logger.warn(`Schema mismatch detected for ${table}, falling back to polling`, {
+              error: err,
+            })
+          } else {
+            logger.warn(
+              `Real-time connection error for ${table}, components will use polling fallback`,
+              { error: err }
+            )
           }
-
-          // For other errors, also continue gracefully
-          console.warn(`⚠️ Real-time updates disabled for ${table}, components will still function`)
         } else if (status === 'TIMED_OUT') {
-          console.warn(`⏰ Subscription to ${table} timed out, retrying...`)
+          logger.warn(`Subscription to ${table} timed out - polling fallback will handle updates`)
         } else if (status === 'CLOSED') {
-          console.warn(`🔒 Subscription to ${table} was closed`)
+          logger.warn(`Subscription to ${table} was closed - polling fallback will handle updates`)
         }
       })
 
       channelRef.current = channel
     } catch (error) {
       // Catch any realtime setup errors and continue gracefully
-      console.warn(`🔄 Realtime setup failed for ${table}, falling back to polling:`, error)
+      logger.warn(`Realtime setup failed for ${table}, falling back to polling`, { error })
 
       // If error message contains schema mismatch, provide specific guidance
       if (
@@ -136,8 +141,9 @@ export function useSupabaseRealtime({
         typeof error.message === 'string' &&
         error.message.includes('mismatch between server and client bindings')
       ) {
-        console.warn(
-          `📊 Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`
+        logger.warn(
+          `Schema mismatch detected - this usually happens after database changes. The app will continue to work with polling updates.`,
+          { error }
         )
       }
     }

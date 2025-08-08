@@ -24,7 +24,10 @@ import {
 
 import { useCallback, useMemo, useState } from 'react'
 
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
+
+const logger = createLogger('MonthlyCalendar')
 
 interface MonthlyCalendarProps {
   workouts: Workout[]
@@ -69,7 +72,7 @@ export default function MonthlyCalendar({
       while (currentDate.compare(endOfWeek) <= 0) {
         // Format CalendarDate to YYYY-MM-DD to match workout data format
         const dateString = format(currentDate.toDate(getLocalTimeZone()), 'yyyy-MM-dd')
-        const dayWorkouts = workouts.filter(workout => {
+        const dayWorkouts = (workouts || []).filter(workout => {
           // Handle different date formats that might come from the API
           const workoutDate = workout.date
           if (typeof workoutDate === 'string') {
@@ -95,7 +98,7 @@ export default function MonthlyCalendar({
 
       return days
     } catch (error) {
-      console.error('Error generating calendar days:', error)
+      logger.error('Error generating calendar days:', error)
       return []
     }
   }, [currentMonth, workouts])

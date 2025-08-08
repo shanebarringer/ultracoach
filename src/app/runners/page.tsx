@@ -12,6 +12,8 @@ import {
   Tab,
   Tabs,
 } from '@heroui/react'
+import { useAtom, useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 import {
   FlagIcon,
   MapPinIcon,
@@ -23,52 +25,63 @@ import {
   UsersIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useEffect } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { useSession } from '@/hooks/useBetterSession'
+import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms'
 import type { User } from '@/lib/supabase'
 
+// Extended User type with runner-specific fields that may be returned from API
 interface RunnerWithStats extends User {
   stats?: {
     trainingPlans: number
     completedWorkouts: number
     upcomingWorkouts: number
   }
-  relationship_status?: 'pending' | 'active' | 'inactive'
   connected_at?: string | null
 }
 
-export default function RunnersPage() {
+// Create loadable atom for better UX
+const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function RunnersPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [runners, setRunners] = useState<RunnerWithStats[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('connected')
+  const searchParams = useSearchParams()
+  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  const [activeTab, setActiveTab] = useAtom(runnersPageTabAtom)
 
-  const fetchRunners = useCallback(async () => {
-    if (!session?.user?.id) return
+  // Handle loading and error states from Jotai loadable
+  const loading = runnersLoadable.state === 'loading'
+  const runners = (
+    runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+  ) as RunnerWithStats[]
+  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
-    try {
-      const response = await fetch('/api/runners')
-
-      if (!response.ok) {
-        console.error('Failed to fetch runners:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
-      setRunners(data.runners || [])
-    } catch (error) {
-      console.error('Error fetching runners:', error)
-    } finally {
-      setLoading(false)
+  // Sync URL with atom state
+  useEffect(() => {
+    const urlTab = searchParams.get('tab')
+    if (urlTab === 'discover' || urlTab === 'connected') {
+      setActiveTab(urlTab)
     }
-  }, [session?.user?.id])
+  }, [searchParams, setActiveTab])
+
+  // Handle tab changes with URL updates
+  const handleTabChange = (newTab: string) => {
+    const tab = newTab as 'connected' | 'discover'
+    setActiveTab(tab)
+
+    // Update URL without page reload
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('tab', tab)
+    router.replace(newUrl.pathname + newUrl.search)
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -82,9 +95,13 @@ export default function RunnersPage() {
       router.push('/dashboard/runner')
       return
     }
+  }, [status, session, router])
 
-    fetchRunners()
-  }, [status, session, router, fetchRunners])
+  // Handle refresh for RunnerSelector
+  const handleRelationshipCreated = () => {
+    // Force refresh of connected runners atom
+    // The atom will automatically refresh on next access
+  }
 
   if (status === 'loading') {
     return (
@@ -98,6 +115,24 @@ export default function RunnersPage() {
 
   if (!session || session.user.role !== 'coach') {
     return null
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="border-danger-200 bg-danger-50">
+            <CardBody className="text-center py-12">
+              <div className="text-danger-600 mb-4">Failed to load runners</div>
+              <Button color="primary" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </CardBody>
+          </Card>
+        </div>
+      </Layout>
+    )
   }
 
   return (
@@ -119,7 +154,7 @@ export default function RunnersPage() {
                 </div>
               </div>
               <Button
-                onClick={() => setActiveTab('discover')}
+                onClick={() => handleTabChange('discover')}
                 color="primary"
                 variant="bordered"
                 startContent={<PlusIcon className="w-4 h-4" />}
@@ -173,7 +208,7 @@ export default function RunnersPage() {
         ) : (
           <Tabs
             selectedKey={activeTab}
-            onSelectionChange={key => setActiveTab(key as string)}
+            onSelectionChange={key => handleTabChange(key as string)}
             className="w-full"
             variant="underlined"
             color="primary"
@@ -195,7 +230,7 @@ export default function RunnersPage() {
                         Connect with runners to start building your expedition team
                       </p>
                       <Button
-                        onClick={() => setActiveTab('discover')}
+                        onClick={() => handleTabChange('discover')}
                         color="primary"
                         size="lg"
                         startContent={<UserPlusIcon className="w-5 h-5" />}
@@ -206,7 +241,7 @@ export default function RunnersPage() {
                   </Card>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {runners.map(runner => (
+                    {runners.map((runner: RunnerWithStats) => (
                       <Card
                         key={runner.id}
                         className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-secondary/60"
@@ -323,7 +358,7 @@ export default function RunnersPage() {
                   </CardHeader>
                   <Divider />
                   <CardBody>
-                    <RunnerSelector onRelationshipCreated={fetchRunners} />
+                    <RunnerSelector onRelationshipCreated={handleRelationshipCreated} />
                   </CardBody>
                 </Card>
               </div>
@@ -332,5 +367,25 @@ export default function RunnersPage() {
         )}
       </div>
     </Layout>
+  )
+}
+
+// Loading fallback component
+function RunnersPageFallback() {
+  return (
+    <Layout>
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="lg" color="primary" label="Loading expedition team..." />
+      </div>
+    </Layout>
+  )
+}
+
+// Main export with Suspense boundary
+export default function RunnersPage() {
+  return (
+    <Suspense fallback={<RunnersPageFallback />}>
+      <RunnersPageContent />
+    </Suspense>
   )
 }

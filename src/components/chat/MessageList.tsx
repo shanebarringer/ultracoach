@@ -236,7 +236,9 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                         {/* Workout context */}
                         {message.workout_id &&
                           (() => {
-                            const workout = workouts.find(w => w.id === message.workout_id)
+                            const workout = workouts.find(
+                              (w: { id: string }) => w.id === message.workout_id
+                            )
                             if (workout) {
                               return (
                                 <div className="mt-2">

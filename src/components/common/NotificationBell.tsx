@@ -12,7 +12,7 @@ import {
 } from '@heroui/react'
 import classNames from 'classnames'
 import { formatDistanceToNow } from 'date-fns'
-import { BellIcon, CheckIcon } from 'lucide-react'
+import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
 
 import { useNotifications } from '@/hooks/useNotifications'
 
@@ -53,6 +53,39 @@ export default function NotificationBell() {
     if (!isRead) {
       await markAsRead(notificationId)
     }
+    // TODO: Add navigation logic based on notification type
+  }
+
+  const getNotificationActions = (notification: { type: string; id: string }) => {
+    // Return action buttons based on notification type
+    switch (notification.type) {
+      case 'message':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="primary"
+            startContent={<ExternalLinkIcon className="w-3 h-3" />}
+            className="h-6"
+          >
+            Reply
+          </Button>
+        )
+      case 'workout':
+        return (
+          <Button size="sm" variant="flat" color="success" className="h-6">
+            View Workout
+          </Button>
+        )
+      case 'training_plan':
+        return (
+          <Button size="sm" variant="flat" color="primary" className="h-6">
+            View Plan
+          </Button>
+        )
+      default:
+        return null
+    }
   }
 
   return (
@@ -65,7 +98,12 @@ export default function NotificationBell() {
             size="sm"
             isInvisible={unreadCount === 0}
           >
-            <BellIcon className="w-5 h-5" />
+            <BellIcon
+              className={classNames(
+                'w-5 h-5 transition-all duration-200',
+                unreadCount > 0 && 'animate-pulse text-primary'
+              )}
+            />
           </Badge>
         </Button>
       </DropdownTrigger>
@@ -137,18 +175,21 @@ export default function NotificationBell() {
                         {notification.message}
                       </p>
                       <div className="flex items-center justify-between mt-2">
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          color={getNotificationColor(notification.type)}
-                        >
-                          {notification.type}
-                        </Chip>
-                        <span className="text-xs text-default-400">
-                          {formatDistanceToNow(new Date(notification.created_at), {
-                            addSuffix: true,
-                          })}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={getNotificationColor(notification.type)}
+                          >
+                            {notification.type}
+                          </Chip>
+                          <span className="text-xs text-default-400">
+                            {formatDistanceToNow(new Date(notification.created_at), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                        </div>
+                        {getNotificationActions(notification)}
                       </div>
                     </div>
                   </div>

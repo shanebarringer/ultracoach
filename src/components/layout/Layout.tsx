@@ -1,3 +1,4 @@
+import FeedbackButton from '../feedback/FeedbackButton'
 import Footer from './Footer'
 import Header from './Header'
 
@@ -11,6 +12,7 @@ export default function Layout({ children }: LayoutProps) {
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <FeedbackButton variant="floating" />
     </div>
   )
 }

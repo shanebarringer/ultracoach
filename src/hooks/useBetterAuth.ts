@@ -5,6 +5,9 @@ import { useEffect } from 'react'
 import { authStateAtom } from '@/lib/atoms'
 import { authClient } from '@/lib/better-auth-client'
 import type { Session, User } from '@/lib/better-auth-client'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('useBetterAuth')
 
 export function useBetterAuth() {
   const [authState, setAuthState] = useAtom(authStateAtom)
@@ -124,10 +127,10 @@ export function useBetterAuth() {
           })
 
           if (!response.ok) {
-            console.warn('Failed to set user role:', await response.text())
+            logger.warn('Failed to set user role:', await response.text())
           }
         } catch (roleError) {
-          console.warn('Failed to set user role:', roleError)
+          logger.warn('Failed to set user role:', roleError)
           // Don't fail the signup, just log the warning
         }
       }

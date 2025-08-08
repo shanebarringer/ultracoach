@@ -8,9 +8,15 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Tab, Tabs } from '@heroui/react'
+import { useAtom, useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
+
+import { relationshipsAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('RelationshipsList')
 
 interface Relationship {
   id: string
@@ -35,33 +41,17 @@ interface RelationshipsListProps {
 }
 
 export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListProps) {
-  const [relationships, setRelationships] = useState<Relationship[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use Jotai atoms instead of local state
+  const relationships = useAtomValue(relationshipsAtom)
+  const [, refreshRelationships] = useAtom(relationshipsAtom)
+
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'active' | 'inactive'>('all')
 
-  useEffect(() => {
-    fetchRelationships()
-  }, [])
+  // Derive loading state from the atom's data
+  const loading = relationships.length === 0
 
-  const fetchRelationships = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/my-relationships')
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch relationships')
-      }
-
-      const data = await response.json()
-      setRelationships(data.relationships)
-    } catch (error) {
-      console.error('Error fetching relationships:', error)
-      toast.error('Failed to load relationships')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Remove fetchRelationships - the atom handles this automatically
 
   const updateRelationshipStatus = async (
     relationshipId: string,
@@ -85,15 +75,13 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
         throw new Error(error.error || 'Failed to update relationship')
       }
 
-      // Update local state
-      setRelationships(prev =>
-        prev.map(rel => (rel.id === relationshipId ? { ...rel, status: newStatus } : rel))
-      )
+      // Refresh the relationships atom to get updated data
+      refreshRelationships()
 
       toast.success(`Relationship ${newStatus === 'active' ? 'accepted' : 'declined'}!`)
       onRelationshipUpdated?.()
     } catch (error) {
-      console.error('Error updating relationship:', error)
+      logger.error('Error updating relationship:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update relationship')
     } finally {
       setUpdatingIds(prev => {
@@ -130,10 +118,13 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
     }
   }
 
-  const filteredRelationships = relationships.filter(rel => {
-    if (selectedTab === 'all') return true
-    return rel.status === selectedTab
-  })
+  // Use useMemo for filtered relationships for better performance
+  const filteredRelationships = useMemo(() => {
+    return relationships.filter((rel: Relationship) => {
+      if (selectedTab === 'all') return true
+      return rel.status === selectedTab
+    })
+  }, [relationships, selectedTab])
 
   if (loading) {
     return (
@@ -189,7 +180,7 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredRelationships.map(relationship => (
+              {filteredRelationships.map((relationship: Relationship) => (
                 <div
                   key={relationship.id}
                   className="flex items-center gap-4 p-4 bg-default-50 rounded-lg"

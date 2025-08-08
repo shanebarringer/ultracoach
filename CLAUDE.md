@@ -11,6 +11,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 3. **Review this file** for project-specific guidance and context
 4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
+6. Always use tslog library and utilities for logging (no console.log)
 
 ### MCP Instructions
 
@@ -43,30 +44,53 @@ pnpm db:fresh       # Reset and seed database
 ### Database Philosophy:
 
 - **Use Drizzle for ALL database operations** (migrations, queries, schema changes)
-- Environment variables are properly loaded from `.env.local`
+- Environment variables are properly loaded from `.env.local` for local dev
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
+
+## 🔐 Better Auth Password Hashing (CRITICAL)
+
+**IMPORTANT**: Better Auth uses its own password hashing format that is incompatible with bcrypt!
+
+### Key Issues to Avoid:
+
+- **NEVER** use bcrypt to hash passwords for Better Auth users
+- **NEVER** manually create account records with bcrypt-generated password hashes
+- Better Auth expects hex-formatted password hashes from its internal hashing system
+- Using bcrypt hashes will cause "User not found" errors during authentication
+
+### Correct Approaches:
+
+1. **For test users**: Use the automated creation script: `pnpm tsx scripts/create-test-users-automated.ts`
+2. **For production**: Always use Better Auth's sign-up API or web interface
+3. **For migrations**: If users exist with wrong hash format, delete and recreate through Better Auth
+
+### Scripts Available:
+
+- `scripts/fresh-test-user-setup.ts` - Cleans existing test users
+- `scripts/create-test-users-automated.ts` - Creates test users via browser automation
+- `scripts/test-better-auth-signin.ts` - Tests sign-in functionality
+
+### Error Symptoms:
+
+- "User not found" during sign-in with correct credentials
+- "hex string expected, got undefined" in Better Auth verification
+- Authentication timeouts in Playwright tests
 
 ## 📊 Project Overview
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-08-05)
+### Current Status (Updated: 2025-08-07)
 
-- **Active Milestone**: System Deployment Readiness ✅ **COMPLETE**
-- **Core Development**: 100% (222/222 tasks) ✅ **COMPLETE** - All performance optimizations and React patterns implemented
-- **Coach-Runner Relationship System**: ✅ **COMPLETE** - Comprehensive bidirectional relationship system with API layer and UI components
-- **Authentication System**: ✅ **RESTORED** - Better Auth login working properly, comprehensive seeding with proper password hashing
-- **Chat/Messaging Integration**: ✅ **COMPLETE** - Full migration to Drizzle with relationship-based authorization for secure communication
-- **Workout Management Integration**: ✅ **COMPLETE** - All workout APIs migrated to Drizzle with comprehensive relationship verification
-- **Dashboard & Relationship Enhancement**: ✅ **COMPLETE** - Dashboard integration and relationship management system fully functional
-- **Code Quality & UI Improvements**: ✅ **COMPLETE** - All ESLint warnings fixed (20/20 files), HeroUI toast system implemented, calendar functionality enhanced
-- **Latest Achievement**: Complete system deployment readiness - production database updated, email system verified, all core functionality tested
-- **Current Focus**: System is production-ready with comprehensive testing, deployment preparation complete
-- **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Jotai state management with comprehensive relationship-based authorization
-- **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, professional toast notifications
-- **Database**: Comprehensive relationship system with proper constraints, type safety, and bidirectional discovery across all features
-- **Next Phase**: System ready for production deployment and beta user testing
+- **Current Focus**: System Polish & Production Readiness - testing infrastructure and user experience enhancement
+- **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
+- **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
+- **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
+- **State Management**: Advanced Jotai patterns implemented - atomFamily, loadable, unwrap, splitAtom for granular performance
+- **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
+- **Authentication**: Better Auth with critical password hash compatibility requirement (see Auth section below)
+- **Next Phase**: Playwright test fixes, workout completion functionality, and comprehensive quality assurance
 
 ## 🏗️ Architecture & Technology
 
@@ -77,7 +101,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Design System**: Mountain Peak Enhanced - Alpine aesthetic with professional UX
 - **Styling**: Tailwind CSS v4 with CSS-first configuration + HeroUI theme system + Custom Mountain Peak colors
 - **Icons**: Lucide React icons for enhanced visual design
-- **State**: Jotai atomic state management (migrated from React Context)
+- **State**: Advanced Jotai atomic state management with performance optimizations (atomFamily, loadable, unwrap, splitAtom patterns)
 - **Database**: Supabase PostgreSQL with enhanced training schema
 - **Auth**: Better Auth (migrated from NextAuth.js for improved stability)
 - **Package Manager**: pnpm (better performance than npm)
@@ -89,19 +113,17 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
-- **Calendar Functionality Enhancement (2025-08-05)**: ✅ **COMPLETED** - Enhanced calendar with loading states, error handling, date format compatibility, and improved UX
-- **Code Quality & Toast System (2025-08-05)**: ✅ **COMPLETED** - All ESLint warnings fixed (20/20 files), comprehensive HeroUI toast notification system implemented
-- **Email System & Production Database (2025-08-05)**: ✅ **COMPLETED** - Production database successfully updated with 18 users, 3 relationships, 15 workouts. Email system (Resend) verified working with successful test email and password reset functionality
-- **Dashboard & Relationship Enhancement (2025-08-04)**: ✅ **COMPLETED** - Dashboard integration and relationship management system fully functional
-- **Chat/Messaging System Migration (2025-08-04)**: ✅ **COMPLETED** - Complete migration from Supabase to Drizzle with comprehensive relationship-based authorization
-- **Workout Management System Migration (2025-08-04)**: ✅ **COMPLETED** - All workout APIs migrated to Drizzle with relationship verification
-- **Better Auth Integration (2025-08-04)**: ✅ **COMPLETED** - All messaging and workout APIs now use Better Auth instead of legacy session handling
-- **Security Enhancement (2025-08-04)**: ✅ **COMPLETED** - Multi-layer authorization: session → role → active relationship verification across all endpoints
-- **Database Architecture**: `coach_runners` table with proper foreign key constraints, unique relationship enforcement, and status management
-- **Secure API Layer**: 11 endpoints with relationship-based authorization: messaging, workouts, coach-runner management, training plans
+- **Runner Experience Enhancement (2025-08-07)**: ✅ **COMPLETED** - Complete feature parity achieved
+  - **Advanced Dashboard**: MetricCard components with trend indicators and professional analytics
+  - **Progress Tracking**: Completion rates, weekly distance, recent activity metrics with visual indicators
+  - **Workout Management**: Status-based completion tracking with interactive "Mark Complete" and "Log Details" buttons
+  - **Coach Integration**: Seamless messaging integration with direct Message buttons and relationship displays
+- **Advanced Jotai State Management (2025-08-05)**: ✅ **COMPLETED** - Phase 1 & 2 complete
+  - **Phase 1**: atomFamily, loadable, unwrap patterns for async data handling
+  - **Phase 2**: splitAtom performance optimizations with granular component re-rendering
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
-- **Current Work**: ESLint fixes, navigation audit, core functionality testing, toast notification implementation
-- **Next Priorities**: Complete code quality improvements, verify navigation, test core features, prepare for beta user testing
+- **Code Quality**: Zero TypeScript errors, zero ESLint warnings, production-ready codebase
+- **Current Priorities**: Playwright test suite repair, workout completion functionality implementation, comprehensive quality assurance
 
 ---
 

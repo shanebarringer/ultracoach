@@ -5,7 +5,10 @@ import { Pool } from 'pg'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
+import { createLogger } from '@/lib/logger'
 import { better_auth_users } from '@/lib/schema'
+
+const logger = createLogger('UserRoleAPI')
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -39,7 +42,7 @@ export async function GET(request: NextRequest) {
     const userRole = betterAuthUser[0].role || 'runner'
     return NextResponse.json({ role: userRole })
   } catch (error) {
-    console.error('Error fetching user role:', error)
+    logger.error('Error fetching user role:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, role })
   } catch (error) {
-    console.error('Error updating user role:', error)
+    logger.error('Error updating user role:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

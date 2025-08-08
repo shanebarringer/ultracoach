@@ -390,6 +390,15 @@ async function createSampleWorkouts(
     recovery: 'Very easy recovery and mobility work',
   }
 
+  // Enhanced workout field mappings
+  const workoutEnhancements = {
+    long_run: { category: 'long_run', intensity: 5, terrain: 'trail', elevation_gain: 500 },
+    tempo: { category: 'tempo', intensity: 7, terrain: 'road', elevation_gain: 200 },
+    interval: { category: 'interval', intensity: 8, terrain: 'track', elevation_gain: 0 },
+    easy: { category: 'easy', intensity: 3, terrain: 'road', elevation_gain: 100 },
+    recovery: { category: 'recovery', intensity: 2, terrain: 'road', elevation_gain: 50 },
+  }
+
   for (let planIndex = 0; planIndex < plans.length; planIndex++) {
     const plan = plans[planIndex]
 
@@ -401,10 +410,11 @@ async function createSampleWorkouts(
         ? addDays(new Date(), -7 + workoutIndex * 2) // Past dates for completed
         : addDays(new Date(), workoutIndex * 2) // Future dates for planned
 
+      const enhancement = workoutEnhancements[workoutType as keyof typeof workoutEnhancements]
+
       await db.insert(workouts).values({
         id: randomUUID(),
         training_plan_id: plan.id,
-        runner_id: plan.runner_id,
         date: workoutDate,
         planned_type: workoutType,
         planned_distance: (workoutIndex * 3 + 5).toString(), // 5, 8, 11, 14, 17 miles as string for decimal
@@ -413,7 +423,12 @@ async function createSampleWorkouts(
         actual_distance: isCompleted ? ((workoutIndex * 3 + 5) * 0.95).toFixed(2) : null, // Slight variance as decimal string
         actual_duration: isCompleted ? Math.round((workoutIndex * 3 + 5) * 9 * 1.05) : null, // Slight variance, rounded to integer
         status: isCompleted ? 'completed' : 'planned',
-        notes: workoutDescriptions[workoutType as keyof typeof workoutDescriptions],
+        workout_notes: workoutDescriptions[workoutType as keyof typeof workoutDescriptions],
+        // Enhanced workout fields
+        category: enhancement.category,
+        intensity: enhancement.intensity,
+        terrain: enhancement.terrain,
+        elevation_gain: enhancement.elevation_gain,
         created_at: new Date(),
         updated_at: new Date(),
       })

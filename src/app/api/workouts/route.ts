@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -35,23 +35,42 @@ export async function GET(request: NextRequest) {
         .from(coach_runners)
         .where(and(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.runner_id)
+      logger.debug('Coach authorized runner IDs', {
+        coachId: sessionUser.id,
+        authorizedRunnerIds: authorizedUserIds,
+      })
     } else {
       const relationships = await db
         .select({ coach_id: coach_runners.coach_id })
         .from(coach_runners)
         .where(and(eq(coach_runners.runner_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.coach_id)
+      logger.debug('Runner authorized coach IDs', {
+        runnerId: sessionUser.id,
+        authorizedCoachIds: authorizedUserIds,
+      })
     }
 
-    if (authorizedUserIds.length === 0) {
-      logger.info('No active relationships found', {
+    // Allow runners to see workouts even if they don't have active relationships yet
+    // This handles the case where workouts exist but relationships might not be set up properly
+    if (authorizedUserIds.length === 0 && sessionUser.role === 'runner') {
+      logger.info(
+        'No active relationships found for runner, but allowing access to their own workouts',
+        {
+          userId: sessionUser.id,
+          role: sessionUser.role,
+        }
+      )
+      // Don't return empty - continue to allow runner to see their workouts
+    } else if (authorizedUserIds.length === 0 && sessionUser.role === 'coach') {
+      logger.info('No active relationships found for coach', {
         userId: sessionUser.id,
         role: sessionUser.role,
       })
       return NextResponse.json({ workouts: [] })
     }
 
-    // Build the base query with training plan join
+    // Build the base query with optional training plan join
     const baseQuery = db
       .select({
         id: workouts.id,
@@ -65,27 +84,25 @@ export async function GET(request: NextRequest) {
         actual_duration: workouts.actual_duration,
         status: workouts.status,
         workout_notes: workouts.workout_notes,
+        category: workouts.category,
+        intensity: workouts.intensity,
+        terrain: workouts.terrain,
+        elevation_gain: workouts.elevation_gain,
         created_at: workouts.created_at,
         updated_at: workouts.updated_at,
-        // Include training plan info for authorization
+        // Include training plan info for authorization (may be null)
         coach_id: training_plans.coach_id,
         plan_runner_id: training_plans.runner_id,
       })
       .from(workouts)
-      .innerJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
+      .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
 
     // Apply role-based and relationship-based filtering
+    // Handle workouts with and without training plans
     const conditions = []
+
     if (sessionUser.role === 'coach') {
-      // Coach can only see workouts for runners they have active relationships with
-      conditions.push(eq(training_plans.coach_id, sessionUser.id))
-      // Ensure the training plan runner is in the authorized relationships
-      conditions.push(
-        eq(
-          training_plans.runner_id,
-          authorizedUserIds.length === 1 ? authorizedUserIds[0] : runnerId || authorizedUserIds[0]
-        )
-      )
+      // Check runnerId authorization first
       if (runnerId && !authorizedUserIds.includes(runnerId)) {
         logger.warn('Coach attempted to access unauthorized runner workouts', {
           coachId: sessionUser.id,
@@ -94,13 +111,53 @@ export async function GET(request: NextRequest) {
         })
         return NextResponse.json({ workouts: [] })
       }
+
+      // Coach can see workouts where:
+      // 1. They own the training plan AND the runner is in their authorized relationships
+      // 2. OR the workout has no training plan (allow for standalone workouts)
+      const coachAccessCondition = or(
+        // Has training plan and coach owns it and runner is authorized
+        and(
+          eq(training_plans.coach_id, sessionUser.id),
+          runnerId
+            ? eq(training_plans.runner_id, runnerId)
+            : authorizedUserIds.length > 0
+              ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
+              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
+        ),
+        // OR workout has no training plan (workout.training_plan_id is null)
+        isNull(workouts.training_plan_id)
+      )
+
+      conditions.push(coachAccessCondition)
     } else {
-      // Runner can only see their own workouts from authorized coaches
-      conditions.push(eq(training_plans.runner_id, sessionUser.id))
-      // Ensure the training plan coach is in the authorized relationships
+      // Runner can see workouts where:
+      // 1. They are the runner in a training plan (from any coach - simplified for now)
+      // 2. OR the workout has no training plan (standalone workouts)
+      let runnerAccessCondition
+
       if (authorizedUserIds.length > 0) {
-        conditions.push(eq(training_plans.coach_id, authorizedUserIds[0])) // For now, just use first authorized coach
+        // Has active relationships - use normal authorization
+        runnerAccessCondition = or(
+          // Has training plan and runner is the user and coach is authorized
+          and(
+            eq(training_plans.runner_id, sessionUser.id),
+            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
+          ),
+          // OR workout has no training plan
+          isNull(workouts.training_plan_id)
+        )
+      } else {
+        // No active relationships - allow runner to see workouts assigned to them in training plans
+        runnerAccessCondition = or(
+          // Has training plan and runner is the user (any coach for now)
+          eq(training_plans.runner_id, sessionUser.id),
+          // OR workout has no training plan
+          isNull(workouts.training_plan_id)
+        )
       }
+
+      conditions.push(runnerAccessCondition)
     }
 
     // Apply date filtering
@@ -117,12 +174,36 @@ export async function GET(request: NextRequest) {
 
     const results = await query.orderBy(asc(workouts.date))
 
+    logger.debug('Raw query results:', {
+      count: results.length,
+      results: results.map(r => ({
+        id: r.id,
+        date: r.date,
+        planned_type: r.planned_type,
+        training_plan_id: r.training_plan_id,
+        coach_id: r.coach_id,
+        plan_runner_id: r.plan_runner_id,
+      })),
+    })
+
     // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = results.map(
       ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
     )
 
-    logger.debug('Successfully fetched workouts', { count: cleanedWorkouts.length })
+    logger.debug('Successfully fetched workouts', {
+      count: cleanedWorkouts.length,
+      sessionUser: sessionUser.id,
+      sessionRole: sessionUser.role,
+      requestedRunnerId: runnerId,
+      authorizedUserIds,
+      cleanedWorkouts: cleanedWorkouts.map(w => ({
+        id: w.id,
+        date: w.date,
+        planned_type: w.planned_type,
+        training_plan_id: w.training_plan_id,
+      })),
+    })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {
     logger.error('Internal server error in GET', error)
@@ -153,10 +234,10 @@ export async function POST(request: NextRequest) {
       plannedDistance,
       plannedDuration,
       notes,
-      // category,
-      // intensity,
-      // terrain,
-      // elevationGain,
+      category,
+      intensity,
+      terrain,
+      elevationGain,
     } = await request.json()
 
     if (!trainingPlanId || !date || !plannedType) {
@@ -221,6 +302,11 @@ export async function POST(request: NextRequest) {
         planned_duration: plannedDuration ? parseInt(plannedDuration) : null,
         workout_notes: notes,
         status: 'planned',
+        // Enhanced workout fields
+        category: category || null,
+        intensity: intensity || null,
+        terrain: terrain || null,
+        elevation_gain: elevationGain || null,
       })
       .returning()
 
