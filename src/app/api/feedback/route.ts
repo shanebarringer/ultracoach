@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
+
+import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
@@ -76,10 +77,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error submitting feedback:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit feedback' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to submit feedback' }, { status: 500 })
   }
 }
 
@@ -114,9 +112,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ feedback: feedbackList })
   } catch (error) {
     logger.error('Error fetching user feedback:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch feedback' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
   }
 }

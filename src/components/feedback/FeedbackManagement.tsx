@@ -81,7 +81,11 @@ interface Feedback {
 const feedbackTypeConfig = {
   bug_report: { icon: BugIcon, color: 'danger' as const, label: 'Bug Report' },
   feature_request: { icon: LightbulbIcon, color: 'warning' as const, label: 'Feature Request' },
-  general_feedback: { icon: MessageCircleIcon, color: 'primary' as const, label: 'General Feedback' },
+  general_feedback: {
+    icon: MessageCircleIcon,
+    color: 'primary' as const,
+    label: 'General Feedback',
+  },
   complaint: { icon: ThumbsDownIcon, color: 'danger' as const, label: 'Complaint' },
   compliment: { icon: ThumbsUpIcon, color: 'success' as const, label: 'Compliment' },
 }
@@ -202,7 +206,7 @@ export default function FeedbackManagement() {
             <Select
               label="Filter by Status"
               selectedKeys={[statusFilter]}
-              onSelectionChange={(keys) => {
+              onSelectionChange={keys => {
                 const value = Array.from(keys)[0] as string
                 setStatusFilter(value)
               }}
@@ -225,12 +229,14 @@ export default function FeedbackManagement() {
               <MessageCircleIcon className="w-12 h-12 text-foreground-300 mx-auto mb-2" />
               <p className="text-foreground-600">No feedback found</p>
               <p className="text-sm text-foreground-400">
-                {statusFilter === 'all' ? 'No feedback submissions yet' : `No ${statusFilter} feedback`}
+                {statusFilter === 'all'
+                  ? 'No feedback submissions yet'
+                  : `No ${statusFilter} feedback`}
               </p>
             </CardBody>
           </Card>
         ) : (
-          filteredFeedback.map((item) => {
+          filteredFeedback.map(item => {
             const typeConfig = feedbackTypeConfig[item.feedback_type]
             const TypeIcon = typeConfig.icon
 
@@ -281,13 +287,13 @@ export default function FeedbackManagement() {
                     <div className="flex items-center justify-between text-sm text-foreground-400">
                       <div className="flex items-center gap-4">
                         <span>By: {item.user?.name || 'Anonymous'}</span>
-                        {item.user_email && (
-                          <span>Email: {item.user_email}</span>
-                        )}
+                        {item.user_email && <span>Email: {item.user_email}</span>}
                       </div>
                       <div className="flex items-center gap-1">
                         <ClockIcon className="w-3 h-3" />
-                        <span>{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</span>
+                        <span>
+                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -334,25 +340,37 @@ export default function FeedbackManagement() {
 
                 <div>
                   <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-foreground-700 whitespace-pre-wrap">{selectedFeedback.description}</p>
+                  <p className="text-foreground-700 whitespace-pre-wrap">
+                    {selectedFeedback.description}
+                  </p>
                 </div>
 
                 <Divider />
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">Submitted by:</span> {selectedFeedback.user?.name || 'Anonymous'}
+                    <span className="font-medium">Submitted by:</span>{' '}
+                    {selectedFeedback.user?.name || 'Anonymous'}
                   </div>
                   <div>
-                    <span className="font-medium">Email:</span> {selectedFeedback.user_email || 'Not provided'}
+                    <span className="font-medium">Email:</span>{' '}
+                    {selectedFeedback.user_email || 'Not provided'}
                   </div>
                   <div>
-                    <span className="font-medium">Created:</span> {formatDistanceToNow(new Date(selectedFeedback.created_at), { addSuffix: true })}
+                    <span className="font-medium">Created:</span>{' '}
+                    {formatDistanceToNow(new Date(selectedFeedback.created_at), {
+                      addSuffix: true,
+                    })}
                   </div>
                   <div>
                     <span className="font-medium">Page URL:</span>{' '}
                     {selectedFeedback.page_url ? (
-                      <a href={selectedFeedback.page_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                      <a
+                        href={selectedFeedback.page_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
                         {selectedFeedback.page_url.split('/').pop() || 'Link'}
                       </a>
                     ) : (
@@ -367,10 +385,23 @@ export default function FeedbackManagement() {
                     <div>
                       <h4 className="font-medium mb-2">Technical Details</h4>
                       <div className="text-sm space-y-1 text-foreground-600">
-                        <p><span className="font-medium">Screen:</span> {selectedFeedback.browser_info.screenWidth}x{selectedFeedback.browser_info.screenHeight}</p>
-                        <p><span className="font-medium">Language:</span> {selectedFeedback.browser_info.language}</p>
-                        <p><span className="font-medium">Timezone:</span> {selectedFeedback.browser_info.timezone}</p>
-                        <p><span className="font-medium">User Agent:</span> {selectedFeedback.browser_info.userAgent}</p>
+                        <p>
+                          <span className="font-medium">Screen:</span>{' '}
+                          {selectedFeedback.browser_info.screenWidth}x
+                          {selectedFeedback.browser_info.screenHeight}
+                        </p>
+                        <p>
+                          <span className="font-medium">Language:</span>{' '}
+                          {selectedFeedback.browser_info.language}
+                        </p>
+                        <p>
+                          <span className="font-medium">Timezone:</span>{' '}
+                          {selectedFeedback.browser_info.timezone}
+                        </p>
+                        <p>
+                          <span className="font-medium">User Agent:</span>{' '}
+                          {selectedFeedback.browser_info.userAgent}
+                        </p>
                       </div>
                     </div>
                   </>
@@ -393,34 +424,41 @@ export default function FeedbackManagement() {
                 <Button variant="flat" onPress={() => setSelectedFeedback(null)}>
                   Cancel
                 </Button>
-                
+
                 <div className="flex gap-2">
                   {selectedFeedback.status === 'open' && (
                     <Button
                       color="primary"
                       startContent={<PlayIcon className="w-4 h-4" />}
-                      onPress={() => updateFeedbackStatus(selectedFeedback.id, 'in_progress', adminNotes)}
+                      onPress={() =>
+                        updateFeedbackStatus(selectedFeedback.id, 'in_progress', adminNotes)
+                      }
                     >
                       Start Progress
                     </Button>
                   )}
-                  
-                  {selectedFeedback.status !== 'resolved' && selectedFeedback.status !== 'closed' && (
-                    <Button
-                      color="success"
-                      startContent={<CheckIcon className="w-4 h-4" />}
-                      onPress={() => updateFeedbackStatus(selectedFeedback.id, 'resolved', adminNotes)}
-                    >
-                      Mark Resolved
-                    </Button>
-                  )}
-                  
+
+                  {selectedFeedback.status !== 'resolved' &&
+                    selectedFeedback.status !== 'closed' && (
+                      <Button
+                        color="success"
+                        startContent={<CheckIcon className="w-4 h-4" />}
+                        onPress={() =>
+                          updateFeedbackStatus(selectedFeedback.id, 'resolved', adminNotes)
+                        }
+                      >
+                        Mark Resolved
+                      </Button>
+                    )}
+
                   {selectedFeedback.status !== 'closed' && (
                     <Button
                       color="danger"
                       variant="flat"
                       startContent={<XIcon className="w-4 h-4" />}
-                      onPress={() => updateFeedbackStatus(selectedFeedback.id, 'closed', adminNotes)}
+                      onPress={() =>
+                        updateFeedbackStatus(selectedFeedback.id, 'closed', adminNotes)
+                      }
                     >
                       Close
                     </Button>

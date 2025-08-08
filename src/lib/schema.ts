@@ -316,8 +316,8 @@ export const user_feedback = pgTable('user_feedback', {
   user_id: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  feedback_type: text('feedback_type', { 
-    enum: ['bug_report', 'feature_request', 'general_feedback', 'complaint', 'compliment'] 
+  feedback_type: text('feedback_type', {
+    enum: ['bug_report', 'feature_request', 'general_feedback', 'complaint', 'compliment'],
   }).notNull(),
   category: text('category'), // 'ui_ux', 'performance', 'functionality', 'content', 'other'
   title: text('title').notNull(),

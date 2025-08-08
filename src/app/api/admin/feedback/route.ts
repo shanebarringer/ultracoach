@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { desc, eq, sql } from 'drizzle-orm'
+
+import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
-import { user_feedback, user } from '@/lib/schema'
+import { user, user_feedback } from '@/lib/schema'
 
 const logger = createLogger('api/admin/feedback')
 
@@ -67,10 +68,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ feedback: feedbackList })
   } catch (error) {
     logger.error('Error fetching admin feedback:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch feedback' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
   }
 }
 
@@ -111,7 +109,7 @@ export async function PATCH(request: NextRequest) {
 
     if (status && ['open', 'in_progress', 'resolved', 'closed'].includes(status)) {
       updateData.status = status as 'open' | 'in_progress' | 'resolved' | 'closed'
-      
+
       // Set resolved info if status is resolved
       if (status === 'resolved') {
         updateData.resolved_by = session.user.id
@@ -141,9 +139,6 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Error updating feedback:', error)
-    return NextResponse.json(
-      { error: 'Failed to update feedback' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update feedback' }, { status: 500 })
   }
 }

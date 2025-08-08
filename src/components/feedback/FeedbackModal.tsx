@@ -145,9 +145,9 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
           '✅ Feedback Submitted',
           `Thank you for your feedback! We'll review it and get back to you soon.`
         )
-        
+
         logger.info('Feedback submitted successfully:', data.feedback.id)
-        
+
         // Reset form and close modal
         setForm({
           feedback_type: 'general_feedback',
@@ -194,7 +194,8 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             <h2 className="text-xl font-semibold">Share Your Feedback</h2>
           </div>
           <p className="text-sm text-foreground-600 font-normal">
-            Help us improve UltraCoach by sharing your thoughts, reporting issues, or suggesting features.
+            Help us improve UltraCoach by sharing your thoughts, reporting issues, or suggesting
+            features.
           </p>
         </ModalHeader>
 
@@ -204,7 +205,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Feedback Type"
             placeholder="Select feedback type"
             selectedKeys={[form.feedback_type]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('feedback_type', value)
             }}
@@ -212,7 +213,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
               trigger: 'border-1',
             }}
           >
-            {feedbackTypes.map((type) => {
+            {feedbackTypes.map(type => {
               const Icon = type.icon
               return (
                 <SelectItem
@@ -234,7 +235,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Category (Optional)"
             placeholder="Select a category"
             selectedKeys={form.category ? [form.category] : []}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('category', value || '')
             }}
@@ -242,10 +243,8 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
               trigger: 'border-1',
             }}
           >
-            {categories.map((category) => (
-              <SelectItem key={category.value}>
-                {category.label}
-              </SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.value}>{category.label}</SelectItem>
             ))}
           </Select>
 
@@ -254,7 +253,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Title"
             placeholder="Brief summary of your feedback"
             value={form.title}
-            onValueChange={(value) => handleInputChange('title', value)}
+            onValueChange={value => handleInputChange('title', value)}
             isRequired
             classNames={{
               input: 'border-1',
@@ -266,7 +265,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Description"
             placeholder="Please provide detailed information about your feedback. For bug reports, include steps to reproduce the issue."
             value={form.description}
-            onValueChange={(value) => handleInputChange('description', value)}
+            onValueChange={value => handleInputChange('description', value)}
             minRows={4}
             maxRows={8}
             isRequired
@@ -280,7 +279,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Priority"
             placeholder="Select priority level"
             selectedKeys={[form.priority]}
-            onSelectionChange={(keys) => {
+            onSelectionChange={keys => {
               const value = Array.from(keys)[0] as string
               handleInputChange('priority', value)
             }}
@@ -288,10 +287,8 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
               trigger: 'border-1',
             }}
           >
-            {priorities.map((priority) => (
-              <SelectItem key={priority.value}>
-                {priority.label}
-              </SelectItem>
+            {priorities.map(priority => (
+              <SelectItem key={priority.value}>{priority.label}</SelectItem>
             ))}
           </Select>
 
@@ -300,7 +297,7 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
             label="Email (Optional)"
             placeholder="Enter your email if you'd like us to follow up"
             value={form.user_email}
-            onValueChange={(value) => handleInputChange('user_email', value)}
+            onValueChange={value => handleInputChange('user_email', value)}
             type="email"
             description="We'll only use this to follow up on your feedback"
             classNames={{

@@ -13,16 +13,14 @@ interface FeedbackButtonProps {
   defaultType?: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
 }
 
-export default function FeedbackButton({ 
-  variant = 'floating', 
+export default function FeedbackButton({
+  variant = 'floating',
   size = 'md',
-  defaultType 
+  defaultType,
 }: FeedbackButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const baseClasses = variant === 'floating' 
-    ? 'fixed bottom-4 right-4 z-50 shadow-lg' 
-    : ''
+  const baseClasses = variant === 'floating' ? 'fixed bottom-4 right-4 z-50 shadow-lg' : ''
 
   return (
     <>
