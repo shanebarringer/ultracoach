@@ -86,7 +86,10 @@ export default function WorkoutLogModal({
   } = useForm<WorkoutLogForm>({
     resolver: zodResolver(workoutLogSchema),
     defaultValues: {
-      status: defaultToComplete && workout.status !== 'completed' ? 'completed' : (workout.status || 'planned'),
+      status:
+        defaultToComplete && workout.status !== 'completed'
+          ? 'completed'
+          : workout.status || 'planned',
       actualType: workout.actual_type || workout.planned_type || '',
       category: workout.category || undefined,
       intensity: workout.intensity || undefined,
@@ -104,7 +107,10 @@ export default function WorkoutLogModal({
   useEffect(() => {
     if (isOpen) {
       reset({
-        status: defaultToComplete && workout.status !== 'completed' ? 'completed' : (workout.status || 'planned'),
+        status:
+          defaultToComplete && workout.status !== 'completed'
+            ? 'completed'
+            : workout.status || 'planned',
         actualType: workout.actual_type || workout.planned_type || '',
         category: workout.category || undefined,
         intensity: workout.intensity || undefined,

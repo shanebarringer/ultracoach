@@ -44,11 +44,11 @@ export default function WorkoutsPage() {
 
   const handleWorkoutPress = useCallback(
     (workout: Workout) => {
-      setUiState(prev => ({ 
-        ...prev, 
-        selectedWorkout: workout, 
+      setUiState(prev => ({
+        ...prev,
+        selectedWorkout: workout,
         showLogWorkout: true,
-        defaultToComplete: workout.status !== 'completed'
+        defaultToComplete: workout.status !== 'completed',
       }))
     },
     [setUiState]
