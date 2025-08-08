@@ -43,6 +43,13 @@
       "when": 1754613252751,
       "tag": "0005_rich_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1754617588281,
+      "tag": "0006_friendly_namor",
+      "breakpoints": true
     }
   ]
 }

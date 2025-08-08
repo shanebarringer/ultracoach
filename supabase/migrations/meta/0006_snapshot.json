@@ -1,6 +1,6 @@
 {
-  "id": "8cacfcc6-7eb2-4d45-b4cf-9b1eeb10e4fc",
-  "prevId": "72886748-ceb9-47c7-b870-7ecc72b726c5",
+  "id": "7bb62f26-a352-4224-8803-27ff62def5d9",
+  "prevId": "8cacfcc6-7eb2-4d45-b4cf-9b1eeb10e4fc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -93,8 +93,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -170,8 +174,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -181,7 +189,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -279,7 +289,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -412,8 +424,12 @@
           "name": "coach_runners_coach_id_user_id_fk",
           "tableFrom": "coach_runners",
           "tableTo": "user",
-          "columnsFrom": ["coach_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "coach_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -421,8 +437,12 @@
           "name": "coach_runners_runner_id_user_id_fk",
           "tableFrom": "coach_runners",
           "tableTo": "user",
-          "columnsFrom": ["runner_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "runner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -432,7 +452,10 @@
         "coach_runners_coach_id_runner_id_unique": {
           "name": "coach_runners_coach_id_runner_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["coach_id", "runner_id"]
+          "columns": [
+            "coach_id",
+            "runner_id"
+          ]
         }
       },
       "policies": {},
@@ -502,8 +525,12 @@
           "name": "conversations_coach_id_user_id_fk",
           "tableFrom": "conversations",
           "tableTo": "user",
-          "columnsFrom": ["coach_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "coach_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -511,8 +538,12 @@
           "name": "conversations_runner_id_user_id_fk",
           "tableFrom": "conversations",
           "tableTo": "user",
-          "columnsFrom": ["runner_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "runner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -520,8 +551,12 @@
           "name": "conversations_training_plan_id_training_plans_id_fk",
           "tableFrom": "conversations",
           "tableTo": "training_plans",
-          "columnsFrom": ["training_plan_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "training_plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -576,8 +611,12 @@
           "name": "message_workout_links_message_id_messages_id_fk",
           "tableFrom": "message_workout_links",
           "tableTo": "messages",
-          "columnsFrom": ["message_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -585,8 +624,12 @@
           "name": "message_workout_links_workout_id_workouts_id_fk",
           "tableFrom": "message_workout_links",
           "tableTo": "workouts",
-          "columnsFrom": ["workout_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workout_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -666,8 +709,12 @@
           "name": "messages_sender_id_user_id_fk",
           "tableFrom": "messages",
           "tableTo": "user",
-          "columnsFrom": ["sender_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "sender_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -675,8 +722,12 @@
           "name": "messages_recipient_id_user_id_fk",
           "tableFrom": "messages",
           "tableTo": "user",
-          "columnsFrom": ["recipient_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recipient_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -684,8 +735,12 @@
           "name": "messages_workout_id_workouts_id_fk",
           "tableFrom": "messages",
           "tableTo": "workouts",
-          "columnsFrom": ["workout_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workout_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -693,8 +748,12 @@
           "name": "messages_conversation_id_conversations_id_fk",
           "tableFrom": "messages",
           "tableTo": "conversations",
-          "columnsFrom": ["conversation_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -761,8 +820,12 @@
           "name": "notifications_user_id_user_id_fk",
           "tableFrom": "notifications",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -867,8 +930,12 @@
           "name": "plan_templates_created_by_user_id_fk",
           "tableFrom": "plan_templates",
           "tableTo": "user",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -973,8 +1040,12 @@
           "name": "races_created_by_user_id_fk",
           "tableFrom": "races",
           "tableTo": "user",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1053,8 +1124,12 @@
           "name": "template_phases_template_id_plan_templates_id_fk",
           "tableFrom": "template_phases",
           "tableTo": "plan_templates",
-          "columnsFrom": ["template_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1062,8 +1137,12 @@
           "name": "template_phases_phase_id_training_phases_id_fk",
           "tableFrom": "template_phases",
           "tableTo": "training_phases",
-          "columnsFrom": ["phase_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "phase_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1206,8 +1285,12 @@
           "name": "training_plans_coach_id_user_id_fk",
           "tableFrom": "training_plans",
           "tableTo": "user",
-          "columnsFrom": ["coach_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "coach_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1215,8 +1298,12 @@
           "name": "training_plans_runner_id_user_id_fk",
           "tableFrom": "training_plans",
           "tableTo": "user",
-          "columnsFrom": ["runner_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "runner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1271,8 +1358,12 @@
           "name": "typing_status_user_id_user_id_fk",
           "tableFrom": "typing_status",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1280,8 +1371,12 @@
           "name": "typing_status_recipient_id_user_id_fk",
           "tableFrom": "typing_status",
           "tableTo": "user",
-          "columnsFrom": ["recipient_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recipient_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1291,9 +1386,159 @@
         "typing_status_user_id_recipient_id_unique": {
           "name": "typing_status_user_id_recipient_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id", "recipient_id"]
+          "columns": [
+            "user_id",
+            "recipient_id"
+          ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_feedback": {
+      "name": "user_feedback",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feedback_type": {
+          "name": "feedback_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'medium'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'open'"
+        },
+        "user_email": {
+          "name": "user_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "browser_info": {
+          "name": "browser_info",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "page_url": {
+          "name": "page_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screenshots": {
+          "name": "screenshots",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_notes": {
+          "name": "admin_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_by": {
+          "name": "resolved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_feedback_user_id_user_id_fk": {
+          "name": "user_feedback_user_id_user_id_fk",
+          "tableFrom": "user_feedback",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_feedback_resolved_by_user_id_fk": {
+          "name": "user_feedback_resolved_by_user_id_fk",
+          "tableFrom": "user_feedback",
+          "tableTo": "user",
+          "columnsFrom": [
+            "resolved_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1427,8 +1672,12 @@
           "name": "workouts_training_plan_id_training_plans_id_fk",
           "tableFrom": "workouts",
           "tableTo": "training_plans",
-          "columnsFrom": ["training_plan_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "training_plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

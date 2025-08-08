@@ -54,7 +54,7 @@ export function useNotifications() {
   // Fetch user preferences
   const fetchPreferences = useCallback(async () => {
     if (!session?.user?.id) return
-    
+
     try {
       const response = await fetch('/api/user/notification-preferences')
       if (response.ok) {
@@ -88,10 +88,10 @@ export function useNotifications() {
     filter: `user_id=eq.${session?.user?.id}`,
     onInsert: payload => {
       const newNotification = payload.new as Notification
-      
+
       // Show toast for new notification
       showNotificationToast(newNotification)
-      
+
       setNotifications(prev => {
         const updated = [newNotification, ...prev.slice(0, 49)]
         setUnreadCount(updated.filter(n => !n.read).length)
@@ -114,24 +114,46 @@ export function useNotifications() {
   const showNotificationToast = (notification: Notification) => {
     // Check if toast notifications are enabled
     if (!preferences?.toast_notifications) return
-    
-    // Check if this type of notification is enabled
-    const typeEnabled = preferences?.[notification.type] !== false
-    if (!typeEnabled) return
+
+    // Map notification types to preference keys
+    const getPreferenceKey = (type: string) => {
+      switch (type) {
+        case 'message':
+          return 'messages'
+        case 'workout':
+          return 'workouts'
+        case 'training_plan':
+          return 'training_plans'
+        case 'race':
+          return 'races'
+        default:
+          return null
+      }
+    }
+
+    const preferenceKey = getPreferenceKey(notification.type)
+    if (preferenceKey && preferences?.[preferenceKey as keyof typeof preferences] === false) {
+      return
+    }
 
     const getNotificationIcon = (type: string) => {
       switch (type) {
-        case 'workout': return '🏃'
-        case 'training_plan': return '📋'
-        case 'message': return '💬'
-        case 'race': return '🏁'
-        default: return '📢'
+        case 'workout':
+          return '🏃'
+        case 'training_plan':
+          return '📋'
+        case 'message':
+          return '💬'
+        case 'race':
+          return '🏁'
+        default:
+          return '📢'
       }
     }
 
     const icon = getNotificationIcon(notification.type)
     const title = `${icon} ${notification.title}`
-    
+
     toast.info(title, notification.message)
   }
 

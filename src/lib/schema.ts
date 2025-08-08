@@ -35,16 +35,15 @@ export const user = pgTable('user', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   fullName: text('full_name'),
-  notification_preferences: json('notification_preferences')
-    .$defaultFn(() => ({
-      messages: true,
-      workouts: true,
-      training_plans: true,
-      races: true,
-      reminders: true,
-      toast_notifications: true,
-      email_notifications: false,
-    })),
+  notification_preferences: json('notification_preferences').$defaultFn(() => ({
+    messages: true,
+    workouts: true,
+    training_plans: true,
+    races: true,
+    reminders: true,
+    toast_notifications: true,
+    email_notifications: false,
+  })),
 })
 
 export const session = pgTable('session', {
@@ -310,6 +309,31 @@ export const coach_runners = pgTable(
     unique_coach_runner: unique().on(table.coach_id, table.runner_id),
   })
 )
+
+// User Feedback
+export const user_feedback = pgTable('user_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  feedback_type: text('feedback_type', { 
+    enum: ['bug_report', 'feature_request', 'general_feedback', 'complaint', 'compliment'] 
+  }).notNull(),
+  category: text('category'), // 'ui_ux', 'performance', 'functionality', 'content', 'other'
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  priority: text('priority', { enum: ['low', 'medium', 'high', 'urgent'] }).default('medium'),
+  status: text('status', { enum: ['open', 'in_progress', 'resolved', 'closed'] }).default('open'),
+  user_email: text('user_email'), // In case user wants follow-up
+  browser_info: json('browser_info'), // User agent, screen size, etc.
+  page_url: text('page_url'), // Where the feedback was submitted from
+  screenshots: text('screenshots').array(), // URLs to uploaded screenshots
+  admin_notes: text('admin_notes'), // Internal notes for admins
+  resolved_by: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
+  resolved_at: timestamp('resolved_at', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
 
 // ===================================
 // LEGACY ALIASES (For Better Auth compatibility)

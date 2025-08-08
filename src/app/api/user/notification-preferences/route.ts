@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
@@ -5,7 +7,6 @@ import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { user } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
 
 const logger = createLogger('api-notification-preferences')
 

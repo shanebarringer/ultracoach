@@ -67,19 +67,13 @@ export default function NotificationPreferences() {
       })
 
       if (response.ok) {
-        toast.success(
-          '✅ Preferences Saved',
-          'Your notification preferences have been updated.'
-        )
+        toast.success('✅ Preferences Saved', 'Your notification preferences have been updated.')
       } else {
         throw new Error('Failed to save preferences')
       }
     } catch (error) {
       logger.error('Error saving notification preferences:', error)
-      toast.error(
-        '❌ Save Failed',
-        'Failed to save notification preferences. Please try again.'
-      )
+      toast.error('❌ Save Failed', 'Failed to save notification preferences. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -111,14 +105,12 @@ export default function NotificationPreferences() {
             <MessageSquareIcon className="w-4 h-4" />
             In-App Notifications
           </h4>
-          
+
           <div className="space-y-2 pl-6">
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Messages</label>
-                <p className="text-xs text-foreground-600">
-                  Coach and runner messages
-                </p>
+                <p className="text-xs text-foreground-600">Coach and runner messages</p>
               </div>
               <Switch
                 isSelected={preferences.messages}
@@ -129,9 +121,7 @@ export default function NotificationPreferences() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Workouts</label>
-                <p className="text-xs text-foreground-600">
-                  Workout updates and reminders
-                </p>
+                <p className="text-xs text-foreground-600">Workout updates and reminders</p>
               </div>
               <Switch
                 isSelected={preferences.workouts}
@@ -142,9 +132,7 @@ export default function NotificationPreferences() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Training Plans</label>
-                <p className="text-xs text-foreground-600">
-                  Plan updates and changes
-                </p>
+                <p className="text-xs text-foreground-600">Plan updates and changes</p>
               </div>
               <Switch
                 isSelected={preferences.training_plans}
@@ -155,9 +143,7 @@ export default function NotificationPreferences() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Races</label>
-                <p className="text-xs text-foreground-600">
-                  Race registrations and updates
-                </p>
+                <p className="text-xs text-foreground-600">Race registrations and updates</p>
               </div>
               <Switch
                 isSelected={preferences.races}
@@ -168,9 +154,7 @@ export default function NotificationPreferences() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium">Reminders</label>
-                <p className="text-xs text-foreground-600">
-                  Training reminders and deadlines
-                </p>
+                <p className="text-xs text-foreground-600">Training reminders and deadlines</p>
               </div>
               <Switch
                 isSelected={preferences.reminders}
@@ -186,7 +170,7 @@ export default function NotificationPreferences() {
             <BellIcon className="w-4 h-4" />
             Toast Notifications
           </h4>
-          
+
           <div className="flex items-center justify-between pl-6">
             <div>
               <label className="text-sm font-medium">Show Toast Notifications</label>
@@ -207,13 +191,11 @@ export default function NotificationPreferences() {
             <MailIcon className="w-4 h-4" />
             Email Notifications
           </h4>
-          
+
           <div className="flex items-center justify-between pl-6">
             <div>
               <label className="text-sm font-medium">Email Notifications</label>
-              <p className="text-xs text-foreground-600">
-                Receive important updates via email
-              </p>
+              <p className="text-xs text-foreground-600">Receive important updates via email</p>
             </div>
             <Switch
               isSelected={preferences.email_notifications}

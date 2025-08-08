@@ -73,23 +73,13 @@ export default function NotificationBell() {
         )
       case 'workout':
         return (
-          <Button
-            size="sm"
-            variant="flat"
-            color="success"
-            className="h-6"
-          >
+          <Button size="sm" variant="flat" color="success" className="h-6">
             View Workout
           </Button>
         )
       case 'training_plan':
         return (
-          <Button
-            size="sm"
-            variant="flat"
-            color="primary"
-            className="h-6"
-          >
+          <Button size="sm" variant="flat" color="primary" className="h-6">
             View Plan
           </Button>
         )
@@ -108,10 +98,12 @@ export default function NotificationBell() {
             size="sm"
             isInvisible={unreadCount === 0}
           >
-            <BellIcon className={classNames(
-              "w-5 h-5 transition-all duration-200",
-              unreadCount > 0 && "animate-pulse text-primary"
-            )} />
+            <BellIcon
+              className={classNames(
+                'w-5 h-5 transition-all duration-200',
+                unreadCount > 0 && 'animate-pulse text-primary'
+              )}
+            />
           </Badge>
         </Button>
       </DropdownTrigger>
