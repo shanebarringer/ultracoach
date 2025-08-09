@@ -89,7 +89,8 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       // Load test environment variables from environment
-      DATABASE_URL: process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+      DATABASE_URL:
+        process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || '',
       BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
       NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001',

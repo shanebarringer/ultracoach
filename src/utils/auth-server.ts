@@ -30,7 +30,11 @@ export interface ServerSession {
 export async function getServerSession(): Promise<ServerSession | null> {
   try {
     // Check if we're in build-time static generation
-    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL && !process.env.NEXT_RUNTIME) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !process.env.VERCEL_URL &&
+      !process.env.NEXT_RUNTIME
+    ) {
       logger.info('Skipping session check during build-time static generation')
       return null
     }
@@ -63,7 +67,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
         id: session.user.id,
         email: session.user.email,
         name: session.user.name || null,
-        role: (userRole === 'coach' || userRole === 'runner') ? userRole : 'runner',
+        role: userRole === 'coach' || userRole === 'runner' ? userRole : 'runner',
       },
     }
 
@@ -81,7 +85,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
       logger.info('Build-time context detected, skipping session check')
       return null
     }
-    
+
     logger.error('Failed to get server session:', error)
     return null
   }
@@ -211,7 +215,8 @@ export async function verifyConversationPermission(recipientId: string): Promise
     // Check for active coach-runner relationship
     const headersList = await headers()
     const host = headersList.get('x-forwarded-host') ?? headersList.get('host')
-    const proto = headersList.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https')
+    const proto =
+      headersList.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https')
     const base = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL || ''
     const cookie = headersList.get('cookie') ?? ''
 
@@ -237,11 +242,11 @@ export async function verifyConversationPermission(recipientId: string): Promise
       const relationships = data.relationships || []
 
       // Check if there's an active relationship between current user and recipient
-      const hasRelationship = relationships.some((rel: { status: string; coach_id: string; runner_id: string }) => 
-        rel.status === 'active' && (
-          (rel.coach_id === session.user.id && rel.runner_id === recipientId) ||
-          (rel.runner_id === session.user.id && rel.coach_id === recipientId)
-        )
+      const hasRelationship = relationships.some(
+        (rel: { status: string; coach_id: string; runner_id: string }) =>
+          rel.status === 'active' &&
+          ((rel.coach_id === session.user.id && rel.runner_id === recipientId) ||
+            (rel.runner_id === session.user.id && rel.coach_id === recipientId))
       )
 
       if (hasRelationship) {

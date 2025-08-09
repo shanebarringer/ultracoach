@@ -1,21 +1,17 @@
 #!/usr/bin/env tsx
 /**
  * UltraCoach Database CLI
- * 
+ *
  * Unified command-line interface for all database operations.
  * Consolidates functionality from multiple duplicate scripts.
- * 
+ *
  * Usage: pnpm tsx scripts/db-cli.ts <command> [options]
  */
-
 import { Command } from 'commander'
 
 const program = new Command()
 
-program
-  .name('db-cli')
-  .description('UltraCoach Database Management CLI')
-  .version('1.0.0')
+program.name('db-cli').description('UltraCoach Database Management CLI').version('1.0.0')
 
 // Seed commands
 program
@@ -23,7 +19,7 @@ program
   .description('Seed the database with test data')
   .option('-p, --production', 'Seed production database (use with caution)')
   .option('-c, --comprehensive', 'Use comprehensive seeding with all test data')
-  .action(async (options) => {
+  .action(async options => {
     if (options.production) {
       console.log('🚨 Production seeding - importing comprehensive-seed.ts')
       await import('./comprehensive-seed.js')
@@ -42,9 +38,11 @@ program
   .description('Create test users')
   .option('-a, --automated', 'Use automated browser-based creation')
   .option('-h, --http', 'Use HTTP API creation')
-  .action(async (options) => {
+  .action(async options => {
     if (options.automated) {
-      console.log('🤖 Creating users via automated browser - importing create-test-users-automated.ts')
+      console.log(
+        '🤖 Creating users via automated browser - importing create-test-users-automated.ts'
+      )
       await import('./create-test-users-automated.js')
     } else if (options.http) {
       console.log('🌐 Creating users via HTTP API - importing create-test-users-http.ts')
@@ -55,17 +53,17 @@ program
     }
   })
 
-// Password management commands  
+// Password management commands
 program
   .command('fix-passwords')
   .description('Fix user password hashes for Better Auth compatibility')
   .option('-p, --production', 'Fix production passwords (use with caution)')
-  .action(async (options) => {
+  .action(async options => {
     if (options.production) {
       console.log('🔐 Fixing production passwords - importing fix-production-passwords.ts')
       await import('./fix-production-passwords.js')
     } else {
-      console.log('🔐 Fixing password hashes - importing fix-better-auth-password-hashes.ts') 
+      console.log('🔐 Fixing password hashes - importing fix-better-auth-password-hashes.ts')
       await import('./fix-better-auth-password-hashes.js')
     }
   })
@@ -75,7 +73,7 @@ program
   .command('reset')
   .description('Reset database to clean state')
   .option('-p, --production', 'Reset production database (DANGEROUS)')
-  .action(async (options) => {
+  .action(async options => {
     if (options.production) {
       console.log('⚠️  DANGER: Production database reset - importing reset-production-database.ts')
       await import('./reset-production-database.js')

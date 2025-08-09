@@ -136,6 +136,6 @@ export function useDashboardData() {
     recentWorkouts,
     upcomingWorkouts,
     relationships,
-    loading: loadingStates.trainingPlans || loadingStates.workouts || relationships.length === 0,
+    loading: loadingStates.trainingPlans || loadingStates.workouts,
   }
 }
