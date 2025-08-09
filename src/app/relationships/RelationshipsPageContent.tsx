@@ -13,12 +13,20 @@ import { relationshipsAtom } from '@/lib/atoms'
 
 export function RelationshipsPageContent() {
   const { user } = useBetterAuth()
-  const [, refreshRelationships] = useAtom(relationshipsAtom)
+  const [, setRelationships] = useAtom(relationshipsAtom)
 
-  const handleRelationshipChange = useCallback(() => {
+  const handleRelationshipChange = useCallback(async () => {
     // Refresh relationships atom to get updated data
-    refreshRelationships()
-  }, [refreshRelationships])
+    try {
+      const response = await fetch('/api/coach-runners')
+      if (response.ok) {
+        const data = await response.json()
+        setRelationships(data.relationships || [])
+      }
+    } catch (error) {
+      console.error('Failed to refresh relationships:', error)
+    }
+  }, [setRelationships])
 
   if (!user) {
     return (

@@ -27,7 +27,7 @@ interface Props {
 
 /**
  * Workouts Page Client Component
- * 
+ *
  * Handles workout interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */

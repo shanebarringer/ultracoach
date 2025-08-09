@@ -45,9 +45,7 @@ export default function ChatPageClient({ user }: Props) {
                   </Button>
                 </div>
                 <p className="text-sm text-foreground-600 mt-2">
-                  {user.role === 'coach'
-                    ? 'Guide your expedition team'
-                    : 'Connect with your guide'}
+                  {user.role === 'coach' ? 'Guide your expedition team' : 'Connect with your guide'}
                 </p>
               </CardHeader>
               <div className="flex-1 overflow-hidden">

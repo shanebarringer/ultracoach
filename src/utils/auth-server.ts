@@ -1,10 +1,9 @@
 /**
  * Server-side authentication utilities for Next.js 15 App Router
- * 
+ *
  * This module provides server-side session management utilities that force
  * dynamic rendering and integrate with Better Auth for secure authentication.
  */
-
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
@@ -24,7 +23,7 @@ export interface ServerSession {
 
 /**
  * Get the current session server-side, forcing dynamic rendering
- * 
+ *
  * This function MUST be called from Server Components only.
  * It forces dynamic rendering by accessing headers.
  */
@@ -32,14 +31,14 @@ export async function getServerSession(): Promise<ServerSession | null> {
   try {
     // Force dynamic rendering by accessing headers
     const headersList = await headers()
-    
+
     logger.info('Getting server session', {
-      userAgent: headersList.get('user-agent')?.substring(0, 50)
+      userAgent: headersList.get('user-agent')?.substring(0, 50),
     })
 
     // Better Auth server-side session retrieval
     const session = await auth.api.getSession({
-      headers: headersList
+      headers: headersList,
     })
 
     if (!session?.user) {
@@ -52,14 +51,14 @@ export async function getServerSession(): Promise<ServerSession | null> {
         id: session.user.id,
         email: session.user.email,
         name: session.user.name || null,
-        role: ((session.user as { role?: string }).role as 'coach' | 'runner') || 'runner'
-      }
+        role: ((session.user as { role?: string }).role as 'coach' | 'runner') || 'runner',
+      },
     }
 
     logger.info('Server session retrieved successfully', {
       userId: serverSession.user.id,
       role: serverSession.user.role,
-      email: serverSession.user.email
+      email: serverSession.user.email,
     })
 
     return serverSession
@@ -75,12 +74,12 @@ export async function getServerSession(): Promise<ServerSession | null> {
  */
 export async function requireAuth(): Promise<ServerSession> {
   const session = await getServerSession()
-  
+
   if (!session) {
     logger.info('Authentication required, redirecting to signin')
     redirect('/auth/signin')
   }
-  
+
   return session
 }
 
@@ -89,16 +88,16 @@ export async function requireAuth(): Promise<ServerSession> {
  */
 export async function requireRole(role: 'coach' | 'runner'): Promise<ServerSession> {
   const session = await requireAuth()
-  
+
   if (session.user.role !== role) {
     logger.warn('Role mismatch, redirecting to dashboard', {
       required: role,
       actual: session.user.role,
-      userId: session.user.id
+      userId: session.user.id,
     })
     redirect('/dashboard')
   }
-  
+
   return session
 }
 
@@ -121,24 +120,40 @@ export async function requireRunner(): Promise<ServerSession> {
  */
 export async function getUserById(userId: string) {
   try {
-    // Force dynamic rendering by accessing headers
-    await headers()
-    
+    // Force dynamic rendering and get incoming request headers
+    const headersList = await headers()
+    const cookie = headersList.get('cookie') ?? ''
+    const authorization = headersList.get('authorization') ?? ''
+
     logger.info('Fetching user by ID', { userId })
 
-    const response = await fetch(`${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/api/users/${userId}`)
-    
+    // Build absolute URL from incoming request to satisfy Node fetch URL parsing in all contexts
+    const host = headersList.get('x-forwarded-host') ?? headersList.get('host')
+    const proto =
+      headersList.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https')
+    const base = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL || ''
+
+    // Call internal API with forwarded auth context; use no-store to avoid caching
+    const response = await fetch(`${base}/api/users/${userId}`, {
+      headers: {
+        ...(cookie ? { cookie } : {}),
+        ...(authorization ? { authorization } : {}),
+        accept: 'application/json',
+      },
+      cache: 'no-store',
+    })
+
     if (!response.ok) {
       logger.error('Failed to fetch user:', {
         userId,
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
       })
       return null
     }
 
     const data = await response.json()
-    
+
     if (!data.user) {
       logger.warn('User not found:', { userId })
       return null
@@ -146,7 +161,7 @@ export async function getUserById(userId: string) {
 
     logger.info('User fetched successfully', {
       userId,
-      userName: data.user.name || data.user.email
+      userName: data.user.name || data.user.email,
     })
 
     return data.user
@@ -162,7 +177,7 @@ export async function getUserById(userId: string) {
 export async function verifyConversationPermission(recipientId: string): Promise<boolean> {
   try {
     const session = await getServerSession()
-    
+
     if (!session) {
       logger.warn('No session found for conversation permission check')
       return false
@@ -177,9 +192,9 @@ export async function verifyConversationPermission(recipientId: string): Promise
     // For now, authenticated users can chat with anyone
     logger.info('Conversation permission granted', {
       currentUser: session.user.id,
-      recipient: recipientId
+      recipient: recipientId,
     })
-    
+
     return true
   } catch (error) {
     logger.error('Error verifying conversation permission:', error)
@@ -193,7 +208,7 @@ export async function verifyConversationPermission(recipientId: string): Promise
  */
 export async function checkResourceAccess(resourceId: string, action: string): Promise<boolean> {
   const session = await getServerSession()
-  
+
   if (!session) {
     return false
   }
@@ -203,8 +218,8 @@ export async function checkResourceAccess(resourceId: string, action: string): P
   logger.info('Checking resource access', {
     userId: session.user.id,
     resourceId,
-    action
+    action,
   })
-  
+
   return true
 }

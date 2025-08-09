@@ -8,6 +8,8 @@ import {
   unwrap,
 } from 'jotai/utils'
 
+import type { RelationshipData } from '@/types/relationships'
+
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
 import type {
@@ -200,34 +202,36 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
 export const relationshipsAtom = atom<RelationshipData[]>([])
 
 // Loadable atom for fetching relationships
-export const relationshipsLoadableAtom = loadable(atom(async (get) => {
-  // Only execute on client-side to prevent build-time fetch errors
-  if (!isBrowser) return []
+export const relationshipsLoadableAtom = loadable(
+  atom(async _get => {
+    // Only execute on client-side to prevent build-time fetch errors
+    if (!isBrowser) return []
 
-  const logger = createLogger('RelationshipsLoadable')
+    const logger = createLogger('RelationshipsLoadable')
 
-  try {
-    logger.debug('Fetching relationships...')
-    const response = await fetch('/api/coach-runners', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    })
+    try {
+      logger.debug('Fetching relationships...')
+      const response = await fetch('/api/coach-runners', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
 
-    if (!response.ok) {
-      logger.error(`Failed to fetch relationships: ${response.status} ${response.statusText}`)
-      throw new Error(`Failed to fetch relationships: ${response.statusText}`)
+      if (!response.ok) {
+        logger.error(`Failed to fetch relationships: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch relationships: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      logger.info('Relationships fetched successfully', { count: data.relationships?.length || 0 })
+      return data.relationships || []
+    } catch (error) {
+      logger.error('Error fetching relationships:', error)
+      return []
     }
-
-    const data = await response.json()
-    logger.info('Relationships fetched successfully', { count: data.relationships?.length || 0 })
-    return data.relationships || []
-  } catch (error) {
-    logger.error('Error fetching relationships:', error)
-    return []
-  }
-}))
+  })
+)
 
 // Chat atoms
 export const messagesAtom = atom<MessageWithUser[]>([])

@@ -15,26 +15,12 @@ import { useMemo, useState } from 'react'
 
 import { relationshipsAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('RelationshipsList')
 
-interface Relationship {
-  id: string
-  status: 'pending' | 'active' | 'inactive'
-  relationship_type: 'standard' | 'invited'
-  invited_by: 'coach' | 'runner'
-  created_at: string
-  notes: string | null
-  is_coach: boolean
-  is_runner: boolean
-  other_party: {
-    id: string
-    name: string
-    full_name: string | null
-    email: string
-    role: 'coach' | 'runner'
-  }
-}
+// Use shared type alias for backward compatibility
+type Relationship = RelationshipData
 
 interface RelationshipsListProps {
   onRelationshipUpdated?: () => void
@@ -43,7 +29,7 @@ interface RelationshipsListProps {
 export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListProps) {
   // Use Jotai atoms instead of local state
   const relationships = useAtomValue(relationshipsAtom)
-  const [, refreshRelationships] = useAtom(relationshipsAtom)
+  const [, setRelationships] = useAtom(relationshipsAtom)
 
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'active' | 'inactive'>('all')
@@ -51,7 +37,18 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
   // Derive loading state from the atom's data
   const loading = relationships.length === 0
 
-  // Remove fetchRelationships - the atom handles this automatically
+  // Refresh relationships function
+  const refreshRelationships = async () => {
+    try {
+      const response = await fetch('/api/coach-runners')
+      if (response.ok) {
+        const data = await response.json()
+        setRelationships(data.relationships || [])
+      }
+    } catch (error) {
+      logger.error('Failed to refresh relationships:', error)
+    }
+  }
 
   const updateRelationshipStatus = async (
     relationshipId: string,
@@ -252,7 +249,7 @@ export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListPr
                         size="sm"
                         startContent={<ChatBubbleLeftRightIcon className="h-4 w-4" />}
                         as="a"
-                        href={`/messages?user=${relationship.other_party.id}`}
+                        href={`/chat/${relationship.other_party.id}`}
                       >
                         Message
                       </Button>

@@ -25,7 +25,7 @@ interface Props {
 
 /**
  * Calendar Page Client Component
- * 
+ *
  * Handles calendar interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */
@@ -188,9 +188,7 @@ export default function CalendarPageClient({ user }: Props) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned Distance:</span>
-                    <span className="font-medium">
-                      {(workoutStats.plannedDistance || 0).toFixed(1)} mi
-                    </span>
+                    <span className="font-medium">{workoutStats.plannedDistance || 0} mi</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>
@@ -200,7 +198,9 @@ export default function CalendarPageClient({ user }: Props) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
-                    <span className="font-medium">{(workoutStats.avgIntensity || 0).toFixed(1)}</span>
+                    <span className="font-medium">
+                      {(workoutStats.avgIntensity || 0).toFixed(1)}
+                    </span>
                   </div>
                 </div>
               </div>

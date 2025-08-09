@@ -57,6 +57,12 @@ export default async function ChatPage() {
 
 import { useSession } from '@/hooks/useBetterSession'
 
+// app/chat/ChatPageClient.tsx (Client Component)
+
+// app/chat/ChatPageClient.tsx (Client Component)
+
+// app/chat/ChatPageClient.tsx (Client Component)
+
 interface Props {
   userAgent?: string | null
 }

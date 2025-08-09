@@ -63,3 +63,6 @@ yarn.lock
 *.db
 *.sqlite
 *.sqlite3
+
+# Context7 documentation (may have specific formatting)
+.context7-docs/

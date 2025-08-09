@@ -280,6 +280,12 @@ import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
 
+// app/chat/page.tsx
+
+// app/chat/page.tsx
+
+// app/chat/page.tsx
+
 export default function ChatPage() {
   const { data: session, status } = useSession()
   const router = useRouter()

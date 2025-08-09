@@ -25,6 +25,7 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
+import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('RunnerDashboard')
 
@@ -339,63 +340,55 @@ function RunnerDashboard() {
             ) : (
               <div className="space-y-3">
                 {relationships
-                  .filter(
-                    (rel: { other_party: { role: string } }) => rel.other_party.role === 'coach'
-                  )
-                  .map(
-                    (relationship: {
-                      id: string
-                      status: string
-                      other_party: { id: string; full_name?: string; name: string; email: string }
-                    }) => (
-                      <Card
-                        key={relationship.id}
-                        className="border border-divider hover:shadow-md transition-shadow"
-                      >
-                        <CardBody className="p-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
-                              {(relationship.other_party.full_name || 'C').charAt(0)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-foreground">
-                                  {relationship.other_party.full_name}
-                                </h3>
-                                <Chip
-                                  size="sm"
-                                  color={relationship.status === 'active' ? 'success' : 'warning'}
-                                  variant="flat"
-                                  className="capitalize"
-                                >
-                                  {relationship.status}
-                                </Chip>
-                              </div>
-                              <p className="text-sm text-foreground-600">
-                                {relationship.other_party.email}
-                              </p>
-                            </div>
+                  .filter((rel: RelationshipData) => rel.other_party.role === 'coach')
+                  .map((relationship: RelationshipData) => (
+                    <Card
+                      key={relationship.id}
+                      className="border border-divider hover:shadow-md transition-shadow"
+                    >
+                      <CardBody className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
+                            {(relationship.other_party.full_name || 'C').charAt(0)}
                           </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="flat" color="primary" className="flex-1">
-                              View Profile
-                            </Button>
-                            <Button
-                              as={Link}
-                              href={`/messages?user=${relationship.other_party.id}`}
-                              size="sm"
-                              variant="flat"
-                              color="success"
-                              className="flex-1"
-                              startContent={<MessageSquareIcon className="w-4 h-4" />}
-                            >
-                              Message
-                            </Button>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">
+                                {relationship.other_party.full_name}
+                              </h3>
+                              <Chip
+                                size="sm"
+                                color={relationship.status === 'active' ? 'success' : 'warning'}
+                                variant="flat"
+                                className="capitalize"
+                              >
+                                {relationship.status}
+                              </Chip>
+                            </div>
+                            <p className="text-sm text-foreground-600">
+                              {relationship.other_party.email}
+                            </p>
                           </div>
-                        </CardBody>
-                      </Card>
-                    )
-                  )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="flat" color="primary" className="flex-1">
+                            View Profile
+                          </Button>
+                          <Button
+                            as={Link}
+                            href={`/chat/${relationship.other_party.id}`}
+                            size="sm"
+                            variant="flat"
+                            color="success"
+                            className="flex-1"
+                            startContent={<MessageSquareIcon className="w-4 h-4" />}
+                          >
+                            Message
+                          </Button>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
               </div>
             )}
           </CardBody>

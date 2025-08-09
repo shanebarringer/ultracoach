@@ -15,7 +15,7 @@ interface Props {
 
 /**
  * Dashboard Router (Client Component)
- * 
+ *
  * Receives authenticated user data from Server Component parents.
  * No authentication logic needed - user is guaranteed to exist and have correct role.
  */

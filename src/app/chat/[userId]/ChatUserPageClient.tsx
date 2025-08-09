@@ -33,14 +33,14 @@ interface Props {
 export default function ChatUserPageClient({ user, recipient, userId }: Props) {
   const router = useRouter()
   const { isOpen, onOpen, onClose } = useDisclosure()
-  
+
   // Use selected recipient atom for proper state management
   const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
 
   useEffect(() => {
     // Set selected recipient on mount
     setSelectedRecipient(userId)
-    
+
     // Cleanup: Clear selected recipient when component unmounts
     return () => {
       setSelectedRecipient(null)

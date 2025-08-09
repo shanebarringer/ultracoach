@@ -19,7 +19,7 @@ interface Props {
 
 /**
  * Training Plans Page Client Component
- * 
+ *
  * Handles training plans interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */

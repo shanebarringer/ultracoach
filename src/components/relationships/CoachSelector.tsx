@@ -27,7 +27,7 @@ interface CoachSelectorProps {
 export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
   // Use Jotai atoms instead of local state
   const coaches = useAtomValue(availableCoachesAtom)
-  const [, refreshRelationships] = useAtom(relationshipsAtom)
+  const [, setRelationships] = useAtom(relationshipsAtom)
   const [, refreshAvailableCoaches] = useAtom(availableCoachesAtom)
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,6 +35,19 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
 
   // Derive loading state from the atom's loadable state
   const loading = coaches.length === 0
+
+  // Refresh function for relationships
+  const refreshRelationshipData = async () => {
+    try {
+      const response = await fetch('/api/coach-runners')
+      if (response.ok) {
+        const data = await response.json()
+        setRelationships(data.relationships || [])
+      }
+    } catch (error) {
+      logger.error('Failed to refresh relationships:', error)
+    }
+  }
 
   // Use useMemo for filtered coaches for better performance
   const filteredCoaches = useMemo(() => {
@@ -71,7 +84,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
       toast.success('Connection request sent to coach!')
 
       // Refresh both available coaches and relationships atoms
-      refreshRelationships()
+      refreshRelationshipData()
       refreshAvailableCoaches()
 
       // Notify parent component
