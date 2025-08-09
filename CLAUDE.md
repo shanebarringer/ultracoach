@@ -226,3 +226,5 @@ const userRole = (sessionData.user as any).role || 'runner'
 ---
 
 _This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._
+
+- @CLAUDE.md @TASKS.md @PLANNING.md
