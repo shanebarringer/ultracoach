@@ -14,10 +14,11 @@ This checklist ensures that Next.js 15 App Router dynamic routes work correctly 
 - [ ] **Test route behavior** - Confirm routes render user-specific content
 
 #### Routes to Verify:
+
 - [ ] `/chat` - User conversations
 - [ ] `/chat/[userId]` - Specific conversation
 - [ ] `/dashboard/coach` - Coach dashboard
-- [ ] `/dashboard/runner` - Runner dashboard  
+- [ ] `/dashboard/runner` - Runner dashboard
 - [ ] `/calendar` - User workout calendar
 - [ ] `/workouts` - Personal workouts
 - [ ] `/training-plans` - User training plans
@@ -26,12 +27,14 @@ This checklist ensures that Next.js 15 App Router dynamic routes work correctly 
 ### 2. Environment Configuration
 
 #### Environment Variables
+
 - [ ] **Production `.env` validation** - All required variables present
 - [ ] **Database URL format** - Correct connection string with SSL
 - [ ] **Better Auth configuration** - Proper secrets and URLs
 - [ ] **Supabase credentials** - Valid API keys and project refs
 
 #### Required Variables:
+
 ```bash
 # Database
 DATABASE_URL="postgresql://..."
@@ -58,20 +61,20 @@ SUPABASE_SERVICE_ROLE_KEY="..."
 export const auth = betterAuth({
   database: {
     adapter: drizzleAdapter(db, {
-      provider: 'pg'
-    })
+      provider: 'pg',
+    }),
   },
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    }
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    },
   },
   advanced: {
     crossSubDomainCookies: {
-      enabled: process.env.NODE_ENV === 'production'
-    }
-  }
+      enabled: process.env.NODE_ENV === 'production',
+    },
+  },
 })
 ```
 
@@ -83,13 +86,14 @@ export const auth = betterAuth({
 - [ ] **RLS policies** - Row Level Security enabled and tested
 
 #### Critical Tables Check:
+
 ```sql
 -- Verify Better Auth tables exist
-SELECT table_name FROM information_schema.tables 
+SELECT table_name FROM information_schema.tables
 WHERE table_name IN ('user', 'session', 'account', 'verification');
 
 -- Check session table has both id and token fields
-SELECT column_name FROM information_schema.columns 
+SELECT column_name FROM information_schema.columns
 WHERE table_name = 'session' AND column_name IN ('id', 'token');
 ```
 
@@ -104,6 +108,7 @@ WHERE table_name = 'session' AND column_name IN ('id', 'token');
 ### 6. Performance and Caching
 
 #### Cache Headers
+
 - [ ] **API routes** - Proper cache control headers
 - [ ] **Dynamic pages** - No-cache headers for user-specific content
 - [ ] **Static assets** - Long-term caching for CSS/JS
@@ -114,14 +119,15 @@ export async function GET() {
   return Response.json(data, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    }
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
   })
 }
 ```
 
 #### Build Configuration
+
 - [ ] **Next.js config** - Proper production settings
 - [ ] **Build optimization** - Tree shaking and minification enabled
 - [ ] **Bundle analysis** - No unexpected large bundles
@@ -130,7 +136,7 @@ export async function GET() {
 // next.config.js
 module.exports = {
   experimental: {
-    ppr: false // Disable Partial Prerendering for UltraCoach
+    ppr: false, // Disable Partial Prerendering for UltraCoach
   },
   headers: async () => [
     {
@@ -138,11 +144,11 @@ module.exports = {
       headers: [
         {
           key: 'Cache-Control',
-          value: 'no-store, no-cache, must-revalidate'
-        }
-      ]
-    }
-  ]
+          value: 'no-store, no-cache, must-revalidate',
+        },
+      ],
+    },
+  ],
 }
 ```
 
@@ -151,6 +157,7 @@ module.exports = {
 ### 1. Pre-Deployment Tests
 
 #### Local Production Build
+
 ```bash
 # Build and test locally
 pnpm build
@@ -162,6 +169,7 @@ curl -I https://localhost:3000/dashboard/coach
 ```
 
 #### Environment Variable Test
+
 ```bash
 # Verify all variables load correctly
 pnpm tsx scripts/test-env-vars.ts
@@ -183,12 +191,14 @@ pnpm db:verify-production
 ### 3. Deployment Verification
 
 #### Immediate Post-Deployment Checks
+
 - [ ] **Health check endpoint** - `/api/health` responds correctly
 - [ ] **Authentication endpoints** - Sign in/out work
 - [ ] **Database connectivity** - API routes can query database
 - [ ] **Environment variables** - All secrets loaded correctly
 
 #### User Flow Verification
+
 - [ ] **Guest user flow** - Can browse public pages
 - [ ] **Sign up flow** - New users can register
 - [ ] **Sign in flow** - Existing users can authenticate
@@ -198,11 +208,13 @@ pnpm db:verify-production
 ### 4. Monitoring Setup
 
 #### Error Tracking
+
 - [ ] **Error boundaries** - Catch and log client-side errors
 - [ ] **Server error logging** - API route error handling
 - [ ] **Authentication errors** - Better Auth error tracking
 
 #### Performance Monitoring
+
 - [ ] **Response times** - API endpoint performance
 - [ ] **Database queries** - Query performance monitoring
 - [ ] **User experience** - Core Web Vitals tracking
@@ -210,6 +222,7 @@ pnpm db:verify-production
 ## 🔍 Post-Deployment Validation
 
 ### Automated Tests
+
 ```bash
 # Run production smoke tests
 pnpm test:production
@@ -221,6 +234,7 @@ npx playwright test --config=playwright.prod.config.ts
 ### Manual Verification Checklist
 
 #### Authentication Flows
+
 - [ ] Navigate to `/chat` without authentication → redirects to signin
 - [ ] Sign in as coach → lands on coach dashboard
 - [ ] Sign in as runner → lands on runner dashboard
@@ -228,6 +242,7 @@ npx playwright test --config=playwright.prod.config.ts
 - [ ] Refresh page in authenticated state → maintains session
 
 #### Data Personalization
+
 - [ ] Coach sees their connected runners
 - [ ] Runner sees their training plan and workouts
 - [ ] Messages show correct sender/recipient
@@ -235,6 +250,7 @@ npx playwright test --config=playwright.prod.config.ts
 - [ ] Profile shows current user data
 
 #### Error Scenarios
+
 - [ ] Invalid session cookie → redirects to signin
 - [ ] Expired session → handles gracefully
 - [ ] Network errors → proper error boundaries
@@ -245,11 +261,13 @@ npx playwright test --config=playwright.prod.config.ts
 ### Issue: Routes Still Marked as Static
 
 **Symptoms:**
+
 - Build output shows routes as "○ (Static)" instead of "λ (Server)"
 - User-specific content not loading
 - Same content shown to all users
 
 **Solutions:**
+
 1. Add `await headers()` to page components
 2. Check for Client Components (`'use client'`) that should be Server Components
 3. Verify authentication logic runs server-side
@@ -257,11 +275,13 @@ npx playwright test --config=playwright.prod.config.ts
 ### Issue: Session Not Available
 
 **Symptoms:**
+
 - `getServerSession()` returns null in production
 - Authentication redirects not working
 - "No session found" errors
 
 **Solutions:**
+
 1. Check Better Auth database connection
 2. Verify session table schema (id AND token fields)
 3. Check cookie configuration for production domain
@@ -269,11 +289,13 @@ npx playwright test --config=playwright.prod.config.ts
 ### Issue: Performance Degradation
 
 **Symptoms:**
+
 - Slow page loads after forcing dynamic rendering
 - High server load
 - Database connection issues
 
 **Solutions:**
+
 1. Implement proper caching strategies
 2. Optimize database queries
 3. Use Suspense for non-critical content
@@ -282,11 +304,13 @@ npx playwright test --config=playwright.prod.config.ts
 ### Issue: Environment Variable Problems
 
 **Symptoms:**
+
 - "Variable not found" errors
 - Authentication configuration failures
 - Database connection errors
 
 **Solutions:**
+
 1. Verify production `.env` file syntax
 2. Check for multiline values (like secrets)
 3. Ensure proper secret rotation procedures
@@ -294,18 +318,21 @@ npx playwright test --config=playwright.prod.config.ts
 ## ✅ Success Criteria
 
 ### Technical Metrics
+
 - [ ] All authenticated routes show "λ (Server)" in build output
 - [ ] Zero static rendering of user-specific content
 - [ ] Response times under 500ms for authenticated routes
 - [ ] Zero authentication-related errors in production
 
 ### User Experience Metrics
+
 - [ ] Sign up completion rate > 95%
 - [ ] Authentication success rate > 99%
 - [ ] Session persistence across page refreshes
 - [ ] Zero reports of "wrong user data" showing
 
 ### Monitoring Alerts
+
 - [ ] Authentication error rate < 1%
 - [ ] API response time < 1000ms 95th percentile
 - [ ] Database connection success rate > 99%

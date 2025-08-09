@@ -42,6 +42,7 @@ export default function AuthClient({ user }) {
 ```
 
 **Benefits**:
+
 - ✅ Proper dynamic rendering for personalized content
 - ✅ Server-side authentication and redirects
 - ✅ Consistent behavior between development and production

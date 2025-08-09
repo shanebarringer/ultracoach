@@ -23,6 +23,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 ### Static vs Dynamic Rendering Rules
 
 **CRITICAL ISSUE**: Routes like `/chat` are being marked as "static" when they should be dynamic for personalized content, causing:
+
 - Signup hanging on "Loading your onboarding..."
 - User-specific content not loading correctly
 - Production vs local environment inconsistencies
@@ -40,10 +41,10 @@ import PageClient from './PageClient'
 
 export default async function AuthenticatedPage() {
   await headers() // 🔑 CRITICAL: Forces dynamic rendering
-  
+
   const session = await getServerSession()
   if (!session) redirect('/auth/signin')
-  
+
   return <PageClient user={session.user} />
 }
 
@@ -75,6 +76,7 @@ export default function PageClient({ user }) {
 ### Reference Documentation
 
 See `.context7-docs/nextjs/` for comprehensive guides:
+
 - `static-vs-dynamic-rendering.md` - Core concepts and solutions
 - `authentication-route-patterns.md` - Authentication implementation patterns
 - `production-deployment-checklist.md` - Production verification checklist

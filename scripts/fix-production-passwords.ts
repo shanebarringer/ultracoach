@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 /**
  * Fix Production User Passwords
- * 
+ *
  * Updates existing production users with properly hashed passwords using Better Auth's
  * internal password hashing system for compatibility
  */
-
 import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
+
 import * as schema from '../src/lib/schema'
 
 // Force production environment variables ONLY
@@ -45,45 +45,46 @@ const USER_PASSWORDS = [
 
 async function fixUserPasswords() {
   logger.info('🔧 Fixing production user passwords with Better Auth hashing...')
-  
+
   // Import Better Auth instance to get proper password hashing
   const { auth } = await import('../src/lib/better-auth')
-  
+
   for (const userCreds of USER_PASSWORDS) {
     try {
       logger.info(`Fixing password for: ${userCreds.email}`)
-      
+
       // Get the user from database
       const user = await db
         .select()
         .from(schema.user)
         .where(eq(schema.user.email, userCreds.email))
         .limit(1)
-        
+
       if (user.length === 0) {
         logger.error(`User ${userCreds.email} not found`)
         continue
       }
-      
+
       // Use Better Auth's internal password hashing
-      const hashedPassword = await auth.options.emailAndPassword?.password?.hash?.(userCreds.password)
-      
+      const hashedPassword = await auth.options.emailAndPassword?.password?.hash?.(
+        userCreds.password
+      )
+
       if (!hashedPassword) {
         logger.error(`Failed to hash password for ${userCreds.email}`)
         continue
       }
-      
+
       // Update the account password
       await db
         .update(schema.account)
-        .set({ 
+        .set({
           password: hashedPassword,
-          updatedAt: new Date() 
+          updatedAt: new Date(),
         })
         .where(eq(schema.account.userId, user[0].id))
-        
+
       logger.info(`✅ Updated password for: ${userCreds.email}`)
-      
     } catch (error) {
       logger.error(`❌ Failed to fix password for ${userCreds.email}:`, error)
     }
@@ -93,11 +94,11 @@ async function fixUserPasswords() {
 async function main() {
   try {
     await fixUserPasswords()
-    
+
     // Verify the password formats
     logger.info('')
     logger.info('🔍 Verifying password formats...')
-    
+
     const accounts = await db
       .select({
         email: schema.user.email,
@@ -106,14 +107,15 @@ async function main() {
       })
       .from(schema.account)
       .innerJoin(schema.user, eq(schema.account.userId, schema.user.id))
-    
+
     for (const account of accounts as any) {
-      logger.info(`${account.email}: length=${account.passwordlength}, sample="${account.passwordsample}"`)
+      logger.info(
+        `${account.email}: length=${account.passwordlength}, sample="${account.passwordsample}"`
+      )
     }
-    
+
     logger.info('')
     logger.info('✅ Password fixing completed! Try logging in again.')
-    
   } catch (error) {
     logger.error('❌ Password fixing failed:', error)
     process.exit(1)

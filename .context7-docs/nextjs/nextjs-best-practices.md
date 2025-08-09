@@ -11,12 +11,14 @@
 ### When Routes Are Static vs Dynamic
 
 #### Static Rendering (Default)
+
 - HTML generated at build time or during revalidation
 - Cached and shared across all users
 - No access to request-specific data (cookies, headers, user sessions)
 - ⚠️ **Problem**: User-specific content shows stale or incorrect data
 
 #### Dynamic Rendering (Required for UltraCoach)
+
 - HTML generated at request time
 - Personalized content based on user session
 - Access to cookies, headers, and user-specific data
@@ -36,12 +38,12 @@ export default async function ChatPage() {
   // Force dynamic rendering by accessing headers
   const headersList = await headers()
   const userAgent = headersList.get('user-agent')
-  
+
   // You can also check authentication here
   // const session = await getServerSession()
-  
+
   return (
-    <ChatPageClient 
+    <ChatPageClient
       userAgent={userAgent}
       // session={session}
     />
@@ -61,7 +63,7 @@ interface Props {
 
 export default function ChatPageClient({ userAgent }: Props) {
   const { data: session, status } = useSession()
-  
+
   // Client-side interactivity and state management
   // ...
 }
@@ -78,7 +80,7 @@ export default async function DashboardPage() {
   // Force dynamic rendering by accessing cookies
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get('session')
-  
+
   return <DashboardClient sessionCookie={sessionCookie} />
 }
 ```
@@ -92,7 +94,7 @@ export default async function ProfilePage() {
   const userProfile = await fetch('/api/user/profile', {
     cache: 'no-store' // This forces dynamic rendering
   })
-  
+
   return <ProfileClient data={userProfile} />
 }
 ```
@@ -137,15 +139,16 @@ app/
 ```typescript
 // utils/auth-server.ts
 import { headers } from 'next/headers'
+
 import { auth } from '@/lib/better-auth'
 
 export async function getServerSession() {
   // Force dynamic rendering
   await headers()
-  
+
   try {
     const session = await auth.api.getSession({
-      headers: await headers()
+      headers: await headers(),
     })
     return session
   } catch (error) {
@@ -162,11 +165,11 @@ import ProtectedClient from './ProtectedClient'
 
 export default async function ProtectedPage() {
   const session = await getServerSession()
-  
+
   if (!session) {
     redirect('/auth/signin')
   }
-  
+
   return <ProtectedClient session={session} />
 }
 ```
@@ -174,12 +177,14 @@ export default async function ProtectedPage() {
 ### Production vs Development Rendering Issues
 
 #### Common Problems
+
 1. **Environment Variable Loading**: Production may handle environment variables differently
 2. **Session Cookie Configuration**: Secure cookies in production vs development
 3. **Database Connection Pooling**: Different connection patterns can affect rendering
 4. **CDN/Edge Caching**: Production deployments may cache static content aggressively
 
 #### Solutions
+
 1. **Consistent Environment Variables**: Use same `.env` structure for dev and production
 2. **Force Dynamic Rendering**: Use the patterns above in ALL user-specific routes
 3. **Proper Session Configuration**: Ensure Better Auth works identically in both environments
@@ -191,8 +196,8 @@ export async function GET() {
   return Response.json(data, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'Pragma': 'no-cache'
-    }
+      Pragma: 'no-cache',
+    },
   })
 }
 ```
@@ -200,7 +205,7 @@ export async function GET() {
 ### Migration Checklist for UltraCoach
 
 - [ ] Convert `/chat/page.tsx` to Server/Client pattern
-- [ ] Convert `/chat/[userId]/page.tsx` to Server/Client pattern  
+- [ ] Convert `/chat/[userId]/page.tsx` to Server/Client pattern
 - [ ] Convert dashboard routes to Server/Client pattern
 - [ ] Add `headers()` or `cookies()` to all authenticated routes
 - [ ] Test production deployment matches local behavior
@@ -210,17 +215,20 @@ export async function GET() {
 ### Performance Considerations
 
 **Static Rendering Benefits** (Lost when going dynamic):
+
 - Faster initial page loads
 - Better SEO
 - CDN caching
 
 **Dynamic Rendering Benefits** (Required for UltraCoach):
+
 - Personalized content
 - Real-time data
 - Authentication-dependent features
 - User-specific state
 
 **Hybrid Approach** (Recommended):
+
 - Keep marketing pages static (`/`, `/about`, `/pricing`)
 - Make app pages dynamic (`/chat`, `/dashboard`, `/calendar`)
 - Use Suspense boundaries for progressive loading

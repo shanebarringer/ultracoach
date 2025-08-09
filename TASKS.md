@@ -33,7 +33,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 - [ ] **Convert `/chat/page.tsx` to Server/Client hybrid pattern** - Fix static rendering that causes personalized content issues
 - [ ] **Convert `/chat/[userId]/page.tsx` to Server/Client hybrid pattern** - Enable user-specific conversation loading
-- [ ] **Convert dashboard routes to Server/Client hybrid pattern** - Fix role-based routing issues  
+- [ ] **Convert dashboard routes to Server/Client hybrid pattern** - Fix role-based routing issues
 - [ ] **Create server-side auth utility (`utils/auth-server.ts`)** - Centralized server-side session management
 - [ ] **Add `await headers()` to all authenticated routes** - Force dynamic rendering for personalized content
 - [ ] **Test production deployment** - Verify all routes show "λ (Server)" not "○ (Static)" in build output
