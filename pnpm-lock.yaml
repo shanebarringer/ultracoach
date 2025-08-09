@@ -58,6 +58,9 @@ importers:
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
+      commander:
+        specifier: ^14.0.0
+        version: 14.0.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -5432,6 +5435,13 @@ packages:
         integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==,
       }
     engines: { node: '>=18' }
+
+  commander@14.0.0:
+    resolution:
+      {
+        integrity: sha512-2uM9rYjPvyq39NwLRqaiLtWHyDC1FvryJDa2ATTVims5YAS4PupsEQsDvP14FqhFr0P49CYDugi59xaxJlTXRA==,
+      }
+    engines: { node: '>=20' }
 
   commander@2.20.3:
     resolution:
@@ -13837,6 +13847,8 @@ snapshots:
       delayed-stream: 1.0.0
 
   commander@12.1.0: {}
+
+  commander@14.0.0: {}
 
   commander@2.20.3: {}
 

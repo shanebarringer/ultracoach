@@ -2,8 +2,32 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Handle OPTIONS requests (CORS preflight)
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    })
+  }
+
   // Allow public routes
-  const publicRoutes = ['/auth/signin', '/auth/signup', '/api/auth', '/']
+  const publicRoutes = [
+    '/auth/signin',
+    '/auth/signup',
+    '/api/auth',
+    '/',
+    '/about',
+    '/contact',
+    '/help',
+    '/pricing',
+    '/privacy',
+    '/terms',
+    '/coaches',
+  ]
 
   const isPublicRoute = publicRoutes.some(
     route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)

@@ -1,184 +1,47 @@
-'use client'
+import { notFound, redirect } from 'next/navigation'
 
-import {
-  Button,
-  Card,
-  CardHeader,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  Spinner,
-  useDisclosure,
-} from '@heroui/react'
-import { useAtom } from 'jotai'
-import { ArrowLeftIcon, MenuIcon, MessageCircleIcon, MountainSnowIcon } from 'lucide-react'
+import { getUserById, requireAuth, verifyConversationPermission } from '@/utils/auth-server'
 
-import { useEffect, useState } from 'react'
+import ChatUserPageClient from './ChatUserPageClient'
 
-import { useRouter } from 'next/navigation'
-import { useParams } from 'next/navigation'
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 
-import ChatWindow from '@/components/chat/ChatWindow'
-import ConversationList from '@/components/chat/ConversationList'
-import Layout from '@/components/layout/Layout'
-import { useSession } from '@/hooks/useBetterSession'
-import { selectedRecipientAtom } from '@/lib/atoms'
-import { createLogger } from '@/lib/logger'
-import type { User } from '@/lib/supabase'
+interface Props {
+  params: Promise<{ userId: string }>
+}
 
-const logger = createLogger('ChatUserPage')
+/**
+ * Chat User Page (Server Component)
+ *
+ * Forces dynamic rendering and handles server-side authentication and data fetching.
+ * Verifies user permissions and fetches recipient data before rendering.
+ */
+export default async function ChatUserPage({ params }: Props) {
+  // Server-side authentication - forces dynamic rendering
+  const session = await requireAuth()
 
-export default function ChatUserPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const params = useParams()
-  const userId = params.userId as string
+  // Await params in Next.js 15
+  const { userId } = await params
 
-  const { isOpen, onOpen, onClose } = useDisclosure()
-
-  // Use selected recipient atom for proper state management
-  const [, setSelectedRecipient] = useAtom(selectedRecipientAtom)
-
-  // Derive recipient from API call - no local state needed
-  const [recipient, setRecipient] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (status === 'loading') return
-
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-
-    if (!userId) {
-      logger.warn('No userId provided, redirecting to chat')
-      router.push('/chat')
-      return
-    }
-
-    const fetchRecipient = async () => {
-      try {
-        const response = await fetch(`/api/users/${userId}`)
-
-        if (!response.ok) {
-          logger.error('Error fetching recipient:', {
-            status: response.status,
-            statusText: response.statusText,
-          })
-          router.push('/chat')
-          return
-        }
-
-        const data = await response.json()
-        setRecipient(data.user)
-        setSelectedRecipient(userId)
-        logger.info('Recipient loaded successfully', {
-          userId,
-          recipientName: data.user?.full_name,
-        })
-      } catch (error) {
-        logger.error('Error fetching recipient:', error)
-        router.push('/chat')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    setLoading(true)
-    fetchRecipient()
-
-    // Cleanup: Clear selected recipient when component unmounts
-    return () => {
-      setSelectedRecipient(null)
-    }
-  }, [status, session, userId, router, setSelectedRecipient])
-
-  if (status === 'loading' || loading) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" color="primary" label="Loading expedition communications..." />
-        </div>
-      </Layout>
-    )
+  if (!userId) {
+    redirect('/chat')
   }
 
-  if (!session || !recipient) {
-    return null
+  // Server-side recipient validation
+  const recipient = await getUserById(userId)
+
+  if (!recipient) {
+    notFound()
   }
 
-  return (
-    <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mobile Conversations Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="md" className="md:hidden">
-          <ModalContent>
-            <ModalHeader className="flex items-center gap-2">
-              <MessageCircleIcon className="w-5 h-5 text-primary" />
-              <span>Base Camp Communications</span>
-            </ModalHeader>
-            <ModalBody className="p-0">
-              <ConversationList selectedUserId={userId} />
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+  // Verify user has permission to chat with this recipient
+  const canChat = await verifyConversationPermission(userId)
 
-        <Card className="h-[calc(100vh-200px)] flex flex-col overflow-hidden">
-          <div className="flex flex-1 min-h-0">
-            {/* Desktop Sidebar */}
-            <div className="hidden md:block w-1/3 lg:w-1/4 border-r border-divider flex flex-col">
-              <CardHeader className="bg-linear-to-r from-primary/10 to-secondary/10 border-b border-divider">
-                <div className="flex items-center gap-2">
-                  <MessageCircleIcon className="w-5 h-5 text-primary" />
-                  <div>
-                    <h1 className="text-lg font-semibold text-foreground">
-                      🏔️ Base Camp Communications
-                    </h1>
-                    <p className="text-sm text-foreground-600 mt-1">
-                      {session.user.role === 'coach'
-                        ? 'Guide your expedition team'
-                        : 'Connect with your mountain guide'}
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <div className="flex-1 overflow-hidden">
-                <ConversationList selectedUserId={userId} />
-              </div>
-            </div>
+  if (!canChat) {
+    redirect('/chat')
+  }
 
-            {/* Chat Window */}
-            <div className="flex-1 flex flex-col min-h-0">
-              {/* Mobile Header with Sidebar Toggle */}
-              <div className="md:hidden flex items-center px-4 py-3 border-b border-divider bg-linear-to-r from-primary/10 to-secondary/10">
-                <Button isIconOnly variant="light" onPress={onOpen} className="mr-3">
-                  <MenuIcon className="w-5 h-5" />
-                </Button>
-                <Button
-                  isIconOnly
-                  variant="light"
-                  onPress={() => router.push('/chat')}
-                  className="mr-3"
-                >
-                  <ArrowLeftIcon className="w-5 h-5" />
-                </Button>
-                <div className="flex items-center gap-2">
-                  <MountainSnowIcon className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">
-                    Expedition Communications
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 min-h-0">
-                <ChatWindow recipientId={userId} recipient={recipient} />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </Layout>
-  )
+  // Pass all authenticated data to Client Component
+  return <ChatUserPageClient user={session.user} recipient={recipient} userId={userId} />
 }

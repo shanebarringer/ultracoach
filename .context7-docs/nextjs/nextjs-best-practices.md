@@ -1,5 +1,244 @@
 # Next.js Best Practices for UltraCoach
 
+## 🎯 Static vs Dynamic Rendering (CRITICAL)
+
+### Understanding the Problem
+
+**Issue**: Routes like `/chat` are being marked as "static" when they should be dynamic for personalized content.
+
+**Next.js Behavior**: By default, Next.js App Router tries to statically render routes at build time for performance. However, personalized routes (authentication-dependent, user-specific data) MUST be dynamically rendered.
+
+### When Routes Are Static vs Dynamic
+
+#### Static Rendering (Default)
+
+- HTML generated at build time or during revalidation
+- Cached and shared across all users
+- No access to request-specific data (cookies, headers, user sessions)
+- ⚠️ **Problem**: User-specific content shows stale or incorrect data
+
+#### Dynamic Rendering (Required for UltraCoach)
+
+- HTML generated at request time
+- Personalized content based on user session
+- Access to cookies, headers, and user-specific data
+- ✅ **Solution**: Proper authentication and personalized experiences
+
+### How to Force Dynamic Rendering
+
+#### Method 1: Using `headers()` Function (Recommended)
+
+```typescript
+// app/chat/page.tsx (Server Component)
+import { headers } from 'next/headers'
+import ChatPageClient from './ChatPageClient'
+
+// This Server Component forces dynamic rendering
+export default async function ChatPage() {
+  // Force dynamic rendering by accessing headers
+  const headersList = await headers()
+  const userAgent = headersList.get('user-agent')
+
+  // You can also check authentication here
+  // const session = await getServerSession()
+
+  return (
+    <ChatPageClient
+      userAgent={userAgent}
+      // session={session}
+    />
+  )
+}
+```
+
+```typescript
+// app/chat/ChatPageClient.tsx (Client Component)
+'use client'
+
+import { useSession } from '@/hooks/useBetterSession'
+
+// app/chat/ChatPageClient.tsx (Client Component)
+
+// app/chat/ChatPageClient.tsx (Client Component)
+
+// app/chat/ChatPageClient.tsx (Client Component)
+
+interface Props {
+  userAgent?: string | null
+}
+
+export default function ChatPageClient({ userAgent }: Props) {
+  const { data: session, status } = useSession()
+
+  // Client-side interactivity and state management
+  // ...
+}
+```
+
+#### Method 2: Using `cookies()` Function
+
+```typescript
+// app/dashboard/page.tsx
+import { cookies } from 'next/headers'
+import DashboardClient from './DashboardClient'
+
+export default async function DashboardPage() {
+  // Force dynamic rendering by accessing cookies
+  const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get('session')
+
+  return <DashboardClient sessionCookie={sessionCookie} />
+}
+```
+
+#### Method 3: Using `fetch()` with `no-store`
+
+```typescript
+// app/profile/page.tsx
+export default async function ProfilePage() {
+  // Force dynamic rendering with uncached fetch
+  const userProfile = await fetch('/api/user/profile', {
+    cache: 'no-store' // This forces dynamic rendering
+  })
+
+  return <ProfileClient data={userProfile} />
+}
+```
+
+### UltraCoach-Specific Solutions
+
+#### Problem Routes That Need Fixing
+
+1. **`/chat` and `/chat/[userId]`**: Currently marked as static
+   - **Issue**: User conversations not loading, personalized content missing
+   - **Solution**: Add Server Component wrapper with `headers()` or `cookies()`
+
+2. **`/dashboard/coach` and `/dashboard/runner`**: Role-based routing issues
+   - **Issue**: Static rendering can't determine user role at build time
+   - **Solution**: Server Component checks user session, passes role to Client Component
+
+3. **`/calendar`, `/workouts`, `/training-plans`**: User-specific data not loading
+   - **Issue**: Personalized data requires dynamic rendering
+   - **Solution**: Force dynamic rendering at page level
+
+#### Recommended Architecture Pattern
+
+```
+app/
+├── chat/
+│   ├── page.tsx              # Server Component (forces dynamic)
+│   ├── ChatPageClient.tsx    # Client Component (interactive)
+│   └── [userId]/
+│       ├── page.tsx          # Server Component (forces dynamic)
+│       └── ChatUserClient.tsx # Client Component (interactive)
+└── dashboard/
+    ├── coach/
+    │   ├── page.tsx          # Server Component (forces dynamic)
+    │   └── CoachClient.tsx   # Client Component (interactive)
+    └── runner/
+        ├── page.tsx          # Server Component (forces dynamic)
+        └── RunnerClient.tsx  # Client Component (interactive)
+```
+
+### Authentication Integration with Better Auth
+
+```typescript
+// utils/auth-server.ts
+import { headers } from 'next/headers'
+
+import { auth } from '@/lib/better-auth'
+
+export async function getServerSession() {
+  // Force dynamic rendering
+  await headers()
+
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    })
+    return session
+  } catch (error) {
+    return null
+  }
+}
+```
+
+```typescript
+// app/protected-route/page.tsx
+import { getServerSession } from '@/utils/auth-server'
+import { redirect } from 'next/navigation'
+import ProtectedClient from './ProtectedClient'
+
+export default async function ProtectedPage() {
+  const session = await getServerSession()
+
+  if (!session) {
+    redirect('/auth/signin')
+  }
+
+  return <ProtectedClient session={session} />
+}
+```
+
+### Production vs Development Rendering Issues
+
+#### Common Problems
+
+1. **Environment Variable Loading**: Production may handle environment variables differently
+2. **Session Cookie Configuration**: Secure cookies in production vs development
+3. **Database Connection Pooling**: Different connection patterns can affect rendering
+4. **CDN/Edge Caching**: Production deployments may cache static content aggressively
+
+#### Solutions
+
+1. **Consistent Environment Variables**: Use same `.env` structure for dev and production
+2. **Force Dynamic Rendering**: Use the patterns above in ALL user-specific routes
+3. **Proper Session Configuration**: Ensure Better Auth works identically in both environments
+4. **Cache Headers**: Set proper cache headers for dynamic routes
+
+```typescript
+// app/api/user-specific/route.ts
+export async function GET() {
+  return Response.json(data, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Pragma: 'no-cache',
+    },
+  })
+}
+```
+
+### Migration Checklist for UltraCoach
+
+- [ ] Convert `/chat/page.tsx` to Server/Client pattern
+- [ ] Convert `/chat/[userId]/page.tsx` to Server/Client pattern
+- [ ] Convert dashboard routes to Server/Client pattern
+- [ ] Add `headers()` or `cookies()` to all authenticated routes
+- [ ] Test production deployment matches local behavior
+- [ ] Update authentication flow to work with Server Components
+- [ ] Verify all personalized content renders dynamically
+
+### Performance Considerations
+
+**Static Rendering Benefits** (Lost when going dynamic):
+
+- Faster initial page loads
+- Better SEO
+- CDN caching
+
+**Dynamic Rendering Benefits** (Required for UltraCoach):
+
+- Personalized content
+- Real-time data
+- Authentication-dependent features
+- User-specific state
+
+**Hybrid Approach** (Recommended):
+
+- Keep marketing pages static (`/`, `/about`, `/pricing`)
+- Make app pages dynamic (`/chat`, `/dashboard`, `/calendar`)
+- Use Suspense boundaries for progressive loading
+
 ## App Router State Management Best Practices
 
 ### 1. useEffect Dependencies and Infinite Loops
