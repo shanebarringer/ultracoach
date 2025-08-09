@@ -3,7 +3,7 @@ import { useAtom, useAtomValue } from 'jotai'
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, relationshipsAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import { loadingStatesAtom, relationshipsAtom, relationshipsLoadableAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 
@@ -32,7 +32,8 @@ export function useDashboardData() {
   const [trainingPlans, setTrainingPlans] = useAtom(trainingPlansAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
-  const relationships = useAtomValue(relationshipsAtom)
+  const [relationships, setRelationships] = useAtom(relationshipsAtom)
+  const relationshipsLoadable = useAtomValue(relationshipsLoadableAtom)
 
   const fetchDashboardData = useCallback(async () => {
     if (!session?.user?.id) return
@@ -75,6 +76,13 @@ export function useDashboardData() {
       fetchDashboardData()
     }
   }, [session?.user?.id, fetchDashboardData])
+
+  // Sync relationships data from loadable to regular atom
+  useEffect(() => {
+    if (relationshipsLoadable.state === 'hasData' && relationshipsLoadable.data) {
+      setRelationships(relationshipsLoadable.data)
+    }
+  }, [relationshipsLoadable.state, relationshipsLoadable.data, setRelationships])
 
   // Use useMemo for better performance when computing derived data
   const runners = useMemo(() => {

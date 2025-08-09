@@ -197,11 +197,14 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
 })
 
 // Relationships atom for coach-runner relationships management
-export const relationshipsAtom = atomWithRefresh(async () => {
+export const relationshipsAtom = atom<RelationshipData[]>([])
+
+// Loadable atom for fetching relationships
+export const relationshipsLoadableAtom = loadable(atom(async (get) => {
   // Only execute on client-side to prevent build-time fetch errors
   if (!isBrowser) return []
 
-  const logger = createLogger('RelationshipsAtom')
+  const logger = createLogger('RelationshipsLoadable')
 
   try {
     logger.debug('Fetching relationships...')
@@ -224,7 +227,7 @@ export const relationshipsAtom = atomWithRefresh(async () => {
     logger.error('Error fetching relationships:', error)
     return []
   }
-})
+}))
 
 // Chat atoms
 export const messagesAtom = atom<MessageWithUser[]>([])
