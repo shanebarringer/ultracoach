@@ -2,6 +2,9 @@ import { requireAuth } from '@/utils/auth-server'
 
 import ProfilePageClient from './ProfilePageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Profile Page (Server Component)
  *

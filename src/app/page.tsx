@@ -5,6 +5,9 @@ import { getServerSession } from '@/utils/auth-server'
 
 import HomePageClient from './HomePageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Home Page (Server Component)
  *

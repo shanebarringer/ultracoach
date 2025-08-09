@@ -1,6 +1,9 @@
 import DashboardRouter from '@/components/dashboard/DashboardRouter'
 import { requireRunner } from '@/utils/auth-server'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Runner Dashboard Page (Server Component)
  *

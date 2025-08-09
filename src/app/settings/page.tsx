@@ -2,6 +2,9 @@ import { requireAuth } from '@/utils/auth-server'
 
 import SettingsPageClient from './SettingsPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Settings Page (Server Component)
  *

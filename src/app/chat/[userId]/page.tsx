@@ -4,6 +4,9 @@ import { getUserById, requireAuth, verifyConversationPermission } from '@/utils/
 
 import ChatUserPageClient from './ChatUserPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 interface Props {
   params: Promise<{ userId: string }>
 }

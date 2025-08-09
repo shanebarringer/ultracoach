@@ -2,6 +2,9 @@ import { requireAuth } from '@/utils/auth-server'
 
 import ChatPageClient from './ChatPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Chat Page (Server Component)
  *

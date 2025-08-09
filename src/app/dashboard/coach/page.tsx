@@ -1,6 +1,9 @@
 import DashboardRouter from '@/components/dashboard/DashboardRouter'
 import { requireCoach } from '@/utils/auth-server'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Coach Dashboard Page (Server Component)
  *

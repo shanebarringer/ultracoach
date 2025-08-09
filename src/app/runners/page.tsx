@@ -2,6 +2,9 @@ import { requireCoach } from '@/utils/auth-server'
 
 import RunnersPageClient from './RunnersPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Runners Page (Server Component)
  *

@@ -29,6 +29,12 @@ export interface ServerSession {
  */
 export async function getServerSession(): Promise<ServerSession | null> {
   try {
+    // Check if we're in build-time static generation
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL && !process.env.NEXT_RUNTIME) {
+      logger.info('Skipping session check during build-time static generation')
+      return null
+    }
+
     // Force dynamic rendering by accessing headers
     const headersList = await headers()
 
@@ -46,12 +52,18 @@ export async function getServerSession(): Promise<ServerSession | null> {
       return null
     }
 
+    // Runtime type validation with proper error handling for Better Auth user type
+    const userRole = (session.user as { role?: string }).role
+    if (userRole && !['coach', 'runner'].includes(userRole)) {
+      logger.warn('Invalid user role detected, defaulting to runner', { role: userRole })
+    }
+
     const serverSession: ServerSession = {
       user: {
         id: session.user.id,
         email: session.user.email,
         name: session.user.name || null,
-        role: ((session.user as { role?: string }).role as 'coach' | 'runner') || 'runner',
+        role: (userRole === 'coach' || userRole === 'runner') ? userRole : 'runner',
       },
     }
 
@@ -63,6 +75,13 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
     return serverSession
   } catch (error) {
+    // Handle build-time errors gracefully
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage?.includes('headers') || errorMessage?.includes('Dynamic server usage')) {
+      logger.info('Build-time context detected, skipping session check')
+      return null
+    }
+    
     logger.error('Failed to get server session:', error)
     return null
   }
@@ -173,6 +192,7 @@ export async function getUserById(userId: string) {
 
 /**
  * Verify conversation permission between current user and recipient
+ * Uses coach_runners table to enforce relationship-based messaging
  */
 export async function verifyConversationPermission(recipientId: string): Promise<boolean> {
   try {
@@ -188,14 +208,60 @@ export async function verifyConversationPermission(recipientId: string): Promise
       return true
     }
 
-    // TODO: Add more sophisticated permission checks
-    // For now, authenticated users can chat with anyone
-    logger.info('Conversation permission granted', {
-      currentUser: session.user.id,
-      recipient: recipientId,
-    })
+    // Check for active coach-runner relationship
+    const headersList = await headers()
+    const host = headersList.get('x-forwarded-host') ?? headersList.get('host')
+    const proto = headersList.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https')
+    const base = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL || ''
+    const cookie = headersList.get('cookie') ?? ''
 
-    return true
+    try {
+      const response = await fetch(`${base}/api/my-relationships`, {
+        headers: {
+          ...(cookie ? { cookie } : {}),
+          accept: 'application/json',
+        },
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        logger.warn('Failed to check relationships for conversation permission', {
+          status: response.status,
+          currentUser: session.user.id,
+          recipient: recipientId,
+        })
+        return false
+      }
+
+      const data = await response.json()
+      const relationships = data.relationships || []
+
+      // Check if there's an active relationship between current user and recipient
+      const hasRelationship = relationships.some((rel: { status: string; coach_id: string; runner_id: string }) => 
+        rel.status === 'active' && (
+          (rel.coach_id === session.user.id && rel.runner_id === recipientId) ||
+          (rel.runner_id === session.user.id && rel.coach_id === recipientId)
+        )
+      )
+
+      if (hasRelationship) {
+        logger.info('Conversation permission granted via active relationship', {
+          currentUser: session.user.id,
+          recipient: recipientId,
+        })
+        return true
+      } else {
+        logger.warn('Conversation permission denied - no active relationship', {
+          currentUser: session.user.id,
+          recipient: recipientId,
+        })
+        return false
+      }
+    } catch (fetchError) {
+      logger.error('Error fetching relationships for conversation permission:', fetchError)
+      // Fail closed - deny permission if we can't verify relationship
+      return false
+    }
   } catch (error) {
     logger.error('Error verifying conversation permission:', error)
     return false
