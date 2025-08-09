@@ -29,7 +29,17 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 **Goal**: Perfect the existing features, implement comprehensive testing, and prepare the platform for real-world users
 
-### 🧪 Phase A: Testing & Quality Assurance (HIGH PRIORITY)
+### 🎯 Phase A: Static vs Dynamic Rendering Fixes (CRITICAL PRIORITY)
+
+- [ ] **Convert `/chat/page.tsx` to Server/Client hybrid pattern** - Fix static rendering that causes personalized content issues
+- [ ] **Convert `/chat/[userId]/page.tsx` to Server/Client hybrid pattern** - Enable user-specific conversation loading
+- [ ] **Convert dashboard routes to Server/Client hybrid pattern** - Fix role-based routing issues  
+- [ ] **Create server-side auth utility (`utils/auth-server.ts`)** - Centralized server-side session management
+- [ ] **Add `await headers()` to all authenticated routes** - Force dynamic rendering for personalized content
+- [ ] **Test production deployment** - Verify all routes show "λ (Server)" not "○ (Static)" in build output
+- [ ] **Fix signup hanging issue** - Resolve "Loading your onboarding..." problem in production
+
+### 🧪 Phase B: Testing & Quality Assurance (HIGH PRIORITY)
 
 - [ ] **Fix Playwright E2E test suite** - Repair failing CI tests and get comprehensive end-to-end testing operational
 - [ ] **Implement comprehensive test coverage** - Cover critical user flows: authentication, dashboard navigation, coach-runner workflows
@@ -38,7 +48,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Add basic error logging** - Enhance existing tslog setup with structured error tracking and log aggregation
 - [ ] **Implement performance monitoring** - Basic performance metrics collection (moved to lower priority)
 
-### 🎨 Phase B: User Experience Enhancement (HIGH PRIORITY)
+### 🎨 Phase C: User Experience Enhancement (HIGH PRIORITY)
 
 - [ ] **Wire up workout completion buttons** - Implement "Mark Complete" and "Log Details" functionality for runners
 - [ ] **Fix real-time messaging issues** - Address any remaining message delivery, typing indicators, or synchronization problems
@@ -47,7 +57,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Add comprehensive onboarding flow** - Create guided setup process for new coaches and runners
 - [ ] **Implement user settings management** - Allow users to customize notifications, preferences, and account settings
 
-### 🏗️ Phase C: Production Infrastructure (MEDIUM PRIORITY)
+### 🏗️ Phase D: Production Infrastructure (MEDIUM PRIORITY)
 
 - [ ] **Set up staging database** - Create Vercel preview environment with proper database isolation and seeding
 - [ ] **Implement backup procedures** - Automated database backups with encryption and recovery testing
@@ -55,7 +65,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [ ] **Implement feature flag system** - Controlled rollout system for new features with A/B testing capabilities
 - [ ] **Set up structured logging** - Enhance logging with better organization and searchability
 
-### 🔍 Phase D: Advanced Monitoring (LOWER PRIORITY)
+### 🔍 Phase E: Advanced Monitoring (LOWER PRIORITY)
 
 - [ ] **Implement error tracking (Sentry)** - Production error monitoring and alerting system (moved to lower priority)
 - [ ] **Add advanced performance monitoring (APM)** - Detailed metrics collection for response times, database queries, and user interactions

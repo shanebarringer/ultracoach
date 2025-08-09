@@ -9,6 +9,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 ### Frontend Architecture
 
 - **Framework**: Next.js 15.3.5 with App Router
+- **Rendering**: Server/Client Component hybrid pattern for authenticated routes (forces dynamic rendering)
 - **Design System**: Mountain Peak Enhanced - Alpine aesthetic with professional UX patterns
 - **UI Library**: HeroUI with custom Mountain Peak theme
 - **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
@@ -16,6 +17,35 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **Authentication**: Better Auth with Drizzle adapter, custom session management, and role-based access
 - **Real-time**: Supabase Realtime for live updates
 - **TypeScript**: Full TypeScript with strict mode for type safety
+
+#### Server/Client Component Architecture (CRITICAL)
+
+**Problem Solved**: Routes like `/chat` were being marked as "static" causing personalized content issues and production deployment problems.
+
+**Solution**: Hybrid architecture pattern:
+
+```typescript
+// Server Component (page.tsx) - Forces dynamic rendering
+export default async function AuthPage() {
+  await headers()                           // Forces dynamic rendering
+  const session = await getServerSession() // Server-side authentication
+  if (!session) redirect('/auth/signin')   // Server-side redirects
+  return <AuthClient user={session.user} />
+}
+
+// Client Component (*Client.tsx) - Handles interactivity
+'use client'
+export default function AuthClient({ user }) {
+  // Client-side state management with Jotai
+  // Interactive features and real-time updates
+}
+```
+
+**Benefits**:
+- ✅ Proper dynamic rendering for personalized content
+- ✅ Server-side authentication and redirects
+- ✅ Consistent behavior between development and production
+- ✅ Optimal performance with hybrid static/dynamic approach
 
 ### Backend Architecture
 

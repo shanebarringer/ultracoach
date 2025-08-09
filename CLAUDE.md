@@ -12,10 +12,72 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
 6. Always use tslog library and utilities for logging (no console.log)
+7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
 ### MCP Instructions
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
+
+## 🎯 Next.js 15 App Router Patterns (CRITICAL)
+
+### Static vs Dynamic Rendering Rules
+
+**CRITICAL ISSUE**: Routes like `/chat` are being marked as "static" when they should be dynamic for personalized content, causing:
+- Signup hanging on "Loading your onboarding..."
+- User-specific content not loading correctly
+- Production vs local environment inconsistencies
+
+### Required Architecture Pattern
+
+**ALL authenticated routes MUST use Server/Client Component hybrid pattern:**
+
+```typescript
+// page.tsx (Server Component) - Forces dynamic rendering
+import { headers } from 'next/headers'
+import { getServerSession } from '@/utils/auth-server'
+import { redirect } from 'next/navigation'
+import PageClient from './PageClient'
+
+export default async function AuthenticatedPage() {
+  await headers() // 🔑 CRITICAL: Forces dynamic rendering
+  
+  const session = await getServerSession()
+  if (!session) redirect('/auth/signin')
+  
+  return <PageClient user={session.user} />
+}
+
+// PageClient.tsx (Client Component) - Handles interactivity
+'use client'
+
+export default function PageClient({ user }) {
+  // Client-side state management and interactivity
+}
+```
+
+### Routes That MUST Be Dynamic
+
+- `/chat` and `/chat/[userId]` - User conversations
+- `/dashboard/coach` and `/dashboard/runner` - Role-based dashboards
+- `/calendar` - User workout calendar
+- `/workouts` - Personal workouts
+- `/training-plans` - User training plans
+- `/profile` - User profile
+
+### Implementation Checklist
+
+- [ ] Add `await headers()` to ALL authenticated page components
+- [ ] Convert pure Client Components to Server/Client hybrid pattern
+- [ ] Use `getServerSession()` for server-side authentication
+- [ ] Pass user data as props to Client Components
+- [ ] Test that build output shows "λ (Server)" not "○ (Static)"
+
+### Reference Documentation
+
+See `.context7-docs/nextjs/` for comprehensive guides:
+- `static-vs-dynamic-rendering.md` - Core concepts and solutions
+- `authentication-route-patterns.md` - Authentication implementation patterns
+- `production-deployment-checklist.md` - Production verification checklist
 
 ## 🗄️ Database Connection (IMPORTANT)
 
