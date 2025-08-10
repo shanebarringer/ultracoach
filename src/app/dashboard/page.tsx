@@ -19,13 +19,17 @@ export default async function DashboardPage() {
   const session = await requireAuth()
 
   // TEMPORARY DEBUG: Track dashboard routing decisions
-  logger.info('🔍 DASHBOARD ROUTING:', {
+  logger.info('🔍 DASHBOARD ROUTING ENHANCED:', {
     userId: session.user.id,
     email: session.user.email,
     role: session.user.role,
     roleType: typeof session.user.role,
     isCoach: session.user.role === 'coach',
+    isRunner: session.user.role === 'runner',
     willRedirectTo: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
+    timestamp: new Date().toISOString(),
+    deployment: process.env.VERCEL_URL ? 'vercel' : 'local',
+    nodeEnv: process.env.NODE_ENV,
   })
 
   // Redirect to role-specific dashboard

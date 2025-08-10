@@ -60,13 +60,18 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const userRole = (session.user as { role?: string }).role
 
     // TEMPORARY DEBUG: Track role detection in production
-    logger.info('🔍 AUTH DEBUG:', {
+    logger.info('🔍 AUTH DEBUG ENHANCED:', {
       userId: session.user.id,
       email: session.user.email,
       rawUserRole: userRole,
       roleType: typeof userRole,
       isCoach: userRole === 'coach',
+      isRunner: userRole === 'runner',
       sessionUserData: JSON.stringify(session.user),
+      fullSessionData: JSON.stringify(session),
+      timestamp: new Date().toISOString(),
+      nodeEnv: process.env.NODE_ENV,
+      deployment: process.env.VERCEL_URL ? 'vercel' : 'local',
     })
 
     if (userRole && !['coach', 'runner'].includes(userRole)) {
