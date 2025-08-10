@@ -68,11 +68,23 @@ async function resetProductionDatabase() {
       'DROP TABLE IF EXISTS races CASCADE;',
       'DROP TABLE IF EXISTS notifications CASCADE;',
 
-      // Drop Better Auth tables
+      // Drop Better Auth tables (new ones)
       'DROP TABLE IF EXISTS better_auth_sessions CASCADE;',
       'DROP TABLE IF EXISTS better_auth_accounts CASCADE;',
       'DROP TABLE IF EXISTS better_auth_verification_tokens CASCADE;',
       'DROP TABLE IF EXISTS better_auth_users CASCADE;',
+
+      // Drop legacy tables (the pesky old ones!)
+      'DROP TABLE IF EXISTS user_settings CASCADE;',
+      'DROP TABLE IF EXISTS user_onboarding CASCADE;',
+      'DROP TABLE IF EXISTS user_feedback CASCADE;',
+      'DROP TABLE IF EXISTS typing_status CASCADE;',
+      'DROP TABLE IF EXISTS onboarding_steps CASCADE;',
+      'DROP TABLE IF EXISTS message_workout_links CASCADE;',
+      'DROP TABLE IF EXISTS session CASCADE;', // Legacy session table
+      'DROP TABLE IF EXISTS account CASCADE;', // Legacy account table
+      'DROP TABLE IF EXISTS verification CASCADE;', // Legacy verification table
+      'DROP TABLE IF EXISTS user CASCADE;', // Legacy user table
 
       // Drop any remaining tables
       'DROP TABLE IF EXISTS schema_migrations CASCADE;',
@@ -260,56 +272,104 @@ async function resetProductionDatabase() {
     // Step 3: Seed with test data
     logger.info('🌱 Step 3: Seeding with comprehensive test data...')
 
-    // Create test users first
-    const testUsers = [
+    // Coach data (from comprehensive-seed.ts)
+    const coaches = [
       {
-        email: 'sarah@ultracoach.dev',
         name: 'Sarah Mountain',
-        role: 'coach',
+        fullName: 'Sarah Mountain',
+        email: 'sarah@ultracoach.dev',
         password: 'UltraCoach2025!',
       },
       {
-        email: 'marcus@ultracoach.dev',
         name: 'Marcus Trail',
-        role: 'coach',
+        fullName: 'Marcus Trail',
+        email: 'marcus@ultracoach.dev',
         password: 'UltraCoach2025!',
       },
       {
-        email: 'emma@ultracoach.dev',
         name: 'Emma Summit',
-        role: 'coach',
+        fullName: 'Emma Summit',
+        email: 'emma@ultracoach.dev',
         password: 'UltraCoach2025!',
-      },
-      {
-        email: 'alex.rivers@ultracoach.dev',
-        name: 'Alex Rivers',
-        role: 'runner',
-        password: 'RunnerPass123!',
-      },
-      {
-        email: 'jordan.peak@ultracoach.dev',
-        name: 'Jordan Peak',
-        role: 'runner',
-        password: 'RunnerPass123!',
       },
     ]
 
-    for (const user of testUsers) {
-      const userId = `${user.name.replace(/\s+/g, '')}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    // Runner data (from comprehensive-seed.ts)
+    const runners = [
+      { name: 'Alex Rivera', email: 'alex.rivera@ultracoach.dev' },
+      { name: 'Jordan Chen', email: 'jordan.chen@ultracoach.dev' },
+      { name: 'Casey Johnson', email: 'casey.johnson@ultracoach.dev' },
+      { name: 'Taylor Smith', email: 'taylor.smith@ultracoach.dev' },
+      { name: 'Morgan Davis', email: 'morgan.davis@ultracoach.dev' },
+      { name: 'Riley Parker', email: 'riley.parker@ultracoach.dev' },
+      { name: 'Quinn Wilson', email: 'quinn.wilson@ultracoach.dev' },
+      { name: 'Blake Torres', email: 'blake.torres@ultracoach.dev' },
+      { name: 'Dakota Lee', email: 'dakota.lee@ultracoach.dev' },
+      { name: 'Sage Rodriguez', email: 'sage.rodriguez@ultracoach.dev' },
+      { name: 'River Martinez', email: 'river.martinez@ultracoach.dev' },
+      { name: 'Phoenix Garcia', email: 'phoenix.garcia@ultracoach.dev' },
+      { name: 'Skylar Anderson', email: 'skylar.anderson@ultracoach.dev' },
+      { name: 'Avery Thompson', email: 'avery.thompson@ultracoach.dev' },
+      { name: 'Cameron White', email: 'cameron.white@ultracoach.dev' },
+    ]
 
-      // Insert user
+    // Create coaches
+    const coachIds = []
+    for (const coach of coaches) {
+      const userId = `${coach.name.replace(/\s+/g, '')}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+
       await sql`
         INSERT INTO better_auth_users (id, email, name, role, full_name, email_verified)
-        VALUES (${userId}, ${user.email}, ${user.name}, ${user.role}, ${user.name}, true)
+        VALUES (${userId}, ${coach.email}, ${coach.name}, 'coach', ${coach.fullName}, true)
       `
 
-      // Insert credential account
       await sql`
         INSERT INTO better_auth_accounts (id, account_id, provider_id, user_id, password)
-        VALUES (${userId + '_account'}, ${user.email}, 'credential', ${userId}, ${user.password})
+        VALUES (${userId + '_account'}, ${coach.email}, 'credential', ${userId}, ${coach.password})
       `
 
-      logger.info(`✅ Created user: ${user.email} (${user.role})`)
+      coachIds.push({ id: userId, email: coach.email, name: coach.name })
+      logger.info(`✅ Created coach: ${coach.email}`)
+    }
+
+    // Create runners
+    const runnerIds = []
+    for (const runner of runners) {
+      const userId = `${runner.name.replace(/\s+/g, '')}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+
+      await sql`
+        INSERT INTO better_auth_users (id, email, name, role, full_name, email_verified)
+        VALUES (${userId}, ${runner.email}, ${runner.name}, 'runner', ${runner.name}, true)
+      `
+
+      await sql`
+        INSERT INTO better_auth_accounts (id, account_id, provider_id, user_id, password)
+        VALUES (${userId + '_account'}, ${runner.email}, 'credential', ${userId}, 'RunnerPass2025!')
+      `
+
+      runnerIds.push({ id: userId, email: runner.email, name: runner.name })
+      logger.info(`✅ Created runner: ${runner.email}`)
+    }
+
+    // Create some coach-runner relationships (1 per coach)
+    logger.info('🔗 Creating coach-runner relationships...')
+
+    for (let i = 0; i < coachIds.length; i++) {
+      const coach = coachIds[i]
+      const runner = runnerIds[i * 5] // Each coach gets connected to one runner
+
+      await sql`
+        INSERT INTO coach_runners (id, coach_id, runner_id, status, created_at, updated_at)
+        VALUES (${`rel_${Date.now()}_${i}`}, ${coach.id}, ${runner.id}, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `
+
+      // Create conversation for this relationship
+      await sql`
+        INSERT INTO conversations (id, coach_id, runner_id, created_at, updated_at)
+        VALUES (${`conv_${Date.now()}_${i}`}, ${coach.id}, ${runner.id}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `
+
+      logger.info(`✅ Created relationship: ${coach.name} ↔ ${runner.name}`)
     }
 
     // Add some basic relationships, races, and training data
@@ -324,11 +384,14 @@ async function resetProductionDatabase() {
 
     logger.info('🎉 Production database reset completed successfully!')
     logger.info('📝 Summary:')
-    logger.info('  - All tables dropped and recreated')
-    logger.info('  - Better Auth schema with correct id/token structure')
-    logger.info('  - 5 test users created with proper roles')
+    logger.info('  - All tables dropped and recreated with correct Better Auth schema')
+    logger.info('  - 3 coaches created: Sarah, Marcus, Emma')
+    logger.info('  - 15 runners created (same as local development)')
+    logger.info('  - 3 active coach-runner relationships established')
+    logger.info('  - 3 conversations created for relationships')
     logger.info('  - Sample race data added')
-    logger.info('  - Ready for production use!')
+    logger.info('  - Production database now matches local development data')
+    logger.info('  - Ready for testing! 🚀')
   } catch (error) {
     logger.error('❌ Error resetting production database:', error)
     process.exit(1)
