@@ -58,6 +58,17 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
     // Runtime type validation with proper error handling for Better Auth user type
     const userRole = (session.user as { role?: string }).role
+
+    // TEMPORARY DEBUG: Track role detection in production
+    logger.info('🔍 AUTH DEBUG:', {
+      userId: session.user.id,
+      email: session.user.email,
+      rawUserRole: userRole,
+      roleType: typeof userRole,
+      isCoach: userRole === 'coach',
+      sessionUserData: JSON.stringify(session.user),
+    })
+
     if (userRole && !['coach', 'runner'].includes(userRole)) {
       logger.warn('Invalid user role detected, defaulting to runner', { role: userRole })
     }

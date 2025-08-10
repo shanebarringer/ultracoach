@@ -15,6 +15,16 @@ export default async function DashboardPage() {
   // Server-side authentication - forces dynamic rendering
   const session = await requireAuth()
 
+  // TEMPORARY DEBUG: Track dashboard routing decisions
+  console.log('🔍 DASHBOARD ROUTING:', {
+    userId: session.user.id,
+    email: session.user.email,
+    role: session.user.role,
+    roleType: typeof session.user.role,
+    isCoach: session.user.role === 'coach',
+    willRedirectTo: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
+  })
+
   // Redirect to role-specific dashboard
   if (session.user.role === 'coach') {
     redirect('/dashboard/coach')
