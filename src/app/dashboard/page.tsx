@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+
 import { requireAuth } from '@/utils/auth-server'
 
 // Force dynamic rendering for this route
@@ -13,6 +14,15 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
   // Server-side authentication - forces dynamic rendering
   const session = await requireAuth()
+
+  // Debug logging to track role-based redirection
+  console.log('🔍 Dashboard routing debug:', {
+    userId: session.user.id,
+    email: session.user.email,
+    role: session.user.role,
+    roleType: typeof session.user.role,
+    willRedirectTo: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+  })
 
   // Redirect to role-specific dashboard
   if (session.user.role === 'coach') {
