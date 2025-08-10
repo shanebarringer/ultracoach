@@ -105,6 +105,12 @@ pnpm db:seed        # Seed database with test data
 pnpm db:fresh       # Reset and seed database
 ```
 
+## Git Commit Strategy:
+
+- Commit early and commit often
+- **ALWAYS** Run `pnpm lint` before adding and committing
+- **ALWAYS** Run `pnpm format` before adding and committing
+
 ### Database Philosophy:
 
 - **Use Drizzle for ALL database operations** (migrations, queries, schema changes)

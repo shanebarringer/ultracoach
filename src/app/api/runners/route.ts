@@ -26,12 +26,30 @@ interface RunnerWithStats {
 
 export async function GET(request: NextRequest) {
   try {
+    logger.info('GET /api/runners - Starting request', {
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+    })
+
     const session = await getServerSession(request)
+    logger.info('Session result', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userRole: session?.user?.role,
+      userId: session?.user?.id,
+    })
+
     if (!session?.user || session.user.role !== 'coach') {
+      logger.warn('Unauthorized access attempt', {
+        hasSession: !!session,
+        userRole: session?.user?.role,
+      })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get all runners with active relationships to this coach
+    logger.info('Querying relationships for coach', { coachId: session.user.id })
+
     const relationships = await db
       .select({
         runner_id: coach_runners.runner_id,
@@ -48,6 +66,8 @@ export async function GET(request: NextRequest) {
       .from(coach_runners)
       .innerJoin(user, eq(coach_runners.runner_id, user.id))
       .where(and(eq(coach_runners.coach_id, session.user.id), eq(coach_runners.status, 'active')))
+
+    logger.info('Query completed', { relationshipsFound: relationships.length })
 
     // Transform the data to include relationship context
     const runnersWithStats: RunnerWithStats[] = relationships.map(rel => ({
@@ -66,6 +86,7 @@ export async function GET(request: NextRequest) {
       },
     }))
 
+    logger.info('Returning response', { runnersCount: runnersWithStats.length })
     return NextResponse.json({ runners: runnersWithStats })
   } catch (error) {
     logger.error('API error in GET /runners', error)
