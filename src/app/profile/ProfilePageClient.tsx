@@ -170,9 +170,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                   <Button
                     variant="light"
                     className="justify-start"
-                    onPress={() =>
-                      router.push(user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner')
-                    }
+                    onPress={() => router.push('/dashboard')}
                   >
                     Back to Dashboard
                   </Button>

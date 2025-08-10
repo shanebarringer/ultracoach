@@ -138,20 +138,12 @@ export default function SignIn() {
           // Set redirecting state for smooth transition
           setIsRedirecting(true)
 
-          // Redirect based on user role with explicit validation
-          if (userRole === 'coach') {
-            logger.info('✅ Redirecting COACH to /dashboard/coach', {
-              userRole,
-              userId: sessionData.data.user.id,
-            })
-            router.push('/dashboard/coach')
-          } else {
-            logger.info('✅ Redirecting RUNNER to /dashboard/runner', {
-              userRole,
-              userId: sessionData.data.user.id,
-            })
-            router.push('/dashboard/runner')
-          }
+          // Redirect to dashboard which will handle role-based routing
+          logger.info('✅ Redirecting authenticated user to dashboard', {
+            userRole,
+            userId: sessionData.data.user.id,
+          })
+          router.push('/dashboard')
         } else {
           logger.error('Failed to get session data after sign in')
           setIsRedirecting(false)

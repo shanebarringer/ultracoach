@@ -23,12 +23,7 @@ export default async function Home() {
 
   // If user is authenticated, redirect to appropriate dashboard
   if (session?.user) {
-    const userRole = session.user.role || 'runner'
-    if (userRole === 'coach') {
-      redirect('/dashboard/coach')
-    } else {
-      redirect('/dashboard/runner')
-    }
+    redirect('/dashboard')
   }
 
   // Show landing page for unauthenticated users

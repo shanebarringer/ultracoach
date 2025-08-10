@@ -72,7 +72,7 @@ function Header() {
 
     const baseItems = [
       {
-        href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
+        href: '/dashboard',
         label: 'Dashboard',
       },
       { href: '/relationships', label: 'Relationships' },
