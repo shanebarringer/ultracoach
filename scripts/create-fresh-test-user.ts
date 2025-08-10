@@ -94,7 +94,6 @@ async function createFreshTestUser() {
     logger.info('Test credentials:')
     logger.info(`Email: ${testEmail}`)
     logger.info(`Password: ${testPassword}`)
-
   } catch (error) {
     logger.error('❌ Failed to create fresh test user:', error)
     throw error

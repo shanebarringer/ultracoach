@@ -88,7 +88,6 @@ async function testAuthentication() {
     } catch (error) {
       logger.error('❌ Session query failed:', error)
     }
-
   } catch (error) {
     logger.error('❌ Authentication test suite failed:', error)
   }

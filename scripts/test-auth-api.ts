@@ -46,7 +46,9 @@ async function testAuthAPI() {
         logger.info(`Response data preview:`, responseData.substring(0, 200) + '...')
       } else {
         const errorText = await signInResponse.text()
-        logger.error(`❌ Sign-in failed for ${creds.email}: ${signInResponse.status} ${signInResponse.statusText}`)
+        logger.error(
+          `❌ Sign-in failed for ${creds.email}: ${signInResponse.status} ${signInResponse.statusText}`
+        )
         logger.error(`Error response:`, errorText)
       }
     } catch (error) {
