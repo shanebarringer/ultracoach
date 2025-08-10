@@ -16,7 +16,7 @@ import {
 // ===================================
 
 // Better Auth user table - this is the primary user table
-export const user = pgTable('user', {
+export const user = pgTable('better_auth_users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -46,7 +46,7 @@ export const user = pgTable('user', {
   })),
 })
 
-export const session = pgTable('session', {
+export const session = pgTable('better_auth_sessions', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
@@ -60,7 +60,7 @@ export const session = pgTable('session', {
   impersonatedBy: text('impersonated_by'),
 })
 
-export const account = pgTable('account', {
+export const account = pgTable('better_auth_accounts', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -78,7 +78,7 @@ export const account = pgTable('account', {
   updatedAt: timestamp('updated_at').notNull(),
 })
 
-export const verification = pgTable('verification', {
+export const verification = pgTable('better_auth_verification_tokens', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
@@ -469,10 +469,10 @@ export const user_settings = pgTable('user_settings', {
 })
 
 // ===================================
-// LEGACY ALIASES (For Better Auth compatibility)
+// BETTER AUTH TABLE ALIASES
 // ===================================
 
-// Better Auth expects these exact table names
+// Aliases for Better Auth tables (now using correct table names directly)
 export const better_auth_users = user
 export const better_auth_accounts = account
 export const better_auth_sessions = session
