@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 
+import { createLogger } from '@/lib/logger'
 import { requireAuth } from '@/utils/auth-server'
+
+const logger = createLogger('DashboardPage')
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -16,7 +19,7 @@ export default async function DashboardPage() {
   const session = await requireAuth()
 
   // TEMPORARY DEBUG: Track dashboard routing decisions
-  console.log('🔍 DASHBOARD ROUTING:', {
+  logger.info('🔍 DASHBOARD ROUTING:', {
     userId: session.user.id,
     email: session.user.email,
     role: session.user.role,
