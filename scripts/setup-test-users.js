@@ -1,3 +1,8 @@
+// ⚠️  DEPRECATED: This script uses the old /api/user/role endpoint which has been removed.
+// Use instead:
+// - scripts/create-test-users-better-auth-api.ts (TypeScript, modern approach)
+// - scripts/create-test-users-automated.ts (browser automation)
+
 // Using built-in fetch (Node 18+ required)
 
 const testUsers = [

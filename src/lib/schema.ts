@@ -34,6 +34,7 @@ export const user = pgTable(
       .$defaultFn(() => new Date())
       .notNull(),
     role: text('role').default('runner').notNull(),
+    userType: text('user_type').default('runner').notNull(),
     banned: boolean('banned'),
     banReason: text('ban_reason'),
     banExpires: timestamp('ban_expires'),

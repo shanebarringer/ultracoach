@@ -148,11 +148,11 @@ describe('Authentication Redirect Logic Tests', () => {
       })
     })
 
-    it('should construct correct API URL for role lookup', () => {
-      const userId = 'user-123'
-      const expectedUrl = `/api/user/role?userId=${userId}`
+    it('should extract role from session data', () => {
+      const mockSession = { user: { role: 'coach', id: 'user-123' } }
+      const userRole = mockSession.user.role || 'runner'
 
-      expect(expectedUrl).toBe('/api/user/role?userId=user-123')
+      expect(userRole).toBe('coach')
     })
 
     it('should handle API response correctly', () => {
@@ -204,19 +204,12 @@ describe('Authentication Redirect Logic Tests', () => {
       })
     })
 
-    it('should handle numeric user IDs safely', () => {
-      const userId = 123456
-      const apiUrl = `/api/user/role?userId=${userId}`
+    it('should handle session role fallback safely', () => {
+      const sessionWithRole = { user: { role: 'coach', id: '123456' } }
+      const sessionWithoutRole = { user: { id: '123456' } }
 
-      expect(apiUrl).toBe('/api/user/role?userId=123456')
-      expect(typeof apiUrl).toBe('string')
-    })
-
-    it('should handle string user IDs safely', () => {
-      const userId = 'user-abc-123'
-      const apiUrl = `/api/user/role?userId=${userId}`
-
-      expect(apiUrl).toBe('/api/user/role?userId=user-abc-123')
+      expect((sessionWithRole.user as SessionUser).role || 'runner').toBe('coach')
+      expect((sessionWithoutRole.user as SessionUser).role || 'runner').toBe('runner')
     })
   })
 

@@ -105,28 +105,8 @@ export default function SignIn() {
           setSession(sessionData.data)
           setUser(sessionData.data.user)
 
-          // Enhanced role extraction with fallback API call
-          let userRole = (sessionData.data.user as User).role || 'runner'
-
-          // If role is missing or undefined, fetch from API as fallback
-          if (!userRole || userRole === 'runner') {
-            try {
-              logger.info('Role unclear from session, fetching from API:', {
-                sessionRole: userRole,
-                userId: sessionData.data.user.id,
-              })
-
-              const roleResponse = await fetch(`/api/user/role?userId=${sessionData.data.user.id}`)
-              if (roleResponse.ok) {
-                const roleData = await roleResponse.json()
-                userRole = roleData.role || 'runner'
-                logger.info('Role fetched from API:', { apiRole: userRole })
-              }
-            } catch (roleError) {
-              logger.error('Failed to fetch role from API:', roleError)
-              // Continue with default role
-            }
-          }
+          // Extract role from session - customSession handles userType → role mapping
+          const userRole = (sessionData.data.user as User).role || 'runner'
 
           logger.info('Final user role determined:', {
             userRole,

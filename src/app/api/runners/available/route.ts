@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       .from(user)
       .where(
         and(
-          eq(user.role, 'runner'),
+          eq(user.userType, 'runner'),
           notExists(
             db
               .select()

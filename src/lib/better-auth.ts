@@ -301,10 +301,9 @@ UltraCoach - Conquer Your Mountain
 
     user: {
       additionalFields: {
-        role: {
+        userType: {
           type: 'string',
-          required: true,
-          defaultValue: 'runner',
+          required: false,
           input: true,
           output: true,
         },
@@ -317,15 +316,28 @@ UltraCoach - Conquer Your Mountain
       },
     },
 
+    // Hooks for debugging signup process
+    hooks: {
+      before: async _ctx => {
+        // Remove middleware hooks due to TypeScript compatibility issues
+        // Logging can be added back with proper Better Auth v2 types
+      },
+    },
+
     plugins: [
       admin(), // Enable admin API for user management
       customSession(async ({ user, session }) => {
         // Ensure role is properly typed and available
-        const typedUser = user as typeof user & { role?: string; fullName?: string }
+        const typedUser = user as typeof user & { userType?: string; fullName?: string }
+        logger.info('Custom session transformation:', {
+          originalUserType: typedUser.userType,
+          transformedRole: (typedUser.userType as 'runner' | 'coach') || 'runner',
+          fullName: typedUser.fullName,
+        })
         return {
           user: {
             ...user,
-            role: (typedUser.role as 'runner' | 'coach') || 'runner',
+            role: (typedUser.userType as 'runner' | 'coach') || 'runner', // Map userType to role for app compatibility
             fullName: typedUser.fullName || null,
           },
           session,

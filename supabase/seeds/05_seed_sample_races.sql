@@ -6,7 +6,7 @@ DECLARE
     sample_coach_id TEXT;
 BEGIN
     -- Try to find a coach user, or use NULL
-    SELECT id INTO sample_coach_id FROM better_auth_users WHERE role = 'coach' LIMIT 1;
+    SELECT id INTO sample_coach_id FROM better_auth_users WHERE user_type = 'coach' LIMIT 1;
 
     -- Insert popular ultra races for 2025 season
     INSERT INTO races (name, date, distance_miles, distance_type, location, elevation_gain_feet, terrain_type, website_url, notes, created_by) VALUES

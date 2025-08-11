@@ -84,19 +84,19 @@ BEGIN
 
     -- Create some sample workouts for first two training plans
     INSERT INTO workouts (
-      id, training_plan_id, user_id, title, description, date, planned_type, planned_distance, planned_duration, 
-      intensity, terrain_type, elevation_gain, status, created_at, updated_at
+      id, training_plan_id, user_id, title, date, planned_type, planned_distance, planned_duration, 
+      intensity, terrain, elevation_gain, status, created_at, updated_at
     ) VALUES
     -- Alex's workouts
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Easy Morning Run', 'Comfortable aerobic pace', CURRENT_DATE + 1, 'easy', 6, '50 minutes', 3, 'road', 100, 'planned', NOW(), NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Tempo Run', 'Comfortably hard effort', CURRENT_DATE + 2, 'tempo', 8, '1 hour', 6, 'road', 150, 'planned', NOW(), NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Recovery Run', 'Easy recovery pace', CURRENT_DATE + 3, 'easy', 5, '40 minutes', 2, 'road', 80, 'planned', NOW(), NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Easy Morning Run', CURRENT_DATE + 1, 'easy', 6, 3000, 3, 'road', 100, 'planned', NOW(), NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Tempo Run', CURRENT_DATE + 2, 'tempo', 8, 3600, 6, 'road', 150, 'planned', NOW(), NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner1_id LIMIT 1), runner1_id, 'Recovery Run', CURRENT_DATE + 3, 'easy', 5, 2400, 2, 'road', 80, 'planned', NOW(), NOW()),
     -- Riley's workouts  
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), runner6_id, 'Trail Fundamentals', 'Learning trail running basics', CURRENT_DATE + 1, 'easy', 4, '35 minutes', 3, 'trail', 120, 'planned', NOW(), NOW()),
-    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), runner6_id, 'Long Trail Run', 'Build endurance on trails', CURRENT_DATE + 2, 'long_run', 12, '1 hour 30 minutes', 5, 'trail', 300, 'planned', NOW(), NOW());
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), runner6_id, 'Trail Fundamentals', CURRENT_DATE + 1, 'easy', 4, 2100, 3, 'trail', 120, 'planned', NOW(), NOW()),
+    (gen_random_uuid(), (SELECT id FROM training_plans WHERE runner_id = runner6_id LIMIT 1), runner6_id, 'Long Trail Run', CURRENT_DATE + 2, 'long_run', 12, 5400, 5, 'trail', 300, 'planned', NOW(), NOW());
 
     -- Create conversations between coaches and runners
-    INSERT INTO conversations (id, user1_id, user2_id, created_at, updated_at) VALUES
+    INSERT INTO conversations (id, coach_id, runner_id, created_at, updated_at) VALUES
     -- Coach 1 conversations
     (gen_random_uuid(), coach1_id, runner1_id, NOW(), NOW()),
     (gen_random_uuid(), coach1_id, runner2_id, NOW(), NOW()),
@@ -105,16 +105,16 @@ BEGIN
     (gen_random_uuid(), coach2_id, runner7_id, NOW(), NOW());
 
     -- Create some sample messages
-    INSERT INTO messages (id, conversation_id, sender_id, recipient_id, content, message_type, created_at, updated_at) VALUES
-    (gen_random_uuid(), (SELECT id FROM conversations WHERE user1_id = coach1_id AND user2_id = runner1_id LIMIT 1), coach1_id, runner1_id, 'Welcome to your training program! Let''s start with building your aerobic base.', 'text', NOW(), NOW()),
-    (gen_random_uuid(), (SELECT id FROM conversations WHERE user1_id = coach1_id AND user2_id = runner1_id LIMIT 1), runner1_id, coach1_id, 'Thanks coach! I''m excited to get started.', 'text', NOW(), NOW()),
-    (gen_random_uuid(), (SELECT id FROM conversations WHERE user1_id = coach2_id AND user2_id = runner6_id LIMIT 1), coach2_id, runner6_id, 'Trail running is all about consistency. Take your time learning the terrain.', 'text', NOW(), NOW());
+    INSERT INTO messages (id, conversation_id, sender_id, recipient_id, content, created_at) VALUES
+    (gen_random_uuid(), (SELECT id FROM conversations WHERE coach_id = coach1_id AND runner_id = runner1_id LIMIT 1), coach1_id, runner1_id, 'Welcome to your training program! Let''s start with building your aerobic base.', NOW()),
+    (gen_random_uuid(), (SELECT id FROM conversations WHERE coach_id = coach1_id AND runner_id = runner1_id LIMIT 1), runner1_id, coach1_id, 'Thanks coach! I''m excited to get started.', NOW()),
+    (gen_random_uuid(), (SELECT id FROM conversations WHERE coach_id = coach2_id AND runner_id = runner6_id LIMIT 1), coach2_id, runner6_id, 'Trail running is all about consistency. Take your time learning the terrain.', NOW());
 
     -- Create some notifications
-    INSERT INTO notifications (id, user_id, title, message, type, is_read, created_at, updated_at) VALUES
-    (gen_random_uuid(), runner1_id, 'New Training Plan', 'Your coach has created a new training plan: Alex - First 50K Training', 'training_plan', false, NOW(), NOW()),
-    (gen_random_uuid(), runner1_id, 'Workout Scheduled', 'New workout scheduled for tomorrow: Easy Morning Run', 'workout', false, NOW(), NOW()),
-    (gen_random_uuid(), runner6_id, 'New Training Plan', 'Your coach has created a new training plan: Riley - Trail Running Fundamentals', 'training_plan', false, NOW(), NOW());
+    INSERT INTO notifications (id, user_id, title, message, type, read, created_at) VALUES
+    (gen_random_uuid(), runner1_id, 'New Training Plan', 'Your coach has created a new training plan: Alex - First 50K Training', 'training_plan', false, NOW()),
+    (gen_random_uuid(), runner1_id, 'Workout Scheduled', 'New workout scheduled for tomorrow: Easy Morning Run', 'workout', false, NOW()),
+    (gen_random_uuid(), runner6_id, 'New Training Plan', 'Your coach has created a new training plan: Riley - Trail Running Fundamentals', 'training_plan', false, NOW());
 
 END $$;
 

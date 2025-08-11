@@ -1,3 +1,9 @@
+-- ⚠️  DEPRECATED: This seed file uses the old 'users' table which no longer exists.
+-- 
+-- Use instead:
+-- - scripts/create-test-users-better-auth-api.ts (recommended)
+-- - scripts/create-test-users-automated.ts (browser automation)
+-- 
 -- Seed Test Users
 -- Creates test coaches and runners for development
 
