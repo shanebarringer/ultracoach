@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         other_party_name: user.name,
         other_party_full_name: user.fullName,
         other_party_email: user.email,
-        other_party_role: user.role,
+        other_party_role: user.userType,
       })
       .from(coach_runners)
       .innerJoin(user, eq(coach_runners.runner_id, user.id))
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         other_party_name: user.name,
         other_party_full_name: user.fullName,
         other_party_email: user.email,
-        other_party_role: user.role,
+        other_party_role: user.userType,
       })
       .from(coach_runners)
       .innerJoin(user, eq(coach_runners.coach_id, user.id))
