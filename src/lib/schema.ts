@@ -1,6 +1,7 @@
 import {
   boolean,
   decimal,
+  foreignKey,
   integer,
   json,
   pgTable,
@@ -16,49 +17,62 @@ import {
 // ===================================
 
 // Better Auth user table - this is the primary user table
-export const user = pgTable('better_auth_users', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified')
-    .$defaultFn(() => false)
-    .notNull(),
-  image: text('image'),
-  createdAt: timestamp('created_at')
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: timestamp('updated_at')
-    .$defaultFn(() => new Date())
-    .notNull(),
-  role: text('role').default('runner').notNull(),
-  banned: boolean('banned'),
-  banReason: text('ban_reason'),
-  banExpires: timestamp('ban_expires'),
-  fullName: text('full_name'),
-  notification_preferences: json('notification_preferences').$defaultFn(() => ({
-    messages: true,
-    workouts: true,
-    training_plans: true,
-    races: true,
-    reminders: true,
-    toast_notifications: true,
-    email_notifications: false,
-  })),
-})
+export const user = pgTable(
+  'better_auth_users',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    emailVerified: boolean('email_verified')
+      .$defaultFn(() => false)
+      .notNull(),
+    image: text('image'),
+    createdAt: timestamp('created_at')
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp('updated_at')
+      .$defaultFn(() => new Date())
+      .notNull(),
+    role: text('role').default('runner').notNull(),
+    banned: boolean('banned'),
+    banReason: text('ban_reason'),
+    banExpires: timestamp('ban_expires'),
+    fullName: text('full_name'),
+    notification_preferences: json('notification_preferences').$defaultFn(() => ({
+      messages: true,
+      workouts: true,
+      training_plans: true,
+      races: true,
+      reminders: true,
+      toast_notifications: true,
+      email_notifications: false,
+    })),
+  },
+  table => [unique('user_email_unique').on(table.email)]
+)
 
-export const session = pgTable('better_auth_sessions', {
-  id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  impersonatedBy: text('impersonated_by'),
-})
+export const session = pgTable(
+  'better_auth_sessions',
+  {
+    id: text('id').primaryKey(),
+    expiresAt: timestamp('expires_at').notNull(),
+    token: text('token').notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id').notNull(),
+    impersonatedBy: text('impersonated_by'),
+  },
+  table => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: 'session_user_id_user_id_fk',
+    }).onDelete('cascade'),
+    unique('session_token_unique').on(table.token),
+  ]
+)
 
 export const account = pgTable('better_auth_accounts', {
   id: text('id').primaryKey(),

@@ -1,17 +1,18 @@
 #!/usr/bin/env tsx
 /**
  * Production Database Table Migration
- * 
+ *
  * This script safely renames tables in production to match the updated schema:
  * - user → better_auth_users
- * - session → better_auth_sessions  
+ * - session → better_auth_sessions
  * - account → better_auth_accounts
  * - verification → better_auth_verification_tokens
- * 
+ *
  * Includes proper foreign key constraint updates and rollback capability.
  */
 import { config } from 'dotenv'
 import postgres from 'postgres'
+
 import { createLogger } from '../src/lib/logger'
 
 // Load production environment
@@ -28,7 +29,7 @@ if (!DATABASE_URL) {
 async function migrateProductionTables() {
   logger.info('🔄 Starting production table name migration...', {
     timestamp: new Date().toISOString(),
-    environment: 'production'
+    environment: 'production',
   })
 
   const sql = postgres(DATABASE_URL, { ssl: 'require' })
@@ -36,7 +37,7 @@ async function migrateProductionTables() {
   try {
     // Step 1: Check current table state
     logger.info('📋 Step 1: Checking current table state...')
-    
+
     const tables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
@@ -44,40 +45,42 @@ async function migrateProductionTables() {
       AND table_name IN ('user', 'session', 'account', 'verification', 'better_auth_users', 'better_auth_sessions', 'better_auth_accounts', 'better_auth_verification_tokens')
       ORDER BY table_name
     `
-    
+
     const tableNames = tables.map(t => t.table_name)
     logger.info('Current tables:', { tables: tableNames })
-    
+
     // Check if migration is needed
-    const hasLegacyTables = tableNames.some(name => ['user', 'session', 'account', 'verification'].includes(name))
+    const hasLegacyTables = tableNames.some(name =>
+      ['user', 'session', 'account', 'verification'].includes(name)
+    )
     const hasNewTables = tableNames.some(name => name.startsWith('better_auth_'))
-    
+
     if (!hasLegacyTables && hasNewTables) {
       logger.info('✅ Migration already complete - tables are already using Better Auth names')
       return true
     }
-    
+
     if (hasLegacyTables && hasNewTables) {
       logger.error('❌ Conflicting state: Both legacy and new tables exist')
       logger.info('Please manually resolve this conflict before running migration')
       return false
     }
-    
+
     if (!hasLegacyTables) {
       logger.error('❌ No legacy tables found - nothing to migrate')
       return false
     }
-    
+
     // Step 2: Create backup of current state
     logger.info('💾 Step 2: Creating backup queries...')
-    
+
     const backupQueries = [
       'CREATE TABLE user_backup AS SELECT * FROM "user";',
-      'CREATE TABLE session_backup AS SELECT * FROM "session";', 
+      'CREATE TABLE session_backup AS SELECT * FROM "session";',
       'CREATE TABLE account_backup AS SELECT * FROM "account";',
-      'CREATE TABLE verification_backup AS SELECT * FROM "verification";'
+      'CREATE TABLE verification_backup AS SELECT * FROM "verification";',
     ]
-    
+
     for (const query of backupQueries) {
       try {
         await sql.unsafe(query)
@@ -86,10 +89,10 @@ async function migrateProductionTables() {
         logger.warn(`⚠️ Backup warning (table may not exist): ${error}`)
       }
     }
-    
+
     // Step 3: Drop foreign key constraints that reference old table names
     logger.info('🔗 Step 3: Dropping foreign key constraints...')
-    
+
     const dropConstraints = [
       // Drop all constraints referencing the old table names
       'ALTER TABLE conversations DROP CONSTRAINT IF EXISTS conversations_coach_id_user_id_fk CASCADE;',
@@ -106,14 +109,14 @@ async function migrateProductionTables() {
       'ALTER TABLE user_onboarding DROP CONSTRAINT IF EXISTS user_onboarding_user_id_user_id_fk CASCADE;',
       'ALTER TABLE user_feedback DROP CONSTRAINT IF EXISTS user_feedback_user_id_user_id_fk CASCADE;',
       'ALTER TABLE user_settings DROP CONSTRAINT IF EXISTS user_settings_user_id_user_id_fk CASCADE;',
-      
+
       // Drop session constraints
       'ALTER TABLE "session" DROP CONSTRAINT IF EXISTS session_user_id_user_id_fk CASCADE;',
-      
-      // Drop account constraints  
+
+      // Drop account constraints
       'ALTER TABLE "account" DROP CONSTRAINT IF EXISTS account_user_id_user_id_fk CASCADE;',
     ]
-    
+
     for (const query of dropConstraints) {
       try {
         await sql.unsafe(query)
@@ -122,17 +125,17 @@ async function migrateProductionTables() {
         logger.warn(`⚠️ Constraint warning: ${error}`)
       }
     }
-    
+
     // Step 4: Rename tables
     logger.info('📝 Step 4: Renaming tables to Better Auth names...')
-    
+
     const renameQueries = [
       'ALTER TABLE "user" RENAME TO "better_auth_users";',
       'ALTER TABLE "session" RENAME TO "better_auth_sessions";',
-      'ALTER TABLE "account" RENAME TO "better_auth_accounts";', 
-      'ALTER TABLE "verification" RENAME TO "better_auth_verification_tokens";'
+      'ALTER TABLE "account" RENAME TO "better_auth_accounts";',
+      'ALTER TABLE "verification" RENAME TO "better_auth_verification_tokens";',
     ]
-    
+
     for (const query of renameQueries) {
       try {
         await sql.unsafe(query)
@@ -142,10 +145,10 @@ async function migrateProductionTables() {
         throw error
       }
     }
-    
+
     // Step 5: Recreate foreign key constraints with new table names
     logger.info('🔗 Step 5: Recreating foreign key constraints...')
-    
+
     const createConstraints = [
       // User table references
       'ALTER TABLE conversations ADD CONSTRAINT conversations_coach_id_better_auth_users_id_fk FOREIGN KEY (coach_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
@@ -162,14 +165,14 @@ async function migrateProductionTables() {
       'ALTER TABLE user_onboarding ADD CONSTRAINT user_onboarding_user_id_better_auth_users_id_fk FOREIGN KEY (user_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
       'ALTER TABLE user_feedback ADD CONSTRAINT user_feedback_user_id_better_auth_users_id_fk FOREIGN KEY (user_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
       'ALTER TABLE user_settings ADD CONSTRAINT user_settings_user_id_better_auth_users_id_fk FOREIGN KEY (user_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
-      
+
       // Session table references
       'ALTER TABLE better_auth_sessions ADD CONSTRAINT better_auth_sessions_user_id_better_auth_users_id_fk FOREIGN KEY (user_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
-      
+
       // Account table references
       'ALTER TABLE better_auth_accounts ADD CONSTRAINT better_auth_accounts_user_id_better_auth_users_id_fk FOREIGN KEY (user_id) REFERENCES better_auth_users(id) ON DELETE CASCADE;',
     ]
-    
+
     for (const query of createConstraints) {
       try {
         await sql.unsafe(query)
@@ -178,10 +181,10 @@ async function migrateProductionTables() {
         logger.warn(`⚠️ Constraint warning: ${error}`)
       }
     }
-    
+
     // Step 6: Verify migration success
     logger.info('✅ Step 6: Verifying migration...')
-    
+
     const newTables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
@@ -189,39 +192,38 @@ async function migrateProductionTables() {
       AND table_name IN ('better_auth_users', 'better_auth_sessions', 'better_auth_accounts', 'better_auth_verification_tokens')
       ORDER BY table_name
     `
-    
+
     const newTableNames = newTables.map(t => t.table_name)
     logger.info('New table names:', { tables: newTableNames })
-    
+
     // Verify data integrity
     const userCount = await sql`SELECT COUNT(*) as count FROM better_auth_users`
     const sessionCount = await sql`SELECT COUNT(*) as count FROM better_auth_sessions`
     const accountCount = await sql`SELECT COUNT(*) as count FROM better_auth_accounts`
-    
+
     logger.info('Data integrity check:', {
       users: userCount[0].count,
-      sessions: sessionCount[0].count, 
-      accounts: accountCount[0].count
+      sessions: sessionCount[0].count,
+      accounts: accountCount[0].count,
     })
-    
+
     logger.info('🎉 Production table migration completed successfully!')
     logger.info('📝 Summary:')
     logger.info('  ✅ Renamed user → better_auth_users')
     logger.info('  ✅ Renamed session → better_auth_sessions')
-    logger.info('  ✅ Renamed account → better_auth_accounts') 
+    logger.info('  ✅ Renamed account → better_auth_accounts')
     logger.info('  ✅ Renamed verification → better_auth_verification_tokens')
     logger.info('  ✅ Updated all foreign key constraints')
     logger.info('  ✅ Preserved all data integrity')
     logger.info('  💾 Created backup tables for rollback')
-    
+
     return true
-    
   } catch (error) {
     logger.error('❌ Migration failed:', error)
     logger.info('🔄 To rollback, you can restore from backup tables:')
     logger.info('   - user_backup → user')
     logger.info('   - session_backup → session')
-    logger.info('   - account_backup → account') 
+    logger.info('   - account_backup → account')
     logger.info('   - verification_backup → verification')
     throw error
   } finally {
