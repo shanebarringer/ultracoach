@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
 import classNames from 'classnames'
+import { useAtom } from 'jotai'
 import {
   ActivityIcon,
   ArrowDownIcon,
@@ -21,8 +22,10 @@ import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
 
+import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
@@ -193,6 +196,42 @@ function RunnerDashboard() {
   const { data: session } = useSession()
   const { trainingPlans, upcomingWorkouts, loading, relationships, recentWorkouts } =
     useDashboardData()
+
+  // Jotai atoms for UI state
+  const [uiState, setUiState] = useAtom(uiStateAtom)
+
+  // Workout action handlers
+  const handleMarkComplete = (workout: Workout) => {
+    setUiState(prev => ({
+      ...prev,
+      selectedWorkout: workout,
+      defaultToComplete: true,
+      showLogWorkout: true,
+    }))
+  }
+
+  const handleLogDetails = (workout: Workout) => {
+    setUiState(prev => ({
+      ...prev,
+      selectedWorkout: workout,
+      defaultToComplete: false,
+      showLogWorkout: true,
+    }))
+  }
+
+  const handleWorkoutModalClose = () => {
+    setUiState(prev => ({
+      ...prev,
+      showLogWorkout: false,
+      selectedWorkout: null,
+      defaultToComplete: false,
+    }))
+  }
+
+  const handleWorkoutSuccess = () => {
+    handleWorkoutModalClose()
+    // The dashboard data should refresh automatically via Jotai atoms
+  }
 
   // Memoize expensive computations and add logging
   const dashboardMetrics = useMemo(() => {
@@ -535,10 +574,16 @@ function RunnerDashboard() {
                               color="success"
                               className="flex-1"
                               startContent={<CheckCircleIcon className="w-4 h-4" />}
+                              onClick={() => handleMarkComplete(workout)}
                             >
                               Mark Complete
                             </Button>
-                            <Button size="sm" variant="bordered" className="flex-1">
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              className="flex-1"
+                              onClick={() => handleLogDetails(workout)}
+                            >
                               Log Details
                             </Button>
                           </div>
@@ -552,6 +597,17 @@ function RunnerDashboard() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Workout Log Modal */}
+      {uiState.selectedWorkout && (
+        <WorkoutLogModal
+          isOpen={uiState.showLogWorkout}
+          onClose={handleWorkoutModalClose}
+          onSuccess={handleWorkoutSuccess}
+          workout={uiState.selectedWorkout}
+          defaultToComplete={uiState.defaultToComplete}
+        />
+      )}
     </div>
   )
 }
