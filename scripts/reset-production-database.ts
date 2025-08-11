@@ -84,7 +84,7 @@ async function resetProductionDatabase() {
       'DROP TABLE IF EXISTS session CASCADE;', // Legacy session table
       'DROP TABLE IF EXISTS account CASCADE;', // Legacy account table
       'DROP TABLE IF EXISTS verification CASCADE;', // Legacy verification table
-      'DROP TABLE IF EXISTS user CASCADE;', // Legacy user table
+      'DROP TABLE IF EXISTS "user" CASCADE;', // Legacy user table (quoted because reserved keyword)
 
       // Drop any remaining tables
       'DROP TABLE IF EXISTS schema_migrations CASCADE;',
