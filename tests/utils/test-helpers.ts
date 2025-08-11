@@ -1,28 +1,28 @@
 import { type Page, expect } from '@playwright/test'
 
-// Test user credentials (consistent with seed script)
+// Test user credentials (consistent with comprehensive seed script)
 export const TEST_USERS = {
   coach: {
-    email: 'testcoach@ultracoach.dev',
-    password: 'TestCoach123!',
+    email: 'sarah@ultracoach.dev',
+    password: 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   coach2: {
-    email: 'testcoach2@ultracoach.dev',
-    password: 'TestCoach456!',
+    email: 'marcus@ultracoach.dev',
+    password: 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   runner: {
-    email: 'testrunner@ultracoach.dev',
-    password: 'TestRunner123!',
+    email: 'alex.rivera@ultracoach.dev',
+    password: 'RunnerPass2025!',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
   runner2: {
-    email: 'testrunner2@ultracoach.dev',
-    password: 'TestRunner456!',
+    email: 'riley.parker@ultracoach.dev',
+    password: 'RunnerPass2025!',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
