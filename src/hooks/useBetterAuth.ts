@@ -97,19 +97,19 @@ export function useBetterAuth() {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }))
 
-      // Sign up the user with role included in initial request
+      // Sign up the user with userType field for Better Auth database storage
       const signUpPayload = {
         email,
         password,
         name,
-        role: role || 'runner', // Pass role during signup
+        userType: role || 'runner', // Map role to userType for database storage
         fullName: name, // Also set fullName
       }
 
       logger.info('Sending signup request to Better Auth:', {
         email: signUpPayload.email,
         name: signUpPayload.name,
-        role: signUpPayload.role,
+        userType: signUpPayload.userType,
         fullName: signUpPayload.fullName,
         payloadKeys: Object.keys(signUpPayload),
       })

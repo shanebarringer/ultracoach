@@ -316,13 +316,8 @@ UltraCoach - Conquer Your Mountain
       },
     },
 
-    // Hooks for debugging signup process
-    hooks: {
-      before: async _ctx => {
-        // Remove middleware hooks due to TypeScript compatibility issues
-        // Logging can be added back with proper Better Auth v2 types
-      },
-    },
+    // No hooks for now - will handle role mapping differently
+    hooks: {},
 
     plugins: [
       admin(), // Enable admin API for user management
