@@ -51,7 +51,7 @@ export default function AuthClient({ user }) {
 ### Backend Architecture
 
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
-- **Authentication**: Better Auth with custom fields (role, fullName), customSession plugin, and proper TypeScript inference
+- **Authentication**: Better Auth with custom fields (role, userType, fullName), customSession plugin, and proper TypeScript inference
 - **API**: Next.js API routes with RESTful design
 - **Real-time**: Supabase Realtime subscriptions
 - **File Storage**: Supabase Storage (future: workout photos, documents)
