@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
     //   ))
     // }
 
-    // Apply role filter if provided
+    // Apply role filter if provided - use userType for database queries
     if (roleParam && (roleParam === 'coach' || roleParam === 'runner')) {
-      conditions.push(eq(user.role, roleParam))
+      conditions.push(eq(user.userType, roleParam))
     }
 
     // Execute query with all conditions
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role,
+        role: user.userType, // Fix: use userType from database
         fullName: user.fullName,
         createdAt: user.createdAt,
       })

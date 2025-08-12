@@ -56,19 +56,19 @@ export async function getServerSession(): Promise<ServerSession | null> {
       return null
     }
 
-    // Runtime type validation with proper error handling for Better Auth user type
-    const userRole = (session.user as { role?: string }).role
+    // Better Auth session already includes transformed data from customSession plugin
+    // The customSession plugin maps userType → role, so we can use session.user.role directly
+    const userRole = (session.user as { role?: 'coach' | 'runner' }).role
 
-    // TEMPORARY DEBUG: Track role detection in production
-    logger.info('🔍 AUTH DEBUG ENHANCED:', {
+    // ENHANCED DEBUG: Track role detection from customSession plugin
+    logger.info('🔍 AUTH DEBUG - CustomSession Data:', {
       userId: session.user.id,
       email: session.user.email,
-      rawUserRole: userRole,
+      transformedRole: userRole,
       roleType: typeof userRole,
       isCoach: userRole === 'coach',
       isRunner: userRole === 'runner',
-      sessionUserData: JSON.stringify(session.user),
-      fullSessionData: JSON.stringify(session),
+      hasRole: !!userRole,
       timestamp: new Date().toISOString(),
       nodeEnv: process.env.NODE_ENV,
       deployment: process.env.VERCEL_URL ? 'vercel' : 'local',

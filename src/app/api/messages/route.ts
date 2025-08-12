@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         name: user.name,
         fullName: user.fullName,
-        role: user.role,
+        role: user.userType, // Fix: use userType from database
         createdAt: user.createdAt,
       })
       .from(user)
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
         .select({
           name: user.name,
           fullName: user.fullName,
-          role: user.role,
+          role: user.userType, // Fix: use userType from database
         })
         .from(user)
         .where(eq(user.id, sessionUser.id))

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           full_name: user.fullName,
-          role: user.role,
+          role: user.userType, // Fix: use userType from database, not role (which is hardcoded to 'user')
           created_at: user.createdAt,
         },
       })
