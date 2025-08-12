@@ -1,83 +1,108 @@
 import { relations } from 'drizzle-orm/relations'
 
 import {
-  account,
+  betterAuthAccounts,
+  betterAuthSessions,
+  betterAuthUsers,
+  coachRunners,
   conversations,
   messageWorkoutLinks,
   messages,
   notifications,
   planTemplates,
   races,
-  session,
   templatePhases,
   trainingPhases,
   trainingPlans,
-  user,
+  typingStatus,
+  userFeedback,
+  userOnboarding,
+  userSettings,
   workouts,
 } from './schema'
 
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
-    references: [user.id],
+export const betterAuthSessionsRelations = relations(betterAuthSessions, ({ one }) => ({
+  betterAuthUser: one(betterAuthUsers, {
+    fields: [betterAuthSessions.userId],
+    references: [betterAuthUsers.id],
   }),
 }))
 
-export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
+export const betterAuthUsersRelations = relations(betterAuthUsers, ({ many }) => ({
+  betterAuthSessions: many(betterAuthSessions),
   conversations_coachId: many(conversations, {
-    relationName: 'conversations_coachId_user_id',
+    relationName: 'conversations_coachId_betterAuthUsers_id',
   }),
   conversations_runnerId: many(conversations, {
-    relationName: 'conversations_runnerId_user_id',
+    relationName: 'conversations_runnerId_betterAuthUsers_id',
   }),
-  messages_recipientId: many(messages, {
-    relationName: 'messages_recipientId_user_id',
+  trainingPlans_coachId: many(trainingPlans, {
+    relationName: 'trainingPlans_coachId_betterAuthUsers_id',
+  }),
+  trainingPlans_runnerId: many(trainingPlans, {
+    relationName: 'trainingPlans_runnerId_betterAuthUsers_id',
   }),
   messages_senderId: many(messages, {
-    relationName: 'messages_senderId_user_id',
+    relationName: 'messages_senderId_betterAuthUsers_id',
+  }),
+  messages_recipientId: many(messages, {
+    relationName: 'messages_recipientId_betterAuthUsers_id',
   }),
   races: many(races),
   planTemplates: many(planTemplates),
-  trainingPlans_coachId: many(trainingPlans, {
-    relationName: 'trainingPlans_coachId_user_id',
-  }),
-  trainingPlans_runnerId: many(trainingPlans, {
-    relationName: 'trainingPlans_runnerId_user_id',
-  }),
   notifications: many(notifications),
-  accounts: many(account),
+  betterAuthAccounts: many(betterAuthAccounts),
+  coachRunners_coachId: many(coachRunners, {
+    relationName: 'coachRunners_coachId_betterAuthUsers_id',
+  }),
+  coachRunners_runnerId: many(coachRunners, {
+    relationName: 'coachRunners_runnerId_betterAuthUsers_id',
+  }),
+  typingStatuses_userId: many(typingStatus, {
+    relationName: 'typingStatus_userId_betterAuthUsers_id',
+  }),
+  typingStatuses_recipientId: many(typingStatus, {
+    relationName: 'typingStatus_recipientId_betterAuthUsers_id',
+  }),
+  userFeedbacks_userId: many(userFeedback, {
+    relationName: 'userFeedback_userId_betterAuthUsers_id',
+  }),
+  userFeedbacks_resolvedBy: many(userFeedback, {
+    relationName: 'userFeedback_resolvedBy_betterAuthUsers_id',
+  }),
+  userOnboardings: many(userOnboarding),
+  userSettings: many(userSettings),
 }))
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
-  user_coachId: one(user, {
-    fields: [conversations.coachId],
-    references: [user.id],
-    relationName: 'conversations_coachId_user_id',
-  }),
-  user_runnerId: one(user, {
-    fields: [conversations.runnerId],
-    references: [user.id],
-    relationName: 'conversations_runnerId_user_id',
-  }),
   trainingPlan: one(trainingPlans, {
     fields: [conversations.trainingPlanId],
     references: [trainingPlans.id],
+  }),
+  betterAuthUser_coachId: one(betterAuthUsers, {
+    fields: [conversations.coachId],
+    references: [betterAuthUsers.id],
+    relationName: 'conversations_coachId_betterAuthUsers_id',
+  }),
+  betterAuthUser_runnerId: one(betterAuthUsers, {
+    fields: [conversations.runnerId],
+    references: [betterAuthUsers.id],
+    relationName: 'conversations_runnerId_betterAuthUsers_id',
   }),
   messages: many(messages),
 }))
 
 export const trainingPlansRelations = relations(trainingPlans, ({ one, many }) => ({
   conversations: many(conversations),
-  user_coachId: one(user, {
+  betterAuthUser_coachId: one(betterAuthUsers, {
     fields: [trainingPlans.coachId],
-    references: [user.id],
-    relationName: 'trainingPlans_coachId_user_id',
+    references: [betterAuthUsers.id],
+    relationName: 'trainingPlans_coachId_betterAuthUsers_id',
   }),
-  user_runnerId: one(user, {
+  betterAuthUser_runnerId: one(betterAuthUsers, {
     fields: [trainingPlans.runnerId],
-    references: [user.id],
-    relationName: 'trainingPlans_runnerId_user_id',
+    references: [betterAuthUsers.id],
+    relationName: 'trainingPlans_runnerId_betterAuthUsers_id',
   }),
   workouts: many(workouts),
 }))
@@ -87,19 +112,19 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.conversationId],
     references: [conversations.id],
   }),
-  user_recipientId: one(user, {
-    fields: [messages.recipientId],
-    references: [user.id],
-    relationName: 'messages_recipientId_user_id',
-  }),
-  user_senderId: one(user, {
-    fields: [messages.senderId],
-    references: [user.id],
-    relationName: 'messages_senderId_user_id',
-  }),
   workout: one(workouts, {
     fields: [messages.workoutId],
     references: [workouts.id],
+  }),
+  betterAuthUser_senderId: one(betterAuthUsers, {
+    fields: [messages.senderId],
+    references: [betterAuthUsers.id],
+    relationName: 'messages_senderId_betterAuthUsers_id',
+  }),
+  betterAuthUser_recipientId: one(betterAuthUsers, {
+    fields: [messages.recipientId],
+    references: [betterAuthUsers.id],
+    relationName: 'messages_recipientId_betterAuthUsers_id',
   }),
   messageWorkoutLinks: many(messageWorkoutLinks),
 }))
@@ -114,9 +139,9 @@ export const workoutsRelations = relations(workouts, ({ one, many }) => ({
 }))
 
 export const racesRelations = relations(races, ({ one }) => ({
-  user: one(user, {
+  betterAuthUser: one(betterAuthUsers, {
     fields: [races.createdBy],
-    references: [user.id],
+    references: [betterAuthUsers.id],
   }),
 }))
 
@@ -137,23 +162,23 @@ export const trainingPhasesRelations = relations(trainingPhases, ({ many }) => (
 
 export const planTemplatesRelations = relations(planTemplates, ({ one, many }) => ({
   templatePhases: many(templatePhases),
-  user: one(user, {
+  betterAuthUser: one(betterAuthUsers, {
     fields: [planTemplates.createdBy],
-    references: [user.id],
+    references: [betterAuthUsers.id],
   }),
 }))
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
-  user: one(user, {
+  betterAuthUser: one(betterAuthUsers, {
     fields: [notifications.userId],
-    references: [user.id],
+    references: [betterAuthUsers.id],
   }),
 }))
 
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, {
-    fields: [account.userId],
-    references: [user.id],
+export const betterAuthAccountsRelations = relations(betterAuthAccounts, ({ one }) => ({
+  betterAuthUser: one(betterAuthUsers, {
+    fields: [betterAuthAccounts.userId],
+    references: [betterAuthUsers.id],
   }),
 }))
 
@@ -165,5 +190,58 @@ export const messageWorkoutLinksRelations = relations(messageWorkoutLinks, ({ on
   workout: one(workouts, {
     fields: [messageWorkoutLinks.workoutId],
     references: [workouts.id],
+  }),
+}))
+
+export const coachRunnersRelations = relations(coachRunners, ({ one }) => ({
+  betterAuthUser_coachId: one(betterAuthUsers, {
+    fields: [coachRunners.coachId],
+    references: [betterAuthUsers.id],
+    relationName: 'coachRunners_coachId_betterAuthUsers_id',
+  }),
+  betterAuthUser_runnerId: one(betterAuthUsers, {
+    fields: [coachRunners.runnerId],
+    references: [betterAuthUsers.id],
+    relationName: 'coachRunners_runnerId_betterAuthUsers_id',
+  }),
+}))
+
+export const typingStatusRelations = relations(typingStatus, ({ one }) => ({
+  betterAuthUser_userId: one(betterAuthUsers, {
+    fields: [typingStatus.userId],
+    references: [betterAuthUsers.id],
+    relationName: 'typingStatus_userId_betterAuthUsers_id',
+  }),
+  betterAuthUser_recipientId: one(betterAuthUsers, {
+    fields: [typingStatus.recipientId],
+    references: [betterAuthUsers.id],
+    relationName: 'typingStatus_recipientId_betterAuthUsers_id',
+  }),
+}))
+
+export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
+  betterAuthUser_userId: one(betterAuthUsers, {
+    fields: [userFeedback.userId],
+    references: [betterAuthUsers.id],
+    relationName: 'userFeedback_userId_betterAuthUsers_id',
+  }),
+  betterAuthUser_resolvedBy: one(betterAuthUsers, {
+    fields: [userFeedback.resolvedBy],
+    references: [betterAuthUsers.id],
+    relationName: 'userFeedback_resolvedBy_betterAuthUsers_id',
+  }),
+}))
+
+export const userOnboardingRelations = relations(userOnboarding, ({ one }) => ({
+  betterAuthUser: one(betterAuthUsers, {
+    fields: [userOnboarding.userId],
+    references: [betterAuthUsers.id],
+  }),
+}))
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  betterAuthUser: one(betterAuthUsers, {
+    fields: [userSettings.userId],
+    references: [betterAuthUsers.id],
   }),
 }))

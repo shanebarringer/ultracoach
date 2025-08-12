@@ -1,1 +1,1 @@
-ALTER TABLE "user" ADD COLUMN "notification_preferences" json;
+ALTER TABLE "better_auth_users" ADD COLUMN "notification_preferences" json;

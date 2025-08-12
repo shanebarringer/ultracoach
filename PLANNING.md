@@ -9,6 +9,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 ### Frontend Architecture
 
 - **Framework**: Next.js 15.3.5 with App Router
+- **Rendering**: Server/Client Component hybrid pattern for authenticated routes (forces dynamic rendering)
 - **Design System**: Mountain Peak Enhanced - Alpine aesthetic with professional UX patterns
 - **UI Library**: HeroUI with custom Mountain Peak theme
 - **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
@@ -16,6 +17,36 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **Authentication**: Better Auth with Drizzle adapter, custom session management, and role-based access
 - **Real-time**: Supabase Realtime for live updates
 - **TypeScript**: Full TypeScript with strict mode for type safety
+
+#### Server/Client Component Architecture (CRITICAL)
+
+**Problem Solved**: Routes like `/chat` were being marked as "static" causing personalized content issues and production deployment problems.
+
+**Solution**: Hybrid architecture pattern:
+
+```typescript
+// Server Component (page.tsx) - Forces dynamic rendering
+export default async function AuthPage() {
+  await headers()                           // Forces dynamic rendering
+  const session = await getServerSession() // Server-side authentication
+  if (!session) redirect('/auth/signin')   // Server-side redirects
+  return <AuthClient user={session.user} />
+}
+
+// Client Component (*Client.tsx) - Handles interactivity
+'use client'
+export default function AuthClient({ user }) {
+  // Client-side state management with Jotai
+  // Interactive features and real-time updates
+}
+```
+
+**Benefits**:
+
+- ✅ Proper dynamic rendering for personalized content
+- ✅ Server-side authentication and redirects
+- ✅ Consistent behavior between development and production
+- ✅ Optimal performance with hybrid static/dynamic approach
 
 ### Backend Architecture
 
@@ -371,15 +402,15 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-### Current Development Status (Updated 2025-08-07)
+### Current Development Status (Updated 2025-08-12)
 
-- **Project Progress**: Core platform complete with unified coach-runner experience ✅ **MVP READY**
-- **Active Milestone**: System Polish & Production Readiness
-- **Recent Completions**: Runner dashboard enhancement with advanced metrics, completion tracking, and coach messaging integration
-- **Major Achievement**: Complete feature parity between coach and runner experiences - professional analytics, progress tracking, and seamless workflow integration
-- **Current Focus**: Testing infrastructure, quality assurance, and user experience refinement
-- **Next Phase**: Design system evolution followed by advanced feature integrations (Strava, analytics)
-- **Technical Health**: Zero TypeScript errors, zero ESLint warnings, production-ready authentication, comprehensive state management
+- **Project Progress**: Core platform complete with production-ready authentication ✅ **PRODUCTION READY**
+- **Active Milestone**: System Polish & Production Readiness - Phase A2 (Code Quality)
+- **Recent Completions**: Production authentication 500 error resolution, Better Auth configuration optimization for Vercel deployment
+- **Major Achievement**: Complete production deployment stability with proper environment-specific URL resolution and comprehensive error handling
+- **Current Focus**: Code quality improvements based on review feedback, type safety enhancements, script consolidation
+- **Next Phase**: Static-to-dynamic route conversions, comprehensive testing infrastructure, then design system evolution
+- **Technical Health**: Zero TypeScript errors, zero ESLint warnings, production-ready authentication with Vercel compatibility, comprehensive state management
 
 ### 📋 Development Roadmap (2025)
 

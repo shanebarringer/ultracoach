@@ -9,13 +9,13 @@ test.describe('Manual Authentication Test', () => {
     await page.waitForLoadState('networkidle')
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
-    console.log('🧪 Testing login with testrunner@ultracoach.dev')
+    console.log('🧪 Testing login with alex.rivera@ultracoach.dev')
 
     // Fill email
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
 
     // Fill password
-    await page.fill('input[type="password"]', 'TestRunner123!')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
 
     // Submit form and wait for navigation
     await Promise.all([
@@ -40,13 +40,13 @@ test.describe('Manual Authentication Test', () => {
     await page.waitForLoadState('networkidle')
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
-    console.log('🧪 Testing login with testcoach@ultracoach.dev')
+    console.log('🧪 Testing login with sarah@ultracoach.dev')
 
     // Fill email
-    await page.fill('input[type="email"]', 'testcoach@ultracoach.dev')
+    await page.fill('input[type="email"]', 'sarah@ultracoach.dev')
 
     // Fill password
-    await page.fill('input[type="password"]', 'TestCoach123!')
+    await page.fill('input[type="password"]', 'UltraCoach2025!')
 
     // Submit form and wait for navigation
     await Promise.all([

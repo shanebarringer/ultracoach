@@ -97,12 +97,24 @@ export function useBetterAuth() {
     try {
       setAuthState(prev => ({ ...prev, loading: true, error: null }))
 
-      // First, sign up the user
-      const { data, error } = await authClient.signUp.email({
+      // Sign up the user with userType field for Better Auth database storage
+      const signUpPayload = {
         email,
         password,
         name,
+        userType: role || 'runner', // Map role to userType for database storage
+        fullName: name, // Also set fullName
+      }
+
+      logger.info('Sending signup request to Better Auth:', {
+        email: signUpPayload.email,
+        name: signUpPayload.name,
+        userType: signUpPayload.userType,
+        fullName: signUpPayload.fullName,
+        payloadKeys: Object.keys(signUpPayload),
       })
+
+      const { data, error } = await authClient.signUp.email(signUpPayload)
 
       if (error) {
         setAuthState(prev => ({
@@ -115,27 +127,7 @@ export function useBetterAuth() {
         return { success: false, error: error.message }
       }
 
-      // Update the user's role via API call if specified and different from default
-      if (role && role !== 'runner' && data.user) {
-        try {
-          const response = await fetch('/api/user/role', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ role }),
-          })
-
-          if (!response.ok) {
-            logger.warn('Failed to set user role:', await response.text())
-          }
-        } catch (roleError) {
-          logger.warn('Failed to set user role:', roleError)
-          // Don't fail the signup, just log the warning
-        }
-      }
-
-      // For sign up, get the session after authentication to get updated user data
+      // Get the session after authentication to get updated user data
       const sessionResult = await authClient.getSession()
       setAuthState({
         user: data.user as User,

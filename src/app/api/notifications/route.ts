@@ -1,8 +1,11 @@
+import { and, desc, eq, inArray } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
+import { notifications as notificationsTable } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
 
 const logger = createLogger('notifications-api')
 
@@ -13,30 +16,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const { searchParams } = new URL(request.url)
-    const limit = searchParams.get('limit') || '50'
+    const limitParam = parseInt(searchParams.get('limit') || '50', 10)
+    const limit = Number.isFinite(limitParam) ? Math.max(1, Math.min(200, limitParam)) : 50
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
-    let query = supabaseAdmin
-      .from('notifications')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-    if (unreadOnly) {
-      query = query.eq('read', false)
-    }
-    const { data: notifications, error } = await query
-    if (error) {
-      logger.error('Failed to fetch notifications', error)
-      return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
-    }
 
-    // Calculate unread count from the fetched notifications
-    const unreadCount = (notifications || []).filter(n => !n.read).length
+    const where = unreadOnly
+      ? and(eq(notificationsTable.user_id, session.user.id), eq(notificationsTable.read, false))
+      : eq(notificationsTable.user_id, session.user.id)
+
+    const rows = await db
+      .select()
+      .from(notificationsTable)
+      .where(where)
+      .orderBy(desc(notificationsTable.created_at))
+      .limit(limit)
+
+    const unreadCount = rows.filter(n => !n.read).length
 
     return NextResponse.json({
-      notifications: notifications || [],
+      notifications: rows,
       unreadCount,
-      total: notifications?.length || 0,
+      total: rows.length,
     })
   } catch (error) {
     logger.error('API error in GET /notifications', error)
@@ -59,24 +59,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    // Create notification
-    const { data: notification, error } = await supabaseAdmin
-      .from('notifications')
-      .insert([
-        {
-          user_id: userId,
-          title,
-          message,
-          type: type || 'message',
-        },
-      ])
-      .select()
-      .single()
-    if (error) {
-      logger.error('Failed to create notification', error)
-      return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
-    }
-    return NextResponse.json({ notification }, { status: 201 })
+
+    const [inserted] = await db
+      .insert(notificationsTable)
+      .values({
+        user_id: userId,
+        title,
+        message,
+        type: type || 'message',
+      })
+      .returning()
+
+    return NextResponse.json({ notification: inserted }, { status: 201 })
   } catch (error) {
     logger.error('API error in POST /notifications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -93,24 +87,28 @@ export async function PATCH(request: NextRequest) {
 
     const { notificationIds, read } = await request.json()
 
-    if (!Array.isArray(notificationIds)) {
+    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
       return NextResponse.json(
         {
-          error: 'Notification IDs must be an array',
+          error: 'Notification IDs must be a non-empty array',
         },
         { status: 400 }
       )
     }
 
-    // Update notifications (only user's own notifications)
-    const { error } = await supabaseAdmin
-      .from('notifications')
-      .update({ read: read !== false }) // Default to true if not specified
-      .in('id', notificationIds)
-      .eq('user_id', session.user.id)
+    const res = await db
+      .update(notificationsTable)
+      .set({ read: read !== false })
+      .where(
+        and(
+          inArray(notificationsTable.id, notificationIds),
+          eq(notificationsTable.user_id, session.user.id)
+        )
+      )
+      .returning({ id: notificationsTable.id })
 
-    if (error) {
-      logger.error('Failed to update notifications', error)
+    if (!res) {
+      logger.error('Failed to update notifications')
       return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 })
     }
 

@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    // Only runners can browse for coaches
-    if (sessionUser.role !== 'runner') {
+    // Only runners can browse for coaches - use transformed session data
+    if ((sessionUser as User & { role?: 'coach' | 'runner' }).role !== 'runner') {
       return NextResponse.json({ error: 'Only runners can browse for coaches' }, { status: 403 })
     }
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       .from(user)
       .where(
         and(
-          eq(user.role, 'coach'),
+          eq(user.userType, 'coach'),
           notExists(
             db
               .select()

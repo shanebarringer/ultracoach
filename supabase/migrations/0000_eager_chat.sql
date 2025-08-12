@@ -1,6 +1,6 @@
 -- Current sql file was generated after introspecting the database
 -- Migration uncommented and ready for execution
-CREATE TABLE "session" (
+CREATE TABLE "better_auth_sessions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp NOT NULL,
 	"token" text NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE "session" (
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "verification" (
+CREATE TABLE "better_auth_verification_tokens" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
-CREATE TABLE "user" (
+CREATE TABLE "better_auth_users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
@@ -124,6 +124,8 @@ CREATE TABLE "training_plans" (
 	"runner_id" text NOT NULL,
 	"target_race_date" timestamp,
 	"target_race_distance" text,
+	"plan_type" text,
+	"goal_type" text,
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now()
 );
@@ -138,7 +140,7 @@ CREATE TABLE "notifications" (
 	"created_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "account" (
+CREATE TABLE "better_auth_accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
@@ -165,6 +167,8 @@ CREATE TABLE "message_workout_links" (
 CREATE TABLE "workouts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"training_plan_id" uuid NOT NULL,
+	"user_id" text NOT NULL,
+	"title" text NOT NULL,
 	"date" timestamp NOT NULL,
 	"planned_distance" numeric(5, 2),
 	"planned_duration" integer,
@@ -180,22 +184,22 @@ CREATE TABLE "workouts" (
 	"updated_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "conversations" ADD CONSTRAINT "conversations_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "conversations" ADD CONSTRAINT "conversations_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "better_auth_sessions" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_training_plan_id_training_plans_id_fk" FOREIGN KEY ("training_plan_id") REFERENCES "public"."training_plans"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "messages" ADD CONSTRAINT "messages_recipient_id_user_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_user_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_recipient_id_user_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_user_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_workout_id_workouts_id_fk" FOREIGN KEY ("workout_id") REFERENCES "public"."workouts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "races" ADD CONSTRAINT "races_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "races" ADD CONSTRAINT "races_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."better_auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "template_phases" ADD CONSTRAINT "template_phases_phase_id_training_phases_id_fk" FOREIGN KEY ("phase_id") REFERENCES "public"."training_phases"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "template_phases" ADD CONSTRAINT "template_phases_template_id_plan_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."plan_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "plan_templates" ADD CONSTRAINT "plan_templates_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "training_plans" ADD CONSTRAINT "training_plans_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "training_plans" ADD CONSTRAINT "training_plans_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "plan_templates" ADD CONSTRAINT "plan_templates_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."better_auth_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "training_plans" ADD CONSTRAINT "training_plans_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "training_plans" ADD CONSTRAINT "training_plans_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "better_auth_accounts" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "message_workout_links" ADD CONSTRAINT "message_workout_links_message_id_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."messages"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "message_workout_links" ADD CONSTRAINT "message_workout_links_workout_id_workouts_id_fk" FOREIGN KEY ("workout_id") REFERENCES "public"."workouts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workouts" ADD CONSTRAINT "workouts_training_plan_id_training_plans_id_fk" FOREIGN KEY ("training_plan_id") REFERENCES "public"."training_plans"("id") ON DELETE cascade ON UPDATE no action;

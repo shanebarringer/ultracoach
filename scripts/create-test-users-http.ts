@@ -2,6 +2,12 @@
 /**
  * HTTP-based Test User Creation Script
  *
+ * ⚠️  DEPRECATED: This script uses the old /api/user/role endpoint which has been removed.
+ *
+ * Use instead:
+ * - scripts/create-test-users-better-auth-api.ts (for API-based user creation)
+ * - scripts/create-test-users-automated.ts (for browser automation)
+ *
  * This script creates test users by making direct HTTP requests to the Better Auth API
  */
 import axios from 'axios'

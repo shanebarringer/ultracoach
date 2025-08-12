@@ -8,7 +8,7 @@ DECLARE
     default_coach_id TEXT;
 BEGIN
     -- Try to find an existing coach, or use a placeholder
-    SELECT id INTO default_coach_id FROM better_auth_users WHERE role = 'coach' LIMIT 1;
+    SELECT id INTO default_coach_id FROM better_auth_users WHERE user_type = 'coach' LIMIT 1;
     
     -- If no coach exists, we'll just use a NULL created_by for public templates
     IF default_coach_id IS NULL THEN

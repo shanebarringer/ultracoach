@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
 import classNames from 'classnames'
+import { useAtom } from 'jotai'
 import {
   ActivityIcon,
   ArrowDownIcon,
@@ -21,10 +22,13 @@ import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
 
+import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
+import { uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
+import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('RunnerDashboard')
 
@@ -193,6 +197,42 @@ function RunnerDashboard() {
   const { trainingPlans, upcomingWorkouts, loading, relationships, recentWorkouts } =
     useDashboardData()
 
+  // Jotai atoms for UI state
+  const [uiState, setUiState] = useAtom(uiStateAtom)
+
+  // Workout action handlers
+  const handleMarkComplete = (workout: Workout) => {
+    setUiState(prev => ({
+      ...prev,
+      selectedWorkout: workout,
+      defaultToComplete: true,
+      showLogWorkout: true,
+    }))
+  }
+
+  const handleLogDetails = (workout: Workout) => {
+    setUiState(prev => ({
+      ...prev,
+      selectedWorkout: workout,
+      defaultToComplete: false,
+      showLogWorkout: true,
+    }))
+  }
+
+  const handleWorkoutModalClose = () => {
+    setUiState(prev => ({
+      ...prev,
+      showLogWorkout: false,
+      selectedWorkout: null,
+      defaultToComplete: false,
+    }))
+  }
+
+  const handleWorkoutSuccess = () => {
+    handleWorkoutModalClose()
+    // The dashboard data should refresh automatically via Jotai atoms
+  }
+
   // Memoize expensive computations and add logging
   const dashboardMetrics = useMemo(() => {
     const today = new Date()
@@ -339,63 +379,55 @@ function RunnerDashboard() {
             ) : (
               <div className="space-y-3">
                 {relationships
-                  .filter(
-                    (rel: { other_party: { role: string } }) => rel.other_party.role === 'coach'
-                  )
-                  .map(
-                    (relationship: {
-                      id: string
-                      status: string
-                      other_party: { id: string; full_name?: string; name: string; email: string }
-                    }) => (
-                      <Card
-                        key={relationship.id}
-                        className="border border-divider hover:shadow-md transition-shadow"
-                      >
-                        <CardBody className="p-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
-                              {(relationship.other_party.full_name || 'C').charAt(0)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-foreground">
-                                  {relationship.other_party.full_name}
-                                </h3>
-                                <Chip
-                                  size="sm"
-                                  color={relationship.status === 'active' ? 'success' : 'warning'}
-                                  variant="flat"
-                                  className="capitalize"
-                                >
-                                  {relationship.status}
-                                </Chip>
-                              </div>
-                              <p className="text-sm text-foreground-600">
-                                {relationship.other_party.email}
-                              </p>
-                            </div>
+                  .filter((rel: RelationshipData) => rel.other_party.role === 'coach')
+                  .map((relationship: RelationshipData) => (
+                    <Card
+                      key={relationship.id}
+                      className="border border-divider hover:shadow-md transition-shadow"
+                    >
+                      <CardBody className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
+                            {(relationship.other_party.full_name || 'C').charAt(0)}
                           </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="flat" color="primary" className="flex-1">
-                              View Profile
-                            </Button>
-                            <Button
-                              as={Link}
-                              href={`/messages?user=${relationship.other_party.id}`}
-                              size="sm"
-                              variant="flat"
-                              color="success"
-                              className="flex-1"
-                              startContent={<MessageSquareIcon className="w-4 h-4" />}
-                            >
-                              Message
-                            </Button>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">
+                                {relationship.other_party.full_name}
+                              </h3>
+                              <Chip
+                                size="sm"
+                                color={relationship.status === 'active' ? 'success' : 'warning'}
+                                variant="flat"
+                                className="capitalize"
+                              >
+                                {relationship.status}
+                              </Chip>
+                            </div>
+                            <p className="text-sm text-foreground-600">
+                              {relationship.other_party.email}
+                            </p>
                           </div>
-                        </CardBody>
-                      </Card>
-                    )
-                  )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="flat" color="primary" className="flex-1">
+                            View Profile
+                          </Button>
+                          <Button
+                            as={Link}
+                            href={`/chat/${relationship.other_party.id}`}
+                            size="sm"
+                            variant="flat"
+                            color="success"
+                            className="flex-1"
+                            startContent={<MessageSquareIcon className="w-4 h-4" />}
+                          >
+                            Message
+                          </Button>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
               </div>
             )}
           </CardBody>
@@ -542,10 +574,16 @@ function RunnerDashboard() {
                               color="success"
                               className="flex-1"
                               startContent={<CheckCircleIcon className="w-4 h-4" />}
+                              onClick={() => handleMarkComplete(workout)}
                             >
                               Mark Complete
                             </Button>
-                            <Button size="sm" variant="bordered" className="flex-1">
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              className="flex-1"
+                              onClick={() => handleLogDetails(workout)}
+                            >
                               Log Details
                             </Button>
                           </div>
@@ -559,6 +597,17 @@ function RunnerDashboard() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Workout Log Modal */}
+      {uiState.selectedWorkout && (
+        <WorkoutLogModal
+          isOpen={uiState.showLogWorkout}
+          onClose={handleWorkoutModalClose}
+          onSuccess={handleWorkoutSuccess}
+          workout={uiState.selectedWorkout}
+          defaultToComplete={uiState.defaultToComplete}
+        />
+      )}
     </div>
   )
 }

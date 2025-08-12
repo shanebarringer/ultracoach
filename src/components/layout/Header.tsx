@@ -72,7 +72,7 @@ function Header() {
 
     const baseItems = [
       {
-        href: session.user.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner',
+        href: '/dashboard',
         label: 'Dashboard',
       },
       { href: '/relationships', label: 'Relationships' },
@@ -177,7 +177,9 @@ function Header() {
                   <DropdownItem key="profile" as={Link} href="/profile">
                     Profile
                   </DropdownItem>
-                  <DropdownItem key="settings">Settings</DropdownItem>
+                  <DropdownItem key="settings" as={Link} href="/settings">
+                    Settings
+                  </DropdownItem>
                   <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
                     Sign Out
                   </DropdownItem>

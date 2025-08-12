@@ -104,13 +104,8 @@ export default function SignUp() {
 
   const handleOnboardingComplete = () => {
     logger.info('Onboarding completed, redirecting to dashboard')
-    // Redirect based on user role - get role from form data since we just signed up
-    const userRole = formState.role || 'runner'
-    if (userRole === 'coach') {
-      router.push('/dashboard/coach')
-    } else {
-      router.push('/dashboard/runner')
-    }
+    // Redirect to dashboard which will handle role-based routing
+    router.push('/dashboard')
   }
 
   const handleOnboardingClose = () => {

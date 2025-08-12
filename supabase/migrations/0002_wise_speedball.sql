@@ -6,5 +6,5 @@ CREATE TABLE "typing_status" (
 	"last_updated" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "typing_status" ADD CONSTRAINT "typing_status_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "typing_status" ADD CONSTRAINT "typing_status_recipient_id_user_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "typing_status" ADD CONSTRAINT "typing_status_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "typing_status" ADD CONSTRAINT "typing_status_recipient_id_user_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;

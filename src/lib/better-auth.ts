@@ -51,23 +51,29 @@ function getBetterAuthBaseUrl(): string {
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ? '[SET]' : 'undefined',
   })
 
-  // Vercel best practice: Use VERCEL_URL in production (automatically set by Vercel)
+  // Priority 1: Use VERCEL_URL in production (automatically set by Vercel)
   if (process.env.VERCEL_URL) {
     const url = `https://${process.env.VERCEL_URL}/api/auth`
     logger.info('Using VERCEL_URL for baseURL:', url)
     return url
   }
 
-  // Alternative: Use explicit BETTER_AUTH_URL if provided (takes precedence)
+  // Priority 2: Use explicit BETTER_AUTH_URL if provided and not localhost in production
   if (process.env.BETTER_AUTH_URL) {
     const url = process.env.BETTER_AUTH_URL
-    // Use endsWith for more accurate detection of /api/auth path
-    const finalUrl = url.endsWith('/api/auth') ? url : `${url}/api/auth`
-    logger.info('Using BETTER_AUTH_URL for baseURL:', finalUrl)
-    return finalUrl
+
+    // Skip localhost URLs in production environment
+    if (process.env.NODE_ENV === 'production' && url.includes('localhost')) {
+      logger.warn('Skipping localhost BETTER_AUTH_URL in production:', url)
+    } else {
+      // Use endsWith for more accurate detection of /api/auth path
+      const finalUrl = url.endsWith('/api/auth') ? url : `${url}/api/auth`
+      logger.info('Using BETTER_AUTH_URL for baseURL:', finalUrl)
+      return finalUrl
+    }
   }
 
-  // Development fallback
+  // Priority 3: Development fallback
   const fallback = 'http://localhost:3001/api/auth'
   logger.info('Using fallback baseURL:', fallback)
   return fallback
@@ -123,25 +129,21 @@ function getTrustedOrigins(): string[] {
 const apiBaseUrl = getBetterAuthBaseUrl()
 const trustedOrigins = getTrustedOrigins()
 
-logger.info('Initializing Better Auth with configuration:', {
+// Initialize Better Auth with proper error handling
+logger.info('Better Auth initialization details:', {
   baseURL: apiBaseUrl,
+  hasSecret: !!betterAuthSecret,
+  secretLength: betterAuthSecret.length,
+  nodeEnv: process.env.NODE_ENV,
+  vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
   trustedOriginsCount: trustedOrigins.length,
-  environment: process.env.NODE_ENV,
+  adapterProvider: 'pg',
+  drizzleSchemaCount: 4,
 })
 
 let auth: ReturnType<typeof betterAuth>
-try {
-  logger.info('Better Auth initialization details:', {
-    baseURL: apiBaseUrl,
-    hasSecret: !!betterAuthSecret,
-    secretLength: betterAuthSecret.length,
-    nodeEnv: process.env.NODE_ENV,
-    vercelUrl: process.env.VERCEL_URL ? '[SET]' : 'undefined',
-    trustedOriginsCount: trustedOrigins.length,
-    adapterProvider: 'pg',
-    drizzleSchemaCount: 4,
-  })
 
+try {
   auth = betterAuth({
     database: drizzleAdapter(db, {
       provider: 'pg',
@@ -215,11 +217,11 @@ try {
         
         <div class="content">
             <h2 style="color: #1e293b; margin-bottom: 20px;">Reset Your Password</h2>
-            <p>Hi ${user.name || 'there'},</p>
+            <p>Hi \${user.name || 'there'},</p>
             <p>We received a request to reset your UltraCoach password. Click the button below to set a new password:</p>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${url}" class="btn">Reset My Password</a>
+                <a href="\${url}" class="btn">Reset My Password</a>
             </div>
             
             <div class="security-note">
@@ -233,7 +235,7 @@ try {
             
             <p style="margin-top: 30px; color: #64748b; font-size: 14px;">
                 If the button doesn't work, copy and paste this link into your browser:<br>
-                <a href="${url}" style="color: #3b82f6; word-break: break-all;">${url}</a>
+                <a href="\${url}" style="color: #3b82f6; word-break: break-all;">\${url}</a>
             </p>
         </div>
         
@@ -249,12 +251,12 @@ try {
         const textTemplate = `
 🏔️ UltraCoach - Password Reset
 
-Hi ${user.name || 'there'},
+Hi \${user.name || 'there'},
 
 We received a request to reset your UltraCoach password.
 
 Click this link to reset your password:
-${url}
+\${url}
 
 ⚠️ SECURITY NOTICE:
 - This link will expire in 1 hour
@@ -301,10 +303,9 @@ UltraCoach - Conquer Your Mountain
 
     user: {
       additionalFields: {
-        role: {
+        userType: {
           type: 'string',
-          required: true,
-          defaultValue: 'runner',
+          required: false,
           input: true,
           output: true,
         },
@@ -317,15 +318,23 @@ UltraCoach - Conquer Your Mountain
       },
     },
 
+    // No hooks for now - will handle role mapping differently
+    hooks: {},
+
     plugins: [
       admin(), // Enable admin API for user management
       customSession(async ({ user, session }) => {
         // Ensure role is properly typed and available
-        const typedUser = user as typeof user & { role?: string; fullName?: string }
+        const typedUser = user as typeof user & { userType?: string; fullName?: string }
+        logger.info('Custom session transformation:', {
+          originalUserType: typedUser.userType,
+          transformedRole: (typedUser.userType as 'runner' | 'coach') || 'runner',
+          fullName: typedUser.fullName,
+        })
         return {
           user: {
             ...user,
-            role: (typedUser.role as 'runner' | 'coach') || 'runner',
+            role: (typedUser.userType as 'runner' | 'coach') || 'runner', // Map userType to role for app compatibility
             fullName: typedUser.fullName || null,
           },
           session,

@@ -12,5 +12,5 @@ CREATE TABLE "coach_runners" (
 	CONSTRAINT "coach_runners_coach_id_runner_id_unique" UNIQUE("coach_id","runner_id")
 );
 --> statement-breakpoint
-ALTER TABLE "coach_runners" ADD CONSTRAINT "coach_runners_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "coach_runners" ADD CONSTRAINT "coach_runners_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "coach_runners" ADD CONSTRAINT "coach_runners_coach_id_user_id_fk" FOREIGN KEY ("coach_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "coach_runners" ADD CONSTRAINT "coach_runners_runner_id_user_id_fk" FOREIGN KEY ("runner_id") REFERENCES "public"."better_auth_users"("id") ON DELETE cascade ON UPDATE no action;

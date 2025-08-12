@@ -12,10 +12,74 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
 6. Always use tslog library and utilities for logging (no console.log)
+7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
 ### MCP Instructions
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
+
+## 🎯 Next.js 15 App Router Patterns (CRITICAL)
+
+### Static vs Dynamic Rendering Rules
+
+**CRITICAL ISSUE**: Routes like `/chat` are being marked as "static" when they should be dynamic for personalized content, causing:
+
+- Signup hanging on "Loading your onboarding..."
+- User-specific content not loading correctly
+- Production vs local environment inconsistencies
+
+### Required Architecture Pattern
+
+**ALL authenticated routes MUST use Server/Client Component hybrid pattern:**
+
+```typescript
+// page.tsx (Server Component) - Forces dynamic rendering
+import { headers } from 'next/headers'
+import { getServerSession } from '@/utils/auth-server'
+import { redirect } from 'next/navigation'
+import PageClient from './PageClient'
+
+export default async function AuthenticatedPage() {
+  await headers() // 🔑 CRITICAL: Forces dynamic rendering
+
+  const session = await getServerSession()
+  if (!session) redirect('/auth/signin')
+
+  return <PageClient user={session.user} />
+}
+
+// PageClient.tsx (Client Component) - Handles interactivity
+'use client'
+
+export default function PageClient({ user }) {
+  // Client-side state management and interactivity
+}
+```
+
+### Routes That MUST Be Dynamic
+
+- `/chat` and `/chat/[userId]` - User conversations
+- `/dashboard/coach` and `/dashboard/runner` - Role-based dashboards
+- `/calendar` - User workout calendar
+- `/workouts` - Personal workouts
+- `/training-plans` - User training plans
+- `/profile` - User profile
+
+### Implementation Checklist
+
+- [ ] Add `await headers()` to ALL authenticated page components
+- [ ] Convert pure Client Components to Server/Client hybrid pattern
+- [ ] Use `getServerSession()` for server-side authentication
+- [ ] Pass user data as props to Client Components
+- [ ] Test that build output shows "λ (Server)" not "○ (Static)"
+
+### Reference Documentation
+
+See `.context7-docs/nextjs/` for comprehensive guides:
+
+- `static-vs-dynamic-rendering.md` - Core concepts and solutions
+- `authentication-route-patterns.md` - Authentication implementation patterns
+- `production-deployment-checklist.md` - Production verification checklist
 
 ## 🗄️ Database Connection (IMPORTANT)
 
@@ -40,6 +104,12 @@ pnpm db:studio      # Open Drizzle Studio
 pnpm db:seed        # Seed database with test data
 pnpm db:fresh       # Reset and seed database
 ```
+
+## Git Commit Strategy:
+
+- Commit early and commit often
+- **ALWAYS** Run `pnpm lint` before adding and committing
+- **ALWAYS** Run `pnpm format` before adding and committing
 
 ### Database Philosophy:
 
@@ -81,16 +151,17 @@ pnpm db:fresh       # Reset and seed database
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-08-07)
+### Current Status (Updated: 2025-08-12)
 
-- **Current Focus**: System Polish & Production Readiness - testing infrastructure and user experience enhancement
+- **Current Focus**: Production Readiness & Critical Bug Fixes - authentication system stability and code quality improvements
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
 - **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
 - **State Management**: Advanced Jotai patterns implemented - atomFamily, loadable, unwrap, splitAtom for granular performance
 - **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
-- **Authentication**: Better Auth with critical password hash compatibility requirement (see Auth section below)
-- **Next Phase**: Playwright test fixes, workout completion functionality, and comprehensive quality assurance
+- **Authentication**: Better Auth configuration optimized for production deployment with proper URL resolution and error handling
+- **Recent Fixes**: Production authentication 500 error resolution, Better Auth URL configuration fixes, comprehensive production testing infrastructure
+- **Next Phase**: Type safety improvements, script consolidation, and static-to-dynamic route conversion
 
 ## 🏗️ Architecture & Technology
 
@@ -113,6 +184,12 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
+- **Production Authentication Fixes (2025-08-12)**: ✅ **COMPLETED** - Critical production stability improvements
+  - **Better Auth URL Resolution**: Fixed VERCEL_URL prioritization for production deployments
+  - **Configuration Optimization**: Enhanced URL parsing logic that skips localhost in production environment
+  - **Error Handling**: Improved Better Auth initialization with comprehensive error logging and diagnostics
+  - **Production Testing**: Created diagnostic scripts for validating production authentication endpoints
+  - **Root Cause**: Resolved 500 errors caused by localhost BETTER_AUTH_URL conflicts in production environment
 - **Runner Experience Enhancement (2025-08-07)**: ✅ **COMPLETED** - Complete feature parity achieved
   - **Advanced Dashboard**: MetricCard components with trend indicators and professional analytics
   - **Progress Tracking**: Completion rates, weekly distance, recent activity metrics with visual indicators
@@ -123,7 +200,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
   - **Phase 2**: splitAtom performance optimizations with granular component re-rendering
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
 - **Code Quality**: Zero TypeScript errors, zero ESLint warnings, production-ready codebase
-- **Current Priorities**: Playwright test suite repair, workout completion functionality implementation, comprehensive quality assurance
+- **Current Priorities**: Type safety improvements, script consolidation, static-to-dynamic route conversions
 
 ---
 
@@ -162,3 +239,7 @@ const userRole = (sessionData.user as any).role || 'runner'
 ---
 
 _This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._
+
+- @CLAUDE.md @TASKS.md @PLANNING.md
+
+- @CLAUDE.md
