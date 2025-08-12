@@ -223,7 +223,7 @@ async function createUsers() {
           name: coach.name,
           email: coach.email,
           emailVerified: false,
-          role: 'coach',
+          userType: 'coach', // Fix: Better Auth hardcodes role='user', use userType instead
           fullName: coach.fullName,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -265,7 +265,7 @@ async function createUsers() {
           name: runner.name,
           email: runner.email,
           emailVerified: false,
-          role: 'runner',
+          userType: 'runner', // Fix: Better Auth hardcodes role='user', use userType instead
           fullName: runner.fullName,
           createdAt: new Date(),
           updatedAt: new Date(),
