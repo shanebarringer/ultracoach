@@ -12,6 +12,27 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthServer')
 
+// Type definitions for Better Auth session data
+interface BetterAuthUser {
+  id: string
+  email: string
+  name: string | null
+  role?: 'coach' | 'runner'
+  userType?: string
+  fullName?: string | null
+}
+
+interface BetterAuthSession {
+  user: BetterAuthUser
+  session: {
+    id: string
+    token: string
+    expiresAt: string
+    createdAt: string
+    updatedAt: string
+  }
+}
+
 export interface ServerSession {
   user: {
     id: string
@@ -19,6 +40,22 @@ export interface ServerSession {
     name: string | null
     role: 'coach' | 'runner'
   }
+}
+
+// Type guard to ensure user has proper role
+function isValidUserRole(role: unknown): role is 'coach' | 'runner' {
+  return typeof role === 'string' && (role === 'coach' || role === 'runner')
+}
+
+// Type guard for Better Auth session
+function isBetterAuthSession(session: unknown): session is BetterAuthSession {
+  if (typeof session !== 'object' || session === null) {
+    return false
+  }
+
+  const sessionObj = session as Record<string, unknown>
+
+  return 'user' in sessionObj && typeof sessionObj.user === 'object' && sessionObj.user !== null
 }
 
 /**
@@ -47,43 +84,56 @@ export async function getServerSession(): Promise<ServerSession | null> {
     })
 
     // Better Auth server-side session retrieval
-    const session = await auth.api.getSession({
+    const rawSession = await auth.api.getSession({
       headers: headersList,
     })
 
-    if (!session?.user) {
+    if (!rawSession?.user) {
       logger.info('No active session found')
       return null
     }
 
-    // Better Auth session already includes transformed data from customSession plugin
-    // The customSession plugin maps userType → role, so we can use session.user.role directly
-    const userRole = (session.user as { role?: 'coach' | 'runner' }).role
+    // Type-safe session handling with proper validation
+    if (!isBetterAuthSession(rawSession)) {
+      logger.error('Invalid session structure returned from Better Auth')
+      return null
+    }
 
-    // ENHANCED DEBUG: Track role detection from customSession plugin
-    logger.info('🔍 AUTH DEBUG - CustomSession Data:', {
-      userId: session.user.id,
-      email: session.user.email,
-      transformedRole: userRole,
+    const { user } = rawSession
+
+    // Extract role using type-safe approach
+    // Priority 1: Use 'role' field from customSession plugin transformation
+    // Priority 2: Fall back to 'userType' field if role not present
+    const roleCandidate = user.role || user.userType
+    const userRole = isValidUserRole(roleCandidate) ? roleCandidate : 'runner'
+
+    // ENHANCED DEBUG: Track role detection with type safety
+    logger.info('🔍 AUTH DEBUG - Type-Safe Session Data:', {
+      userId: user.id,
+      email: user.email,
+      rawRole: user.role,
+      rawUserType: user.userType,
+      resolvedRole: userRole,
       roleType: typeof userRole,
-      isCoach: userRole === 'coach',
-      isRunner: userRole === 'runner',
-      hasRole: !!userRole,
+      isValidRole: isValidUserRole(roleCandidate),
       timestamp: new Date().toISOString(),
       nodeEnv: process.env.NODE_ENV,
       deployment: process.env.VERCEL_URL ? 'vercel' : 'local',
     })
 
-    if (userRole && !['coach', 'runner'].includes(userRole)) {
-      logger.warn('Invalid user role detected, defaulting to runner', { role: userRole })
+    if (roleCandidate && !isValidUserRole(roleCandidate)) {
+      logger.warn('Invalid role detected, defaulting to runner', {
+        invalidRole: roleCandidate,
+        resolvedRole: userRole,
+      })
     }
 
     const serverSession: ServerSession = {
       user: {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name || null,
-        role: userRole === 'coach' || userRole === 'runner' ? userRole : 'runner',
+        id: user.id,
+        email: user.email,
+        name: user.name || null,
+        role: userRole,
       },
     }
 
