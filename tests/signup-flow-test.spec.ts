@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 
 test.describe('Signup Flow Test', () => {
   test('should signup as coach and assign correct userType', async ({ page }) => {
+    // Generate unique email to prevent conflicts with existing users
+    const timestamp = Date.now()
+    const uniqueEmail = `testcoach${timestamp}@example.com`
+
     // Navigate to signup page
     await page.goto('/auth/signup')
 
@@ -9,46 +13,26 @@ test.describe('Signup Flow Test', () => {
     await page.waitForLoadState('networkidle')
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
-    console.log('🧪 Testing coach signup flow')
+    console.log('🧪 Testing coach signup flow with email:', uniqueEmail)
 
     // Fill form fields
     await page.fill('input[name="fullName"]', 'Test Coach User')
-    await page.fill('input[type="email"]', 'testcoach@example.com')
+    await page.fill('input[type="email"]', uniqueEmail)
     await page.fill('input[type="password"]', 'TestPassword123!')
 
     // Select coach role - HeroUI Select component
     await page.click('button:has-text("Choose your path")')
-    await page.waitForSelector('[data-key="coach"]', { state: 'visible' })
+    await page.waitForSelector('[data-key="coach"]', { state: 'visible', timeout: 5000 })
     await page.click('[data-key="coach"]')
+
+    // Verify the selection was applied by checking if dropdown shows "Mountain Guide"
+    await page.waitForSelector('button:has-text("Mountain Guide")', { timeout: 5000 })
 
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for either onboarding modal or redirect to dashboard
-    try {
-      // Check if onboarding modal appears first
-      const onboardingModal = page.locator(
-        '[data-testid="onboarding-modal"], .modal:has-text("Welcome")'
-      )
-      await onboardingModal.waitFor({ timeout: 5000, state: 'visible' })
-      if (await onboardingModal.isVisible()) {
-        console.log('✅ Onboarding modal appeared')
-
-        // Complete onboarding or close it
-        const completeButton = page.locator(
-          'button:has-text("Complete"), button:has-text("Get Started")'
-        )
-        const closeButton = page.locator('button[aria-label="Close"], .modal-close')
-
-        if (await completeButton.isVisible()) {
-          await completeButton.click()
-        } else if (await closeButton.isVisible()) {
-          await closeButton.click()
-        }
-      }
-    } catch (e) {
-      console.log('⚠️  No onboarding modal, checking for direct redirect')
-    }
+    // In test environment, expect direct redirect to dashboard without onboarding modal
+    console.log('✅ Signup submitted, waiting for redirect to dashboard')
 
     // Should redirect to coach dashboard
     await expect(page).toHaveURL(/dashboard\/coach/, { timeout: 15000 })
@@ -59,6 +43,10 @@ test.describe('Signup Flow Test', () => {
   })
 
   test('should signup as runner and assign correct userType', async ({ page }) => {
+    // Generate unique email to prevent conflicts with existing users
+    const timestamp = Date.now()
+    const uniqueEmail = `testrunner${timestamp}@example.com`
+
     // Navigate to signup page
     await page.goto('/auth/signup')
 
@@ -66,46 +54,26 @@ test.describe('Signup Flow Test', () => {
     await page.waitForLoadState('networkidle')
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
-    console.log('🧪 Testing runner signup flow')
+    console.log('🧪 Testing runner signup flow with email:', uniqueEmail)
 
     // Fill form fields
     await page.fill('input[name="fullName"]', 'Test Runner User')
-    await page.fill('input[type="email"]', 'testrunner@example.com')
+    await page.fill('input[type="email"]', uniqueEmail)
     await page.fill('input[type="password"]', 'TestPassword123!')
 
-    // Select runner role (should be default) - HeroUI Select component
+    // Select runner role - HeroUI Select component
     await page.click('button:has-text("Choose your path")')
-    await page.waitForSelector('[data-key="runner"]', { state: 'visible' })
+    await page.waitForSelector('[data-key="runner"]', { state: 'visible', timeout: 5000 })
     await page.click('[data-key="runner"]')
+
+    // Verify the selection was applied by checking if dropdown shows "Trail Runner"
+    await page.waitForSelector('button:has-text("Trail Runner")', { timeout: 5000 })
 
     // Submit form
     await page.click('button[type="submit"]')
 
-    // Wait for either onboarding modal or redirect to dashboard
-    try {
-      // Check if onboarding modal appears first
-      const onboardingModal = page.locator(
-        '[data-testid="onboarding-modal"], .modal:has-text("Welcome")'
-      )
-      await onboardingModal.waitFor({ timeout: 5000, state: 'visible' })
-      if (await onboardingModal.isVisible()) {
-        console.log('✅ Onboarding modal appeared')
-
-        // Complete onboarding or close it
-        const completeButton = page.locator(
-          'button:has-text("Complete"), button:has-text("Get Started")'
-        )
-        const closeButton = page.locator('button[aria-label="Close"], .modal-close')
-
-        if (await completeButton.isVisible()) {
-          await completeButton.click()
-        } else if (await closeButton.isVisible()) {
-          await closeButton.click()
-        }
-      }
-    } catch (e) {
-      console.log('⚠️  No onboarding modal, checking for direct redirect')
-    }
+    // In test environment, expect direct redirect to dashboard without onboarding modal
+    console.log('✅ Signup submitted, waiting for redirect to dashboard')
 
     // Should redirect to runner dashboard
     await expect(page).toHaveURL(/dashboard\/runner/, { timeout: 15000 })
