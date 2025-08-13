@@ -33,7 +33,7 @@ export const user = pgTable(
     updatedAt: timestamp('updated_at')
       .$defaultFn(() => new Date())
       .notNull(),
-    role: text('role').default('runner').notNull(),
+    role: text('role').default('user').notNull(),
     userType: text('user_type').default('runner').notNull(),
     banned: boolean('banned'),
     banReason: text('ban_reason'),
@@ -130,6 +130,10 @@ export const workouts = pgTable('workouts', {
   training_plan_id: uuid('training_plan_id').references(() => training_plans.id, {
     onDelete: 'cascade',
   }),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
   date: timestamp('date').notNull(),
   planned_distance: decimal('planned_distance', { precision: 5, scale: 2 }),
   planned_duration: integer('planned_duration'),

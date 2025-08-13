@@ -125,23 +125,39 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Prepare workouts for insertion
-    const workoutsToInsert = workoutList.map(workoutData => ({
-      training_plan_id: workoutData.trainingPlanId,
-      date: new Date(workoutData.date),
-      planned_type: workoutData.plannedType,
-      planned_distance: workoutData.plannedDistance?.toString() || null,
-      planned_duration: workoutData.plannedDuration || null,
-      workout_notes: workoutData.notes || null,
-      status: 'planned' as const,
-      // Enhanced workout fields
-      category: workoutData.category || null,
-      intensity: workoutData.intensity || null,
-      terrain: workoutData.terrain || null,
-      elevation_gain: workoutData.elevationGain || null,
-      created_at: new Date(),
-      updated_at: new Date(),
-    }))
+    // Prepare workouts for insertion with required user_id and title fields
+    const workoutsToInsert = workoutList.map(workoutData => {
+      // Find the training plan to get the runner_id
+      const trainingPlan = trainingPlansData.find(plan => plan.id === workoutData.trainingPlanId)
+      if (!trainingPlan) {
+        throw new Error(`Training plan not found for workout: ${workoutData.trainingPlanId}`)
+      }
+
+      // Generate a descriptive title for the workout
+      const workoutDate = new Date(workoutData.date)
+      const workoutTitle = workoutData.plannedType
+        ? `${workoutData.plannedType} - ${workoutDate.toLocaleDateString()}`
+        : `Workout - ${workoutDate.toLocaleDateString()}`
+
+      return {
+        training_plan_id: workoutData.trainingPlanId,
+        user_id: trainingPlan.runner_id, // Required field
+        title: workoutTitle, // Required field
+        date: workoutDate,
+        planned_type: workoutData.plannedType,
+        planned_distance: workoutData.plannedDistance?.toString() || null,
+        planned_duration: workoutData.plannedDuration || null,
+        workout_notes: workoutData.notes || null,
+        status: 'planned' as const,
+        // Enhanced workout fields
+        category: workoutData.category || null,
+        intensity: workoutData.intensity || null,
+        terrain: workoutData.terrain || null,
+        elevation_gain: workoutData.elevationGain || null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+    })
 
     // Bulk insert workouts
     const insertedWorkouts = await db.insert(workouts).values(workoutsToInsert).returning()

@@ -58,11 +58,31 @@ async function createTestUsers() {
       process.exit(1)
     }
 
+    // Check if database has required schema
+    logger.info('Checking database schema compatibility...')
+    try {
+      await db.select({ userType: user.userType }).from(user).limit(1)
+      logger.info('✅ Database schema is compatible (user_type column exists)')
+    } catch (error) {
+      if (error.message?.includes('user_type') || error.message?.includes('does not exist')) {
+        logger.error('❌ Database schema is missing required user_type column!')
+        logger.error('This usually means the database migrations have not been applied.')
+        logger.error('Please ensure the database schema includes the user_type column.')
+        logger.error('If running on main branch, the schema may need to be updated.')
+        process.exit(1)
+      }
+      throw error // Re-throw if it's a different error
+    }
+
     // Clean up existing test users first
     logger.info('Cleaning up existing test users...')
     for (const testUser of TEST_USERS) {
       const existingUser = await db
-        .select()
+        .select({
+          id: user.id,
+          email: user.email,
+          userType: user.userType,
+        })
         .from(user)
         .where(eq(user.email, testUser.email))
         .limit(1)

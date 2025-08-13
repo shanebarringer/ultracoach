@@ -118,11 +118,49 @@ pnpm db:fresh       # Reset and seed database
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
 
-## 🔐 Better Auth Password Hashing (CRITICAL)
+## 🔐 Better Auth Configuration (CRITICAL)
+
+### Database Schema Fields (EXTREMELY IMPORTANT)
+
+**CRITICAL**: Better Auth uses specific field naming that MUST be followed exactly:
+
+- **Better Auth Role**: `role` field should be `'user'` (Better Auth standard)
+- **Application Role**: Use `user_type` field for coach/runner differentiation
+- **Database Queries**: ALL API queries must filter by `user.userType` (maps to `user_type` column)
+- **Session Data**: Better Auth will use `role: 'user'` for all users, customSession transforms this
+
+### Schema Configuration:
+
+```typescript
+// In schema.ts - BOTH fields required for Better Auth compatibility
+export const user = pgTable('better_auth_users', {
+  // ... other fields
+  role: text('role').default('user').notNull(), // Better Auth standard role
+  userType: text('user_type').default('runner').notNull(), // Our coach/runner differentiation
+})
+```
+
+### API Query Pattern (REQUIRED):
+
+```typescript
+// ✅ CORRECT - Use userType field for database queries
+.where(eq(user.userType, 'runner'))
+.where(eq(user.userType, 'coach'))
+
+// ❌ WRONG - Don't use role field for queries
+.where(eq(user.role, 'runner'))
+```
+
+### Data Consistency Fix:
+
+```sql
+-- Fix any inconsistent role values to Better Auth standard
+UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
+```
+
+### Password Hashing (CRITICAL)
 
 **IMPORTANT**: Better Auth uses its own password hashing format that is incompatible with bcrypt!
-
-### Key Issues to Avoid:
 
 - **NEVER** use bcrypt to hash passwords for Better Auth users
 - **NEVER** manually create account records with bcrypt-generated password hashes
@@ -146,6 +184,7 @@ pnpm db:fresh       # Reset and seed database
 - "User not found" during sign-in with correct credentials
 - "hex string expected, got undefined" in Better Auth verification
 - Authentication timeouts in Playwright tests
+- API returning empty results when filtering by wrong field
 
 ## 📊 Project Overview
 

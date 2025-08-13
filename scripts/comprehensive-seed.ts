@@ -361,7 +361,7 @@ async function createTrainingPlans(
       coach_id: coach.id,
       runner_id: runner.id,
       target_race_date: targetRaceDate,
-      duration_weeks: template.duration_weeks,
+      target_race_distance: `${template.target_distance}M`, // Add target distance with unit
       created_at: new Date(),
       updated_at: new Date(),
     })
@@ -412,9 +412,16 @@ async function createSampleWorkouts(
 
       const enhancement = workoutEnhancements[workoutType as keyof typeof workoutEnhancements]
 
+      const workoutTitle = `${workoutType
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')} - ${format(workoutDate, 'MMM dd')}`
+
       await db.insert(workouts).values({
         id: randomUUID(),
         training_plan_id: plan.id,
+        user_id: plan.runner_id, // Required field - associate workout with runner
+        title: workoutTitle, // Required field - descriptive title
         date: workoutDate,
         planned_type: workoutType,
         planned_distance: (workoutIndex * 3 + 5).toString(), // 5, 8, 11, 14, 17 miles as string for decimal

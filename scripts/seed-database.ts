@@ -1,9 +1,11 @@
 #!/usr/bin/env tsx
 import { generateRandomString } from 'better-auth/crypto'
 import { scrypt } from 'crypto'
+// Add the randomUUID import for generating UUIDs
+import { randomUUID } from 'crypto'
 import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -216,9 +218,8 @@ const planTemplatesData = [
   },
 ]
 
-// Test users data - using environment variables for security
+// Comprehensive test users data - using environment variables for security
 function getTestUsersData() {
-  // Generate secure random passwords if not provided
   const generateSecurePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
     let result = ''
@@ -228,36 +229,130 @@ function getTestUsersData() {
     return result
   }
 
-  return [
+  // Coaches
+  const coaches = [
     {
-      email: process.env.TEST_COACH_EMAIL || 'coach1@ultracoach.dev',
-      password: process.env.TEST_COACH_PASSWORD || generateSecurePassword(),
-      name: 'Elena Rodriguez',
-      fullName: 'Elena Rodriguez',
-      role: 'coach' as const,
-    },
-    {
-      email: process.env.TEST_COACH2_EMAIL || 'coach2@ultracoach.dev',
-      password: process.env.TEST_COACH2_PASSWORD || generateSecurePassword(),
+      email: process.env.TEST_COACH_EMAIL || 'sarah@ultracoach.dev',
+      password: process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!',
       name: 'Sarah Mountain',
       fullName: 'Sarah Mountain',
       role: 'coach' as const,
     },
     {
-      email: process.env.TEST_RUNNER_EMAIL || 'testrunner@ultracoach.dev',
-      password: process.env.TEST_RUNNER_PASSWORD || generateSecurePassword(),
-      name: 'Alex Trail',
-      fullName: 'Alex Trail',
-      role: 'runner' as const,
+      email: process.env.TEST_COACH2_EMAIL || 'marcus@ultracoach.dev',
+      password: process.env.TEST_COACH2_PASSWORD || 'UltraCoach2025!',
+      name: 'Marcus Trail',
+      fullName: 'Marcus Trail',
+      role: 'coach' as const,
     },
     {
-      email: process.env.TEST_RUNNER2_EMAIL || 'runner2@ultracoach.dev',
-      password: process.env.TEST_RUNNER2_PASSWORD || generateSecurePassword(),
-      name: 'Mike Trailblazer',
-      fullName: 'Mike Trailblazer',
-      role: 'runner' as const,
+      email: process.env.TEST_COACH3_EMAIL || 'emma@ultracoach.dev',
+      password: process.env.TEST_COACH3_PASSWORD || 'UltraCoach2025!',
+      name: 'Emma Summit',
+      fullName: 'Emma Summit',
+      role: 'coach' as const,
     },
   ]
+
+  // Runners - 15 runners with varied backgrounds
+  const runners = [
+    {
+      email: 'alex.rivera@ultracoach.dev',
+      name: 'Alex Rivera',
+      fullName: 'Alex Rivera',
+      experience: 'beginner',
+    },
+    {
+      email: 'jordan.chen@ultracoach.dev',
+      name: 'Jordan Chen',
+      fullName: 'Jordan Chen',
+      experience: 'intermediate',
+    },
+    {
+      email: 'casey.johnson@ultracoach.dev',
+      name: 'Casey Johnson',
+      fullName: 'Casey Johnson',
+      experience: 'advanced',
+    },
+    {
+      email: 'taylor.smith@ultracoach.dev',
+      name: 'Taylor Smith',
+      fullName: 'Taylor Smith',
+      experience: 'beginner',
+    },
+    {
+      email: 'morgan.davis@ultracoach.dev',
+      name: 'Morgan Davis',
+      fullName: 'Morgan Davis',
+      experience: 'intermediate',
+    },
+    {
+      email: 'riley.parker@ultracoach.dev',
+      name: 'Riley Parker',
+      fullName: 'Riley Parker',
+      experience: 'beginner',
+    },
+    {
+      email: 'quinn.wilson@ultracoach.dev',
+      name: 'Quinn Wilson',
+      fullName: 'Quinn Wilson',
+      experience: 'advanced',
+    },
+    {
+      email: 'blake.torres@ultracoach.dev',
+      name: 'Blake Torres',
+      fullName: 'Blake Torres',
+      experience: 'intermediate',
+    },
+    {
+      email: 'dakota.lee@ultracoach.dev',
+      name: 'Dakota Lee',
+      fullName: 'Dakota Lee',
+      experience: 'beginner',
+    },
+    {
+      email: 'sage.rodriguez@ultracoach.dev',
+      name: 'Sage Rodriguez',
+      fullName: 'Sage Rodriguez',
+      experience: 'intermediate',
+    },
+    {
+      email: 'river.martinez@ultracoach.dev',
+      name: 'River Martinez',
+      fullName: 'River Martinez',
+      experience: 'advanced',
+    },
+    {
+      email: 'phoenix.garcia@ultracoach.dev',
+      name: 'Phoenix Garcia',
+      fullName: 'Phoenix Garcia',
+      experience: 'beginner',
+    },
+    {
+      email: 'skylar.anderson@ultracoach.dev',
+      name: 'Skylar Anderson',
+      fullName: 'Skylar Anderson',
+      experience: 'intermediate',
+    },
+    {
+      email: 'rowan.thompson@ultracoach.dev',
+      name: 'Rowan Thompson',
+      fullName: 'Rowan Thompson',
+      experience: 'advanced',
+    },
+    {
+      email: 'nova.clark@ultracoach.dev',
+      name: 'Nova Clark',
+      fullName: 'Nova Clark',
+      experience: 'beginner',
+    },
+  ].map(runner => ({
+    ...runner,
+    password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
+    role: 'runner' as const,
+  }))
+
+  return [...coaches, ...runners]
 }
 
 // --- Database Setup ---
@@ -366,7 +461,8 @@ async function seedTestUsers() {
         id: userId,
         email: userData.email,
         name: userData.name,
-        role: userData.role,
+        role: 'user', // Better Auth standard role
+        userType: userData.role, // Our application-specific role (coach/runner)
         fullName: userData.fullName,
         emailVerified: false, // Set appropriate verification status
         createdAt: new Date(),
@@ -400,53 +496,141 @@ async function seedTestUsers() {
   }
 }
 
-// --- Training Plans & Sample Data Seeding ---
-async function createSampleTrainingPlan() {
-  // Use the unified database connection
-  logger.info('🏃 Creating sample training plans with coach-runner relationships...')
+// --- Coach-Runner Relationships ---
+async function createCoachRunnerRelationships() {
+  logger.info('🤝 Creating coach-runner relationships...')
 
-  // Get coach and runners
   const users = await db.select().from(schema.user)
-  const coaches = users.filter(user => user.role === 'coach')
-  const runners = users.filter(user => user.role === 'runner')
+  const coaches = users.filter(user => user.userType === 'coach')
+  const runners = users.filter(user => user.userType === 'runner')
 
   if (coaches.length === 0 || runners.length === 0) {
-    logger.warn('⚠️ No coaches or runners found - skipping training plan creation')
+    logger.warn('⚠️ No coaches or runners found - skipping relationship creation')
     return
   }
 
-  // Create multiple training plans with proper relationships
-  const trainingPlansData = [
+  // Connect 1 runner to each coach (3 active relationships)
+  // Connect runners 0, 5, 10 (one from each group of 5)
+  const connectedRunnerIndices = [0, 5, 10]
+
+  for (let i = 0; i < Math.min(coaches.length, connectedRunnerIndices.length); i++) {
+    const coach = coaches[i]
+    const runnerIndex = connectedRunnerIndices[i]
+
+    if (runnerIndex < runners.length) {
+      const runner = runners[runnerIndex]
+
+      try {
+        // Check if relationship already exists
+        const existingRelationship = await db
+          .select()
+          .from(schema.coach_runners)
+          .where(
+            and(
+              eq(schema.coach_runners.coach_id, coach.id),
+              eq(schema.coach_runners.runner_id, runner.id)
+            )
+          )
+          .limit(1)
+
+        if (existingRelationship.length > 0) {
+          logger.info(
+            `Relationship between ${coach.name} and ${runner.name} already exists, skipping...`
+          )
+          continue
+        }
+
+        // Create active coach-runner relationship
+        await db.insert(schema.coach_runners).values({
+          id: randomUUID(),
+          coach_id: coach.id,
+          runner_id: runner.id,
+          status: 'active',
+          relationship_type: 'standard',
+          invited_by: null,
+          relationship_started_at: new Date(),
+          notes: `Connected during comprehensive seeding - ${coach.name} coaching ${runner.name}`,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+
+        logger.info(`✅ Connected ${coach.name} ↔ ${runner.name}`)
+      } catch (error) {
+        logger.error(
+          `❌ Failed to create relationship between ${coach.name} and ${runner.name}:`,
+          error
+        )
+      }
+    }
+  }
+
+  logger.info(
+    `✅ Created relationships for ${Math.min(coaches.length, connectedRunnerIndices.length)} coach-runner pairs`
+  )
+}
+
+// --- Training Plans & Sample Data Seeding ---
+async function createSampleTrainingPlan() {
+  // Use the unified database connection
+  logger.info('🏃 Creating sample training plans for connected coach-runner pairs...')
+
+  // Get coach and runners
+  const users = await db.select().from(schema.user)
+  const coaches = users.filter(user => user.userType === 'coach')
+  const runners = users.filter(user => user.userType === 'runner')
+
+  // Get connected relationships
+  const relationships = await db
+    .select()
+    .from(schema.coach_runners)
+    .where(eq(schema.coach_runners.status, 'active'))
+
+  if (coaches.length === 0 || runners.length === 0 || relationships.length === 0) {
+    logger.warn(
+      '⚠️ No connected coach-runner relationships found - skipping training plan creation'
+    )
+    return
+  }
+
+  // Training plan templates based on coach specialties
+  const trainingPlanTemplates = [
     {
-      title: '100 Mile Ultra Training - Spring Peak',
+      title: 'Alpine 100-Mile Mastery',
       description:
-        'Comprehensive 24-week training plan targeting a 100-mile ultramarathon with periodized training phases.',
-      coach_id: coaches[0].id, // Elena Rodriguez
-      runner_id: runners[0].id, // Alex Trail
-      target_race_date: new Date('2025-09-15'),
-      target_race_distance: '100 miles',
+        'Comprehensive 20-week program for tackling 100-mile mountain races with technical terrain and elevation gain.',
+      target_distance: '100M',
     },
     {
-      title: '50K Trail Race Preparation',
+      title: '50K Trail Domination',
       description:
-        '16-week plan focused on trail running techniques, elevation training, and race strategy.',
-      coach_id: coaches[1] ? coaches[1].id : coaches[0].id, // Sarah Mountain or Elena
-      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
-      target_race_date: new Date('2025-07-20'),
-      target_race_distance: '50K',
+        '12-week speed-focused plan for conquering your first or fastest 50K trail race.',
+      target_distance: '50K',
     },
     {
-      title: 'Ultra Marathon Base Building',
+      title: 'Backcountry 50-Mile Journey',
       description:
-        'Foundation phase training plan for ultra distance preparation with gradual mileage increases.',
-      coach_id: coaches[0].id, // Elena Rodriguez (coaches both runners)
-      runner_id: runners[1] ? runners[1].id : runners[0].id, // Mike Trailblazer or Alex
-      target_race_date: new Date('2025-10-01'),
-      target_race_distance: '50 miles',
+        '16-week holistic training approach combining physical preparation with mental resilience and fueling strategies.',
+      target_distance: '50M',
     },
   ]
 
-  for (const planData of trainingPlansData) {
+  for (let i = 0; i < Math.min(relationships.length, trainingPlanTemplates.length); i++) {
+    const relationship = relationships[i]
+    const template = trainingPlanTemplates[i]
+    const coach = coaches.find(c => c.id === relationship.coach_id)
+    const runner = runners.find(r => r.id === relationship.runner_id)
+
+    if (!coach || !runner) continue
+
+    const planData = {
+      title: template.title,
+      description: template.description,
+      coach_id: coach.id,
+      runner_id: runner.id,
+      target_race_date: addDays(new Date(), 140), // ~20 weeks out
+      target_race_distance: template.target_distance,
+    }
+
     try {
       const existingPlan = await db
         .select()
@@ -460,10 +644,8 @@ async function createSampleTrainingPlan() {
       }
 
       const [newPlan] = await db.insert(schema.training_plans).values(planData).returning()
-      const coach = coaches.find(c => c.id === planData.coach_id)
-      const runner = runners.find(r => r.id === planData.runner_id)
       logger.info(
-        `✅ Created training plan: "${planData.title}" (Coach: ${coach?.email}, Runner: ${runner?.email})`
+        `✅ Created training plan: "${planData.title}" (Coach: ${coach.email}, Runner: ${runner.email})`
       )
 
       // Create sample workouts for each training plan
@@ -479,9 +661,22 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
   // Use the unified database connection
   const currentDate = new Date()
 
+  // Get the training plan to find the runner_id
+  const [plan] = await db
+    .select()
+    .from(schema.training_plans)
+    .where(eq(schema.training_plans.id, trainingPlanId))
+
+  if (!plan) {
+    logger.error(`❌ Training plan not found for ID: ${trainingPlanId}`)
+    return
+  }
+
   const workoutsData = [
     {
       training_plan_id: trainingPlanId,
+      user_id: plan.runner_id, // Required field - associate workout with runner
+      title: `Easy Run - ${format(addDays(currentDate, 1), 'MMM dd')}`, // Required field
       date: startOfDay(addDays(currentDate, 1)), // Tomorrow
       planned_distance: '5.00',
       planned_duration: 45, // 45 minutes (stored as minutes)
@@ -495,6 +690,8 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
     },
     {
       training_plan_id: trainingPlanId,
+      user_id: plan.runner_id, // Required field
+      title: `Tempo Run - ${format(addDays(currentDate, 3), 'MMM dd')}`, // Required field
       date: startOfDay(addDays(currentDate, 3)), // 3 days from now
       planned_distance: '8.00',
       planned_duration: 60, // 60 minutes
@@ -508,6 +705,8 @@ async function seedSampleWorkouts(trainingPlanId: string, planTitle: string) {
     },
     {
       training_plan_id: trainingPlanId,
+      user_id: plan.runner_id, // Required field
+      title: `Long Run - ${format(addDays(currentDate, 6), 'MMM dd')}`, // Required field
       date: startOfDay(addDays(currentDate, 6)), // 6 days from now
       planned_distance: '12.00',
       planned_duration: 90, // 90 minutes
@@ -539,8 +738,8 @@ async function seedConversations() {
 
   // Get all users and training plans
   const users = await db.select().from(schema.user)
-  const coaches = users.filter(user => user.role === 'coach')
-  const runners = users.filter(user => user.role === 'runner')
+  const coaches = users.filter(user => user.userType === 'coach')
+  const runners = users.filter(user => user.userType === 'runner')
   const trainingPlans = await db.select().from(schema.training_plans)
 
   if (coaches.length === 0 || runners.length === 0 || trainingPlans.length === 0) {
@@ -608,6 +807,9 @@ async function main() {
 
     // Create test users
     await seedTestUsers()
+
+    // Create coach-runner relationships
+    await createCoachRunnerRelationships()
 
     // Create sample training plans with relationships
     await createSampleTrainingPlan()
