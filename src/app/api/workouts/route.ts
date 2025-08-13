@@ -292,11 +292,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the workout
+    const workoutDate = new Date(date)
+    const workoutTitle = plannedType
+      ? `${plannedType} - ${workoutDate.toLocaleDateString()}`
+      : `Workout - ${workoutDate.toLocaleDateString()}`
+
     const [workout] = await db
       .insert(workouts)
       .values({
         training_plan_id: trainingPlanId,
-        date: new Date(date),
+        user_id: plan.runner_id, // Required field
+        title: workoutTitle, // Required field
+        date: workoutDate,
         planned_type: plannedType,
         planned_distance: plannedDistance?.toString(),
         planned_duration: plannedDuration ? parseInt(plannedDuration) : null,

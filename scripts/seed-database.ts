@@ -5,7 +5,7 @@ import { scrypt } from 'crypto'
 import { randomUUID } from 'crypto'
 import { addDays, format, startOfDay } from 'date-fns'
 import { config } from 'dotenv'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -525,8 +525,12 @@ async function createCoachRunnerRelationships() {
         const existingRelationship = await db
           .select()
           .from(schema.coach_runners)
-          .where(eq(schema.coach_runners.coach_id, coach.id))
-          .where(eq(schema.coach_runners.runner_id, runner.id))
+          .where(
+            and(
+              eq(schema.coach_runners.coach_id, coach.id),
+              eq(schema.coach_runners.runner_id, runner.id)
+            )
+          )
           .limit(1)
 
         if (existingRelationship.length > 0) {

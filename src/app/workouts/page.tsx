@@ -2,6 +2,9 @@ import { requireAuth } from '@/utils/auth-server'
 
 import WorkoutsPageClient from './WorkoutsPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Workouts Page (Server Component)
  *

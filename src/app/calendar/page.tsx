@@ -2,6 +2,9 @@ import { requireAuth } from '@/utils/auth-server'
 
 import CalendarPageClient from './CalendarPageClient'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * Calendar Page (Server Component)
  *
