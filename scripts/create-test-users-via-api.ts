@@ -61,8 +61,12 @@ async function createTestUsers() {
     // Clean up existing test users first
     logger.info('Cleaning up existing test users...')
     for (const testUser of TEST_USERS) {
+      // Only select fields that exist in all schema versions for backwards compatibility
       const existingUser = await db
-        .select()
+        .select({
+          id: user.id,
+          email: user.email,
+        })
         .from(user)
         .where(eq(user.email, testUser.email))
         .limit(1)
