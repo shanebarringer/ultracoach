@@ -48,7 +48,7 @@ async function testSignupFlow() {
 
       // Check database record
       const coachRecord = await db
-        .select({ id: user.id, email: user.email, role: user.role })
+        .select({ id: user.id, email: user.email, role: user.role, userType: user.userType })
         .from(user)
         .where(eq(user.email, testCoachEmail))
       if (coachRecord.length > 0) {
@@ -86,7 +86,7 @@ async function testSignupFlow() {
 
       // Check database record
       const runnerRecord = await db
-        .select({ id: user.id, email: user.email, role: user.role })
+        .select({ id: user.id, email: user.email, role: user.role, userType: user.userType })
         .from(user)
         .where(eq(user.email, testRunnerEmail))
       if (runnerRecord.length > 0) {

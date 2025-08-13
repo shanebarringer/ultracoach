@@ -34,7 +34,7 @@ async function clearSarahSession() {
   try {
     // Find all Sarah records (by email)
     const sarahUsers = await db
-      .select({ id: user.id, email: user.email })
+      .select({ id: user.id, email: user.email, userType: user.userType })
       .from(user)
       .where(eq(user.email, 'sarah@ultracoach.dev'))
 
