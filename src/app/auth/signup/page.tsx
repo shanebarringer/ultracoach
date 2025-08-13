@@ -236,13 +236,13 @@ export default function SignUp() {
                         value: 'text-foreground',
                       }}
                     >
-                      <SelectItem key="runner" startContent="🏃">
+                      <SelectItem key="runner" startContent="🏃" textValue="Trail Runner">
                         <span className="font-medium">Trail Runner</span>
                         <span className="text-sm text-foreground-500 block">
                           Conquer your personal peaks
                         </span>
                       </SelectItem>
-                      <SelectItem key="coach" startContent="🏔️">
+                      <SelectItem key="coach" startContent="🏔️" textValue="Mountain Guide">
                         <span className="font-medium">Mountain Guide</span>
                         <span className="text-sm text-foreground-500 block">
                           Lead others to their summit
