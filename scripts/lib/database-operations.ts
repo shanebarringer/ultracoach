@@ -94,9 +94,16 @@ export function setupEnvironment(targetEnv: 'local' | 'production' = 'local'): D
 }
 
 // Password Hashing (Better Auth compatible)
+// ⚠️ SECURITY NOTICE: This custom implementation is deprecated and causes authentication failures
+// Use Better Auth's sign-up API instead for proper password hashing compatibility
 const scryptAsync = promisify(scrypt)
 
 export async function hashPassword(password: string): Promise<string> {
+  const logger = createLogger('database-operations')
+  logger.warn('⚠️ WARNING: Custom password hashing is deprecated and causes authentication failures!')
+  logger.warn('   Use Better Auth sign-up API instead for proper compatibility')
+  logger.warn('   See: scripts/create-test-users-via-api.ts for correct approach')
+  
   const salt = generateRandomString(16)
   const hash = (await scryptAsync(password, salt, 32)) as Buffer
   return `${salt}:${hash.toString('hex')}`
@@ -142,6 +149,9 @@ export async function createUser(
   userData: TestUser,
   logger: ReturnType<typeof createLogger>
 ): Promise<string> {
+  logger.warn('⚠️ WARNING: This function uses deprecated custom password hashing!')
+  logger.warn('   Users created this way will have authentication failures.')
+  logger.warn('   Use scripts/create-test-users-via-api.ts instead for Better Auth compatibility.')
   logger.info(`Creating user: ${userData.email}`)
 
   // Check if user already exists
@@ -175,6 +185,7 @@ export async function createUser(
   logger.info(`✅ Created user: ${userData.email} (${userData.role})`)
 
   // Create credential account for password authentication
+  // ⚠️ This will use deprecated password hashing that causes auth failures!
   const passwordHash = await hashPassword(userData.password)
 
   await dbConfig.db.insert(schema.account).values({
@@ -187,7 +198,8 @@ export async function createUser(
     updatedAt: new Date(),
   })
 
-  logger.info(`✅ Created credential account for: ${userData.email}`)
+  logger.warn(`⚠️ Created credential account with deprecated password hash for: ${userData.email}`)
+  logger.warn('   This user will likely have authentication failures!')
 
   return userId
 }

@@ -164,6 +164,7 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 
 - **NEVER** use bcrypt to hash passwords for Better Auth users
 - **NEVER** manually create account records with bcrypt-generated password hashes
+- **⚠️ SECURITY ISSUE**: Custom password hashing in `scripts/lib/database-operations.ts:96-100` causes authentication failures
 - Better Auth expects hex-formatted password hashes from its internal hashing system
 - Using bcrypt hashes will cause "User not found" errors during authentication
 
@@ -239,7 +240,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
   - **Phase 2**: splitAtom performance optimizations with granular component re-rendering
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
 - **Code Quality**: Zero TypeScript errors, zero ESLint warnings, production-ready codebase
-- **Current Priorities**: Type safety improvements, script consolidation, static-to-dynamic route conversions
+- **Current Priorities**: Critical security fixes (password hashing), type safety improvements, script consolidation, static-to-dynamic route conversions
 
 ---
 

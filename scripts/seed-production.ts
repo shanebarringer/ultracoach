@@ -2,17 +2,39 @@
 /**
  * Production Database Seeding Script
  *
- * Uses the shared database operations module to seed production database
- * with proper Better Auth schema and test data.
+ * ⚠️ DEPRECATED: This script uses deprecated password hashing that causes authentication failures!
+ * 
+ * USE INSTEAD: pnpm tsx scripts/seed-production-secure.ts
+ * 
+ * The secure version uses Better Auth sign-up API for proper password compatibility.
  */
+import { createLogger } from '../src/lib/logger'
 import { seedDatabase } from './lib/database-operations'
 
+const logger = createLogger('seed-production-deprecated')
+
 async function main() {
+  logger.warn('⚠️ WARNING: This script is DEPRECATED and causes authentication failures!')
+  logger.warn('   It uses custom password hashing incompatible with Better Auth.')
+  logger.warn('   USE INSTEAD: pnpm tsx scripts/seed-production-secure.ts')
+  logger.warn('   See: https://github.com/better-auth/better-auth/issues for details')
+  
+  // Still allow execution but warn user
+  const shouldContinue = process.env.FORCE_DEPRECATED_SEEDING === 'true'
+  
+  if (!shouldContinue) {
+    logger.error('❌ Aborting deprecated seeding. Use the secure version instead.')
+    logger.info('💡 Run: pnpm tsx scripts/seed-production-secure.ts')
+    process.exit(1)
+  }
+  
+  logger.warn('🚨 PROCEEDING WITH DEPRECATED SEEDING (users will have auth failures!)')
+  
   try {
     await seedDatabase('production')
     process.exit(0)
   } catch (error) {
-    console.error('Production seeding failed:', error)
+    logger.error('Production seeding failed:', error)
     process.exit(1)
   }
 }
