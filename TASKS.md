@@ -41,7 +41,13 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 ### 🔧 Phase A2: Code Quality & Review Feedback (🔄 IN PROGRESS)
 
-- [ ] **Implement type safety improvements in auth-server.ts** - Replace brittle type assertions with proper typing
+- [ ] **Fix critical password hashing security issue** - Replace custom password hashing in `scripts/lib/database-operations.ts:96-100` with Better Auth's built-in API (HIGH PRIORITY ⚠️)
+- [ ] **Improve type safety in Playwright tests** - Replace DOM manipulation with proper selectors in `tests/signup-flow-test.spec.ts:40,182` (MEDIUM PRIORITY)
+- [ ] **Add robust input validation to bulk workouts API** - Implement date format, numeric ranges, enum validation in `src/app/api/workouts/bulk/route.ts:52` (MEDIUM PRIORITY)
+- [ ] **Optimize bulk delete operations** - Implement date-range filtering or soft deletes for large datasets in workouts API (MEDIUM PRIORITY)
+- [ ] **Implement error handling with transaction rollback** - Add proper rollback for bulk operation failures in `src/app/api/workouts/bulk/route.ts:120-126` (MEDIUM PRIORITY)
+- [ ] **Implement batch notification processing** - Prevent performance bottlenecks from individual notifications in bulk operations (LOW PRIORITY)
+- [ ] **Enhance HeroUI accessibility** - Add aria-describedby for help text in `src/app/auth/signup/page.tsx:239-250` (LOW PRIORITY)
 - [ ] **Script consolidation and cleanup** - Address 44 duplicate scripts mentioned in code review
 - [ ] **Add integration tests and error scenarios** - Enhance testing coverage as recommended
 - [ ] **Performance testing implementation** - Add load testing for authentication endpoints
