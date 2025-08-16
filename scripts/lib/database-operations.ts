@@ -100,10 +100,12 @@ const scryptAsync = promisify(scrypt)
 
 export async function hashPassword(password: string): Promise<string> {
   const logger = createLogger('database-operations')
-  logger.warn('⚠️ WARNING: Custom password hashing is deprecated and causes authentication failures!')
+  logger.warn(
+    '⚠️ WARNING: Custom password hashing is deprecated and causes authentication failures!'
+  )
   logger.warn('   Use Better Auth sign-up API instead for proper compatibility')
   logger.warn('   See: scripts/create-test-users-via-api.ts for correct approach')
-  
+
   const salt = generateRandomString(16)
   const hash = (await scryptAsync(password, salt, 32)) as Buffer
   return `${salt}:${hash.toString('hex')}`

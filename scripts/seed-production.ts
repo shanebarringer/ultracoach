@@ -3,9 +3,9 @@
  * Production Database Seeding Script
  *
  * ⚠️ DEPRECATED: This script uses deprecated password hashing that causes authentication failures!
- * 
+ *
  * USE INSTEAD: pnpm tsx scripts/seed-production-secure.ts
- * 
+ *
  * The secure version uses Better Auth sign-up API for proper password compatibility.
  */
 import { createLogger } from '../src/lib/logger'
@@ -18,18 +18,18 @@ async function main() {
   logger.warn('   It uses custom password hashing incompatible with Better Auth.')
   logger.warn('   USE INSTEAD: pnpm tsx scripts/seed-production-secure.ts')
   logger.warn('   See: https://github.com/better-auth/better-auth/issues for details')
-  
+
   // Still allow execution but warn user
   const shouldContinue = process.env.FORCE_DEPRECATED_SEEDING === 'true'
-  
+
   if (!shouldContinue) {
     logger.error('❌ Aborting deprecated seeding. Use the secure version instead.')
     logger.info('💡 Run: pnpm tsx scripts/seed-production-secure.ts')
     process.exit(1)
   }
-  
+
   logger.warn('🚨 PROCEEDING WITH DEPRECATED SEEDING (users will have auth failures!)')
-  
+
   try {
     await seedDatabase('production')
     process.exit(0)

@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Secure Local Database Seeding Script
- * 
+ *
  * Uses Better Auth sign-up API for proper password hashing compatibility.
  * Replaces the deprecated database-operations.ts approach.
  */
@@ -26,7 +26,7 @@ const TEST_USERS = [
     role: 'coach',
   },
   {
-    email: 'marcus@ultracoach.dev', 
+    email: 'marcus@ultracoach.dev',
     password: 'UltraCoach2025!',
     name: 'Marcus Trail',
     role: 'coach',
@@ -48,12 +48,12 @@ const TEST_USERS = [
     password: 'RunnerPass2025!',
     name: 'Riley Parker',
     role: 'runner',
-  }
+  },
 ]
 
 async function cleanupExistingUsers() {
   logger.info('🧹 Cleaning up existing test users...')
-  
+
   try {
     // Find and delete existing test users
     for (const userData of TEST_USERS) {
@@ -70,7 +70,7 @@ async function cleanupExistingUsers() {
         logger.info(`Cleaned up existing user: ${userData.email}`)
       }
     }
-    
+
     logger.info('✅ Cleanup completed')
   } catch (error) {
     logger.error('❌ Error during cleanup:', error)
@@ -78,9 +78,9 @@ async function cleanupExistingUsers() {
   }
 }
 
-async function createUserWithBetterAuth(userData: typeof TEST_USERS[0]): Promise<boolean> {
+async function createUserWithBetterAuth(userData: (typeof TEST_USERS)[0]): Promise<boolean> {
   logger.info(`Creating user via Better Auth API: ${userData.email}`)
-  
+
   try {
     const response = await fetch('http://localhost:3001/api/auth/sign-up/email', {
       method: 'POST',
@@ -103,7 +103,6 @@ async function createUserWithBetterAuth(userData: typeof TEST_USERS[0]): Promise
 
     logger.info(`✅ Created user: ${userData.email} (${userData.role})`)
     return true
-    
   } catch (error) {
     logger.error(`Error creating ${userData.email}:`, error)
     return false
@@ -112,18 +111,22 @@ async function createUserWithBetterAuth(userData: typeof TEST_USERS[0]): Promise
 
 async function fixRoleMapping() {
   logger.info('🔧 Fixing role and userType mapping...')
-  
+
   try {
     // Fix coaches
-    await db.update(user)
+    await db
+      .update(user)
       .set({ role: 'user', userType: 'coach' })
       .where(sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev')`)
-    
-    // Fix runners  
-    await db.update(user)
+
+    // Fix runners
+    await db
+      .update(user)
       .set({ role: 'user', userType: 'runner' })
-      .where(sql`email IN ('alex.rivera@ultracoach.dev', 'jordan.chen@ultracoach.dev', 'riley.parker@ultracoach.dev')`)
-    
+      .where(
+        sql`email IN ('alex.rivera@ultracoach.dev', 'jordan.chen@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+      )
+
     logger.info('✅ Role mapping fixed')
   } catch (error) {
     logger.error('❌ Error fixing role mapping:', error)
@@ -133,24 +136,26 @@ async function fixRoleMapping() {
 
 async function verifyUsers() {
   logger.info('🔍 Verifying created users...')
-  
+
   const finalUsers = await db
     .select()
     .from(user)
-    .where(sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'jordan.chen@ultracoach.dev', 'riley.parker@ultracoach.dev')`)
-  
+    .where(
+      sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'jordan.chen@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+    )
+
   logger.info('Final verification:')
   for (const user of finalUsers) {
     logger.info(`  - ${user.email}: role=${user.role}, userType=${user.userType}`)
   }
-  
+
   return finalUsers.length
 }
 
 async function seedLocalDatabase() {
   try {
     logger.info('🌱 Starting secure local database seeding...')
-    
+
     // Check if dev server is running
     try {
       const healthCheck = await fetch('http://localhost:3001')
@@ -162,36 +167,37 @@ async function seedLocalDatabase() {
       logger.error('   Please run "pnpm dev" first, then run this script')
       process.exit(1)
     }
-    
-    // Step 1: Clean up existing users  
+
+    // Step 1: Clean up existing users
     await cleanupExistingUsers()
-    
+
     // Step 2: Create users with Better Auth API
     logger.info('👥 Creating users with Better Auth API...')
     let successCount = 0
-    
+
     for (const userData of TEST_USERS) {
       const success = await createUserWithBetterAuth(userData)
       if (success) successCount++
     }
-    
+
     logger.info(`📊 Created ${successCount}/${TEST_USERS.length} users successfully`)
-    
+
     // Step 3: Fix role mapping
     await fixRoleMapping()
-    
+
     // Step 4: Verify final state
     const finalUserCount = await verifyUsers()
-    
+
     if (finalUserCount === TEST_USERS.length) {
       logger.info('🎉 Local database seeding completed successfully!')
       logger.info('✅ All test users created with proper Better Auth compatibility')
       logger.info('✅ Authentication should work properly now')
     } else {
-      logger.error(`❌ Seeding incomplete - expected ${TEST_USERS.length} users, got ${finalUserCount}`)
+      logger.error(
+        `❌ Seeding incomplete - expected ${TEST_USERS.length} users, got ${finalUserCount}`
+      )
       process.exit(1)
     }
-    
   } catch (error) {
     logger.error('💥 Critical error during local database seeding:', error)
     process.exit(1)
