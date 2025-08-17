@@ -41,7 +41,6 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 ### 🔧 Phase A2: Critical Security Fixes & UI Audit (🔄 IN PROGRESS 2025-08-16)
 
-<<<<<<< HEAD
 #### **A2a: Critical Security Fixes (HIGH PRIORITY ⚠️)**
 
 - [x] **Fix critical password hashing security issue** - ✅ **COMPLETED 2025-08-17** - Replaced custom password hashing with Better Auth API approach, created secure seeding scripts
