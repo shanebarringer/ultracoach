@@ -108,7 +108,7 @@ pnpm db:fresh       # Reset and seed database
 ## Git Commit Strategy:
 
 - Commit early and commit often
-- **ALWAYS** Run `pnpm lint` before adding and committing  
+- **ALWAYS** Run `pnpm lint` before adding and committing
 - **ALWAYS** Run `pnpm format` before adding and committing
 - **PRE-COMMIT HOOK COMMANDS**: The Husky pre-commit hook runs different commands than manual ones:
   - Manual: `pnpm lint` (ESLint check)
@@ -215,11 +215,13 @@ curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com
 ### Additional Fixes (2025-08-17):
 
 **✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
+
 - **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
 - **Solution**: Created proper API endpoint with authentication and database integration
 - **Result**: 19 public templates now load correctly in training plan creation modal
 
 **✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
+
 - **Issue**: Better Auth additionalFields not included in TypeScript signatures
 - **Solution**: Extended interfaces instead of using `any` types
 - **Implementation**: Created `SignUpEmailBody` interface for type safety
@@ -241,6 +243,7 @@ const result = await auth.api.signUpEmail({
 ```
 
 **✅ UI CONSISTENCY**: Fixed header navigation button inconsistency
+
 - **Issue**: Sign In was a plain link while Sign Up was a proper Button component
 - **Solution**: Converted both desktop and mobile Sign In to use Button component with `variant="light"`
 

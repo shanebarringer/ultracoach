@@ -63,7 +63,7 @@ export default function RacesPage() {
   const router = useRouter()
   const [races, refreshRaces] = useAtom(racesAtom)
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
-  const logger = createLogger('RacesPage')
+  const logger = useMemo(() => createLogger('RacesPage'), [])
 
   // Derive loading state from atom data
   const loading = useMemo(() => races.length === 0, [races.length])

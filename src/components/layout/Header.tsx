@@ -52,7 +52,7 @@ const ThemeToggle = memo(function ThemeToggle() {
 })
 
 function Header() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -129,7 +129,10 @@ function Header() {
       </NavbarContent>
 
       <NavbarContent className="hidden md:flex gap-4" justify="center">
-        {session ? (
+        {status === 'loading' ? (
+          // Show nothing while loading to prevent flash
+          <></>
+        ) : session ? (
           <>
             {userNavItems.map(item => (
               <NavbarItem key={item.href}>
@@ -193,7 +196,10 @@ function Header() {
       </NavbarContent>
 
       <NavbarMenu>
-        {session ? (
+        {status === 'loading' ? (
+          // Show nothing while loading to prevent flash
+          <></>
+        ) : session ? (
           <>
             {userNavItems.map(item => (
               <NavbarMenuItem key={item.href}>

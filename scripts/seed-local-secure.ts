@@ -11,7 +11,7 @@ import { resolve } from 'path'
 
 import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
-import { account, user } from '../src/lib/schema'
+import { account, coach_runners, user } from '../src/lib/schema'
 
 // Load environment variables
 config({ path: resolve(process.cwd(), '.env.local') })
@@ -134,6 +134,66 @@ async function fixRoleMapping() {
   }
 }
 
+async function createCoachRunnerRelationships() {
+  logger.info('🔗 Creating coach-runner relationships...')
+
+  try {
+    // Clean up existing relationships first
+    await db.delete(coach_runners).where(sql`1=1`)
+
+    // Get user IDs for relationship creation
+    const users = await db
+      .select({ id: user.id, email: user.email, userType: user.userType })
+      .from(user)
+      .where(
+        sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+      )
+
+    const coaches = users.filter(u => u.userType === 'coach')
+    const runners = users.filter(u => u.userType === 'runner')
+
+    if (coaches.length === 0 || runners.length === 0) {
+      logger.warn('⚠️ No coaches or runners found to create relationships')
+      return
+    }
+
+    // Create relationships: Sarah ↔ Alex, Marcus ↔ Riley
+    const relationships = [
+      {
+        coach_id: coaches.find(c => c.email === 'sarah@ultracoach.dev')?.id,
+        runner_id: runners.find(r => r.email === 'alex.rivera@ultracoach.dev')?.id,
+      },
+      {
+        coach_id: coaches.find(c => c.email === 'marcus@ultracoach.dev')?.id,
+        runner_id: runners.find(r => r.email === 'riley.parker@ultracoach.dev')?.id,
+      },
+    ]
+
+    for (const rel of relationships) {
+      if (rel.coach_id && rel.runner_id) {
+        await db.insert(coach_runners).values({
+          coach_id: rel.coach_id,
+          runner_id: rel.runner_id,
+          status: 'active',
+          relationship_type: 'standard',
+          relationship_started_at: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+
+        const coach = coaches.find(c => c.id === rel.coach_id)
+        const runner = runners.find(r => r.id === rel.runner_id)
+        logger.info(`✅ Created relationship: ${coach?.email} ↔ ${runner?.email}`)
+      }
+    }
+
+    logger.info('✅ Coach-runner relationships created')
+  } catch (error) {
+    logger.error('❌ Error creating relationships:', error)
+    throw error
+  }
+}
+
 async function verifyUsers() {
   logger.info('🔍 Verifying created users...')
 
@@ -185,13 +245,17 @@ async function seedLocalDatabase() {
     // Step 3: Fix role mapping
     await fixRoleMapping()
 
-    // Step 4: Verify final state
+    // Step 4: Create coach-runner relationships
+    await createCoachRunnerRelationships()
+
+    // Step 5: Verify final state
     const finalUserCount = await verifyUsers()
 
     if (finalUserCount === TEST_USERS.length) {
       logger.info('🎉 Local database seeding completed successfully!')
       logger.info('✅ All test users created with proper Better Auth compatibility')
-      logger.info('✅ Authentication should work properly now')
+      logger.info('✅ Coach-runner relationships established')
+      logger.info('✅ Authentication and messaging should work properly now')
     } else {
       logger.error(
         `❌ Seeding incomplete - expected ${TEST_USERS.length} users, got ${finalUserCount}`
