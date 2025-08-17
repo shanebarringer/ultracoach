@@ -108,8 +108,16 @@ pnpm db:fresh       # Reset and seed database
 ## Git Commit Strategy:
 
 - Commit early and commit often
-- **ALWAYS** Run `pnpm lint` before adding and committing
+- **ALWAYS** Run `pnpm lint` before adding and committing  
 - **ALWAYS** Run `pnpm format` before adding and committing
+- **PRE-COMMIT HOOK COMMANDS**: The Husky pre-commit hook runs different commands than manual ones:
+  - Manual: `pnpm lint` (ESLint check)
+  - Pre-commit: `pnpm lint` (same)
+  - Manual: `pnpm format` (writes formatting changes)
+  - Pre-commit: `pnpm format:check` (only checks, fails if unformatted)
+  - Manual: `pnpm typecheck` (TypeScript validation)
+  - Pre-commit: `pnpm typecheck` (same)
+- **DEBUGGING TIP**: If pre-commit fails but manual commands pass, run `pnpm format:check` to verify formatting
 
 ### Database Philosophy:
 
@@ -203,6 +211,38 @@ curl http://localhost:3001/api/auth/sign-up/email -d @signup.json -H "Content-Ty
 # ❌ WRONG - Escaped quotes cause JSON parsing errors
 curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com"}'
 ```
+
+### Additional Fixes (2025-08-17):
+
+**✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
+- **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
+- **Solution**: Created proper API endpoint with authentication and database integration
+- **Result**: 19 public templates now load correctly in training plan creation modal
+
+**✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
+- **Issue**: Better Auth additionalFields not included in TypeScript signatures
+- **Solution**: Extended interfaces instead of using `any` types
+- **Implementation**: Created `SignUpEmailBody` interface for type safety
+
+```typescript
+// ✅ CORRECT - Extend types properly
+interface SignUpEmailBody {
+  email: string
+  password: string
+  name: string
+  userType?: string
+  callbackURL?: string
+}
+
+// Use with proper casting
+const result = await auth.api.signUpEmail({
+  body: userData as SignUpEmailBody,
+})
+```
+
+**✅ UI CONSISTENCY**: Fixed header navigation button inconsistency
+- **Issue**: Sign In was a plain link while Sign Up was a proper Button component
+- **Solution**: Converted both desktop and mobile Sign In to use Button component with `variant="light"`
 
 ## 📊 Project Overview
 
