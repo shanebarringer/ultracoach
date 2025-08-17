@@ -186,6 +186,23 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 - "hex string expected, got undefined" in Better Auth verification
 - Authentication timeouts in Playwright tests
 - API returning empty results when filtering by wrong field
+- **500 errors with "Bad escaped character in JSON"** - caused by improper JSON escaping in API calls
+
+### Critical Fix (2025-08-17):
+
+**✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
+
+**Issue**: 500 errors were caused by improper JSON escaping in curl commands during testing, NOT actual Better Auth problems.
+
+**Solution**: Always use proper JSON formatting when testing APIs:
+
+```bash
+# ✅ CORRECT - Use JSON file to avoid escaping issues
+curl http://localhost:3001/api/auth/sign-up/email -d @signup.json -H "Content-Type: application/json"
+
+# ❌ WRONG - Escaped quotes cause JSON parsing errors
+curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com"}'
+```
 
 ## 📊 Project Overview
 
