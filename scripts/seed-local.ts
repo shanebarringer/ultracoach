@@ -32,9 +32,10 @@ async function main() {
   
   try {
     await seedDatabase('local')
-    process.exit(0)
+    logger.warn('⚠️ Seeding completed but users created will have authentication failures!')
+    logger.warn('   Delete these users and use scripts/seed-local-secure.ts instead')
   } catch (error) {
-    logger.error('Local seeding failed:', error)
+    logger.error('Failed to seed local database:', error)
     process.exit(1)
   }
 }

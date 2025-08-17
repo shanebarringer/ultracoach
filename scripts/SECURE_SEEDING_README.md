@@ -14,10 +14,10 @@ This document explains the secure seeding approach for UltraCoach that resolves 
 
 ### New Secure Scripts
 
-| Script | Purpose | Command |
-|--------|---------|---------|
-| `seed-local-secure.ts` | Local development seeding | `pnpm run db:seed:secure` |
-| `seed-production-secure.ts` | Production seeding | `pnpm run prod:db:seed:secure` |
+| Script                      | Purpose                   | Command                        |
+| --------------------------- | ------------------------- | ------------------------------ |
+| `seed-local-secure.ts`      | Local development seeding | `pnpm run db:seed:secure`      |
+| `seed-production-secure.ts` | Production seeding        | `pnpm run prod:db:seed:secure` |
 
 ### Key Security Improvements
 
@@ -42,7 +42,7 @@ pnpm run db:seed:secure
 #### Production
 
 ```bash
-# OLD (deprecated - causes auth failures)  
+# OLD (deprecated - causes auth failures)
 pnpm run prod:db:seed
 
 # NEW (secure - Better Auth compatible)
@@ -54,6 +54,7 @@ pnpm run prod:db:seed:secure
 ### Password Hashing Comparison
 
 **Deprecated Approach** (causes auth failures):
+
 ```typescript
 // Custom scrypt hashing - INCOMPATIBLE with Better Auth
 const hash = await scrypt(password, salt, 32)
@@ -61,6 +62,7 @@ const passwordHash = `${salt}:${hash.toString('hex')}`
 ```
 
 **Secure Approach** (Better Auth compatible):
+
 ```typescript
 // Uses Better Auth sign-up API for proper hashing
 const response = await fetch('/api/auth/sign-up/email', {

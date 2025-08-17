@@ -32,9 +32,10 @@ async function main() {
   
   try {
     await seedDatabase('production')
-    process.exit(0)
+    logger.warn('⚠️ Seeding completed but users created will have authentication failures!')
+    logger.warn('   Delete these users and use scripts/seed-production-secure.ts instead')
   } catch (error) {
-    logger.error('Production seeding failed:', error)
+    logger.error('Failed to seed production database:', error)
     process.exit(1)
   }
 }

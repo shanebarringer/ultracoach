@@ -29,7 +29,7 @@ const PRODUCTION_USERS = [
     role: 'coach',
   },
   {
-    email: 'marcus@ultracoach.dev', 
+    email: 'marcus@ultracoach.dev',
     password: 'UltraCoach2025!',
     name: 'Marcus Trail',
     role: 'coach',

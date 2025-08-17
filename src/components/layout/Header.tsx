@@ -52,7 +52,7 @@ const ThemeToggle = memo(function ThemeToggle() {
 })
 
 function Header() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -129,7 +129,10 @@ function Header() {
       </NavbarContent>
 
       <NavbarContent className="hidden md:flex gap-4" justify="center">
-        {session ? (
+        {status === 'loading' ? (
+          // Show nothing while loading to prevent flash
+          <></>
+        ) : session ? (
           <>
             {userNavItems.map(item => (
               <NavbarItem key={item.href}>
@@ -145,7 +148,9 @@ function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Link href="/auth/signin">Sign In</Link>
+              <Button as={Link} href="/auth/signin" variant="light" size="sm">
+                Sign In
+              </Button>
             </NavbarItem>
             <NavbarItem>
               <Button as={Link} href="/auth/signup" color="primary" size="sm">
@@ -191,7 +196,10 @@ function Header() {
       </NavbarContent>
 
       <NavbarMenu>
-        {session ? (
+        {status === 'loading' ? (
+          // Show nothing while loading to prevent flash
+          <></>
+        ) : session ? (
           <>
             {userNavItems.map(item => (
               <NavbarMenuItem key={item.href}>
@@ -221,9 +229,15 @@ function Header() {
         ) : (
           <>
             <NavbarMenuItem>
-              <Link href="/auth/signin" onClick={handleMenuClose}>
+              <Button
+                as={Link}
+                href="/auth/signin"
+                variant="light"
+                className="w-full text-left"
+                onClick={handleMenuClose}
+              >
                 Sign In
-              </Link>
+              </Button>
             </NavbarMenuItem>
             <NavbarMenuItem>
               <Button

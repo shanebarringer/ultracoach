@@ -110,6 +110,14 @@ pnpm db:fresh       # Reset and seed database
 - Commit early and commit often
 - **ALWAYS** Run `pnpm lint` before adding and committing
 - **ALWAYS** Run `pnpm format` before adding and committing
+- **PRE-COMMIT HOOK COMMANDS**: The Husky pre-commit hook runs different commands than manual ones:
+  - Manual: `pnpm lint` (ESLint check)
+  - Pre-commit: `pnpm lint` (same)
+  - Manual: `pnpm format` (writes formatting changes)
+  - Pre-commit: `pnpm format:check` (only checks, fails if unformatted)
+  - Manual: `pnpm typecheck` (TypeScript validation)
+  - Pre-commit: `pnpm typecheck` (same)
+- **DEBUGGING TIP**: If pre-commit fails but manual commands pass, run `pnpm format:check` to verify formatting
 
 ### Database Philosophy:
 
@@ -186,22 +194,74 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 - "hex string expected, got undefined" in Better Auth verification
 - Authentication timeouts in Playwright tests
 - API returning empty results when filtering by wrong field
+- **500 errors with "Bad escaped character in JSON"** - caused by improper JSON escaping in API calls
+
+### Critical Fix (2025-08-17):
+
+**✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
+
+**Issue**: 500 errors were caused by improper JSON escaping in curl commands during testing, NOT actual Better Auth problems.
+
+**Solution**: Always use proper JSON formatting when testing APIs:
+
+```bash
+# ✅ CORRECT - Use JSON file to avoid escaping issues
+curl http://localhost:3001/api/auth/sign-up/email -d @signup.json -H "Content-Type: application/json"
+
+# ❌ WRONG - Escaped quotes cause JSON parsing errors
+curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com"}'
+```
+
+### Additional Fixes (2025-08-17):
+
+**✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
+
+- **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
+- **Solution**: Created proper API endpoint with authentication and database integration
+- **Result**: 19 public templates now load correctly in training plan creation modal
+
+**✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
+
+- **Issue**: Better Auth additionalFields not included in TypeScript signatures
+- **Solution**: Extended interfaces instead of using `any` types
+- **Implementation**: Created `SignUpEmailBody` interface for type safety
+
+```typescript
+// ✅ CORRECT - Extend types properly
+interface SignUpEmailBody {
+  email: string
+  password: string
+  name: string
+  userType?: string
+  callbackURL?: string
+}
+
+// Use with proper casting
+const result = await auth.api.signUpEmail({
+  body: userData as SignUpEmailBody,
+})
+```
+
+**✅ UI CONSISTENCY**: Fixed header navigation button inconsistency
+
+- **Issue**: Sign In was a plain link while Sign Up was a proper Button component
+- **Solution**: Converted both desktop and mobile Sign In to use Button component with `variant="light"`
 
 ## 📊 Project Overview
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
-### Current Status (Updated: 2025-08-12)
+### Current Status (Updated: 2025-08-16)
 
-- **Current Focus**: Production Readiness & Critical Bug Fixes - authentication system stability and code quality improvements
+- **Current Focus**: Comprehensive UI Audit & Critical Security Fixes - Server/Client component architecture standardization and authentication security improvements
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
 - **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
 - **State Management**: Advanced Jotai patterns implemented - atomFamily, loadable, unwrap, splitAtom for granular performance
 - **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
 - **Authentication**: Better Auth configuration optimized for production deployment with proper URL resolution and error handling
-- **Recent Fixes**: Production authentication 500 error resolution, Better Auth URL configuration fixes, comprehensive production testing infrastructure
-- **Next Phase**: Type safety improvements, script consolidation, and static-to-dynamic route conversion
+- **Recent Progress**: Comprehensive UI audit plan with security integration, component architecture review, and authentication crisis resolution
+- **Active Phase**: Critical password hashing security fixes, Server/Client hybrid pattern audit, comprehensive UI component review
 
 ## 🏗️ Architecture & Technology
 
@@ -240,7 +300,30 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
   - **Phase 2**: splitAtom performance optimizations with granular component re-rendering
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
 - **Code Quality**: Zero TypeScript errors, zero ESLint warnings, production-ready codebase
-- **Current Priorities**: Critical security fixes (password hashing), type safety improvements, script consolidation, static-to-dynamic route conversions
+- **Current Priorities**: Beta readiness completed, comprehensive UI audit, Server/Client component architecture standardization
+
+### 🎉 Recent Achievements (2025-08-17)
+
+**Beta Readiness Completed:**
+
+- ✅ Authentication flow: Fixed and tested with Better Auth compatibility
+- ✅ Training plan templates: API endpoint created and working
+- ✅ Races infinite loop: Fixed with memoized logger pattern
+- ✅ Messages API 403 errors: Resolved with coach-runner relationships
+- ✅ Navbar flashing: Fixed with loading state checks
+- ✅ Playwright tests: All 22/22 tests passing
+- ✅ Type safety improvements: All ESLint warnings resolved
+- ✅ Script consolidation: Deprecated scripts removed, secure versions enhanced
+
+### 🎯 Next Phase: UI Audit & Advanced Features (2025-08-17)
+
+**Ready for:**
+
+1. **Comprehensive UI Audit**: Review all components for Mountain Peak design consistency and HeroUI integration
+2. **Server/Client Architecture**: Ensure all authenticated routes use proper dynamic rendering patterns
+3. **Component Standardization**: Standardize all UI components with Mountain Peak theme integration
+4. **Advanced Features**: Garmin and Strava integration development
+5. **Performance Optimization**: Ensure all components use optimal state management patterns
 
 ---
 

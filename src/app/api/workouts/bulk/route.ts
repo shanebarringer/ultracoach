@@ -1,3 +1,4 @@
+import { addYears, isAfter, isBefore, isValid, parseISO } from 'date-fns'
 import { and, eq, inArray } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -9,6 +10,211 @@ import { createLogger } from '@/lib/logger'
 import { coach_runners, notifications, training_plans, user, workouts } from '@/lib/schema'
 
 const logger = createLogger('api-workouts-bulk')
+
+// Validation constants
+const VALIDATION_RULES = {
+  MAX_BULK_WORKOUTS: 500, // Prevent abuse
+  MIN_INTENSITY: 1,
+  MAX_INTENSITY: 10,
+  MIN_DISTANCE: 0.1, // km
+  MAX_DISTANCE: 500, // km (reasonable for ultras)
+  MIN_DURATION: 1, // minutes
+  MAX_DURATION: 1440, // 24 hours in minutes
+  MIN_ELEVATION: 0, // meters
+  MAX_ELEVATION: 10000, // meters (reasonable for ultras)
+  MAX_DATE_FUTURE: 365, // days in future
+  MAX_DATE_PAST: 30, // days in past
+} as const
+
+// Valid enum values for runtime validation
+const VALID_CATEGORIES = [
+  'easy',
+  'tempo',
+  'interval',
+  'long_run',
+  'race_simulation',
+  'recovery',
+  'strength',
+  'cross_training',
+  'rest',
+] as const
+
+const VALID_TERRAINS = ['road', 'trail', 'track', 'treadmill'] as const
+
+// Validation helper functions
+function validateDate(dateString: string): { isValid: boolean; error?: string; date?: Date } {
+  if (!dateString || typeof dateString !== 'string') {
+    return { isValid: false, error: 'Date is required and must be a string' }
+  }
+
+  // Parse ISO 8601 date format
+  const parsedDate = parseISO(dateString)
+
+  if (!isValid(parsedDate)) {
+    return { isValid: false, error: 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)' }
+  }
+
+  const now = new Date()
+  const maxFutureDate = addYears(now, 1) // Max 1 year in future
+  const minPastDate = new Date(now.getTime() - VALIDATION_RULES.MAX_DATE_PAST * 24 * 60 * 60 * 1000)
+
+  if (isAfter(parsedDate, maxFutureDate)) {
+    return { isValid: false, error: 'Date cannot be more than 1 year in the future' }
+  }
+
+  if (isBefore(parsedDate, minPastDate)) {
+    return {
+      isValid: false,
+      error: `Date cannot be more than ${VALIDATION_RULES.MAX_DATE_PAST} days in the past`,
+    }
+  }
+
+  return { isValid: true, date: parsedDate }
+}
+
+function validateNumericRange(
+  value: number | null | undefined,
+  min: number,
+  max: number,
+  fieldName: string
+): { isValid: boolean; error?: string } {
+  if (value === null || value === undefined) {
+    return { isValid: true } // Allow null/undefined for optional fields
+  }
+
+  if (typeof value !== 'number' || isNaN(value)) {
+    return { isValid: false, error: `${fieldName} must be a valid number` }
+  }
+
+  if (value < min || value > max) {
+    return { isValid: false, error: `${fieldName} must be between ${min} and ${max}` }
+  }
+
+  return { isValid: true }
+}
+
+function validateEnum<T extends readonly string[]>(
+  value: string | null | undefined,
+  validValues: T,
+  fieldName: string
+): { isValid: boolean; error?: string } {
+  if (value === null || value === undefined) {
+    return { isValid: true } // Allow null/undefined for optional fields
+  }
+
+  if (typeof value !== 'string') {
+    return { isValid: false, error: `${fieldName} must be a string` }
+  }
+
+  if (!validValues.includes(value as T[number])) {
+    return { isValid: false, error: `${fieldName} must be one of: ${validValues.join(', ')}` }
+  }
+
+  return { isValid: true }
+}
+
+function validateUUID(value: string, fieldName: string): { isValid: boolean; error?: string } {
+  if (!value || typeof value !== 'string') {
+    return { isValid: false, error: `${fieldName} is required` }
+  }
+
+  // Simple UUID format validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(value)) {
+    return { isValid: false, error: `${fieldName} must be a valid UUID` }
+  }
+
+  return { isValid: true }
+}
+
+function validateBulkWorkout(
+  workout: BulkWorkout,
+  index: number
+): { isValid: boolean; errors: string[] } {
+  const errors: string[] = []
+
+  // Validate training plan ID
+  const trainingPlanValidation = validateUUID(workout.trainingPlanId, 'trainingPlanId')
+  if (!trainingPlanValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${trainingPlanValidation.error}`)
+  }
+
+  // Validate date
+  const dateValidation = validateDate(workout.date)
+  if (!dateValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${dateValidation.error}`)
+  }
+
+  // Validate planned type (required)
+  if (
+    !workout.plannedType ||
+    typeof workout.plannedType !== 'string' ||
+    workout.plannedType.trim().length === 0
+  ) {
+    errors.push(`Workout ${index + 1}: plannedType is required`)
+  } else if (workout.plannedType.length > 100) {
+    errors.push(`Workout ${index + 1}: plannedType must be 100 characters or less`)
+  }
+
+  // Validate numeric fields
+  const distanceValidation = validateNumericRange(
+    workout.plannedDistance,
+    VALIDATION_RULES.MIN_DISTANCE,
+    VALIDATION_RULES.MAX_DISTANCE,
+    'plannedDistance'
+  )
+  if (!distanceValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${distanceValidation.error}`)
+  }
+
+  const durationValidation = validateNumericRange(
+    workout.plannedDuration,
+    VALIDATION_RULES.MIN_DURATION,
+    VALIDATION_RULES.MAX_DURATION,
+    'plannedDuration'
+  )
+  if (!durationValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${durationValidation.error}`)
+  }
+
+  const intensityValidation = validateNumericRange(
+    workout.intensity,
+    VALIDATION_RULES.MIN_INTENSITY,
+    VALIDATION_RULES.MAX_INTENSITY,
+    'intensity'
+  )
+  if (!intensityValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${intensityValidation.error}`)
+  }
+
+  const elevationValidation = validateNumericRange(
+    workout.elevationGain,
+    VALIDATION_RULES.MIN_ELEVATION,
+    VALIDATION_RULES.MAX_ELEVATION,
+    'elevationGain'
+  )
+  if (!elevationValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${elevationValidation.error}`)
+  }
+
+  // Validate enum fields
+  const categoryValidation = validateEnum(workout.category, VALID_CATEGORIES, 'category')
+  if (!categoryValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${categoryValidation.error}`)
+  }
+
+  const terrainValidation = validateEnum(workout.terrain, VALID_TERRAINS, 'terrain')
+  if (!terrainValidation.isValid) {
+    errors.push(`Workout ${index + 1}: ${terrainValidation.error}`)
+  }
+
+  // Validate notes length
+  if (workout.notes && typeof workout.notes === 'string' && workout.notes.length > 1000) {
+    errors.push(`Workout ${index + 1}: notes must be 1000 characters or less`)
+  }
+
+  return { isValid: errors.length === 0, errors }
+}
 
 interface BulkWorkout {
   trainingPlanId: string
@@ -49,14 +255,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only coaches can create bulk workouts' }, { status: 403 })
     }
 
-    const { workouts: workoutList }: { workouts: BulkWorkout[] } = await request.json()
+    const requestBody = await request.json()
+    const { workouts: workoutList }: { workouts: BulkWorkout[] } = requestBody
 
+    // Basic array validation
     if (!workoutList || !Array.isArray(workoutList) || workoutList.length === 0) {
       return NextResponse.json({ error: 'No workouts provided' }, { status: 400 })
     }
 
+    // Check maximum bulk limit to prevent abuse
+    if (workoutList.length > VALIDATION_RULES.MAX_BULK_WORKOUTS) {
+      return NextResponse.json(
+        {
+          error: `Too many workouts. Maximum allowed is ${VALIDATION_RULES.MAX_BULK_WORKOUTS}, received ${workoutList.length}`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate each workout
+    const allErrors: string[] = []
+    const validWorkouts: BulkWorkout[] = []
+
+    for (let i = 0; i < workoutList.length; i++) {
+      const workout = workoutList[i]
+      const validation = validateBulkWorkout(workout, i)
+
+      if (!validation.isValid) {
+        allErrors.push(...validation.errors)
+      } else {
+        validWorkouts.push(workout)
+      }
+    }
+
+    // If there are validation errors, return them all
+    if (allErrors.length > 0) {
+      logger.warn('Bulk workout validation failed', {
+        coachId: sessionUser.id,
+        totalWorkouts: workoutList.length,
+        validWorkouts: validWorkouts.length,
+        errorCount: allErrors.length,
+        errors: allErrors.slice(0, 10), // Log first 10 errors only
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: allErrors,
+          summary: `${allErrors.length} validation error(s) found in ${workoutList.length} workout(s)`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Continue with validated workouts
+    const finalWorkoutList = validWorkouts
+
     // Verify all training plans belong to this coach
-    const trainingPlanIds = [...new Set(workoutList.map(w => w.trainingPlanId))]
+    const trainingPlanIds = [...new Set(finalWorkoutList.map(w => w.trainingPlanId))]
 
     const trainingPlansData = await db
       .select({
@@ -126,15 +382,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare workouts for insertion with required user_id and title fields
-    const workoutsToInsert = workoutList.map(workoutData => {
+    const workoutsToInsert = finalWorkoutList.map(workoutData => {
       // Find the training plan to get the runner_id
       const trainingPlan = trainingPlansData.find(plan => plan.id === workoutData.trainingPlanId)
       if (!trainingPlan) {
         throw new Error(`Training plan not found for workout: ${workoutData.trainingPlanId}`)
       }
 
-      // Generate a descriptive title for the workout
-      const workoutDate = new Date(workoutData.date)
+      // Generate a descriptive title for the workout - use validated date
+      const dateValidation = validateDate(workoutData.date)
+      const workoutDate = dateValidation.date || new Date(workoutData.date) // Fallback (should never hit)
       const workoutTitle = workoutData.plannedType
         ? `${workoutData.plannedType} - ${workoutDate.toLocaleDateString()}`
         : `Workout - ${workoutDate.toLocaleDateString()}`
@@ -171,7 +428,9 @@ export async function POST(request: NextRequest) {
     if (insertedWorkouts && insertedWorkouts.length > 0) {
       try {
         // Get runner info from the training plan
-        const firstPlan = trainingPlansData.find(plan => plan.id === workoutList[0].trainingPlanId)
+        const firstPlan = trainingPlansData.find(
+          plan => plan.id === finalWorkoutList[0].trainingPlanId
+        )
         if (firstPlan) {
           const [runner] = await db
             .select({
