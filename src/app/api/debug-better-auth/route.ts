@@ -3,6 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 
+// Extend Better Auth types to include our custom fields
+interface SignUpEmailBody {
+  email: string
+  password: string
+  name: string
+  userType?: string
+  callbackURL?: string
+}
+
 const logger = createLogger('debug-better-auth')
 
 export async function GET(request: NextRequest) {
@@ -104,7 +113,7 @@ export async function POST(request: NextRequest) {
         password: body.password,
         name: body.name,
         userType: body.userType || 'runner',
-      },
+      } as SignUpEmailBody,
     })
 
     logger.info('✅ Signup successful:', { hasUser: !!result.user })

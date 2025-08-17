@@ -145,7 +145,9 @@ function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Link href="/auth/signin">Sign In</Link>
+              <Button as={Link} href="/auth/signin" variant="light" size="sm">
+                Sign In
+              </Button>
             </NavbarItem>
             <NavbarItem>
               <Button as={Link} href="/auth/signup" color="primary" size="sm">
@@ -221,9 +223,15 @@ function Header() {
         ) : (
           <>
             <NavbarMenuItem>
-              <Link href="/auth/signin" onClick={handleMenuClose}>
+              <Button
+                as={Link}
+                href="/auth/signin"
+                variant="light"
+                className="w-full text-left"
+                onClick={handleMenuClose}
+              >
                 Sign In
-              </Link>
+              </Button>
             </NavbarMenuItem>
             <NavbarMenuItem>
               <Button
