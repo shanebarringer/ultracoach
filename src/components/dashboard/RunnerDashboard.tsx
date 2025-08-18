@@ -228,7 +228,6 @@ function RunnerDashboard() {
     }))
   }
 
-
   const handleWorkoutSuccess = () => {
     handleWorkoutModalClose()
     // The dashboard data should refresh automatically via Jotai atoms

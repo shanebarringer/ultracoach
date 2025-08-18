@@ -33,7 +33,7 @@ export function useMessages(recipientId?: string) {
 
   // Debounce message fetching to prevent race conditions using atoms
   const [lastMessagesFetchTime, setLastMessagesFetchTime] = useAtom(messagesFetchTimestampAtom)
-  
+
   // Use ref to track loaded conversations without causing re-renders
   const loadedConversationsRef = useRef<Set<string>>(new Set())
 
@@ -285,7 +285,7 @@ export function useMessages(recipientId?: string) {
       if (needsInitialLoad) {
         // Mark as loading this conversation
         loadedConversationsRef.current.add(recipientId)
-        
+
         // Initial load with loading spinner
         fetchMessages(recipientId, true)
       }
@@ -329,12 +329,7 @@ export function useMessages(recipientId?: string) {
         }
       }
     }
-  }, [
-    recipientId,
-    setChatUiState,
-    fetchMessages,
-    setUiState,
-  ])
+  }, [recipientId, setChatUiState, fetchMessages, setUiState])
 
   // Get messages for current conversation using loadable pattern
   const getConversationMessages = () => {

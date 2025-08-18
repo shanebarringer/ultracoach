@@ -163,7 +163,7 @@ export function useSupabaseRealtime({
         channelRef.current = null
       }
     }
-  }, [table, filter, onInsert, onUpdate, onDelete])
+  }, [table, filter, disabled, onInsert, onUpdate, onDelete])
 
   return channelRef.current
 }

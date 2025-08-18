@@ -396,19 +396,19 @@ function CoachDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="flat" 
-                          color="primary" 
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="primary"
                           className="flex-1"
                           onPress={() => handleViewProgress(runner.id)}
                         >
                           View Progress
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="flat" 
-                          color="success" 
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="success"
                           className="flex-1"
                           onPress={() => handleSendMessage(runner.id)}
                         >

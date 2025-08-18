@@ -111,8 +111,8 @@ export default function MessageInput({
               maxRows={5}
               disabled={disabled}
               classNames={{
-                input: 'text-small',
-                inputWrapper: 'bg-default-100 dark:bg-default-900',
+                input: 'text-small text-foreground',
+                inputWrapper: 'bg-default-100 dark:bg-default-50',
               }}
             />
           </div>
