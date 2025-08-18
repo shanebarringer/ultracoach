@@ -72,7 +72,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       }
 
       try {
-        const success = await sendMessage(content, workoutId, contextType)
+        const success = await sendMessage(content, workoutId)
         if (!success) {
           toast.error('Message Failed', 'Unable to send message. Please try again.')
         }
@@ -105,8 +105,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             logger.info('Sending queued message:', { id: queuedMessage.id })
             const success = await sendMessage(
               queuedMessage.content,
-              queuedMessage.workoutId,
-              queuedMessage.contextType
+              queuedMessage.workoutId
             )
 
             if (success) {
