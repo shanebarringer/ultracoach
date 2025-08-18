@@ -193,7 +193,7 @@ function ConversationList({ selectedUserId, useSuspense = false }: ConversationL
   }
 
   return (
-    <div className="overflow-y-auto">
+    <div className="overflow-y-auto" data-testid="conversation-list">
       {memoizedConversations.length === 0 ? (
         <div className="p-6 text-center">
           <MessageCircleIcon className="mx-auto h-8 w-8 text-foreground-400 mb-3" />

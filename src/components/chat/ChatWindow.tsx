@@ -103,10 +103,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         for (const queuedMessage of messagesToSend) {
           try {
             logger.info('Sending queued message:', { id: queuedMessage.id })
-            const success = await sendMessage(
-              queuedMessage.content,
-              queuedMessage.workoutId
-            )
+            const success = await sendMessage(queuedMessage.content, queuedMessage.workoutId)
 
             if (success) {
               // Remove from queue
@@ -163,7 +160,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
+    <div className="flex flex-col h-full min-h-0 relative" data-testid="chat-window">
       <ConnectionStatus />
       {/* Chat Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
