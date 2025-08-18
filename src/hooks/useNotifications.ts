@@ -83,9 +83,11 @@ export function useNotifications() {
   }, [session?.user?.id, fetchNotifications, fetchPreferences])
 
   // Enhanced real-time updates with toast notifications
+  // Temporarily disabled due to schema mismatch - relying on polling fallback
   useSupabaseRealtime({
     table: 'notifications',
     filter: `user_id=eq.${session?.user?.id}`,
+    disabled: true, // Disabled due to schema mismatch
     onInsert: payload => {
       const newNotification = payload.new as Notification
 

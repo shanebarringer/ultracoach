@@ -238,6 +238,19 @@ export const messagesAtom = atom<MessageWithUser[]>([])
 export const conversationsAtom = atom<ConversationWithUser[]>([])
 export const currentConversationIdAtom = atom<string | null>(null)
 
+// Offline message queue atom
+interface OfflineMessage {
+  id: string
+  recipientId: string
+  content: string
+  workoutId?: string
+  contextType?: string
+  timestamp: number
+  retryCount: number
+}
+
+export const offlineMessageQueueAtom = atomWithStorage<OfflineMessage[]>('offline-messages', [])
+
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
   get => get(chatUiStateAtom).currentRecipientId,

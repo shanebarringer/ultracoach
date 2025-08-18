@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -33,6 +33,9 @@ export function useMessages(recipientId?: string) {
 
   // Debounce message fetching to prevent race conditions using atoms
   const [lastMessagesFetchTime, setLastMessagesFetchTime] = useAtom(messagesFetchTimestampAtom)
+  
+  // Use ref to track loaded conversations without causing re-renders
+  const loadedConversationsRef = useRef<Set<string>>(new Set())
 
   // Use atomFamily for conversation-specific messages
   const [conversationMessages] = useAtom(
@@ -188,8 +191,10 @@ export function useMessages(recipientId?: string) {
   )
 
   // Real-time updates for messages with error handling
+  // Temporarily disabled due to schema mismatch - relying on polling fallback
   useSupabaseRealtime({
     table: 'messages',
+    disabled: true, // Disabled due to schema mismatch
     onInsert: payload => {
       try {
         const newMessage = payload.new as Message
@@ -274,18 +279,13 @@ export function useMessages(recipientId?: string) {
   // Enhanced polling with exponential backoff and error recovery
   useEffect(() => {
     if (recipientId) {
-      // Only trigger initial load if we haven't loaded this conversation before
-      // or if the conversation has changed
-      const needsInitialLoad =
-        !chatUiState.hasInitiallyLoadedMessages || chatUiState.currentRecipientId !== recipientId
+      // Check if we need to load this conversation
+      const needsInitialLoad = !loadedConversationsRef.current.has(recipientId)
 
       if (needsInitialLoad) {
-        setChatUiState(prev => ({
-          ...prev,
-          hasInitiallyLoadedMessages: false,
-          currentRecipientId: recipientId,
-        }))
-
+        // Mark as loading this conversation
+        loadedConversationsRef.current.add(recipientId)
+        
         // Initial load with loading spinner
         fetchMessages(recipientId, true)
       }
@@ -331,8 +331,6 @@ export function useMessages(recipientId?: string) {
     }
   }, [
     recipientId,
-    chatUiState.currentRecipientId,
-    chatUiState.hasInitiallyLoadedMessages,
     setChatUiState,
     fetchMessages,
     setUiState,

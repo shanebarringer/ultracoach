@@ -12,27 +12,69 @@ export default function ConnectionStatus() {
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const { connectionStatus } = uiState
 
-  // Monitor online/offline status
+  // Enhanced connection monitoring with retry logic
   useEffect(() => {
+    let retryTimeout: NodeJS.Timeout | null = null
+    let retryCount = 0
+    const maxRetries = 3
+
+    const attemptReconnection = async () => {
+      try {
+        setUiState(prev => ({ ...prev, connectionStatus: 'reconnecting' }))
+
+        // Test API connectivity
+        const response = await fetch('/api/health', {
+          method: 'HEAD',
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(5000),
+        })
+
+        if (response.ok) {
+          setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
+          retryCount = 0
+        } else {
+          throw new Error('API not responding')
+        }
+      } catch {
+        retryCount++
+        if (retryCount < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000) // Exponential backoff
+          retryTimeout = setTimeout(attemptReconnection, delay)
+        } else {
+          setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
+        }
+      }
+    }
+
     const handleOnline = () => {
-      setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
+      retryCount = 0
+      attemptReconnection()
     }
 
     const handleOffline = () => {
       setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+        retryTimeout = null
+      }
     }
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
 
-    // Set initial state
+    // Set initial state and attempt connection
     if (!navigator.onLine) {
       setUiState(prev => ({ ...prev, connectionStatus: 'disconnected' }))
+    } else {
+      attemptReconnection()
     }
 
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+      }
     }
   }, [setUiState])
 

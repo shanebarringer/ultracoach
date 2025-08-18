@@ -197,8 +197,10 @@ export function useConversations() {
   }, [session?.user?.id, fetchConversations])
 
   // Real-time updates for messages (which affect conversations) with error handling
+  // Temporarily disabled due to schema mismatch - relying on polling fallback
   useSupabaseRealtime({
     table: 'messages',
+    disabled: true, // Disabled due to schema mismatch
     onInsert: payload => {
       try {
         const newMessage = payload.new as Message

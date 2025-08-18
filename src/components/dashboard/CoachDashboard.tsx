@@ -14,6 +14,7 @@ import classNames from 'classnames'
 import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
@@ -124,6 +125,17 @@ const MetricCard = memo(function MetricCard({
 
 function CoachDashboard() {
   const { trainingPlans, runners, recentWorkouts, loading, relationships } = useDashboardData()
+  const router = useRouter()
+
+  // Handler for viewing runner progress
+  const handleViewProgress = (runnerId: string) => {
+    router.push(`/weekly-planner/${runnerId}`)
+  }
+
+  // Handler for sending messages to runners
+  const handleSendMessage = (runnerId: string) => {
+    router.push(`/chat/${runnerId}`)
+  }
 
   // Memoize expensive computations and add logging
   const typedTrainingPlans = useMemo(() => {
@@ -384,10 +396,22 @@ function CoachDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="flat" color="primary" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="flat" 
+                          color="primary" 
+                          className="flex-1"
+                          onPress={() => handleViewProgress(runner.id)}
+                        >
                           View Progress
                         </Button>
-                        <Button size="sm" variant="flat" color="success" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="flat" 
+                          color="success" 
+                          className="flex-1"
+                          onPress={() => handleSendMessage(runner.id)}
+                        >
                           Send Message
                         </Button>
                       </div>
