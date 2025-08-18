@@ -153,6 +153,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    logger.info('🚨 MESSAGE POST START: Request received', {
+      method: request.method,
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+    })
+
     logger.info('🔍 MESSAGE POST DEBUG: Attempting to send message', {
       headers: Object.fromEntries(request.headers.entries()),
       url: request.url,
