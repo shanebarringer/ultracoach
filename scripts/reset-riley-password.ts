@@ -1,9 +1,7 @@
 #!/usr/bin/env tsx
-
 /**
  * Reset Riley Parker's password for testing
  */
-
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('reset-riley-password')
@@ -31,7 +29,7 @@ async function resetRileyPassword() {
     } else {
       // If signup fails (user exists), that's expected
       logger.info('ℹ️  User exists, testing login instead...')
-      
+
       // Test if current password works
       const loginResponse = await fetch(`${BASE_URL}/api/auth/sign-in/email`, {
         method: 'POST',

@@ -756,7 +756,6 @@ export const sendMessageActionAtom = atom(
     try {
       const requestBody = { content, recipientId, workoutId }
 
-      
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

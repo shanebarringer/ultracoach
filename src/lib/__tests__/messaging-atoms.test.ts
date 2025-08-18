@@ -1,14 +1,16 @@
 /**
  * Messaging Atoms Unit Tests
- * 
+ *
  * Tests the core messaging atom functionality:
  * - sendMessageActionAtom
  * - Optimistic message handling
  * - Error handling
  */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createStore } from 'jotai'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Import after mocks
+import { messagesAtom, sendMessageActionAtom, sessionAtom } from '@/lib/atoms'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()
@@ -23,16 +25,13 @@ vi.mock('@/lib/logger', () => ({
   }),
 }))
 
-// Import after mocks
-import { sendMessageActionAtom, messagesAtom, sessionAtom } from '@/lib/atoms'
-
 describe('Messaging Atoms', () => {
   let store: ReturnType<typeof createStore>
 
   beforeEach(() => {
     vi.clearAllMocks()
     store = createStore()
-    
+
     // Reset atoms and mock session
     store.set(messagesAtom, [])
     store.set(sessionAtom, {
@@ -53,15 +52,16 @@ describe('Messaging Atoms', () => {
     it('should send a message successfully', async () => {
       const mockResponse = {
         ok: true,
-        json: () => Promise.resolve({
-          message: {
-            id: 'real-msg-123',
-            content: 'Test message',
-            sender_id: 'test-user-id',
-            recipient_id: 'recipient-id',
-            created_at: new Date().toISOString(),
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            message: {
+              id: 'real-msg-123',
+              content: 'Test message',
+              sender_id: 'test-user-id',
+              recipient_id: 'recipient-id',
+              created_at: new Date().toISOString(),
+            },
+          }),
       }
 
       mockFetch.mockResolvedValueOnce(mockResponse)
@@ -114,15 +114,16 @@ describe('Messaging Atoms', () => {
       // Resolve the response
       resolveResponse!({
         ok: true,
-        json: () => Promise.resolve({
-          message: {
-            id: 'real-msg-123',
-            content: 'Optimistic message',
-            sender_id: 'test-user-id',
-            recipient_id: 'recipient-id',
-            created_at: new Date().toISOString(),
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            message: {
+              id: 'real-msg-123',
+              content: 'Optimistic message',
+              sender_id: 'test-user-id',
+              recipient_id: 'recipient-id',
+              created_at: new Date().toISOString(),
+            },
+          }),
       })
 
       await sendPromise
@@ -159,13 +160,14 @@ describe('Messaging Atoms', () => {
     it('should include workoutId when provided', async () => {
       const mockResponse = {
         ok: true,
-        json: () => Promise.resolve({
-          message: {
-            id: 'msg-123',
-            content: 'Test message',
-            workout_id: 'workout-123',
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            message: {
+              id: 'msg-123',
+              content: 'Test message',
+              workout_id: 'workout-123',
+            },
+          }),
       }
 
       mockFetch.mockResolvedValueOnce(mockResponse)
@@ -224,15 +226,16 @@ describe('Messaging Atoms', () => {
     it('should replace optimistic message with real message', async () => {
       const mockResponse = {
         ok: true,
-        json: () => Promise.resolve({
-          message: {
-            id: 'real-msg-123',
-            content: 'Test message',
-            sender_id: 'test-user-id',
-            recipient_id: 'recipient-id',
-            created_at: new Date().toISOString(),
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            message: {
+              id: 'real-msg-123',
+              content: 'Test message',
+              sender_id: 'test-user-id',
+              recipient_id: 'recipient-id',
+              created_at: new Date().toISOString(),
+            },
+          }),
       }
 
       mockFetch.mockResolvedValueOnce(mockResponse)

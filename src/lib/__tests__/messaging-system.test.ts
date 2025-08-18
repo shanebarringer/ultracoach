@@ -1,16 +1,19 @@
 /**
  * Messaging System Unit Tests
- * 
+ *
  * Tests the core messaging functionality including:
  * - Message sending and receiving
  * - Relationship verification
  * - Bidirectional communication
  * - Error handling
  */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useAtom } from 'jotai'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+// Import after mocks
+import { useMessages } from '@/hooks/useMessages'
+import { messagesAtom } from '@/lib/atoms'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()
@@ -41,10 +44,6 @@ vi.mock('@/lib/logger', () => ({
   }),
 }))
 
-// Import after mocks
-import { useMessages } from '@/hooks/useMessages'
-import { messagesAtom } from '@/lib/atoms'
-
 describe('Messaging System', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -62,15 +61,16 @@ describe('Messaging System', () => {
     it('should send a message successfully', async () => {
       const mockResponse = {
         ok: true,
-        json: () => Promise.resolve({
-          message: {
-            id: 'msg-123',
-            content: 'Test message',
-            sender_id: 'test-user-id',
-            recipient_id: 'recipient-id',
-            created_at: new Date().toISOString(),
-          },
-        }),
+        json: () =>
+          Promise.resolve({
+            message: {
+              id: 'msg-123',
+              content: 'Test message',
+              sender_id: 'test-user-id',
+              recipient_id: 'recipient-id',
+              created_at: new Date().toISOString(),
+            },
+          }),
       }
 
       mockFetch.mockResolvedValueOnce(mockResponse)
@@ -169,9 +169,7 @@ describe('Messaging System', () => {
         expect(result.current.loading).toBe(false)
       })
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/messages?recipientId=recipient-id'
-      )
+      expect(mockFetch).toHaveBeenCalledWith('/api/messages?recipientId=recipient-id')
     })
 
     it('should handle fetch errors gracefully', async () => {
@@ -285,17 +283,18 @@ describe('Messaging System', () => {
   describe('Message State Management', () => {
     it('should add optimistic message immediately', async () => {
       // Mock a slow response
-      mockFetch.mockImplementation(() =>
-        new Promise(resolve =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: () => Promise.resolve({ message: {} }),
-              }),
-            100
+      mockFetch.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  json: () => Promise.resolve({ message: {} }),
+                }),
+              100
+            )
           )
-        )
       )
 
       const { result } = renderHook(() => useAtom(messagesAtom))
