@@ -754,6 +754,13 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
+      console.log('🔍 ATOMS DEBUG: Sending message', {
+        content: content.substring(0, 50) + '...',
+        recipientId,
+        workoutId,
+        url: '/api/messages',
+      })
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

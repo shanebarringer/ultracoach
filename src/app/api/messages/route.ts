@@ -153,18 +153,41 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    logger.info('🔍 MESSAGE POST DEBUG: Attempting to send message', {
+      headers: Object.fromEntries(request.headers.entries()),
+      url: request.url,
+    })
+
     const session = await auth.api.getSession({
       headers: request.headers,
     })
 
+    logger.info('🔍 MESSAGE POST DEBUG: Session check result', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+    })
+
     if (!session) {
+      logger.error('🔍 MESSAGE POST DEBUG: No session found - returning 401')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const sessionUser = session.user as User
     const { content, recipientId, workoutId, workoutLinks = [] } = await request.json()
 
+    logger.info('🔍 MESSAGE POST DEBUG: Request data parsed', {
+      content: content?.substring(0, 50) + '...',
+      recipientId,
+      workoutId,
+      sessionUserId: sessionUser.id,
+    })
+
     if (!content || !recipientId) {
+      logger.error('🔍 MESSAGE POST DEBUG: Missing content or recipientId', {
+        hasContent: !!content,
+        hasRecipientId: !!recipientId,
+      })
       return NextResponse.json(
         {
           error: 'Content and recipient ID are required',
@@ -174,6 +197,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify that the user has an active relationship with the recipient
+    logger.info('🔍 MESSAGE POST DEBUG: Checking relationship', {
+      sessionUserId: sessionUser.id,
+      recipientId,
+      checking: 'active relationship',
+    })
+
     const hasActiveRelationship = await db
       .select()
       .from(coach_runners)
@@ -196,7 +225,16 @@ export async function POST(request: NextRequest) {
       )
       .limit(1)
 
+    logger.info('🔍 MESSAGE POST DEBUG: Relationship check result', {
+      foundRelationships: hasActiveRelationship.length,
+      relationships: hasActiveRelationship,
+    })
+
     if (hasActiveRelationship.length === 0) {
+      logger.error('🔍 MESSAGE POST DEBUG: No active relationship found - returning 403', {
+        sessionUserId: sessionUser.id,
+        recipientId,
+      })
       return NextResponse.json(
         { error: 'No active relationship found with this user' },
         { status: 403 }
