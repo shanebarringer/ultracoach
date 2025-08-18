@@ -67,7 +67,7 @@ const passwordHash = `${salt}:${hash.toString('hex')}`
 // Uses Better Auth sign-up API for proper hashing
 const response = await fetch('/api/auth/sign-up/email', {
   method: 'POST',
-  body: JSON.stringify({ email, password, name, role })
+  body: JSON.stringify({ email, password, name, role }),
 })
 ```
 
