@@ -113,7 +113,11 @@ async function verifyDashboardRedirect(
   const expectedPath = `/dashboard/${expectedRole}`
   logger.info(`⏰ Waiting for redirect to ${expectedPath}...`)
 
-  // Wait for redirect to the correct dashboard
+  // First, wait for any redirect away from signup page
+  await expect(page).not.toHaveURL(/\/auth\/signup/, { timeout: 10000 })
+  logger.info(`✅ Redirected away from signup page`)
+
+  // Then wait for the final dashboard redirect (may go through /dashboard first)
   await expect(page).toHaveURL(new RegExp(`dashboard/${expectedRole}`), { timeout: 15000 })
   logger.info(`✅ Successfully redirected to ${expectedRole} dashboard`)
 
@@ -151,6 +155,19 @@ test.describe('Signup Flow Test', () => {
   })
 
   test('should signup as runner and assign correct userType', async ({ page }) => {
+    // Listen for console messages and network requests
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        logger.error(`Browser console error: ${msg.text()}`)
+      }
+    })
+
+    page.on('response', response => {
+      if (response.url().includes('/api/auth/sign-up') && !response.ok()) {
+        logger.error(`Signup API error: ${response.status()} ${response.statusText()}`)
+      }
+    })
+
     // Generate unique email to prevent conflicts
     const timestamp = Date.now()
     const formData: SignupFormData = {
@@ -170,6 +187,14 @@ test.describe('Signup Flow Test', () => {
 
     // Select runner role using proper selectors
     await selectUserRole(page, formData.role)
+
+    // Add a small delay before submission to ensure role is properly set
+    await page.waitForTimeout(1000)
+
+    // Log the form data before submission
+    const emailValue = await page.locator('input[type="email"]').inputValue()
+    const nameValue = await page.locator('input[type="text"]').inputValue()
+    logger.info(`Form data before submission: email=${emailValue}, name=${nameValue}`)
 
     // Submit form
     await submitSignupForm(page)
