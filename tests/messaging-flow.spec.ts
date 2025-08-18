@@ -20,7 +20,7 @@ const COACH_CREDENTIALS = {
 
 const RUNNER_CREDENTIALS = {
   email: 'riley.parker@ultracoach.dev',
-  password: 'UltraCoach2025!',
+  password: 'RunnerPass2025!',
   name: 'Riley Parker',
   userId: 'NU12c66I1ACHqNvmRFJDAY6pr0w0OVZL', // Updated with new user ID
 }
@@ -28,7 +28,7 @@ const RUNNER_CREDENTIALS = {
 // Alternative runner credentials for testing
 const ALT_RUNNER_CREDENTIALS = {
   email: 'alex.rivera@ultracoach.dev',
-  password: 'UltraCoach2025!',
+  password: 'RunnerPass2025!',
   name: 'Alex Rivera',
   userId: 'btQaqCnR9fzWxCJpg6M6Kolf8JCPmJap', // Updated with new user ID
 }
@@ -63,17 +63,8 @@ async function signIn(page: Page, credentials: typeof COACH_CREDENTIALS) {
 }
 
 async function navigateToChat(page: Page, recipientUserId: string) {
-  // First verify we can access dashboard (confirms session is working)
-  await page.goto('/dashboard')
-  await page.waitForTimeout(1000)
-
-  // Check if we got redirected to signin
-  if (page.url().includes('/auth/signin')) {
-    throw new Error(`Session expired - redirected to signin from dashboard. URL: ${page.url()}`)
-  }
-
-  // Now navigate to chat with specific user
-  await page.goto(`/chat/${recipientUserId}`, { waitUntil: 'domcontentloaded' })
+  // Navigate directly to chat with specific user
+  await page.goto(`/chat/${recipientUserId}`)
 
   // Check if we got redirected to signin (session expired)
   if (page.url().includes('/auth/signin')) {
@@ -240,18 +231,25 @@ test.describe('Messaging System E2E', () => {
       // Go to main chat page
       await page.goto('/chat')
 
-      // Wait for conversation list
+      // Wait for the main chat interface to load
       await page.waitForSelector('[data-testid="conversation-list"]', { timeout: 10000 })
 
-      // Look for runner in conversation list and click
-      const runnerName = RUNNER_CREDENTIALS.name
-      await page.click(`text="${runnerName}"`)
+      // Click "Start New Conversation" button to open the new message modal
+      await page.click('button:has-text("Start New Conversation")')
+
+      // Wait for the new message modal to open
+      await page.waitForSelector('[data-testid="new-message-modal"]', { timeout: 5000 })
+
+      // Look for runner in the available users list using data-testid
+      const runnerUserId = RUNNER_CREDENTIALS.userId
+      await page.click(`[data-testid="user-option-${runnerUserId}"]`)
 
       // Should navigate to the specific chat
-      await page.waitForURL(`**/chat/${RUNNER_CREDENTIALS.userId}`)
-      await page.waitForSelector('[data-testid="chat-window"]')
+      await page.waitForURL(`**/chat/${runnerUserId}`)
+      await page.waitForSelector('[data-testid="chat-window"]', { timeout: 10000 })
 
       // Verify we're in the right conversation
+      const runnerName = RUNNER_CREDENTIALS.name
       await expect(page.locator(`text="${runnerName}"`)).toBeVisible()
     } finally {
       await context.close()
