@@ -180,13 +180,15 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionUser = session.user as User
-    const { content, recipientId, workoutId, workoutLinks = [] } = await request.json()
+    const requestBody = await request.json()
+    const { content, recipientId, workoutId, workoutLinks = [] } = requestBody
 
     logger.info('🔍 MESSAGE POST DEBUG: Request data parsed', {
       content: content?.substring(0, 50) + '...',
       recipientId,
       workoutId,
       sessionUserId: sessionUser.id,
+      fullRequestBody: requestBody,
     })
 
     if (!content || !recipientId) {

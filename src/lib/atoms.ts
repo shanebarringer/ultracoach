@@ -754,21 +754,33 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
+      const requestBody = { content, recipientId, workoutId }
+
       console.log('🔍 ATOMS DEBUG: Sending message', {
         content: content.substring(0, 50) + '...',
         recipientId,
         workoutId,
         url: '/api/messages',
+        requestBody: JSON.stringify(requestBody),
       })
 
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, recipientId, workoutId }),
+        body: JSON.stringify(requestBody),
         credentials: 'include',
       })
 
+      console.log('🔍 ATOMS DEBUG: Response received', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        url: response.url,
+      })
+
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('🔍 ATOMS DEBUG: Error response body', errorText)
         throw new Error(`Failed to send message: ${response.statusText}`)
       }
 
