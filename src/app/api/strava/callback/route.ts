@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       expires_at: new Date(tokenData.expires_at * 1000),
-      scope: tokenData.scope.split(','),
+      scope: tokenData.scope ? tokenData.scope.split(',') : ['read'],
       athlete_data: tokenData.athlete,
       updated_at: new Date(),
     }
