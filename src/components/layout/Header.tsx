@@ -12,19 +12,17 @@ import {
   NavbarBrand,
   NavbarContent,
   NavbarItem,
-  NavbarMenu,
-  NavbarMenuItem,
   NavbarMenuToggle,
 } from '@heroui/react'
 import { useAtom } from 'jotai'
 
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 
 import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
-import { themeModeAtom } from '@/lib/atoms'
+import { themeModeAtom, uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Header')
@@ -54,17 +52,13 @@ const ThemeToggle = memo(function ThemeToggle() {
 function Header() {
   const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [, setUiState] = useAtom(uiStateAtom)
 
   const handleSignOut = useCallback(async () => {
     logger.info('User signing out')
     await signOut()
     window.location.href = '/'
   }, [signOut])
-
-  const handleMenuClose = useCallback(() => {
-    setIsMenuOpen(false)
-  }, [])
 
   // Memoize user navigation items to prevent unnecessary re-renders
   const userNavItems = useMemo(() => {
@@ -103,16 +97,12 @@ function Header() {
   }, [session])
 
   return (
-    <Navbar
-      onMenuOpenChange={setIsMenuOpen}
-      isMenuOpen={isMenuOpen}
-      className="bg-background/95 backdrop-blur-md border-b border-divider"
-      height="4rem"
-    >
+    <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
       <NavbarContent>
         <NavbarMenuToggle
-          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={'Open menu'}
           className=""
+          onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
         />
         <NavbarBrand className="mr-2">
           <Link href="/" className="flex items-center gap-2">
@@ -195,65 +185,6 @@ function Header() {
           </>
         )}
       </NavbarContent>
-
-      <NavbarMenu>
-        {status === 'loading' ? (
-          // Show nothing while loading to prevent flash
-          <></>
-        ) : session ? (
-          <>
-            {userNavItems.map(item => (
-              <NavbarMenuItem key={item.href}>
-                <Link href={item.href} onClick={handleMenuClose}>
-                  {item.label}
-                </Link>
-              </NavbarMenuItem>
-            ))}
-            <NavbarMenuItem>
-              <Link href="/profile" onClick={handleMenuClose}>
-                Profile
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Button
-                onClick={() => {
-                  handleSignOut()
-                  handleMenuClose()
-                }}
-                className="w-full text-left"
-                variant="light"
-              >
-                Sign Out
-              </Button>
-            </NavbarMenuItem>
-          </>
-        ) : (
-          <>
-            <NavbarMenuItem>
-              <Button
-                as={Link}
-                href="/auth/signin"
-                variant="light"
-                className="w-full text-left"
-                onClick={handleMenuClose}
-              >
-                Sign In
-              </Button>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Button
-                as={Link}
-                href="/auth/signup"
-                color="primary"
-                className="w-full"
-                onClick={handleMenuClose}
-              >
-                Sign Up
-              </Button>
-            </NavbarMenuItem>
-          </>
-        )}
-      </NavbarMenu>
     </Navbar>
   )
 }

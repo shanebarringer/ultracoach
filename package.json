@@ -59,6 +59,7 @@
   "dependencies": {
     "@better-auth/cli": "^1.2.12",
     "@heroicons/react": "^2.2.0",
+    "@heroui/drawer": "^2.2.21",
     "@heroui/react": "^2.7.11",
     "@heroui/theme": "^2.4.17",
     "@hookform/resolvers": "^5.1.1",
