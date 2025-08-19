@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from '@heroui/react'
 import { Activity } from 'lucide-react'
 
 import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
+import StravaActivityList from '@/components/strava/StravaActivityList'
 
 export default function IntegrationsSettingsPanel() {
   return (
@@ -23,6 +24,11 @@ export default function IntegrationsSettingsPanel() {
         <div>
           <h3 className="text-lg font-medium mb-4">Activity Tracking</h3>
           <StravaConnectionCard />
+        </div>
+
+        <div>
+          <h3 className="text-lg font-medium mb-4">Activity Sync</h3>
+          <StravaActivityList />
         </div>
 
         {/* Future integrations */}
