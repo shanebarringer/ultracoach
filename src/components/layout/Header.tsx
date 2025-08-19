@@ -148,7 +148,7 @@ function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Button as={Link} href="/auth/signin" variant="light" size="sm">
+              <Button as={Link} href="/auth/signin" variant="ghost" size="sm">
                 Sign In
               </Button>
             </NavbarItem>
