@@ -496,3 +496,109 @@ export const better_auth_users = user
 export const better_auth_accounts = account
 export const better_auth_sessions = session
 export const better_auth_verification_tokens = verification
+
+// ===================================
+// STRAVA INTEGRATION TABLES
+// ===================================
+
+// Strava connections - links UltraCoach users to Strava accounts
+export const strava_connections = pgTable(
+  'strava_connections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    strava_athlete_id: integer('strava_athlete_id').notNull(),
+    access_token: text('access_token').notNull(),
+    refresh_token: text('refresh_token').notNull(),
+    expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+    scope: json('scope').$type<string[]>().notNull(),
+    athlete_data: json('athlete_data').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'strava_connections_user_id_fkey',
+    }),
+    stravaAthleteUnique: unique('strava_connections_athlete_id_unique').on(table.strava_athlete_id),
+    userStravaUnique: unique('strava_connections_user_strava_unique').on(
+      table.user_id,
+      table.strava_athlete_id
+    ),
+  })
+)
+
+// Strava activity sync - tracks synced activities between Strava and UltraCoach
+export const strava_activity_syncs = pgTable(
+  'strava_activity_syncs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    connection_id: uuid('connection_id').notNull(),
+    strava_activity_id: integer('strava_activity_id').notNull(),
+    ultracoach_workout_id: uuid('ultracoach_workout_id'),
+    activity_data: json('activity_data').notNull(),
+    sync_status: text('sync_status', {
+      enum: ['pending', 'synced', 'failed', 'ignored'],
+    })
+      .default('pending')
+      .notNull(),
+    sync_error: text('sync_error'),
+    synced_at: timestamp('synced_at', { withTimezone: true }),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    connectionRef: foreignKey({
+      columns: [table.connection_id],
+      foreignColumns: [strava_connections.id],
+      name: 'strava_activity_syncs_connection_id_fkey',
+    }),
+    workoutRef: foreignKey({
+      columns: [table.ultracoach_workout_id],
+      foreignColumns: [workouts.id],
+      name: 'strava_activity_syncs_workout_id_fkey',
+    }),
+    stravaActivityUnique: unique('strava_activity_syncs_strava_activity_unique').on(
+      table.strava_activity_id
+    ),
+  })
+)
+
+// Strava webhooks - for real-time activity updates
+export const strava_webhooks = pgTable('strava_webhooks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  subscription_id: integer('subscription_id').notNull(),
+  callback_url: text('callback_url').notNull(),
+  verify_token: text('verify_token').notNull(),
+  active: boolean('active').default(true).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// Strava webhook events - log of received webhook events
+export const strava_webhook_events = pgTable(
+  'strava_webhook_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    webhook_id: uuid('webhook_id').notNull(),
+    object_type: text('object_type', { enum: ['activity', 'athlete'] }).notNull(),
+    object_id: integer('object_id').notNull(),
+    aspect_type: text('aspect_type', { enum: ['create', 'update', 'delete'] }).notNull(),
+    updates: json('updates'),
+    owner_id: integer('owner_id').notNull(),
+    event_time: timestamp('event_time', { withTimezone: true }).notNull(),
+    processed: boolean('processed').default(false).notNull(),
+    processed_at: timestamp('processed_at', { withTimezone: true }),
+    error: text('error'),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    webhookRef: foreignKey({
+      columns: [table.webhook_id],
+      foreignColumns: [strava_webhooks.id],
+      name: 'strava_webhook_events_webhook_id_fkey',
+    }),
+  })
+)

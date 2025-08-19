@@ -2,6 +2,7 @@
 
 import { Card, CardBody, CardHeader, Divider, Skeleton, Tab, Tabs } from '@heroui/react'
 import {
+  Activity,
   BellIcon,
   MessageSquareIcon,
   PaletteIcon,
@@ -18,6 +19,7 @@ import { useUserSettings } from '@/hooks/useUserSettings'
 
 import CommunicationSettingsPanel from './components/CommunicationSettingsPanel'
 import DisplaySettingsPanel from './components/DisplaySettingsPanel'
+import IntegrationsSettingsPanel from './components/IntegrationsSettingsPanel'
 import NotificationSettingsPanel from './components/NotificationSettingsPanel'
 import PrivacySettingsPanel from './components/PrivacySettingsPanel'
 import ProfileSettingsPanel from './components/ProfileSettingsPanel'
@@ -123,6 +125,12 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
       title: 'Training',
       icon: <TargetIcon className="w-4 h-4" />,
       component: <TrainingSettingsPanel settings={settings} />,
+    },
+    {
+      key: 'integrations',
+      title: 'Integrations',
+      icon: <Activity className="w-4 h-4" />,
+      component: <IntegrationsSettingsPanel />,
     },
   ]
 
