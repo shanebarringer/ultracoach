@@ -262,7 +262,7 @@ export async function getUserById(userId: string) {
 
 /**
  * Verify conversation permission between current user and recipient
- * Uses coach_runners table to enforce relationship-based messaging
+ * Uses direct database query to check coach_runners table for active relationships
  */
 export async function verifyConversationPermission(recipientId: string): Promise<boolean> {
   try {
@@ -275,66 +275,64 @@ export async function verifyConversationPermission(recipientId: string): Promise
 
     // Users can always message themselves (for testing)
     if (session.user.id === recipientId) {
+      logger.info('Conversation permission granted - messaging self', {
+        userId: session.user.id,
+      })
       return true
     }
 
-    // Check for active coach-runner relationship
-    const headersList = await headers()
-    const host = headersList.get('x-forwarded-host') ?? headersList.get('host')
-    const proto =
-      headersList.get('x-forwarded-proto') ?? (host?.startsWith('localhost') ? 'http' : 'https')
-    const base = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL || ''
-    const cookie = headersList.get('cookie') ?? ''
+    // Direct database query to check for active coach-runner relationship
+    // This eliminates cookie forwarding issues that occur with server-side fetch
+    const { db } = await import('@/lib/db')
+    const { coach_runners } = await import('@/lib/schema')
+    const { and, or, eq } = await import('drizzle-orm')
 
-    try {
-      const response = await fetch(`${base}/api/my-relationships`, {
-        headers: {
-          ...(cookie ? { cookie } : {}),
-          accept: 'application/json',
-        },
-        cache: 'no-store',
+    const relationships = await db
+      .select({
+        id: coach_runners.id,
+        status: coach_runners.status,
+        coach_id: coach_runners.coach_id,
+        runner_id: coach_runners.runner_id,
       })
-
-      if (!response.ok) {
-        logger.warn('Failed to check relationships for conversation permission', {
-          status: response.status,
-          currentUser: session.user.id,
-          recipient: recipientId,
-        })
-        return false
-      }
-
-      const data = await response.json()
-      const relationships = data.relationships || []
-
-      // Check if there's an active relationship between current user and recipient
-      const hasRelationship = relationships.some(
-        (rel: { status: string; coach_id: string; runner_id: string }) =>
-          rel.status === 'active' &&
-          ((rel.coach_id === session.user.id && rel.runner_id === recipientId) ||
-            (rel.runner_id === session.user.id && rel.coach_id === recipientId))
+      .from(coach_runners)
+      .where(
+        and(
+          // Check for bidirectional relationship
+          or(
+            and(
+              eq(coach_runners.coach_id, session.user.id),
+              eq(coach_runners.runner_id, recipientId)
+            ),
+            and(
+              eq(coach_runners.runner_id, session.user.id),
+              eq(coach_runners.coach_id, recipientId)
+            )
+          ),
+          // Only active relationships
+          eq(coach_runners.status, 'active')
+        )
       )
+      .limit(1)
 
-      if (hasRelationship) {
-        logger.info('Conversation permission granted via active relationship', {
-          currentUser: session.user.id,
-          recipient: recipientId,
-        })
-        return true
-      } else {
-        logger.warn('Conversation permission denied - no active relationship', {
-          currentUser: session.user.id,
-          recipient: recipientId,
-        })
-        return false
-      }
-    } catch (fetchError) {
-      logger.error('Error fetching relationships for conversation permission:', fetchError)
-      // Fail closed - deny permission if we can't verify relationship
+    const hasActiveRelationship = relationships.length > 0
+
+    if (hasActiveRelationship) {
+      logger.info('Conversation permission granted via active relationship', {
+        currentUser: session.user.id,
+        recipient: recipientId,
+        relationshipId: relationships[0].id,
+      })
+      return true
+    } else {
+      logger.warn('Conversation permission denied - no active relationship found', {
+        currentUser: session.user.id,
+        recipient: recipientId,
+      })
       return false
     }
   } catch (error) {
     logger.error('Error verifying conversation permission:', error)
+    // Fail closed - deny permission if we can't verify relationship
     return false
   }
 }

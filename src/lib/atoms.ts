@@ -238,6 +238,19 @@ export const messagesAtom = atom<MessageWithUser[]>([])
 export const conversationsAtom = atom<ConversationWithUser[]>([])
 export const currentConversationIdAtom = atom<string | null>(null)
 
+// Offline message queue atom
+interface OfflineMessage {
+  id: string
+  recipientId: string
+  content: string
+  workoutId?: string
+  contextType?: string
+  timestamp: number
+  retryCount: number
+}
+
+export const offlineMessageQueueAtom = atomWithStorage<OfflineMessage[]>('offline-messages', [])
+
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
   get => get(chatUiStateAtom).currentRecipientId,
@@ -741,14 +754,17 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
+      const requestBody = { content, recipientId, workoutId }
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, recipientId, workoutId }),
+        body: JSON.stringify(requestBody),
         credentials: 'include',
       })
 
       if (!response.ok) {
+        await response.text() // Consume response body
         throw new Error(`Failed to send message: ${response.statusText}`)
       }
 

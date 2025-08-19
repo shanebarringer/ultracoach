@@ -12,6 +12,7 @@ const logger = createLogger('useSupabaseRealtime')
 interface UseSupabaseRealtimeProps {
   table: string
   filter?: string
+  disabled?: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onInsert?: (payload: Record<string, any>) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,6 +24,7 @@ interface UseSupabaseRealtimeProps {
 export function useSupabaseRealtime({
   table,
   filter,
+  disabled = false,
   onInsert,
   onUpdate,
   onDelete,
@@ -30,6 +32,12 @@ export function useSupabaseRealtime({
   const channelRef = useRef<RealtimeChannel | null>(null)
 
   useEffect(() => {
+    // Skip if disabled
+    if (disabled) {
+      logger.info(`Realtime subscription disabled for ${table}`)
+      return
+    }
+
     // Check if real-time is available
     if (!supabase.realtime) {
       logger.warn('Supabase real-time not available')
@@ -155,7 +163,7 @@ export function useSupabaseRealtime({
         channelRef.current = null
       }
     }
-  }, [table, filter, onInsert, onUpdate, onDelete])
+  }, [table, filter, disabled, onInsert, onUpdate, onDelete])
 
   return channelRef.current
 }

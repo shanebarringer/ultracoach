@@ -66,7 +66,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   )
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} data-testid="new-message-modal">
       <ModalContent>
         <ModalHeader>New Message</ModalHeader>
         <ModalBody>
@@ -118,6 +118,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                     variant="light"
                     className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors text-left justify-start"
                     onClick={() => handleStartConversation(user.id)}
+                    data-testid={`user-option-${user.id}`}
                   >
                     <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium mr-3">
                       {user.full_name?.charAt(0)?.toUpperCase() || 'U'}

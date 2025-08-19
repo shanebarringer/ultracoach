@@ -12,13 +12,13 @@ import {
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { chatUiStateAtom } from '@/lib/atoms'
+import { chatUiStateAtom, offlineMessageQueueAtom, uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
@@ -38,6 +38,8 @@ interface ChatWindowProps {
 export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) {
   const { data: session } = useSession()
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
+  const [uiState] = useAtom(uiStateAtom)
+  const [offlineQueue, setOfflineQueue] = useAtom(offlineMessageQueueAtom)
 
   // Use Jotai hooks for state management
   const { messages, loading, sendMessage } = useMessages(recipientId)
@@ -49,13 +51,30 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       if (!session?.user?.id || chatUiState.sending) return
 
       setChatUiState(prev => ({ ...prev, sending: true }))
+
+      // Check if offline
+      if (uiState.connectionStatus === 'disconnected') {
+        // Queue message for offline sending
+        const offlineMessage = {
+          id: crypto.randomUUID(),
+          recipientId,
+          content,
+          workoutId,
+          contextType,
+          timestamp: Date.now(),
+          retryCount: 0,
+        }
+
+        setOfflineQueue(prev => [...prev, offlineMessage])
+        toast.warning('Message Queued', 'Message will be sent when connection is restored.')
+        setChatUiState(prev => ({ ...prev, sending: false }))
+        return
+      }
+
       try {
-        const success = await sendMessage(content, workoutId, contextType)
+        const success = await sendMessage(content, workoutId)
         if (!success) {
           toast.error('Message Failed', 'Unable to send message. Please try again.')
-        } else {
-          // Optional: Show success toast for sent messages (can be removed if too noisy)
-          // toast.success('Message Sent', 'Your message has been delivered.')
         }
       } catch (error) {
         logger.error('Error sending message:', error)
@@ -64,8 +83,58 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         setChatUiState(prev => ({ ...prev, sending: false }))
       }
     },
-    [session?.user?.id, chatUiState.sending, sendMessage, setChatUiState]
+    [
+      session?.user?.id,
+      chatUiState.sending,
+      uiState.connectionStatus,
+      recipientId,
+      sendMessage,
+      setChatUiState,
+      setOfflineQueue,
+    ]
   )
+
+  // Process offline message queue when connection is restored
+  useEffect(() => {
+    if (uiState.connectionStatus === 'connected' && offlineQueue.length > 0) {
+      const processQueue = async () => {
+        const messagesToSend = offlineQueue.filter(msg => msg.retryCount < 3)
+
+        for (const queuedMessage of messagesToSend) {
+          try {
+            logger.info('Sending queued message:', { id: queuedMessage.id })
+            const success = await sendMessage(queuedMessage.content, queuedMessage.workoutId)
+
+            if (success) {
+              // Remove from queue
+              setOfflineQueue(prev => prev.filter(msg => msg.id !== queuedMessage.id))
+              toast.success('Message Sent', 'Queued message delivered successfully.')
+            } else {
+              // Increment retry count
+              setOfflineQueue(prev =>
+                prev.map(msg =>
+                  msg.id === queuedMessage.id ? { ...msg, retryCount: msg.retryCount + 1 } : msg
+                )
+              )
+            }
+          } catch (error) {
+            logger.error('Failed to send queued message:', error)
+            // Increment retry count
+            setOfflineQueue(prev =>
+              prev.map(msg =>
+                msg.id === queuedMessage.id ? { ...msg, retryCount: msg.retryCount + 1 } : msg
+              )
+            )
+          }
+        }
+
+        // Remove messages that have exceeded retry limit
+        setOfflineQueue(prev => prev.filter(msg => msg.retryCount < 3))
+      }
+
+      processQueue()
+    }
+  }, [uiState.connectionStatus, offlineQueue, sendMessage, setOfflineQueue])
 
   // Note: Message filtering is now handled by the PerformantMessageList component
 
@@ -91,7 +160,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
+    <div className="flex flex-col h-full min-h-0 relative" data-testid="chat-window">
       <ConnectionStatus />
       {/* Chat Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
