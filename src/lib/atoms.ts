@@ -398,6 +398,7 @@ export const uiStateAtom = atom({
   useSuspense: false, // Toggle for demonstrating Suspense vs traditional loading
   defaultToComplete: false,
   connectionStatus: 'connected' as 'connected' | 'reconnecting' | 'disconnected',
+  isDrawerOpen: false,
 })
 
 // Async atoms for data fetching with Suspense support

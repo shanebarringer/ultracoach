@@ -238,14 +238,26 @@ function CoachDashboard() {
               <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
               <p className="text-sm text-foreground-600">Active summit challenges</p>
             </div>
-            <Button
-              as={Link}
-              href="/training-plans"
-              color="primary"
-              className="bg-linear-to-r from-primary to-secondary text-white font-medium"
-            >
-              ⛰️ Manage Plans
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                as={Link}
+                href="/coach/weekly-overview"
+                variant="flat"
+                color="primary"
+                size="sm"
+                className="hidden sm:flex"
+              >
+                📊 Weekly Overview
+              </Button>
+              <Button
+                as={Link}
+                href="/training-plans"
+                color="primary"
+                className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+              >
+                ⛰️ Manage Plans
+              </Button>
+            </div>
           </CardHeader>
           <CardBody>
             {typedTrainingPlans.length === 0 ? (

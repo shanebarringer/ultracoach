@@ -123,12 +123,21 @@ export default function CreateTrainingPlanModal({
         // Fetch plan templates
         if (planTemplates.length === 0) {
           try {
-            const response = await fetch('/api/training-plans/templates')
+            const response = await fetch('/api/training-plans/templates', {
+              credentials: 'include', // Include cookies for authentication
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            })
             if (response.ok) {
               const data = await response.json()
               setPlanTemplates(data.templates)
+              logger.info(`Loaded ${data.templates.length} plan templates`)
             } else {
-              logger.error('Failed to fetch plan templates', response.statusText)
+              logger.error('Failed to fetch plan templates:', response.status, response.statusText)
+              // Show more detailed error for debugging
+              const errorText = await response.text()
+              logger.error('API response:', errorText)
             }
           } catch (err) {
             logger.error('Error fetching plan templates:', err)
@@ -154,6 +163,7 @@ export default function CreateTrainingPlanModal({
 
       const response = await fetch('/api/training-plans', {
         method: 'POST',
+        credentials: 'include', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
         },

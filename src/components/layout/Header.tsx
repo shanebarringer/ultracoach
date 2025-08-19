@@ -12,19 +12,18 @@ import {
   NavbarBrand,
   NavbarContent,
   NavbarItem,
-  NavbarMenu,
-  NavbarMenuItem,
   NavbarMenuToggle,
 } from '@heroui/react'
 import { useAtom } from 'jotai'
 
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback } from 'react'
 
 import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
-import { themeModeAtom } from '@/lib/atoms'
+import { useNavigationItems } from '@/hooks/useNavigationItems'
+import { themeModeAtom, uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Header')
@@ -54,7 +53,7 @@ const ThemeToggle = memo(function ThemeToggle() {
 function Header() {
   const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [, setUiState] = useAtom(uiStateAtom)
 
   const handleSignOut = useCallback(async () => {
     logger.info('User signing out')
@@ -62,65 +61,25 @@ function Header() {
     window.location.href = '/'
   }, [signOut])
 
-  const handleMenuClose = useCallback(() => {
-    setIsMenuOpen(false)
-  }, [])
-
-  // Memoize user navigation items to prevent unnecessary re-renders
-  const userNavItems = useMemo(() => {
-    if (!session) return []
-
-    const baseItems = [
-      {
-        href: '/dashboard',
-        label: 'Dashboard',
-      },
-      { href: '/relationships', label: 'Relationships' },
-      { href: '/calendar', label: 'Calendar' },
-      { href: '/workouts', label: 'Workouts' },
-      { href: '/chat', label: 'Messages' },
-    ]
-
-    if (session.user.role === 'coach') {
-      return [
-        baseItems[0], // Dashboard
-        baseItems[1], // Relationships
-        baseItems[2], // Calendar
-        { href: '/runners', label: 'Runners' },
-        { href: '/races', label: 'Races' },
-        { href: '/weekly-planner', label: 'Weekly Planner' },
-        { href: '/training-plans', label: 'Training Plans' },
-        ...baseItems.slice(3), // Workouts, Messages
-      ]
-    }
-
-    return [
-      ...baseItems.slice(0, 3), // Dashboard, Relationships, Calendar
-      { href: '/weekly-planner', label: 'My Training' }, // Read-only weekly planner for runners
-      ...baseItems.slice(3), // Workouts, Messages
-    ]
-  }, [session])
+  // Use centralized navigation hook to prevent DRY violation
+  const userNavItems = useNavigationItems(session)
 
   return (
-    <Navbar
-      onMenuOpenChange={setIsMenuOpen}
-      isMenuOpen={isMenuOpen}
-      className="bg-background/95 backdrop-blur-md border-b border-divider"
-      height="4rem"
-    >
-      <NavbarContent>
+    <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
+      <NavbarContent justify="start" className="gap-3">
         <NavbarMenuToggle
-          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-          className="md:hidden"
+          aria-label={'Open menu'}
+          className="lg:hidden"
+          onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
         />
         <NavbarBrand>
-          <Link href="/" className="flex items-center gap-3">
-            <span className="text-2xl">🏔️</span>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-xl">🏔️</span>
             <div className="flex flex-col">
-              <span className="font-black text-xl bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <span className="font-black text-lg bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent leading-tight">
                 UltraCoach
               </span>
-              <span className="text-xs text-muted font-medium hidden md:block">
+              <span className="text-xs text-muted font-medium hidden lg:block leading-none">
                 Conquer Your Peaks
               </span>
             </div>
@@ -128,7 +87,7 @@ function Header() {
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden md:flex gap-4" justify="center">
+      <NavbarContent className="hidden lg:flex gap-1 lg:gap-2" justify="center">
         {status === 'loading' ? (
           // Show nothing while loading to prevent flash
           <></>
@@ -138,7 +97,7 @@ function Header() {
               <NavbarItem key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-foreground hover:text-primary transition-colors font-medium"
+                  className="text-foreground hover:text-primary transition-colors font-medium text-sm lg:text-base px-1"
                 >
                   {item.label}
                 </Link>
@@ -194,65 +153,6 @@ function Header() {
           </>
         )}
       </NavbarContent>
-
-      <NavbarMenu>
-        {status === 'loading' ? (
-          // Show nothing while loading to prevent flash
-          <></>
-        ) : session ? (
-          <>
-            {userNavItems.map(item => (
-              <NavbarMenuItem key={item.href}>
-                <Link href={item.href} onClick={handleMenuClose}>
-                  {item.label}
-                </Link>
-              </NavbarMenuItem>
-            ))}
-            <NavbarMenuItem>
-              <Link href="/profile" onClick={handleMenuClose}>
-                Profile
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Button
-                onClick={() => {
-                  handleSignOut()
-                  handleMenuClose()
-                }}
-                className="w-full text-left"
-                variant="light"
-              >
-                Sign Out
-              </Button>
-            </NavbarMenuItem>
-          </>
-        ) : (
-          <>
-            <NavbarMenuItem>
-              <Button
-                as={Link}
-                href="/auth/signin"
-                variant="light"
-                className="w-full text-left"
-                onClick={handleMenuClose}
-              >
-                Sign In
-              </Button>
-            </NavbarMenuItem>
-            <NavbarMenuItem>
-              <Button
-                as={Link}
-                href="/auth/signup"
-                color="primary"
-                className="w-full"
-                onClick={handleMenuClose}
-              >
-                Sign Up
-              </Button>
-            </NavbarMenuItem>
-          </>
-        )}
-      </NavbarMenu>
     </Navbar>
   )
 }
