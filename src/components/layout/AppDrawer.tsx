@@ -2,22 +2,12 @@
 
 import { Drawer, DrawerBody, DrawerContent, DrawerHeader } from '@heroui/drawer'
 import { useAtom } from 'jotai'
-import {
-  Calendar,
-  CalendarDays,
-  Dumbbell,
-  FileText,
-  LayoutDashboard,
-  MapPin,
-  MessageCircle,
-  Mountain,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
+import { Mountain } from 'lucide-react'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
+import { useNavigationItems } from '@/hooks/useNavigationItems'
 import { uiStateAtom } from '@/lib/atoms'
 
 import MobileNavContent from './MobileNavContent'
@@ -36,92 +26,8 @@ export default function AppDrawer() {
     window.location.href = '/'
   }, [signOut])
 
-  const userNavItems = useMemo(() => {
-    if (!session) return []
-
-    const baseItems = [
-      {
-        href: '/dashboard',
-        label: 'Dashboard',
-        icon: LayoutDashboard,
-        description: 'Overview and metrics',
-      },
-      {
-        href: '/relationships',
-        label: 'Connections',
-        icon: Users,
-        description: 'Manage relationships',
-      },
-      {
-        href: '/calendar',
-        label: 'Calendar',
-        icon: Calendar,
-        description: 'View scheduled workouts',
-      },
-      {
-        href: '/workouts',
-        label: 'Workouts',
-        icon: Dumbbell,
-        description: 'Track your training',
-      },
-      {
-        href: '/chat',
-        label: 'Messages',
-        icon: MessageCircle,
-        description: 'Chat with your team',
-      },
-    ]
-
-    if (session.user.role === 'coach') {
-      return [
-        baseItems[0], // Dashboard
-        baseItems[1], // Relationships
-        {
-          href: '/runners',
-          label: 'Runners',
-          icon: Users,
-          description: 'Manage your athletes',
-        },
-        {
-          href: '/races',
-          label: 'Races',
-          icon: MapPin,
-          description: 'Browse race events',
-        },
-        baseItems[2], // Calendar
-        {
-          href: '/weekly-planner',
-          label: 'Planner',
-          icon: CalendarDays,
-          description: 'Plan training weeks',
-        },
-        {
-          href: '/coach/weekly-overview',
-          label: 'Overview',
-          icon: TrendingUp,
-          description: 'Athlete progress tracking',
-        },
-        {
-          href: '/training-plans',
-          label: 'Plans',
-          icon: FileText,
-          description: 'Create & manage plans',
-        },
-        ...baseItems.slice(3), // Workouts, Messages
-      ]
-    }
-
-    return [
-      ...baseItems.slice(0, 3), // Dashboard, Relationships, Calendar
-      {
-        href: '/weekly-planner',
-        label: 'My Training',
-        icon: CalendarDays,
-        description: 'View your training plan',
-      },
-      ...baseItems.slice(3), // Workouts, Messages
-    ]
-  }, [session])
+  // Use centralized navigation hook to eliminate DRY violation
+  const userNavItems = useNavigationItems(session)
 
   return (
     <Drawer

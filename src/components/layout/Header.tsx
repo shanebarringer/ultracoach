@@ -16,12 +16,13 @@ import {
 } from '@heroui/react'
 import { useAtom } from 'jotai'
 
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback } from 'react'
 
 import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
+import { useNavigationItems } from '@/hooks/useNavigationItems'
 import { themeModeAtom, uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
@@ -60,41 +61,8 @@ function Header() {
     window.location.href = '/'
   }, [signOut])
 
-  // Memoize user navigation items to prevent unnecessary re-renders
-  const userNavItems = useMemo(() => {
-    if (!session) return []
-
-    const baseItems = [
-      {
-        href: '/dashboard',
-        label: 'Dashboard',
-      },
-      { href: '/relationships', label: 'Connections' },
-      { href: '/calendar', label: 'Calendar' },
-      { href: '/workouts', label: 'Workouts' },
-      { href: '/chat', label: 'Messages' },
-    ]
-
-    if (session.user.role === 'coach') {
-      return [
-        baseItems[0], // Dashboard
-        baseItems[1], // Relationships
-        { href: '/runners', label: 'Runners' },
-        { href: '/races', label: 'Races' },
-        baseItems[2], // Calendar
-        { href: '/weekly-planner', label: 'Planner' },
-        { href: '/coach/weekly-overview', label: 'Overview' },
-        { href: '/training-plans', label: 'Plans' },
-        ...baseItems.slice(3), // Workouts, Messages
-      ]
-    }
-
-    return [
-      ...baseItems.slice(0, 3), // Dashboard, Relationships, Calendar
-      { href: '/weekly-planner', label: 'My Training' }, // Read-only weekly planner for runners
-      ...baseItems.slice(3), // Workouts, Messages
-    ]
-  }, [session])
+  // Use centralized navigation hook to prevent DRY violation
+  const userNavItems = useNavigationItems(session)
 
   return (
     <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
