@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
     const baseQuery = db
       .select({
         id: workouts.id,
+        user_id: workouts.user_id, // Add user_id field for filtering
         training_plan_id: workouts.training_plan_id,
         date: workouts.date,
         planned_type: workouts.planned_type,
