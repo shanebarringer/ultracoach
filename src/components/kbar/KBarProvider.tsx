@@ -1,5 +1,6 @@
 'use client'
 
+import { useAtom } from 'jotai'
 import {
   Action,
   KBarProvider as KBar,
@@ -10,7 +11,6 @@ import {
   KBarSearch,
   useMatches,
 } from 'kbar'
-import { useAtom } from 'jotai'
 import {
   Activity,
   Calendar,
@@ -31,7 +31,11 @@ import { ReactNode, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { stravaActivitiesRefreshableAtom, stravaConnectionStatusAtom, workoutStravaShowPanelAtom } from '@/lib/atoms'
+import {
+  stravaActivitiesRefreshableAtom,
+  stravaConnectionStatusAtom,
+  workoutStravaShowPanelAtom,
+} from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('KBarProvider')
@@ -96,7 +100,7 @@ interface ExtendedUser {
 export default function KBarProvider({ children }: KBarProviderProps) {
   const router = useRouter()
   const { data: session } = useSession()
-  
+
   // Strava state atoms
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
   const [, refreshStravaActivities] = useAtom(stravaActivitiesRefreshableAtom)
@@ -222,9 +226,14 @@ export default function KBarProvider({ children }: KBarProviderProps) {
       {
         id: 'strava-status',
         name: 'Strava Connection Status',
-        subtitle: connectionStatus === 'loading' ? 'Checking connection...' : 
-                  connectionStatus === 'connected' ? '✅ Connected' : 
-                  connectionStatus === 'disconnected' ? '❌ Not connected' : 'Check your Strava connection',
+        subtitle:
+          connectionStatus === 'loading'
+            ? 'Checking connection...'
+            : connectionStatus === 'connected'
+              ? '✅ Connected'
+              : connectionStatus === 'disconnected'
+                ? '❌ Not connected'
+                : 'Check your Strava connection',
         shortcut: ['s', 'c'],
         keywords: 'strava connection status check',
         icon: <Activity className="w-4 h-4" />,

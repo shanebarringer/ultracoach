@@ -10,6 +10,11 @@ import {
 
 import type { RelationshipData } from '@/types/relationships'
 import type { StravaActivity, StravaConnection } from '@/types/strava'
+// ============================================================================
+// Workout Matching & Diffing Atoms
+// ============================================================================
+
+import type { WorkoutMatch } from '@/utils/workout-matching'
 
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
@@ -1657,12 +1662,6 @@ export const stravaStateAtom = atom(get => {
   }
 })
 
-// ============================================================================
-// Workout Matching & Diffing Atoms
-// ============================================================================
-
-import type { WorkoutMatch } from '@/utils/workout-matching'
-
 // Workout matching state
 export const workoutMatchingStateAtom = atom<{
   matches: Map<number, WorkoutMatch[]>
@@ -1673,15 +1672,15 @@ export const workoutMatchingStateAtom = atom<{
   matches: new Map(),
   loading: false,
   lastProcessed: null,
-  error: null
+  error: null,
 })
 
 // Current matching options
 export const matchingOptionsAtom = atom({
   dateTolerance: 1, // days
   distanceTolerance: 0.15, // 15%
-  durationTolerance: 0.20, // 20%
-  minConfidence: 0.3 // 30%
+  durationTolerance: 0.2, // 20%
+  minConfidence: 0.3, // 30%
 })
 
 // Selected match for diffing
@@ -1712,27 +1711,27 @@ export const matchingSummaryAtom = atom(get => {
   const conflicts = allMatches.filter(m => m.matchType === 'conflict').length
 
   // Find unmatched planned workouts
-  const matchedWorkoutIds = new Set(allMatches.filter(m => m.confidence > 0.5).map(m => m.workout.id))
-  const unmatchedWorkouts = workouts.filter(w => 
-    w.status === 'planned' && 
-    !matchedWorkoutIds.has(w.id) &&
-    new Date(w.date) <= new Date()
+  const matchedWorkoutIds = new Set(
+    allMatches.filter(m => m.confidence > 0.5).map(m => m.workout.id)
+  )
+  const unmatchedWorkouts = workouts.filter(
+    w => w.status === 'planned' && !matchedWorkoutIds.has(w.id) && new Date(w.date) <= new Date()
   ).length
 
   return {
     total: {
       activities: activities.length,
       workouts: workouts.length,
-      matches: totalMatches
+      matches: totalMatches,
     },
     byType: {
       exact: exactMatches,
       probable: probableMatches,
       possible: possibleMatches,
-      conflicts: conflicts
+      conflicts: conflicts,
     },
     unmatchedWorkouts,
-    lastProcessed: matchingState.lastProcessed
+    lastProcessed: matchingState.lastProcessed,
   }
 })
 
@@ -1753,7 +1752,7 @@ export const triggerWorkoutMatchingAtom = atom(null, async (get, set) => {
     logger.info('Starting workout matching process', {
       activities: stravaState.activities.length,
       workouts: workouts.length,
-      options
+      options,
     })
 
     const { batchMatchActivities } = await import('@/utils/workout-matching')
@@ -1764,21 +1763,21 @@ export const triggerWorkoutMatchingAtom = atom(null, async (get, set) => {
       matches,
       loading: false,
       lastProcessed: new Date().toISOString(),
-      error: null
+      error: null,
     }))
 
     logger.info('Workout matching completed successfully', {
       matchedActivities: matches.size,
-      totalMatches: Array.from(matches.values()).flat().length
+      totalMatches: Array.from(matches.values()).flat().length,
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     logger.error('Workout matching failed:', error)
-    
+
     set(workoutMatchingStateAtom, prev => ({
       ...prev,
       loading: false,
-      error: errorMessage
+      error: errorMessage,
     }))
   }
 })

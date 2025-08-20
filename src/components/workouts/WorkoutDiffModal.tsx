@@ -46,7 +46,7 @@ interface WorkoutDiffModalProps {
 
 /**
  * Advanced workout comparison modal for reviewing Strava activity matches
- * 
+ *
  * Features:
  * - Side-by-side comparison of planned vs actual workouts
  * - Detailed discrepancy analysis with severity indicators
@@ -64,7 +64,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
     setShowModal(false)
     setSelectedMatch(null)
   }, [setShowModal, setSelectedMatch])
-  
+
   const handleClose = onClose || handleCloseDefault
 
   // Compute comparison data
@@ -72,7 +72,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
     if (!selectedMatch) return null
 
     const { workout, activity, confidence, discrepancies, suggestions } = selectedMatch
-    
+
     // Convert activity data to comparable format
     const actualDistance = Number((activity.distance / 1609.34).toFixed(2)) // meters to miles
     const actualDuration = Math.round(activity.moving_time / 60) // seconds to minutes
@@ -102,27 +102,34 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
         discrepancies,
         suggestions,
         activityId: activity.id,
-      }
+      },
     }
   }, [selectedMatch])
 
   // Categorize discrepancies by severity
   const categorizedDiscrepancies = useMemo(() => {
     if (!comparisonData) return { major: [], moderate: [], minor: [] }
-    
-    return comparisonData.meta.discrepancies.reduce((acc, discrepancy) => {
-      acc[discrepancy.severity].push(discrepancy)
-      return acc
-    }, { major: [] as WorkoutDiscrepancy[], moderate: [] as WorkoutDiscrepancy[], minor: [] as WorkoutDiscrepancy[] })
+
+    return comparisonData.meta.discrepancies.reduce(
+      (acc, discrepancy) => {
+        acc[discrepancy.severity].push(discrepancy)
+        return acc
+      },
+      {
+        major: [] as WorkoutDiscrepancy[],
+        moderate: [] as WorkoutDiscrepancy[],
+        minor: [] as WorkoutDiscrepancy[],
+      }
+    )
   }, [comparisonData])
 
   // Handle match approval
   const handleApproveMatch = useCallback(() => {
     if (selectedMatch && onApproveMatch) {
-      logger.info('Approving workout match', { 
+      logger.info('Approving workout match', {
         workoutId: selectedMatch.workout.id,
         activityId: selectedMatch.activity.id,
-        confidence: selectedMatch.confidence 
+        confidence: selectedMatch.confidence,
       })
       onApproveMatch(selectedMatch)
     }
@@ -160,8 +167,8 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
   }
 
   return (
-    <Modal 
-      isOpen={modalOpen} 
+    <Modal
+      isOpen={modalOpen}
       onClose={handleClose}
       size="5xl"
       scrollBehavior="inside"
@@ -190,8 +197,8 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
 
         <ModalBody className="p-0">
           <Tabs aria-label="Workout comparison tabs" className="px-6 pt-4">
-            <Tab 
-              key="comparison" 
+            <Tab
+              key="comparison"
               title={
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
@@ -209,8 +216,8 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                     </h3>
                   </CardHeader>
                   <CardBody className="pt-0">
-                    <Progress 
-                      value={meta.confidence * 100} 
+                    <Progress
+                      value={meta.confidence * 100}
                       color={getConfidenceColor(meta.confidence)}
                       size="lg"
                       className="mb-3"
@@ -236,7 +243,9 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">{new Date(planned.date).toLocaleDateString()}</p>
+                          <p className="font-medium">
+                            {new Date(planned.date).toLocaleDateString()}
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm text-foreground-600">Type</p>
@@ -284,7 +293,9 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">{new Date(actual.date).toLocaleDateString()}</p>
+                          <p className="font-medium">
+                            {new Date(actual.date).toLocaleDateString()}
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm text-foreground-600">Type</p>
@@ -333,8 +344,8 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
               </div>
             </Tab>
 
-            <Tab 
-              key="discrepancies" 
+            <Tab
+              key="discrepancies"
               title={
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
@@ -366,7 +377,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                         </CardHeader>
                         <CardBody className="space-y-3">
                           {categorizedDiscrepancies.major.map((discrepancy, index) => (
-                            <div key={index} className="flex items-start gap-3 p-3 bg-danger/5 rounded-lg">
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 p-3 bg-danger/5 rounded-lg"
+                            >
                               <AlertCircle className="h-5 w-5 text-danger flex-shrink-0 mt-0.5" />
                               <div>
                                 <p className="font-medium text-foreground capitalize">
@@ -376,8 +390,12 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                                   {discrepancy.description}
                                 </p>
                                 <div className="flex items-center gap-4 text-xs">
-                                  <span>Planned: <strong>{discrepancy.planned}</strong></span>
-                                  <span>Actual: <strong>{discrepancy.actual}</strong></span>
+                                  <span>
+                                    Planned: <strong>{discrepancy.planned}</strong>
+                                  </span>
+                                  <span>
+                                    Actual: <strong>{discrepancy.actual}</strong>
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -397,7 +415,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                         </CardHeader>
                         <CardBody className="space-y-3">
                           {categorizedDiscrepancies.moderate.map((discrepancy, index) => (
-                            <div key={index} className="flex items-start gap-3 p-3 bg-warning/5 rounded-lg">
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 p-3 bg-warning/5 rounded-lg"
+                            >
                               <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
                               <div>
                                 <p className="font-medium text-foreground capitalize">
@@ -407,8 +428,12 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                                   {discrepancy.description}
                                 </p>
                                 <div className="flex items-center gap-4 text-xs">
-                                  <span>Planned: <strong>{discrepancy.planned}</strong></span>
-                                  <span>Actual: <strong>{discrepancy.actual}</strong></span>
+                                  <span>
+                                    Planned: <strong>{discrepancy.planned}</strong>
+                                  </span>
+                                  <span>
+                                    Actual: <strong>{discrepancy.actual}</strong>
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -428,7 +453,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                         </CardHeader>
                         <CardBody className="space-y-3">
                           {categorizedDiscrepancies.minor.map((discrepancy, index) => (
-                            <div key={index} className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg">
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg"
+                            >
                               <Target className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                               <div>
                                 <p className="font-medium text-foreground capitalize">
@@ -438,8 +466,12 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                                   {discrepancy.description}
                                 </p>
                                 <div className="flex items-center gap-4 text-xs">
-                                  <span>Planned: <strong>{discrepancy.planned}</strong></span>
-                                  <span>Actual: <strong>{discrepancy.actual}</strong></span>
+                                  <span>
+                                    Planned: <strong>{discrepancy.planned}</strong>
+                                  </span>
+                                  <span>
+                                    Actual: <strong>{discrepancy.actual}</strong>
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -452,8 +484,8 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
               </div>
             </Tab>
 
-            <Tab 
-              key="suggestions" 
+            <Tab
+              key="suggestions"
               title={
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" />
@@ -471,7 +503,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                   </CardHeader>
                   <CardBody className="space-y-3">
                     {meta.suggestions.map((suggestion, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-success/5 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 p-3 bg-success/5 rounded-lg"
+                      >
                         <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
                         <p className="text-foreground">{suggestion}</p>
                       </div>
@@ -484,11 +519,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                   <Card className="border-success/20">
                     <CardBody className="text-center py-6">
                       <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-3" />
-                      <h4 className="text-lg font-semibold text-success mb-2">
-                        Ready to Sync
-                      </h4>
+                      <h4 className="text-lg font-semibold text-success mb-2">Ready to Sync</h4>
                       <p className="text-foreground-600 mb-4">
-                        This is a high-confidence match. The activity data will update your planned workout.
+                        This is a high-confidence match. The activity data will update your planned
+                        workout.
                       </p>
                       <div className="flex gap-3 justify-center">
                         <Button
