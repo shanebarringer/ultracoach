@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   decimal,
   foreignKey,
@@ -536,7 +537,7 @@ export const strava_activity_syncs = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     connection_id: uuid('connection_id').notNull(),
-    strava_activity_id: integer('strava_activity_id').notNull(),
+    strava_activity_id: bigint('strava_activity_id', { mode: 'number' }).notNull(),
     ultracoach_workout_id: uuid('ultracoach_workout_id'),
     activity_data: json('activity_data').notNull(),
     sync_status: text('sync_status', {

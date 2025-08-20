@@ -26,27 +26,30 @@ export default function ChatPageClient({ user }: Props) {
             {/* Conversations Sidebar */}
             <div className="w-full md:w-1/3 lg:w-1/4 border-r border-divider flex flex-col">
               <CardHeader className="bg-content2 border-b border-divider">
-                <div className="flex justify-between items-center w-full">
+                <div className="flex flex-col w-full">
                   <div className="flex items-center gap-2">
                     <MessageCircleIcon className="w-5 h-5 text-primary" />
                     <h1 className="text-lg font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                       Base Camp Communications
                     </h1>
+
+                    <Button
+                      isIconOnly
+                      color="primary"
+                      variant="solid"
+                      size="sm"
+                      onPress={() => setChatUiState(prev => ({ ...prev, showNewMessage: true }))}
+                      className="hover:scale-105 transition-transform"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    isIconOnly
-                    color="primary"
-                    variant="solid"
-                    size="sm"
-                    onPress={() => setChatUiState(prev => ({ ...prev, showNewMessage: true }))}
-                    className="hover:scale-105 transition-transform"
-                  >
-                    <PlusIcon className="w-4 h-4" />
-                  </Button>
+                  <p className="text-sm text-foreground-600 mt-2">
+                    {user.role === 'coach'
+                      ? 'Guide your expedition team'
+                      : 'Connect with your guide'}
+                  </p>
                 </div>
-                <p className="text-sm text-foreground-600 mt-2">
-                  {user.role === 'coach' ? 'Guide your expedition team' : 'Connect with your guide'}
-                </p>
               </CardHeader>
               <div className="flex-1 overflow-hidden">
                 <ConversationList />

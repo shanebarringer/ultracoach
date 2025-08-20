@@ -1,14 +1,6 @@
 'use client'
 
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Chip,
-  Divider,
-  Spinner,
-} from '@heroui/react'
+import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from '@heroui/react'
 import { Activity, Calendar, MapPin, Timer, TrendingUp } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
@@ -115,10 +107,7 @@ export default function StravaActivityList() {
             workout_id: result.workout_id,
           },
         }))
-        toast.success(
-          'Activity synced!',
-          `${activity.name} has been added to your workouts`
-        )
+        toast.success('Activity synced!', `${activity.name} has been added to your workouts`)
         logger.info('Successfully synced activity', {
           activityId: activity.id,
           workoutId: result.workout_id,
@@ -304,9 +293,7 @@ export default function StravaActivityList() {
                     <Chip color="success" size="sm">
                       Synced
                     </Chip>
-                    <span className="text-small text-default-500">
-                      Added to your workouts
-                    </span>
+                    <span className="text-small text-default-500">Added to your workouts</span>
                   </div>
                 ) : (
                   <Button

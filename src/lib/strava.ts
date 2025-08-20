@@ -106,7 +106,9 @@ export async function exchangeCodeForTokens(code: string) {
 
     return tokens
   } catch (error) {
-    logger.error('Error exchanging code for tokens:', error)
+    logger.error('Error exchanging code for tokens:', {
+      message: error instanceof Error ? error.message : String(error),
+    })
     throw error
   }
 }
@@ -142,7 +144,9 @@ export async function refreshAccessToken(refreshToken: string) {
 
     return tokens
   } catch (error) {
-    logger.error('Error refreshing access token:', error)
+    logger.error('Error refreshing access token:', {
+      message: error instanceof Error ? error.message : String(error),
+    })
     throw error
   }
 }
@@ -177,28 +181,34 @@ export async function ensureValidToken(connection: {
  * Fetch athlete's recent activities from Strava
  */
 export async function getRecentActivities(accessToken: string, page = 1, perPage = 30) {
-  const client = createStravaClient(accessToken)
-
   try {
-    const activities = await new Promise((resolve, reject) => {
-      client.athlete.listActivities(
-        {
-          page,
-          per_page: perPage,
+    // Use direct API call instead of strava-v3 library (which has token issues)
+    const response = await fetch(
+      `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-        (err: unknown, payload: unknown) => {
-          if (err) reject(err)
-          else resolve(payload)
-        }
-      )
-    })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Strava API error: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+
+    const activities = await response.json()
 
     logger.info(
-      `Fetched ${Array.isArray(activities) ? activities.length : 0} activities from Strava`
+      `Fetched ${Array.isArray(activities) ? activities.length : 0} activities from Strava using direct API`
     )
     return activities
   } catch (error) {
-    logger.error('Error fetching activities from Strava:', error)
+    logger.error('Error fetching activities from Strava:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     throw error
   }
 }
@@ -207,26 +217,31 @@ export async function getRecentActivities(accessToken: string, page = 1, perPage
  * Get detailed activity information
  */
 export async function getActivityById(accessToken: string, activityId: number) {
-  const client = createStravaClient(accessToken)
-
   try {
-    const activity = await new Promise((resolve, reject) => {
-      client.activities.get(
-        {
-          id: activityId,
-          include_all_efforts: true,
+    // Use direct API call instead of strava-v3 library (which has token issues)
+    const response = await fetch(
+      `https://www.strava.com/api/v3/activities/${activityId}?include_all_efforts=true`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
-        (err: unknown, payload: unknown) => {
-          if (err) reject(err)
-          else resolve(payload)
-        }
-      )
-    })
+      }
+    )
 
-    logger.info(`Fetched detailed activity ${activityId} from Strava`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Strava API error: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+
+    const activity = await response.json()
+
+    logger.info(`Fetched detailed activity ${activityId} from Strava using direct API`)
     return activity
   } catch (error) {
-    logger.error(`Error fetching activity ${activityId} from Strava:`, error)
+    logger.error(`Error fetching activity ${activityId} from Strava:`, {
+      message: error instanceof Error ? error.message : String(error),
+    })
     throw error
   }
 }

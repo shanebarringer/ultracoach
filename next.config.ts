@@ -1,7 +1,14 @@
+import { codeInspectorPlugin } from 'code-inspector-plugin'
+
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  webpack: config => {
+  webpack: (config, { dev, isServer }) => {
+    // Add the code-inspector-plugin
+    if (dev && !isServer) {
+      config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
+    }
+
     // Ignore pg-native module since it's not available in browser environments
     config.resolve.alias = {
       ...config.resolve.alias,

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
+import KBarProvider from '@/components/kbar/KBarProvider'
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
 import { Toaster } from '@/components/ui/toast'
 import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
@@ -36,8 +37,10 @@ export default function RootLayout({
           <BetterAuthProvider>
             <HeroUIProvider>
               <ThemeWrapper>
-                {children}
-                <Toaster />
+                <KBarProvider>
+                  {children}
+                  <Toaster />
+                </KBarProvider>
               </ThemeWrapper>
             </HeroUIProvider>
           </BetterAuthProvider>

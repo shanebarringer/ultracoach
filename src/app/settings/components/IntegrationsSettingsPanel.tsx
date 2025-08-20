@@ -3,8 +3,8 @@
 import { Card, CardBody, CardHeader } from '@heroui/react'
 import { Activity } from 'lucide-react'
 
-import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
 import StravaActivityList from '@/components/strava/StravaActivityList'
+import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
 
 export default function IntegrationsSettingsPanel() {
   return (

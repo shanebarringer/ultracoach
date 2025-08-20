@@ -261,6 +261,16 @@ export default function StravaConnectionCard() {
             </div>
           )}
 
+          {!isExpired && status.scope && !status.scope.includes('activity:read_all') && (
+            <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg">
+              <div className="text-sm font-medium text-warning-800">Limited Permissions</div>
+              <div className="text-sm text-warning-700 mt-1">
+                Your Strava connection has limited permissions and cannot sync activities. Please
+                reconnect to grant activity reading permissions.
+              </div>
+            </div>
+          )}
+
           <Divider />
 
           <div className="flex gap-2">

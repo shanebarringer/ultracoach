@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
+
+import { NextResponse } from 'next/server'
 
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
@@ -25,20 +26,59 @@ export async function GET() {
       .limit(1)
 
     if (connection.length === 0) {
-      return NextResponse.json(
-        { error: 'No Strava connection found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No Strava connection found' }, { status: 404 })
     }
 
     const conn = connection[0]
-    
-    // Ensure token is valid and refresh if needed
-    const validToken = await ensureValidToken({
-      access_token: conn.access_token,
-      refresh_token: conn.refresh_token,
-      expires_at: conn.expires_at,
+
+    logger.info('Strava connection details', {
+      userId: session.user.id,
+      stravaAthleteId: conn.strava_athlete_id,
+      expiresAt: conn.expires_at,
+      currentTime: new Date(),
+      isExpired: new Date() >= new Date(conn.expires_at),
+      scope: conn.scope,
     })
+
+    // Check if connection has required scopes for activities
+    if (!conn.scope || !conn.scope.includes('activity:read_all')) {
+      logger.error('Insufficient Strava permissions', {
+        userId: session.user.id,
+        currentScope: conn.scope,
+        requiredScope: 'activity:read_all',
+      })
+      return NextResponse.json(
+        {
+          error:
+            'Insufficient Strava permissions. Please reconnect your Strava account with activity reading permissions.',
+          reconnectRequired: true,
+        },
+        { status: 403 }
+      )
+    }
+
+    // Ensure token is valid and refresh if needed
+    let validToken
+    try {
+      validToken = await ensureValidToken({
+        access_token: conn.access_token,
+        refresh_token: conn.refresh_token,
+        expires_at: conn.expires_at,
+      })
+    } catch (error) {
+      logger.error('Token refresh failed, reconnection required', {
+        userId: session.user.id,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      return NextResponse.json(
+        {
+          error:
+            'Strava token has expired and could not be refreshed. Please reconnect your Strava account.',
+          reconnectRequired: true,
+        },
+        { status: 401 }
+      )
+    }
 
     // Update connection if token was refreshed
     if (validToken.access_token !== conn.access_token) {
@@ -75,10 +115,10 @@ export async function GET() {
       },
     })
   } catch (error) {
-    logger.error('Error fetching Strava activities:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Strava activities' },
-      { status: 500 }
-    )
+    logger.error('Error fetching Strava activities:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'UnknownError',
+    })
+    return NextResponse.json({ error: 'Failed to fetch Strava activities' }, { status: 500 })
   }
 }

@@ -12,6 +12,11 @@ const logger = createLogger('strava-callback-api')
 
 export async function GET(req: NextRequest) {
   try {
+    logger.info('Strava callback received', {
+      url: req.url,
+      timestamp: new Date().toISOString(),
+    })
+
     // Check if Strava is enabled
     if (!STRAVA_ENABLED) {
       logger.warn('Strava integration is not configured')
@@ -23,6 +28,18 @@ export async function GET(req: NextRequest) {
     const state = searchParams.get('state')
     const error = searchParams.get('error')
 
+    // Get scope from URL parameters (Strava includes it in callback)
+    const urlScope = searchParams.get('scope')
+
+    logger.info('Strava callback parameters', {
+      hasCode: !!code,
+      hasState: !!state,
+      error: error,
+      urlScope: urlScope,
+      codeLength: code?.length,
+      stateLength: state?.length,
+    })
+
     // Handle OAuth errors
     if (error) {
       logger.warn('Strava OAuth error:', error)
@@ -30,7 +47,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!code || !state) {
-      logger.error('Missing code or state parameter')
+      logger.error('Missing code or state parameter', { code: !!code, state: !!state })
       return redirect('/settings?error=strava_invalid_callback')
     }
 
@@ -60,10 +77,19 @@ export async function GET(req: NextRequest) {
     }
 
     // Exchange code for tokens
+    logger.info('Exchanging code for tokens', { userId })
     const tokenData = await exchangeCodeForTokens(code)
 
+    logger.info('Token exchange result', {
+      hasAccessToken: !!tokenData.access_token,
+      hasRefreshToken: !!tokenData.refresh_token,
+      hasAthlete: !!tokenData.athlete,
+      athleteId: tokenData.athlete?.id,
+      scope: tokenData.scope,
+    })
+
     if (!tokenData.access_token || !tokenData.refresh_token) {
-      logger.error('Invalid token response from Strava')
+      logger.error('Invalid token response from Strava', { tokenData })
       return redirect('/settings?error=strava_token_failed')
     }
 
@@ -84,16 +110,31 @@ export async function GET(req: NextRequest) {
     }
 
     // Create or update Strava connection
+    // Use scope from URL params (more reliable than token response)
+    const scopeArray = urlScope
+      ? urlScope.split(',')
+      : tokenData.scope
+        ? tokenData.scope.split(',')
+        : ['read']
+
     const connectionData = {
       user_id: userId,
       strava_athlete_id: tokenData.athlete.id,
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
       expires_at: new Date(tokenData.expires_at * 1000),
-      scope: tokenData.scope ? tokenData.scope.split(',') : ['read'],
+      scope: scopeArray,
       athlete_data: tokenData.athlete,
       updated_at: new Date(),
     }
+
+    logger.info('Saving Strava connection to database', {
+      userId,
+      stravaAthleteId: tokenData.athlete.id,
+      isUpdate: existingConnection.length > 0,
+      scopeArray: scopeArray,
+      hasActivityReadAll: scopeArray.includes('activity:read_all'),
+    })
 
     if (existingConnection.length > 0) {
       // Update existing connection
@@ -121,6 +162,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    logger.info('Strava OAuth callback completed successfully, redirecting to settings')
     // Redirect to settings with success
     return redirect('/settings?success=strava_connected')
   } catch (error) {
