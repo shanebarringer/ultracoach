@@ -15,6 +15,8 @@ import {
   NavbarMenuToggle,
 } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { useKBar } from 'kbar'
+import { Search } from 'lucide-react'
 
 import { memo, useCallback } from 'react'
 
@@ -46,6 +48,27 @@ const ThemeToggle = memo(function ThemeToggle() {
       className="hover:bg-primary/10 transition-colors"
     >
       {themeMode === 'light' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+    </Button>
+  )
+})
+
+const SearchButton = memo(function SearchButton() {
+  const { query } = useKBar()
+
+  const openKBar = useCallback(() => {
+    logger.debug('Opening K-Bar via search button')
+    query.toggle()
+  }, [query])
+
+  return (
+    <Button
+      isIconOnly
+      variant="light"
+      onClick={openKBar}
+      aria-label="Search (⌘K)"
+      className="hover:bg-primary/10 transition-colors"
+    >
+      <Search className="h-5 w-5" />
     </Button>
   )
 })
@@ -121,36 +144,41 @@ function Header() {
       </NavbarContent>
 
       <NavbarContent justify="end">
+        <NavbarItem>
+          <SearchButton />
+        </NavbarItem>
         {session && (
           <>
             <NavbarItem>
               <NotificationBell />
             </NavbarItem>
-            <NavbarItem>
-              <ThemeToggle />
-            </NavbarItem>
-            <NavbarItem>
-              <Dropdown>
-                <DropdownTrigger>
-                  <Avatar
-                    name={(session.user?.name as string) || 'User'}
-                    className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
-                  />
-                </DropdownTrigger>
-                <DropdownMenu aria-label="User menu">
-                  <DropdownItem key="profile" as={Link} href="/profile">
-                    Profile
-                  </DropdownItem>
-                  <DropdownItem key="settings" as={Link} href="/settings">
-                    Settings
-                  </DropdownItem>
-                  <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
-                    Sign Out
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </NavbarItem>
           </>
+        )}
+        <NavbarItem>
+          <ThemeToggle />
+        </NavbarItem>
+        {session && (
+          <NavbarItem>
+            <Dropdown>
+              <DropdownTrigger>
+                <Avatar
+                  name={(session.user?.name as string) || 'User'}
+                  className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
+                />
+              </DropdownTrigger>
+              <DropdownMenu aria-label="User menu">
+                <DropdownItem key="profile" as={Link} href="/profile">
+                  Profile
+                </DropdownItem>
+                <DropdownItem key="settings" as={Link} href="/settings">
+                  Settings
+                </DropdownItem>
+                <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+                  Sign Out
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </NavbarItem>
         )}
       </NavbarContent>
     </Navbar>

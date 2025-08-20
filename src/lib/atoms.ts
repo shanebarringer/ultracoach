@@ -1455,7 +1455,9 @@ export const syncStatsAtom = atom(get => {
 
   const activities = activitiesLoadable.data
   const total = activities.length
-  const synced = activities.filter((activity: StravaActivity) => syncProgress[activity.id]?.synced).length
+  const synced = activities.filter(
+    (activity: StravaActivity) => syncProgress[activity.id]?.synced
+  ).length
   const pending = total - synced
   const syncing = Object.values(syncProgress).filter(p => p.syncing).length
 
@@ -1493,7 +1495,10 @@ export const stravaActionsAtom = atom(
   (
     get,
     set,
-    action: { type: 'SYNC_ACTIVITY' | 'CONNECT' | 'DISCONNECT' | 'RECONNECT'; payload?: SyncActivityPayload }
+    action: {
+      type: 'SYNC_ACTIVITY' | 'CONNECT' | 'DISCONNECT' | 'RECONNECT'
+      payload?: SyncActivityPayload
+    }
   ) => {
     const logger = createLogger('StravaActions')
 
@@ -1629,7 +1634,10 @@ export const stravaStateAtom = atom(get => {
   const error = get(stravaErrorAtom)
   const autoReconnect = get(stravaAutoReconnectAtom)
 
-  const connection = connectionLoadable.state === 'hasData' ? connectionLoadable.data : { connected: false, enabled: false }
+  const connection =
+    connectionLoadable.state === 'hasData'
+      ? connectionLoadable.data
+      : { connected: false, enabled: false }
   const activities = activitiesLoadable.state === 'hasData' ? activitiesLoadable.data : []
 
   return {
