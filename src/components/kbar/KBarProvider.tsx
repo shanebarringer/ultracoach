@@ -171,8 +171,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         icon: <CheckCircle className="w-4 h-4" />,
         parent: 'quick-actions',
         perform: () => {
-          // This will be enhanced to show a modal with today's workouts
-          logger.info('Mark workout complete command triggered')
+          logger.info("Mark workout complete command triggered - navigating to today's workouts")
+          router.push('/workouts?filter=today')
         },
       },
       {
@@ -203,8 +203,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         icon: <RefreshCw className="w-4 h-4" />,
         parent: 'strava',
         perform: () => {
-          // This will trigger the Strava sync modal
-          logger.info('Strava sync command triggered')
+          logger.info('Strava sync command triggered - navigating to dashboard for sync')
+          router.push('/dashboard?strava=sync')
         },
       },
       {
@@ -216,8 +216,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         icon: <Activity className="w-4 h-4" />,
         parent: 'strava',
         perform: () => {
-          // This will show Strava status
-          logger.info('Strava status command triggered')
+          logger.info('Strava status command triggered - navigating to dashboard')
+          router.push('/dashboard?strava=status')
         },
       },
 
