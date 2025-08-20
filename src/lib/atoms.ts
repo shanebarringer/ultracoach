@@ -1358,14 +1358,20 @@ export const syncProgressAtom = atom<{
   }
 }>({})
 
-// Refreshable Strava connection status atom
-export const stravaConnectionStatusAtom = atomWithRefresh(async () => {
+// Refreshable Strava connection status atom (only fetches when user is authenticated)
+export const stravaConnectionStatusAtom = atomWithRefresh(async get => {
   if (!isBrowser) return { connected: false, enabled: false }
+
+  // Check authentication first - don't make API calls for unauthenticated users
+  const authState = get(authStateAtom)
+  if (!authState.user || authState.loading) {
+    return { connected: false, enabled: false }
+  }
 
   const logger = createLogger('StravaConnectionStatus')
 
   try {
-    logger.debug('Fetching Strava connection status...')
+    logger.debug('Fetching Strava connection status for authenticated user...')
     const response = await fetch('/api/strava/status', {
       credentials: 'include',
     })
@@ -1384,14 +1390,20 @@ export const stravaConnectionStatusAtom = atomWithRefresh(async () => {
   }
 })
 
-// Refreshable Strava activities atom
-export const stravaActivitiesRefreshableAtom = atomWithRefresh(async () => {
+// Refreshable Strava activities atom (only fetches when user is authenticated)
+export const stravaActivitiesRefreshableAtom = atomWithRefresh(async get => {
   if (!isBrowser) return []
+
+  // Check authentication first - don't make API calls for unauthenticated users
+  const authState = get(authStateAtom)
+  if (!authState.user || authState.loading) {
+    return []
+  }
 
   const logger = createLogger('StravaActivities')
 
   try {
-    logger.debug('Fetching Strava activities...')
+    logger.debug('Fetching Strava activities for authenticated user...')
     const response = await fetch('/api/strava/activities', {
       credentials: 'include',
     })
