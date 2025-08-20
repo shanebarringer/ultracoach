@@ -158,27 +158,29 @@ function Header() {
           <ThemeToggle />
         </NavbarItem>
         {session && (
-          <NavbarItem>
-            <Dropdown>
-              <DropdownTrigger>
-                <Avatar
-                  name={(session.user?.name as string) || 'User'}
-                  className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
-                />
-              </DropdownTrigger>
-              <DropdownMenu aria-label="User menu">
-                <DropdownItem key="profile" as={Link} href="/profile">
-                  Profile
-                </DropdownItem>
-                <DropdownItem key="settings" as={Link} href="/settings">
-                  Settings
-                </DropdownItem>
-                <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
-                  Sign Out
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </NavbarItem>
+          <>
+            <NavbarItem>
+              <Dropdown>
+                <DropdownTrigger>
+                  <Avatar
+                    name={(session.user?.name as string) || 'User'}
+                    className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
+                  />
+                </DropdownTrigger>
+                <DropdownMenu aria-label="User menu">
+                  <DropdownItem key="profile" as={Link} href="/profile">
+                    Profile
+                  </DropdownItem>
+                  <DropdownItem key="settings" as={Link} href="/settings">
+                    Settings
+                  </DropdownItem>
+                  <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+                    Sign Out
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </NavbarItem>
+          </>
         )}
       </NavbarContent>
     </Navbar>
