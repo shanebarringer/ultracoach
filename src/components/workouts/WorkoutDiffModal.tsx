@@ -71,7 +71,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
   const comparisonData = useMemo(() => {
     if (!selectedMatch) return null
 
-    const { workout, activity, confidence, discrepancies, suggestions } = selectedMatch
+    const { workout, activity, confidence, discrepancies, suggestions, matchType } = selectedMatch
 
     // Convert activity data to comparable format
     const actualDistance = Number((activity.distance / 1609.34).toFixed(2)) // meters to miles
@@ -101,6 +101,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
         confidence,
         discrepancies,
         suggestions,
+        matchType,
         activityId: activity.id,
       },
     }
@@ -175,24 +176,46 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
       className="max-h-[90vh]"
     >
       <ModalContent>
-        <ModalHeader className="flex flex-col gap-2">
+        <ModalHeader className="flex flex-col gap-3 bg-gradient-to-r from-primary/5 via-secondary/5 to-success/5 border-b border-divider">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">Workout Comparison</h2>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 via-secondary/20 to-success/20 border border-primary/20 shadow-lg">
+                <Target className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                  Workout Comparison
+                  <Chip size="sm" variant="flat" color="primary" className="font-medium">
+                    Alpine Match
+                  </Chip>
+                </h2>
+                <p className="text-sm text-foreground-600 mt-1">
+                  🏔️ Side-by-side comparison of planned vs actual workout data
+                </p>
+              </div>
+            </div>
             <Chip
               color={getConfidenceColor(meta.confidence)}
-              variant="flat"
+              variant="shadow"
               size="lg"
-              className="font-semibold"
+              className="font-bold text-white border-white/20"
             >
               {getConfidenceLabel(meta.confidence)} ({Math.round(meta.confidence * 100)}%)
             </Chip>
           </div>
-          <div className="flex items-center gap-2 text-foreground-600">
-            <Activity className="h-4 w-4" />
-            <span>{actual.name}</span>
-            <ArrowRight className="h-4 w-4" />
-            <span>{planned.type}</span>
-          </div>
+          <Card className="border-l-4 border-l-secondary/60 bg-gradient-to-r from-secondary/10 to-transparent">
+            <CardBody className="py-3">
+              <div className="flex items-center gap-3 text-foreground-700">
+                <Activity className="h-5 w-5 text-secondary" />
+                <span className="font-medium">{actual.name}</span>
+                <ArrowRight className="h-4 w-4 text-foreground-500" />
+                <span className="font-medium">{planned.type}</span>
+                <Chip size="sm" variant="flat" color="secondary" className="ml-auto">
+                  {meta.matchType}
+                </Chip>
+              </div>
+            </CardBody>
+          </Card>
         </ModalHeader>
 
         <ModalBody className="p-0">

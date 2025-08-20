@@ -106,39 +106,45 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
 
   return (
     <div className={`relative ${className}`}>
-      {/* Toggle Button */}
+      {/* Enhanced Alpine Toggle Button */}
       <Button
         isIconOnly
-        variant="flat"
+        variant="shadow"
         color="primary"
-        className={`fixed top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 ${
+        className={`fixed top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 shadow-lg border border-primary/20 bg-gradient-to-br from-primary/90 to-secondary/90 hover:shadow-xl hover:scale-110 ${
           showPanel ? 'right-80' : 'right-4'
         }`}
         onPress={handleTogglePanel}
         aria-label={showPanel ? 'Close Strava panel' : 'Open Strava panel'}
       >
-        {showPanel ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        {showPanel ? <ChevronRight className="h-5 w-5 text-white" /> : <ChevronLeft className="h-5 w-5 text-white" />}
       </Button>
 
-      {/* Sliding Panel */}
+      {/* Enhanced Alpine Sliding Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-background border-l border-divider shadow-2xl transform transition-transform duration-300 ease-in-out z-10 ${
+        className={`fixed top-0 right-0 h-full w-80 bg-gradient-to-b from-background via-content1/50 to-background border-l-4 border-l-primary/60 shadow-2xl transform transition-transform duration-300 ease-in-out z-10 backdrop-blur-sm ${
           showPanel ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="h-full flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex-shrink-0 p-4 border-b border-divider bg-content1">
+          {/* Enhanced Alpine Header */}
+          <div className="flex-shrink-0 p-4 border-b border-divider bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-lg">Strava Sync</h3>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20">
+                  <Activity className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-foreground">Strava Sync</h3>
+                  <p className="text-xs text-foreground-600">🏔️ Alpine Integration</p>
+                </div>
               </div>
               <Chip
                 size="sm"
                 color={connectionIndicator.color}
-                variant="flat"
+                variant="shadow"
                 startContent={connectionIndicator.icon}
+                className="font-medium"
               >
                 {connectionIndicator.text}
               </Chip>
