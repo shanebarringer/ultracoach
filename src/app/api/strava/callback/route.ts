@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       return redirect('/settings?error=strava_invalid_state')
     }
 
-    const { userId, timestamp } = stateData
+    const { userId, timestamp, returnUrl } = stateData
 
     // Verify state is not too old (5 minutes max)
     if (Date.now() - timestamp > 5 * 60 * 1000) {
@@ -162,9 +162,11 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    logger.info('Strava OAuth callback completed successfully, redirecting to settings')
-    // Redirect to settings with success
-    return redirect('/settings?success=strava_connected')
+    // Determine where to redirect after successful connection
+    const redirectUrl = returnUrl || '/dashboard'
+    logger.info('Strava OAuth callback completed successfully', { redirecting_to: redirectUrl })
+    // Redirect to original page or dashboard with success
+    return redirect(`${redirectUrl}?success=strava_connected`)
   } catch (error) {
     logger.error('Error processing Strava callback:', error)
     return redirect('/settings?error=strava_callback_failed')

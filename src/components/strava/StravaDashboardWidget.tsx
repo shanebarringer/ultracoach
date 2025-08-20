@@ -14,6 +14,7 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
+import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
 import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
@@ -49,6 +50,9 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
   const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
   const [syncStats] = useAtom(syncStatsAtom)
   const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
+
+  // Handle OAuth return and refresh status
+  useStravaOAuthReturn()
 
   // Connection status indicator
   const connectionInfo = useMemo(() => {
@@ -101,7 +105,8 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
   // Handler functions
   const handleConnectStrava = useCallback(() => {
     logger.info('Initiating Strava connection from dashboard widget')
-    window.location.href = '/api/strava/connect'
+    const currentUrl = window.location.pathname
+    window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`
   }, [])
 
   const handleSyncActivities = useCallback(async () => {

@@ -6,7 +6,7 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('strava-connect-api')
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     // Check if Strava is enabled
     if (!STRAVA_ENABLED) {
@@ -20,23 +20,29 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Generate state parameter with user ID for security
+    // Get return URL from query params (where user should return after OAuth)
+    const { searchParams } = new URL(req.url)
+    const returnUrl = searchParams.get('returnUrl') || '/dashboard'
+
+    // Generate state parameter with user ID and return URL for security
     const state = Buffer.from(
       JSON.stringify({
         userId: session.user.id,
         timestamp: Date.now(),
+        returnUrl: returnUrl,
       })
     ).toString('base64url')
 
     // Get Strava authorization URL
     const authUrl = getStravaAuthUrl(state)
 
-    logger.info('Generated Strava auth URL', {
+    logger.info('Redirecting to Strava auth URL', {
       userId: session.user.id,
       userEmail: session.user.email,
     })
 
-    return NextResponse.json({ authUrl, state })
+    // Redirect directly to Strava instead of returning JSON
+    return NextResponse.redirect(authUrl)
   } catch (error) {
     logger.error('Error generating Strava auth URL:', error)
     return NextResponse.json({ error: 'Failed to generate authentication URL' }, { status: 500 })

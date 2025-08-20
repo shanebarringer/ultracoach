@@ -89,13 +89,13 @@ function Header() {
 
   return (
     <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
-      <NavbarContent justify="start" className="gap-3">
+      <NavbarContent justify="start" className="gap-3 flex-grow-0">
         <NavbarMenuToggle
           aria-label={'Open menu'}
-          className="lg:hidden"
+          className="sm:flex" // Show on all screen sizes, not just mobile
           onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
         />
-        <NavbarBrand>
+        <NavbarBrand className="flex-grow-0">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl">🏔️</span>
             <div className="flex flex-col">
@@ -110,7 +110,7 @@ function Header() {
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden lg:flex gap-1 lg:gap-2" justify="center">
+      <NavbarContent className="hidden lg:flex gap-4 ml-8" justify="start">
         {status === 'loading' ? (
           // Show nothing while loading to prevent flash
           <></>
@@ -143,7 +143,7 @@ function Header() {
         )}
       </NavbarContent>
 
-      <NavbarContent justify="end">
+      <NavbarContent justify="end" className="gap-2 flex-grow-0">
         <NavbarItem>
           <SearchButton />
         </NavbarItem>

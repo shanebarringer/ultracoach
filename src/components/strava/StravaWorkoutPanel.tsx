@@ -78,7 +78,8 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
 
   const handleConnectStrava = useCallback(() => {
     logger.info('Initiating Strava connection from workout panel')
-    window.location.href = '/api/strava/connect'
+    const currentUrl = window.location.pathname
+    window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`
   }, [])
 
   // Recent activities for display

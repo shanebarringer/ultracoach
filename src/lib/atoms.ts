@@ -1654,8 +1654,11 @@ export const stravaStateAtom = atom(get => {
 
   const connection =
     connectionLoadable.state === 'hasData'
-      ? connectionLoadable.data
-      : { connected: false, enabled: false }
+      ? {
+          ...connectionLoadable.data,
+          isConnected: connectionLoadable.data.connected, // Map connected to isConnected for component compatibility
+        }
+      : { connected: false, enabled: false, isConnected: false }
   const activities = activitiesLoadable.state === 'hasData' ? activitiesLoadable.data : []
 
   return {

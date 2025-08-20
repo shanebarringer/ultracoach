@@ -5,6 +5,7 @@ import { Activity, Calendar, ExternalLink, Unlink } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
+import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -55,6 +56,9 @@ export default function StravaConnectionCard() {
     }
   }
 
+  // Handle OAuth return and refresh status
+  useStravaOAuthReturn(fetchStatus)
+
   useEffect(() => {
     fetchStatus()
   }, [])
@@ -62,20 +66,9 @@ export default function StravaConnectionCard() {
   const handleConnect = async () => {
     setConnecting(true)
     try {
-      const response = await fetch('/api/strava/connect', {
-        credentials: 'include',
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        logger.info('Redirecting to Strava authorization...')
-        window.location.href = data.authUrl
-      } else {
-        const errorData = await response.json()
-        logger.error('Failed to get Strava auth URL:', errorData)
-        toast.error('Failed to connect to Strava. Please try again.')
-        setConnecting(false)
-      }
+      logger.info('Redirecting to Strava authorization...')
+      const currentUrl = window.location.pathname
+      window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`
     } catch (error) {
       logger.error('Error connecting to Strava:', error)
       toast.error('Network error. Please try again.')
