@@ -1363,8 +1363,10 @@ export const stravaConnectionStatusAtom = atomWithRefresh(async get => {
   if (!isBrowser) return { connected: false, enabled: false }
 
   // Check authentication first - don't make API calls for unauthenticated users
-  const authState = get(authStateAtom)
-  if (!authState.user || authState.loading) {
+  // Use the same atoms that useBetterSession uses
+  const user = get(userAtom)
+  const loading = get(authLoadingAtom)
+  if (!user || loading) {
     return { connected: false, enabled: false }
   }
 

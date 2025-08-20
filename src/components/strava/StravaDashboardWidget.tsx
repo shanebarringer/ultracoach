@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { loadable } from 'jotai/utils'
 import {
   Activity,
   AlertCircle,
@@ -46,7 +47,7 @@ interface ProcessedActivity {
  */
 const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetProps) => {
   const [stravaState] = useAtom(stravaStateAtom)
-  const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
+  const [connectionStatusLoadable] = useAtom(loadable(stravaConnectionStatusAtom))
   const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
   const [syncStats] = useAtom(syncStatsAtom)
   const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
@@ -56,7 +57,7 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
 
   // Connection status indicator
   const connectionInfo = useMemo(() => {
-    if (connectionStatus === 'loading') {
+    if (connectionStatusLoadable.state === 'loading') {
       return {
         color: 'warning' as const,
         text: 'Checking...',
@@ -64,7 +65,19 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
         description: 'Verifying connection status',
       }
     }
-    if (stravaState.connection?.isConnected) {
+    if (connectionStatusLoadable.state === 'hasError') {
+      return {
+        color: 'danger' as const,
+        text: 'Error',
+        icon: <Zap className="h-4 w-4" />,
+        description: 'Failed to check connection status',
+      }
+    }
+
+    const connectionStatus =
+      connectionStatusLoadable.state === 'hasData' ? connectionStatusLoadable.data : null
+
+    if (connectionStatus?.connected || stravaState.connection?.isConnected) {
       return {
         color: 'success' as const,
         text: 'Connected',
@@ -78,7 +91,7 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
       icon: <Zap className="h-4 w-4" />,
       description: 'Connect to sync your activities',
     }
-  }, [connectionStatus, stravaState.connection?.isConnected])
+  }, [connectionStatusLoadable, stravaState.connection?.isConnected])
 
   // Recent activities for quick overview
   const recentActivities = useMemo(() => {
@@ -149,7 +162,9 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
       </CardHeader>
 
       <CardBody className="space-y-4">
-        {!stravaState.connection?.isConnected ? (
+        {!(
+          connectionStatusLoadable.state === 'hasData' && connectionStatusLoadable.data?.connected
+        ) && !stravaState.connection?.isConnected ? (
           // Connection Setup State
           <div className="text-center py-4">
             <Zap className="h-12 w-12 text-warning mx-auto mb-4" />
