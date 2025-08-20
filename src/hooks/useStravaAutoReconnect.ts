@@ -1,6 +1,6 @@
 /**
  * Auto-reconnect hook for Strava connection management
- * 
+ *
  * Features:
  * - Automatic connection health monitoring
  * - Smart retry logic with exponential backoff
@@ -8,14 +8,11 @@
  * - User-configurable reconnection preferences
  * - Integration with existing Jotai atoms
  */
-
 import { useAtom } from 'jotai'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  stravaConnectionStatusAtom,
-  stravaStateAtom,
-} from '@/lib/atoms'
+import { stravaConnectionStatusAtom, stravaStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('StravaAutoReconnect')
@@ -54,11 +51,11 @@ const defaultOptions: Required<AutoReconnectOptions> = {
  */
 export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
   const opts = useMemo(() => ({ ...defaultOptions, ...options }), [options])
-  
+
   const [stravaState] = useAtom(stravaStateAtom)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
-  
+
   const [autoReconnectState, setAutoReconnectState] = useState<AutoReconnectState>({
     isMonitoring: false,
     retryCount: 0,
@@ -72,15 +69,15 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
   const lastConnectionState = useRef(stravaState.isConnected)
 
   // Calculate next retry delay with exponential backoff
-  const calculateRetryDelay = useCallback((retryCount: number) => {
-    const delay = Math.min(
-      opts.initialDelay * Math.pow(2, retryCount),
-      opts.maxDelay
-    )
-    // Add jitter to prevent thundering herd
-    const jitter = delay * 0.1 * Math.random()
-    return Math.floor(delay + jitter)
-  }, [opts.initialDelay, opts.maxDelay])
+  const calculateRetryDelay = useCallback(
+    (retryCount: number) => {
+      const delay = Math.min(opts.initialDelay * Math.pow(2, retryCount), opts.maxDelay)
+      // Add jitter to prevent thundering herd
+      const jitter = delay * 0.1 * Math.random()
+      return Math.floor(delay + jitter)
+    },
+    [opts.initialDelay, opts.maxDelay]
+  )
 
   // Test connection health
   const testConnection = useCallback(async (): Promise<{
@@ -90,7 +87,7 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
   }> => {
     try {
       logger.debug('Testing Strava connection health')
-      
+
       const response = await fetch('/api/strava/status', {
         method: 'GET',
         headers: {
@@ -103,7 +100,7 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
       }
 
       const statusData = await response.json()
-      
+
       // Check various health indicators
       if (!statusData.connected) {
         return { isHealthy: false, reason: 'error' }
@@ -131,14 +128,13 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
 
       logger.debug('Connection health check passed')
       return { isHealthy: true }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       logger.error('Connection health check failed:', error)
-      return { 
-        isHealthy: false, 
+      return {
+        isHealthy: false,
         reason: 'error',
-        error: errorMessage 
+        error: errorMessage,
       }
     }
   }, [])
@@ -159,7 +155,7 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
   // Stop monitoring
   const stopMonitoring = useCallback(() => {
     logger.info('Stopping Strava connection monitoring')
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
@@ -178,14 +174,14 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
 
     logger.info('Manual connection check requested')
     const result = await testConnection()
-    
+
     if (!result.isHealthy) {
       setAutoReconnectState(prev => ({
         ...prev,
         reconnectReason: result.reason || 'error',
         lastError: result.error || null,
       }))
-      
+
       opts.onReconnectNeeded(result.reason || 'error')
     }
   }, [opts, testConnection])
@@ -275,7 +271,7 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
   useEffect(() => {
     const wasConnected = lastConnectionState.current
     const isConnected = stravaState.isConnected
-    
+
     if (wasConnected && !isConnected) {
       // Connection lost
       logger.warn('Strava connection lost, starting health checks')
@@ -292,7 +288,14 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
     }
 
     lastConnectionState.current = isConnected
-  }, [stravaState.isConnected, opts.enabled, autoReconnectState.isMonitoring, startMonitoring, performHealthCheck, resetRetries])
+  }, [
+    stravaState.isConnected,
+    opts.enabled,
+    autoReconnectState.isMonitoring,
+    startMonitoring,
+    performHealthCheck,
+    resetRetries,
+  ])
 
   // Start monitoring when enabled
   useEffect(() => {
@@ -302,7 +305,14 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
     } else if (!opts.enabled && autoReconnectState.isMonitoring) {
       stopMonitoring()
     }
-  }, [opts.enabled, stravaState.isConnected, autoReconnectState.isMonitoring, startMonitoring, stopMonitoring, performHealthCheck])
+  }, [
+    opts.enabled,
+    stravaState.isConnected,
+    autoReconnectState.isMonitoring,
+    startMonitoring,
+    stopMonitoring,
+    performHealthCheck,
+  ])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -321,17 +331,18 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
     lastError: autoReconnectState.lastError,
     reconnectReason: autoReconnectState.reconnectReason,
     nextAttempt: autoReconnectState.nextAttempt,
-    
+
     // Actions
     startMonitoring,
     stopMonitoring,
     checkNow,
     resetRetries,
-    
+
     // Computed
     hasFailures: autoReconnectState.retryCount > 0,
     isMaxRetriesReached: autoReconnectState.retryCount >= opts.maxRetries,
-    timeUntilNextAttempt: autoReconnectState.nextAttempt ? 
-      Math.max(0, autoReconnectState.nextAttempt - Date.now()) : null,
+    timeUntilNextAttempt: autoReconnectState.nextAttempt
+      ? Math.max(0, autoReconnectState.nextAttempt - Date.now())
+      : null,
   }
 }
