@@ -1656,3 +1656,129 @@ export const stravaStateAtom = atom(get => {
     loading: connectionLoadable.state === 'loading' || activitiesLoadable.state === 'loading',
   }
 })
+
+// ============================================================================
+// Workout Matching & Diffing Atoms
+// ============================================================================
+
+import type { WorkoutMatch } from '@/utils/workout-matching'
+
+// Workout matching state
+export const workoutMatchingStateAtom = atom<{
+  matches: Map<number, WorkoutMatch[]>
+  loading: boolean
+  lastProcessed: string | null
+  error: string | null
+}>({
+  matches: new Map(),
+  loading: false,
+  lastProcessed: null,
+  error: null
+})
+
+// Current matching options
+export const matchingOptionsAtom = atom({
+  dateTolerance: 1, // days
+  distanceTolerance: 0.15, // 15%
+  durationTolerance: 0.20, // 20%
+  minConfidence: 0.3 // 30%
+})
+
+// Selected match for diffing
+export const selectedMatchAtom = atom<WorkoutMatch | null>(null)
+
+// Show workout diff modal
+export const showWorkoutDiffModalAtom = atom(false)
+
+// Workout matching summary statistics
+export const matchingSummaryAtom = atom(get => {
+  const stravaState = get(stravaStateAtom)
+  const workouts = get(workoutsAtom)
+  const matchingState = get(workoutMatchingStateAtom)
+
+  if (!stravaState.activities || workouts.length === 0 || matchingState.matches.size === 0) {
+    return null
+  }
+
+  const activities = stravaState.activities
+  const matches = matchingState.matches
+
+  // Calculate summary statistics
+  const allMatches = Array.from(matches.values()).flat()
+  const totalMatches = allMatches.length
+  const exactMatches = allMatches.filter(m => m.matchType === 'exact').length
+  const probableMatches = allMatches.filter(m => m.matchType === 'probable').length
+  const possibleMatches = allMatches.filter(m => m.matchType === 'possible').length
+  const conflicts = allMatches.filter(m => m.matchType === 'conflict').length
+
+  // Find unmatched planned workouts
+  const matchedWorkoutIds = new Set(allMatches.filter(m => m.confidence > 0.5).map(m => m.workout.id))
+  const unmatchedWorkouts = workouts.filter(w => 
+    w.status === 'planned' && 
+    !matchedWorkoutIds.has(w.id) &&
+    new Date(w.date) <= new Date()
+  ).length
+
+  return {
+    total: {
+      activities: activities.length,
+      workouts: workouts.length,
+      matches: totalMatches
+    },
+    byType: {
+      exact: exactMatches,
+      probable: probableMatches,
+      possible: possibleMatches,
+      conflicts: conflicts
+    },
+    unmatchedWorkouts,
+    lastProcessed: matchingState.lastProcessed
+  }
+})
+
+// Action atom to trigger workout matching
+export const triggerWorkoutMatchingAtom = atom(null, async (get, set) => {
+  const stravaState = get(stravaStateAtom)
+  const workouts = get(workoutsAtom)
+  const options = get(matchingOptionsAtom)
+
+  if (!stravaState.activities || workouts.length === 0) {
+    logger.warn('Cannot perform workout matching: missing activities or workouts')
+    return
+  }
+
+  set(workoutMatchingStateAtom, prev => ({ ...prev, loading: true, error: null }))
+
+  try {
+    logger.info('Starting workout matching process', {
+      activities: stravaState.activities.length,
+      workouts: workouts.length,
+      options
+    })
+
+    const { batchMatchActivities } = await import('@/utils/workout-matching')
+    const matches = batchMatchActivities(stravaState.activities, workouts, options)
+
+    set(workoutMatchingStateAtom, prev => ({
+      ...prev,
+      matches,
+      loading: false,
+      lastProcessed: new Date().toISOString(),
+      error: null
+    }))
+
+    logger.info('Workout matching completed successfully', {
+      matchedActivities: matches.size,
+      totalMatches: Array.from(matches.values()).flat().length
+    })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Workout matching failed:', error)
+    
+    set(workoutMatchingStateAtom, prev => ({
+      ...prev,
+      loading: false,
+      error: errorMessage
+    }))
+  }
+})

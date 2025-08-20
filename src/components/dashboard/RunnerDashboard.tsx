@@ -22,6 +22,7 @@ import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
 
+import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -596,6 +597,9 @@ function RunnerDashboard() {
             )}
           </CardBody>
         </Card>
+
+        {/* Strava Integration Widget */}
+        <StravaDashboardWidget />
       </div>
 
       {/* Workout Log Modal */}

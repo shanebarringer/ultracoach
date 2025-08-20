@@ -10,6 +10,7 @@ import {
   KBarSearch,
   useMatches,
 } from 'kbar'
+import { useAtom } from 'jotai'
 import {
   Activity,
   Calendar,
@@ -30,6 +31,7 @@ import { ReactNode, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { stravaActivitiesRefreshableAtom, stravaConnectionStatusAtom, workoutStravaShowPanelAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('KBarProvider')
@@ -94,6 +96,11 @@ interface ExtendedUser {
 export default function KBarProvider({ children }: KBarProviderProps) {
   const router = useRouter()
   const { data: session } = useSession()
+  
+  // Strava state atoms
+  const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
+  const [, refreshStravaActivities] = useAtom(stravaActivitiesRefreshableAtom)
+  const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
 
   // Extract userType for dependency array
   const userType = (session?.user as ExtendedUser)?.userType
@@ -202,22 +209,63 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         keywords: 'strava sync activities import',
         icon: <RefreshCw className="w-4 h-4" />,
         parent: 'strava',
-        perform: () => {
-          logger.info('Strava sync command triggered - navigating to dashboard for sync')
-          router.push('/dashboard?strava=sync')
+        perform: async () => {
+          logger.info('Strava sync command triggered - refreshing activities')
+          try {
+            await refreshStravaActivities()
+            logger.info('Strava sync completed successfully')
+          } catch (error) {
+            logger.error('Failed to sync Strava activities:', error)
+          }
         },
       },
       {
         id: 'strava-status',
         name: 'Strava Connection Status',
-        subtitle: 'Check your Strava connection',
+        subtitle: connectionStatus === 'loading' ? 'Checking connection...' : 
+                  connectionStatus === 'connected' ? '✅ Connected' : 
+                  connectionStatus === 'disconnected' ? '❌ Not connected' : 'Check your Strava connection',
         shortcut: ['s', 'c'],
         keywords: 'strava connection status check',
         icon: <Activity className="w-4 h-4" />,
         parent: 'strava',
         perform: () => {
-          logger.info('Strava status command triggered - navigating to dashboard')
-          router.push('/dashboard?strava=status')
+          logger.info('Strava status command triggered')
+          if (connectionStatus === 'disconnected') {
+            logger.info('Redirecting to Strava connect')
+            window.location.href = '/api/strava/connect'
+          } else {
+            logger.info('Opening Strava panel for status details')
+            setShowStravaPanel(true)
+            router.push('/workouts')
+          }
+        },
+      },
+      {
+        id: 'connect-strava',
+        name: 'Connect Strava Account',
+        subtitle: 'Link your Strava account for automatic sync',
+        shortcut: ['s', 'n'],
+        keywords: 'strava connect link account setup new',
+        icon: <Activity className="w-4 h-4" />,
+        parent: 'strava',
+        perform: () => {
+          logger.info('Strava connect command triggered')
+          window.location.href = '/api/strava/connect'
+        },
+      },
+      {
+        id: 'open-strava-panel',
+        name: 'Open Strava Panel',
+        subtitle: 'Show Strava integration sidebar',
+        shortcut: ['s', 'p'],
+        keywords: 'strava panel sidebar open show',
+        icon: <Activity className="w-4 h-4" />,
+        parent: 'strava',
+        perform: () => {
+          logger.info('Open Strava panel command triggered')
+          setShowStravaPanel(true)
+          router.push('/workouts')
         },
       },
 
@@ -298,7 +346,7 @@ export default function KBarProvider({ children }: KBarProviderProps) {
     }
 
     return coreActions
-  }, [router, userType])
+  }, [router, userType, connectionStatus, refreshStravaActivities, setShowStravaPanel])
 
   return (
     <KBar actions={actions}>
