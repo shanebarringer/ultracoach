@@ -391,6 +391,7 @@ export const workoutQuickFilterAtom = atom<'all' | 'today' | 'this-week' | 'comp
   'all'
 )
 export const workoutShowAdvancedFiltersAtom = atom(false)
+export const workoutStravaShowPanelAtom = atom(false)
 
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,

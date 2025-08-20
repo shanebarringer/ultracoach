@@ -1,8 +1,8 @@
 'use client'
 
-import { Spinner } from '@heroui/react'
+import { Button, Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { Mountain } from 'lucide-react'
+import { Activity, Mountain } from 'lucide-react'
 
 import { useCallback } from 'react'
 
@@ -10,9 +10,10 @@ import dynamic from 'next/dynamic'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { loadingStatesAtom, uiStateAtom } from '@/lib/atoms'
+import { loadingStatesAtom, uiStateAtom, workoutStravaShowPanelAtom } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
 
@@ -35,6 +36,7 @@ export default function WorkoutsPageClient({ user }: Props) {
   useWorkouts() // Initialize workouts data
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
+  const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -52,6 +54,10 @@ export default function WorkoutsPageClient({ user }: Props) {
     [setUiState]
   )
 
+  const handleToggleStravaPanel = useCallback(() => {
+    setShowStravaPanel(!showStravaPanel)
+  }, [showStravaPanel, setShowStravaPanel])
+
   return (
     <Layout>
       <ModernErrorBoundary>
@@ -68,6 +74,17 @@ export default function WorkoutsPageClient({ user }: Props) {
                   : 'Track your ascent to peak performance'}
               </p>
             </div>
+
+            {/* Strava Panel Toggle */}
+            <Button
+              variant={showStravaPanel ? 'solid' : 'bordered'}
+              color="primary"
+              onPress={handleToggleStravaPanel}
+              startContent={<Activity className="h-4 w-4" />}
+              className="hidden sm:flex"
+            >
+              Strava Sync
+            </Button>
           </div>
 
           {/* Note: Filtering is now handled by the enhanced workouts list component */}
@@ -94,6 +111,9 @@ export default function WorkoutsPageClient({ user }: Props) {
               defaultToComplete={uiState.defaultToComplete}
             />
           )}
+
+          {/* Strava Integration Panel */}
+          <StravaWorkoutPanel />
         </div>
       </ModernErrorBoundary>
     </Layout>
