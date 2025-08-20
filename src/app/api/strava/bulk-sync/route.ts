@@ -1,63 +1,75 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
+import { createLogger } from '@/lib/logger'
 import { workouts } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
-import type { WorkoutUpdateData, SyncOptions } from '@/types/common'
+import type { SyncOptions, WorkoutUpdateData } from '@/types/common'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('StravaBulkSyncAPI')
 
 // Validation schemas
 const bulkSyncSchema = z.object({
-  operations: z.array(z.object({
-    activity: z.object({
-      id: z.number(),
-      name: z.string(),
-      type: z.string(),
-      distance: z.number(),
-      moving_time: z.number(),
-      start_date: z.string(),
-      trainer: z.boolean().optional(),
-      average_heartrate: z.number().optional(),
-      max_heartrate: z.number().optional(),
-      total_elevation_gain: z.number().optional(),
-      average_speed: z.number().optional(),
-    }),
-    workout_match: z.object({
-      workout: z.object({
-        id: z.string(),
-        planned_type: z.string().nullable(),
-        planned_distance: z.number().nullable(),
-        planned_duration: z.number().nullable(),
-        status: z.string(),
-        date: z.string(),
-      }),
-      confidence: z.number().min(0).max(1),
-      match_type: z.enum(['exact', 'probable', 'possible', 'conflict']),
-      discrepancies: z.array(z.object({
-        field: z.enum(['distance', 'duration', 'type', 'date']),
-        planned: z.union([z.string(), z.number()]),
-        actual: z.union([z.string(), z.number()]),
-        severity: z.enum(['minor', 'moderate', 'major']),
-        description: z.string(),
-      })),
-      suggestions: z.array(z.string()),
-    }),
-    sync_options: z.object({
-      update_status: z.boolean().default(true),
-      update_actual_data: z.boolean().default(true),
-      update_notes: z.boolean().default(true),
-      overwrite_existing: z.boolean().default(false),
-    }).optional(),
-  })).min(1).max(50), // Limit to 50 operations per batch
-  global_options: z.object({
-    continue_on_error: z.boolean().default(true),
-    min_confidence_threshold: z.number().min(0).max(1).default(0.3),
-    dry_run: z.boolean().default(false),
-  }).optional(),
+  operations: z
+    .array(
+      z.object({
+        activity: z.object({
+          id: z.number(),
+          name: z.string(),
+          type: z.string(),
+          distance: z.number(),
+          moving_time: z.number(),
+          start_date: z.string(),
+          trainer: z.boolean().optional(),
+          average_heartrate: z.number().optional(),
+          max_heartrate: z.number().optional(),
+          total_elevation_gain: z.number().optional(),
+          average_speed: z.number().optional(),
+        }),
+        workout_match: z.object({
+          workout: z.object({
+            id: z.string(),
+            planned_type: z.string().nullable(),
+            planned_distance: z.number().nullable(),
+            planned_duration: z.number().nullable(),
+            status: z.string(),
+            date: z.string(),
+          }),
+          confidence: z.number().min(0).max(1),
+          match_type: z.enum(['exact', 'probable', 'possible', 'conflict']),
+          discrepancies: z.array(
+            z.object({
+              field: z.enum(['distance', 'duration', 'type', 'date']),
+              planned: z.union([z.string(), z.number()]),
+              actual: z.union([z.string(), z.number()]),
+              severity: z.enum(['minor', 'moderate', 'major']),
+              description: z.string(),
+            })
+          ),
+          suggestions: z.array(z.string()),
+        }),
+        sync_options: z
+          .object({
+            update_status: z.boolean().default(true),
+            update_actual_data: z.boolean().default(true),
+            update_notes: z.boolean().default(true),
+            overwrite_existing: z.boolean().default(false),
+          })
+          .optional(),
+      })
+    )
+    .min(1)
+    .max(50), // Limit to 50 operations per batch
+  global_options: z
+    .object({
+      continue_on_error: z.boolean().default(true),
+      min_confidence_threshold: z.number().min(0).max(1).default(0.3),
+      dry_run: z.boolean().default(false),
+    })
+    .optional(),
 })
 
 interface SyncResult {
@@ -71,9 +83,9 @@ interface SyncResult {
 
 /**
  * POST /api/strava/bulk-sync
- * 
+ *
  * Perform bulk synchronization of Strava activities to planned workouts
- * 
+ *
  * Features:
  * - Batch processing of multiple activity-workout pairs
  * - Configurable sync options for each operation
@@ -90,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     logger.info('Processing bulk sync request', {
       userId: session.user.id,
       operationsCount: body.operations?.length || 0,
@@ -100,10 +112,13 @@ export async function POST(request: NextRequest) {
     const validation = bulkSyncSchema.safeParse(body)
     if (!validation.success) {
       logger.warn('Invalid bulk sync request', { errors: validation.error.issues })
-      return NextResponse.json({ 
-        error: 'Invalid request data',
-        details: validation.error.issues 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Invalid request data',
+          details: validation.error.issues,
+        },
+        { status: 400 }
+      )
     }
 
     const { operations, global_options } = validation.data
@@ -111,10 +126,10 @@ export async function POST(request: NextRequest) {
       continue_on_error: true,
       min_confidence_threshold: 0.3,
       dry_run: false,
-      ...global_options
+      ...global_options,
     }
     const isDryRun = globalOpts.dry_run || false
-    
+
     logger.info('Starting bulk sync processing', {
       userId: session.user.id,
       operationsCount: operations.length,
@@ -133,7 +148,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < operations.length; i++) {
       const operation = operations[i]
       const { activity, workout_match, sync_options } = operation
-      const syncOpts: SyncOptions = sync_options || {};
+      const syncOpts: SyncOptions = sync_options || {}
 
       try {
         logger.debug(`Processing operation ${i + 1}/${operations.length}`, {
@@ -174,7 +189,7 @@ export async function POST(request: NextRequest) {
           }
           results.push(result)
           errorCount++
-          
+
           if (!globalOpts.continue_on_error) {
             break
           }
@@ -210,11 +225,11 @@ export async function POST(request: NextRequest) {
           // Convert Strava data to workout format
           const actualDistance = activity.distance / 1609.34 // meters to miles
           const actualDuration = Math.round(activity.moving_time / 60) // seconds to minutes
-          
+
           updateData.actual_distance = actualDistance.toString()
           updateData.actual_duration = actualDuration
           updateData.actual_type = activity.name
-          
+
           changesMade.push(`actual_distance → ${actualDistance.toFixed(2)} mi`)
           changesMade.push(`actual_duration → ${actualDuration} min`)
           changesMade.push(`actual_type → ${activity.name}`)
@@ -241,7 +256,8 @@ export async function POST(request: NextRequest) {
         }
 
         if (syncOpts.update_notes) {
-          const syncNotes = `Synced from Strava activity "${activity.name}" (ID: ${activity.id})
+          const syncNotes =
+            `Synced from Strava activity "${activity.name}" (ID: ${activity.id})
 ` +
             `Confidence: ${(workout_match.confidence * 100).toFixed(1)}%
 ` +
@@ -261,10 +277,7 @@ ${syncNotes}`
 
         // Perform the update (unless dry run)
         if (!isDryRun && Object.keys(updateData).length > 0) {
-          await db
-            .update(workouts)
-            .set(updateData)
-            .where(eq(workouts.id, workout_match.workout.id))
+          await db.update(workouts).set(updateData).where(eq(workouts.id, workout_match.workout.id))
 
           logger.debug('Workout updated successfully', {
             workoutId: workout_match.workout.id,
@@ -281,10 +294,10 @@ ${syncNotes}`
         }
         results.push(result)
         successCount++
-
       } catch (operationError) {
-        const errorMessage = operationError instanceof Error ? operationError.message : 'Unknown error'
-        logger.error(`Operation ${i + 1} failed`, { 
+        const errorMessage =
+          operationError instanceof Error ? operationError.message : 'Unknown error'
+        logger.error(`Operation ${i + 1} failed`, {
           activityId: operation.activity.id,
           workoutId: operation.workout_match.workout.id,
           error: errorMessage,
@@ -332,22 +345,18 @@ ${syncNotes}`
       options: globalOpts,
       timestamp: new Date().toISOString(),
     })
-
   } catch (error) {
-    logger.error('Bulk sync request failed', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Bulk sync request failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
     })
-    
-    return NextResponse.json(
-      { error: 'Internal server error during bulk sync' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({ error: 'Internal server error during bulk sync' }, { status: 500 })
   }
 }
 
 /**
  * GET /api/strava/bulk-sync
- * 
+ *
  * Get bulk sync configuration and limits
  */
 export async function GET() {
@@ -379,7 +388,7 @@ export async function GET() {
       supported_fields: [
         'status',
         'actual_distance',
-        'actual_duration', 
+        'actual_duration',
         'actual_type',
         'avg_heart_rate',
         'elevation_gain',

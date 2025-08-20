@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
+import { createLogger } from '@/lib/logger'
 import { workouts } from '@/lib/schema'
-import { eq, and } from 'drizzle-orm'
-import { matchActivityToWorkouts, type MatchingOptions } from '@/utils/workout-matching'
+import type { Workout } from '@/lib/supabase'
 import type { SyncPreferences } from '@/types/common'
 import type { StravaActivity } from '@/types/strava'
-import type { Workout } from '@/lib/supabase'
+import { getServerSession } from '@/utils/auth-server'
+import { type MatchingOptions, matchActivityToWorkouts } from '@/utils/workout-matching'
 
 // Partial activity type that matches our validation schema
 type PartialStravaActivity = {
@@ -36,7 +37,9 @@ function convertDbWorkoutToMatchingFormat(dbWorkout: typeof workouts.$inferSelec
     id: dbWorkout.id,
     training_plan_id: dbWorkout.training_plan_id,
     date: dbWorkout.date.toISOString().split('T')[0],
-    planned_distance: dbWorkout.planned_distance ? parseFloat(dbWorkout.planned_distance) : undefined,
+    planned_distance: dbWorkout.planned_distance
+      ? parseFloat(dbWorkout.planned_distance)
+      : undefined,
     planned_duration: dbWorkout.planned_duration ?? undefined,
     planned_type: dbWorkout.planned_type || '',
     category: dbWorkout.category ?? undefined,
@@ -122,21 +125,25 @@ const enhancedSyncSchema = z.object({
   }),
   sync_mode: z.enum(['auto_match', 'create_new', 'match_specific', 'smart_sync']),
   target_workout_id: z.string().optional(), // Required for 'match_specific'
-  sync_preferences: z.object({
-    update_status: z.boolean().default(true),
-    update_actual_data: z.boolean().default(true),
-    update_notes: z.boolean().default(true),
-    preserve_planned_data: z.boolean().default(true),
-    auto_categorize: z.boolean().default(true),
-    calculate_intensity: z.boolean().default(true),
-    detect_terrain: z.boolean().default(true),
-  }).optional(),
-  matching_options: z.object({
-    date_tolerance: z.number().min(0).max(7).default(1),
-    distance_tolerance: z.number().min(0).max(1).default(0.15),
-    duration_tolerance: z.number().min(0).max(1).default(0.2),
-    min_confidence: z.number().min(0).max(1).default(0.5),
-  }).optional(),
+  sync_preferences: z
+    .object({
+      update_status: z.boolean().default(true),
+      update_actual_data: z.boolean().default(true),
+      update_notes: z.boolean().default(true),
+      preserve_planned_data: z.boolean().default(true),
+      auto_categorize: z.boolean().default(true),
+      calculate_intensity: z.boolean().default(true),
+      detect_terrain: z.boolean().default(true),
+    })
+    .optional(),
+  matching_options: z
+    .object({
+      date_tolerance: z.number().min(0).max(7).default(1),
+      distance_tolerance: z.number().min(0).max(1).default(0.15),
+      duration_tolerance: z.number().min(0).max(1).default(0.2),
+      min_confidence: z.number().min(0).max(1).default(0.5),
+    })
+    .optional(),
 })
 
 interface SyncResult {
@@ -157,9 +164,9 @@ interface SyncResult {
 
 /**
  * POST /api/strava/enhanced-sync
- * 
+ *
  * Enhanced Strava sync with intelligent matching and flexible sync modes
- * 
+ *
  * Sync Modes:
  * - auto_match: Automatically find and sync to best matching planned workout
  * - create_new: Always create a new workout from the activity
@@ -175,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     logger.info('Processing enhanced sync request', {
       userId: session.user.id,
       activityId: body.activity?.id,
@@ -186,19 +193,17 @@ export async function POST(request: NextRequest) {
     const validation = enhancedSyncSchema.safeParse(body)
     if (!validation.success) {
       logger.warn('Invalid enhanced sync request', { errors: validation.error.issues })
-      return NextResponse.json({ 
-        error: 'Invalid request data',
-        details: validation.error.issues 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Invalid request data',
+          details: validation.error.issues,
+        },
+        { status: 400 }
+      )
     }
 
-    const { 
-      activity, 
-      sync_mode, 
-      target_workout_id, 
-      sync_preferences, 
-      matching_options 
-    } = validation.data
+    const { activity, sync_mode, target_workout_id, sync_preferences, matching_options } =
+      validation.data
 
     const syncPrefs: SyncPreferences = sync_preferences || {}
     const matchOpts: MatchingOptions = {
@@ -220,16 +225,21 @@ export async function POST(request: NextRequest) {
     // Convert Strava activity data
     const actualDistance = activity.distance / 1609.34 // meters to miles
     const actualDuration = Math.round(activity.moving_time / 60) // seconds to minutes
-    
-    // Detect activity characteristics
-    const detectedTerrain = activity.trainer ? 'treadmill' : 
-                           activity.type.toLowerCase() === 'run' ? 'trail' : null
-    
-    const calculatedIntensity = activity.average_heartrate ? 
-      Math.min(Math.max(Math.round(activity.average_heartrate / 20), 1), 10) : null
 
-    const elevationGainFeet = activity.total_elevation_gain ? 
-      Math.round(activity.total_elevation_gain * 3.28084) : null
+    // Detect activity characteristics
+    const detectedTerrain = activity.trainer
+      ? 'treadmill'
+      : activity.type.toLowerCase() === 'run'
+        ? 'trail'
+        : null
+
+    const calculatedIntensity = activity.average_heartrate
+      ? Math.min(Math.max(Math.round(activity.average_heartrate / 20), 1), 10)
+      : null
+
+    const elevationGainFeet = activity.total_elevation_gain
+      ? Math.round(activity.total_elevation_gain * 3.28084)
+      : null
 
     // Execute sync based on mode
     switch (sync_mode) {
@@ -253,7 +263,7 @@ export async function POST(request: NextRequest) {
       if (!session?.user?.id) {
         throw new Error('User session required')
       }
-      
+
       // Always create a new workout
       const workoutData = {
         user_id: session.user.id,
@@ -272,12 +282,15 @@ export async function POST(request: NextRequest) {
         // avg_heart_rate: activity.average_heartrate, // Not in current schema
       }
 
-      const [newWorkout] = await db.insert(workouts).values(workoutData).returning({ id: workouts.id })
-      
+      const [newWorkout] = await db
+        .insert(workouts)
+        .values(workoutData)
+        .returning({ id: workouts.id })
+
       result.workout_id = newWorkout.id
       result.action_taken = 'created_new'
       result.changes_made.push(`Created new workout from ${activity.name}`)
-      
+
       logger.info('Created new workout from Strava activity', {
         activityId: activity.id,
         workoutId: newWorkout.id,
@@ -299,10 +312,7 @@ export async function POST(request: NextRequest) {
       const existingWorkout = await db
         .select()
         .from(workouts)
-        .where(and(
-          eq(workouts.id, target_workout_id),
-          eq(workouts.user_id, session.user.id)
-        ))
+        .where(and(eq(workouts.id, target_workout_id), eq(workouts.user_id, session.user.id)))
 
       if (existingWorkout.length === 0) {
         throw new Error('Target workout not found or access denied')
@@ -315,15 +325,12 @@ export async function POST(request: NextRequest) {
       if (!session?.user?.id) {
         throw new Error('User session required')
       }
-      
+
       // Find matching workouts
       const userWorkouts = await db
         .select()
         .from(workouts)
-        .where(and(
-          eq(workouts.user_id, session.user.id),
-          eq(workouts.status, 'planned')
-        ))
+        .where(and(eq(workouts.user_id, session.user.id), eq(workouts.status, 'planned')))
 
       if (userWorkouts.length === 0) {
         result.warnings.push('No planned workouts found, consider using create_new mode')
@@ -331,11 +338,17 @@ export async function POST(request: NextRequest) {
       }
 
       const convertedWorkouts = userWorkouts.map(convertDbWorkoutToMatchingFormat)
-      const matches = matchActivityToWorkouts(toMatchableActivity(activity), convertedWorkouts, matchOpts)
+      const matches = matchActivityToWorkouts(
+        toMatchableActivity(activity),
+        convertedWorkouts,
+        matchOpts
+      )
       const bestMatch = matches[0]
 
       if (!bestMatch || bestMatch.confidence < matchOpts.minConfidence) {
-        result.warnings.push(`No suitable match found (best confidence: ${bestMatch?.confidence.toFixed(2) || 'none'})`)
+        result.warnings.push(
+          `No suitable match found (best confidence: ${bestMatch?.confidence.toFixed(2) || 'none'})`
+        )
         return
       }
 
@@ -352,19 +365,20 @@ export async function POST(request: NextRequest) {
       if (!session?.user?.id) {
         throw new Error('User session required')
       }
-      
+
       // First try auto-matching
       const userWorkouts = await db
         .select()
         .from(workouts)
-        .where(and(
-          eq(workouts.user_id, session.user.id),
-          eq(workouts.status, 'planned')
-        ))
+        .where(and(eq(workouts.user_id, session.user.id), eq(workouts.status, 'planned')))
 
       if (userWorkouts.length > 0) {
         const convertedWorkouts = userWorkouts.map(convertDbWorkoutToMatchingFormat)
-        const matches = matchActivityToWorkouts(toMatchableActivity(activity), convertedWorkouts, matchOpts)
+        const matches = matchActivityToWorkouts(
+          toMatchableActivity(activity),
+          convertedWorkouts,
+          matchOpts
+        )
         const bestMatch = matches[0]
 
         // If we have a high-confidence match, use it
@@ -385,11 +399,14 @@ export async function POST(request: NextRequest) {
       result.warnings.push('No high-confidence match found, created new workout')
     }
 
-    async function updateWorkout(workout: typeof workouts.$inferSelect, match: { confidence: number; matchType: string }) {
+    async function updateWorkout(
+      workout: typeof workouts.$inferSelect,
+      match: { confidence: number; matchType: string }
+    ) {
       const updateData: Partial<typeof workouts.$inferInsert> = {}
       const changes: string[] = []
 
-      if ((syncPrefs.update_status !== false) && workout.status !== 'completed') {
+      if (syncPrefs.update_status !== false && workout.status !== 'completed') {
         updateData.status = 'completed'
         changes.push('status → completed')
       }
@@ -413,12 +430,12 @@ export async function POST(request: NextRequest) {
           changes.push(`elevation_gain → ${elevationGainFeet} ft`)
         }
 
-        if ((syncPrefs.detect_terrain !== false) && detectedTerrain) {
+        if (syncPrefs.detect_terrain !== false && detectedTerrain) {
           updateData.terrain = detectedTerrain
           changes.push(`terrain → ${detectedTerrain}`)
         }
 
-        if ((syncPrefs.calculate_intensity !== false) && calculatedIntensity && !workout.intensity) {
+        if (syncPrefs.calculate_intensity !== false && calculatedIntensity && !workout.intensity) {
           updateData.intensity = calculatedIntensity
           changes.push(`intensity → ${calculatedIntensity}`)
         }
@@ -426,7 +443,7 @@ export async function POST(request: NextRequest) {
 
       if (syncPrefs.update_notes !== false) {
         const stravaInfo = generateWorkoutNotes()
-        if ((syncPrefs.preserve_planned_data !== false) && workout.workout_notes) {
+        if (syncPrefs.preserve_planned_data !== false && workout.workout_notes) {
           updateData.workout_notes = `${workout.workout_notes}
 
 --- Strava Sync ---
@@ -439,11 +456,11 @@ ${stravaInfo}`
 
       if (Object.keys(updateData).length > 0) {
         await db.update(workouts).set(updateData).where(eq(workouts.id, workout.id))
-        
+
         result.workout_id = workout.id
         result.action_taken = 'updated_existing'
         result.changes_made = changes
-        
+
         logger.info('Updated existing workout from Strava activity', {
           activityId: activity.id,
           workoutId: workout.id,
@@ -460,7 +477,7 @@ ${stravaInfo}`
       const pacePerMile = actualDuration / actualDistance
       const paceMinutes = Math.floor(pacePerMile)
       const paceSeconds = Math.round((pacePerMile - paceMinutes) * 60)
-      
+
       return [
         `Synced from Strava: ${activity.name}`,
         `Activity ID: ${activity.id}`,
@@ -471,21 +488,23 @@ ${stravaInfo}`
         elevationGainFeet ? `Elevation Gain: ${elevationGainFeet} ft` : null,
         `Date: ${new Date(activity.start_date).toLocaleDateString()}`,
         `Sync Date: ${new Date().toLocaleString()}`,
-      ].filter(Boolean).join('\n')
+      ]
+        .filter(Boolean)
+        .join('\n')
     }
 
     function categorizeActivity(): string {
       const type = activity.type.toLowerCase()
       const distance = actualDistance
       const duration = actualDuration
-      
+
       if (type === 'run') {
         if (distance >= 13) return 'long_run'
         if (duration < 30) return 'recovery'
         if (activity.average_heartrate && activity.average_heartrate > 160) return 'tempo'
         return 'easy'
       }
-      
+
       return 'cross_training'
     }
 
@@ -503,12 +522,11 @@ ${stravaInfo}`
       result,
       timestamp: new Date().toISOString(),
     })
-
   } catch (error) {
-    logger.error('Enhanced sync request failed', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Enhanced sync request failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
     })
-    
+
     return NextResponse.json(
       { error: 'Internal server error during enhanced sync' },
       { status: 500 }
@@ -518,7 +536,7 @@ ${stravaInfo}`
 
 /**
  * GET /api/strava/enhanced-sync
- * 
+ *
  * Get enhanced sync configuration
  */
 export async function GET() {

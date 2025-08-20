@@ -1,4 +1,3 @@
-
 // Common types for API operations
 
 export interface SyncOptions {
@@ -40,26 +39,26 @@ export type WorkoutUpdateData = {
 }
 
 export interface MatchOptions {
-  dateTolerance?: number;
-  distanceTolerance?: number;
-  durationTolerance?: number;
-  minConfidence?: number;
+  dateTolerance?: number
+  distanceTolerance?: number
+  durationTolerance?: number
+  minConfidence?: number
 }
 
 export interface BulkMatchSummary {
-  total: { activities: number; workouts: number; matches: number };
-  by_confidence: { exact: number; probable: number; possible: number; conflicts: number };
-  unmatched_workouts: number;
-  suggestions: string[];
+  total: { activities: number; workouts: number; matches: number }
+  by_confidence: { exact: number; probable: number; possible: number; conflicts: number }
+  unmatched_workouts: number
+  suggestions: string[]
 }
 
 export interface SingleMatchSummary {
-  total: { activities: number; workouts: number; matches: number };
+  total: { activities: number; workouts: number; matches: number }
   best_match: {
-    confidence: number;
-    match_type: string;
-    workout_id: string;
-    discrepancies_count: number;
-  } | null;
-  suggestions: string[];
+    confidence: number
+    match_type: string
+    workout_id: string
+    discrepancies_count: number
+  } | null
+  suggestions: string[]
 }

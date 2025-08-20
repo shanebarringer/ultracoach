@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
+import { createLogger } from '@/lib/logger'
 import { workouts } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
 import type { WorkoutUpdateData } from '@/types/common'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('StravaMergeAPI')
 
@@ -29,20 +30,36 @@ const mergeOperationSchema = z.object({
     achievement_count: z.number().optional(),
   }),
   merge_strategy: z.enum(['prefer_planned', 'prefer_actual', 'manual', 'smart_merge']),
-  field_preferences: z.object({
-    distance: z.enum(['planned', 'actual', 'average', 'max']).optional(),
-    duration: z.enum(['planned', 'actual', 'average', 'max']).optional(),
-    type: z.enum(['planned', 'actual', 'combined']).optional(),
-    intensity: z.enum(['planned', 'calculated', 'manual']).optional(),
-    notes: z.enum(['planned', 'actual', 'append', 'prepend']).optional(),
-    terrain: z.enum(['planned', 'detected', 'manual']).optional(),
-  }).optional(),
-  custom_values: z.object({
-    intensity: z.number().min(1).max(10).optional(),
-    terrain: z.enum(['road', 'trail', 'track', 'treadmill']).optional(),
-    category: z.enum(['easy', 'tempo', 'interval', 'long_run', 'race_simulation', 'recovery', 'strength', 'cross_training', 'rest']).optional(),
-    notes: z.string().max(2000).optional(),
-  }).optional(),
+  field_preferences: z
+    .object({
+      distance: z.enum(['planned', 'actual', 'average', 'max']).optional(),
+      duration: z.enum(['planned', 'actual', 'average', 'max']).optional(),
+      type: z.enum(['planned', 'actual', 'combined']).optional(),
+      intensity: z.enum(['planned', 'calculated', 'manual']).optional(),
+      notes: z.enum(['planned', 'actual', 'append', 'prepend']).optional(),
+      terrain: z.enum(['planned', 'detected', 'manual']).optional(),
+    })
+    .optional(),
+  custom_values: z
+    .object({
+      intensity: z.number().min(1).max(10).optional(),
+      terrain: z.enum(['road', 'trail', 'track', 'treadmill']).optional(),
+      category: z
+        .enum([
+          'easy',
+          'tempo',
+          'interval',
+          'long_run',
+          'race_simulation',
+          'recovery',
+          'strength',
+          'cross_training',
+          'rest',
+        ])
+        .optional(),
+      notes: z.string().max(2000).optional(),
+    })
+    .optional(),
   preserve_history: z.boolean().default(true),
 })
 
@@ -63,9 +80,9 @@ interface MergeResult {
 
 /**
  * POST /api/strava/merge
- * 
+ *
  * Intelligently merge Strava activity data with planned workout data
- * 
+ *
  * Features:
  * - Multiple merge strategies (prefer planned, prefer actual, smart merge, manual)
  * - Field-level control over merge behavior
@@ -82,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     logger.info('Processing merge request', {
       userId: session.user.id,
       workoutId: body.workout_id,
@@ -94,32 +111,38 @@ export async function POST(request: NextRequest) {
     const validation = mergeOperationSchema.safeParse(body)
     if (!validation.success) {
       logger.warn('Invalid merge request', { errors: validation.error.issues })
-      return NextResponse.json({ 
-        error: 'Invalid request data',
-        details: validation.error.issues 
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: 'Invalid request data',
+          details: validation.error.issues,
+        },
+        { status: 400 }
+      )
     }
 
-    const { 
-      workout_id, 
-      activity, 
-      merge_strategy, 
-      field_preferences, 
+    const {
+      workout_id,
+      activity,
+      merge_strategy,
+      field_preferences,
       custom_values,
-      preserve_history 
+      preserve_history,
     } = validation.data
 
     // Fetch existing workout
-    const existingWorkout = await db
-      .select()
-      .from(workouts)
-      .where(eq(workouts.id, workout_id))
+    const existingWorkout = await db.select().from(workouts).where(eq(workouts.id, workout_id))
 
     if (existingWorkout.length === 0 || existingWorkout[0].user_id !== session.user.id) {
-      logger.warn('Workout not found or access denied', { workoutId: workout_id, userId: session.user.id })
-      return NextResponse.json({ 
-        error: 'Workout not found or access denied' 
-      }, { status: 404 })
+      logger.warn('Workout not found or access denied', {
+        workoutId: workout_id,
+        userId: session.user.id,
+      })
+      return NextResponse.json(
+        {
+          error: 'Workout not found or access denied',
+        },
+        { status: 404 }
+      )
     }
 
     const currentWorkout = existingWorkout[0]
@@ -148,16 +171,20 @@ export async function POST(request: NextRequest) {
     const customVals = custom_values || {}
 
     // Helper function to detect conflicts
-    const detectConflict = (field: string, plannedValue: unknown, actualValue: unknown): boolean => {
+    const detectConflict = (
+      field: string,
+      plannedValue: unknown,
+      actualValue: unknown
+    ): boolean => {
       if (plannedValue == null && actualValue == null) return false
       if (plannedValue == null || actualValue == null) return false
-      
+
       // For numbers, consider values within 10% as non-conflicting
       if (typeof plannedValue === 'number' && typeof actualValue === 'number') {
         const tolerance = Math.abs(plannedValue * 0.1)
         return Math.abs(plannedValue - actualValue) > tolerance
       }
-      
+
       // For strings, exact match required
       return plannedValue !== actualValue
     }
@@ -182,12 +209,14 @@ export async function POST(request: NextRequest) {
             // For metrics, prefer actual if planned is missing or very different
             if (!plannedValue) return { value: actualValue, strategy: 'smart_merge (no_planned)' }
             if (!actualValue) return { value: plannedValue, strategy: 'smart_merge (no_actual)' }
-            
+
             // Ensure both values are numbers for comparison
-            const plannedNum = typeof plannedValue === 'string' ? parseFloat(plannedValue) : plannedValue as number
+            const plannedNum =
+              typeof plannedValue === 'string' ? parseFloat(plannedValue) : (plannedValue as number)
             const actualNum = actualValue as number
             const diff = Math.abs((actualNum - plannedNum) / plannedNum)
-            if (diff > 0.2) { // More than 20% difference
+            if (diff > 0.2) {
+              // More than 20% difference
               return { value: actualValue, strategy: 'smart_merge (significant_diff)' }
             }
             return { value: plannedValue, strategy: 'smart_merge (close_match)' }
@@ -195,16 +224,21 @@ export async function POST(request: NextRequest) {
           // For other fields, prefer actual
           return { value: actualValue || plannedValue, strategy: 'smart_merge (default)' }
         case 'manual':
-          return { value: customVals[field as keyof typeof customVals] || plannedValue, strategy: 'manual' }
+          return {
+            value: customVals[field as keyof typeof customVals] || plannedValue,
+            strategy: 'manual',
+          }
         default:
           return { value: plannedValue, strategy: 'fallback' }
       }
     }
 
     // Process distance
-    const plannedDistance = currentWorkout.planned_distance ? parseFloat(currentWorkout.planned_distance) : null
+    const plannedDistance = currentWorkout.planned_distance
+      ? parseFloat(currentWorkout.planned_distance)
+      : null
     const actualDistance = activity.distance / 1609.34 // Convert meters to miles
-    
+
     if (detectConflict('distance', plannedDistance, actualDistance)) {
       result.conflicts.push({
         field: 'distance',
@@ -214,7 +248,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const distanceResult = applyMergeStrategy('distance', plannedDistance, actualDistance, fieldPrefs.distance)
+    const distanceResult = applyMergeStrategy(
+      'distance',
+      plannedDistance,
+      actualDistance,
+      fieldPrefs.distance
+    )
     if (distanceResult.value !== currentWorkout.actual_distance) {
       mergedData.actual_distance = distanceResult.value?.toString() || '0'
       result.changes_made.actual_distance = {
@@ -237,7 +276,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const durationResult = applyMergeStrategy('duration', plannedDuration, actualDuration, fieldPrefs.duration)
+    const durationResult = applyMergeStrategy(
+      'duration',
+      plannedDuration,
+      actualDuration,
+      fieldPrefs.duration
+    )
     if (durationResult.value !== currentWorkout.actual_duration) {
       mergedData.actual_duration = durationResult.value as number
       result.changes_made.actual_duration = {
@@ -293,7 +337,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (detectedTerrain) {
-      const terrainResult = applyMergeStrategy('terrain', currentWorkout.terrain, detectedTerrain, fieldPrefs.terrain)
+      const terrainResult = applyMergeStrategy(
+        'terrain',
+        currentWorkout.terrain,
+        detectedTerrain,
+        fieldPrefs.terrain
+      )
       if (terrainResult.value !== currentWorkout.terrain) {
         mergedData.terrain = terrainResult.value as string
         result.changes_made.terrain = {
@@ -305,21 +354,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Process notes
-    const stravaInfo = `Strava Activity: ${activity.name} (ID: ${activity.id})\n` +
+    const stravaInfo =
+      `Strava Activity: ${activity.name} (ID: ${activity.id})\n` +
       `Distance: ${actualDistance.toFixed(2)} mi, Duration: ${actualDuration} min\n` +
       `Date: ${new Date(activity.start_date).toLocaleDateString()}`
 
     let mergedNotes = currentWorkout.workout_notes || ''
-    
+
     switch (fieldPrefs.notes) {
       case 'actual':
         mergedNotes = stravaInfo
         break
       case 'append':
-        mergedNotes = mergedNotes ? `${mergedNotes}\n\n--- Strava Data ---\n${stravaInfo}` : stravaInfo
+        mergedNotes = mergedNotes
+          ? `${mergedNotes}\n\n--- Strava Data ---\n${stravaInfo}`
+          : stravaInfo
         break
       case 'prepend':
-        mergedNotes = mergedNotes ? `--- Strava Data ---\n${stravaInfo}\n\n${mergedNotes}` : stravaInfo
+        mergedNotes = mergedNotes
+          ? `--- Strava Data ---\n${stravaInfo}\n\n${mergedNotes}`
+          : stravaInfo
         break
       case 'planned':
       default:
@@ -332,7 +386,9 @@ export async function POST(request: NextRequest) {
     if (mergedNotes !== currentWorkout.workout_notes) {
       mergedData.workout_notes = mergedNotes
       result.changes_made.workout_notes = {
-        from: currentWorkout.workout_notes?.substring(0, 100) + (currentWorkout.workout_notes && currentWorkout.workout_notes.length > 100 ? '...' : ''),
+        from:
+          currentWorkout.workout_notes?.substring(0, 100) +
+          (currentWorkout.workout_notes && currentWorkout.workout_notes.length > 100 ? '...' : ''),
         to: 'Updated with Strava information',
         strategy: fieldPrefs.notes || 'append',
       }
@@ -380,10 +436,7 @@ export async function POST(request: NextRequest) {
 
     // Apply updates to database
     if (Object.keys(mergedData).length > 0) {
-      await db
-        .update(workouts)
-        .set(mergedData)
-        .where(eq(workouts.id, workout_id))
+      await db.update(workouts).set(mergedData).where(eq(workouts.id, workout_id))
 
       logger.info('Workout merge completed', {
         workoutId: workout_id,
@@ -417,22 +470,18 @@ export async function POST(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     })
-
   } catch (error) {
-    logger.error('Merge request failed', { 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    logger.error('Merge request failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
     })
-    
-    return NextResponse.json(
-      { error: 'Internal server error during merge' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({ error: 'Internal server error during merge' }, { status: 500 })
   }
 }
 
 /**
  * GET /api/strava/merge
- * 
+ *
  * Get merge configuration and supported strategies
  */
 export async function GET() {
@@ -471,9 +520,16 @@ export async function GET() {
           terrain: ['planned', 'detected', 'manual'],
         },
         supported_fields: [
-          'status', 'actual_distance', 'actual_duration', 'actual_type',
-          'avg_heart_rate', 'elevation_gain', 'terrain', 'intensity',
-          'category', 'workout_notes',
+          'status',
+          'actual_distance',
+          'actual_duration',
+          'actual_type',
+          'avg_heart_rate',
+          'elevation_gain',
+          'terrain',
+          'intensity',
+          'category',
+          'workout_notes',
         ],
         defaults: {
           merge_strategy: 'smart_merge',

@@ -117,7 +117,11 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
         onPress={handleTogglePanel}
         aria-label={showPanel ? 'Close Strava panel' : 'Open Strava panel'}
       >
-        {showPanel ? <ChevronRight className="h-5 w-5 text-white" /> : <ChevronLeft className="h-5 w-5 text-white" />}
+        {showPanel ? (
+          <ChevronRight className="h-5 w-5 text-white" />
+        ) : (
+          <ChevronLeft className="h-5 w-5 text-white" />
+        )}
       </Button>
 
       {/* Enhanced Alpine Sliding Panel */}
