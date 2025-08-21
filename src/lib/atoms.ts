@@ -328,6 +328,10 @@ export const signInFormAtom = atom({
   loading: false,
 })
 
+// Auth UI state atoms
+export const authSuccessMessageAtom = atom<string | null>(null)
+export const authRedirectingAtom = atom(false)
+
 export const signUpFormAtom = atom({
   fullName: '',
   email: '',

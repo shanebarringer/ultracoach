@@ -13,7 +13,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { sessionAtom, signInFormAtom, userAtom } from '@/lib/atoms'
+import {
+  authRedirectingAtom,
+  authSuccessMessageAtom,
+  sessionAtom,
+  signInFormAtom,
+  userAtom,
+} from '@/lib/atoms'
 import type { User } from '@/lib/better-auth'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
@@ -36,8 +42,8 @@ export default function SignIn() {
   const router = useRouter()
   const [, setSession] = useAtom(sessionAtom)
   const [, setUser] = useAtom(userAtom)
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
-  const [isRedirecting, setIsRedirecting] = React.useState(false)
+  const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
+  const [isRedirecting, setIsRedirecting] = useAtom(authRedirectingAtom)
 
   // Check for success messages from URL params
   React.useEffect(() => {
@@ -51,7 +57,7 @@ export default function SignIn() {
       // Clean URL
       router.replace('/auth/signin', { scroll: false })
     }
-  }, [router]) // Include router dependency as required by ESLint
+  }, [router, setSuccessMessage]) // Include dependencies as required by ESLint
 
   // React Hook Form setup
   const {
