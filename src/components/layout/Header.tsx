@@ -91,11 +91,11 @@ function Header() {
     <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
       <NavbarContent justify="start" className="gap-3">
         <NavbarMenuToggle
-          aria-label={'Open menu'}
-          className="lg:hidden"
+          aria-label="Open menu"
+          className="lg:hidden flex-shrink-0"
           onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
         />
-        <NavbarBrand>
+        <NavbarBrand className="flex-grow-0">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl">🏔️</span>
             <div className="flex flex-col">
@@ -110,7 +110,10 @@ function Header() {
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden lg:flex gap-2 lg:gap-4 ml-4 lg:ml-8 flex-1 min-w-0" justify="start">
+      <NavbarContent
+        className="hidden lg:flex gap-2 lg:gap-4 ml-4 lg:ml-8 flex-1 min-w-0"
+        justify="start"
+      >
         {status === 'loading' ? (
           // Show nothing while loading to prevent flash
           <></>

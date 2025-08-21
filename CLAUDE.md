@@ -88,22 +88,45 @@ See `.context7-docs/nextjs/` for comprehensive guides:
 ### Correct Database Commands:
 
 ```bash
-# Connect to database
+# Local database operations
 pnpm db:connect
-
-# Run a query
 pnpm db:query "SELECT * FROM coach_runners LIMIT 5;"
-
-# Drizzle operations
 pnpm db:generate    # Generate migrations
 pnpm db:push        # Push schema changes (uses --force)
 pnpm db:migrate     # Apply migrations
 pnpm db:studio      # Open Drizzle Studio
-
-# Database seeding and setup
 pnpm db:seed        # Seed database with test data
 pnpm db:fresh       # Reset and seed database
+
+# Production database operations
+pnpm prod:db:query "SELECT COUNT(*) FROM better_auth_users;"
+pnpm prod:db:seed   # Seed production database
+
+# Supabase CLI operations (requires password from .env.production)
+supabase db reset --linked     # Reset production database
+supabase db push --linked      # Push migrations to production
+supabase db dump --linked      # Dump production data
 ```
+
+### Production Database Password
+
+**CRITICAL**: Production database password is stored in `.env.production`:
+```bash
+DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
+```
+
+**When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
+
+### ⚠️ CRITICAL: Supabase Database Auto-Pause Issue
+
+**ISSUE**: Supabase pauses databases after 7 days of inactivity, causing "Tenant or user not found" errors.
+
+**SOLUTION**: 
+1. **Unpause database** via Supabase Dashboard: https://supabase.com/dashboard/project/ccnbzjpccmlribljugve/settings/database
+2. **Keep database active** with regular activity until beta users are onboarded
+3. **Monitor database status** regularly to prevent future pauses
+
+**PRODUCTION READINESS REQUIREMENT**: Database must remain active for beta user onboarding
 
 ## Git Commit Strategy:
 
@@ -253,15 +276,15 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ### Current Status (Updated: 2025-08-21)
 
-- **Current Focus**: Comprehensive Strava Integration Complete - Advanced workout matching, sync operations, and Mountain Peak styling
+- **Current Focus**: Production Deployment Readiness - Database foundation, core functionality completion, and testing infrastructure
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
-- **Database**: Comprehensive relationship system with proper constraints, type safety, production-ready with comprehensive test data (18 users, 3 relationships, 15 workouts)
+- **Database**: Comprehensive relationship system with proper constraints, type safety, requires production reset and re-migration
 - **State Management**: Advanced Jotai patterns implemented - atomFamily, loadable, unwrap, splitAtom for granular performance
 - **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
 - **Authentication**: Better Auth configuration optimized for production deployment with proper URL resolution and error handling
 - **Recent Completion**: Full Strava integration with OAuth, activity browsing, intelligent workout matching, and comprehensive sync operations
-- **Active Phase**: Production-ready Strava integration with comprehensive API infrastructure and Mountain Peak styled components
+- **Active Phase**: Phase 1 - Database foundation with production reset, workout completion functionality, and E2E test fixes
 
 ## 🏗️ Architecture & Technology
 
@@ -329,9 +352,33 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 8. **Advanced State Management** - Jotai patterns with loadable, refreshable, and action atoms for optimal performance
 
 **Next Phase Ready for:**
+
 - Testing infrastructure development
 - Advanced features (Garmin integration)
 - Performance monitoring and analytics
+
+### ⚠️ Minor Areas for Future Enhancement
+
+1. **Rate Limiting Enhancement**
+   ```typescript
+   // Consider adding exponential backoff for Strava API calls
+   // Current: Fixed retry logic
+   // Suggestion: Implement exponential backoff with jitter
+   ```
+
+2. **Caching Strategy**
+   ```typescript
+   // Consider implementing Redis caching for frequently accessed Strava data
+   // Current: In-memory caching via Jotai atoms
+   // Future: Persistent caching for better UX
+   ```
+
+3. **Monitoring Enhancement**
+   ```typescript
+   // Consider adding metrics collection for sync operations
+   // Current: Excellent logging
+   // Future: Performance metrics and success rate tracking
+   ```
 
 ---
 

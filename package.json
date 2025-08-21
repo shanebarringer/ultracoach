@@ -54,6 +54,8 @@
     "prod:db:query": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c",
     "prod:db:status": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c \"SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;\"",
     "prod:db:users": "export $(grep -v '^#' .env.production | xargs) && psql \"$DATABASE_URL\" -c \"SELECT id, email, role, created_at FROM \\\"user\\\" ORDER BY created_at;\"",
+    "prod:db:keepalive": "NODE_ENV=production tsx scripts/database-keepalive.ts",
+    "db:keepalive": "tsx scripts/database-keepalive.ts",
     "prepare": "husky"
   },
   "dependencies": {
