@@ -111,6 +111,7 @@ supabase db dump --linked      # Dump production data
 ### Production Database Password
 
 **CRITICAL**: Production database password is stored in `.env.production`:
+
 ```bash
 DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
 ```
@@ -121,7 +122,8 @@ DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
 
 **ISSUE**: Supabase pauses databases after 7 days of inactivity, causing "Tenant or user not found" errors.
 
-**SOLUTION**: 
+**SOLUTION**:
+
 1. **Unpause database** via Supabase Dashboard: https://supabase.com/dashboard/project/ccnbzjpccmlribljugve/settings/database
 2. **Keep database active** with regular activity until beta users are onboarded
 3. **Monitor database status** regularly to prevent future pauses
@@ -360,6 +362,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 ### ⚠️ Minor Areas for Future Enhancement
 
 1. **Rate Limiting Enhancement**
+
    ```typescript
    // Consider adding exponential backoff for Strava API calls
    // Current: Fixed retry logic
@@ -367,6 +370,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
    ```
 
 2. **Caching Strategy**
+
    ```typescript
    // Consider implementing Redis caching for frequently accessed Strava data
    // Current: In-memory caching via Jotai atoms

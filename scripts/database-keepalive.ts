@@ -1,21 +1,19 @@
 #!/usr/bin/env tsx
-
 /**
  * Database Keep-Alive Script
- * 
+ *
  * Prevents Supabase production database from auto-pausing due to inactivity.
  * This script should be run periodically (e.g., every 6 hours) via cron job or scheduled task.
- * 
+ *
  * Usage:
  *   NODE_ENV=production tsx scripts/database-keepalive.ts
- * 
+ *
  * Cron job example (every 6 hours):
  *   0 0/6 * * * cd /path/to/ultracoach && NODE_ENV=production tsx scripts/database-keepalive.ts
  */
-
 import { config } from 'dotenv'
-import { drizzle } from 'drizzle-orm/postgres-js'
 import { sql } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { createLogger } from '../src/lib/logger'

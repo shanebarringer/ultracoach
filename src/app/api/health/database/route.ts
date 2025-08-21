@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
 import { sql } from 'drizzle-orm'
 
-import { createLogger } from '@/lib/logger'
+import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
+import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api/health/database')
 
@@ -16,7 +17,12 @@ export async function GET() {
     const queryTime = Date.now() - startTime
 
     // postgres-js returns results directly as an array
-    const row = result[0] as { health_check: number; current_database: string; current_user: string; timestamp: Date }
+    const row = result[0] as {
+      health_check: number
+      current_database: string
+      current_user: string
+      timestamp: Date
+    }
 
     const healthData = {
       status: 'healthy',

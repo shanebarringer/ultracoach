@@ -1,15 +1,13 @@
 #!/usr/bin/env tsx
-
 /**
  * Sync Production Schema Script
- * 
+ *
  * This script syncs the production database schema to match our local development schema exactly.
  * It uses our current schema definition to recreate all tables with the correct structure.
  */
-
 import { config } from 'dotenv'
-import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import { drizzle } from 'drizzle-orm/postgres-js'
+import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 
 import { createLogger } from '../src/lib/logger'
