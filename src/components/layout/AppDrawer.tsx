@@ -38,8 +38,7 @@ export default function AppDrawer() {
         base: 'data-[placement=left]:border-r-1 data-[placement=left]:border-divider',
         backdrop: 'backdrop-blur-sm bg-background/20',
         body: 'px-2 py-4',
-        header:
-          'px-4 py-6 border-b-1 border-divider bg-gradient-to-r from-primary-50 to-secondary-50',
+        header: 'px-4 py-6 border-b-1 border-divider bg-content1',
       }}
     >
       <DrawerContent>
