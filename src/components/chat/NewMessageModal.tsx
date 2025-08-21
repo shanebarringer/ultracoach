@@ -66,10 +66,16 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   )
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} data-testid="new-message-modal">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="4xl"
+      scrollBehavior="inside"
+      data-testid="new-message-modal"
+    >
       <ModalContent>
-        <ModalHeader>New Message</ModalHeader>
-        <ModalBody>
+        <ModalHeader className="border-b border-divider">New Message</ModalHeader>
+        <ModalBody className="overflow-y-auto py-6">
           <Controller
             name="searchTerm"
             control={control}
@@ -80,14 +86,15 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                 placeholder="Search by name or email..."
                 isInvalid={!!fieldState.error}
                 errorMessage={fieldState.error?.message}
+                className="mb-6"
               />
             )}
           />
-          <div className="max-h-64 overflow-y-auto mt-4">
+          <div className="space-y-4">
             {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
+                  className="mx-auto h-16 w-16 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -104,31 +111,33 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                     ? 'No users found'
                     : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-default-500">
                   {session?.user?.role === 'coach'
                     ? 'Create training plans to connect with runners'
                     : 'Ask your coach to create a training plan for you'}
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="">
                 {filteredUsers.map((user: User) => (
                   <Button
                     key={user.id}
-                    variant="light"
-                    className="w-full flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors text-left justify-start"
+                    variant="flat"
+                    className="w-full flex items-center p-3 rounded-lg text-left justify-start height-[400px] overflow-y-auto"
                     onClick={() => handleStartConversation(user.id)}
                     data-testid={`user-option-${user.id}`}
+                    size="lg"
                   >
-                    <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium mr-3">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-medium mr-3">
                       {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-sm font-medium text-foreground truncate">
                         {user.full_name || 'Unknown User'}
                       </h3>
-                      <p className="text-sm text-gray-500 truncate">{user.email || 'No email'}</p>
-                      <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+                      <p className="text-sm text-default-500 truncate">
+                        {user.email || 'No email'}
+                      </p>
                     </div>
                     <svg
                       className="w-5 h-5 text-gray-400"

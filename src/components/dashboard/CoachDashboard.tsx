@@ -16,6 +16,7 @@ import { memo, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User } from '@/lib/supabase'
@@ -227,10 +228,10 @@ function CoachDashboard() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {/* Training Expeditions */}
         <Card
-          className="hover:shadow-lg transition-shadow duration-300"
+          className="hover:shadow-lg transition-shadow duration-300 xl:col-span-2"
           data-testid="training-plans-section"
         >
           <CardHeader className="flex justify-between items-center">
@@ -307,6 +308,14 @@ function CoachDashboard() {
           </CardBody>
         </Card>
 
+        {/* Strava Integration Widget */}
+        <div className="xl:col-span-1">
+          <StravaDashboardWidget className="mb-8" />
+        </div>
+      </div>
+
+      {/* Second Content Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Peaks Conquered - Using Suspense-enabled component */}
         <RecentActivity
           title="Recent Peaks Conquered"

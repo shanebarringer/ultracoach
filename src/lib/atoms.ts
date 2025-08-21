@@ -9,6 +9,12 @@ import {
 } from 'jotai/utils'
 
 import type { RelationshipData } from '@/types/relationships'
+import type { StravaActivity, StravaConnection } from '@/types/strava'
+// ============================================================================
+// Workout Matching & Diffing Atoms
+// ============================================================================
+
+import type { WorkoutMatch } from '@/utils/workout-matching'
 
 import type { User as BetterAuthUser, Session } from './better-auth-client'
 import { createLogger } from './logger'
@@ -385,6 +391,12 @@ export const workoutSortByAtom = atom<'date-desc' | 'date-asc' | 'type' | 'statu
 )
 export const workoutTypeFilterAtom = atom<string>('all')
 export const workoutStatusFilterAtom = atom<string>('all')
+export const workoutViewModeAtom = atom<'grid' | 'list'>('grid')
+export const workoutQuickFilterAtom = atom<'all' | 'today' | 'this-week' | 'completed' | 'planned'>(
+  'all'
+)
+export const workoutShowAdvancedFiltersAtom = atom(false)
+export const workoutStravaShowPanelAtom = atom(false)
 
 export const uiStateAtom = atom({
   showCreateTrainingPlan: false,
@@ -1317,3 +1329,480 @@ export const errorRecoveryAtom = atom(
     }
   }
 )
+
+// ===================================
+// STRAVA INTEGRATION ATOMS
+// ===================================
+
+// Core Strava connection atom
+export const stravaConnectionAtom = atom<StravaConnection | null>(null)
+
+// Strava connection status atom
+export const stravaStatusAtom = atom<
+  'disconnected' | 'connecting' | 'connected' | 'expired' | 'error'
+>('disconnected')
+
+// Error state for Strava operations
+export const stravaErrorAtom = atom<string | null>(null)
+
+// Strava activities atom
+export const stravaActivitiesAtom = atom<StravaActivity[]>([])
+
+// Sync progress tracking for individual activities
+export const syncProgressAtom = atom<{
+  [activityId: string]: {
+    syncing: boolean
+    synced: boolean
+    error?: string
+    workoutId?: string
+  }
+}>({})
+
+// Refreshable Strava connection status atom (only fetches when user is authenticated)
+export const stravaConnectionStatusAtom = atomWithRefresh(async get => {
+  if (!isBrowser) return { connected: false, enabled: false }
+
+  // Check authentication first - don't make API calls for unauthenticated users
+  // Use the same atoms that useBetterSession uses
+  const user = get(userAtom)
+  const loading = get(authLoadingAtom)
+  if (!user || loading) {
+    return { connected: false, enabled: false }
+  }
+
+  const logger = createLogger('StravaConnectionStatus')
+
+  try {
+    logger.debug('Fetching Strava connection status for authenticated user...')
+    const response = await fetch('/api/strava/status', {
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      logger.error(`Failed to fetch Strava status: ${response.status} ${response.statusText}`)
+      return { connected: false, enabled: false, error: 'Failed to load status' }
+    }
+
+    const data = await response.json()
+    logger.info('Strava connection status fetched successfully', { connected: data.connected })
+    return data
+  } catch (error) {
+    logger.error('Error fetching Strava connection status:', error)
+    return { connected: false, enabled: false, error: 'Network error' }
+  }
+})
+
+// Refreshable Strava activities atom (only fetches when user is authenticated)
+export const stravaActivitiesRefreshableAtom = atomWithRefresh(async get => {
+  if (!isBrowser) return []
+
+  // Check authentication first - don't make API calls for unauthenticated users
+  // Use the same atoms that stravaConnectionStatusAtom uses for consistency
+  const user = get(userAtom)
+  const loading = get(authLoadingAtom)
+  if (!user || loading) {
+    return []
+  }
+
+  const logger = createLogger('StravaActivities')
+
+  try {
+    logger.debug('Fetching Strava activities for authenticated user...')
+    const response = await fetch('/api/strava/activities', {
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        logger.warn('Insufficient Strava permissions for activities')
+        return []
+      }
+      logger.error(`Failed to fetch Strava activities: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch Strava activities: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    logger.info('Strava activities fetched successfully', { count: data.activities?.length || 0 })
+    return data.activities || []
+  } catch (error) {
+    logger.error('Error fetching Strava activities:', error)
+    return []
+  }
+})
+
+// Derived atoms for better performance using unwrap for async data
+export const unsyncedActivitiesAtom = atom(get => {
+  const activitiesLoadable = get(loadable(stravaActivitiesRefreshableAtom))
+  const syncProgress = get(syncProgressAtom)
+
+  if (activitiesLoadable.state !== 'hasData') {
+    return []
+  }
+
+  const activities = activitiesLoadable.data
+  return activities.filter((activity: StravaActivity) => {
+    const progress = syncProgress[activity.id]
+    return !progress?.synced
+  })
+})
+
+export const syncedActivitiesAtom = atom(get => {
+  const activitiesLoadable = get(loadable(stravaActivitiesRefreshableAtom))
+  const syncProgress = get(syncProgressAtom)
+
+  if (activitiesLoadable.state !== 'hasData') {
+    return []
+  }
+
+  const activities = activitiesLoadable.data
+  return activities.filter((activity: StravaActivity) => {
+    const progress = syncProgress[activity.id]
+    return progress?.synced
+  })
+})
+
+export const syncStatsAtom = atom(get => {
+  const activitiesLoadable = get(loadable(stravaActivitiesRefreshableAtom))
+  const syncProgress = get(syncProgressAtom)
+
+  if (activitiesLoadable.state !== 'hasData') {
+    return {
+      total: 0,
+      synced: 0,
+      pending: 0,
+      syncing: 0,
+      syncRate: 0,
+    }
+  }
+
+  const activities = activitiesLoadable.data
+  const total = activities.length
+  const synced = activities.filter(
+    (activity: StravaActivity) => syncProgress[activity.id]?.synced
+  ).length
+  const pending = total - synced
+  const syncing = Object.values(syncProgress).filter(p => p.syncing).length
+
+  return {
+    total,
+    synced,
+    pending,
+    syncing,
+    syncRate: total > 0 ? Math.round((synced / total) * 100) : 0,
+  }
+})
+
+// Auto-reconnect state
+export const stravaAutoReconnectAtom = atom<{
+  enabled: boolean
+  attempts: number
+  maxAttempts: number
+  lastAttempt: Date | null
+}>({
+  enabled: true,
+  attempts: 0,
+  maxAttempts: 3,
+  lastAttempt: null,
+})
+
+// Types for Strava action payloads
+interface SyncActivityPayload {
+  activityId: string
+  syncAsWorkout?: boolean
+}
+
+// Strava sync operations atom for actions
+export const stravaActionsAtom = atom(
+  null,
+  (
+    get,
+    set,
+    action: {
+      type: 'SYNC_ACTIVITY' | 'CONNECT' | 'DISCONNECT' | 'RECONNECT'
+      payload?: SyncActivityPayload
+    }
+  ) => {
+    const logger = createLogger('StravaActions')
+
+    switch (action.type) {
+      case 'SYNC_ACTIVITY':
+        if (!action.payload) {
+          logger.error('SYNC_ACTIVITY action requires payload with activityId')
+          return
+        }
+        const { activityId, syncAsWorkout = true } = action.payload
+
+        // Set syncing state
+        set(syncProgressAtom, prev => ({
+          ...prev,
+          [activityId]: { ...prev[activityId], syncing: true, error: undefined },
+        }))
+
+        // Perform sync operation
+        fetch('/api/strava/sync', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            activity_id: parseInt(activityId, 10), // Convert string to number for API
+            sync_as_workout: syncAsWorkout,
+          }),
+        })
+          .then(async response => {
+            if (response.ok) {
+              const result = await response.json()
+              set(syncProgressAtom, prev => ({
+                ...prev,
+                [activityId]: {
+                  syncing: false,
+                  synced: true,
+                  workoutId: result.workout_id,
+                },
+              }))
+              logger.info('Activity synced successfully', {
+                activityId,
+                workoutId: result.workout_id,
+              })
+            } else {
+              const errorData = await response.json()
+              set(syncProgressAtom, prev => ({
+                ...prev,
+                [activityId]: {
+                  syncing: false,
+                  synced: false,
+                  error: errorData.error,
+                },
+              }))
+              logger.error('Failed to sync activity', {
+                activityId,
+                status: response.status,
+                statusText: response.statusText,
+                error: errorData.error,
+                details: errorData.details,
+              })
+            }
+          })
+          .catch(error => {
+            set(syncProgressAtom, prev => ({
+              ...prev,
+              [activityId]: {
+                syncing: false,
+                synced: false,
+                error: 'Network error',
+              },
+            }))
+            logger.error('Network error syncing activity', { activityId, error })
+          })
+        break
+
+      case 'CONNECT':
+        set(stravaStatusAtom, 'connecting')
+        fetch('/api/strava/connect', { credentials: 'include' })
+          .then(async response => {
+            if (response.ok) {
+              const data = await response.json()
+              window.location.href = data.authUrl
+            } else {
+              set(stravaStatusAtom, 'error')
+              set(stravaErrorAtom, 'Failed to initiate connection')
+            }
+          })
+          .catch(() => {
+            set(stravaStatusAtom, 'error')
+            set(stravaErrorAtom, 'Network error')
+          })
+        break
+
+      case 'DISCONNECT':
+        fetch('/api/strava/disconnect', {
+          method: 'POST',
+          credentials: 'include',
+        })
+          .then(async response => {
+            if (response.ok) {
+              set(stravaStatusAtom, 'disconnected')
+              set(stravaConnectionAtom, null)
+              set(stravaActivitiesAtom, [])
+              set(syncProgressAtom, {})
+              logger.info('Successfully disconnected from Strava')
+            } else {
+              set(stravaErrorAtom, 'Failed to disconnect')
+            }
+          })
+          .catch(() => {
+            set(stravaErrorAtom, 'Network error during disconnect')
+          })
+        break
+
+      case 'RECONNECT':
+        const reconnectState = get(stravaAutoReconnectAtom)
+        if (reconnectState.attempts < reconnectState.maxAttempts) {
+          set(stravaAutoReconnectAtom, {
+            ...reconnectState,
+            attempts: reconnectState.attempts + 1,
+            lastAttempt: new Date(),
+          })
+          // Trigger connect action
+          set(stravaActionsAtom, { type: 'CONNECT' })
+        } else {
+          logger.warn('Max reconnect attempts reached')
+          set(stravaErrorAtom, 'Max reconnection attempts reached')
+        }
+        break
+    }
+  }
+)
+
+// Combined Strava state atom for easy consumption
+export const stravaStateAtom = atom(get => {
+  const connectionLoadable = get(loadable(stravaConnectionStatusAtom))
+  const activitiesLoadable = get(loadable(stravaActivitiesRefreshableAtom))
+  const syncStats = get(syncStatsAtom)
+  const status = get(stravaStatusAtom)
+  const error = get(stravaErrorAtom)
+  const autoReconnect = get(stravaAutoReconnectAtom)
+
+  const connection =
+    connectionLoadable.state === 'hasData'
+      ? {
+          ...connectionLoadable.data,
+          isConnected: connectionLoadable.data.connected, // Map connected to isConnected for component compatibility
+        }
+      : { connected: false, enabled: false, isConnected: false }
+  const activities = activitiesLoadable.state === 'hasData' ? activitiesLoadable.data : []
+
+  return {
+    connection,
+    activities,
+    syncStats,
+    status,
+    error,
+    autoReconnect,
+    isConnected: connection.connected && status === 'connected',
+    canSync: connection.connected && connection.scope?.includes('activity:read_all'),
+    needsReconnect:
+      status === 'expired' ||
+      (connection.connected && !connection.scope?.includes('activity:read_all')),
+    loading: connectionLoadable.state === 'loading' || activitiesLoadable.state === 'loading',
+  }
+})
+
+// Workout matching state
+export const workoutMatchingStateAtom = atom<{
+  matches: Map<number, WorkoutMatch[]>
+  loading: boolean
+  lastProcessed: string | null
+  error: string | null
+}>({
+  matches: new Map(),
+  loading: false,
+  lastProcessed: null,
+  error: null,
+})
+
+// Current matching options
+export const matchingOptionsAtom = atom({
+  dateTolerance: 1, // days
+  distanceTolerance: 0.15, // 15%
+  durationTolerance: 0.2, // 20%
+  minConfidence: 0.3, // 30%
+})
+
+// Selected match for diffing
+export const selectedMatchAtom = atom<WorkoutMatch | null>(null)
+
+// Show workout diff modal
+export const showWorkoutDiffModalAtom = atom(false)
+
+// Workout matching summary statistics
+export const matchingSummaryAtom = atom(get => {
+  const stravaState = get(stravaStateAtom)
+  const workouts = get(workoutsAtom)
+  const matchingState = get(workoutMatchingStateAtom)
+
+  if (!stravaState.activities || workouts.length === 0 || matchingState.matches.size === 0) {
+    return null
+  }
+
+  const activities = stravaState.activities
+  const matches = matchingState.matches
+
+  // Calculate summary statistics
+  const allMatches = Array.from(matches.values()).flat()
+  const totalMatches = allMatches.length
+  const exactMatches = allMatches.filter(m => m.matchType === 'exact').length
+  const probableMatches = allMatches.filter(m => m.matchType === 'probable').length
+  const possibleMatches = allMatches.filter(m => m.matchType === 'possible').length
+  const conflicts = allMatches.filter(m => m.matchType === 'conflict').length
+
+  // Find unmatched planned workouts
+  const matchedWorkoutIds = new Set(
+    allMatches.filter(m => m.confidence > 0.5).map(m => m.workout.id)
+  )
+  const unmatchedWorkouts = workouts.filter(
+    w => w.status === 'planned' && !matchedWorkoutIds.has(w.id) && new Date(w.date) <= new Date()
+  ).length
+
+  return {
+    total: {
+      activities: activities.length,
+      workouts: workouts.length,
+      matches: totalMatches,
+    },
+    byType: {
+      exact: exactMatches,
+      probable: probableMatches,
+      possible: possibleMatches,
+      conflicts: conflicts,
+    },
+    unmatchedWorkouts,
+    lastProcessed: matchingState.lastProcessed,
+  }
+})
+
+// Action atom to trigger workout matching
+export const triggerWorkoutMatchingAtom = atom(null, async (get, set) => {
+  const stravaState = get(stravaStateAtom)
+  const workouts = get(workoutsAtom)
+  const options = get(matchingOptionsAtom)
+
+  if (!stravaState.activities || workouts.length === 0) {
+    logger.warn('Cannot perform workout matching: missing activities or workouts')
+    return
+  }
+
+  set(workoutMatchingStateAtom, prev => ({ ...prev, loading: true, error: null }))
+
+  try {
+    logger.info('Starting workout matching process', {
+      activities: stravaState.activities.length,
+      workouts: workouts.length,
+      options,
+    })
+
+    const { batchMatchActivities } = await import('@/utils/workout-matching')
+    const matches = batchMatchActivities(stravaState.activities, workouts, options)
+
+    set(workoutMatchingStateAtom, prev => ({
+      ...prev,
+      matches,
+      loading: false,
+      lastProcessed: new Date().toISOString(),
+      error: null,
+    }))
+
+    logger.info('Workout matching completed successfully', {
+      matchedActivities: matches.size,
+      totalMatches: Array.from(matches.values()).flat().length,
+    })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Workout matching failed:', error)
+
+    set(workoutMatchingStateAtom, prev => ({
+      ...prev,
+      loading: false,
+      error: errorMessage,
+    }))
+  }
+})

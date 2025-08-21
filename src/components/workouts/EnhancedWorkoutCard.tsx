@@ -3,20 +3,24 @@
 import { Badge, Button, Card, CardBody, CardFooter, CardHeader, Progress } from '@heroui/react'
 import { useAtom } from 'jotai'
 import {
+  Activity,
   AlertCircle,
   Calendar,
   CheckCircle2,
   Circle,
   Clock,
+  ExternalLink,
   MapPin,
+  RefreshCw,
   Target,
   TrendingUp,
 } from 'lucide-react'
 
-import { memo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 
-import { workoutAtomFamily } from '@/lib/atoms'
+import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
+import type { StravaActivity } from '@/types/strava'
 
 type WorkoutAtom = import('jotai').Atom<Workout | null>
 
@@ -192,6 +196,150 @@ const WorkoutProgress = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => 
 })
 WorkoutProgress.displayName = 'WorkoutProgress'
 
+// Strava sync status component
+const StravaStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
+  const [workout] = useAtom(workoutAtom)
+  const [stravaState] = useAtom(stravaStateAtom)
+
+  const stravaData = useMemo(() => {
+    if (!workout || !stravaState.connection?.isConnected) return null
+
+    // Check if this workout has associated Strava data
+    const workoutDate = workout.date
+    const matchedActivity = stravaState.activities?.find((activity: StravaActivity) => {
+      const activityDate = new Date(activity.start_date).toISOString().split('T')[0]
+      return activityDate === workoutDate && activity.type === 'Run'
+    })
+
+    if (matchedActivity) {
+      return {
+        status: 'synced',
+        activity: matchedActivity,
+        icon: Activity,
+        color: 'success' as const,
+        label: 'Synced',
+      }
+    }
+
+    // Check if workout is completed and could be synced
+    if (workout.status === 'completed') {
+      return {
+        status: 'syncable',
+        activity: null,
+        icon: RefreshCw,
+        color: 'warning' as const,
+        label: 'Can Sync',
+      }
+    }
+
+    return null
+  }, [workout, stravaState])
+
+  const handleStravaAction = useCallback(() => {
+    if (!stravaData) return
+
+    if (stravaData.status === 'synced' && stravaData.activity) {
+      // Open Strava activity in new tab
+      window.open(`https://www.strava.com/activities/${stravaData.activity.id}`, '_blank')
+    } else if (stravaData.status === 'syncable') {
+      // Future: Trigger sync for this specific workout
+      console.log('Sync workout to Strava:', workout?.id)
+    }
+  }, [stravaData, workout])
+
+  if (!stravaData) return null
+
+  const Icon = stravaData.icon
+
+  return (
+    <Button
+      isIconOnly
+      size="sm"
+      variant="flat"
+      color={stravaData.color}
+      onPress={handleStravaAction}
+      className="min-w-unit-8 h-unit-8"
+      title={
+        stravaData.status === 'synced'
+          ? 'View on Strava'
+          : stravaData.status === 'syncable'
+            ? 'Sync to Strava'
+            : 'Strava'
+      }
+    >
+      <Icon className="h-3 w-3" />
+    </Button>
+  )
+})
+StravaStatus.displayName = 'StravaStatus'
+
+// Enhanced Strava action button for footer
+const StravaActionButton = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
+  const [workout] = useAtom(workoutAtom)
+  const [stravaState] = useAtom(stravaStateAtom)
+
+  const actionData = useMemo(() => {
+    if (!workout || !stravaState.connection?.isConnected) return null
+
+    const workoutDate = workout.date
+    const matchedActivity = stravaState.activities?.find((activity: StravaActivity) => {
+      const activityDate = new Date(activity.start_date).toISOString().split('T')[0]
+      return activityDate === workoutDate && activity.type === 'Run'
+    })
+
+    if (matchedActivity) {
+      return {
+        type: 'view',
+        label: 'View on Strava',
+        icon: ExternalLink,
+        color: 'secondary' as const,
+        activity: matchedActivity,
+      }
+    }
+
+    if (workout.status === 'completed') {
+      return {
+        type: 'sync',
+        label: 'Sync to Strava',
+        icon: RefreshCw,
+        color: 'primary' as const,
+        activity: null,
+      }
+    }
+
+    return null
+  }, [workout, stravaState])
+
+  const handleAction = useCallback(() => {
+    if (!actionData) return
+
+    if (actionData.type === 'view' && actionData.activity) {
+      window.open(`https://www.strava.com/activities/${actionData.activity.id}`, '_blank')
+    } else if (actionData.type === 'sync') {
+      // Future: Implement actual sync to Strava
+      console.log('Sync workout to Strava:', workout?.id)
+    }
+  }, [actionData, workout])
+
+  if (!actionData) return null
+
+  const Icon = actionData.icon
+
+  return (
+    <Button
+      size="sm"
+      variant="bordered"
+      color={actionData.color}
+      onPress={handleAction}
+      startContent={<Icon className="h-4 w-4" />}
+      className="ml-auto"
+    >
+      {actionData.label}
+    </Button>
+  )
+})
+StravaActionButton.displayName = 'StravaActionButton'
+
 // Main enhanced workout card
 const EnhancedWorkoutCard = memo(
   ({
@@ -226,7 +374,10 @@ const EnhancedWorkoutCard = memo(
             <div className="flex-1 min-w-0">
               <EnhancedWorkoutName workoutAtom={workoutAtom} />
             </div>
-            <EnhancedWorkoutStatus workoutAtom={workoutAtom} />
+            <div className="flex items-center gap-2">
+              <StravaStatus workoutAtom={workoutAtom} />
+              <EnhancedWorkoutStatus workoutAtom={workoutAtom} />
+            </div>
           </div>
         </CardHeader>
 
@@ -277,6 +428,7 @@ const EnhancedWorkoutCard = memo(
                 View Details
               </Button>
             )}
+            <StravaActionButton workoutAtom={workoutAtom} />
           </div>
         </CardFooter>
       </Card>

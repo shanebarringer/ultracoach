@@ -15,6 +15,8 @@ import {
   NavbarMenuToggle,
 } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { useKBar } from 'kbar'
+import { Search } from 'lucide-react'
 
 import { memo, useCallback } from 'react'
 
@@ -46,6 +48,27 @@ const ThemeToggle = memo(function ThemeToggle() {
       className="hover:bg-primary/10 transition-colors"
     >
       {themeMode === 'light' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+    </Button>
+  )
+})
+
+const SearchButton = memo(function SearchButton() {
+  const { query } = useKBar()
+
+  const openKBar = useCallback(() => {
+    logger.debug('Opening K-Bar via search button')
+    query.toggle()
+  }, [query])
+
+  return (
+    <Button
+      isIconOnly
+      variant="light"
+      onClick={openKBar}
+      aria-label="Search (⌘K)"
+      className="hover:bg-primary/10 transition-colors"
+    >
+      <Search className="h-5 w-5" />
     </Button>
   )
 })
@@ -87,7 +110,7 @@ function Header() {
         </NavbarBrand>
       </NavbarContent>
 
-      <NavbarContent className="hidden lg:flex gap-1 lg:gap-2" justify="center">
+      <NavbarContent className="hidden lg:flex gap-2 lg:gap-4 ml-4 lg:ml-8 flex-1 min-w-0" justify="start">
         {status === 'loading' ? (
           // Show nothing while loading to prevent flash
           <></>
@@ -120,15 +143,22 @@ function Header() {
         )}
       </NavbarContent>
 
-      <NavbarContent justify="end">
+      <NavbarContent justify="end" className="gap-1 lg:gap-2 flex-shrink-0 min-w-0">
+        <NavbarItem>
+          <SearchButton />
+        </NavbarItem>
         {session && (
           <>
             <NavbarItem>
               <NotificationBell />
             </NavbarItem>
-            <NavbarItem>
-              <ThemeToggle />
-            </NavbarItem>
+          </>
+        )}
+        <NavbarItem>
+          <ThemeToggle />
+        </NavbarItem>
+        {session && (
+          <>
             <NavbarItem>
               <Dropdown>
                 <DropdownTrigger>

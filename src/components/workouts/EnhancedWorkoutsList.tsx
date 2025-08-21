@@ -1,17 +1,22 @@
 'use client'
 
-import { Button, Card, CardBody, Input, Select, SelectItem } from '@heroui/react'
+import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { Calendar, Filter, Search, SortAsc, SortDesc } from 'lucide-react'
+import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
+
+import { useSearchParams } from 'next/navigation'
 
 import {
   filteredWorkoutsAtom,
+  workoutQuickFilterAtom,
   workoutSearchTermAtom,
+  workoutShowAdvancedFiltersAtom,
   workoutSortByAtom,
   workoutStatusFilterAtom,
   workoutTypeFilterAtom,
+  workoutViewModeAtom,
 } from '@/lib/atoms'
 import type { Workout } from '@/lib/supabase'
 
@@ -24,22 +29,76 @@ interface EnhancedWorkoutsListProps {
   variant?: 'default' | 'compact' | 'detailed'
 }
 
+type QuickFilter = 'all' | 'today' | 'this-week' | 'completed' | 'planned'
+
 type SortOption = 'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'
 
 const EnhancedWorkoutsList = memo(
   ({ userRole, onEditWorkout, onLogWorkout, variant = 'default' }: EnhancedWorkoutsListProps) => {
     const [workouts] = useAtom(filteredWorkoutsAtom)
+    const searchParams = useSearchParams()
 
     // Centralized filtering and sorting state using atoms
     const [searchTerm, setSearchTerm] = useAtom(workoutSearchTermAtom)
     const [sortBy, setSortBy] = useAtom(workoutSortByAtom)
     const [typeFilter, setTypeFilter] = useAtom(workoutTypeFilterAtom)
     const [statusFilter, setStatusFilter] = useAtom(workoutStatusFilterAtom)
-    // Note: viewMode functionality removed for simplicity - could be added back later
+    const [viewMode, setViewMode] = useAtom(workoutViewModeAtom)
+    const [quickFilter, setQuickFilter] = useAtom(workoutQuickFilterAtom)
+    const [showAdvancedFilters, setShowAdvancedFilters] = useAtom(workoutShowAdvancedFiltersAtom)
+
+    // Handle URL query parameters from k-bar commands
+    useEffect(() => {
+      const filter = searchParams.get('filter')
+      const status = searchParams.get('status')
+      const timeframe = searchParams.get('timeframe')
+
+      if (filter === 'today') {
+        setQuickFilter('today')
+      } else if (timeframe === 'this-week') {
+        setQuickFilter('this-week')
+      } else if (status === 'completed') {
+        setStatusFilter('completed')
+        setQuickFilter('completed')
+      } else if (status === 'planned') {
+        setStatusFilter('planned')
+        setQuickFilter('planned')
+      }
+    }, [searchParams, setStatusFilter, setQuickFilter])
 
     // Filter and sort workouts
     const processedWorkouts = useMemo(() => {
       let filtered = workouts
+
+      // Apply quick filter first
+      if (quickFilter !== 'all') {
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+
+        const startOfWeek = new Date(today)
+        startOfWeek.setDate(today.getDate() - today.getDay())
+        const endOfWeek = new Date(today)
+        endOfWeek.setDate(today.getDate() + (6 - today.getDay()))
+
+        switch (quickFilter) {
+          case 'today':
+            filtered = filtered.filter(workout => workout.date?.startsWith(todayStr))
+            break
+          case 'this-week':
+            filtered = filtered.filter(workout => {
+              if (!workout.date) return false
+              const workoutDate = new Date(workout.date)
+              return workoutDate >= startOfWeek && workoutDate <= endOfWeek
+            })
+            break
+          case 'completed':
+            filtered = filtered.filter(workout => workout.status === 'completed')
+            break
+          case 'planned':
+            filtered = filtered.filter(workout => (workout.status || 'planned') === 'planned')
+            break
+        }
+      }
 
       // Apply search filter
       if (searchTerm) {
@@ -51,13 +110,13 @@ const EnhancedWorkoutsList = memo(
         )
       }
 
-      // Apply type filter
-      if (typeFilter !== 'all') {
+      // Apply type filter (only if advanced filters are shown)
+      if (showAdvancedFilters && typeFilter !== 'all') {
         filtered = filtered.filter(workout => workout.planned_type === typeFilter)
       }
 
-      // Apply status filter
-      if (statusFilter !== 'all') {
+      // Apply status filter (only if advanced filters are shown and no quick filter)
+      if (showAdvancedFilters && quickFilter === 'all' && statusFilter !== 'all') {
         filtered = filtered.filter(workout => (workout.status || 'planned') === statusFilter)
       }
 
@@ -82,7 +141,7 @@ const EnhancedWorkoutsList = memo(
       })
 
       return sorted
-    }, [workouts, searchTerm, sortBy, typeFilter, statusFilter])
+    }, [workouts, searchTerm, sortBy, typeFilter, statusFilter, quickFilter, showAdvancedFilters])
 
     // Clear all filters
     const clearFilters = () => {
@@ -90,10 +149,41 @@ const EnhancedWorkoutsList = memo(
       setTypeFilter('all')
       setStatusFilter('all')
       setSortBy('date-desc')
+      setQuickFilter('all')
+      setShowAdvancedFilters(false)
     }
 
-    const hasActiveFilters =
-      searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'date-desc'
+    const hasActiveFilters = useMemo(() => {
+      return (
+        searchTerm ||
+        quickFilter !== 'all' ||
+        typeFilter !== 'all' ||
+        statusFilter !== 'all' ||
+        sortBy !== 'date-desc'
+      )
+    }, [searchTerm, quickFilter, typeFilter, statusFilter, sortBy])
+
+    // Quick filter handlers
+    const handleQuickFilter = (filter: QuickFilter) => {
+      if (filter === quickFilter) {
+        setQuickFilter('all')
+        if (filter === 'completed' || filter === 'planned') {
+          setStatusFilter('all')
+        }
+      } else {
+        setQuickFilter(filter)
+        if (filter === 'completed') {
+          setStatusFilter('completed')
+        } else if (filter === 'planned') {
+          setStatusFilter('planned')
+        } else {
+          // For today/this-week, don't change status filter
+          if (showAdvancedFilters) {
+            setStatusFilter('all')
+          }
+        }
+      }
+    }
 
     if (workouts.length === 0) {
       return (
@@ -120,21 +210,99 @@ const EnhancedWorkoutsList = memo(
 
     return (
       <div className="space-y-6">
-        {/* Enhanced Filters and Search */}
-        <Card>
-          <CardBody className="space-y-4">
+        {/* Streamlined Toolbar */}
+        <div className="bg-content1 rounded-xl border border-divider p-4 space-y-4">
+          {/* Top Row: Search and View Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
             {/* Search Bar */}
-            <Input
-              placeholder="Search workouts by type or notes..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-              startContent={<Search className="h-4 w-4 text-foreground-400" />}
-              isClearable
-              className="w-full"
-            />
+            <div className="flex-1">
+              <Input
+                placeholder="Search workouts by type or notes..."
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+                startContent={<Search className="h-4 w-4 text-foreground-400" />}
+                isClearable
+                variant="bordered"
+                className="w-full"
+              />
+            </div>
 
-            {/* Filter Controls */}
-            <div className="flex flex-wrap gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                isIconOnly
+                variant={viewMode === 'grid' ? 'solid' : 'light'}
+                color={viewMode === 'grid' ? 'primary' : 'default'}
+                size="sm"
+                onPress={() => setViewMode('grid')}
+                aria-label="Grid view"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                isIconOnly
+                variant={viewMode === 'list' ? 'solid' : 'light'}
+                color={viewMode === 'list' ? 'primary' : 'default'}
+                size="sm"
+                onPress={() => setViewMode('list')}
+                aria-label="List view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Filter Chips */}
+          <div className="flex flex-wrap gap-2">
+            <Chip
+              variant={quickFilter === 'today' ? 'solid' : 'bordered'}
+              color={quickFilter === 'today' ? 'primary' : 'default'}
+              className="cursor-pointer transition-all hover:scale-105"
+              onClick={() => handleQuickFilter('today')}
+            >
+              Today
+            </Chip>
+            <Chip
+              variant={quickFilter === 'this-week' ? 'solid' : 'bordered'}
+              color={quickFilter === 'this-week' ? 'primary' : 'default'}
+              className="cursor-pointer transition-all hover:scale-105"
+              onClick={() => handleQuickFilter('this-week')}
+            >
+              This Week
+            </Chip>
+            <Chip
+              variant={quickFilter === 'completed' ? 'solid' : 'bordered'}
+              color={quickFilter === 'completed' ? 'success' : 'default'}
+              className="cursor-pointer transition-all hover:scale-105"
+              onClick={() => handleQuickFilter('completed')}
+            >
+              Completed
+            </Chip>
+            <Chip
+              variant={quickFilter === 'planned' ? 'solid' : 'bordered'}
+              color={quickFilter === 'planned' ? 'warning' : 'default'}
+              className="cursor-pointer transition-all hover:scale-105"
+              onClick={() => handleQuickFilter('planned')}
+            >
+              Planned
+            </Chip>
+
+            {/* Advanced Filters Toggle */}
+            <div className="flex items-center gap-2 ml-auto">
+              <Switch
+                size="sm"
+                isSelected={showAdvancedFilters}
+                onValueChange={setShowAdvancedFilters}
+                color="primary"
+              >
+                <span className="text-sm text-foreground-600">Advanced</span>
+              </Switch>
+            </div>
+          </div>
+
+          {/* Advanced Filters (Collapsible) */}
+          {showAdvancedFilters && (
+            <div className="flex flex-wrap gap-3 pt-2 border-t border-divider">
               <Select
                 placeholder="Workout Type"
                 selectedKeys={typeFilter === 'all' ? [] : [typeFilter]}
@@ -187,28 +355,34 @@ const EnhancedWorkoutsList = memo(
                 <SelectItem key="status">Status</SelectItem>
                 <SelectItem key="distance">Distance</SelectItem>
               </Select>
+            </div>
+          )}
 
+          {/* Status Bar */}
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-foreground-600">
+              Showing {processedWorkouts.length} of {workouts.length} workouts
+            </span>
+            <div className="flex items-center gap-2">
               {hasActiveFilters && (
-                <Button
-                  variant="flat"
-                  size="sm"
-                  onPress={clearFilters}
-                  startContent={<Filter className="h-4 w-4" />}
-                >
-                  Clear Filters
-                </Button>
+                <>
+                  <Chip size="sm" color="primary" variant="dot" className="text-xs">
+                    Filters active
+                  </Chip>
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onPress={clearFilters}
+                    startContent={<X className="h-3 w-3" />}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </>
               )}
             </div>
-
-            {/* Results Summary */}
-            <div className="flex justify-between items-center text-sm text-foreground-600">
-              <span>
-                Showing {processedWorkouts.length} of {workouts.length} workouts
-              </span>
-              {hasActiveFilters && <span className="text-primary">Filters active</span>}
-            </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
 
         {/* Workouts Grid/List */}
         {processedWorkouts.length === 0 ? (
@@ -227,7 +401,9 @@ const EnhancedWorkoutsList = memo(
             </CardBody>
           </Card>
         ) : (
-          <div className={`grid ${gridColumns} gap-6`}>
+          <div
+            className={viewMode === 'grid' ? `grid ${gridColumns} gap-6` : 'flex flex-col gap-4'}
+          >
             {processedWorkouts.map(workout => (
               <EnhancedWorkoutCard
                 key={workout.id}
@@ -235,7 +411,7 @@ const EnhancedWorkoutsList = memo(
                 userRole={userRole}
                 onEdit={onEditWorkout}
                 onLog={onLogWorkout}
-                variant={variant}
+                variant={viewMode === 'list' ? 'compact' : variant}
               />
             ))}
           </div>
