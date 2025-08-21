@@ -90,7 +90,7 @@ export default function RacesPage() {
     } catch (error) {
       logger.error('Error refreshing races:', error)
     }
-  }, [session?.user?.id, refreshRaces, logger])
+  }, [session?.user?.id, refreshRaces])
 
   useEffect(() => {
     if (status === 'loading') return
