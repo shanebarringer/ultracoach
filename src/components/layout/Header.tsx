@@ -81,7 +81,11 @@ function Header() {
   }, [signOut])
 
   return (
-    <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem" maxWidth="full">
+    <Navbar
+      className="bg-background/95 backdrop-blur-md border-b border-divider"
+      height="4rem"
+      maxWidth="full"
+    >
       <div className="max-w-7xl w-full mx-auto px-6 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Button
@@ -121,9 +125,7 @@ function Header() {
 
           <SearchButton />
 
-          {session && (
-            <NotificationBell />
-          )}
+          {session && <NotificationBell />}
 
           <ThemeToggle />
 

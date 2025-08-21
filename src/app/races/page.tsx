@@ -65,8 +65,14 @@ export default function RacesPage() {
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
   const logger = useMemo(() => createLogger('RacesPage'), [])
 
-  // Derive loading state from atom data
-  const loading = useMemo(() => races.length === 0, [races.length])
+  // Track whether we've attempted to load races
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false)
+
+  // Derive loading state - only show loading if we haven't attempted to load yet
+  const loading = useMemo(
+    () => !hasAttemptedLoad && races.length === 0,
+    [hasAttemptedLoad, races.length]
+  )
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -89,7 +95,10 @@ export default function RacesPage() {
       await refreshRaces()
     } catch (error) {
       logger.error('Error refreshing races:', error)
+    } finally {
+      setHasAttemptedLoad(true)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, refreshRaces])
 
   useEffect(() => {
@@ -105,9 +114,11 @@ export default function RacesPage() {
       return
     }
 
-    // Fetch races data using atom
-    fetchRaces()
-  }, [status, session, router, fetchRaces])
+    // Fetch races data using atom (only if we haven't attempted yet)
+    if (!hasAttemptedLoad) {
+      fetchRaces()
+    }
+  }, [status, session, router, fetchRaces, hasAttemptedLoad])
 
   const handleOpenModal = (race?: Race) => {
     if (race) {

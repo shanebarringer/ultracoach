@@ -182,14 +182,14 @@
   }
 
   .dark {
-    --bg-primary: var(--granite-900);
-    --bg-secondary: var(--granite-800);
-    --bg-card: var(--granite-800);
-    --text-primary: var(--granite-100);
-    --text-secondary: var(--granite-300);
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #111111;
+    --bg-card: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: var(--granite-200);
     --text-muted: var(--granite-400);
-    --border-light: var(--granite-700);
-    --border-medium: var(--granite-600);
+    --border-light: #333333;
+    --border-medium: #444444;
     --primary: var(--alpine-blue-400);
     --primary-hover: var(--alpine-blue-300);
     --secondary: var(--summit-gold-400);
