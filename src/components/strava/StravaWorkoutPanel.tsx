@@ -28,13 +28,17 @@ import {
 import { memo, useCallback, useEffect, useMemo } from 'react'
 
 import {
+  matchingSummaryAtom,
+  stravaActionsAtom,
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
   stravaStateAtom,
   syncStatsAtom,
+  triggerWorkoutMatchingAtom,
   workoutStravaShowPanelAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('StravaWorkoutPanel')
@@ -53,6 +57,9 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
   const [connectionStatusLoadable] = useAtom(loadable(stravaConnectionStatusAtom))
   const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
   const [syncStats] = useAtom(syncStatsAtom)
+  const [, dispatchStravaAction] = useAtom(stravaActionsAtom)
+  const [, triggerMatching] = useAtom(triggerWorkoutMatchingAtom)
+  const [matchingSummary] = useAtom(matchingSummaryAtom)
 
   // Auto-refresh activities when panel opens
   useEffect(() => {
@@ -70,12 +77,40 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
   const handleSyncActivities = useCallback(async () => {
     logger.info('Manual sync triggered from workout panel')
     try {
+      // Refresh activities first
       await refreshActivities()
-      // Future: Trigger actual sync with backend
+
+      // Trigger workout matching for diffing analysis
+      await triggerMatching()
+
+      // Auto-sync recent running activities
+      if (stravaState.activities && stravaState.activities.length > 0) {
+        const recentRuns = stravaState.activities
+          .filter((activity: StravaActivity) => activity.type === 'Run')
+          .slice(0, 5) // Sync more activities from the detailed panel
+
+        logger.info('Auto-syncing recent running activities from panel', {
+          count: recentRuns.length,
+        })
+
+        // Dispatch sync actions for each recent run
+        for (const activity of recentRuns) {
+          dispatchStravaAction({
+            type: 'SYNC_ACTIVITY',
+            payload: {
+              activityId: activity.id.toString(), // String for atom key
+              syncAsWorkout: true,
+            },
+          })
+        }
+
+        toast.success(`Syncing ${recentRuns.length} recent runs to workouts`)
+      }
     } catch (error) {
       logger.error('Failed to sync activities:', error)
+      toast.error('Failed to sync Strava activities')
     }
-  }, [refreshActivities])
+  }, [refreshActivities, triggerMatching, stravaState.activities, dispatchStravaAction])
 
   const handleConnectStrava = useCallback(() => {
     logger.info('Initiating Strava connection from workout panel')
@@ -240,6 +275,60 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                           className="mt-2"
                         />
                       )}
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* Workout Matching Summary */}
+                {matchingSummary && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        Match Analysis
+                      </h4>
+                    </CardHeader>
+                    <CardBody className="pt-0 space-y-3">
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-foreground-600">Perfect</span>
+                          <span className="font-medium text-success">
+                            {matchingSummary.byType.exact}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-foreground-600">Good</span>
+                          <span className="font-medium text-primary">
+                            {matchingSummary.byType.probable}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-foreground-600">Possible</span>
+                          <span className="font-medium text-warning">
+                            {matchingSummary.byType.possible}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-foreground-600">Conflicts</span>
+                          <span className="font-medium text-danger">
+                            {matchingSummary.byType.conflicts}
+                          </span>
+                        </div>
+                      </div>
+                      {matchingSummary.unmatchedWorkouts > 0 && (
+                        <div className="text-xs p-2 bg-warning/10 rounded">
+                          <span className="text-warning-600">
+                            {matchingSummary.unmatchedWorkouts} planned workouts have no matching
+                            activities
+                          </span>
+                        </div>
+                      )}
+                      <div className="text-xs text-foreground-500">
+                        Last analyzed:{' '}
+                        {matchingSummary.lastProcessed
+                          ? new Date(matchingSummary.lastProcessed).toLocaleTimeString()
+                          : 'Never'}
+                      </div>
                     </CardBody>
                   </Card>
                 )}

@@ -13,17 +13,20 @@ import {
   Zap,
 } from 'lucide-react'
 
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 
 import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
 import {
+  stravaActionsAtom,
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
   stravaStateAtom,
   syncStatsAtom,
+  triggerWorkoutMatchingAtom,
   workoutStravaShowPanelAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('StravaDashboardWidget')
@@ -51,6 +54,9 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
   const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
   const [syncStats] = useAtom(syncStatsAtom)
   const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
+  const [, dispatchStravaAction] = useAtom(stravaActionsAtom)
+  const [, triggerMatching] = useAtom(triggerWorkoutMatchingAtom)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Handle OAuth return and refresh status
   useStravaOAuthReturn()
@@ -124,12 +130,68 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
 
   const handleSyncActivities = useCallback(async () => {
     logger.info('Manual sync triggered from dashboard widget')
+    setIsSyncing(true)
     try {
+      // First fetch fresh activities from Strava API
+      logger.debug('Fetching fresh activities from Strava...')
       await refreshActivities()
+
+      // Trigger workout matching to find planned vs actual discrepancies
+      logger.debug('Triggering workout matching for diffing analysis...')
+      await triggerMatching()
+
+      // Auto-sync the most recent running activities (last 3)
+      logger.debug('Checking activities for sync', {
+        hasActivities: !!stravaState.activities,
+        activityCount: stravaState.activities?.length || 0,
+        stravaState: {
+          connection: stravaState.connection,
+          loading: stravaState.loading,
+          error: stravaState.error,
+        },
+      })
+
+      if (stravaState.activities && stravaState.activities.length > 0) {
+        const recentRuns = stravaState.activities
+          .filter((activity: StravaActivity) => activity.type === 'Run')
+          .slice(0, 3)
+
+        logger.info('Auto-syncing recent running activities', {
+          count: recentRuns.length,
+          activityIds: recentRuns.map((a: StravaActivity) => a.id),
+        })
+
+        // Dispatch sync actions for each recent run
+        for (const activity of recentRuns) {
+          dispatchStravaAction({
+            type: 'SYNC_ACTIVITY',
+            payload: {
+              activityId: activity.id.toString(), // Keep as string for atom key
+              syncAsWorkout: true,
+            },
+          })
+        }
+
+        toast.success(`Syncing ${recentRuns.length} recent runs to workouts`)
+      }
+
+      logger.info('Successfully refreshed and syncing activities from Strava')
     } catch (error) {
       logger.error('Failed to sync activities:', error)
+      toast.error('Failed to sync Strava activities')
+      throw error
+    } finally {
+      setIsSyncing(false)
     }
-  }, [refreshActivities])
+  }, [
+    refreshActivities,
+    triggerMatching,
+    stravaState.activities,
+    stravaState.connection,
+    stravaState.error,
+    stravaState.loading,
+    dispatchStravaAction,
+  ])
 
   const handleOpenStravaPanel = useCallback(() => {
     logger.debug('Opening Strava workout panel from dashboard widget')
@@ -200,7 +262,7 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
                 color="primary"
                 className="flex-1"
                 onPress={handleSyncActivities}
-                isLoading={stravaState.loading}
+                isLoading={isSyncing || stravaState.loading}
                 startContent={<RefreshCw className="h-4 w-4" />}
               >
                 Sync Now

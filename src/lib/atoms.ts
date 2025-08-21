@@ -1397,8 +1397,10 @@ export const stravaActivitiesRefreshableAtom = atomWithRefresh(async get => {
   if (!isBrowser) return []
 
   // Check authentication first - don't make API calls for unauthenticated users
-  const authState = get(authStateAtom)
-  if (!authState.user || authState.loading) {
+  // Use the same atoms that stravaConnectionStatusAtom uses for consistency
+  const user = get(userAtom)
+  const loading = get(authLoadingAtom)
+  if (!user || loading) {
     return []
   }
 
@@ -1542,7 +1544,7 @@ export const stravaActionsAtom = atom(
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            activity_id: activityId,
+            activity_id: parseInt(activityId, 10), // Convert string to number for API
             sync_as_workout: syncAsWorkout,
           }),
         })
@@ -1571,7 +1573,13 @@ export const stravaActionsAtom = atom(
                   error: errorData.error,
                 },
               }))
-              logger.error('Failed to sync activity', { activityId, error: errorData.error })
+              logger.error('Failed to sync activity', {
+                activityId,
+                status: response.status,
+                statusText: response.statusText,
+                error: errorData.error,
+                details: errorData.details,
+              })
             }
           })
           .catch(error => {
