@@ -39,6 +39,7 @@ export interface ServerSession {
     email: string
     name: string | null
     role: 'coach' | 'runner'
+    userType: 'coach' | 'runner'
   }
 }
 
@@ -134,6 +135,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
         email: user.email,
         name: user.name || null,
         role: userRole,
+        userType: userRole,
       },
     }
 

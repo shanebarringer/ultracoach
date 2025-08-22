@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardHeader } from '@heroui/react'
-import { CalendarDaysIcon } from 'lucide-react'
+import { Mountain } from 'lucide-react'
 
 import { useState } from 'react'
 
@@ -41,7 +41,7 @@ export default function WeeklyOverviewPageClient({ user }: WeeklyOverviewPageCli
         <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <CalendarDaysIcon className="w-8 h-8 text-primary" />
+              <Mountain className="w-8 h-8 text-primary" />
               <div>
                 <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                   🏔️ Weekly Expedition Overview

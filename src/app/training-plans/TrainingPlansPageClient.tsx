@@ -1,9 +1,12 @@
 'use client'
 
+import { Button, Card, CardBody, CardHeader, Checkbox, Spinner } from '@heroui/react'
 import { useAtom } from 'jotai'
+import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect } from 'react'
 
+import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
@@ -47,138 +50,179 @@ export default function TrainingPlansPageClient({ user }: Props) {
   const isLoading = trainingPlansLoadable.state === 'loading'
   const hasError = trainingPlansLoadable.state === 'hasError'
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = useCallback(() => {
     // Refresh training plans and close modal
     refreshTrainingPlans()
     setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))
-  }
+  }, [refreshTrainingPlans, setUiState])
 
-  const handleArchiveChange = () => {
+  const handleArchiveChange = useCallback(() => {
     // Refresh training plans to show updated archive status
     refreshTrainingPlans()
-  }
+  }, [refreshTrainingPlans])
+
+  const handleShowArchivedChange = useCallback(
+    (checked: boolean) => {
+      setUiState(prev => ({ ...prev, showArchived: checked }))
+    },
+    [setUiState]
+  )
+
+  const handleCreatePlanClick = useCallback(() => {
+    setUiState(prev => ({ ...prev, showCreateTrainingPlan: true }))
+  }, [setUiState])
+
+  const handleCloseModal = useCallback(() => {
+    setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))
+  }, [setUiState])
 
   return (
-    <ModernErrorBoundary>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Training Plans</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
-              {user.role === 'coach'
-                ? 'Manage training plans for your runners'
-                : 'View your training plans and progress'}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={uiState.showArchived}
-                  onChange={e => setUiState(prev => ({ ...prev, showArchived: e.target.checked }))}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Show archived</span>
-              </label>
-            </div>
-
-            <button
-              onClick={refreshTrainingPlans}
-              className="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 text-sm"
-            >
-              Refresh
-            </button>
-
-            {user.role === 'coach' && (
-              <button
-                onClick={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: true }))}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-              >
-                Create New Plan
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Training Plans Display */}
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-          </div>
-        ) : hasError ? (
-          <div className="text-center py-12">
-            <div className="text-red-600 dark:text-red-400">
-              Error loading training plans. Please try refreshing.
-            </div>
-          </div>
-        ) : (
-          <Suspense
-            fallback={
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-              </div>
-            }
-          >
-            {getPlans().length === 0 ? (
-              <div className="text-center py-12">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                  />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                  {uiState.showArchived ? 'No archived training plans' : 'No training plans'}
-                </h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {uiState.showArchived
-                    ? 'No training plans have been archived yet.'
-                    : user.role === 'coach'
-                      ? 'Get started by creating your first training plan.'
-                      : 'No training plans have been created for you yet.'}
-                </p>
-                {user.role === 'coach' && (
-                  <div className="mt-6">
-                    <button
-                      onClick={() =>
-                        setUiState(prev => ({ ...prev, showCreateTrainingPlan: true }))
-                      }
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                    >
-                      Create Training Plan
-                    </button>
+    <Layout>
+      <ModernErrorBoundary>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero Section */}
+          <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+            <CardHeader>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <Mountain className="w-8 h-8 text-primary" />
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+                      🏔️ Training Expeditions
+                    </h1>
+                    <p className="text-foreground/70 mt-1 text-lg">
+                      {user.role === 'coach'
+                        ? 'Design summit quests for your athletes'
+                        : 'Your personalized path to peak performance'}
+                    </p>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getPlans().map((plan: TrainingPlan) => (
-                  <TrainingPlanCard
-                    key={plan.id}
-                    plan={plan}
-                    userRole={user.role as 'runner' | 'coach'}
-                    onArchiveChange={handleArchiveChange}
-                  />
-                ))}
-              </div>
-            )}
-          </Suspense>
-        )}
+                </div>
 
-        <CreateTrainingPlanModal
-          isOpen={uiState.showCreateTrainingPlan}
-          onClose={() => setUiState(prev => ({ ...prev, showCreateTrainingPlan: false }))}
-          onSuccess={handleCreateSuccess}
-        />
-      </div>
-    </ModernErrorBoundary>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    isSelected={uiState.showArchived}
+                    onValueChange={handleShowArchivedChange}
+                    classNames={{
+                      label: 'text-sm text-foreground/70',
+                    }}
+                  >
+                    Show archived
+                  </Checkbox>
+
+                  <Button
+                    variant="bordered"
+                    size="sm"
+                    onPress={refreshTrainingPlans}
+                    isIconOnly
+                    className="border-primary/20 hover:border-primary/40"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+
+                  {user.role === 'coach' && (
+                    <Button
+                      color="primary"
+                      onPress={handleCreatePlanClick}
+                      startContent={<Plus className="h-4 w-4" />}
+                      className="bg-primary font-medium"
+                    >
+                      Create Expedition
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Training Plans Display */}
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Spinner size="lg" color="primary" label="Loading your expeditions..." />
+            </div>
+          ) : hasError ? (
+            <Card className="border border-danger/20 bg-danger/5">
+              <CardBody className="text-center py-12">
+                <div className="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mountain className="w-8 h-8 text-danger" />
+                </div>
+                <h3 className="text-lg font-semibold text-danger mb-2">
+                  Unable to Load Expeditions
+                </h3>
+                <p className="text-foreground/70 mb-4">
+                  There was an error loading your training plans. Please try refreshing.
+                </p>
+                <Button
+                  color="danger"
+                  variant="flat"
+                  onPress={refreshTrainingPlans}
+                  startContent={<RefreshCw className="h-4 w-4" />}
+                >
+                  Try Again
+                </Button>
+              </CardBody>
+            </Card>
+          ) : (
+            <Suspense
+              fallback={
+                <div className="flex justify-center items-center h-64">
+                  <Spinner size="lg" color="primary" label="Loading expeditions..." />
+                </div>
+              }
+            >
+              {getPlans().length === 0 ? (
+                <Card className="border-dashed border-2 border-primary/20">
+                  <CardBody className="text-center py-16">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Calendar className="w-10 h-10 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {uiState.showArchived
+                        ? 'No Archived Expeditions'
+                        : 'No Training Expeditions Yet'}
+                    </h3>
+                    <p className="text-foreground/70 mb-6 max-w-md mx-auto">
+                      {uiState.showArchived
+                        ? 'No training plans have been archived yet. Archive completed expeditions to keep your dashboard organized.'
+                        : user.role === 'coach'
+                          ? 'Start building your first summit quest! Create personalized training expeditions to guide your athletes to peak performance.'
+                          : 'Your coach will create customized training expeditions designed specifically for your goals and abilities.'}
+                    </p>
+                    {user.role === 'coach' && !uiState.showArchived && (
+                      <Button
+                        color="primary"
+                        size="lg"
+                        onPress={handleCreatePlanClick}
+                        startContent={<Plus className="h-5 w-5" />}
+                        className="bg-primary font-medium"
+                      >
+                        Create Your First Expedition
+                      </Button>
+                    )}
+                  </CardBody>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {getPlans().map((plan: TrainingPlan) => (
+                    <TrainingPlanCard
+                      key={plan.id}
+                      plan={plan}
+                      userRole={user.role as 'runner' | 'coach'}
+                      onArchiveChange={handleArchiveChange}
+                    />
+                  ))}
+                </div>
+              )}
+            </Suspense>
+          )}
+
+          <CreateTrainingPlanModal
+            isOpen={uiState.showCreateTrainingPlan}
+            onClose={handleCloseModal}
+            onSuccess={handleCreateSuccess}
+          />
+        </div>
+      </ModernErrorBoundary>
+    </Layout>
   )
 }

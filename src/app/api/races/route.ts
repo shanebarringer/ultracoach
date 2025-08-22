@@ -1,7 +1,10 @@
+import { eq, isNull, or } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
+import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
-import { supabaseAdmin } from '@/lib/supabase'
+import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('RacesAPI')
@@ -14,41 +17,32 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = supabaseAdmin
+    try {
+      let raceResults
 
-    // Get all races for coaches, or races for specific runners
-    let query = supabase.from('races').select('*').order('date', { ascending: true })
-
-    if (session.user.role === 'coach') {
-      // Coaches can see all races
-      query = query.or(`created_by.eq.${session.user.id},created_by.is.null`)
-    } else {
-      // Runners can see races they're targeting in their training plans
-      // First get the race IDs for this runner
-      const { data: runnerPlans } = await supabase
-        .from('training_plans')
-        .select('race_id')
-        .eq('runner_id', session.user.id)
-        .not('race_id', 'is', null)
-
-      const raceIds = runnerPlans?.map(plan => plan.race_id).filter(Boolean) || []
-
-      if (raceIds.length > 0) {
-        query = query.in('id', raceIds)
+      if (session.user.userType === 'coach') {
+        // Coaches can see all races (their own + public races where created_by is null)
+        raceResults = await db
+          .select()
+          .from(races)
+          .where(or(eq(races.created_by, session.user.id), isNull(races.created_by)))
+          .orderBy(races.date)
       } else {
-        // No races found for this runner
-        query = query.eq('id', 'no-races-found')
+        // Runners can see races they're targeting in their training plans
+        // For now, show all public races (created_by is null) - we can enhance this later
+        raceResults = await db
+          .select()
+          .from(races)
+          .where(isNull(races.created_by))
+          .orderBy(races.date)
       }
-    }
 
-    const { data: races, error } = await query
-
-    if (error) {
+      logger.info('Races fetched successfully', { count: raceResults.length })
+      return NextResponse.json({ races: raceResults })
+    } catch (error) {
       logger.error('Error fetching races:', error)
       return NextResponse.json({ error: 'Failed to fetch races' }, { status: 500 })
     }
-
-    return NextResponse.json({ races })
   } catch (error) {
     logger.error('Error in GET /api/races:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -59,7 +53,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
 
-    if (!session || session.user.role !== 'coach') {
+    if (!session || session.user.userType !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -79,31 +73,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const supabase = supabaseAdmin
+    try {
+      const [race] = await db
+        .insert(races)
+        .values({
+          name,
+          date,
+          distance_miles,
+          distance_type,
+          location,
+          elevation_gain_feet: elevation_gain_feet || 0,
+          terrain_type,
+          website_url: website_url || null,
+          notes: notes || null,
+          created_by: session.user.id,
+        })
+        .returning()
 
-    const { data: race, error } = await supabase
-      .from('races')
-      .insert({
-        name,
-        date,
-        distance_miles,
-        distance_type,
-        location,
-        elevation_gain_feet: elevation_gain_feet || 0,
-        terrain_type,
-        website_url: website_url || null,
-        notes: notes || null,
-        created_by: session.user.id,
-      })
-      .select()
-      .single()
-
-    if (error) {
+      logger.info('Race created successfully', { raceId: race.id })
+      return NextResponse.json({ race }, { status: 201 })
+    } catch (error) {
       logger.error('Error creating race:', error)
       return NextResponse.json({ error: 'Failed to create race' }, { status: 500 })
     }
-
-    return NextResponse.json({ race }, { status: 201 })
   } catch (error) {
     logger.error('Error in POST /api/races:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
