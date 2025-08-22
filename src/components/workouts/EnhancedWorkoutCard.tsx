@@ -19,8 +19,11 @@ import {
 import { memo, useCallback, useMemo } from 'react'
 
 import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
+
+const logger = createLogger('EnhancedWorkoutCard')
 
 type WorkoutAtom = import('jotai').Atom<Workout | null>
 
@@ -243,7 +246,7 @@ const StravaStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
       window.open(`https://www.strava.com/activities/${stravaData.activity.id}`, '_blank')
     } else if (stravaData.status === 'syncable') {
       // Future: Trigger sync for this specific workout
-      console.log('Sync workout to Strava:', workout?.id)
+      logger.debug('Sync workout to Strava requested:', { workoutId: workout?.id })
     }
   }, [stravaData, workout])
 
@@ -317,7 +320,7 @@ const StravaActionButton = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) 
       window.open(`https://www.strava.com/activities/${actionData.activity.id}`, '_blank')
     } else if (actionData.type === 'sync') {
       // Future: Implement actual sync to Strava
-      console.log('Sync workout to Strava:', workout?.id)
+      logger.debug('Sync workout to Strava action triggered:', { workoutId: workout?.id })
     }
   }, [actionData, workout])
 
