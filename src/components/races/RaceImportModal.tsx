@@ -79,26 +79,6 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragging(false)
-      const files = Array.from(e.dataTransfer.files)
-      handleFiles(files)
-    },
-    [handleFiles]
-  )
-
-  const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-        const files = Array.from(e.target.files)
-        handleFiles(files)
-      }
-    },
-    [handleFiles]
-  )
-
   const parseGPXFile = useCallback(async (file: File): Promise<ParsedRaceData> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -153,22 +133,22 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             gpx_data: {
               tracks:
                 gpx.tracks?.map(t => ({
-                  name: t.name,
+                  name: t.name || undefined,
                   points:
                     t.points?.map(p => ({
                       lat: p.latitude,
                       lon: p.longitude,
-                      ele: p.elevation,
-                      time: p.time,
+                      ele: p.elevation || undefined,
+                      time: p.time?.toISOString() || undefined,
                     })) || [],
                 })) || [],
               waypoints:
                 gpx.waypoints?.map(w => ({
-                  name: w.name,
+                  name: w.name || undefined,
                   lat: w.latitude,
                   lon: w.longitude,
-                  ele: w.elevation,
-                  desc: w.description,
+                  ele: w.elevation || undefined,
+                  desc: w.description || undefined,
                 })) || [],
             },
           })
@@ -219,28 +199,23 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
   const handleFiles = useCallback(
     async (files: File[]) => {
+      const validFiles = files.filter(
+        file => file.name.toLowerCase().endsWith('.gpx') || file.name.toLowerCase().endsWith('.csv')
+      )
+
+      if (validFiles.length === 0) {
+        toast.error('Invalid files', 'Please select valid GPX or CSV files')
+        return
+      }
+
       try {
-        const validFiles = files.filter(file => {
-          const extension = file.name.toLowerCase().split('.').pop()
-          return extension === 'gpx' || extension === 'csv'
-        })
-
-        if (validFiles.length === 0) {
-          toast.error('Invalid files', 'Please select valid GPX or CSV files')
-          return
-        }
-
-        logger.info(`Processing ${validFiles.length} files`, { files: validFiles.map(f => f.name) })
-
         const allRaces: ParsedRaceData[] = []
 
         for (const file of validFiles) {
-          const extension = file.name.toLowerCase().split('.').pop()
-
-          if (extension === 'gpx') {
+          if (file.name.toLowerCase().endsWith('.gpx')) {
             const race = await parseGPXFile(file)
             allRaces.push(race)
-          } else if (extension === 'csv') {
+          } else if (file.name.toLowerCase().endsWith('.csv')) {
             const races = await parseCSVFile(file)
             allRaces.push(...races)
           }
@@ -248,13 +223,36 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
         setParsedRaces(allRaces)
         setSelectedTab('preview')
-        logger.info(`Successfully parsed ${allRaces.length} races`)
+
+        toast.success(
+          'Files parsed successfully',
+          `Imported ${allRaces.length} race${allRaces.length > 1 ? 's' : ''} from ${validFiles.length} file${validFiles.length > 1 ? 's' : ''}`
+        )
       } catch (error) {
-        logger.error('Error processing files:', error)
-        toast.error('File processing error', `Error processing files: ${error}`)
+        logger.error('Error parsing files:', error)
+        toast.error('Parse failed', `Failed to parse files: ${error}`)
       }
     },
     [parseGPXFile, parseCSVFile]
+  )
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragging(false)
+
+      const files = Array.from(e.dataTransfer.files)
+      await handleFiles(files)
+    },
+    [handleFiles]
+  )
+
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || [])
+      await handleFiles(files)
+    },
+    [handleFiles]
   )
 
   const handleImport = useCallback(async () => {
