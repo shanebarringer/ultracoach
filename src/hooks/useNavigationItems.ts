@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   MapPin,
   MessageCircle,
+  Settings,
   TrendingUp,
   Users,
 } from 'lucide-react'
@@ -107,6 +108,12 @@ export function useNavigationItems(session: Session | null): NavItem[] {
           description: 'Create & manage plans',
         },
         ...baseItems.slice(3), // Workouts, Messages
+        {
+          href: '/settings',
+          label: 'Settings',
+          icon: Settings,
+          description: 'Account & preferences',
+        },
       ]
     }
 
@@ -119,6 +126,12 @@ export function useNavigationItems(session: Session | null): NavItem[] {
         description: 'View your training plan',
       },
       ...baseItems.slice(3), // Workouts, Messages
+      {
+        href: '/settings',
+        label: 'Settings',
+        icon: Settings,
+        description: 'Account & preferences',
+      },
     ]
   }, [session])
 }

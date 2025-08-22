@@ -10,13 +10,10 @@ import {
   DropdownTrigger,
   Navbar,
   NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  NavbarMenuToggle,
 } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { useKBar } from 'kbar'
-import { Search } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 
 import { memo, useCallback } from 'react'
 
@@ -24,7 +21,6 @@ import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
-import { useNavigationItems } from '@/hooks/useNavigationItems'
 import { themeModeAtom, uiStateAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 
@@ -84,105 +80,78 @@ function Header() {
     window.location.href = '/'
   }, [signOut])
 
-  // Use centralized navigation hook to prevent DRY violation
-  const userNavItems = useNavigationItems(session)
-
   return (
-    <Navbar className="bg-background/95 backdrop-blur-md border-b border-divider" height="4rem">
-      <NavbarContent justify="start" className="gap-3">
-        <NavbarMenuToggle
-          aria-label={'Open menu'}
-          className="lg:hidden"
-          onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
-        />
-        <NavbarBrand>
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl">🏔️</span>
-            <div className="flex flex-col">
-              <span className="font-black text-lg bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent leading-tight">
-                UltraCoach
-              </span>
-              <span className="text-xs text-muted font-medium hidden lg:block leading-none">
-                Conquer Your Peaks
-              </span>
-            </div>
-          </Link>
-        </NavbarBrand>
-      </NavbarContent>
+    <Navbar
+      className="bg-background/95 backdrop-blur-md border-b border-divider"
+      height="4rem"
+      maxWidth="full"
+    >
+      <div className="max-w-7xl w-full mx-auto px-6 flex justify-between items-center">
+        <div className="flex items-center gap-6">
+          <Button
+            isIconOnly
+            variant="light"
+            aria-label="Open menu"
+            className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
+            onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
 
-      <NavbarContent className="hidden lg:flex gap-2 lg:gap-4 ml-4 lg:ml-8 flex-1 min-w-0" justify="start">
-        {status === 'loading' ? (
-          // Show nothing while loading to prevent flash
-          <></>
-        ) : session ? (
-          <>
-            {userNavItems.map(item => (
-              <NavbarItem key={item.href}>
-                <Link
-                  href={item.href}
-                  className="text-foreground hover:text-primary transition-colors font-medium text-sm lg:text-base px-1"
-                >
-                  {item.label}
-                </Link>
-              </NavbarItem>
-            ))}
-          </>
-        ) : (
-          <>
-            <NavbarItem>
+          <NavbarBrand className="flex-grow-0">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-xl">🏔️</span>
+              <div className="flex flex-col">
+                <span className="font-black text-lg text-foreground leading-tight">UltraCoach</span>
+                <span className="text-xs text-muted font-medium hidden lg:block leading-none">
+                  Conquer Your Peaks
+                </span>
+              </div>
+            </Link>
+          </NavbarBrand>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {!session && status !== 'loading' && (
+            <>
               <Button as={Link} href="/auth/signin" variant="light" size="sm">
                 Sign In
               </Button>
-            </NavbarItem>
-            <NavbarItem>
               <Button as={Link} href="/auth/signup" color="primary" size="sm">
                 Sign Up
               </Button>
-            </NavbarItem>
-          </>
-        )}
-      </NavbarContent>
+            </>
+          )}
 
-      <NavbarContent justify="end" className="gap-1 lg:gap-2 flex-shrink-0 min-w-0">
-        <NavbarItem>
           <SearchButton />
-        </NavbarItem>
-        {session && (
-          <>
-            <NavbarItem>
-              <NotificationBell />
-            </NavbarItem>
-          </>
-        )}
-        <NavbarItem>
+
+          {session && <NotificationBell />}
+
           <ThemeToggle />
-        </NavbarItem>
-        {session && (
-          <>
-            <NavbarItem>
-              <Dropdown>
-                <DropdownTrigger>
-                  <Avatar
-                    name={(session.user?.name as string) || 'User'}
-                    className="cursor-pointer bg-linear-to-br from-primary to-secondary text-white"
-                  />
-                </DropdownTrigger>
-                <DropdownMenu aria-label="User menu">
-                  <DropdownItem key="profile" as={Link} href="/profile">
-                    Profile
-                  </DropdownItem>
-                  <DropdownItem key="settings" as={Link} href="/settings">
-                    Settings
-                  </DropdownItem>
-                  <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
-                    Sign Out
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </NavbarItem>
-          </>
-        )}
-      </NavbarContent>
+
+          {session && (
+            <Dropdown>
+              <DropdownTrigger>
+                <Avatar
+                  name={(session.user?.name as string) || 'User'}
+                  className="cursor-pointer bg-primary text-white"
+                />
+              </DropdownTrigger>
+              <DropdownMenu aria-label="User menu">
+                <DropdownItem key="profile" as={Link} href="/profile">
+                  Profile
+                </DropdownItem>
+                <DropdownItem key="settings" as={Link} href="/settings">
+                  Settings
+                </DropdownItem>
+                <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+                  Sign Out
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          )}
+        </div>
+      </div>
     </Navbar>
   )
 }

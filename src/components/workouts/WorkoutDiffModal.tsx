@@ -176,10 +176,10 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
       className="max-h-[90vh]"
     >
       <ModalContent>
-        <ModalHeader className="flex flex-col gap-3 bg-gradient-to-r from-primary/5 via-secondary/5 to-success/5 border-b border-divider">
+        <ModalHeader className="flex flex-col gap-3 bg-primary/5 border-b border-divider">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 via-secondary/20 to-success/20 border border-primary/20 shadow-lg">
+              <div className="p-3 rounded-xl bg-primary/20 border border-primary/20 shadow-lg">
                 <Target className="h-7 w-7 text-primary" />
               </div>
               <div>
@@ -203,7 +203,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
               {getConfidenceLabel(meta.confidence)} ({Math.round(meta.confidence * 100)}%)
             </Chip>
           </div>
-          <Card className="border-l-4 border-l-secondary/60 bg-gradient-to-r from-secondary/10 to-transparent">
+          <Card className="border-l-4 border-l-secondary/60 bg-secondary/10">
             <CardBody className="py-3">
               <div className="flex items-center gap-3 text-foreground-700">
                 <Activity className="h-5 w-5 text-secondary" />

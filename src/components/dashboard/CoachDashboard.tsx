@@ -74,7 +74,7 @@ const MetricCard = memo(function MetricCard({
     trend?.direction === 'up' ? ArrowUpIcon : trend?.direction === 'down' ? ArrowDownIcon : null
 
   return (
-    <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <Card className="border-none" shadow="sm" isHoverable>
       <CardBody className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
@@ -171,69 +171,12 @@ function CoachDashboard() {
             Track your athletes&apos; ascent to peak performance
           </p>
         </div>
-
-        <Card className="bg-linear-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
-          <div className="text-center">
-            <p className="text-xs text-warning font-medium mb-1">CURRENT ALTITUDE</p>
-            <p className="text-2xl font-bold text-foreground">8,847m</p>
-            <p className="text-sm text-foreground-600">Peak Performance</p>
-          </div>
-        </Card>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div data-testid="active-plans-count">
-          <MetricCard
-            title="Active Training Plans"
-            value={trainingPlans.length}
-            subtitle="expeditions"
-            icon={CalendarDaysIcon}
-            trend={{ value: 12, direction: 'up' }}
-            color="primary"
-          />
-        </div>
-
-        <div data-testid="total-runners-count">
-          <MetricCard
-            title="Runners"
-            value={runners.length}
-            subtitle="athletes"
-            icon={UsersIcon}
-            trend={{ value: 8, direction: 'up' }}
-            color="success"
-          />
-        </div>
-
-        <div data-testid="upcoming-workouts-count">
-          <MetricCard
-            title="Recent Workouts"
-            value={recentWorkouts.length}
-            subtitle="completed"
-            icon={ChartBarIcon}
-            color="warning"
-          />
-        </div>
-
-        <div data-testid="this-week-count">
-          <MetricCard
-            title="This Week"
-            value="127"
-            subtitle="km total"
-            icon={ArrowTrendingUpIcon}
-            trend={{ value: 15, direction: 'up' }}
-            color="secondary"
-          />
-        </div>
       </div>
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {/* Training Expeditions */}
-        <Card
-          className="hover:shadow-lg transition-shadow duration-300 xl:col-span-2"
-          data-testid="training-plans-section"
-        >
+        <Card className="xl:col-span-2" shadow="sm" data-testid="training-plans-section">
           <CardHeader className="flex justify-between items-center">
             <div>
               <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
@@ -254,7 +197,7 @@ function CoachDashboard() {
                 as={Link}
                 href="/training-plans"
                 color="primary"
-                className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+                className="bg-primary text-white font-medium"
               >
                 ⛰️ Manage Plans
               </Button>
@@ -327,10 +270,7 @@ function CoachDashboard() {
       </div>
 
       {/* Your Athletes */}
-      <Card
-        className="hover:shadow-lg transition-shadow duration-300"
-        data-testid="runners-section"
-      >
+      <Card shadow="sm" data-testid="runners-section">
         <CardHeader className="flex justify-between items-center">
           <div>
             <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
@@ -354,7 +294,7 @@ function CoachDashboard() {
               href="/relationships"
               size="sm"
               color="primary"
-              className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+              className="bg-primary text-white font-medium"
             >
               🏃‍♂️ Connect
             </Button>
@@ -374,7 +314,7 @@ function CoachDashboard() {
                 as={Link}
                 href="/relationships"
                 color="primary"
-                className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+                className="bg-primary text-white font-medium"
               >
                 Find Athletes to Coach
               </Button>
@@ -394,7 +334,7 @@ function CoachDashboard() {
                       className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
                           {(runner.full_name || 'U').charAt(0)}
                         </div>
                         <div className="flex-1">
@@ -460,6 +400,52 @@ function CoachDashboard() {
           )}
         </CardBody>
       </Card>
+
+      {/* Metrics Grid - Moved to bottom for better UX hierarchy */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div data-testid="active-plans-count">
+          <MetricCard
+            title="Active Training Plans"
+            value={trainingPlans.length}
+            subtitle="expeditions"
+            icon={CalendarDaysIcon}
+            trend={{ value: 12, direction: 'up' }}
+            color="primary"
+          />
+        </div>
+
+        <div data-testid="total-runners-count">
+          <MetricCard
+            title="Runners"
+            value={runners.length}
+            subtitle="athletes"
+            icon={UsersIcon}
+            trend={{ value: 8, direction: 'up' }}
+            color="success"
+          />
+        </div>
+
+        <div data-testid="upcoming-workouts-count">
+          <MetricCard
+            title="Recent Workouts"
+            value={recentWorkouts.length}
+            subtitle="completed"
+            icon={ChartBarIcon}
+            color="warning"
+          />
+        </div>
+
+        <div data-testid="this-week-count">
+          <MetricCard
+            title="This Week"
+            value="127"
+            subtitle="km total"
+            icon={ArrowTrendingUpIcon}
+            trend={{ value: 15, direction: 'up' }}
+            color="secondary"
+          />
+        </div>
+      </div>
     </div>
   )
 }

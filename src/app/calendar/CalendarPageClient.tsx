@@ -193,13 +193,13 @@ export default function CalendarPageClient({ user }: Props) {
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>
                     <span className="font-medium text-success">
-                      {(workoutStats.completedDistance || 0)?.toFixed(1)} mi
+                      {Number(workoutStats.completedDistance || 0).toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
                     <span className="font-medium">
-                      {(workoutStats.avgIntensity || 0).toFixed(1)}
+                      {Number(workoutStats.avgIntensity || 0).toFixed(1)}
                     </span>
                   </div>
                 </div>

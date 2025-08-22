@@ -436,7 +436,7 @@ export default function OnboardingStepRenderer({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        <Card className="p-4 bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
+        <Card className="p-4 bg-primary-50 border-primary-200">
           <CardBody className="text-center">
             <TrophyIcon className="w-8 h-8 text-primary mx-auto mb-2" />
             <h3 className="font-semibold">Start Training</h3>
@@ -446,7 +446,7 @@ export default function OnboardingStepRenderer({
           </CardBody>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-success-50 to-primary-50 border-success-200">
+        <Card className="p-4 bg-success-50 border-success-200">
           <CardBody className="text-center">
             <UsersIcon className="w-8 h-8 text-success mx-auto mb-2" />
             <h3 className="font-semibold">Find Your Tribe</h3>

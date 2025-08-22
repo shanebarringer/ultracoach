@@ -1,3 +1,4 @@
+import Layout from '@/components/layout/Layout'
 import { requireAuth } from '@/utils/auth-server'
 
 import TrainingPlansPageClient from './TrainingPlansPageClient'
@@ -16,5 +17,9 @@ export default async function TrainingPlansPage() {
   const session = await requireAuth()
 
   // Pass authenticated user data to Client Component
-  return <TrainingPlansPageClient user={session.user} />
+  return (
+    <Layout>
+      <TrainingPlansPageClient user={session.user} />
+    </Layout>
+  )
 }
