@@ -9,7 +9,7 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('RaceTrainingPlansAPI')
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession()
 
@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const raceId = params.id
+    const { id: raceId } = await params
 
     try {
       // Get all training plans with runner details

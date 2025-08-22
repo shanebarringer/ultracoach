@@ -33,6 +33,7 @@ import {
   SearchIcon,
   TrashIcon,
   TrendingUpIcon,
+  UploadIcon,
   UsersIcon,
 } from 'lucide-react'
 
@@ -41,6 +42,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
+import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
@@ -118,6 +120,7 @@ export default function RacesPage() {
     onOpen: onTrainingPlansOpen,
     onClose: onTrainingPlansClose,
   } = useDisclosure()
+  const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
 
   const fetchRaces = useCallback(async () => {
     if (!session?.user?.id) return
@@ -345,14 +348,25 @@ export default function RacesPage() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  onPress={() => handleOpenModal()}
-                  color="primary"
-                  size="lg"
-                  startContent={<PlusIcon className="w-5 h-5" />}
-                >
-                  Add New Race
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    onPress={onImportOpen}
+                    color="secondary"
+                    size="lg"
+                    variant="flat"
+                    startContent={<UploadIcon className="w-5 h-5" />}
+                  >
+                    Import Races
+                  </Button>
+                  <Button
+                    onPress={() => handleOpenModal()}
+                    color="primary"
+                    size="lg"
+                    startContent={<PlusIcon className="w-5 h-5" />}
+                  >
+                    Add New Race
+                  </Button>
+                </div>
               </div>
 
               {/* Search and Filter Controls */}
@@ -755,6 +769,17 @@ export default function RacesPage() {
           isOpen={isTrainingPlansOpen}
           onClose={onTrainingPlansClose}
           race={selectedRaceForPlans}
+        />
+
+        {/* Race Import Modal */}
+        <RaceImportModal
+          isOpen={isImportOpen}
+          onClose={onImportClose}
+          onSuccess={() => {
+            // Refresh races after successful import
+            fetchRaces()
+            fetchTrainingPlanCounts()
+          }}
         />
       </div>
     </Layout>

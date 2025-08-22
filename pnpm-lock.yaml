@@ -46,6 +46,9 @@ importers:
       '@types/pg':
         specifier: ^8.15.4
         version: 8.15.4
+      '@we-gold/gpxjs':
+        specifier: ^1.1.0
+        version: 1.1.0
       axios:
         specifier: ^1.10.0
         version: 1.10.0
@@ -91,6 +94,9 @@ importers:
       next:
         specifier: 15.3.5
         version: 15.3.5(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.54.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -155,6 +161,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.8
+      '@types/papaparse':
+        specifier: ^5.3.16
+        version: 5.3.16
       '@types/react':
         specifier: ^19
         version: 19.1.8
@@ -4711,6 +4720,12 @@ packages:
         integrity: sha512-HzbgCY53T6bfu4tT7Aq3TvViJyHjLjPNaAS3HOuMc9pw97KHsUtXNX4L+wu59g1WnjsZSko35MbEqnO58rihhw==,
       }
 
+  '@types/papaparse@5.3.16':
+    resolution:
+      {
+        integrity: sha512-T3VuKMC2H0lgsjI9buTB3uuKj3EMD2eap1MOuEQuBQ44EnDx/IkGhU6EwiTf9zG3za4SKlmwKAImdDKdNnCsXg==,
+      }
+
   '@types/pg-pool@2.0.6':
     resolution:
       {
@@ -5083,6 +5098,12 @@ packages:
     resolution:
       {
         integrity: sha512-cZy8Dq+uuIXbxCZpuLd2GJdeSO/lIzIspC2WtkqIpje5QyFbvLaI5wZtdUjLHjGZrlVX6GilejatWwVYYRc8tA==,
+      }
+
+  '@we-gold/gpxjs@1.1.0':
+    resolution:
+      {
+        integrity: sha512-oH1QDdpyBR47XmhOJti6mXtN8bpLviI5hwY3I5koOb41WWZQtmIXSwSceXFv7HSLymBdnEz3bykJZffBTAoQeg==,
       }
 
   '@webassemblyjs/ast@1.14.1':
@@ -8413,6 +8434,12 @@ packages:
         integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==,
       }
     engines: { node: '>=10' }
+
+  papaparse@5.5.3:
+    resolution:
+      {
+        integrity: sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A==,
+      }
 
   parent-module@1.0.1:
     resolution:
@@ -14084,6 +14111,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/papaparse@5.3.16':
+    dependencies:
+      '@types/node': 20.19.8
+
   '@types/pg-pool@2.0.6':
     dependencies:
       '@types/pg': 8.15.4
@@ -14339,6 +14370,8 @@ snapshots:
       '@vue/shared': 3.5.18
 
   '@vue/shared@3.5.18': {}
+
+  '@we-gold/gpxjs@1.1.0': {}
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -16388,6 +16421,8 @@ snapshots:
   p-locate@5.0.0:
     dependencies:
       p-limit: 3.1.0
+
+  papaparse@5.5.3: {}
 
   parent-module@1.0.1:
     dependencies:
