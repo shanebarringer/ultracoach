@@ -60,7 +60,15 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Wire Up Workout Completion Buttons** - ✅ **ALREADY IMPLEMENTED** - "Mark Complete" and "Log Details" functionality working with WorkoutLogModal
 - [x] **Fix Playwright E2E Tests** - ✅ **MOSTLY WORKING** - Core tests passing, some auth edge cases to investigate
 
-### 🎨 Phase 4: UX Enhancement & Polish (🔄 NEW PRIORITIES 2025-08-22)
+### 🎨 Phase 4: Coach Experience Enhancement (✅ COMPLETED 2025-08-22)
+
+- [x] **Enhanced Coach Training Log Experience** - ✅ **COMPLETED** - Added runner name display and selection dropdown for coaches
+- [x] **Redesigned Coach Dashboard Layout** - ✅ **COMPLETED** - Improved information hierarchy with athletes prioritized at top
+- [x] **Better Visual Organization** - ✅ **COMPLETED** - Created consistent spacing with quick stats pills and compact metrics
+- [x] **Enhanced API for Coach View** - ✅ **COMPLETED** - Added runner name and email joins to workouts API endpoint
+- [x] **Workout Context Display** - ✅ **COMPLETED** - Added current runner context with workout counts for better coach awareness
+
+### 🎨 Phase 5: Advanced UX Improvements (📋 PLANNED)
 
 - [ ] **Improve Loading States** - Replace spinners that pop up after content with skeleton components for better UX
 - [ ] **Enhanced App Drawer UX** - Add pin functionality to keep drawer open, remove blur overlay, make responsive

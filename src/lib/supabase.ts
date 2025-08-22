@@ -61,6 +61,7 @@ export interface TrainingPlan {
 
 export interface Workout {
   id: string
+  user_id: string
   training_plan_id: string | null
   date: string
   planned_distance?: number
@@ -88,6 +89,9 @@ export interface Workout {
   status: 'planned' | 'completed' | 'skipped'
   created_at: string
   updated_at: string
+  // Extended fields for coach view
+  runner_name?: string
+  runner_email?: string
 }
 
 export interface Message {
