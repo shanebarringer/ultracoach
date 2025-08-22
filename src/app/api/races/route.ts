@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { createLogger } from '@/lib/logger'
-import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('RacesAPI')
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const session = await getServerSession(request)
+    const session = await getServerSession()
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(request)
+    const session = await getServerSession()
 
     if (!session || session.user.role !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

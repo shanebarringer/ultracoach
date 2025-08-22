@@ -118,6 +118,40 @@ DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
 
 **When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
 
+### ⚠️ CRITICAL: Current System Issues (2025-08-21)
+
+#### **1. Messaging System SSL Connection Error (CRITICAL)**
+
+**ISSUE**: SSL connection error in `auth-server.ts:334` preventing coach-runner relationship verification
+
+```
+Error: The server does not support SSL connections
+```
+
+**ROOT CAUSE**: Database SSL configuration issue in `src/lib/db.ts` not handling local development vs production environment differences correctly
+
+**IMPACT**: Messaging system completely non-functional, no conversations loading, relationship verification failing
+
+**SOLUTION**: Update SSL configuration to properly handle environment differences
+
+#### **2. Training Plans Page Issues**
+
+**ISSUE 1**: Duplicate div containers causing layout problems in `TrainingPlansPageClient.tsx`
+**ISSUE 2**: Race selection not loading/working in `CreateTrainingPlanModal.tsx`
+
+**IMPACT**: Poor UX in training plan creation and management
+
+#### **3. Excessive Gradient Usage**
+
+**ISSUE**: 34+ files contain gradient usage throughout the application
+**IMPACT**: Visual inconsistency and departure from clean Mountain Peak design
+**GOAL**: Remove non-essential gradients while preserving Mountain Peak branding
+
+#### **4. App Drawer Navigation**
+
+**ISSUE**: Settings only accessible through Profile, not intuitive for users
+**SOLUTION**: Add Settings as separate navigation item in app drawer
+
 ### ⚠️ CRITICAL: Supabase Database Auto-Pause Issue
 
 **ISSUE**: Supabase pauses databases after 7 days of inactivity, causing "Tenant or user not found" errors.
@@ -278,7 +312,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ### Current Status (Updated: 2025-08-21)
 
-- **Current Focus**: Production Deployment Readiness - Database foundation, core functionality completion, and testing infrastructure
+- **Current Focus**: Critical bug fixes and UI improvements for production readiness
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
 - **Database**: Comprehensive relationship system with proper constraints, type safety, requires production reset and re-migration
@@ -286,7 +320,8 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **User Experience**: Complete coach-runner feature parity with advanced analytics, progress tracking, and seamless messaging integration
 - **Authentication**: Better Auth configuration optimized for production deployment with proper URL resolution and error handling
 - **Recent Completion**: Full Strava integration with OAuth, activity browsing, intelligent workout matching, and comprehensive sync operations
-- **Active Phase**: Phase 1 - Database foundation with production reset, workout completion functionality, and E2E test fixes
+- **Active Phase**: Phase 1 - Critical bug fixes including messaging system SSL error, training plans issues, and gradient cleanup
+- **CRITICAL ISSUE**: Messaging system broken due to SSL connection error in database configuration preventing coach-runner relationship verification
 
 ## 🏗️ Architecture & Technology
 
