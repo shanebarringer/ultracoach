@@ -23,14 +23,18 @@ import { useAtom } from 'jotai'
 import {
   CalendarIcon,
   EditIcon,
+  FilterIcon,
   FlagIcon,
   GlobeIcon,
   MapPinIcon,
   MountainSnowIcon,
   PlusIcon,
   RouteIcon,
+  SearchIcon,
   TrashIcon,
   TrendingUpIcon,
+  UploadIcon,
+  UsersIcon,
 } from 'lucide-react'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -38,6 +42,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
+import RaceImportModal from '@/components/races/RaceImportModal'
+import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
@@ -68,11 +74,31 @@ export default function RacesPage() {
   // Track whether we've attempted to load races
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false)
 
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [distanceFilter, setDistanceFilter] = useState('all')
+  const [terrainFilter, setTerrainFilter] = useState('all')
+
   // Derive loading state - only show loading if we haven't attempted to load yet
   const loading = useMemo(
     () => !hasAttemptedLoad && races.length === 0,
     [hasAttemptedLoad, races.length]
   )
+
+  // Filter and search races
+  const filteredRaces = useMemo(() => {
+    return races.filter((race: Race) => {
+      const matchesSearch =
+        !searchQuery ||
+        race.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        race.location.toLowerCase().includes(searchQuery.toLowerCase())
+
+      const matchesDistance = distanceFilter === 'all' || race.distance_type === distanceFilter
+      const matchesTerrain = terrainFilter === 'all' || race.terrain_type === terrainFilter
+
+      return matchesSearch && matchesDistance && matchesTerrain
+    })
+  }, [races, searchQuery, distanceFilter, terrainFilter])
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -85,7 +111,16 @@ export default function RacesPage() {
     notes: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [trainingPlanCounts, setTrainingPlanCounts] = useState<Record<string, number>>({})
+  const [selectedRaceForPlans, setSelectedRaceForPlans] = useState<Race | null>(null)
+
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isTrainingPlansOpen,
+    onOpen: onTrainingPlansOpen,
+    onClose: onTrainingPlansClose,
+  } = useDisclosure()
+  const { isOpen: isImportOpen, onOpen: onImportOpen, onClose: onImportClose } = useDisclosure()
 
   const fetchRaces = useCallback(async () => {
     if (!session?.user?.id) return
@@ -101,6 +136,42 @@ export default function RacesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, refreshRaces])
 
+  // Fetch training plan counts for all races
+  const fetchTrainingPlanCounts = useCallback(async () => {
+    if (races.length === 0) return
+
+    try {
+      const counts: Record<string, number> = {}
+
+      // Fetch counts for each race in parallel
+      const countPromises = races.map(async (race: Race) => {
+        try {
+          const response = await fetch(`/api/races/${race.id}/training-plans`, {
+            credentials: 'include',
+          })
+          if (response.ok) {
+            const data = await response.json()
+            counts[race.id] = data.count || 0
+          }
+        } catch (error) {
+          logger.warn(`Failed to fetch training plan count for race ${race.id}:`, error)
+          counts[race.id] = 0
+        }
+      })
+
+      await Promise.all(countPromises)
+      setTrainingPlanCounts(counts)
+      logger.debug('Training plan counts fetched', { counts })
+    } catch (error) {
+      logger.error('Error fetching training plan counts:', error)
+    }
+  }, [races, logger])
+
+  const handleViewTrainingPlans = (race: Race) => {
+    setSelectedRaceForPlans(race)
+    onTrainingPlansOpen()
+  }
+
   useEffect(() => {
     if (status === 'loading') return
 
@@ -109,7 +180,7 @@ export default function RacesPage() {
       return
     }
 
-    if (session.user.role !== 'coach') {
+    if (session.user.userType !== 'coach') {
       router.push('/dashboard')
       return
     }
@@ -119,6 +190,13 @@ export default function RacesPage() {
       fetchRaces()
     }
   }, [status, session, router, fetchRaces, hasAttemptedLoad])
+
+  // Fetch training plan counts when races are loaded
+  useEffect(() => {
+    if (races.length > 0) {
+      fetchTrainingPlanCounts()
+    }
+  }, [races.length, fetchTrainingPlanCounts])
 
   const handleOpenModal = (race?: Race) => {
     if (race) {
@@ -249,7 +327,7 @@ export default function RacesPage() {
     )
   }
 
-  if (!session || session.user.role !== 'coach') {
+  if (!session || session.user.userType !== 'coach') {
     return null
   }
 
@@ -257,28 +335,85 @@ export default function RacesPage() {
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+        <Card className="mb-8 bg-primary/5 border-l-4 border-l-primary">
           <CardHeader>
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <FlagIcon className="w-8 h-8 text-primary" />
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    🏔️ Race Expeditions
-                  </h1>
-                  <p className="text-foreground-600 text-lg mt-1">
-                    Manage target races and summit challenges for your athletes
-                  </p>
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <FlagIcon className="w-8 h-8 text-primary" />
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">🏔️ Race Expeditions</h1>
+                    <p className="text-foreground-600 text-lg mt-1">
+                      Manage target races and summit challenges for your athletes
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onPress={onImportOpen}
+                    color="secondary"
+                    size="lg"
+                    variant="flat"
+                    startContent={<UploadIcon className="w-5 h-5" />}
+                  >
+                    Import Races
+                  </Button>
+                  <Button
+                    onPress={() => handleOpenModal()}
+                    color="primary"
+                    size="lg"
+                    startContent={<PlusIcon className="w-5 h-5" />}
+                  >
+                    Add New Race
+                  </Button>
                 </div>
               </div>
-              <Button
-                onPress={() => handleOpenModal()}
-                color="primary"
-                size="lg"
-                startContent={<PlusIcon className="w-5 h-5" />}
-              >
-                Add New Race
-              </Button>
+
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <Input
+                  placeholder="Search races by name or location..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  startContent={<SearchIcon className="w-4 h-4 text-foreground-400" />}
+                  className="flex-1"
+                  variant="bordered"
+                />
+                <div className="flex gap-3">
+                  <Select
+                    placeholder="Distance"
+                    selectedKeys={[distanceFilter]}
+                    onSelectionChange={keys => setDistanceFilter(Array.from(keys).join(''))}
+                    className="w-32"
+                    variant="bordered"
+                    startContent={<FilterIcon className="w-4 h-4 text-foreground-400" />}
+                  >
+                    <SelectItem key="all">All Distances</SelectItem>
+                    <SelectItem key="50K">50K (31.07 miles)</SelectItem>
+                    <SelectItem key="50M">50 Mile</SelectItem>
+                    <SelectItem key="100K">100K (62.14 miles)</SelectItem>
+                    <SelectItem key="100M">100 Mile</SelectItem>
+                    <SelectItem key="Marathon">Marathon (26.2 miles)</SelectItem>
+                    <SelectItem key="Custom">Custom Distance</SelectItem>
+                  </Select>
+                  <Select
+                    placeholder="Terrain"
+                    selectedKeys={[terrainFilter]}
+                    onSelectionChange={keys => setTerrainFilter(Array.from(keys).join(''))}
+                    className="w-32"
+                    variant="bordered"
+                    startContent={<MountainSnowIcon className="w-4 h-4 text-foreground-400" />}
+                  >
+                    <SelectItem key="all">All Terrain</SelectItem>
+                    <SelectItem key="trail">Trail/Single Track</SelectItem>
+                    <SelectItem key="mountain">Mountain/Technical</SelectItem>
+                    <SelectItem key="road">Road/Paved</SelectItem>
+                    <SelectItem key="mixed">Mixed Terrain</SelectItem>
+                    <SelectItem key="desert">Desert</SelectItem>
+                    <SelectItem key="forest">Forest/Wooded</SelectItem>
+                  </Select>
+                </div>
+              </div>
             </div>
           </CardHeader>
         </Card>
@@ -421,6 +556,29 @@ export default function RacesPage() {
           </ModalContent>
         </Modal>
 
+        {/* Results Summary */}
+        {!loading && races.length > 0 && (
+          <div className="mb-6 text-center">
+            <p className="text-foreground-600">
+              Showing {filteredRaces.length} of {races.length} race expeditions
+              {(searchQuery || distanceFilter !== 'all' || terrainFilter !== 'all') && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  onPress={() => {
+                    setSearchQuery('')
+                    setDistanceFilter('all')
+                    setTerrainFilter('all')
+                  }}
+                  className="ml-2 text-primary"
+                >
+                  Clear filters
+                </Button>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Races Grid */}
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -450,9 +608,37 @@ export default function RacesPage() {
               </Button>
             </CardBody>
           </Card>
+        ) : filteredRaces.length === 0 ? (
+          <Card className="max-w-md mx-auto">
+            <CardBody className="text-center py-12">
+              <div className="flex justify-center mb-6">
+                <div className="bg-warning/10 rounded-full p-6">
+                  <SearchIcon className="h-12 w-12 text-warning" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No races match your search
+              </h3>
+              <p className="text-foreground-600 mb-6">
+                Try adjusting your search terms or filters to find more races
+              </p>
+              <Button
+                variant="flat"
+                color="warning"
+                onPress={() => {
+                  setSearchQuery('')
+                  setDistanceFilter('all')
+                  setTerrainFilter('all')
+                }}
+                startContent={<FilterIcon className="w-4 h-4" />}
+              >
+                Clear All Filters
+              </Button>
+            </CardBody>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {races.map((race: Race) => (
+            {filteredRaces.map((race: Race) => (
               <Card
                 key={race.id}
                 className="hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 border-l-primary/60"
@@ -478,6 +664,14 @@ export default function RacesPage() {
                           startContent={getTerrainIcon(race.terrain_type)}
                         >
                           {race.terrain_type}
+                        </Chip>
+                        <Chip
+                          size="sm"
+                          color="secondary"
+                          variant="flat"
+                          startContent={<UsersIcon className="w-3 h-3" />}
+                        >
+                          {trainingPlanCounts[race.id] || 0} athletes
                         </Chip>
                       </div>
                     </div>
@@ -536,9 +730,9 @@ export default function RacesPage() {
                     </>
                   )}
 
-                  {/* Race Website */}
-                  {race.website_url && (
-                    <div className="mt-4">
+                  {/* Action Buttons */}
+                  <div className="mt-4 space-y-2">
+                    {race.website_url && (
                       <Button
                         as="a"
                         href={race.website_url}
@@ -551,13 +745,42 @@ export default function RacesPage() {
                       >
                         Race Website
                       </Button>
-                    </div>
-                  )}
+                    )}
+
+                    <Button
+                      variant="flat"
+                      size="sm"
+                      color="secondary"
+                      startContent={<UsersIcon className="w-4 h-4" />}
+                      onPress={() => handleViewTrainingPlans(race)}
+                      className="w-full"
+                    >
+                      View Training Plans ({trainingPlanCounts[race.id] || 0})
+                    </Button>
+                  </div>
                 </CardBody>
               </Card>
             ))}
           </div>
         )}
+
+        {/* Training Plans Modal */}
+        <RaceTrainingPlansModal
+          isOpen={isTrainingPlansOpen}
+          onClose={onTrainingPlansClose}
+          race={selectedRaceForPlans}
+        />
+
+        {/* Race Import Modal */}
+        <RaceImportModal
+          isOpen={isImportOpen}
+          onClose={onImportClose}
+          onSuccess={() => {
+            // Refresh races after successful import
+            fetchRaces()
+            fetchTrainingPlanCounts()
+          }}
+        />
       </div>
     </Layout>
   )

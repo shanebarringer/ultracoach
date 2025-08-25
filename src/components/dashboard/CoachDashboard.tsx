@@ -162,287 +162,265 @@ function CoachDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      {/* Page Header with Quick Stats */}
+      <div className="flex flex-col lg:flex-row justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Summit Dashboard</h1>
-          <p className="text-foreground-600">
+          <p className="text-foreground-600 text-lg">
             Track your athletes&apos; ascent to peak performance
           </p>
         </div>
+
+        {/* Quick Stats Pills */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-primary/10 text-primary px-4 py-2 rounded-full flex items-center gap-2 border border-primary/20">
+            <UsersIcon className="w-4 h-4" />
+            <span className="font-semibold">{runners.length} Athletes</span>
+          </div>
+          <div className="bg-success/10 text-success px-4 py-2 rounded-full flex items-center gap-2 border border-success/20">
+            <CalendarDaysIcon className="w-4 h-4" />
+            <span className="font-semibold">{trainingPlans.length} Active Plans</span>
+          </div>
+          <div className="bg-warning/10 text-warning px-4 py-2 rounded-full flex items-center gap-2 border border-warning/20">
+            <ChartBarIcon className="w-4 h-4" />
+            <span className="font-semibold">{recentWorkouts.length} Recent</span>
+          </div>
+        </div>
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {/* Training Expeditions */}
-        <Card className="xl:col-span-2" shadow="sm" data-testid="training-plans-section">
-          <CardHeader className="flex justify-between items-center">
-            <div>
-              <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
-              <p className="text-sm text-foreground-600">Active summit challenges</p>
-            </div>
-            <div className="flex gap-2">
+      {/* Main Content - Better organized hierarchy */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Primary Column - Athletes (Most Important) */}
+        <div className="xl:col-span-2 space-y-6">
+          {/* Your Athletes - Moved to top for priority */}
+          <Card shadow="sm" data-testid="runners-section">
+            <CardHeader className="flex justify-between items-center pb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
+                <p className="text-sm text-foreground-600">
+                  {runners.length} runners on their summit journey
+                </p>
+              </div>
               <Button
                 as={Link}
-                href="/coach/weekly-overview"
-                variant="flat"
-                color="primary"
+                href="/relationships"
                 size="sm"
-                className="hidden sm:flex"
+                color="primary"
+                className="bg-primary text-white font-medium"
               >
-                📊 Weekly Overview
+                🏃‍♂️ Connect
               </Button>
+            </CardHeader>
+            <CardBody>
+              {runners.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="mx-auto h-12 w-12 bg-default-100 rounded-full flex items-center justify-center mb-3">
+                    <UsersIcon className="h-6 w-6 text-default-400" />
+                  </div>
+                  <p className="text-foreground font-medium mb-1">No athletes connected</p>
+                  <p className="text-sm text-foreground-500 mb-4">
+                    Connect with runners to start coaching.
+                  </p>
+                  <Button as={Link} href="/relationships" color="primary" size="sm">
+                    Find Athletes to Coach
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {runners.slice(0, 4).map((runner: User) => {
+                      const relationship = relationships.find(
+                        (rel: { other_party: { id: string } }) => rel.other_party.id === runner.id
+                      )
+
+                      return (
+                        <div
+                          key={runner.id}
+                          className="border border-divider rounded-lg p-3 bg-content2/50 hover:bg-content2 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                              {(runner.full_name || 'U').charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-foreground text-sm truncate">
+                                  {runner.full_name || 'User'}
+                                </h4>
+                                {relationship && (
+                                  <Chip
+                                    size="sm"
+                                    color={relationship.status === 'active' ? 'success' : 'warning'}
+                                    variant="flat"
+                                    className="capitalize"
+                                  >
+                                    {relationship.status}
+                                  </Chip>
+                                )}
+                              </div>
+                              <p className="text-xs text-foreground-500 truncate">{runner.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="primary"
+                              className="flex-1 text-xs h-7"
+                              onPress={() => handleViewProgress(runner.id)}
+                            >
+                              Progress
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="success"
+                              className="flex-1 text-xs h-7"
+                              onPress={() => handleSendMessage(runner.id)}
+                            >
+                              Message
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Show more link if there are more runners */}
+                  {runners.length > 4 && (
+                    <div className="pt-3 border-t border-divider text-center">
+                      <Button
+                        as={Link}
+                        href="/relationships"
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                      >
+                        View All {runners.length} Athletes
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          {/* Training Expeditions - Secondary priority */}
+          <Card shadow="sm" data-testid="training-plans-section">
+            <CardHeader className="flex justify-between items-center pb-4">
+              <div>
+                <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
+                <p className="text-sm text-foreground-600">Active summit challenges</p>
+              </div>
               <Button
                 as={Link}
                 href="/training-plans"
                 color="primary"
+                size="sm"
                 className="bg-primary text-white font-medium"
               >
                 ⛰️ Manage Plans
               </Button>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {typedTrainingPlans.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto h-16 w-16 bg-default-100 rounded-full flex items-center justify-center mb-4">
-                  <CalendarDaysIcon className="h-8 w-8 text-default-400" />
-                </div>
-                <p className="text-foreground font-medium mb-2">No expeditions yet</p>
-                <p className="text-sm text-foreground-500">
-                  Create your first training expedition to get started.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {typedTrainingPlans.map(plan => (
-                  <div
-                    key={plan.id}
-                    className="border border-divider rounded-lg p-4 hover:shadow-md transition-shadow bg-content1"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-semibold text-foreground mb-1">{plan.title}</h4>
-                        <p className="text-sm text-foreground-600">{plan.description}</p>
-                      </div>
-                      <Chip color="primary" variant="flat" size="sm" className="capitalize">
-                        Active
-                      </Chip>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {plan.runners && (
-                        <div className="flex items-center gap-1 text-sm text-foreground-600">
-                          <UsersIcon className="w-4 h-4" />
-                          <span>{plan.runners.full_name}</span>
-                        </div>
-                      )}
-                      {plan.target_race_date && (
-                        <div className="flex items-center gap-1 text-sm text-foreground-600">
-                          <CalendarDaysIcon className="w-4 h-4" />
-                          <span>{new Date(plan.target_race_date).toLocaleDateString()}</span>
-                        </div>
-                      )}
-                    </div>
+            </CardHeader>
+            <CardBody>
+              {typedTrainingPlans.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="mx-auto h-12 w-12 bg-default-100 rounded-full flex items-center justify-center mb-3">
+                    <CalendarDaysIcon className="h-6 w-6 text-default-400" />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Strava Integration Widget */}
-        <div className="xl:col-span-1">
-          <StravaDashboardWidget className="mb-8" />
-        </div>
-      </div>
-
-      {/* Second Content Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Peaks Conquered - Using Suspense-enabled component */}
-        <RecentActivity
-          title="Recent Peaks Conquered"
-          subtitle="Latest summit achievements"
-          limit={5}
-          userRole="coach"
-          useSuspense={true}
-        />
-      </div>
-
-      {/* Your Athletes */}
-      <Card shadow="sm" data-testid="runners-section">
-        <CardHeader className="flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
-            <p className="text-sm text-foreground-600">
-              Runners on their summit journey ({runners.length} connected)
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              as={Link}
-              href="/relationships"
-              size="sm"
-              variant="flat"
-              color="primary"
-              className="hidden sm:flex"
-            >
-              Find Athletes
-            </Button>
-            <Button
-              as={Link}
-              href="/relationships"
-              size="sm"
-              color="primary"
-              className="bg-primary text-white font-medium"
-            >
-              🏃‍♂️ Connect
-            </Button>
-          </div>
-        </CardHeader>
-        <CardBody>
-          {runners.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto h-16 w-16 bg-default-100 rounded-full flex items-center justify-center mb-4">
-                <UsersIcon className="h-8 w-8 text-default-400" />
-              </div>
-              <p className="text-foreground font-medium mb-2">No athletes connected yet</p>
-              <p className="text-sm text-foreground-500 mb-4">
-                Connect with runners to start their journey to peak performance.
-              </p>
-              <Button
-                as={Link}
-                href="/relationships"
-                color="primary"
-                className="bg-primary text-white font-medium"
-              >
-                Find Athletes to Coach
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {runners.map((runner: User) => {
-                  // Find the relationship for this runner to show status
-                  const relationship = relationships.find(
-                    (rel: { other_party: { id: string } }) => rel.other_party.id === runner.id
-                  )
-
-                  return (
+                  <p className="text-foreground font-medium mb-1">No expeditions yet</p>
+                  <p className="text-sm text-foreground-500">
+                    Create your first training expedition.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {typedTrainingPlans.map(plan => (
                     <div
-                      key={runner.id}
-                      className="border border-divider rounded-lg p-4 bg-content1 hover:shadow-md transition-shadow"
+                      key={plan.id}
+                      className="border border-divider rounded-lg p-4 hover:shadow-sm transition-shadow bg-content2/30"
                     >
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
-                          {(runner.full_name || 'U').charAt(0)}
-                        </div>
+                      <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-foreground">
-                              {runner.full_name || 'User'}
-                            </h4>
-                            {relationship && (
-                              <Chip
-                                size="sm"
-                                color={relationship.status === 'active' ? 'success' : 'warning'}
-                                variant="flat"
-                                className="capitalize"
-                              >
-                                {relationship.status}
-                              </Chip>
-                            )}
-                          </div>
-                          <p className="text-sm text-foreground-600">{runner.email}</p>
+                          <h4 className="font-semibold text-foreground mb-1">{plan.title}</h4>
+                          <p className="text-sm text-foreground-600 line-clamp-1">
+                            {plan.description}
+                          </p>
                         </div>
+                        <Chip color="primary" variant="flat" size="sm">
+                          Active
+                        </Chip>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="primary"
-                          className="flex-1"
-                          onPress={() => handleViewProgress(runner.id)}
-                        >
-                          View Progress
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          color="success"
-                          className="flex-1"
-                          onPress={() => handleSendMessage(runner.id)}
-                        >
-                          Send Message
-                        </Button>
+                      <div className="flex flex-wrap gap-3 text-xs text-foreground-600">
+                        {plan.runners && (
+                          <div className="flex items-center gap-1">
+                            <UsersIcon className="w-3 h-3" />
+                            <span>{plan.runners.full_name}</span>
+                          </div>
+                        )}
+                        {plan.target_race_date && (
+                          <div className="flex items-center gap-1">
+                            <CalendarDaysIcon className="w-3 h-3" />
+                            <span>{new Date(plan.target_race_date).toLocaleDateString()}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Show connection actions */}
-              <div className="pt-4 border-t border-divider">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-foreground-600">Want to coach more athletes?</p>
-                  <Button
-                    as={Link}
-                    href="/relationships"
-                    size="sm"
-                    variant="bordered"
-                    color="primary"
-                  >
-                    Browse Available Runners
-                  </Button>
+                  ))}
                 </div>
-              </div>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Metrics Grid - Moved to bottom for better UX hierarchy */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div data-testid="active-plans-count">
-          <MetricCard
-            title="Active Training Plans"
-            value={trainingPlans.length}
-            subtitle="expeditions"
-            icon={CalendarDaysIcon}
-            trend={{ value: 12, direction: 'up' }}
-            color="primary"
-          />
+              )}
+            </CardBody>
+          </Card>
         </div>
 
-        <div data-testid="total-runners-count">
-          <MetricCard
-            title="Runners"
-            value={runners.length}
-            subtitle="athletes"
-            icon={UsersIcon}
-            trend={{ value: 8, direction: 'up' }}
-            color="success"
-          />
-        </div>
+        {/* Secondary Column - Analytics & Tools */}
+        <div className="xl:col-span-2 space-y-6">
+          {/* Key Metrics - Compact grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 gap-3">
+            <MetricCard
+              title="Active Plans"
+              value={trainingPlans.length}
+              subtitle="expeditions"
+              icon={CalendarDaysIcon}
+              trend={{ value: 12, direction: 'up' }}
+              color="primary"
+            />
+            <MetricCard
+              title="Athletes"
+              value={runners.length}
+              subtitle="connected"
+              icon={UsersIcon}
+              trend={{ value: 8, direction: 'up' }}
+              color="success"
+            />
+            <MetricCard
+              title="This Week"
+              value="127"
+              subtitle="km total"
+              icon={ArrowTrendingUpIcon}
+              trend={{ value: 15, direction: 'up' }}
+              color="warning"
+            />
+            <MetricCard
+              title="Completed"
+              value={recentWorkouts.length}
+              subtitle="workouts"
+              icon={ChartBarIcon}
+              color="secondary"
+            />
+          </div>
 
-        <div data-testid="upcoming-workouts-count">
-          <MetricCard
-            title="Recent Workouts"
-            value={recentWorkouts.length}
-            subtitle="completed"
-            icon={ChartBarIcon}
-            color="warning"
-          />
-        </div>
+          {/* Strava Integration Widget */}
+          <StravaDashboardWidget />
 
-        <div data-testid="this-week-count">
-          <MetricCard
-            title="This Week"
-            value="127"
-            subtitle="km total"
-            icon={ArrowTrendingUpIcon}
-            trend={{ value: 15, direction: 'up' }}
-            color="secondary"
+          {/* Recent Activity */}
+          <RecentActivity
+            title="Recent Peaks Conquered"
+            subtitle="Latest summit achievements"
+            limit={5}
+            userRole="coach"
+            useSuspense={true}
           />
         </div>
       </div>

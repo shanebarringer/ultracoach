@@ -132,7 +132,9 @@ activeTrainingPlansAtom: Computed active plans
 {
   "strava-v3": "^2.0.0",
   "node-cron": "^3.0.0",
-  "date-fns": "^2.30.0"
+  "date-fns": "^2.30.0",
+  "@we-gold/gpxjs": "^1.1.0",
+  "papaparse": "^5.5.3"
 }
 ```
 
@@ -271,6 +273,34 @@ supabase db pull              # Sync schema changes
 - Terrain types: trail, road, track, treadmill
 - Elevation gain and weather condition tracking
 
+### Race Import System (✅ COMPLETED 2025-08-22)
+
+- ✅ **GPX File Import**: Automatic extraction of race data from GPS track files
+  - Distance calculation from track points with meter-to-mile conversion
+  - Elevation gain analysis with meter-to-feet conversion
+  - Intelligent terrain type classification (road, trail, mountain) based on elevation profile
+  - Route coordinate storage for future map visualization
+  - Start point geolocation for race location identification
+- ✅ **CSV Bulk Import**: Streamlined bulk race data import with validation
+  - Support for standard CSV format with headers (name, date, location, distance, etc.)
+  - Automatic data type conversion and validation
+  - Error handling for malformed data with detailed feedback
+- ✅ **Advanced File Upload UX**: Modern drag-and-drop interface with real-time feedback
+  - HeroUI-styled upload zone with visual drag states
+  - Multi-file support for batch operations
+  - File type validation (.gpx, .csv) with clear error messages
+  - Upload progress tracking with completion percentages
+- ✅ **Data Preview & Validation**: Smart preview system before import
+  - Tabbed interface showing parsed race data
+  - Individual race card previews with all extracted information
+  - Import confirmation with batch processing capabilities
+  - Real-time validation and error correction suggestions
+- ✅ **API Integration**: Secure server-side processing with comprehensive error handling
+  - Coach-only import permissions with role-based access control
+  - Database transaction safety for bulk operations
+  - Detailed logging for import tracking and debugging
+  - Mountain Peak design consistency across all import components
+
 ### Strava Integration (✅ COMPLETED 2025-08-21)
 
 - ✅ Seamless OAuth connection between UltraCoach and Strava accounts with proper session management
@@ -406,12 +436,12 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-### Current Development Status (Updated 2025-08-21)
+### Current Development Status (Updated 2025-08-22)
 
-- **Project Progress**: Core platform with advanced Strava integration ✅ **FEATURE COMPLETE**
+- **Project Progress**: Core platform with advanced integrations (Strava + Race Import) ✅ **FEATURE COMPLETE**
 - **Active Milestone**: Production Deployment Readiness ⚡ **IN PROGRESS**
-- **Recent Completions**: Full Strava OAuth flow, activity browsing, intelligent workout matching, comprehensive sync operations
-- **Major Achievement**: Complete production-ready Strava integration with advanced workflow matching and Mountain Peak styling
+- **Recent Completions**: Race import system with GPX/CSV support, file upload infrastructure, comprehensive data validation
+- **Major Achievement**: Complete race import functionality with intelligent GPS data extraction and bulk CSV import capabilities
 - **Current Focus**: Critical bug fixes including messaging system SSL error, UI improvements, and core functionality completion
 - **Active Phase**: Phase 1 - Critical bug fixes, messaging system repair, training plans improvements, and gradient cleanup
 - **Technical Health**: Zero TypeScript errors, zero ESLint warnings, production-ready authentication with Vercel compatibility, comprehensive Strava integration with advanced state management

@@ -26,7 +26,7 @@ import {
   racesAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, Race, User } from '@/lib/supabase'
+import type { PlanTemplate, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
@@ -334,15 +334,56 @@ export default function CreateTrainingPlanModal({
                 const selectedRaceId = Array.from(keys).join('')
                 setValue('race_id', selectedRaceId === '' ? null : selectedRaceId)
               }}
-              placeholder="Select a target race..."
-              items={[{ id: '', name: 'No specific race' }, ...races]}
+              placeholder="Select a target race expedition..."
+              description="Choose a race to tailor your training plan"
+              items={[
+                {
+                  id: '',
+                  name: 'No specific race',
+                  distance_type: '',
+                  location: '',
+                  date: '',
+                  terrain_type: '',
+                  elevation_gain_feet: 0,
+                  distance_miles: 0,
+                },
+                ...races,
+              ]}
             >
               {item => (
-                <SelectItem key={item.id}>
-                  {item.name}{' '}
-                  {item.id !== '' &&
-                    (item as Race).date &&
-                    `(${new Date((item as Race).date).toLocaleDateString()})`}
+                <SelectItem key={item.id} textValue={item.name}>
+                  <div className="flex flex-col py-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-foreground">{item.name}</span>
+                      {item.id !== '' && item.distance_type && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                          {item.distance_type}
+                        </span>
+                      )}
+                    </div>
+                    {item.id !== '' && (item.location || item.date) && (
+                      <div className="flex items-center gap-3 text-xs text-foreground-500">
+                        {item.location && (
+                          <span className="flex items-center gap-1">📍 {item.location}</span>
+                        )}
+                        {item.date && (
+                          <span className="flex items-center gap-1">
+                            📅{' '}
+                            {new Date(item.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                        {item.elevation_gain_feet > 0 && (
+                          <span className="flex items-center gap-1">
+                            ⛰️ {item.elevation_gain_feet.toLocaleString()}ft
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </SelectItem>
               )}
             </Select>

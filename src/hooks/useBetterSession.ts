@@ -81,6 +81,10 @@ export function useSession() {
             email: (user?.email as string) || '',
             name: (user?.name as string) || '',
             role: (user?.role as 'runner' | 'coach') || 'runner',
+            userType:
+              (user?.userType as 'runner' | 'coach') ||
+              (user?.role as 'runner' | 'coach') ||
+              'runner',
           },
         }
       : null,

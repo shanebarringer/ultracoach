@@ -301,7 +301,7 @@ process.on('SIGINT', () => connectionPool.destroy())
  *
  * // Monitor pool performance
  * const stats = getPoolStats();
- * console.log('Pool hit rate:', stats.hitRate);
+ * logger.info('Pool hit rate:', stats.hitRate);
  * ```
  *
  * PERFORMANCE BENEFITS:

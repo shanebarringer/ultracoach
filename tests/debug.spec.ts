@@ -52,8 +52,8 @@ test.describe('Debug Tests', () => {
     await page.waitForLoadState('networkidle')
 
     // Try to login with correct test user
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
-    await page.fill('input[type="password"]', 'password123')
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
 
     // Listen for any navigation
     const responsePromise = page.waitForResponse(response => response.url().includes('/api/auth'), {

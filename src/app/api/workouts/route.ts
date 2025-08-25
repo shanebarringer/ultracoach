@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ workouts: [] })
     }
 
-    // Build the base query with optional training plan join
+    // Build the base query with optional training plan join and runner name
     const baseQuery = db
       .select({
         id: workouts.id,
@@ -94,9 +94,13 @@ export async function GET(request: NextRequest) {
         // Include training plan info for authorization (may be null)
         coach_id: training_plans.coach_id,
         plan_runner_id: training_plans.runner_id,
+        // Include runner name for coach view
+        runner_name: user.fullName,
+        runner_email: user.email,
       })
       .from(workouts)
       .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
+      .leftJoin(user, eq(workouts.user_id, user.id))
 
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
