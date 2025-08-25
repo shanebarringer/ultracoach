@@ -169,3 +169,53 @@ export function addRateLimitHeaders(response: Response, result: RateLimitResult)
     headers,
   })
 }
+
+/**
+ * Exponential backoff utility for retry logic
+ */
+export function calculateBackoff(
+  attempt: number,
+  baseDelay: number = 1000,
+  maxDelay: number = 30000
+): number {
+  const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay)
+  // Add jitter to prevent thundering herd
+  const jitter = Math.random() * 0.1 * delay
+  return Math.floor(delay + jitter)
+}
+
+/**
+ * Generic retry function with exponential backoff
+ */
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  shouldRetry?: (error: unknown) => boolean
+): Promise<T> {
+  let lastError: unknown
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+
+      // Don't retry on final attempt
+      if (attempt === maxRetries) {
+        break
+      }
+
+      // Check if we should retry this error
+      if (shouldRetry && !shouldRetry(error)) {
+        break
+      }
+
+      // Wait before retrying
+      const delay = calculateBackoff(attempt, baseDelay)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError
+}

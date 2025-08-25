@@ -21,6 +21,7 @@ import Papa from 'papaparse'
 import { useCallback, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
+import { retryWithBackoff } from '@/lib/rate-limiter'
 import { toast } from '@/lib/toast'
 
 const logger = createLogger('RaceImportModal')
@@ -496,14 +497,24 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
     try {
       // Use bulk import API for better performance
       if (parsedRaces.length > 1) {
-        const response = await fetch('/api/races/bulk-import', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const response = await retryWithBackoff(
+          async () => {
+            return fetch('/api/races/bulk-import', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({ races: parsedRaces }),
+            })
           },
-          credentials: 'include',
-          body: JSON.stringify({ races: parsedRaces }),
-        })
+          2, // max 2 retries for bulk import
+          2000, // 2 second base delay
+          error => {
+            // Only retry on network errors, not rate limits or validation errors
+            return error instanceof TypeError || (error as Error)?.name === 'NetworkError'
+          }
+        )
 
         setUploadProgress(50) // Show progress during API call
 
@@ -549,14 +560,24 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       } else {
         // Single race import using original API
         const race = parsedRaces[0]
-        const response = await fetch('/api/races/import', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const response = await retryWithBackoff(
+          async () => {
+            return fetch('/api/races/import', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify(race),
+            })
           },
-          credentials: 'include',
-          body: JSON.stringify(race),
-        })
+          3, // max 3 retries for single import
+          1000, // 1 second base delay
+          error => {
+            // Only retry on network errors, not rate limits or validation errors
+            return error instanceof TypeError || (error as Error)?.name === 'NetworkError'
+          }
+        )
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -592,7 +613,18 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       onClose()
     } catch (error) {
       logger.error('Error importing races:', error)
-      toast.error('Import failed', `Import failed: ${error}`)
+
+      // Provide more helpful error messages based on error type
+      let errorMessage = `Import failed: ${error}`
+
+      if (error instanceof TypeError || (error as Error)?.name === 'NetworkError') {
+        errorMessage =
+          'Import failed due to network error. Please check your connection and try again.'
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = (error as Error).message
+      }
+
+      toast.error('Import failed', errorMessage)
     } finally {
       setIsUploading(false)
       setUploadProgress(0)
