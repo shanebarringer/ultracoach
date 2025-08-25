@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
+import { addRateLimitHeaders, raceBulkImportLimiter } from '@/lib/rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
@@ -64,6 +65,20 @@ export async function POST(request: NextRequest) {
         { error: 'Unauthorized - Only coaches can import races' },
         { status: 401 }
       )
+    }
+
+    // Apply rate limiting (stricter for bulk operations)
+    const rateLimitResult = raceBulkImportLimiter.check(session.user.id)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          details: `Too many bulk imports. Please try again in ${Math.ceil(rateLimitResult.retryAfter! / 60)} minutes.`,
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        { status: 429 }
+      )
+      return addRateLimitHeaders(response, rateLimitResult)
     }
 
     // Check request size to prevent memory exhaustion attacks
@@ -255,7 +270,7 @@ export async function POST(request: NextRequest) {
       errors: results.filter(r => !r.success && !r.isDuplicate).length,
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         summary,
         results,
@@ -264,6 +279,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
+    return addRateLimitHeaders(response, rateLimitResult)
   } catch (error) {
     logger.error('Error in POST /api/races/bulk-import:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

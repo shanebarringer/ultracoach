@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
+import { addRateLimitHeaders, raceImportLimiter } from '@/lib/rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
@@ -49,6 +50,20 @@ export async function POST(request: NextRequest) {
         { error: 'Unauthorized - Only coaches can import races' },
         { status: 401 }
       )
+    }
+
+    // Apply rate limiting
+    const rateLimitResult = raceImportLimiter.check(session.user.id)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          details: `Too many race imports. Please try again in ${rateLimitResult.retryAfter} seconds.`,
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        { status: 429 }
+      )
+      return addRateLimitHeaders(response, rateLimitResult)
     }
 
     // Check request size to prevent memory exhaustion attacks
@@ -171,13 +186,14 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           race,
           message: `Race "${race.name}" imported successfully`,
         },
         { status: 201 }
       )
+      return addRateLimitHeaders(response, rateLimitResult)
     } catch (error) {
       logger.error('Database error creating imported race:', error)
       return NextResponse.json({ error: 'Failed to save race to database' }, { status: 500 })

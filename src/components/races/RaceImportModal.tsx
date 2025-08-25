@@ -509,6 +509,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
         if (!response.ok) {
           const errorData = await response.json()
+          // Handle rate limiting specially
+          if (response.status === 429) {
+            const retryAfter = Math.ceil((errorData.retryAfter || 900) / 60)
+            throw new Error(
+              `Rate limit exceeded. Too many bulk imports. Please try again in ${retryAfter} minute${retryAfter > 1 ? 's' : ''}.`
+            )
+          }
           throw new Error(errorData.error || 'Failed to bulk import races')
         }
 
@@ -554,7 +561,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         if (!response.ok) {
           const errorData = await response.json()
 
-          // Handle duplicate detection specially
+          // Handle specific error cases
           if (response.status === 409) {
             logger.warn('Duplicate race detected during import', {
               raceName: race.name,
@@ -563,6 +570,11 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             toast.warning(
               'Duplicate race detected',
               `${race.name}: ${errorData.details || 'A similar race may already exist'}`
+            )
+          } else if (response.status === 429) {
+            const retryAfter = Math.ceil((errorData.retryAfter || 300) / 60)
+            throw new Error(
+              `Rate limit exceeded. Too many imports. Please try again in ${retryAfter} minute${retryAfter > 1 ? 's' : ''}.`
             )
           } else {
             throw new Error(errorData.error || 'Failed to import race')
