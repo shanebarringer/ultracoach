@@ -85,18 +85,72 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       reader.onload = e => {
         try {
           const gpxContent = e.target?.result as string
+
+          // Basic XML structure validation
+          if (!gpxContent.includes('<gpx') || !gpxContent.includes('</gpx>')) {
+            throw new Error('Invalid GPX file: Missing required GPX XML structure')
+          }
+
+          // Check for minimum content length (prevent empty or minimal files)
+          if (gpxContent.length < 500) {
+            throw new Error('Invalid GPX file: File appears to be too small or incomplete')
+          }
+
           const [gpx, error] = parseGPX(gpxContent)
 
           if (error || !gpx) {
             throw new Error(typeof error === 'string' ? error : 'Failed to parse GPX content')
           }
 
-          // Extract race data from GPX
-          const track = gpx.tracks?.[0] // Use first track
+          // Comprehensive GPX validation
+          const track = gpx.tracks?.[0]
+          if (!track || !track.points || track.points.length < 10) {
+            throw new Error(
+              'Invalid GPX file: Must contain at least 10 track points to represent a meaningful route'
+            )
+          }
+
+          // Validate track points have required coordinates
+          const validPoints = track.points.filter(
+            p =>
+              p.latitude != null &&
+              p.longitude != null &&
+              !isNaN(p.latitude) &&
+              !isNaN(p.longitude) &&
+              p.latitude >= -90 &&
+              p.latitude <= 90 &&
+              p.longitude >= -180 &&
+              p.longitude <= 180
+          )
+
+          if (validPoints.length < track.points.length * 0.9) {
+            throw new Error('Invalid GPX file: Too many track points with invalid coordinates')
+          }
+
+          if (validPoints.length < 10) {
+            throw new Error('Invalid GPX file: Not enough valid track points (minimum 10 required)')
+          }
+
+          // Check for reasonable distance (prevent corrupted GPS data)
+          const totalDistanceMeters = track?.distance?.total || 0
+          if (totalDistanceMeters < 100) {
+            // Less than 100 meters
+            throw new Error('Invalid GPX file: Track distance too short (minimum 100 meters)')
+          }
+
+          if (totalDistanceMeters > 200000) {
+            // More than 200km (unrealistic for most races)
+            logger.warn('Very long GPX track detected', {
+              distance: totalDistanceMeters,
+              fileName: file.name,
+            })
+          }
+
+          // Extract race data from validated GPX
           const name = track?.name || gpx.metadata?.name || file.name.replace('.gpx', '')
 
           // Calculate total distance in miles
-          const totalDistance = track?.distance?.total ? track.distance.total / 1609.34 : 0 // Convert meters to miles
+          const totalDistance = totalDistanceMeters ? totalDistanceMeters / 1609.34 : 0 // Convert meters to miles
 
           // Calculate elevation gain in feet
           const elevationGain = track?.elevation?.positive ? track.elevation.positive * 3.28084 : 0 // Convert meters to feet
@@ -169,24 +223,177 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         skipEmptyLines: true,
         complete: results => {
           try {
-            const races: ParsedRaceData[] = (results.data as Record<string, string>[]).map(
-              (row, index: number) => ({
-                name: row.name || row.race_name || `Race ${index + 1}`,
-                date: row.date || row.race_date,
-                location: row.location,
-                distance_miles: parseFloat(row.distance_miles || row.distance) || 0,
-                distance_type: row.distance_type || 'Custom',
-                elevation_gain_feet: parseInt(row.elevation_gain_feet || row.elevation) || 0,
-                terrain_type: row.terrain_type || row.terrain || 'mixed',
-                website_url: row.website_url || row.website,
-                notes: row.notes || `Imported from CSV file: ${file.name}`,
-                source: 'csv',
-              })
+            // Validate CSV structure
+            if (!results.data || results.data.length === 0) {
+              throw new Error('CSV file is empty or contains no valid data rows')
+            }
+
+            if (results.data.length > 1000) {
+              throw new Error('CSV file contains too many rows (maximum 1000 races per file)')
+            }
+
+            // Check for basic required headers with flexible column mapping
+            const headers = Object.keys(results.data[0] as Record<string, string>)
+            const nameColumns = headers.filter(h =>
+              /^(name|race_?name|event_?name|title)$/i.test(h.toLowerCase())
             )
+
+            if (nameColumns.length === 0) {
+              throw new Error(
+                'CSV file must contain a name column (name, race_name, event_name, or title)'
+              )
+            }
+
+            logger.info('CSV parsing', {
+              fileName: file.name,
+              rows: results.data.length,
+              headers: headers,
+              nameColumn: nameColumns[0],
+            })
+
+            const races: ParsedRaceData[] = []
+            const errors: string[] = []
+
+            ;(results.data as Record<string, string>[]).forEach(
+              (row: Record<string, string>, index: number) => {
+                try {
+                  // Flexible column mapping with multiple possible column names
+                  const getName = () => {
+                    for (const col of [
+                      'name',
+                      'race_name',
+                      'race name',
+                      'event_name',
+                      'event name',
+                      'title',
+                    ]) {
+                      if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
+                        return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
+                      }
+                    }
+                    return `Race ${index + 1}`
+                  }
+
+                  const getDate = () => {
+                    for (const col of [
+                      'date',
+                      'race_date',
+                      'race date',
+                      'event_date',
+                      'event date',
+                    ]) {
+                      if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
+                        return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
+                      }
+                    }
+                    return undefined
+                  }
+
+                  const getLocation = () => {
+                    for (const col of ['location', 'place', 'city', 'venue', 'where']) {
+                      if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
+                        return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
+                      }
+                    }
+                    return undefined
+                  }
+
+                  const getDistance = () => {
+                    for (const col of [
+                      'distance',
+                      'distance_miles',
+                      'distance miles',
+                      'miles',
+                      'race_distance',
+                    ]) {
+                      const value = row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
+                      if (value) {
+                        const parsed = parseFloat(value)
+                        return !isNaN(parsed) && parsed >= 0 ? parsed : 0
+                      }
+                    }
+                    return 0
+                  }
+
+                  const getElevation = () => {
+                    for (const col of [
+                      'elevation',
+                      'elevation_gain',
+                      'elevation gain',
+                      'elevation_feet',
+                      'climb',
+                    ]) {
+                      const value = row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
+                      if (value) {
+                        const parsed = parseInt(value)
+                        return !isNaN(parsed) && parsed >= 0 ? parsed : 0
+                      }
+                    }
+                    return 0
+                  }
+
+                  const name = getName()
+                  if (!name || name.trim().length === 0) {
+                    errors.push(`Row ${index + 1}: Missing race name`)
+                    return
+                  }
+
+                  if (name.length > 200) {
+                    errors.push(`Row ${index + 1}: Race name too long (maximum 200 characters)`)
+                    return
+                  }
+
+                  const race: ParsedRaceData = {
+                    name: name.trim(),
+                    date: getDate(),
+                    location: getLocation(),
+                    distance_miles: getDistance(),
+                    distance_type: row.distance_type || row.type || 'Custom',
+                    elevation_gain_feet: getElevation(),
+                    terrain_type: (row.terrain_type || row.terrain || 'mixed').toLowerCase(),
+                    website_url: row.website_url || row.website || row.url,
+                    notes: row.notes || `Imported from CSV file: ${file.name}, Row ${index + 1}`,
+                    source: 'csv',
+                  }
+
+                  // Validate terrain type
+                  const validTerrains = ['trail', 'mountain', 'road', 'mixed', 'desert', 'forest']
+                  if (!race.terrain_type || !validTerrains.includes(race.terrain_type)) {
+                    race.terrain_type = 'mixed'
+                  }
+
+                  races.push(race)
+                } catch (rowError) {
+                  errors.push(
+                    `Row ${index + 1}: ${rowError instanceof Error ? rowError.message : 'Unknown error'}`
+                  )
+                }
+              }
+            )
+
+            if (races.length === 0) {
+              throw new Error(
+                `No valid races found in CSV file${errors.length > 0 ? '. Errors: ' + errors.slice(0, 3).join('; ') : ''}`
+              )
+            }
+
+            if (errors.length > 0) {
+              logger.warn('CSV parsing encountered errors', {
+                fileName: file.name,
+                totalRows: results.data.length,
+                successfulRaces: races.length,
+                errors: errors.slice(0, 5), // Log first 5 errors
+              })
+            }
+
             resolve(races)
           } catch (error) {
             logger.error('Error parsing CSV file:', error)
-            reject(new Error(`Failed to parse CSV file: ${error}`))
+            reject(
+              new Error(
+                `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
+              )
+            )
           }
         },
         error: error => {
@@ -199,12 +406,37 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
   const handleFiles = useCallback(
     async (files: File[]) => {
+      const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB in bytes
+
+      // First filter for valid file extensions
       const validFiles = files.filter(
         file => file.name.toLowerCase().endsWith('.gpx') || file.name.toLowerCase().endsWith('.csv')
       )
 
       if (validFiles.length === 0) {
         toast.error('Invalid files', 'Please select valid GPX or CSV files')
+        return
+      }
+
+      // Check file sizes to prevent memory exhaustion
+      const oversizedFiles = validFiles.filter(file => file.size > MAX_FILE_SIZE)
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ')
+        toast.error(
+          'Files too large',
+          `The following files exceed the 10MB limit: ${fileNames}. Please use smaller files to prevent memory issues.`
+        )
+        return
+      }
+
+      // Check total size of all files combined
+      const totalSize = validFiles.reduce((sum, file) => sum + file.size, 0)
+      if (totalSize > MAX_FILE_SIZE * 3) {
+        // Allow up to 30MB total for multiple files
+        toast.error(
+          'Total size too large',
+          `Combined file size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds the 30MB limit. Please select fewer or smaller files.`
+        )
         return
       }
 
@@ -262,9 +494,54 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
     setUploadProgress(0)
 
     try {
-      for (let i = 0; i < parsedRaces.length; i++) {
-        const race = parsedRaces[i]
+      // Use bulk import API for better performance
+      if (parsedRaces.length > 1) {
+        const response = await fetch('/api/races/bulk-import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ races: parsedRaces }),
+        })
 
+        setUploadProgress(50) // Show progress during API call
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to bulk import races')
+        }
+
+        const result = await response.json()
+        setUploadProgress(100)
+
+        logger.info('Bulk import completed', result.summary)
+
+        // Show detailed results
+        const { summary } = result
+        if (summary.successful > 0) {
+          toast.success(
+            'Bulk import completed',
+            `${summary.successful} races imported successfully${summary.duplicates > 0 ? `, ${summary.duplicates} duplicates skipped` : ''}${summary.errors > 0 ? `, ${summary.errors} errors` : ''}`
+          )
+        }
+
+        if (summary.duplicates > 0) {
+          toast.warning(
+            'Duplicates detected',
+            `${summary.duplicates} race${summary.duplicates > 1 ? 's were' : ' was'} skipped as potential duplicates`
+          )
+        }
+
+        if (summary.errors > 0 && summary.successful === 0) {
+          toast.error(
+            'Import failed',
+            `${summary.errors} race${summary.errors > 1 ? 's' : ''} failed to import`
+          )
+        }
+      } else {
+        // Single race import using original API
+        const race = parsedRaces[0]
         const response = await fetch('/api/races/import', {
           method: 'POST',
           headers: {
@@ -276,17 +553,26 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
         if (!response.ok) {
           const errorData = await response.json()
-          throw new Error(errorData.error || 'Failed to import race')
+
+          // Handle duplicate detection specially
+          if (response.status === 409) {
+            logger.warn('Duplicate race detected during import', {
+              raceName: race.name,
+              existingRaces: errorData.existingRaces,
+            })
+            toast.warning(
+              'Duplicate race detected',
+              `${race.name}: ${errorData.details || 'A similar race may already exist'}`
+            )
+          } else {
+            throw new Error(errorData.error || 'Failed to import race')
+          }
+        } else {
+          toast.success('Import successful', `Successfully imported "${race.name}"`)
         }
 
-        setUploadProgress(((i + 1) / parsedRaces.length) * 100)
+        setUploadProgress(100)
       }
-
-      logger.info(`Successfully imported ${parsedRaces.length} races`)
-      toast.success(
-        'Import successful',
-        `Successfully imported ${parsedRaces.length} race${parsedRaces.length > 1 ? 's' : ''}`
-      )
 
       setParsedRaces([])
       setSelectedTab('upload')

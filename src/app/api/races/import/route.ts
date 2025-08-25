@@ -1,3 +1,5 @@
+import { and, ilike, or, sql } from 'drizzle-orm'
+
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
@@ -49,6 +51,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check request size to prevent memory exhaustion attacks
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+      logger.warn('Request payload too large', { contentLength, userId: session.user.id })
+      return NextResponse.json(
+        { error: 'Payload too large - maximum 10MB allowed per import' },
+        { status: 413 }
+      )
+    }
+
     const importData: ImportRaceData = await request.json()
 
     // Validate required fields
@@ -92,6 +104,53 @@ export async function POST(request: NextRequest) {
       raceData.distance_type = 'Custom'
     }
 
+    // Check for duplicate races to prevent importing the same race multiple times
+    const duplicateQuery = db
+      .select()
+      .from(races)
+      .where(
+        and(
+          ilike(races.name, `%${raceData.name.trim()}%`),
+          or(
+            // Same location
+            raceData.location !== 'Unknown Location'
+              ? ilike(races.location, `%${raceData.location}%`)
+              : sql`false`,
+            // Similar distance (within 5 miles for ultramarathons)
+            sql`ABS(CAST(${races.distance_miles} AS FLOAT) - ${distanceNum}) < 5`,
+            // Same date if provided
+            raceData.date ? sql`${races.date} = ${raceData.date}` : sql`false`
+          )
+        )
+      )
+      .limit(5)
+
+    const existingRaces = await duplicateQuery
+
+    if (existingRaces.length > 0) {
+      const duplicateNames = existingRaces.map(r => r.name).join(', ')
+      logger.warn('Potential duplicate race detected', {
+        newRaceName: raceData.name,
+        existingRaces: duplicateNames,
+        userId: session.user.id,
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Potential duplicate race detected',
+          details: `A similar race may already exist: ${duplicateNames}. Please verify this isn't a duplicate before importing.`,
+          existingRaces: existingRaces.map(r => ({
+            id: r.id,
+            name: r.name,
+            location: r.location,
+            distance: r.distance_miles,
+            date: r.date,
+          })),
+        },
+        { status: 409 }
+      )
+    }
+
     try {
       const [race] = await db.insert(races).values(raceData).returning()
 
@@ -100,6 +159,7 @@ export async function POST(request: NextRequest) {
         name: race.name,
         source: importData.source,
         importedBy: session.user.id,
+        duplicateCheckPassed: true,
       })
 
       // TODO: Store GPX data in future when we add gpx_data column
