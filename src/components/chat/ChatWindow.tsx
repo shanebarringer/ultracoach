@@ -6,6 +6,8 @@ import { Filter, X } from 'lucide-react'
 
 import { useCallback, useEffect } from 'react'
 
+import dynamic from 'next/dynamic'
+
 import { ChatWindowSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
 import { useMessages } from '@/hooks/useMessages'
@@ -20,6 +22,12 @@ import ConnectionStatus from './ConnectionStatus'
 import MessageInput from './MessageInput'
 import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
+
+// Dynamic import for WorkoutLogModal
+const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
+  loading: () => null,
+  ssr: false,
+})
 
 const logger = createLogger('ChatWindow')
 
@@ -38,6 +46,14 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const { messages, loading, sendMessage } = useMessages(recipientId)
   const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
   const { workouts } = useWorkouts()
+
+  const handleWorkoutLogSuccess = useCallback(() => {
+    setChatUiState(prev => ({
+      ...prev,
+      showWorkoutModal: false,
+      selectedChatWorkout: null,
+    }))
+  }, [setChatUiState])
 
   const handleSendMessage = useCallback(
     async (content: string, workoutId?: string, contextType?: string) => {
@@ -240,6 +256,23 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         disabled={chatUiState.sending || !session?.user?.id}
         recipientId={recipientId}
       />
+
+      {/* Workout Log Modal */}
+      {chatUiState.selectedChatWorkout && (
+        <WorkoutLogModal
+          isOpen={chatUiState.showWorkoutModal}
+          onClose={() =>
+            setChatUiState(prev => ({
+              ...prev,
+              showWorkoutModal: false,
+              selectedChatWorkout: null,
+            }))
+          }
+          onSuccess={handleWorkoutLogSuccess}
+          workout={chatUiState.selectedChatWorkout}
+          defaultToComplete={false}
+        />
+      )}
     </div>
   )
 }

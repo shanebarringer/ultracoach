@@ -2,9 +2,9 @@
 
 import { useAtom } from 'jotai'
 
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
 
-import { workoutsAtom } from '@/lib/atoms'
+import { chatUiStateAtom, workoutsAtom } from '@/lib/atoms'
 import type { MessageWithUser } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'
@@ -37,6 +37,21 @@ const formatTime = (dateString: string) => {
 const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessageProps) => {
   const [message] = useAtom(messageAtom)
   const [workouts] = useAtom(workoutsAtom)
+  const [, setChatUiState] = useAtom(chatUiStateAtom)
+
+  const handleViewWorkout = useCallback(
+    (workoutId: string) => {
+      const workout = workouts.find((w: { id: string }) => w.id === workoutId)
+      if (workout) {
+        setChatUiState(prev => ({
+          ...prev,
+          showWorkoutModal: true,
+          selectedChatWorkout: workout,
+        }))
+      }
+    },
+    [workouts, setChatUiState]
+  )
 
   if (!message) return null
 
@@ -72,7 +87,12 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
             if (workout) {
               return (
                 <div className="mt-2">
-                  <WorkoutContext workout={workout} linkType={'reference'} className="text-xs" />
+                  <WorkoutContext
+                    workout={workout}
+                    linkType={'reference'}
+                    className="text-xs"
+                    onViewWorkout={handleViewWorkout}
+                  />
                 </div>
               )
             }

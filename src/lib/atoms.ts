@@ -356,6 +356,8 @@ export const chatUiStateAtom = atom({
   sending: false,
   filterWorkoutId: null as string | null,
   showNewMessage: false,
+  showWorkoutModal: false,
+  selectedChatWorkout: null as Workout | null,
 })
 
 export const messageInputAtom = atom({
