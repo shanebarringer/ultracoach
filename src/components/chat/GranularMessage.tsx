@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { memo, useCallback, useMemo } from 'react'
 
-import { chatUiStateAtom, workoutsAtom } from '@/lib/atoms'
+import { chatUiStateAtom, workoutLookupMapAtom } from '@/lib/atoms'
 import type { MessageWithUser } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'
@@ -36,20 +36,20 @@ const formatTime = (dateString: string) => {
 // Memoized individual message component - only re-renders when THIS message changes
 const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessageProps) => {
   const [message] = useAtom(messageAtom)
-  const [workouts] = useAtom(workoutsAtom)
+  const [workoutLookupMap] = useAtom(workoutLookupMapAtom)
   const [, setChatUiState] = useAtom(chatUiStateAtom)
 
-  // Optimize workout lookup with useMemo to prevent recalculation on every render
+  // Optimized workout lookup using Map for O(1) performance instead of array.find()
   const linkedWorkout = useMemo(() => {
     if (message.workout_id) {
-      return workouts.find((w: { id: string }) => w.id === message.workout_id)
+      return workoutLookupMap.get(message.workout_id) || null
     }
     return null
-  }, [workouts, message.workout_id])
+  }, [workoutLookupMap, message.workout_id])
 
   const handleViewWorkout = useCallback(
     (workoutId: string) => {
-      const workout = workouts.find((w: { id: string }) => w.id === workoutId)
+      const workout = workoutLookupMap.get(workoutId)
       if (workout) {
         setChatUiState(prev => ({
           ...prev,
@@ -58,7 +58,7 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
         }))
       }
     },
-    [workouts, setChatUiState]
+    [workoutLookupMap, setChatUiState]
   )
 
   if (!message) return null

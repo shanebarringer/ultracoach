@@ -25,8 +25,30 @@ import type { Workout } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import type { ServerSession } from '@/utils/auth-server'
 
-// Memoize calendar component to prevent unnecessary re-renders
-const MemoizedMonthlyCalendar = memo(MonthlyCalendar)
+// Enhanced memoization with custom comparison logic to prevent unnecessary re-renders
+const MemoizedMonthlyCalendar = memo(MonthlyCalendar, (prevProps, nextProps) => {
+  // Compare workouts array more intelligently
+  if (prevProps.workouts.length !== nextProps.workouts.length) {
+    return false // Re-render if workout count changed
+  }
+
+  // Deep comparison of workout IDs, dates, and status changes
+  const prevWorkoutIds = prevProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
+  const nextWorkoutIds = nextProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
+
+  for (let i = 0; i < prevWorkoutIds.length; i++) {
+    if (prevWorkoutIds[i] !== nextWorkoutIds[i]) {
+      return false // Re-render if any workout changed
+    }
+  }
+
+  // Compare other props
+  return (
+    prevProps.onWorkoutClick === nextProps.onWorkoutClick &&
+    prevProps.onDateClick === nextProps.onDateClick &&
+    prevProps.className === nextProps.className
+  )
+})
 
 // Dynamic imports for modals to reduce initial bundle size
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {

@@ -4,7 +4,7 @@ import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } f
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -23,10 +23,18 @@ import MessageInput from './MessageInput'
 import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
 
-// Dynamic import for WorkoutLogModal
+// Enhanced dynamic import with graceful error handling and cleanup safety
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
-  loading: () => null,
+  loading: () => (
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+    </div>
+  ),
   ssr: false,
+  // Add error boundary for failed dynamic imports
+  onError: error => {
+    logger.error('Failed to load WorkoutLogModal component:', error)
+  },
 })
 
 const logger = createLogger('ChatWindow')
@@ -47,18 +55,55 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
   const { workouts } = useWorkouts()
 
-  const handleWorkoutLogSuccess = useCallback(() => {
-    setChatUiState(prev => ({
-      ...prev,
-      showWorkoutModal: false,
-      selectedChatWorkout: null,
-    }))
+  // Prevent race conditions in modal and async operations
+  const operationInProgress = useRef(false)
+
+  const handleWorkoutLogSuccess = useCallback(async () => {
+    // Prevent race conditions
+    if (operationInProgress.current) return
+    operationInProgress.current = true
+
+    try {
+      setChatUiState(prev => ({
+        ...prev,
+        showWorkoutModal: false,
+        selectedChatWorkout: null,
+      }))
+    } finally {
+      operationInProgress.current = false
+    }
   }, [setChatUiState])
+
+  // Component cleanup effect to handle graceful unmounting during async operations
+  useEffect(() => {
+    return () => {
+      // Clean up any pending operations when component unmounts
+      // This prevents state updates on unmounted components
+      logger.debug('ChatWindow unmounting, cleaning up async operations')
+
+      // Stop any typing indicators
+      try {
+        stopTyping()
+      } catch (error) {
+        logger.warn('Error stopping typing indicator during cleanup:', error)
+      }
+
+      // Clear any modal states to prevent memory leaks
+      setChatUiState(prev => ({
+        ...prev,
+        sending: false,
+        showWorkoutModal: false,
+        selectedChatWorkout: null,
+      }))
+    }
+  }, [setChatUiState, stopTyping])
 
   const handleSendMessage = useCallback(
     async (content: string, workoutId?: string, contextType?: string) => {
-      if (!session?.user?.id || chatUiState.sending) return
+      // Enhanced race condition protection
+      if (!session?.user?.id || chatUiState.sending || operationInProgress.current) return
 
+      operationInProgress.current = true
       setChatUiState(prev => ({ ...prev, sending: true }))
 
       // Check if offline
@@ -77,6 +122,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         setOfflineQueue(prev => [...prev, offlineMessage])
         toast.warning('Message Queued', 'Message will be sent when connection is restored.')
         setChatUiState(prev => ({ ...prev, sending: false }))
+        operationInProgress.current = false
         return
       }
 
@@ -90,6 +136,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         toast.error('Message Failed', 'Unable to send message. Please try again.')
       } finally {
         setChatUiState(prev => ({ ...prev, sending: false }))
+        operationInProgress.current = false
       }
     },
     [

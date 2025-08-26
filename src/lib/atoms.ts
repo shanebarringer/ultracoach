@@ -612,6 +612,20 @@ export const filteredWorkoutsAtom = atom(get => {
   return workouts.filter(w => w.status === filter)
 })
 
+// Workout lookup map for O(1) performance instead of array filtering
+export const workoutLookupMapAtom = atom<Map<string, Workout>>(get => {
+  const workouts = get(workoutsAtom)
+  const lookupMap = new Map<string, Workout>()
+
+  if (workouts) {
+    workouts.forEach(workout => {
+      lookupMap.set(workout.id, workout)
+    })
+  }
+
+  return lookupMap
+})
+
 // Calendar-specific derived atoms for better performance
 export const workoutStatsAtom = atom(get => {
   const workouts = get(filteredWorkoutsAtom) || []
