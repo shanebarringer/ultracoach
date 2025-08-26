@@ -13,7 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { commonToasts } from '@/lib/toast'
 
@@ -22,6 +22,7 @@ interface AddWorkoutModalProps {
   onClose: () => void
   onSuccess: () => void
   trainingPlanId: string
+  initialDate?: string // Pre-populate the date field
 }
 
 export default function AddWorkoutModal({
@@ -29,9 +30,10 @@ export default function AddWorkoutModal({
   onClose,
   onSuccess,
   trainingPlanId,
+  initialDate,
 }: AddWorkoutModalProps) {
   const [formData, setFormData] = useState({
-    date: '',
+    date: initialDate || '',
     plannedType: '',
     plannedDistance: '',
     plannedDuration: '',
@@ -53,6 +55,13 @@ export default function AddWorkoutModal({
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Update form date when initialDate prop changes
+  useEffect(() => {
+    if (initialDate && initialDate !== formData.date) {
+      setFormData(prev => ({ ...prev, date: initialDate }))
+    }
+  }, [initialDate, formData.date])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

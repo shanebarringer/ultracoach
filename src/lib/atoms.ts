@@ -360,6 +360,15 @@ export const chatUiStateAtom = atom({
   selectedChatWorkout: null as Workout | null,
 })
 
+// Calendar UI state atom for modal management
+export const calendarUiStateAtom = atom({
+  showWorkoutModal: false,
+  selectedCalendarWorkout: null as Workout | null,
+  showAddWorkoutModal: false,
+  selectedDate: null as string | null, // ISO date string for selected calendar date
+  workoutsLoading: false,
+})
+
 export const messageInputAtom = atom({
   message: '',
   linkedWorkout: null as Workout | null,
