@@ -44,6 +44,7 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
+import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
 import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
@@ -320,8 +321,8 @@ export default function RacesPage() {
   if (status === 'loading') {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" color="primary" label="Loading race expeditions..." />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <RacesPageSkeleton />
         </div>
       </Layout>
     )

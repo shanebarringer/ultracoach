@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Checkbox, Spinner } from '@heroui/react'
+import { Button, Card, CardBody, CardHeader, Checkbox } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
@@ -10,6 +10,7 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
+import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useRefreshableTrainingPlans } from '@/hooks/useRefreshableTrainingPlans'
 import { filteredTrainingPlansAtom, trainingPlansLoadableAtom, uiStateAtom } from '@/lib/atoms'
 import type { TrainingPlan } from '@/lib/supabase'
@@ -137,9 +138,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
 
           {/* Training Plans Display */}
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" color="primary" label="Loading your expeditions..." />
-            </div>
+            <TrainingPlansPageSkeleton />
           ) : hasError ? (
             <Card className="border border-danger/20 bg-danger/5">
               <CardBody className="text-center py-12">
@@ -163,13 +162,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
               </CardBody>
             </Card>
           ) : (
-            <Suspense
-              fallback={
-                <div className="flex justify-center items-center h-64">
-                  <Spinner size="lg" color="primary" label="Loading expeditions..." />
-                </div>
-              }
-            >
+            <Suspense fallback={<TrainingPlansPageSkeleton />}>
               {getPlans().length === 0 ? (
                 <Card className="border-dashed border-2 border-primary/20">
                   <CardBody className="text-center py-16">

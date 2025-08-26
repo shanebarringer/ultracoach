@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
+import { Button, Card, CardBody, CardHeader, Chip, Progress } from '@heroui/react'
 import classNames from 'classnames'
 import { useAtom } from 'jotai'
 import {
@@ -23,6 +23,7 @@ import { memo, useMemo } from 'react'
 import Link from 'next/link'
 
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
+import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -268,11 +269,7 @@ function RunnerDashboard() {
   }, [upcomingWorkouts, trainingPlans.length, recentWorkouts, loading])
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" color="primary" label="Loading your base camp..." />
-      </div>
-    )
+    return <RunnerDashboardSkeleton />
   }
 
   return (

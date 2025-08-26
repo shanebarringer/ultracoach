@@ -51,9 +51,9 @@ export default function AppDrawer() {
       size="sm"
       classNames={{
         base: 'data-[placement=left]:border-r-1 data-[placement=left]:border-divider data-[placement=left]:w-80 sm:data-[placement=left]:w-72',
-        backdrop: uiState.isDrawerPinned ? 'hidden' : 'bg-background/40',
-        body: 'px-2 py-4',
-        header: 'px-4 py-4 border-b-1 border-divider bg-content1',
+        backdrop: uiState.isDrawerPinned ? 'hidden' : 'bg-background/20 backdrop-blur-sm', // Lighter, more subtle backdrop
+        body: 'px-3 py-4',
+        header: 'px-4 py-4 border-b-1 border-divider bg-content1/90 backdrop-blur-md',
       }}
     >
       <DrawerContent>

@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
+import { CoachDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User } from '@/lib/supabase'
@@ -151,14 +152,7 @@ function CoachDashboard() {
   }, [trainingPlans, runners.length, recentWorkouts.length, loading])
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-foreground-600">Loading your summit dashboard...</p>
-        </div>
-      </div>
-    )
+    return <CoachDashboardSkeleton />
   }
 
   return (

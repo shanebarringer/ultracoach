@@ -1,19 +1,12 @@
 'use client'
 
-import {
-  Button,
-  Chip,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Spinner,
-} from '@heroui/react'
+import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
 import { useCallback, useEffect } from 'react'
 
+import { ChatWindowSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
@@ -149,14 +142,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   )
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" color="primary" />
-          <p className="text-sm text-foreground-600">Loading conversation...</p>
-        </div>
-      </div>
-    )
+    return <ChatWindowSkeleton />
   }
 
   return (

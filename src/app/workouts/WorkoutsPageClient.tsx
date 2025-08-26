@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Select, SelectItem, Spinner } from '@heroui/react'
+import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Users } from 'lucide-react'
 
@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
+import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useWorkouts } from '@/hooks/useWorkouts'
@@ -240,9 +241,7 @@ export default function WorkoutsPageClient({ user }: Props) {
 
           {/* Enhanced Workout List with Advanced Filtering */}
           {loadingStates.workouts ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" color="primary" label="Loading your training history..." />
-            </div>
+            <WorkoutsPageSkeleton />
           ) : (
             <EnhancedWorkoutsList
               userRole={user?.role as 'runner' | 'coach'}

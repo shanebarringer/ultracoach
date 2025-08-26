@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardBody, CardHeader, Divider, Skeleton, Tab, Tabs } from '@heroui/react'
+import { Card, CardBody, CardHeader, Divider, Tab, Tabs } from '@heroui/react'
 import {
   Activity,
   BellIcon,
@@ -15,6 +15,7 @@ import {
 import { useState } from 'react'
 
 import Layout from '@/components/layout/Layout'
+import { SettingsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useUserSettings } from '@/hooks/useUserSettings'
 
 import CommunicationSettingsPanel from './components/CommunicationSettingsPanel'
@@ -42,20 +43,8 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-          <div className="mb-8">
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="lg:w-64">
-              <Skeleton className="h-96 w-full" />
-            </div>
-            <div className="flex-1">
-              <Skeleton className="h-96 w-full" />
-            </div>
-          </div>
+        <div className="max-w-6xl mx-auto p-6">
+          <SettingsPageSkeleton />
         </div>
       </Layout>
     )
