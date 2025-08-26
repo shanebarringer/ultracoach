@@ -124,12 +124,31 @@ export default function SignIn() {
           // Set redirecting state for smooth transition
           setIsRedirecting(true)
 
-          // Redirect to dashboard which will handle role-based routing
+          // Force a longer delay to ensure client state is fully synchronized
+          // This should fix the refresh issue on preview deployments
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // Use window.location in preview/production to force complete page reload
+          // This ensures server-side authentication is properly synchronized
           logger.info('✅ Redirecting authenticated user to dashboard', {
             userRole,
             userId: sessionData.data.user.id,
+            isProduction: process.env.NODE_ENV === 'production',
+            useHardRedirect: process.env.NODE_ENV === 'production' || !!process.env.VERCEL_URL,
           })
-          router.push('/dashboard')
+
+          // In preview/production deployments, use hard redirect to ensure session sync
+          if (
+            typeof window !== 'undefined' &&
+            (process.env.NODE_ENV === 'production' || process.env.VERCEL_URL)
+          ) {
+            logger.info(
+              'Using window.location for preview/production redirect to ensure session sync'
+            )
+            window.location.href = '/dashboard'
+          } else {
+            router.push('/dashboard')
+          }
         } else {
           logger.error('Failed to get session data after sign in')
           setIsRedirecting(false)

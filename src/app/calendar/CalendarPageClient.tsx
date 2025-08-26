@@ -190,14 +190,12 @@ export default function CalendarPageClient({ user }: Props) {
                       setCalendarUiState(prev => ({ ...prev, selectedRunnerId: runnerId || null }))
                     }}
                   >
-                    <SelectItem key="all" value="">
-                      All Runners
-                    </SelectItem>
-                    {connectedRunners.map(runner => (
-                      <SelectItem key={runner.id} value={runner.id}>
-                        {runner.full_name || runner.email}
-                      </SelectItem>
-                    ))}
+                    <SelectItem key="all">All Runners</SelectItem>
+                    {connectedRunners.map(
+                      (runner: { id: string; full_name?: string; email: string }) => (
+                        <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
+                      )
+                    )}
                   </Select>
                 )}
 
