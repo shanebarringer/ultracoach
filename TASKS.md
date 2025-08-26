@@ -87,6 +87,20 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Complete Chat-Workout UX** - ✅ **COMPLETED** - Enabled coaches/runners to view and edit workouts directly from chat message references
 - [x] **Verify E2E Test Suite** - ✅ **COMPLETED** - Fixed Playwright configuration for reliable test execution with proper timeout handling
 - [x] **Investigate Resend Email Issues** - ✅ **RESOLVED** - Resend API working correctly, in test mode (only sends to verified email: shanebarringer@gmail.com)
+- [x] **Complete Calendar Page Functionality** - ✅ **COMPLETED** - Addressed all 14 Vercel feedback issues with workout modal integration, add workout functionality, and mobile responsiveness improvements
+
+### 🎨 Phase 6B: Advanced UI/UX Polish (🔄 IN PROGRESS 2025-08-26)
+
+**Goal**: Polish remaining UI/UX issues and complete gradient cleanup for production readiness
+
+- [ ] **Authentication Flow Enhancement** - Fix manual refresh requirement after login on preview environment
+- [ ] **Comprehensive Gradient Cleanup** - Remove excessive gradient usage while preserving Mountain Peak branding consistency
+- [ ] **Weekly Planner Layout Improvements** - Horizontal layout for better space utilization and mobile responsiveness
+- [ ] **Calendar Coach Experience** - Add runner dropdown for coaches and fix volume calculation issues
+- [ ] **Modal and Component Sizing** - Fix workout modal viewport overflow and improve responsive behavior
+- [ ] **Strava Integration Styling** - Apply proper Strava brand colors and remove conflicting gradients
+- [ ] **Training Plans Page Overhaul** - Fix double-header issue and improve data display consistency
+- [ ] **About Page Modernization** - Complete UI overhaul with Mountain Peak theme and modern layout
 
 ### 🏗️ Phase 3: Production Infrastructure (LOWER PRIORITY - 📋 PLANNED)
 

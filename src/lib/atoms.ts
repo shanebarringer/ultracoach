@@ -367,6 +367,7 @@ export const calendarUiStateAtom = atom({
   showAddWorkoutModal: false,
   selectedDate: null as string | null, // ISO date string for selected calendar date
   workoutsLoading: false,
+  selectedRunnerId: null as string | null, // For coach filtering
 })
 
 export const messageInputAtom = atom({

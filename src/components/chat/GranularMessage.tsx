@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 
 import { chatUiStateAtom, workoutsAtom } from '@/lib/atoms'
 import type { MessageWithUser } from '@/lib/supabase'
@@ -38,6 +38,14 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
   const [message] = useAtom(messageAtom)
   const [workouts] = useAtom(workoutsAtom)
   const [, setChatUiState] = useAtom(chatUiStateAtom)
+
+  // Optimize workout lookup with useMemo to prevent recalculation on every render
+  const linkedWorkout = useMemo(() => {
+    if (message.workout_id) {
+      return workouts.find((w: { id: string }) => w.id === message.workout_id)
+    }
+    return null
+  }, [workouts, message.workout_id])
 
   const handleViewWorkout = useCallback(
     (workoutId: string) => {
@@ -81,23 +89,16 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
         <div className="whitespace-pre-wrap break-words">{message.content}</div>
 
         {/* Workout context if linked */}
-        {message.workout_id &&
-          (() => {
-            const workout = workouts.find((w: { id: string }) => w.id === message.workout_id)
-            if (workout) {
-              return (
-                <div className="mt-2">
-                  <WorkoutContext
-                    workout={workout}
-                    linkType={'reference'}
-                    className="text-xs"
-                    onViewWorkout={handleViewWorkout}
-                  />
-                </div>
-              )
-            }
-            return null
-          })()}
+        {linkedWorkout && (
+          <div className="mt-2">
+            <WorkoutContext
+              workout={linkedWorkout}
+              linkType={'reference'}
+              className="text-xs"
+              onViewWorkout={handleViewWorkout}
+            />
+          </div>
+        )}
 
         {/* Timestamp */}
         <div

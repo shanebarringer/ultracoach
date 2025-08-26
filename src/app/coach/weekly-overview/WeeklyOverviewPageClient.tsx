@@ -38,15 +38,15 @@ export default function WeeklyOverviewPageClient({ user }: WeeklyOverviewPageCli
     <Layout>
       <div className="max-w-[1600px] mx-auto px-8 py-8">
         {/* Hero Section */}
-        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+        <Card className="mb-6 bg-content1 border-l-4 border-l-primary">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <Mountain className="w-8 h-8 text-primary" />
+              <Mountain className="w-6 h-6 text-primary" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-foreground">
                   🏔️ Weekly Expedition Overview
                 </h1>
-                <p className="text-foreground/70 mt-1 text-lg">
+                <p className="text-foreground/70 mt-1 text-base">
                   Monitor your athletes&apos; training progress and expedition achievements
                 </p>
               </div>

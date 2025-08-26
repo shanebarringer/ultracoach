@@ -63,6 +63,14 @@ export default function AddWorkoutModal({
     }
   }, [initialDate, formData.date])
 
+  // Reset form state when modal opens
+  useEffect(() => {
+    if (isOpen && !initialDate) {
+      // Reset form when opening without initial date
+      setError('')
+    }
+  }, [isOpen, initialDate])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -133,7 +141,7 @@ export default function AddWorkoutModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
       <ModalContent>
         <ModalHeader>Add Workout</ModalHeader>
         <form onSubmit={handleSubmit}>
@@ -159,7 +167,7 @@ export default function AddWorkoutModal({
               required
               selectedKeys={formData.plannedType ? [formData.plannedType] : []}
               onSelectionChange={keys => {
-                const selectedType = Array.from(keys).join('')
+                const selectedType = Array.from(keys)[0] as string
                 setFormData(prev => ({ ...prev, plannedType: selectedType }))
               }}
               placeholder="Select type..."
@@ -184,7 +192,7 @@ export default function AddWorkoutModal({
               name="category"
               selectedKeys={formData.category ? [formData.category] : []}
               onSelectionChange={keys => {
-                const selectedCategory = Array.from(keys).join('') as
+                const selectedCategory = Array.from(keys)[0] as
                   | 'easy'
                   | 'tempo'
                   | 'interval'
@@ -229,7 +237,7 @@ export default function AddWorkoutModal({
               name="terrain"
               selectedKeys={formData.terrain ? [formData.terrain] : []}
               onSelectionChange={keys => {
-                const selectedTerrain = Array.from(keys).join('') as
+                const selectedTerrain = Array.from(keys)[0] as
                   | 'road'
                   | 'trail'
                   | 'track'

@@ -1,9 +1,10 @@
 'use client'
 
+import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom } from 'jotai'
 
-import { useCallback } from 'react'
+import { memo, useCallback, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,7 @@ import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
+  connectedRunnersAtom,
   filteredWorkoutsAtom,
   trainingPlansAtom,
   workoutStatsAtom,
@@ -22,6 +24,9 @@ import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import type { ServerSession } from '@/utils/auth-server'
+
+// Memoize calendar component to prevent unnecessary re-renders
+const MemoizedMonthlyCalendar = memo(MonthlyCalendar)
 
 // Dynamic imports for modals to reduce initial bundle size
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
@@ -53,6 +58,10 @@ export default function CalendarPageClient({ user }: Props) {
   const [workoutStats] = useAtom(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const [trainingPlans] = useAtom(trainingPlansAtom)
+  const [connectedRunners] = useAtom(connectedRunnersAtom)
+
+  // Prevent race conditions in modal operations
+  const operationInProgress = useRef(false)
 
   const handleWorkoutClick = useCallback(
     (workout: Workout) => {
@@ -110,10 +119,18 @@ export default function CalendarPageClient({ user }: Props) {
     }))
   }, [setCalendarUiState])
 
-  const handleWorkoutModalSuccess = useCallback(() => {
-    // Refresh workouts after successful edit
-    fetchWorkouts()
-    handleWorkoutModalClose()
+  const handleWorkoutModalSuccess = useCallback(async () => {
+    // Prevent race conditions
+    if (operationInProgress.current) return
+    operationInProgress.current = true
+
+    try {
+      // Refresh workouts after successful edit
+      await fetchWorkouts()
+      handleWorkoutModalClose()
+    } finally {
+      operationInProgress.current = false
+    }
   }, [fetchWorkouts, handleWorkoutModalClose])
 
   const handleAddWorkoutModalClose = useCallback(() => {
@@ -124,11 +141,19 @@ export default function CalendarPageClient({ user }: Props) {
     }))
   }, [setCalendarUiState])
 
-  const handleAddWorkoutSuccess = useCallback(() => {
-    // Refresh workouts after successful addition
-    fetchWorkouts()
-    handleAddWorkoutModalClose()
-    toast.success('Workout Added', 'Your workout has been added to the calendar')
+  const handleAddWorkoutSuccess = useCallback(async () => {
+    // Prevent race conditions
+    if (operationInProgress.current) return
+    operationInProgress.current = true
+
+    try {
+      // Refresh workouts after successful addition
+      await fetchWorkouts()
+      handleAddWorkoutModalClose()
+      toast.success('Workout Added', 'Your workout has been added to the calendar')
+    } finally {
+      operationInProgress.current = false
+    }
   }, [fetchWorkouts, handleAddWorkoutModalClose])
 
   // Get the first available training plan for new workout creation
@@ -141,7 +166,7 @@ export default function CalendarPageClient({ user }: Props) {
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                   Training Calendar
                 </h1>
                 <p className="text-foreground-600 mt-2 text-base sm:text-lg">
@@ -150,26 +175,53 @@ export default function CalendarPageClient({ user }: Props) {
                     : 'Track your training progress and upcoming workouts'}
                 </p>
               </div>
-              <button
-                onClick={handleRefreshWorkouts}
-                disabled={workoutsLoading || calendarUiState.workoutsLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors disabled:opacity-50"
-              >
-                <svg
-                  className={`w-4 h-4 ${workoutsLoading || calendarUiState.workoutsLoading ? 'animate-spin' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center gap-3">
+                {/* Runner Dropdown for Coaches */}
+                {user.role === 'coach' && connectedRunners.length > 0 && (
+                  <Select
+                    placeholder="All Runners"
+                    size="sm"
+                    className="min-w-[160px]"
+                    selectedKeys={
+                      calendarUiState.selectedRunnerId ? [calendarUiState.selectedRunnerId] : []
+                    }
+                    onSelectionChange={keys => {
+                      const runnerId = Array.from(keys)[0] as string
+                      setCalendarUiState(prev => ({ ...prev, selectedRunnerId: runnerId || null }))
+                    }}
+                  >
+                    <SelectItem key="all" value="">
+                      All Runners
+                    </SelectItem>
+                    {connectedRunners.map(runner => (
+                      <SelectItem key={runner.id} value={runner.id}>
+                        {runner.full_name || runner.email}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+
+                <button
+                  onClick={handleRefreshWorkouts}
+                  disabled={workoutsLoading || calendarUiState.workoutsLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors disabled:opacity-50"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                {workoutsLoading || calendarUiState.workoutsLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
+                  <svg
+                    className={`w-4 h-4 ${workoutsLoading || calendarUiState.workoutsLoading ? 'animate-spin' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  {workoutsLoading || calendarUiState.workoutsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -182,7 +234,7 @@ export default function CalendarPageClient({ user }: Props) {
                 </div>
               </div>
             )}
-            <MonthlyCalendar
+            <MemoizedMonthlyCalendar
               workouts={filteredWorkouts}
               onWorkoutClick={handleWorkoutClick}
               onDateClick={handleDateClick}
@@ -265,7 +317,9 @@ export default function CalendarPageClient({ user }: Props) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned Distance:</span>
-                    <span className="font-medium">{workoutStats.plannedDistance || 0} mi</span>
+                    <span className="font-medium">
+                      {Number(workoutStats.plannedDistance || 0).toFixed(1)} mi
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>

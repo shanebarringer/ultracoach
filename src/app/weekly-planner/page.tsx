@@ -90,26 +90,29 @@ export default function WeeklyPlannerPage() {
   return (
     <Layout>
       <div className="max-w-[1600px] mx-auto px-8 py-8">
-        {/* Hero Section */}
-        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <CalendarDaysIcon className="w-8 h-8 text-primary" />
-              <div>
-                <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  🏔️ Weekly Expedition Planner
-                </h1>
-                <p className="text-foreground/70 mt-1 text-lg">
-                  Architect your team&apos;s weekly training summit - strategic workout planning for
-                  peak performance
-                </p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Hero Section */}
+          <Card className="lg:col-span-3 bg-content1 border-l-4 border-l-primary">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <CalendarDaysIcon className="w-8 h-8 text-primary" />
+                <div>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                    🏔️ Weekly Expedition Planner
+                  </h1>
+                  <p className="text-foreground/70 mt-1 text-base lg:text-lg">
+                    Architect your team&apos;s weekly training summit - strategic workout planning
+                    for peak performance
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-        </Card>
+            </CardHeader>
+          </Card>
+        </div>
 
         {/* Runner Selection */}
-        <Card className="mb-6 bg-linear-to-br from-background to-secondary/5 border-t-4 border-t-secondary">
+        <Card className="mb-6 bg-content1 border-t-4 border-t-secondary">
           <CardHeader>
             <div className="flex items-center gap-3">
               <UsersIcon className="w-6 h-6 text-secondary" />
@@ -137,14 +140,14 @@ export default function WeeklyPlannerPage() {
                     key={runner.id}
                     isPressable
                     onPress={() => router.push(`/weekly-planner/${runner.id}`)}
-                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-linear-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent"
+                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border-l-4 border-l-transparent"
                   >
                     <CardBody className="p-4">
                       <div className="flex items-center gap-3">
                         <Avatar
                           name={runner.full_name || 'User'}
                           size="md"
-                          className="bg-linear-to-br from-primary to-secondary text-white"
+                          className="bg-primary text-white"
                         />
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground">
@@ -180,7 +183,7 @@ export default function WeeklyPlannerPage() {
         </Card>
 
         {!loading && runners.length > 0 && (
-          <Card className="bg-linear-to-br from-default/10 to-secondary/10 border-t-4 border-t-default">
+          <Card className="bg-content1 border-t-4 border-t-default">
             <CardBody className="text-center py-12">
               <CalendarDaysIcon className="mx-auto w-16 h-16 text-default-400 mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2">
