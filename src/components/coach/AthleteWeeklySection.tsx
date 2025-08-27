@@ -13,7 +13,7 @@ import {
   UserIcon,
 } from 'lucide-react'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -38,7 +38,7 @@ interface AthleteWeeklySectionProps {
   }
 }
 
-export default function AthleteWeeklySection({
+function AthleteWeeklySection({
   athlete,
   workouts,
   weekStart,
@@ -147,11 +147,7 @@ export default function AthleteWeeklySection({
         <div className="flex items-center justify-between w-full">
           {/* Athlete Info */}
           <div className="flex items-center gap-4">
-            <Avatar
-              name={athlete.name || 'User'}
-              size="lg"
-              className="bg-linear-to-br from-primary to-secondary text-white"
-            />
+            <Avatar name={athlete.name || 'User'} size="lg" className="bg-primary text-white" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-xl font-semibold text-foreground">{athlete.name || 'User'}</h3>
@@ -359,3 +355,5 @@ export default function AthleteWeeklySection({
     </Card>
   )
 }
+
+export default memo(AthleteWeeklySection)

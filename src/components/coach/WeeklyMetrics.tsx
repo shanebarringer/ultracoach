@@ -10,7 +10,7 @@ import {
   XCircleIcon,
 } from 'lucide-react'
 
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 
 import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
@@ -24,7 +24,7 @@ interface WeeklyMetricsProps {
   loading: boolean
 }
 
-export default function WeeklyMetrics({ workouts, athletes, loading }: WeeklyMetricsProps) {
+function WeeklyMetrics({ workouts, athletes, loading }: WeeklyMetricsProps) {
   // Calculate metrics from workouts data
   const metrics = useMemo(() => {
     if (loading || workouts.length === 0) {
@@ -130,3 +130,5 @@ export default function WeeklyMetrics({ workouts, athletes, loading }: WeeklyMet
     </div>
   )
 }
+
+export default memo(WeeklyMetrics)

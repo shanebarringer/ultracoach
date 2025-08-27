@@ -5,7 +5,7 @@ import { useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-react'
 
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 
 import { connectedRunnersAtom } from '@/lib/atoms'
 import type { User } from '@/lib/better-auth'
@@ -31,11 +31,7 @@ interface WeeklyWorkoutOverviewProps {
   onWeekChange: (newWeek: Date) => void
 }
 
-export default function WeeklyWorkoutOverview({
-  coach,
-  currentWeek,
-  onWeekChange,
-}: WeeklyWorkoutOverviewProps) {
+function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorkoutOverviewProps) {
   const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set())
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Workout[]>([])
@@ -298,3 +294,5 @@ export default function WeeklyWorkoutOverview({
     </div>
   )
 }
+
+export default memo(WeeklyWorkoutOverview)
