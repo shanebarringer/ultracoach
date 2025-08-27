@@ -132,9 +132,7 @@ export default function SignUp() {
             <div className="flex flex-col items-center space-y-3">
               <MountainSnowIcon className="h-12 w-12 text-secondary" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  🏔️ UltraCoach
-                </h1>
+                <h1 className="text-3xl font-bold text-foreground">🏔️ UltraCoach</h1>
                 <p className="text-lg text-foreground-600 mt-1">Join the Expedition</p>
               </div>
             </div>
