@@ -77,18 +77,18 @@ async function createPlaywrightUsers() {
 
       if (existingUser.length > 0) {
         const userId = existingUser[0].id
-        
+
         // Delete related records first to avoid foreign key constraint violations
         try {
           // Delete strava connections if they exist
           await db.execute(sql`DELETE FROM strava_connections WHERE user_id = ${userId}`)
-          
+
           // Delete Better Auth account records
           await db.delete(account).where(eq(account.userId, userId))
-          
+
           // Finally delete the user
           await db.delete(user).where(eq(user.id, userId))
-          
+
           logger.info(`🗑️  Cleaned up existing user: ${userData.email}`)
         } catch (error) {
           logger.error(`Warning: Could not fully clean up ${userData.email}:`, error.message)
@@ -117,8 +117,10 @@ async function createPlaywrightUsers() {
 
         if (!response.ok) {
           const errorText = await response.text()
-          logger.error(`❌ Failed to create ${userData.email}: HTTP ${response.status}: ${errorText}`)
-          
+          logger.error(
+            `❌ Failed to create ${userData.email}: HTTP ${response.status}: ${errorText}`
+          )
+
           // In CI, we want to fail fast if user creation fails
           if (process.env.CI) {
             logger.error('CI environment detected - failing fast on user creation error')
@@ -131,7 +133,7 @@ async function createPlaywrightUsers() {
         successCount++
       } catch (error) {
         logger.error(`❌ Error creating ${userData.email}:`, error)
-        
+
         // In CI, fail fast on network errors
         if (process.env.CI) {
           logger.error('CI environment detected - failing fast on network error')
@@ -164,7 +166,9 @@ async function createPlaywrightUsers() {
       .set({ role: 'user', userType: 'runner' })
       .where(sql`email IN ('alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`)
 
-    logger.info(`🎉 Successfully created ${successCount}/${PLAYWRIGHT_USERS.length} Playwright test users`)
+    logger.info(
+      `🎉 Successfully created ${successCount}/${PLAYWRIGHT_USERS.length} Playwright test users`
+    )
 
     // Final verification - ensure all required users exist with correct roles
     const finalUsers = await db
@@ -175,7 +179,9 @@ async function createPlaywrightUsers() {
       )
 
     if (finalUsers.length !== PLAYWRIGHT_USERS.length) {
-      logger.error(`❌ Verification failed: Expected ${PLAYWRIGHT_USERS.length} users, found ${finalUsers.length}`)
+      logger.error(
+        `❌ Verification failed: Expected ${PLAYWRIGHT_USERS.length} users, found ${finalUsers.length}`
+      )
       if (process.env.CI) {
         process.exit(1)
       }
@@ -189,14 +195,14 @@ async function createPlaywrightUsers() {
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
   } catch (error) {
     logger.error('💥 Fatal error creating Playwright users:', error)
-    
+
     // Provide helpful debugging information
     logger.error('Debug information:')
     logger.error(`- NODE_ENV: ${process.env.NODE_ENV}`)
     logger.error(`- CI: ${process.env.CI}`)
     logger.error(`- DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Not set'}`)
     logger.error(`- BETTER_AUTH_SECRET: ${process.env.BETTER_AUTH_SECRET ? 'Set' : 'Not set'}`)
-    
+
     process.exit(1)
   }
 }

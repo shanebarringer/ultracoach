@@ -133,7 +133,15 @@ jobs:
           pnpm start &
           echo $! > .next_pid
         env:
+          # Ensure all environment variables are passed to the app
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: production
           PORT: 3001
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: http://localhost:3001
+          NEXT_PUBLIC_BASE_URL: http://localhost:3001
+          RESEND_API_KEY: test-key
+          RESEND_FROM_EMAIL: test@ultracoach.dev
 
       - name: Wait for app to be ready
         run: |
@@ -151,12 +159,22 @@ jobs:
 
       - name: Create test users via Better Auth API
         run: pnpm tsx scripts/create-playwright-test-users.ts
+        env:
+          # Ensure test database is used
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: http://localhost:3001
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Run Playwright tests
         run: pnpm test:e2e
+        env:
+          # Use test database for E2E tests
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
 
       - name: Stop Next.js app
         if: always()
