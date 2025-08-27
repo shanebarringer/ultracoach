@@ -169,24 +169,21 @@ export default function WeeklyPlannerRunnerPage() {
 
   return (
     <Layout>
-      <div className="max-w-[1600px] mx-auto px-8 py-8">
-        {/* Consolidated Header */}
-        <Card className="mb-6 bg-content1 border-l-4 border-l-primary">
-          <CardHeader className="pb-4">
-            {/* Title and Actions Row */}
-            <div className="flex items-center justify-between w-full mb-4">
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8">
+        {/* Consolidated Header - Mobile Optimized */}
+        <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
+          <CardHeader className="pb-3 lg:pb-4 px-4 lg:px-6">
+            {/* Title and Actions Row - Responsive */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full mb-3 lg:mb-4 gap-3 lg:gap-0">
               <div className="flex items-center gap-3">
-                <CalendarDaysIcon className="w-8 h-8 text-primary" />
+                <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary" />
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">
-                    🏔️{' '}
-                    {session?.user?.role === 'runner'
-                      ? 'My Training Schedule'
-                      : 'Weekly Expedition Planner'}
+                  <h1 className="text-lg lg:text-2xl font-bold text-foreground">
+                    🏔️ {session?.user?.role === 'runner' ? 'My Training' : 'Weekly Planner'}
                   </h1>
-                  <p className="text-foreground/70 text-sm">
+                  <p className="text-foreground/70 text-xs lg:text-sm">
                     {session?.user?.role === 'runner'
-                      ? 'Your weekly training overview'
+                      ? 'Your weekly overview'
                       : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
                   </p>
                 </div>
@@ -196,32 +193,33 @@ export default function WeeklyPlannerRunnerPage() {
                   variant="flat"
                   size="sm"
                   onClick={() => router.push('/weekly-planner')}
-                  className="text-secondary hover:bg-secondary/20"
+                  className="text-secondary hover:bg-secondary/20 self-start lg:self-auto"
                 >
                   Change Runner
                 </Button>
               )}
             </div>
 
-            {/* Runner Info and Week Navigation Row */}
-            <div className="flex items-center justify-between w-full gap-4">
-              {/* Runner Info - Compact */}
+            {/* Runner Info and Week Navigation - Mobile Stack */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full gap-3 lg:gap-4">
+              {/* Runner Info - Mobile Optimized */}
               <div className="flex items-center gap-3">
                 <Avatar
                   name={selectedRunner.full_name || 'User'}
-                  size="md"
+                  size="sm"
                   className="bg-primary text-white"
                 />
                 <div className="flex-1">
                   <p className="font-medium text-foreground text-sm">
                     {selectedRunner.full_name || 'User'}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-1 lg:gap-2 mt-1">
                     <Chip
                       size="sm"
                       variant="flat"
                       color="success"
                       startContent={<TrendingUpIcon className="w-3 h-3" />}
+                      className="text-xs"
                     >
                       Active
                     </Chip>
@@ -230,6 +228,7 @@ export default function WeeklyPlannerRunnerPage() {
                       variant="flat"
                       color="secondary"
                       startContent={<FlagIcon className="w-3 h-3" />}
+                      className="text-xs"
                     >
                       Training
                     </Chip>
@@ -237,9 +236,9 @@ export default function WeeklyPlannerRunnerPage() {
                 </div>
               </div>
 
-              {/* Week Navigation - Compact */}
-              <div className="flex items-center gap-3">
-                <div className="text-right">
+              {/* Week Navigation - Mobile Optimized */}
+              <div className="flex items-center justify-between lg:justify-end gap-3">
+                <div className="text-left lg:text-right">
                   <p className="font-semibold text-foreground text-sm">
                     {formatWeekRange(currentWeek)}
                   </p>
@@ -259,7 +258,7 @@ export default function WeeklyPlannerRunnerPage() {
                     variant="flat"
                     size="sm"
                     onClick={goToCurrentWeek}
-                    className="text-warning px-3"
+                    className="text-warning px-2 lg:px-3 text-xs lg:text-sm"
                   >
                     Today
                   </Button>
@@ -278,15 +277,17 @@ export default function WeeklyPlannerRunnerPage() {
           </CardHeader>
         </Card>
 
-        {/* Weekly Calendar */}
-        <WeeklyPlannerCalendar
-          runner={selectedRunner}
-          weekStart={currentWeek}
-          readOnly={session?.user?.role === 'runner'}
-          onWeekUpdate={() => {
-            // Week updated successfully - data will be automatically refreshed
-          }}
-        />
+        {/* Weekly Calendar - Responsive */}
+        <div className="w-full">
+          <WeeklyPlannerCalendar
+            runner={selectedRunner}
+            weekStart={currentWeek}
+            readOnly={session?.user?.role === 'runner'}
+            onWeekUpdate={() => {
+              // Week updated successfully - data will be automatically refreshed
+            }}
+          />
+        </div>
       </div>
     </Layout>
   )

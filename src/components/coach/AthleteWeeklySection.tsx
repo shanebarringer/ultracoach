@@ -239,50 +239,61 @@ function AthleteWeeklySection({
       </CardHeader>
 
       <CardBody className="pt-0">
-        {/* Weekly Workout Grid */}
-        <div className="grid grid-cols-7 gap-2 mb-6">
-          {weeklyWorkoutGrid.map((dayData, index) => (
-            <div key={index} className="text-center">
-              {/* Day Header */}
-              <div className="mb-2">
-                <div className="text-sm font-medium text-foreground/70">{dayData.day}</div>
-                <div className="text-xs text-foreground/50">{dayData.date.getDate()}</div>
-              </div>
-
-              {/* Workout Cards for the Day */}
-              <div className="space-y-1">
-                {dayData.workouts.length === 0 ? (
-                  <div className="bg-default-100 rounded-lg p-2 min-h-[60px] flex items-center justify-center">
-                    <span className="text-xs text-foreground/40">Rest</span>
+        {/* Weekly Workout Grid - Horizontal Scroll on Mobile */}
+        <div className="mb-6">
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-2 lg:gap-3 min-w-[600px] lg:min-w-0">
+              {weeklyWorkoutGrid.map((dayData, index) => (
+                <div key={index} className="text-center">
+                  {/* Day Header - Compact */}
+                  <div className="mb-2">
+                    <div className="text-xs lg:text-sm font-medium text-foreground/70">
+                      {dayData.day.slice(0, 3)}
+                    </div>
+                    <div className="text-xs text-foreground/50">{dayData.date.getDate()}</div>
                   </div>
-                ) : (
-                  dayData.workouts.map(workout => (
-                    <WeeklyWorkoutCard
-                      key={workout.id}
-                      workout={workout}
-                      compact={true}
-                      showActions={true}
-                      onEdit={workout => {
-                        setUiState(prev => ({
-                          ...prev,
-                          isWorkoutLogModalOpen: true,
-                          selectedWorkout: workout,
-                        }))
-                      }}
-                      onMessage={workoutId => {
-                        setUiState(prev => ({
-                          ...prev,
-                          isNewMessageModalOpen: true,
-                          selectedConversationUserId: athlete.id,
-                          workoutContext: workoutId,
-                        }))
-                      }}
-                    />
-                  ))
-                )}
-              </div>
+
+                  {/* Workout Cards for the Day - More Compact */}
+                  <div className="space-y-1">
+                    {dayData.workouts.length === 0 ? (
+                      <div className="bg-default-100 rounded-lg p-1.5 lg:p-2 min-h-[50px] lg:min-h-[60px] flex items-center justify-center">
+                        <span className="text-xs text-foreground/40">Rest</span>
+                      </div>
+                    ) : (
+                      dayData.workouts.map(workout => (
+                        <WeeklyWorkoutCard
+                          key={workout.id}
+                          workout={workout}
+                          compact={true}
+                          showActions={true}
+                          onEdit={workout => {
+                            setUiState(prev => ({
+                              ...prev,
+                              isWorkoutLogModalOpen: true,
+                              selectedWorkout: workout,
+                            }))
+                          }}
+                          onMessage={workoutId => {
+                            setUiState(prev => ({
+                              ...prev,
+                              isNewMessageModalOpen: true,
+                              selectedConversationUserId: athlete.id,
+                              workoutContext: workoutId,
+                            }))
+                          }}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Mobile Instructions */}
+          <div className="lg:hidden mt-2 text-center text-xs text-foreground/50">
+            ←→ Swipe to view all days
+          </div>
         </div>
 
         {/* Athlete Notes Section */}

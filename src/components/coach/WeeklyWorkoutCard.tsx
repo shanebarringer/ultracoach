@@ -144,9 +144,9 @@ function WeeklyWorkoutCard({
     return (
       <Tooltip
         content={
-          <div className="p-2">
-            <div className="font-medium capitalize mb-1">{displayType}</div>
-            <div className="text-sm space-y-1">
+          <div className="p-2 max-w-64">
+            <div className="font-medium capitalize mb-1 text-sm">{displayType}</div>
+            <div className="text-xs space-y-1">
               {showDistance && (
                 <div className="flex items-center gap-1">
                   <MapPinIcon className="w-3 h-3" />
@@ -160,7 +160,7 @@ function WeeklyWorkoutCard({
                 </div>
               )}
               {workout.workout_notes && (
-                <div className="text-xs text-foreground/60 mt-1 max-w-48">
+                <div className="text-xs text-foreground/60 mt-1 line-clamp-3">
                   {workout.workout_notes}
                 </div>
               )}
@@ -168,6 +168,7 @@ function WeeklyWorkoutCard({
           </div>
         }
         placement="top"
+        showArrow
       >
         <Card
           className={`${statusConfig.bgColor} ${statusConfig.borderColor} border-l-2 cursor-pointer hover:shadow-md transition-all duration-200 min-h-[60px] relative group`}
