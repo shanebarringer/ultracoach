@@ -619,7 +619,7 @@ export default function WeeklyPlannerCalendar({
   }
 
   return (
-    <Card className="bg-linear-to-br from-background to-secondary/5 border-l-4 border-l-primary shadow-xl">
+    <Card className="bg-background border-l-4 border-l-primary shadow-xl">
       <CardHeader>
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-3">
@@ -641,7 +641,7 @@ export default function WeeklyPlannerCalendar({
               onClick={saveWeekPlan}
               disabled={saving}
               startContent={saving ? <Spinner size="sm" /> : <ZapIcon className="w-4 h-4" />}
-              className="bg-linear-to-r from-success to-success/80 hover:from-success/90 hover:to-success/70"
+              className="bg-success hover:bg-success/90"
             >
               {saving ? 'Saving Expedition...' : 'Save Week Plan'}
             </Button>
@@ -657,8 +657,8 @@ export default function WeeklyPlannerCalendar({
               className={classNames(
                 'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
                 isToday(day.date)
-                  ? 'ring-2 ring-primary bg-linear-to-br from-primary/10 to-secondary/10 border-l-4 border-l-primary'
-                  : 'hover:bg-linear-to-br hover:from-secondary/5 hover:to-primary/5 border-l-4 border-l-transparent'
+                  ? 'ring-2 ring-primary bg-primary/10 border-l-4 border-l-primary'
+                  : 'hover:bg-secondary/5 border-l-4 border-l-transparent'
               )}
             >
               <CardHeader className="pb-3">
@@ -841,7 +841,7 @@ export default function WeeklyPlannerCalendar({
         </div>
 
         {hasChanges && (
-          <Card className="mt-6 bg-linear-to-r from-warning/10 to-primary/10 border-l-4 border-l-warning">
+          <Card className="mt-6 bg-warning/10 border-l-4 border-l-warning">
             <CardBody className="p-4">
               <div className="flex items-center gap-3">
                 <ZapIcon className="w-5 h-5 text-warning shrink-0" />

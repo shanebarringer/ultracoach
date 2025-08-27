@@ -169,7 +169,7 @@ export default function UnitSettingsPanel({ settings }: UnitSettingsPanelProps) 
       </Card>
 
       {/* Preview */}
-      <Card className="bg-gradient-to-r from-primary-50 to-secondary-50 border-primary-200">
+      <Card className="bg-primary-50 border-primary-200">
         <CardHeader>
           <h3 className="text-lg font-semibold">Preview</h3>
         </CardHeader>
