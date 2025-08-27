@@ -157,7 +157,7 @@ export default function WorkoutsPageClient({ user }: Props) {
             {/* Header */}
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                   <Mountain className="w-8 h-8 text-primary" />
                   Training Log
                 </h1>

@@ -152,7 +152,7 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
         isIconOnly
         variant="shadow"
         color="primary"
-        className={`fixed top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 shadow-lg border border-primary/20 bg-gradient-to-br from-primary/90 to-secondary/90 hover:shadow-xl hover:scale-110 ${
+        className={`fixed top-1/2 transform -translate-y-1/2 z-20 transition-all duration-300 shadow-lg border border-primary/20 bg-primary/90 hover:shadow-xl hover:scale-110 ${
           showPanel ? 'right-80' : 'right-4'
         }`}
         onPress={handleTogglePanel}
@@ -167,16 +167,16 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
 
       {/* Enhanced Alpine Sliding Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-gradient-to-b from-background via-content1/50 to-background border-l-4 border-l-primary/60 shadow-2xl transform transition-transform duration-300 ease-in-out z-10 backdrop-blur-sm ${
+        className={`fixed top-0 right-0 h-full w-80 bg-background border-l-4 border-l-primary/60 shadow-2xl transform transition-transform duration-300 ease-in-out z-10 backdrop-blur-sm ${
           showPanel ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="h-full flex flex-col overflow-hidden">
           {/* Enhanced Alpine Header */}
-          <div className="flex-shrink-0 p-4 border-b border-divider bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10">
+          <div className="flex-shrink-0 p-4 border-b border-divider bg-content1">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20">
+                <div className="p-2 rounded-lg bg-primary/20 border border-primary/20">
                   <Activity className="h-6 w-6 text-primary" />
                 </div>
                 <div>

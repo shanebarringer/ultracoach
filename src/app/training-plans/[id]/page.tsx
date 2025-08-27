@@ -23,8 +23,11 @@ import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms'
+import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+
+const logger = createLogger('TrainingPlanDetail')
 
 type TrainingPlanWithUsers = TrainingPlan & {
   runners?: User
@@ -93,7 +96,7 @@ export default function TrainingPlanDetailPage() {
           plan_phases: phasesData.plan_phases || [],
         }))
       } else {
-        console.error('Failed to fetch plan phases:', phasesResponse.statusText)
+        logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
       }
 
       // Fetch previous and next plans if they exist
@@ -106,7 +109,7 @@ export default function TrainingPlanDetailPage() {
             previous_plan: prevPlanData.trainingPlan,
           }))
         } else {
-          console.error('Failed to fetch previous plan:', prevPlanResponse.statusText)
+          logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
         }
       }
 
@@ -119,11 +122,11 @@ export default function TrainingPlanDetailPage() {
             next_plan: nextPlanData.trainingPlan,
           }))
         } else {
-          console.error('Failed to fetch next plan:', nextPlanResponse.statusText)
+          logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
         }
       }
     } catch (error) {
-      console.error('Error fetching extended plan data:', error)
+      logger.error('Error fetching extended plan data', { error })
     }
   }, [session?.user?.id, planId, trainingPlan])
 
@@ -191,7 +194,7 @@ export default function TrainingPlanDetailPage() {
         commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
       }
     } catch (error) {
-      console.error('Error deleting training plan:', error)
+      logger.error('Error deleting training plan', { error })
       commonToasts.trainingPlanError('Failed to delete training plan')
     } finally {
       setIsDeleting(false)

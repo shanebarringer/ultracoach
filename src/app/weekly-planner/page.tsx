@@ -12,7 +12,7 @@ import {
   Spinner,
 } from '@heroui/react'
 // Removed classNames import since we're using dynamic routes
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
 import { CalendarDaysIcon, FlagIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 
@@ -32,6 +32,7 @@ export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  const [, refreshConnectedRunners] = useAtom(connectedRunnersAtom)
   const [viewMode, setViewMode] = useState<'grid' | 'dropdown'>('grid')
 
   // Handle loading and error states from Jotai loadable
@@ -88,7 +89,7 @@ export default function WeeklyPlannerPage() {
           <Card className="border-danger-200 bg-danger-50">
             <CardBody className="text-center py-12">
               <div className="text-danger-600 mb-4">Failed to load runners</div>
-              <Button color="primary" onClick={() => window.location.reload()}>
+              <Button color="primary" onClick={() => refreshConnectedRunners()}>
                 Retry
               </Button>
             </CardBody>
