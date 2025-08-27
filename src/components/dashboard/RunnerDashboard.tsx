@@ -369,7 +369,7 @@ function RunnerDashboard() {
                   href="/relationships"
                   color="primary"
                   size="sm"
-                  className="bg-linear-to-r from-primary to-secondary text-white font-medium"
+                  className="bg-primary text-white font-medium"
                 >
                   Find Your Guide
                 </Button>
@@ -385,7 +385,7 @@ function RunnerDashboard() {
                     >
                       <CardBody className="p-4">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-linear-to-br from-secondary to-primary rounded-full flex items-center justify-center text-white font-semibold">
+                          <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-semibold">
                             {(relationship.other_party.full_name || 'C').charAt(0)}
                           </div>
                           <div className="flex-1">

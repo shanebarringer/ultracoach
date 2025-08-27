@@ -3,9 +3,9 @@
 import { Button, Card, CardBody, CardHeader, Select, SelectItem, Spinner } from '@heroui/react'
 import { useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
-import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, FilterIcon, UsersIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-react'
 
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 
 import { connectedRunnersAtom } from '@/lib/atoms'
 import type { User } from '@/lib/better-auth'
@@ -31,11 +31,7 @@ interface WeeklyWorkoutOverviewProps {
   onWeekChange: (newWeek: Date) => void
 }
 
-export default function WeeklyWorkoutOverview({
-  coach,
-  currentWeek,
-  onWeekChange,
-}: WeeklyWorkoutOverviewProps) {
+function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorkoutOverviewProps) {
   const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set())
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Workout[]>([])
@@ -170,18 +166,20 @@ export default function WeeklyWorkoutOverview({
 
   return (
     <div className="space-y-6">
-      {/* Week Navigation and Filters */}
-      <Card className="bg-linear-to-br from-warning/10 to-primary/10 border-t-4 border-t-warning">
+      {/* Consolidated Navigation and Filters */}
+      <Card className="bg-content1 border-l-4 border-l-primary">
         <CardHeader>
-          <div className="flex items-center justify-between w-full flex-wrap gap-4">
-            {/* Week Navigation */}
+          {/* Main Header Row */}
+          <div className="flex items-center justify-between w-full mb-4">
             <div className="flex items-center gap-3">
-              <ClockIcon className="w-6 h-6 text-warning" />
+              <ClockIcon className="w-6 h-6 text-primary" />
               <div>
                 <h2 className="text-xl font-semibold text-foreground">
-                  Training Week: {formatWeekRange(currentWeek)}
+                  Weekly Expedition Overview
                 </h2>
-                <p className="text-foreground/70 text-sm">Strategic expedition planning</p>
+                <p className="text-foreground/70 text-sm">
+                  {formatWeekRange(currentWeek)} • Strategic expedition planning
+                </p>
               </div>
             </div>
 
@@ -192,69 +190,65 @@ export default function WeeklyWorkoutOverview({
                 variant="ghost"
                 size="sm"
                 onClick={() => navigateWeek('prev')}
-                className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
+                className="text-foreground/70 hover:text-foreground"
               >
-                <ChevronLeftIcon className="w-5 h-5" />
+                <ChevronLeftIcon className="w-4 h-4" />
               </Button>
-
               <Button
                 variant="flat"
                 size="sm"
                 onClick={goToCurrentWeek}
-                className="bg-warning/20 text-warning hover:bg-warning/30"
+                className="text-warning px-3"
               >
-                Current Week
+                Today
               </Button>
-
               <Button
                 isIconOnly
                 variant="ghost"
                 size="sm"
                 onClick={() => navigateWeek('next')}
-                className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
+                className="text-foreground/70 hover:text-foreground"
               >
-                <ChevronRightIcon className="w-5 h-5" />
+                <ChevronRightIcon className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
-          {/* Athlete Filter */}
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <FilterIcon className="w-4 h-4 text-foreground/70" />
-              <span className="text-sm font-medium text-foreground/70">Filter Athletes:</span>
+          {/* Filters and Metrics Row */}
+          <div className="flex items-center justify-between w-full gap-4">
+            {/* Athlete Filter */}
+            <div className="flex items-center gap-3">
+              <Select
+                placeholder="All Athletes"
+                variant="bordered"
+                selectionMode="multiple"
+                className="max-w-xs"
+                selectedKeys={selectedAthletes}
+                onSelectionChange={handleAthleteSelection}
+                isLoading={runnersLoading}
+                startContent={<UsersIcon className="w-4 h-4" />}
+                size="sm"
+              >
+                {runnersData.map((runner: User) => (
+                  <SelectItem key={runner.id}>{runner.name || runner.email}</SelectItem>
+                ))}
+              </Select>
+              <span className="text-xs text-foreground/60">
+                {selectedAthletes.size === 0
+                  ? `${runnersData.length} total`
+                  : `${selectedAthletes.size}/${runnersData.length} selected`}
+              </span>
             </div>
 
-            <Select
-              placeholder="All Athletes"
-              variant="bordered"
-              selectionMode="multiple"
-              className="max-w-xs"
-              selectedKeys={selectedAthletes}
-              onSelectionChange={handleAthleteSelection}
-              isLoading={runnersLoading}
-              startContent={<UsersIcon className="w-4 h-4" />}
-            >
-              {runnersData.map((runner: User) => (
-                <SelectItem key={runner.id}>{runner.name || runner.email}</SelectItem>
-              ))}
-            </Select>
-
-            <div className="text-sm text-foreground/60">
-              {selectedAthletes.size === 0
-                ? `Showing all ${runnersData.length} athletes`
-                : `Showing ${selectedAthletes.size} of ${runnersData.length} athletes`}
-            </div>
+            {/* Compact Metrics */}
+            <WeeklyMetrics
+              workouts={filteredWorkouts}
+              athletes={filteredRunners}
+              loading={workoutsLoading}
+            />
           </div>
         </CardHeader>
       </Card>
-
-      {/* Weekly Metrics Summary */}
-      <WeeklyMetrics
-        workouts={filteredWorkouts}
-        athletes={filteredRunners}
-        loading={workoutsLoading}
-      />
 
       {/* Athletes Weekly Sections */}
       {workoutsLoading ? (
@@ -300,3 +294,5 @@ export default function WeeklyWorkoutOverview({
     </div>
   )
 }
+
+export default memo(WeeklyWorkoutOverview)

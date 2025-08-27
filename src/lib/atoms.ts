@@ -428,6 +428,14 @@ export const uiStateAtom = atom({
   connectionStatus: 'connected' as 'connected' | 'reconnecting' | 'disconnected',
   isDrawerOpen: false,
   isDrawerPinned: false,
+  // New modal states for coach-athlete interactions
+  isAddWorkoutModalOpen: false,
+  isWorkoutLogModalOpen: false,
+  isNewMessageModalOpen: false,
+  selectedAthleteForWorkout: null as (User | BetterAuthUser) | null,
+  selectedConversationUserId: null as string | null,
+  workoutContext: null as string | null,
+  expandedNotes: {} as Record<string, boolean>,
 })
 
 // Async atoms for data fetching with Suspense support

@@ -40,7 +40,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 - [ ] **Authentication Flow Enhancement** - Fix manual refresh requirement after login on preview environment
 - [ ] **Comprehensive Gradient Cleanup** - Remove excessive gradient usage while preserving Mountain Peak branding consistency
-- [ ] **Weekly Planner Layout Improvements** - Horizontal layout for better space utilization and mobile responsiveness
+- [x] **Weekly Planner Layout Improvements** - ✅ **COMPLETED 2025-08-27** - Horizontal layout for better space utilization and mobile responsiveness
 - [ ] **Calendar Coach Experience** - Add runner dropdown for coaches and fix volume calculation issues
 - [ ] **Modal and Component Sizing** - Fix workout modal viewport overflow and improve responsive behavior
 - [ ] **Strava Integration Styling** - Apply proper Strava brand colors and remove conflicting gradients

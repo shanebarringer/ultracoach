@@ -439,9 +439,9 @@ const StravaActivityBrowser = memo(
         hideCloseButton={bulkOperation.isProcessing}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-3 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-divider">
+          <ModalHeader className="flex flex-col gap-3 bg-content1 border-b border-divider">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 shadow-lg">
+              <div className="p-3 rounded-xl bg-primary/20 border border-primary/20 shadow-lg">
                 <Activity className="h-7 w-7 text-primary" />
               </div>
               <div>
@@ -459,7 +459,7 @@ const StravaActivityBrowser = memo(
 
             {/* Enhanced Alpine Summary Stats */}
             {matchingSummary && (
-              <Card className="border-t-4 border-t-primary/60 bg-gradient-to-br from-background to-default/30 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border-t-4 border-t-primary/60 bg-background shadow-lg hover:shadow-xl transition-shadow">
                 <CardBody className="py-4">
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                     <div className="text-center group hover:scale-105 transition-transform">
@@ -514,8 +514,8 @@ const StravaActivityBrowser = memo(
 
           <ModalBody className="space-y-6">
             {/* Enhanced Alpine Filters and Controls */}
-            <Card className="border-l-4 border-l-secondary/60 bg-gradient-to-r from-secondary/5 to-transparent shadow-md hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3 bg-gradient-to-r from-secondary/10 to-transparent">
+            <Card className="border-l-4 border-l-secondary/60 bg-content1 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3 bg-content1">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
                   <div className="p-2 rounded-lg bg-secondary/20">
                     <Filter className="h-5 w-5 text-secondary" />

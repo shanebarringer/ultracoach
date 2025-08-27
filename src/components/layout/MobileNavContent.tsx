@@ -51,7 +51,7 @@ function MobileNavContent({
               size="sm"
               className="flex-shrink-0"
               classNames={{
-                base: 'bg-gradient-to-br from-primary to-secondary',
+                base: 'bg-primary',
                 name: 'text-white font-medium',
               }}
             />

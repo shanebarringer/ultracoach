@@ -1,19 +1,23 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
   MessageCircleIcon,
+  PlusIcon,
+  TargetIcon,
   TrendingUpIcon,
   UserIcon,
 } from 'lucide-react'
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 
 import { useRouter } from 'next/navigation'
 
+import { uiStateAtom } from '@/lib/atoms'
 import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -34,14 +38,16 @@ interface AthleteWeeklySectionProps {
   }
 }
 
-export default function AthleteWeeklySection({
+function AthleteWeeklySection({
   athlete,
   workouts,
   weekStart,
   coach: _coach,
 }: AthleteWeeklySectionProps) {
   const router = useRouter()
-  const [expandedNotes, setExpandedNotes] = useState(false)
+  const setUiState = useSetAtom(uiStateAtom)
+  const uiState = useAtomValue(uiStateAtom)
+  const expandedNotes = uiState.expandedNotes?.[athlete.id] || false
 
   // Organize workouts by day of week
   const weeklyWorkoutGrid = useMemo(() => {
@@ -110,12 +116,29 @@ export default function AthleteWeeklySection({
       }))
   }, [workouts])
 
-  const handleSendMessage = () => {
-    router.push(`/chat/${athlete.id}`)
-  }
-
   const handleViewProgress = () => {
     router.push(`/weekly-planner/${athlete.id}`)
+  }
+
+  const handleAddWorkout = () => {
+    setUiState(prev => ({
+      ...prev,
+      isAddWorkoutModalOpen: true,
+      selectedAthleteForWorkout: athlete,
+    }))
+  }
+
+  const handleQuickMessage = () => {
+    setUiState(prev => ({
+      ...prev,
+      isNewMessageModalOpen: true,
+      selectedConversationUserId: athlete.id,
+    }))
+  }
+
+  const handleViewTrainingPlan = () => {
+    // Navigate to training plans with athlete filter
+    router.push(`/training-plans?athlete=${athlete.id}`)
   }
 
   return (
@@ -124,11 +147,7 @@ export default function AthleteWeeklySection({
         <div className="flex items-center justify-between w-full">
           {/* Athlete Info */}
           <div className="flex items-center gap-4">
-            <Avatar
-              name={athlete.name || 'User'}
-              size="lg"
-              className="bg-linear-to-br from-primary to-secondary text-white"
-            />
+            <Avatar name={athlete.name || 'User'} size="lg" className="bg-primary text-white" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-xl font-semibold text-foreground">{athlete.name || 'User'}</h3>
@@ -174,53 +193,107 @@ export default function AthleteWeeklySection({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Primary Actions */}
             <Button
               size="sm"
               variant="flat"
               color="primary"
-              startContent={<UserIcon className="w-4 h-4" />}
-              onPress={handleViewProgress}
+              startContent={<PlusIcon className="w-4 h-4" />}
+              onPress={handleAddWorkout}
+              className="bg-primary/10 hover:bg-primary/20"
             >
-              View Progress
+              Add Workout
             </Button>
             <Button
               size="sm"
               variant="flat"
               color="success"
               startContent={<MessageCircleIcon className="w-4 h-4" />}
-              onPress={handleSendMessage}
+              onPress={handleQuickMessage}
+              className="bg-success/10 hover:bg-success/20"
             >
-              Message
+              Quick Message
+            </Button>
+
+            {/* Secondary Actions */}
+            <Button
+              size="sm"
+              variant="ghost"
+              color="secondary"
+              startContent={<TargetIcon className="w-4 h-4" />}
+              onPress={handleViewTrainingPlan}
+            >
+              Plan
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              color="default"
+              startContent={<UserIcon className="w-4 h-4" />}
+              onPress={handleViewProgress}
+            >
+              Progress
             </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardBody className="pt-0">
-        {/* Weekly Workout Grid */}
-        <div className="grid grid-cols-7 gap-2 mb-6">
-          {weeklyWorkoutGrid.map((dayData, index) => (
-            <div key={index} className="text-center">
-              {/* Day Header */}
-              <div className="mb-2">
-                <div className="text-sm font-medium text-foreground/70">{dayData.day}</div>
-                <div className="text-xs text-foreground/50">{dayData.date.getDate()}</div>
-              </div>
-
-              {/* Workout Cards for the Day */}
-              <div className="space-y-1">
-                {dayData.workouts.length === 0 ? (
-                  <div className="bg-default-100 rounded-lg p-2 min-h-[60px] flex items-center justify-center">
-                    <span className="text-xs text-foreground/40">Rest</span>
+        {/* Weekly Workout Grid - Horizontal Scroll on Mobile */}
+        <div className="mb-6">
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-2 lg:gap-3 min-w-[600px] lg:min-w-0">
+              {weeklyWorkoutGrid.map((dayData, index) => (
+                <div key={index} className="text-center">
+                  {/* Day Header - Compact */}
+                  <div className="mb-2">
+                    <div className="text-xs lg:text-sm font-medium text-foreground/70">
+                      {dayData.day.slice(0, 3)}
+                    </div>
+                    <div className="text-xs text-foreground/50">{dayData.date.getDate()}</div>
                   </div>
-                ) : (
-                  dayData.workouts.map(workout => (
-                    <WeeklyWorkoutCard key={workout.id} workout={workout} compact={true} />
-                  ))
-                )}
-              </div>
+
+                  {/* Workout Cards for the Day - More Compact */}
+                  <div className="space-y-1">
+                    {dayData.workouts.length === 0 ? (
+                      <div className="bg-default-100 rounded-lg p-1.5 lg:p-2 min-h-[50px] lg:min-h-[60px] flex items-center justify-center">
+                        <span className="text-xs text-foreground/40">Rest</span>
+                      </div>
+                    ) : (
+                      dayData.workouts.map(workout => (
+                        <WeeklyWorkoutCard
+                          key={workout.id}
+                          workout={workout}
+                          compact={true}
+                          showActions={true}
+                          onEdit={workout => {
+                            setUiState(prev => ({
+                              ...prev,
+                              isWorkoutLogModalOpen: true,
+                              selectedWorkout: workout,
+                            }))
+                          }}
+                          onMessage={workoutId => {
+                            setUiState(prev => ({
+                              ...prev,
+                              isNewMessageModalOpen: true,
+                              selectedConversationUserId: athlete.id,
+                              workoutContext: workoutId,
+                            }))
+                          }}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Mobile Instructions */}
+          <div className="lg:hidden mt-2 text-center text-xs text-foreground/50">
+            ←→ Swipe to view all days
+          </div>
         </div>
 
         {/* Athlete Notes Section */}
@@ -233,7 +306,19 @@ export default function AthleteWeeklySection({
                   Training Notes ({athleteNotes.length})
                 </span>
               </div>
-              <Button size="sm" variant="light" onClick={() => setExpandedNotes(!expandedNotes)}>
+              <Button
+                size="sm"
+                variant="light"
+                onClick={() =>
+                  setUiState(prev => ({
+                    ...prev,
+                    expandedNotes: {
+                      ...prev.expandedNotes,
+                      [athlete.id]: !expandedNotes,
+                    },
+                  }))
+                }
+              >
                 {expandedNotes ? 'Hide' : 'Show'} Notes
               </Button>
             </div>
@@ -281,3 +366,5 @@ export default function AthleteWeeklySection({
     </Card>
   )
 }
+
+export default memo(AthleteWeeklySection)

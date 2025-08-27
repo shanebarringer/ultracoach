@@ -210,7 +210,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       {/* Chat Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-linear-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white font-medium">
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-medium">
             {(recipient.full_name || 'U').charAt(0).toUpperCase()}
           </div>
           <div>

@@ -1,12 +1,16 @@
 'use client'
 
-import { Card, CardBody, Chip, Tooltip } from '@heroui/react'
+import { Button, Card, CardBody, Chip, Tooltip } from '@heroui/react'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { atomWithReset } from 'jotai/utils'
 import {
   ActivityIcon,
   AlertTriangleIcon,
   CheckCircleIcon,
   ClockIcon,
+  EditIcon,
   MapPinIcon,
+  MessageCircleIcon,
   XCircleIcon,
 } from 'lucide-react'
 
@@ -17,13 +21,30 @@ import type { Workout } from '@/lib/supabase'
 
 const logger = createLogger('WeeklyWorkoutCard')
 
+// Create atom for tracking hover state per workout
+const workoutHoverStateAtom = atomWithReset<Record<string, boolean>>({})
+
 interface WeeklyWorkoutCardProps {
   workout: Workout
   compact?: boolean
   onClick?: (workout: Workout) => void
+  onEdit?: (workout: Workout) => void
+  onMessage?: (workoutId: string) => void
+  showActions?: boolean
 }
 
-function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutCardProps) {
+function WeeklyWorkoutCard({
+  workout,
+  compact = false,
+  onClick,
+  onEdit,
+  onMessage,
+  showActions = false,
+}: WeeklyWorkoutCardProps) {
+  const hoverStates = useAtomValue(workoutHoverStateAtom)
+  const setHoverStates = useSetAtom(workoutHoverStateAtom)
+  const isHovered = hoverStates[workout.id] || false
+
   const handleClick = () => {
     if (onClick) {
       logger.debug('Weekly workout card clicked', {
@@ -32,6 +53,22 @@ function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutC
         type: workout.planned_type,
       })
       onClick(workout)
+    }
+  }
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onEdit) {
+      logger.debug('Edit workout clicked', { workoutId: workout.id })
+      onEdit(workout)
+    }
+  }
+
+  const handleMessage = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onMessage) {
+      logger.debug('Message workout clicked', { workoutId: workout.id })
+      onMessage(workout.id)
     }
   }
 
@@ -107,9 +144,9 @@ function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutC
     return (
       <Tooltip
         content={
-          <div className="p-2">
-            <div className="font-medium capitalize mb-1">{displayType}</div>
-            <div className="text-sm space-y-1">
+          <div className="p-2 max-w-64">
+            <div className="font-medium capitalize mb-1 text-sm">{displayType}</div>
+            <div className="text-xs space-y-1">
               {showDistance && (
                 <div className="flex items-center gap-1">
                   <MapPinIcon className="w-3 h-3" />
@@ -123,7 +160,7 @@ function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutC
                 </div>
               )}
               {workout.workout_notes && (
-                <div className="text-xs text-foreground/60 mt-1 max-w-48">
+                <div className="text-xs text-foreground/60 mt-1 line-clamp-3">
                   {workout.workout_notes}
                 </div>
               )}
@@ -131,11 +168,14 @@ function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutC
           </div>
         }
         placement="top"
+        showArrow
       >
         <Card
-          className={`${statusConfig.bgColor} ${statusConfig.borderColor} border-l-2 cursor-pointer hover:shadow-md transition-all duration-200 min-h-[60px]`}
+          className={`${statusConfig.bgColor} ${statusConfig.borderColor} border-l-2 cursor-pointer hover:shadow-md transition-all duration-200 min-h-[60px] relative group`}
           isPressable={!!onClick}
           onPress={onClick ? handleClick : undefined}
+          onMouseEnter={() => setHoverStates(prev => ({ ...prev, [workout.id]: true }))}
+          onMouseLeave={() => setHoverStates(prev => ({ ...prev, [workout.id]: false }))}
         >
           <CardBody className="p-2">
             <div className="flex items-center gap-1 mb-1">
@@ -163,6 +203,36 @@ function WeeklyWorkoutCard({ workout, compact = false, onClick }: WeeklyWorkoutC
                 </div>
               )}
             </div>
+
+            {/* Quick Actions on Hover */}
+            {showActions && isHovered && (
+              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center gap-1 rounded-lg">
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="primary"
+                    isIconOnly
+                    onClick={handleEdit}
+                    className="h-6 w-6 min-w-6"
+                  >
+                    <EditIcon className="w-3 h-3" />
+                  </Button>
+                )}
+                {onMessage && (
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="success"
+                    isIconOnly
+                    onClick={handleMessage}
+                    className="h-6 w-6 min-w-6"
+                  >
+                    <MessageCircleIcon className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            )}
           </CardBody>
         </Card>
       </Tooltip>
