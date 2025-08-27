@@ -232,7 +232,10 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
             <Zap className="h-12 w-12 text-warning mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">Connect Your Strava</h3>
             <p className="text-sm text-foreground-600 mb-4">{connectionInfo.description}</p>
-            <Button color="primary" onPress={handleConnectStrava} className="w-full">
+            <Button
+              onPress={handleConnectStrava}
+              className="w-full bg-[#FC4C02] hover:bg-[#E8440B] text-white font-medium"
+            >
               <ExternalLink className="h-4 w-4 mr-2" />
               Connect to Strava
             </Button>

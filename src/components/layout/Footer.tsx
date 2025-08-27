@@ -43,7 +43,7 @@ export default function Footer() {
           </div>
 
           <div className="text-center sm:text-right">
-            <p className="text-sm text-foreground/60">© 2024 UltraCoach</p>
+            <p className="text-sm text-foreground/60">© 2025 UltraCoach</p>
           </div>
         </div>
       </div>

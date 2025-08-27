@@ -238,7 +238,10 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                   <p className="text-sm text-foreground-600 mb-4">
                     Automatically sync your runs and compare planned vs actual workouts.
                   </p>
-                  <Button color="primary" onPress={handleConnectStrava} className="w-full">
+                  <Button
+                    onPress={handleConnectStrava}
+                    className="w-full bg-[#FC4C02] hover:bg-[#E8440B] text-white font-medium"
+                  >
                     Connect to Strava
                   </Button>
                 </CardBody>

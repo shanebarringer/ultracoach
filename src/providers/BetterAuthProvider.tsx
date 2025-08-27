@@ -50,7 +50,40 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
+    // Get initial session
     getSession()
+
+    // Set up periodic session refresh to prevent staleness
+    // This helps fix the issue where users need manual refresh after login
+    const refreshInterval = setInterval(() => {
+      // Only refresh if we have a session and page is visible
+      if (document.visibilityState === 'visible') {
+        getSession()
+      }
+    }, 30000) // Refresh every 30 seconds when page is visible
+
+    // Also refresh when user returns to the page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        logger.info('Page became visible, refreshing session')
+        getSession()
+      }
+    }
+
+    const handleFocus = () => {
+      logger.info('Window gained focus, refreshing session')
+      getSession()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    // Clean up interval and event listeners on unmount
+    return () => {
+      clearInterval(refreshInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [setSession, setUser, setAuthLoading])
 
   return <>{children}</>

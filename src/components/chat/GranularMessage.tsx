@@ -2,9 +2,9 @@
 
 import { useAtom } from 'jotai'
 
-import { memo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 
-import { workoutsAtom } from '@/lib/atoms'
+import { chatUiStateAtom, workoutLookupMapAtom } from '@/lib/atoms'
 import type { MessageWithUser } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'
@@ -36,7 +36,30 @@ const formatTime = (dateString: string) => {
 // Memoized individual message component - only re-renders when THIS message changes
 const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessageProps) => {
   const [message] = useAtom(messageAtom)
-  const [workouts] = useAtom(workoutsAtom)
+  const [workoutLookupMap] = useAtom(workoutLookupMapAtom)
+  const [, setChatUiState] = useAtom(chatUiStateAtom)
+
+  // Optimized workout lookup using Map for O(1) performance instead of array.find()
+  const linkedWorkout = useMemo(() => {
+    if (message.workout_id) {
+      return workoutLookupMap.get(message.workout_id) || null
+    }
+    return null
+  }, [workoutLookupMap, message.workout_id])
+
+  const handleViewWorkout = useCallback(
+    (workoutId: string) => {
+      const workout = workoutLookupMap.get(workoutId)
+      if (workout) {
+        setChatUiState(prev => ({
+          ...prev,
+          showWorkoutModal: true,
+          selectedChatWorkout: workout,
+        }))
+      }
+    },
+    [workoutLookupMap, setChatUiState]
+  )
 
   if (!message) return null
 
@@ -66,18 +89,16 @@ const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessagePro
         <div className="whitespace-pre-wrap break-words">{message.content}</div>
 
         {/* Workout context if linked */}
-        {message.workout_id &&
-          (() => {
-            const workout = workouts.find((w: { id: string }) => w.id === message.workout_id)
-            if (workout) {
-              return (
-                <div className="mt-2">
-                  <WorkoutContext workout={workout} linkType={'reference'} className="text-xs" />
-                </div>
-              )
-            }
-            return null
-          })()}
+        {linkedWorkout && (
+          <div className="mt-2">
+            <WorkoutContext
+              workout={linkedWorkout}
+              linkType={'reference'}
+              className="text-xs"
+              onViewWorkout={handleViewWorkout}
+            />
+          </div>
+        )}
 
         {/* Timestamp */}
         <div

@@ -11,18 +11,12 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 3. **Review this file** for project-specific guidance and context
 4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
 5. **Add newly discovered tasks** to TASKS.md when found during development
-6. Always use tslog library and utilities for logging (no console.log)
+6. **Always use tslog library and utilities for logging (no console.log)**
 7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
 ### MCP Instructions
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
-
-## 🎯 Next.js 15 App Router Patterns (✅ RESOLVED)
-
-### Static vs Dynamic Rendering Rules
-
-**✅ RESOLVED**: All authenticated routes now properly use Server/Client Component hybrid pattern with dynamic rendering. All routes show "ƒ (Server)" in build output confirming proper dynamic rendering for personalized content.
 
 ### Required Architecture Pattern
 
@@ -61,14 +55,6 @@ export default function PageClient({ user }) {
 - `/training-plans` - User training plans
 - `/profile` - User profile
 
-### Implementation Checklist
-
-- [ ] Add `await headers()` to ALL authenticated page components
-- [ ] Convert pure Client Components to Server/Client hybrid pattern
-- [ ] Use `getServerSession()` for server-side authentication
-- [ ] Pass user data as props to Client Components
-- [ ] Test that build output shows "λ (Server)" not "○ (Static)"
-
 ### Reference Documentation
 
 See `.context7-docs/nextjs/` for comprehensive guides:
@@ -96,7 +82,6 @@ pnpm db:fresh       # Reset and seed database
 
 # Production database operations
 pnpm prod:db:query "SELECT COUNT(*) FROM better_auth_users;"
-pnpm prod:db:seed   # Seed production database
 
 # Supabase CLI operations (requires password from .env.production)
 supabase db reset --linked     # Reset production database
@@ -108,45 +93,7 @@ supabase db dump --linked      # Dump production data
 
 **CRITICAL**: Production database password is stored in `.env.production`:
 
-```bash
-DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
-```
-
 **When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
-
-### ✅ RESOLVED: Previous Critical Issues (2025-08-22)
-
-#### **✅ RESOLVED: Messaging System SSL Connection Error**
-
-**FIXED**: SSL connection configuration in `src/lib/db.ts` now properly handles environment-specific settings
-
-**SOLUTION**: Added environment-based SSL configuration logic that disables SSL for local development and enables secure SSL for production environments
-
-**RESULT**: Messaging system fully functional, coach-runner communication restored, all relationship verification working properly
-
-#### **✅ RESOLVED: Training Plans Page Issues**
-
-**FIXED**: Duplicate div containers and race selection API authentication resolved
-**SOLUTION**: Proper Server/Client component structure and updated authentication patterns
-**RESULT**: Training plans page layout improved, race selection fully functional
-
-#### **✅ RESOLVED: Excessive Gradient Usage**
-
-**FIXED**: Cleaned up 34+ gradient usages throughout the application
-**SOLUTION**: Systematic removal of non-essential gradients while preserving Mountain Peak branding
-**RESULT**: Consistent Mountain Peak design aesthetic maintained, visual consistency improved
-
-#### **✅ RESOLVED: App Drawer Navigation**
-
-**FIXED**: Settings now available as separate navigation item in app drawer
-**SOLUTION**: Added Settings to navigation items hook with proper icon and description
-**RESULT**: Improved user accessibility and intuitive navigation experience
-
-### ✅ RESOLVED: Supabase Database Status
-
-**STATUS**: Database is active and accessible (unpaused by user)
-**MONITORING**: Health check endpoints and keep-alive system implemented
-**RESULT**: Production database operational, all API endpoints functional, no connectivity issues
 
 ## Git Commit Strategy:
 
@@ -166,6 +113,7 @@ DATABASE_PASSWORD=kgy7YEH5etg7abw!ztr
 
 - **Use Drizzle for ALL database operations** (migrations, queries, schema changes)
 - Environment variables are properly loaded from `.env.local` for local dev
+  - env vars for production can be found in vercel and `.env.production`
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
 
@@ -243,9 +191,7 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 
 **✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
 
-**Issue**: 500 errors were caused by improper JSON escaping in curl commands during testing, NOT actual Better Auth problems.
-
-**Solution**: Always use proper JSON formatting when testing APIs:
+**Always** use proper JSON formatting when testing APIs:
 
 ```bash
 # ✅ CORRECT - Use JSON file to avoid escaping issues
@@ -285,18 +231,12 @@ const result = await auth.api.signUpEmail({
 })
 ```
 
-**✅ UI CONSISTENCY**: Fixed header navigation button inconsistency
-
-- **Issue**: Sign In was a plain link while Sign Up was a proper Button component
-- **Solution**: Converted both desktop and mobile Sign In to use Button component with `variant="light"`
-
 ## 📊 Project Overview
 
 UltraCoach is a professional ultramarathon coaching platform built with Next.js 15, Supabase, BetterAuth, and Jotai state management. The platform supports race-centric training plans, proper periodization, coach-runner relationships, and real-time communication.
 
 ### Current Status (Updated: 2025-08-22)
 
-- **Current Focus**: UI/UX audit, workout functionality completion, and testing infrastructure
 - **Tech Stack**: Next.js 15, Better Auth, Drizzle ORM, HeroUI, Advanced Jotai state management with performance optimizations
 - **Developer Experience**: Pre-commit hooks prevent failed builds, automated TypeScript/ESLint validation, zero compilation errors, zero ESLint warnings, professional toast notifications
 - **Database**: ✅ **ACTIVE** - Comprehensive relationship system with proper constraints, type safety, production database operational
@@ -306,7 +246,6 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Recent Completion**: Critical bug fixes - messaging system SSL error, training plans layout, race selection API, gradient cleanup, navigation enhancement
 - **Major Achievement**: PR #36 created with comprehensive fixes, production-ready Strava integration, and Mountain Peak styling consistency
 - **Active Phase**: Phase 3 - UI/UX audit and quality assurance for production readiness
-- **✅ RESOLVED**: All critical system issues fixed, database active, messaging functional, production-ready state achieved
 
 ## 🏗️ Architecture & Technology
 
@@ -345,33 +284,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
   - **Phase 2**: splitAtom performance optimizations with granular component re-rendering
 - **Technical Infrastructure**: Complete Drizzle migration system, Better Auth session handling, comprehensive logging, type-safe operations
 - **Code Quality**: Zero TypeScript errors, zero ESLint warnings, production-ready codebase
-- **Current Priorities**: Beta readiness completed, comprehensive UI audit, Server/Client component architecture standardization
-
-### 🎉 Recent Achievements (2025-08-17)
-
-**Beta Readiness Completed:**
-
-- ✅ Authentication flow: Fixed and tested with Better Auth compatibility
-- ✅ Training plan templates: API endpoint created and working
-- ✅ Races infinite loop: Fixed with memoized logger pattern
-- ✅ Messages API 403 errors: Resolved with coach-runner relationships
-- ✅ Navbar flashing: Fixed with loading state checks
-- ✅ Playwright tests: All 22/22 tests passing
-- ✅ Type safety improvements: All ESLint warnings resolved
-- ✅ Script consolidation: Deprecated scripts removed, secure versions enhanced
-
-### 🎉 Major Achievement: Comprehensive Strava Integration (2025-08-21)
-
-**✅ COMPLETED - Full Production-Ready Strava Integration:**
-
-1. **OAuth Flow** - Seamless Strava account connection with proper redirects and session management
-2. **Activity Browsing** - Advanced modal with filtering, search, pagination, and Mountain Peak styling
-3. **Intelligent Workout Matching** - Confidence-based matching with discrepancy analysis and recommendations
-4. **Comprehensive Sync Operations** - Multiple sync strategies (bulk, enhanced, selective) with transaction safety
-5. **Dashboard Integration** - Strava widget on runner dashboard with real-time connection status
-6. **API Infrastructure** - 4 comprehensive endpoints for matching, syncing, merging, and enhanced operations
-7. **Mountain Peak Styling** - All components follow alpine design system with gradient backgrounds and professional UX
-8. **Advanced State Management** - Jotai patterns with loadable, refreshable, and action atoms for optimal performance
+- **Current Priorities**: Beta readiness completed, comprehensive UI audit
 
 **Next Phase Ready for:**
 
@@ -442,6 +355,4 @@ const userRole = (sessionData.user as any).role || 'runner'
 
 _This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._
 
-- @CLAUDE.md @TASKS.md @PLANNING.md
-
-- @CLAUDE.md
+- @CLAUDE.md @TASKS.md @PLANNING.md @COMPLETED_MILESTONES.md

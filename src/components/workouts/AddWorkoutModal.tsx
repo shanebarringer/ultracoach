@@ -13,7 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { commonToasts } from '@/lib/toast'
 
@@ -22,6 +22,7 @@ interface AddWorkoutModalProps {
   onClose: () => void
   onSuccess: () => void
   trainingPlanId: string
+  initialDate?: string // Pre-populate the date field
 }
 
 export default function AddWorkoutModal({
@@ -29,9 +30,10 @@ export default function AddWorkoutModal({
   onClose,
   onSuccess,
   trainingPlanId,
+  initialDate,
 }: AddWorkoutModalProps) {
   const [formData, setFormData] = useState({
-    date: '',
+    date: initialDate || '',
     plannedType: '',
     plannedDistance: '',
     plannedDuration: '',
@@ -53,6 +55,46 @@ export default function AddWorkoutModal({
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Update form date when initialDate prop changes
+  useEffect(() => {
+    if (initialDate && initialDate !== formData.date) {
+      setFormData(prev => ({ ...prev, date: initialDate }))
+    }
+  }, [initialDate, formData.date])
+
+  // Enhanced form reset logic to prevent stale error states
+  useEffect(() => {
+    if (isOpen) {
+      // Reset error state when opening modal
+      setError('')
+
+      // Reset form data completely when opening without initial date
+      if (!initialDate) {
+        setFormData({
+          date: '',
+          plannedType: '',
+          plannedDistance: '',
+          plannedDuration: '',
+          notes: '',
+          category: '' as
+            | 'easy'
+            | 'tempo'
+            | 'interval'
+            | 'long_run'
+            | 'race_simulation'
+            | 'recovery'
+            | 'strength'
+            | 'cross_training'
+            | 'rest'
+            | '',
+          intensity: '',
+          terrain: '' as 'road' | 'trail' | 'track' | 'treadmill' | '',
+          elevationGain: '',
+        })
+      }
+    }
+  }, [isOpen, initialDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,7 +166,7 @@ export default function AddWorkoutModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
       <ModalContent>
         <ModalHeader>Add Workout</ModalHeader>
         <form onSubmit={handleSubmit}>
@@ -150,8 +192,11 @@ export default function AddWorkoutModal({
               required
               selectedKeys={formData.plannedType ? [formData.plannedType] : []}
               onSelectionChange={keys => {
-                const selectedType = Array.from(keys).join('')
-                setFormData(prev => ({ ...prev, plannedType: selectedType }))
+                const keyArray = Array.from(keys)
+                if (keyArray.length > 0 && typeof keyArray[0] === 'string') {
+                  const selectedType = keyArray[0]
+                  setFormData(prev => ({ ...prev, plannedType: selectedType }))
+                }
               }}
               placeholder="Select type..."
               items={[
@@ -175,18 +220,21 @@ export default function AddWorkoutModal({
               name="category"
               selectedKeys={formData.category ? [formData.category] : []}
               onSelectionChange={keys => {
-                const selectedCategory = Array.from(keys).join('') as
-                  | 'easy'
-                  | 'tempo'
-                  | 'interval'
-                  | 'long_run'
-                  | 'race_simulation'
-                  | 'recovery'
-                  | 'strength'
-                  | 'cross_training'
-                  | 'rest'
-                  | ''
-                setFormData(prev => ({ ...prev, category: selectedCategory }))
+                const keyArray = Array.from(keys)
+                if (keyArray.length > 0 && typeof keyArray[0] === 'string') {
+                  const selectedCategory = keyArray[0] as
+                    | 'easy'
+                    | 'tempo'
+                    | 'interval'
+                    | 'long_run'
+                    | 'race_simulation'
+                    | 'recovery'
+                    | 'strength'
+                    | 'cross_training'
+                    | 'rest'
+                    | ''
+                  setFormData(prev => ({ ...prev, category: selectedCategory }))
+                }
               }}
               placeholder="Select category..."
               items={[
@@ -220,13 +268,16 @@ export default function AddWorkoutModal({
               name="terrain"
               selectedKeys={formData.terrain ? [formData.terrain] : []}
               onSelectionChange={keys => {
-                const selectedTerrain = Array.from(keys).join('') as
-                  | 'road'
-                  | 'trail'
-                  | 'track'
-                  | 'treadmill'
-                  | ''
-                setFormData(prev => ({ ...prev, terrain: selectedTerrain }))
+                const keyArray = Array.from(keys)
+                if (keyArray.length > 0 && typeof keyArray[0] === 'string') {
+                  const selectedTerrain = keyArray[0] as
+                    | 'road'
+                    | 'trail'
+                    | 'track'
+                    | 'treadmill'
+                    | ''
+                  setFormData(prev => ({ ...prev, terrain: selectedTerrain }))
+                }
               }}
               placeholder="Select terrain..."
               items={[

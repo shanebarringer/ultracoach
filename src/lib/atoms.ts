@@ -356,6 +356,18 @@ export const chatUiStateAtom = atom({
   sending: false,
   filterWorkoutId: null as string | null,
   showNewMessage: false,
+  showWorkoutModal: false,
+  selectedChatWorkout: null as Workout | null,
+})
+
+// Calendar UI state atom for modal management
+export const calendarUiStateAtom = atom({
+  showWorkoutModal: false,
+  selectedCalendarWorkout: null as Workout | null,
+  showAddWorkoutModal: false,
+  selectedDate: null as string | null, // ISO date string for selected calendar date
+  workoutsLoading: false,
+  selectedRunnerId: null as string | null, // For coach filtering
 })
 
 export const messageInputAtom = atom({
@@ -598,6 +610,20 @@ export const filteredWorkoutsAtom = atom(get => {
 
   if (filter === 'all') return workouts
   return workouts.filter(w => w.status === filter)
+})
+
+// Workout lookup map for O(1) performance instead of array filtering
+export const workoutLookupMapAtom = atom<Map<string, Workout>>(get => {
+  const workouts = get(workoutsAtom)
+  const lookupMap = new Map<string, Workout>()
+
+  if (workouts) {
+    workouts.forEach(workout => {
+      lookupMap.set(workout.id, workout)
+    })
+  }
+
+  return lookupMap
 })
 
 // Calendar-specific derived atoms for better performance

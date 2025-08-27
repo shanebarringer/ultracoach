@@ -630,7 +630,7 @@ export const SettingsPageSkeleton = () => (
 export const RacesPageSkeleton = () => (
   <div className="space-y-6">
     {/* Header Section */}
-    <Card className="bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
+    <Card className="bg-primary/10 border-l-4 border-l-primary">
       <CardBody className="p-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">

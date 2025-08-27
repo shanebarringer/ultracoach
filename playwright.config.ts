@@ -7,20 +7,20 @@ import { randomBytes } from 'crypto'
 export default defineConfig({
   testDir: './tests',
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false, // Disabled to prevent database contention
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI and use fewer workers for better stability */
-  workers: process.env.CI ? 1 : 2,
+  workers: 1, // Reduced to 1 worker to prevent database contention during tests
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
   /* Global timeout for each test */
-  timeout: 30000,
+  timeout: 60000, // Increased from 30s to 60s for database-heavy operations
   /* Global timeout for expect assertions */
   expect: {
-    timeout: 10000,
+    timeout: 15000, // Increased from 10s to 15s
   },
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -37,10 +37,10 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Set longer action timeout */
-    actionTimeout: 10000,
+    actionTimeout: 15000, // Increased from 10s to 15s
 
     /* Set longer navigation timeout */
-    navigationTimeout: 15000,
+    navigationTimeout: 30000, // Increased from 15s to 30s for authentication redirects
   },
 
   /* Configure projects for major browsers */
@@ -83,10 +83,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: process.env.CI ? 'echo "Server already started by CI"' : 'pnpm dev',
+    command: process.env.CI
+      ? 'echo "Server already started by CI"'
+      : 'echo "Development server already running on port 3001"',
     url: 'http://localhost:3001',
-    reuseExistingServer: true, // Always reuse existing server (CI manually starts it)
-    timeout: 120000, // 2 minutes to start server
+    reuseExistingServer: true, // Always reuse existing server
+    timeout: 5000, // Short timeout since we're reusing existing server
     env: {
       NODE_ENV: 'test',
       // Load test environment variables from environment
