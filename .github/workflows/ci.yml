@@ -54,8 +54,8 @@ jobs:
         run: pnpm test:run
 
   playwright:
-    # Run Playwright on main branch pushes and PR to fix/playwright-ci-tests branch
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request')
+    # Run Playwright on main branch pushes and PR to CI-related branches
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
@@ -150,7 +150,7 @@ jobs:
           exit 1
 
       - name: Create test users via Better Auth API
-        run: pnpm tsx scripts/create-test-users-via-api.ts
+        run: pnpm tsx scripts/create-playwright-test-users.ts
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
