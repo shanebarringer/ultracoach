@@ -1,19 +1,23 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
   MessageCircleIcon,
+  PlusIcon,
+  TargetIcon,
   TrendingUpIcon,
   UserIcon,
 } from 'lucide-react'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useRouter } from 'next/navigation'
 
+import { uiStateAtom } from '@/lib/atoms'
 import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -41,7 +45,9 @@ export default function AthleteWeeklySection({
   coach: _coach,
 }: AthleteWeeklySectionProps) {
   const router = useRouter()
-  const [expandedNotes, setExpandedNotes] = useState(false)
+  const setUiState = useSetAtom(uiStateAtom)
+  const uiState = useAtomValue(uiStateAtom)
+  const expandedNotes = uiState.expandedNotes?.[athlete.id] || false
 
   // Organize workouts by day of week
   const weeklyWorkoutGrid = useMemo(() => {
@@ -110,12 +116,29 @@ export default function AthleteWeeklySection({
       }))
   }, [workouts])
 
-  const handleSendMessage = () => {
-    router.push(`/chat/${athlete.id}`)
-  }
-
   const handleViewProgress = () => {
     router.push(`/weekly-planner/${athlete.id}`)
+  }
+
+  const handleAddWorkout = () => {
+    setUiState(prev => ({
+      ...prev,
+      isAddWorkoutModalOpen: true,
+      selectedAthleteForWorkout: athlete,
+    }))
+  }
+
+  const handleQuickMessage = () => {
+    setUiState(prev => ({
+      ...prev,
+      isNewMessageModalOpen: true,
+      selectedConversationUserId: athlete.id,
+    }))
+  }
+
+  const handleViewTrainingPlan = () => {
+    // Navigate to training plans with athlete filter
+    router.push(`/training-plans?athlete=${athlete.id}`)
   }
 
   return (
@@ -174,23 +197,46 @@ export default function AthleteWeeklySection({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* Primary Actions */}
             <Button
               size="sm"
               variant="flat"
               color="primary"
-              startContent={<UserIcon className="w-4 h-4" />}
-              onPress={handleViewProgress}
+              startContent={<PlusIcon className="w-4 h-4" />}
+              onPress={handleAddWorkout}
+              className="bg-primary/10 hover:bg-primary/20"
             >
-              View Progress
+              Add Workout
             </Button>
             <Button
               size="sm"
               variant="flat"
               color="success"
               startContent={<MessageCircleIcon className="w-4 h-4" />}
-              onPress={handleSendMessage}
+              onPress={handleQuickMessage}
+              className="bg-success/10 hover:bg-success/20"
             >
-              Message
+              Quick Message
+            </Button>
+
+            {/* Secondary Actions */}
+            <Button
+              size="sm"
+              variant="ghost"
+              color="secondary"
+              startContent={<TargetIcon className="w-4 h-4" />}
+              onPress={handleViewTrainingPlan}
+            >
+              Plan
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              color="default"
+              startContent={<UserIcon className="w-4 h-4" />}
+              onPress={handleViewProgress}
+            >
+              Progress
             </Button>
           </div>
         </div>
@@ -215,7 +261,27 @@ export default function AthleteWeeklySection({
                   </div>
                 ) : (
                   dayData.workouts.map(workout => (
-                    <WeeklyWorkoutCard key={workout.id} workout={workout} compact={true} />
+                    <WeeklyWorkoutCard
+                      key={workout.id}
+                      workout={workout}
+                      compact={true}
+                      showActions={true}
+                      onEdit={workout => {
+                        setUiState(prev => ({
+                          ...prev,
+                          isWorkoutLogModalOpen: true,
+                          selectedWorkout: workout,
+                        }))
+                      }}
+                      onMessage={workoutId => {
+                        setUiState(prev => ({
+                          ...prev,
+                          isNewMessageModalOpen: true,
+                          selectedConversationUserId: athlete.id,
+                          workoutContext: workoutId,
+                        }))
+                      }}
+                    />
                   ))
                 )}
               </div>
@@ -233,7 +299,19 @@ export default function AthleteWeeklySection({
                   Training Notes ({athleteNotes.length})
                 </span>
               </div>
-              <Button size="sm" variant="light" onClick={() => setExpandedNotes(!expandedNotes)}>
+              <Button
+                size="sm"
+                variant="light"
+                onClick={() =>
+                  setUiState(prev => ({
+                    ...prev,
+                    expandedNotes: {
+                      ...prev.expandedNotes,
+                      [athlete.id]: !expandedNotes,
+                    },
+                  }))
+                }
+              >
                 {expandedNotes ? 'Hide' : 'Show'} Notes
               </Button>
             </div>

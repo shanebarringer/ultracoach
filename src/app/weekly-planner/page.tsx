@@ -1,12 +1,22 @@
 'use client'
 
-import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
+import {
+  Avatar,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Select,
+  SelectItem,
+  Spinner,
+} from '@heroui/react'
 // Removed classNames import since we're using dynamic routes
 import { useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
 import { CalendarDaysIcon, FlagIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -22,11 +32,19 @@ export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
-  // Remove selectedRunner since we're now using dynamic routes
+  const [viewMode, setViewMode] = useState<'grid' | 'dropdown'>('grid')
+
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
   const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
   const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
+
+  const handleRunnerSelection = (keys: 'all' | Set<React.Key>) => {
+    if (keys !== 'all' && keys.size > 0) {
+      const selectedRunnerId = Array.from(keys)[0] as string
+      router.push(`/weekly-planner/${selectedRunnerId}`)
+    }
+  }
 
   useEffect(() => {
     if (status === 'loading') return
@@ -86,7 +104,7 @@ export default function WeeklyPlannerPage() {
         {/* Consolidated Header */}
         <Card className="mb-6 bg-content1 border-l-4 border-l-primary">
           <CardHeader>
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full mb-4">
               <div className="flex items-center gap-3">
                 <CalendarDaysIcon className="w-8 h-8 text-primary" />
                 <div>
@@ -105,6 +123,55 @@ export default function WeeklyPlannerPage() {
                 </span>
               </div>
             </div>
+
+            {/* View Mode Toggle and Quick Selection */}
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant={viewMode === 'grid' ? 'solid' : 'flat'}
+                  color="secondary"
+                  onClick={() => setViewMode('grid')}
+                >
+                  Grid View
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === 'dropdown' ? 'solid' : 'flat'}
+                  color="secondary"
+                  onClick={() => setViewMode('dropdown')}
+                >
+                  Quick Select
+                </Button>
+              </div>
+
+              {viewMode === 'dropdown' && runners.length > 0 && (
+                <Select
+                  placeholder="Choose your training partner..."
+                  className="max-w-sm"
+                  variant="bordered"
+                  size="sm"
+                  onSelectionChange={handleRunnerSelection}
+                  startContent={<UsersIcon className="w-4 h-4" />}
+                >
+                  {runners.map((runner: User) => (
+                    <SelectItem key={runner.id} textValue={runner.full_name || runner.email}>
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          name={runner.full_name || 'User'}
+                          size="sm"
+                          className="bg-primary text-white"
+                        />
+                        <div>
+                          <div className="font-medium">{runner.full_name || 'User'}</div>
+                          <div className="text-xs text-foreground/60">{runner.email}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
+            </div>
           </CardHeader>
           <CardBody>
             {loading ? (
@@ -119,6 +186,17 @@ export default function WeeklyPlannerPage() {
                 <h3 className="text-lg font-semibold text-foreground mb-2">No Training Partners</h3>
                 <p className="text-foreground/70">
                   Create training plans to connect with runners and start expedition planning.
+                </p>
+              </div>
+            ) : viewMode === 'dropdown' ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <UsersIcon className="w-8 h-8 text-primary/50" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Quick Selection Mode</h3>
+                <p className="text-foreground/70">
+                  Use the dropdown above to quickly jump to any training partner&apos;s weekly
+                  planner.
                 </p>
               </div>
             ) : (
