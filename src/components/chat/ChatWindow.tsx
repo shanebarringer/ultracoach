@@ -31,10 +31,6 @@ const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogMo
     </div>
   ),
   ssr: false,
-  // Add error boundary for failed dynamic imports
-  onError: error => {
-    logger.error('Failed to load WorkoutLogModal component:', error)
-  },
 })
 
 const logger = createLogger('ChatWindow')

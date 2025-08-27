@@ -73,11 +73,10 @@ export default function AddWorkoutModal({
       if (!initialDate) {
         setFormData({
           date: '',
-          name: '',
-          description: '',
           plannedType: '',
           plannedDistance: '',
           plannedDuration: '',
+          notes: '',
           category: '' as
             | 'easy'
             | 'tempo'

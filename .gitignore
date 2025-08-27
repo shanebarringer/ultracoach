@@ -52,3 +52,8 @@ test-results/
 playwright-report/
 debug-*.png
 supabase/migrations_old/
+
+#mcp config
+.mcp.json
+
+dev.pid
