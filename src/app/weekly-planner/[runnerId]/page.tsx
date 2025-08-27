@@ -7,7 +7,6 @@ import {
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ClockIcon,
   FlagIcon,
   TrendingUpIcon,
 } from 'lucide-react'
@@ -171,20 +170,21 @@ export default function WeeklyPlannerRunnerPage() {
   return (
     <Layout>
       <div className="max-w-[1600px] mx-auto px-8 py-8">
-        {/* Hero Section */}
-        <Card className="mb-8 bg-linear-to-br from-primary/10 via-secondary/5 to-primary/10 border-l-4 border-l-primary">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
+        {/* Consolidated Header */}
+        <Card className="mb-6 bg-content1 border-l-4 border-l-primary">
+          <CardHeader className="pb-4">
+            {/* Title and Actions Row */}
+            <div className="flex items-center justify-between w-full mb-4">
               <div className="flex items-center gap-3">
                 <CalendarDaysIcon className="w-8 h-8 text-primary" />
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold text-foreground">
                     🏔️{' '}
                     {session?.user?.role === 'runner'
                       ? 'My Training Schedule'
                       : 'Weekly Expedition Planner'}
                   </h1>
-                  <p className="text-foreground/70 mt-1 text-lg">
+                  <p className="text-foreground/70 text-sm">
                     {session?.user?.role === 'runner'
                       ? 'Your weekly training overview'
                       : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
@@ -194,96 +194,85 @@ export default function WeeklyPlannerRunnerPage() {
               {session?.user?.role === 'coach' && (
                 <Button
                   variant="flat"
+                  size="sm"
                   onClick={() => router.push('/weekly-planner')}
-                  className="bg-secondary/20 text-secondary hover:bg-secondary/30"
+                  className="text-secondary hover:bg-secondary/20"
                 >
                   Change Runner
                 </Button>
               )}
             </div>
-          </CardHeader>
-        </Card>
 
-        {/* Runner Info */}
-        <Card className="mb-6 bg-linear-to-br from-background to-secondary/5 border-t-4 border-t-secondary">
-          <CardBody className="p-6">
-            <div className="flex items-center gap-4">
-              <Avatar
-                name={selectedRunner.full_name || 'User'}
-                size="lg"
-                className="bg-linear-to-br from-primary to-secondary text-white"
-              />
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-foreground">
-                  {selectedRunner.full_name || 'User'}
-                </h2>
-                <p className="text-foreground/70">{selectedRunner.email}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color="success"
-                    startContent={<TrendingUpIcon className="w-3 h-3" />}
-                  >
-                    Active
-                  </Chip>
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color="secondary"
-                    startContent={<FlagIcon className="w-3 h-3" />}
-                  >
-                    Training
-                  </Chip>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Week Navigation */}
-        <Card className="mb-6 bg-linear-to-br from-warning/10 to-primary/10 border-t-4 border-t-warning">
-          <CardHeader>
-            <div className="flex items-center justify-between w-full">
+            {/* Runner Info and Week Navigation Row */}
+            <div className="flex items-center justify-between w-full gap-4">
+              {/* Runner Info - Compact */}
               <div className="flex items-center gap-3">
-                <ClockIcon className="w-6 h-6 text-warning" />
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    Training Week: {formatWeekRange(currentWeek)}
-                  </h2>
-                  <p className="text-foreground/70 text-sm">Strategic expedition planning</p>
+                <Avatar
+                  name={selectedRunner.full_name || 'User'}
+                  size="md"
+                  className="bg-primary text-white"
+                />
+                <div className="flex-1">
+                  <p className="font-medium text-foreground text-sm">
+                    {selectedRunner.full_name || 'User'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color="success"
+                      startContent={<TrendingUpIcon className="w-3 h-3" />}
+                    >
+                      Active
+                    </Chip>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color="secondary"
+                      startContent={<FlagIcon className="w-3 h-3" />}
+                    >
+                      Training
+                    </Chip>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateWeek('prev')}
-                  className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
-                >
-                  <ChevronLeftIcon className="w-5 h-5" />
-                </Button>
-
-                <Button
-                  variant="flat"
-                  size="sm"
-                  onClick={goToCurrentWeek}
-                  className="bg-warning/20 text-warning hover:bg-warning/30"
-                >
-                  Current Week
-                </Button>
-
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateWeek('next')}
-                  className="text-foreground/70 hover:text-foreground hover:bg-warning/20"
-                >
-                  <ChevronRightIcon className="w-5 h-5" />
-                </Button>
+              {/* Week Navigation - Compact */}
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="font-semibold text-foreground text-sm">
+                    {formatWeekRange(currentWeek)}
+                  </p>
+                  <p className="text-foreground/50 text-xs">Training Week</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWeek('prev')}
+                    className="text-foreground/70 hover:text-foreground"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="flat"
+                    size="sm"
+                    onClick={goToCurrentWeek}
+                    className="text-warning px-3"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateWeek('next')}
+                    className="text-foreground/70 hover:text-foreground"
+                  >
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>

@@ -4,14 +4,7 @@ import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@hero
 // Removed classNames import since we're using dynamic routes
 import { useAtomValue } from 'jotai'
 import { loadable } from 'jotai/utils'
-import {
-  CalendarDaysIcon,
-  FlagIcon,
-  MapPinIcon,
-  RouteIcon,
-  TrendingUpIcon,
-  UsersIcon,
-} from 'lucide-react'
+import { CalendarDaysIcon, FlagIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 
 import { useEffect } from 'react'
 
@@ -90,35 +83,27 @@ export default function WeeklyPlannerPage() {
   return (
     <Layout>
       <div className="max-w-[1600px] mx-auto px-8 py-8">
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Hero Section */}
-          <Card className="lg:col-span-3 bg-content1 border-l-4 border-l-primary">
-            <CardHeader>
+        {/* Consolidated Header */}
+        <Card className="mb-6 bg-content1 border-l-4 border-l-primary">
+          <CardHeader>
+            <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <CalendarDaysIcon className="w-8 h-8 text-primary" />
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                  <h1 className="text-2xl font-bold text-foreground">
                     🏔️ Weekly Expedition Planner
                   </h1>
-                  <p className="text-foreground/70 mt-1 text-base lg:text-lg">
-                    Architect your team&apos;s weekly training summit - strategic workout planning
-                    for peak performance
+                  <p className="text-foreground/70 text-sm">
+                    Select a training partner to architect their weekly summit plan
                   </p>
                 </div>
               </div>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Runner Selection */}
-        <Card className="mb-6 bg-content1 border-t-4 border-t-secondary">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <UsersIcon className="w-6 h-6 text-secondary" />
-              <h2 className="text-xl font-semibold text-foreground">
-                Select Your Training Partner
-              </h2>
+              <div className="flex items-center gap-2">
+                <UsersIcon className="w-5 h-5 text-secondary" />
+                <span className="text-sm font-medium text-foreground/70">
+                  {runners.length} Training Partner{runners.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
           </CardHeader>
           <CardBody>
@@ -128,9 +113,12 @@ export default function WeeklyPlannerPage() {
               </div>
             ) : runners.length === 0 ? (
               <div className="text-center py-8">
-                <RouteIcon className="mx-auto w-12 h-12 text-default-400 mb-4" />
-                <p className="text-foreground/70 text-lg">
-                  No training partners found. Create training plans to connect with runners.
+                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <UsersIcon className="w-8 h-8 text-secondary/50" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Training Partners</h3>
+                <p className="text-foreground/70">
+                  Create training plans to connect with runners and start expedition planning.
                 </p>
               </div>
             ) : (
@@ -140,7 +128,7 @@ export default function WeeklyPlannerPage() {
                     key={runner.id}
                     isPressable
                     onPress={() => router.push(`/weekly-planner/${runner.id}`)}
-                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border-l-4 border-l-transparent"
+                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
                   >
                     <CardBody className="p-4">
                       <div className="flex items-center gap-3">
@@ -181,24 +169,6 @@ export default function WeeklyPlannerPage() {
             )}
           </CardBody>
         </Card>
-
-        {!loading && runners.length > 0 && (
-          <Card className="bg-content1 border-t-4 border-t-default">
-            <CardBody className="text-center py-12">
-              <CalendarDaysIcon className="mx-auto w-16 h-16 text-default-400 mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Ready to Plan Your Next Expedition?
-              </h3>
-              <p className="text-foreground/70 text-lg mb-4">
-                Select a training partner from above to architect their weekly summit plan.
-              </p>
-              <div className="flex items-center justify-center gap-2 text-sm text-foreground/60">
-                <MapPinIcon className="w-4 h-4" />
-                <span>Strategic weekly planning for peak performance</span>
-              </div>
-            </CardBody>
-          </Card>
-        )}
       </div>
     </Layout>
   )
