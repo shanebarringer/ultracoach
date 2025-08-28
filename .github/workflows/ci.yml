@@ -78,8 +78,8 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
       NODE_ENV: test
 
-      # Supabase configuration for testing (use DATABASE_URL instead)
-      NEXT_PUBLIC_SUPABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+      # Supabase configuration for testing (use mock values since we use direct database)
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
 
@@ -156,6 +156,15 @@ jobs:
           done
           echo "App failed to start!"
           exit 1
+
+      - name: Debug CI environment before user creation
+        run: pnpm tsx scripts/debug-ci-environment.ts
+        env:
+          # Ensure test database is used
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: http://localhost:3001
 
       - name: Create test users via Better Auth API
         run: pnpm tsx scripts/create-playwright-test-users.ts
