@@ -3,13 +3,13 @@ import { type Page, expect } from '@playwright/test'
 // Test user credentials (consistent with comprehensive seed script)
 export const TEST_USERS = {
   coach: {
-    email: 'sarah@ultracoach.dev',
+    email: 'marcus@ultracoach.dev',
     password: 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   coach2: {
-    email: 'marcus@ultracoach.dev',
+    email: 'emma@ultracoach.dev',
     password: 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
@@ -47,16 +47,17 @@ export async function loginAsUser(page: Page, userType: TestUserType) {
   await page.fill('input[type="email"]', user.email)
   await page.fill('input[type="password"]', user.password)
 
-  // Submit form
-  await page.click('button[type="submit"]')
+  // Submit form using keyboard to avoid portal interference
+  await page.focus('input[type="password"]') // Ensure password field has focus
+  await page.keyboard.press('Enter') // Submit form from password field
 
-  // Wait for successful redirect - longer timeout for coach dashboard compilation
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: 20000 })
+  // Wait for successful redirect - longer timeout for dashboard compilation and potential errors
+  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
 
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   if (await loadingText.isVisible()) {
-    await expect(loadingText).not.toBeVisible({ timeout: 20000 })
+    await expect(loadingText).not.toBeVisible({ timeout: 30000 })
   }
 
   // Verify we're logged in by checking that we're not redirected back to signin

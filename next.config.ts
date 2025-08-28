@@ -4,8 +4,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   webpack: (config, { dev, isServer }) => {
-    // Add the code-inspector-plugin
-    if (dev && !isServer) {
+    // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
+    if (dev && !isServer && process.env.NODE_ENV !== 'test') {
       config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
     }
 
