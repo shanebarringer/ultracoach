@@ -177,13 +177,13 @@ jobs:
           echo "Pre-warming critical API endpoints..."
           # Pre-compile slow API endpoints by making requests to them
           # This prevents 80+ second compilation delays during tests
-          
+
           # Authenticate as test runner to get session cookie
           echo "Authenticating as test runner..."
           COOKIE=$(curl -s -i -X POST http://localhost:3001/api/auth/sign-in/email \
             -H "Content-Type: application/json" \
             -d '{"email":"alex.rivera@ultracoach.dev","password":"RunnerPass2025!"}' | grep -i set-cookie | head -1 | cut -d' ' -f2)
-          
+
           if [ ! -z "$COOKIE" ]; then
             echo "Authentication successful, pre-warming endpoints..."
             
@@ -204,7 +204,7 @@ jobs:
         run: pnpm exec playwright install chromium --with-deps
 
       - name: Run Playwright tests
-        run: pnpm test:e2e
+        run: npx playwright test tests/auth.spec.ts
         env:
           # Use test database for E2E tests
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
