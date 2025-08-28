@@ -125,17 +125,14 @@ jobs:
           done
           echo "Database schema setup complete"
 
-      - name: Build Next.js app
-        run: pnpm build
-
-      - name: Start Next.js app in background
+      - name: Start Next.js app in development mode
         run: |
-          pnpm start &
+          pnpm dev &
           echo $! > .next_pid
         env:
           # Ensure all environment variables are passed to the app
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
-          NODE_ENV: production
+          NODE_ENV: test
           PORT: 3001
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
