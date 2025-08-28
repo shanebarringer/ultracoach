@@ -172,6 +172,34 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
 
+      - name: Pre-warm API endpoints to prevent test timeouts
+        run: |
+          echo "Pre-warming critical API endpoints..."
+          # Pre-compile slow API endpoints by making requests to them
+          # This prevents 80+ second compilation delays during tests
+          
+          # Authenticate as test runner to get session cookie
+          echo "Authenticating as test runner..."
+          COOKIE=$(curl -s -i -X POST http://localhost:3001/api/auth/sign-in/email \
+            -H "Content-Type: application/json" \
+            -d '{"email":"alex.rivera@ultracoach.dev","password":"RunnerPass2025!"}' | grep -i set-cookie | head -1 | cut -d' ' -f2)
+          
+          if [ ! -z "$COOKIE" ]; then
+            echo "Authentication successful, pre-warming endpoints..."
+            
+            # Pre-warm coach-runners API (this one takes 80+ seconds on cold start)
+            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/coach-runners >/dev/null || echo "Warning: coach-runners API pre-warm failed"
+            
+            # Pre-warm other critical APIs
+            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/workouts >/dev/null || echo "Warning: workouts API pre-warm failed"
+            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/training-plans >/dev/null || echo "Warning: training-plans API pre-warm failed"
+            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/notifications >/dev/null || echo "Warning: notifications API pre-warm failed"
+            
+            echo "✅ API endpoints pre-warmed successfully"
+          else
+            echo "⚠️ Could not authenticate for API pre-warming, tests may be slower"
+          fi
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
