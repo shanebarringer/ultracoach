@@ -126,34 +126,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Install PostgreSQL client tools
+      - name: Set up test database schema with Drizzle
         run: |
-          echo "Installing PostgreSQL client tools..."
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-          # Verify installation
-          psql --version
-          echo "PostgreSQL client tools installed successfully"
-
-      - name: Set up test database schema
-        run: |
-          echo "Setting up test database schema..."
-          # Verify psql is available
-          which psql || (echo "ERROR: psql command not found" && exit 1)
-
-          # Test database connection
-          PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -c "SELECT version();" || (echo "ERROR: Cannot connect to database" && exit 1)
-
-          # Apply all database migrations in order
-          for migration in supabase/migrations/*.sql; do
-            if [ -f "$migration" ]; then
-              echo "Applying migration: $migration"
-              PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration" || (echo "ERROR: Failed to apply migration $migration" && exit 1)
-            else
-              echo "WARNING: Migration file not found: $migration"
-            fi
-          done
-          echo "Database schema setup complete"
+          echo "Setting up test database schema with Drizzle..."
+          # Use Drizzle to push the schema directly from our schema definition
+          pnpm drizzle-kit push --verbose
+          echo "Database schema setup complete with Drizzle"
 
       - name: Start Next.js app in development mode
         run: |
@@ -321,34 +299,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Install PostgreSQL client tools
+      - name: Set up shard database schema with Drizzle
         run: |
-          echo "Installing PostgreSQL client tools for shard..."
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-          # Verify installation
-          psql --version
-          echo "PostgreSQL client tools installed successfully"
-
-      - name: Set up test database schema
-        run: |
-          echo "Setting up shard database schema..."
-          # Verify psql is available
-          which psql || (echo "ERROR: psql command not found" && exit 1)
-
-          # Test database connection
-          PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -c "SELECT version();" || (echo "ERROR: Cannot connect to shard database" && exit 1)
-
-          # Apply all database migrations in order
-          for migration in supabase/migrations/*.sql; do
-            if [ -f "$migration" ]; then
-              echo "Applying migration: $migration"
-              PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -f "$migration" || (echo "ERROR: Failed to apply migration $migration" && exit 1)
-            else
-              echo "WARNING: Migration file not found: $migration"
-            fi
-          done
-          echo "Shard database schema setup complete"
+          echo "Setting up shard database schema with Drizzle..."
+          # Use Drizzle to push the schema to the shard database
+          pnpm drizzle-kit push --verbose
+          echo "Shard database schema setup complete with Drizzle"
 
       - name: Start Next.js app
         run: |
