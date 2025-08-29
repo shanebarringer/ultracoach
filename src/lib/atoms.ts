@@ -54,6 +54,113 @@ export const trainingPlansAtom = atom<TrainingPlan[]>([])
 export const runnersAtom = atom<User[]>([])
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
 
+// Workout completion atoms
+export const completeWorkoutAtom = atom(
+  null,
+  async (get, set, { workoutId, data }: { workoutId: string; data?: Record<string, unknown> }) => {
+    const logger = createLogger('CompleteWorkoutAtom')
+
+    try {
+      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data || {}),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to complete workout')
+      }
+
+      const updatedWorkout = await response.json()
+
+      // Update the workouts atom with the new status
+      const workouts = get(workoutsAtom)
+      const updatedWorkouts = workouts.map((w: Workout) =>
+        w.id === workoutId ? { ...w, ...updatedWorkout } : w
+      )
+      set(workoutsAtom, updatedWorkouts)
+
+      // Trigger refresh for any dependent atoms
+      set(workoutsRefreshTriggerAtom, Date.now())
+
+      logger.info('Workout completed successfully', { workoutId })
+      return updatedWorkout
+    } catch (error) {
+      logger.error('Error completing workout', error)
+      throw error
+    }
+  }
+)
+
+export const logWorkoutDetailsAtom = atom(
+  null,
+  async (get, set, { workoutId, data }: { workoutId: string; data: Record<string, unknown> }) => {
+    const logger = createLogger('LogWorkoutDetailsAtom')
+
+    try {
+      const response = await fetch(`/api/workouts/${workoutId}/log`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to log workout details')
+      }
+
+      const updatedWorkout = await response.json()
+
+      // Update the workouts atom with the new details
+      const workouts = get(workoutsAtom)
+      const updatedWorkouts = workouts.map((w: Workout) =>
+        w.id === workoutId ? { ...w, ...updatedWorkout } : w
+      )
+      set(workoutsAtom, updatedWorkouts)
+
+      // Trigger refresh for any dependent atoms
+      set(workoutsRefreshTriggerAtom, Date.now())
+
+      logger.info('Workout details logged successfully', { workoutId })
+      return updatedWorkout
+    } catch (error) {
+      logger.error('Error logging workout details', error)
+      throw error
+    }
+  }
+)
+
+export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) => {
+  const logger = createLogger('SkipWorkoutAtom')
+
+  try {
+    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to skip workout')
+    }
+
+    const updatedWorkout = await response.json()
+
+    // Update the workouts atom with the new status
+    const workouts = get(workoutsAtom)
+    const updatedWorkouts = workouts.map((w: Workout) =>
+      w.id === workoutId ? { ...w, ...updatedWorkout } : w
+    )
+    set(workoutsAtom, updatedWorkouts)
+
+    // Trigger refresh for any dependent atoms
+    set(workoutsRefreshTriggerAtom, Date.now())
+
+    logger.info('Workout skipped successfully', { workoutId })
+    return updatedWorkout
+  } catch (error) {
+    logger.error('Error skipping workout', error)
+    throw error
+  }
+})
+
 // Races atom for coach races management
 export const racesAtom = atomWithRefresh(async () => {
   // Only execute on client-side to prevent build-time fetch errors
