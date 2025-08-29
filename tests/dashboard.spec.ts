@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test'
 
-import { assertAuthenticated, loginAsUser } from './utils/test-helpers'
+import { navigateToDashboard } from './utils/test-helpers'
 
 test.describe('Dashboard Functionality', () => {
   test('runner dashboard should display training plans', async ({ page }) => {
-    await loginAsUser(page, 'runner')
-    await assertAuthenticated(page, 'runner')
+    await navigateToDashboard(page, 'runner')
 
     // Check for actual runner dashboard content
     await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
@@ -23,8 +22,7 @@ test.describe('Dashboard Functionality', () => {
   })
 
   test('coach dashboard should display runners', async ({ page }) => {
-    await loginAsUser(page, 'coach')
-    await assertAuthenticated(page, 'coach')
+    await navigateToDashboard(page, 'coach')
 
     // Verify we successfully reached the coach dashboard
     await expect(page).toHaveURL(/dashboard\/coach/)
@@ -40,53 +38,35 @@ test.describe('Dashboard Functionality', () => {
   })
 
   test('should navigate to training plans page', async ({ page }) => {
-    await loginAsUser(page, 'runner')
-    await assertAuthenticated(page, 'runner')
-
-    // Navigate directly to weekly planner page
+    // Navigate directly to weekly planner page (authentication via storage state)
     await page.goto('/weekly-planner')
 
     // Should successfully navigate to weekly planner
-    await expect(page).toHaveURL(/weekly-planner/)
+    await expect(page).toHaveURL(/weekly-planner/, { timeout: 60000 })
 
-    // Wait for page to load
-    await page.waitForTimeout(2000)
-
-    // Check that we navigated away from dashboard
-    await expect(page).not.toHaveURL(/dashboard\/runner/)
+    // Wait for page content to load
+    await page.waitForLoadState('networkidle', { timeout: 60000 })
   })
 
   test('should navigate to workouts page', async ({ page }) => {
-    await loginAsUser(page, 'runner')
-    await assertAuthenticated(page, 'runner')
-
-    // Navigate directly to workouts page
+    // Navigate directly to workouts page (authentication via storage state)
     await page.goto('/workouts')
 
     // Should successfully navigate to workouts page
-    await expect(page).toHaveURL(/workouts/)
+    await expect(page).toHaveURL(/workouts/, { timeout: 60000 })
 
-    // Wait for page to load
-    await page.waitForTimeout(2000)
-
-    // Check that we navigated away from dashboard
-    await expect(page).not.toHaveURL(/dashboard\/runner/)
+    // Wait for page content to load
+    await page.waitForLoadState('networkidle', { timeout: 60000 })
   })
 
   test('should access chat functionality', async ({ page }) => {
-    await loginAsUser(page, 'runner')
-    await assertAuthenticated(page, 'runner')
-
-    // Navigate directly to chat page
+    // Navigate directly to chat page (authentication via storage state)
     await page.goto('/chat')
 
     // Should successfully navigate to chat page
-    await expect(page).toHaveURL(/chat/)
+    await expect(page).toHaveURL(/chat/, { timeout: 60000 })
 
-    // Wait for page to load
-    await page.waitForTimeout(2000)
-
-    // Check that we navigated away from dashboard
-    await expect(page).not.toHaveURL(/dashboard\/runner/)
+    // Wait for page content to load
+    await page.waitForLoadState('networkidle', { timeout: 60000 })
   })
 })

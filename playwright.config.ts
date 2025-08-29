@@ -13,14 +13,14 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Enable file-level parallelization for faster execution */
-  workers: process.env.CI ? 3 : 2, // CI: 3 workers, Local: 2 workers (safe parallel execution)
+  workers: process.env.CI ? 2 : 1, // Reduce workers for CI stability
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['github'], ['html']] : 'html',
+  reporter: process.env.CI ? [['github'], ['html'], ['blob']] : 'html',
   /* Global timeout for each test */
-  timeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s for Next.js compilation
+  timeout: process.env.CI ? 120000 : 60000, // CI: 2min, Local: 1min for compilation
   /* Global timeout for expect assertions */
   expect: {
-    timeout: process.env.CI ? 30000 : 15000, // CI: 30s, Local: 15s for dynamic content loading
+    timeout: process.env.CI ? 60000 : 30000, // CI: 1min, Local: 30s for loading
   },
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -36,23 +36,35 @@ export default defineConfig({
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
 
-    /* Set longer action timeout */
-    actionTimeout: 10000, // Increased for network-dependent actions
+    /* Set longer action timeout for CI compilation delays */
+    actionTimeout: process.env.CI ? 30000 : 15000, // CI: 30s, Local: 15s
 
-    /* Set longer navigation timeout */
-    navigationTimeout: 15000, // Increased for Next.js compilation
+    /* Set longer navigation timeout for CI compilation delays */
+    navigationTimeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s
 
     /* Ensure session persistence in CI environment */
-    storageState: undefined, // Start fresh but preserve cookies during test execution
+    storageState: undefined, // Will be overridden by projects that need auth
     acceptDownloads: true,
     ignoreHTTPSErrors: false,
   },
 
-  /* Configure projects for major browsers */
+  /* Setup projects - run authentication before other tests */
   projects: [
+    // Setup project for authentication
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+
+    // Main test project with authentication
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved authentication state
+        storageState: './playwright/.auth/user.json',
+      },
+      dependencies: ['setup'], // Wait for auth setup to complete
     },
 
     // Temporarily disabled to reduce CI time and runner usage
@@ -93,7 +105,7 @@ export default defineConfig({
       : 'echo "Development server already running on port 3001"',
     url: 'http://localhost:3001',
     reuseExistingServer: true, // Always reuse existing server
-    timeout: 5000, // Short timeout since we're reusing existing server
+    timeout: process.env.CI ? 30000 : 5000, // Longer timeout for CI
     env: {
       NODE_ENV: 'test',
       // Load test environment variables from environment

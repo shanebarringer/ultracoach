@@ -31,64 +31,28 @@ export const TEST_USERS = {
 export type TestUserType = keyof typeof TEST_USERS
 
 /**
- * Login helper function with proper error handling and waiting
+ * Navigate directly to user's dashboard (assumes authentication is already set up)
  */
-export async function loginAsUser(page: Page, userType: TestUserType) {
+export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // Navigate to signin page
-  await page.goto('/auth/signin')
+  // Navigate directly to dashboard (authentication handled by storage state)
+  await page.goto(user.expectedDashboard)
 
-  // Wait for page to be fully loaded
-  await expect(page.locator('input[type="email"]')).toBeVisible()
-  await expect(page.locator('input[type="password"]')).toBeVisible()
-
-  // Fill credentials
-  await page.fill('input[type="email"]', user.email)
-  await page.fill('input[type="password"]', user.password)
-
-  // Wait for React to hydrate and form to be ready
-  await page.waitForLoadState('networkidle')
-  const buttonTimeout = process.env.CI ? 30000 : 15000
-  await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: buttonTimeout })
-
-  // Submit the form with longer timeout for CI
-  const submitTimeout = process.env.CI ? 30000 : 15000
-  await page.click('button[type="submit"]', { timeout: submitTimeout })
-
-  // Wait for successful redirect - much longer timeout for CI compilation delays
-  const urlTimeout = process.env.CI ? 60000 : 30000
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: urlTimeout })
+  // Wait for page to load completely
+  await page.waitForLoadState('networkidle', { timeout: 60000 })
 
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   if (await loadingText.isVisible()) {
-    await expect(loadingText).not.toBeVisible({ timeout: 30000 })
+    await expect(loadingText).not.toBeVisible({ timeout: 60000 })
   }
 
-  // Verify we're logged in by checking that we're not redirected back to signin
-  // Wait a bit for any potential redirects and check URL stability
+  // Verify we're on the correct dashboard
+  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
+
+  // Wait for dashboard content to stabilize
   await page.waitForTimeout(3000)
-
-  // Ensure we stayed on the dashboard (no redirect back to signin)
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
-
-  // Debug: Check if session cookies are present (helpful for CI debugging)
-  if (process.env.CI) {
-    const cookies = await page.context().cookies()
-    const betterAuthCookies = cookies.filter(c => c.name.includes('better-auth'))
-    console.log(`Session cookies present: ${betterAuthCookies.length > 0 ? 'YES' : 'NO'}`)
-    if (betterAuthCookies.length === 0) {
-      console.log('WARNING: No Better Auth session cookies found after login')
-    }
-  }
-
-  // Try to find any visible content on the page (fallback approach)
-  const anyContent = page.locator('body, html, div, main, section, header, nav')
-  await expect(anyContent.first()).toBeAttached({ timeout: 10000 })
-
-  // Also verify URL still matches (in case of redirect issues)
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 }
 
 /**

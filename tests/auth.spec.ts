@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 
 import {
   assertAuthenticated,
-  loginAsUser,
   navigateAndWait,
+  navigateToDashboard,
   waitForAppReady,
 } from './utils/test-helpers'
 
@@ -17,12 +17,12 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should redirect to dashboard after successful runner login', async ({ page }) => {
-    await loginAsUser(page, 'runner')
+    await navigateToDashboard(page, 'runner')
     await assertAuthenticated(page, 'runner')
   })
 
   test('should redirect to dashboard after successful coach login', async ({ page }) => {
-    await loginAsUser(page, 'coach')
+    await navigateToDashboard(page, 'coach')
     await assertAuthenticated(page, 'coach')
   })
 

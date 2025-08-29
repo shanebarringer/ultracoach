@@ -65,6 +65,9 @@ jobs:
     # Run Playwright on main branch pushes and PR to CI-related branches
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
+      options: --user 1001
 
     services:
       postgres:
@@ -208,44 +211,10 @@ jobs:
             echo "⚠️ Could not authenticate for API pre-warming, tests may be slower"
           fi
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+      # Skip browser installation - using Docker container with pre-installed browsers
 
-      - name: Set up Playwright MCP integration
-        run: |
-          echo "Setting up Playwright MCP for enhanced browser automation..."
-          # Install correct Playwright MCP package for advanced CI capabilities
-          npm install -g @playwright/mcp@latest
-
-          # Create MCP configuration for CI environment
-          cat > .mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest", "--isolated", "--headless"],
-                "env": {
-                  "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
-                  "CI": "true"
-                }
-              }
-            },
-            "features": {
-              "snapshots": true,
-              "networkInterception": true,
-              "visualComparisons": true,
-              "performanceMetrics": true
-            }
-          }
-          EOF
-
-          # Verify MCP server installation
-          npx @playwright/mcp@latest --help || echo "⚠️ MCP server not available, continuing with standard Playwright"
-
-          echo "✅ Playwright MCP integration configured"
-
-      - name: Run comprehensive Playwright test suite
-        run: npx playwright test --reporter=github,html,blob
+      - name: Run Playwright tests with enhanced timeouts
+        run: npx playwright test --reporter=github,html
         env:
           # Use test database for E2E tests
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test

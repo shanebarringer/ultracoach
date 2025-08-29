@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { type TestUserType, loginAsUser } from './utils/test-helpers'
+import { type TestUserType, navigateToDashboard } from './utils/test-helpers'
 
 const TEST_GPX_CONTENT = `<?xml version="1.0"?>
 <gpx version="1.1" creator="TestCreator">
@@ -44,7 +44,7 @@ const TEST_CSV_CONTENT = `Name,Date,Location,Distance (miles),Distance Type,Elev
 
 test.describe('Race Import Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsUser(page, 'coach')
+    await navigateToDashboard(page, 'coach')
     await page.goto('/races')
   })
 
@@ -283,7 +283,7 @@ test.describe('Race Import Flow', () => {
 
 test.describe('Race Import Edge Cases', () => {
   test('should handle network failures gracefully', async ({ page }) => {
-    await loginAsUser(page, 'coach')
+    await navigateToDashboard(page, 'coach')
     await page.goto('/races')
 
     // Mock network failure
@@ -314,7 +314,7 @@ test.describe('Race Import Edge Cases', () => {
   })
 
   test('should handle rate limiting', async ({ page }) => {
-    await loginAsUser(page, 'coach')
+    await navigateToDashboard(page, 'coach')
     await page.goto('/races')
 
     // Mock rate limiting response
@@ -353,7 +353,7 @@ test.describe('Race Import Edge Cases', () => {
 
   test('should only allow coaches to import races', async ({ page }) => {
     // Login as runner instead of coach
-    await loginAsUser(page, 'runner')
+    await navigateToDashboard(page, 'runner')
     await page.goto('/races')
 
     // Import button should not be visible for runners

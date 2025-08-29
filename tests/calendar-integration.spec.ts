@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test'
 // TODO: Fix calendar integration tests
 // These tests are currently disabled because:
 // 1. Calendar page structure doesn't match test expectations
-// 2. Tests need to use proper test helpers (loginAsUser, assertAuthenticated)
+// 2. Tests need to use proper test helpers (navigateToDashboard, assertAuthenticated)
 // 3. Need to verify calendar component implementation and data loading
 // 4. Calendar UI may not have the expected data-testid attributes
 //
