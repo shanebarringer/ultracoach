@@ -26,6 +26,63 @@ import RecentActivity from './RecentActivity'
 
 const logger = createLogger('CoachDashboard')
 
+// Helper functions for calculating coach-specific metrics
+const calculateOverallCompletionRate = (workouts: Array<{ status: string }>) => {
+  if (!workouts.length) return 0
+  const completedWorkouts = workouts.filter(w => w.status === 'completed').length
+  return Math.round((completedWorkouts / workouts.length) * 100)
+}
+
+const calculateWeeklyAthletesActive = (workouts: Array<{ date: string; status: string; user_id: string }>) => {
+  const today = new Date()
+  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  
+  const activeAthletes = new Set<string>()
+  workouts.forEach(w => {
+    const workoutDate = new Date(w.date)
+    if (workoutDate >= weekAgo && workoutDate <= today && w.status === 'completed') {
+      activeAthletes.add(w.user_id)
+    }
+  })
+  
+  return activeAthletes.size
+}
+
+const calculateCoachStats = (workouts: Array<{ date: string; status: string; user_id: string }>) => {
+  const today = new Date()
+  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate())
+  
+  // This week's workouts
+  const thisWeek = workouts.filter(w => {
+    const workoutDate = new Date(w.date)
+    return workoutDate >= weekAgo && workoutDate <= today
+  })
+  
+  // This month's workouts  
+  const thisMonth = workouts.filter(w => {
+    const workoutDate = new Date(w.date)
+    return workoutDate >= monthAgo && workoutDate <= today
+  })
+  
+  const weeklyCompleted = thisWeek.filter(w => w.status === 'completed').length
+  const monthlyCompleted = thisMonth.filter(w => w.status === 'completed').length
+  
+  const weeklyCompletionRate = thisWeek.length > 0 ? Math.round((weeklyCompleted / thisWeek.length) * 100) : 0
+  const monthlyCompletionRate = thisMonth.length > 0 ? Math.round((monthlyCompleted / thisMonth.length) * 100) : 0
+  
+  return {
+    overallRate: calculateOverallCompletionRate(workouts),
+    weeklyRate: weeklyCompletionRate,
+    monthlyRate: monthlyCompletionRate,
+    activeAthletesThisWeek: calculateWeeklyAthletesActive(workouts),
+    totalWorkoutsThisWeek: thisWeek.length,
+    completedThisWeek: weeklyCompleted,
+    totalWorkoutsThisMonth: thisMonth.length,
+    completedThisMonth: monthlyCompleted
+  }
+}
+
 type TrainingPlanWithRunner = TrainingPlan & { runners: User }
 
 interface MetricCardProps {
@@ -140,16 +197,23 @@ function CoachDashboard() {
   }
 
   // Memoize expensive computations and add logging
-  const typedTrainingPlans = useMemo(() => {
+  const { typedTrainingPlans, coachStats } = useMemo(() => {
     const plans = trainingPlans as TrainingPlanWithRunner[]
-    logger.debug('Dashboard data updated:', {
+    const stats = calculateCoachStats(recentWorkouts)
+    
+    logger.debug('Coach dashboard data updated:', {
       plansCount: plans.length,
       runnersCount: runners.length,
       recentWorkoutsCount: recentWorkouts.length,
+      coachStats: stats,
       loading,
     })
-    return plans
-  }, [trainingPlans, runners.length, recentWorkouts.length, loading])
+    
+    return { 
+      typedTrainingPlans: plans, 
+      coachStats: stats 
+    }
+  }, [trainingPlans, runners.length, recentWorkouts, loading])
 
   if (loading) {
     return <CoachDashboardSkeleton />
@@ -166,19 +230,19 @@ function CoachDashboard() {
           </p>
         </div>
 
-        {/* Quick Stats Pills */}
+        {/* Completion Statistics Cards */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-primary/10 text-primary px-4 py-2 rounded-full flex items-center gap-2 border border-primary/20">
-            <UsersIcon className="w-4 h-4" />
-            <span className="font-semibold">{runners.length} Athletes</span>
+          <div className="bg-success/10 text-success px-4 py-3 rounded-lg flex flex-col items-center border border-success/20 min-w-[120px]">
+            <div className="text-2xl font-bold">{coachStats.overallRate}%</div>
+            <div className="text-xs font-medium">Overall Rate</div>
           </div>
-          <div className="bg-success/10 text-success px-4 py-2 rounded-full flex items-center gap-2 border border-success/20">
-            <CalendarDaysIcon className="w-4 h-4" />
-            <span className="font-semibold">{trainingPlans.length} Active Plans</span>
+          <div className="bg-primary/10 text-primary px-4 py-3 rounded-lg flex flex-col items-center border border-primary/20 min-w-[120px]">
+            <div className="text-2xl font-bold">{coachStats.weeklyRate}%</div>
+            <div className="text-xs font-medium">This Week</div>
           </div>
-          <div className="bg-warning/10 text-warning px-4 py-2 rounded-full flex items-center gap-2 border border-warning/20">
-            <ChartBarIcon className="w-4 h-4" />
-            <span className="font-semibold">{recentWorkouts.length} Recent</span>
+          <div className="bg-warning/10 text-warning px-4 py-3 rounded-lg flex flex-col items-center border border-warning/20 min-w-[120px]">
+            <div className="text-2xl font-bold">{coachStats.activeAthletesThisWeek}</div>
+            <div className="text-xs font-medium">Active Athletes</div>
           </div>
         </div>
       </div>
@@ -390,16 +454,19 @@ function CoachDashboard() {
             />
             <MetricCard
               title="This Week"
-              value="127"
-              subtitle="km total"
+              value={`${coachStats.completedThisWeek}/${coachStats.totalWorkoutsThisWeek}`}
+              subtitle="completed"
               icon={ArrowTrendingUpIcon}
-              trend={{ value: 15, direction: 'up' }}
+              trend={{ 
+                value: coachStats.weeklyRate - coachStats.monthlyRate, 
+                direction: coachStats.weeklyRate > coachStats.monthlyRate ? 'up' : 'down'
+              }}
               color="warning"
             />
             <MetricCard
-              title="Completed"
-              value={recentWorkouts.length}
-              subtitle="workouts"
+              title="Monthly Rate"
+              value={coachStats.monthlyRate}
+              subtitle="% completed"
               icon={ChartBarIcon}
               color="secondary"
             />
