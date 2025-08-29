@@ -185,12 +185,13 @@ export function useConversations() {
       // Initial load with loading spinner
       fetchConversations(true)
 
-      // Polling fallback - refresh conversations every 30 seconds (background updates)
+      // Polling fallback - refresh conversations (background updates)
       // This ensures conversation list stays updated even if real-time fails
-      // Reduced frequency to minimize flickering
+      // Reduced frequency in test/CI environment to prevent timeout issues
+      const pollIntervalMs = process.env.NODE_ENV === 'test' ? 60000 : 30000 // 60s for tests, 30s for dev
       const pollInterval = setInterval(() => {
         fetchConversations(false) // Background update, no loading spinner
-      }, 30000)
+      }, pollIntervalMs)
 
       return () => clearInterval(pollInterval)
     }

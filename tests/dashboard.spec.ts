@@ -5,30 +5,37 @@ import { navigateToDashboard } from './utils/test-helpers'
 test.describe('Runner Dashboard', () => {
   test('should display training plans and metrics', async ({ page }) => {
     // Skip this test if running with coach authentication
-    test.skip(test.info().project.name === 'chromium-coach', 'Runner test requires runner authentication')
-    
+    test.skip(
+      test.info().project.name === 'chromium-coach',
+      'Runner test requires runner authentication'
+    )
+
     await navigateToDashboard(page, 'runner')
 
-    // Simplified test - just verify the dashboard loads properly
-    await expect(page.locator('main')).toBeVisible({ timeout: 30000 })
-    
-    // Verify we're on a dashboard page (could be runner or coach due to routing logic)
-    await expect(page).toHaveURL(/dashboard/)
+    // Verify we're on runner dashboard with runner-specific content
+    await expect(page).toHaveURL(/dashboard\/runner/)
+    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('text=Training Progress')).toBeVisible({ timeout: 30000 })
   })
 })
 
 test.describe('Coach Dashboard', () => {
   test('should display runners and coach metrics', async ({ page }) => {
     // Skip this test if running with runner authentication
-    test.skip(test.info().project.name === 'chromium-runner', 'Coach test requires coach authentication')
-    
+    test.skip(
+      test.info().project.name === 'chromium-runner',
+      'Coach test requires coach authentication'
+    )
+
     await navigateToDashboard(page, 'coach')
 
-    // Simplified test - just verify the dashboard loads properly
-    await expect(page.locator('main')).toBeVisible({ timeout: 30000 })
-    
-    // Verify we're on a dashboard page (could be runner or coach due to routing logic)
-    await expect(page).toHaveURL(/dashboard/)
+    // Verify we're on coach dashboard with coach-specific content
+    await expect(page).toHaveURL(/dashboard\/coach/)
+    await expect(page.locator('text=Summit Dashboard')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('h3').filter({ hasText: 'Your Athletes' })).toBeVisible({
+      timeout: 30000,
+    })
+    await expect(page.locator('text=Training Expeditions')).toBeVisible({ timeout: 30000 })
   })
 })
 
@@ -62,7 +69,8 @@ test.describe('Navigation Tests', () => {
     // Should successfully navigate to chat page
     await expect(page).toHaveURL(/chat/, { timeout: 60000 })
 
-    // Wait for page content to load
-    await page.waitForLoadState('networkidle', { timeout: 60000 })
+    // Wait for main content to be visible instead of networkidle (due to polling)
+    await expect(page.locator('text=Base Camp Communications')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('text=Choose Your Communication')).toBeVisible({ timeout: 30000 })
   })
 })

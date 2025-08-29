@@ -41,7 +41,7 @@ const client = postgres(process.env.DATABASE_URL, {
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: process.env.NODE_ENV === 'production' ? 3 : 5, // Conservative pool size for serverless
   idle_timeout: process.env.NODE_ENV === 'production' ? 30 : 300, // Seconds
-  connect_timeout: process.env.NODE_ENV === 'test' ? 30 : 10, // Longer timeout for CI environment
+  connect_timeout: process.env.NODE_ENV === 'test' ? 60 : process.env.CI ? 30 : 10, // Extended timeout for CI/test
   prepare: false, // Required for Supabase transaction pooler
   transform: {
     undefined: null, // Transform undefined to null for PostgreSQL compatibility
