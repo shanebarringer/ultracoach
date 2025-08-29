@@ -40,7 +40,8 @@ test.describe('Authentication Flow', () => {
     await page.waitForTimeout(3000)
 
     // Check that we're still on signin page (not redirected to dashboard)
-    await expect(page).toHaveURL('/auth/signin')
+    // Allow for query parameters in the URL
+    await expect(page).toHaveURL(/\/auth\/signin/)
 
     // Look for various error indicators
     const hasErrorAttribute = await page.locator('input[type="email"]').getAttribute('aria-invalid')

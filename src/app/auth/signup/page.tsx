@@ -139,7 +139,12 @@ export default function SignUp() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <form
+              className="space-y-6"
+              onSubmit={handleSubmit(onSubmit)}
+              method="post"
+              action="/api/auth/sign-up/email"
+            >
               <div className="space-y-4">
                 <Controller
                   name="fullName"

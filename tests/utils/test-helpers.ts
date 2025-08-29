@@ -47,9 +47,12 @@ export async function loginAsUser(page: Page, userType: TestUserType) {
   await page.fill('input[type="email"]', user.email)
   await page.fill('input[type="password"]', user.password)
 
-  // Submit form using keyboard to avoid portal interference
-  await page.focus('input[type="password"]') // Ensure password field has focus
-  await page.keyboard.press('Enter') // Submit form from password field
+  // Wait for React to hydrate and form to be ready
+  await page.waitForLoadState('networkidle')
+  await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 10000 })
+
+  // Submit the form
+  await page.click('button[type="submit"]', { timeout: 10000 })
 
   // Wait for successful redirect - longer timeout for dashboard compilation and potential errors
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: 30000 })

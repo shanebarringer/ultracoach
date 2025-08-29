@@ -6,14 +6,14 @@ import { randomBytes } from 'crypto'
  */
 export default defineConfig({
   testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: false, // Disabled to prevent database contention
+  /* Run tests in files in parallel - SAFE: Each file gets its own worker process */
+  fullyParallel: false, // Keep false - tests within files still run sequentially (database safety)
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI and use fewer workers for better stability */
-  workers: 1, // Reduced to 1 worker to prevent database contention during tests
+  /* Enable file-level parallelization for faster execution */
+  workers: process.env.CI ? 3 : 2, // CI: 3 workers, Local: 2 workers (safe parallel execution)
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
   /* Global timeout for each test */
