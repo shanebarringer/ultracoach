@@ -49,6 +49,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -117,6 +118,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -148,18 +150,47 @@ jobs:
           RESEND_API_KEY: test-key
           RESEND_FROM_EMAIL: test@ultracoach.dev
 
-      - name: Wait for app to be ready
+      - name: Wait for application to be ready
         run: |
-          echo "Waiting for Next.js app to be ready..."
-          for i in {1..30}; do
-            if curl -f http://localhost:3001/api/health 2>/dev/null; then
-              echo "App is ready!"
+          echo "Waiting for application to be ready..."
+          echo "Checking if Next.js process is running..."
+          ps aux | grep next || echo "Next.js process not found"
+
+          for i in {1..45}; do
+            # First try health endpoint
+            if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
+              echo "✅ Health endpoint is ready!"
+              curl -s http://localhost:3001/api/health | head -3
               exit 0
             fi
-            echo "Waiting... ($i/30)"
+            
+            # Fallback: try root endpoint  
+            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
+              echo "✅ Root endpoint is ready!"
+              exit 0
+            fi
+            
+            # Show more debugging info every 10 attempts
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "🔍 Debugging attempt $i/45:"
+              echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
+              echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
+              echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
+              if [ -f .next_pid ]; then
+                NEXT_PID=$(cat .next_pid)
+                echo "  - Process status: $(ps -p $NEXT_PID -o pid,ppid,etime,cmd --no-headers 2>/dev/null || echo 'Process not found')"
+              fi
+            fi
+            
+            echo "Waiting... ($i/45) - checking again in 2s"
             sleep 2
           done
-          echo "App failed to start!"
+
+          echo "❌ Application failed to start within 90 seconds"
+          echo "🔍 Final debugging info:"
+          echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
+          echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
+          echo "  - Process PID file: $(cat .next_pid 2>/dev/null || echo 'PID file not found')"
           exit 1
 
       - name: Debug CI environment before user creation
@@ -290,6 +321,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -386,6 +418,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
