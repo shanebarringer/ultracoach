@@ -51,6 +51,7 @@ test-users.txt
 test-results/
 playwright-report/
 debug-*.png
+successful-*.png
 supabase/migrations_old/
 
 #mcp config
