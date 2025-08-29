@@ -8,12 +8,13 @@ test.describe('Dashboard Functionality', () => {
     await assertAuthenticated(page, 'runner')
 
     // Check for actual runner dashboard content
-    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('text=Welcome back, Alex Rivera')).toBeVisible()
+    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('text=Welcome back, Alex Rivera')).toBeVisible({ timeout: 15000 })
 
-    // Check for metrics cards
-    await expect(page.locator('text=ACTIVE TRAINING PLANS')).toBeVisible()
-    await expect(page.locator('text=expeditions')).toBeVisible()
+    // Check for metrics cards with more specific selectors
+    await expect(page.locator('text=ACTIVE TRAINING PLANS')).toBeVisible({ timeout: 15000 })
+    // Use more specific selector to avoid duplicate matches
+    await expect(page.locator('[data-testid="metric-card"] span:has-text("expeditions")')).toBeVisible({ timeout: 15000 })
 
     // Verify we're still on the runner dashboard URL
     await expect(page).toHaveURL(/dashboard\/runner/)

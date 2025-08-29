@@ -49,13 +49,16 @@ export async function loginAsUser(page: Page, userType: TestUserType) {
 
   // Wait for React to hydrate and form to be ready
   await page.waitForLoadState('networkidle')
-  await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 10000 })
+  const buttonTimeout = process.env.CI ? 30000 : 15000
+  await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: buttonTimeout })
 
-  // Submit the form
-  await page.click('button[type="submit"]', { timeout: 10000 })
+  // Submit the form with longer timeout for CI
+  const submitTimeout = process.env.CI ? 30000 : 15000
+  await page.click('button[type="submit"]', { timeout: submitTimeout })
 
-  // Wait for successful redirect - longer timeout for dashboard compilation and potential errors
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
+  // Wait for successful redirect - much longer timeout for CI compilation delays
+  const urlTimeout = process.env.CI ? 60000 : 30000
+  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: urlTimeout })
 
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')

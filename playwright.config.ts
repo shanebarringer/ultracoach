@@ -17,10 +17,10 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['github'], ['html']] : 'html',
   /* Global timeout for each test */
-  timeout: 30000, // Increased to 30s for Next.js compilation
+  timeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s for Next.js compilation
   /* Global timeout for expect assertions */
   expect: {
-    timeout: 15000, // Increased to 15s for dynamic content loading
+    timeout: process.env.CI ? 30000 : 15000, // CI: 30s, Local: 15s for dynamic content loading
   },
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
