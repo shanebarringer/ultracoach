@@ -14,7 +14,9 @@ test.describe('Dashboard Functionality', () => {
     // Check for metrics cards with more specific selectors
     await expect(page.locator('text=ACTIVE TRAINING PLANS')).toBeVisible({ timeout: 15000 })
     // Use more specific selector to avoid duplicate matches
-    await expect(page.locator('[data-testid="metric-card"] span:has-text("expeditions")')).toBeVisible({ timeout: 15000 })
+    await expect(
+      page.locator('[data-testid="metric-card"] span:has-text("expeditions")')
+    ).toBeVisible({ timeout: 15000 })
 
     // Verify we're still on the runner dashboard URL
     await expect(page).toHaveURL(/dashboard\/runner/)
