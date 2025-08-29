@@ -73,6 +73,16 @@ export async function loginAsUser(page: Page, userType: TestUserType) {
   // Ensure we stayed on the dashboard (no redirect back to signin)
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 
+  // Debug: Check if session cookies are present (helpful for CI debugging)
+  if (process.env.CI) {
+    const cookies = await page.context().cookies()
+    const betterAuthCookies = cookies.filter(c => c.name.includes('better-auth'))
+    console.log(`Session cookies present: ${betterAuthCookies.length > 0 ? 'YES' : 'NO'}`)
+    if (betterAuthCookies.length === 0) {
+      console.log('WARNING: No Better Auth session cookies found after login')
+    }
+  }
+
   // Try to find any visible content on the page (fallback approach)
   const anyContent = page.locator('body, html, div, main, section, header, nav')
   await expect(anyContent.first()).toBeAttached({ timeout: 10000 })

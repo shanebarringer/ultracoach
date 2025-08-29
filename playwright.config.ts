@@ -41,6 +41,11 @@ export default defineConfig({
 
     /* Set longer navigation timeout */
     navigationTimeout: 15000, // Increased for Next.js compilation
+
+    /* Ensure session persistence in CI environment */
+    storageState: undefined, // Start fresh but preserve cookies during test execution
+    acceptDownloads: true,
+    ignoreHTTPSErrors: false,
   },
 
   /* Configure projects for major browsers */

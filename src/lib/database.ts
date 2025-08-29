@@ -39,7 +39,7 @@ if (isProductionDeployment && process.env.DATABASE_URL!.includes('127.0.0.1')) {
 const client = postgres(process.env.DATABASE_URL, {
   // Supabase specific optimizations
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: process.env.NODE_ENV === 'production' ? 3 : 5, // Conservative pool size for serverless  
+  max: process.env.NODE_ENV === 'production' ? 3 : 5, // Conservative pool size for serverless
   idle_timeout: process.env.NODE_ENV === 'production' ? 30 : 300, // Seconds
   connect_timeout: process.env.NODE_ENV === 'test' ? 30 : 10, // Longer timeout for CI environment
   prepare: false, // Required for Supabase transaction pooler
