@@ -2,20 +2,23 @@ import { expect, test } from '@playwright/test'
 
 test.describe('Workout Completion Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the application
-    await page.goto('http://localhost:3001')
+    // Reset Alex Rivera's workouts to planned status before each test
+    // Use email instead of hard-coded UUID for CI compatibility
+    const response = await page.request.post('/api/test/reset-workouts', {
+      data: { userEmail: 'alex.rivera@ultracoach.dev' },
+    })
+
+    if (!response.ok()) {
+      console.warn('Failed to reset workout data, some tests may fail')
+    }
+
+    // Navigate directly to the runner dashboard (authentication is handled by setup)
+    await page.goto('/dashboard/runner')
+    // Wait for dashboard to load
+    await expect(page.locator('text=Alex Rivera')).toBeVisible()
   })
 
   test('should complete workout with basic completion', async ({ page }) => {
-    // Sign in as runner
-    await page.getByRole('button', { name: 'Sign In' }).click()
-    await page.getByRole('textbox', { name: 'Email address' }).fill('jordan.chen@ultracoach.dev')
-    await page.getByRole('textbox', { name: 'Password' }).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: 'Begin Your Expedition' }).click()
-
-    // Wait for dashboard to load
-    await expect(page.locator('text=Jordan Chen')).toBeVisible()
-
     // Navigate to workouts
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()
@@ -30,28 +33,22 @@ test.describe('Workout Completion Flow', () => {
 
     // Verify modal opens
     await expect(page.getByText('Log Workout')).toBeVisible()
-    await expect(page.getByText('Status*')).toBeVisible()
-    await expect(page.getByText('Completed')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Status.*Completed/ })).toBeVisible()
+    await expect(page.getByText('Completed').first()).toBeVisible()
 
     // Save workout with basic completion
     await page.getByRole('button', { name: 'Save Workout' }).click()
 
     // Verify workout status changed
     await expect(page.getByText('Completed').first()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'View Details' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'View Details' }).first()).toBeVisible()
 
     // Verify progress indicator
-    await expect(page.getByText('Progress')).toBeVisible()
-    await expect(page.getByText('Complete')).toBeVisible()
+    await expect(page.getByText('Progress').first()).toBeVisible()
+    await expect(page.getByText('Complete').first()).toBeVisible()
   })
 
   test('should complete workout with detailed logging', async ({ page }) => {
-    // Sign in as runner
-    await page.getByRole('button', { name: 'Sign In' }).click()
-    await page.getByRole('textbox', { name: 'Email address' }).fill('jordan.chen@ultracoach.dev')
-    await page.getByRole('textbox', { name: 'Password' }).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: 'Begin Your Expedition' }).click()
-
     // Navigate to workouts
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()
@@ -71,23 +68,18 @@ test.describe('Workout Completion Flow', () => {
     await page.getByRole('button', { name: 'Save Workout' }).click()
 
     // Verify detailed data is displayed
-    await expect(page.getByText('8.20')).toBeVisible() // Actual distance
-    await expect(page.getByText('58')).toBeVisible() // Actual duration
-    await expect(page.getByText('7/10')).toBeVisible() // Intensity
-    await expect(page.getByText('Great tempo run! Weather was perfect.')).toBeVisible() // Notes
+    await expect(page.getByText('8.20').first()).toBeVisible() // Actual distance
+    await expect(page.getByText('58').first()).toBeVisible() // Actual duration
+    await expect(page.getByText('7/10').first()).toBeVisible() // Intensity
+    await expect(page.getByText('Great tempo run! Weather was perfect.').first()).toBeVisible() // Notes
 
     // Verify status changed to completed
-    await expect(page.getByText('Completed')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'View Details' })).toBeVisible()
+    await expect(page.getByText('Completed').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'View Details' }).first()).toBeVisible()
   })
 
   test('should handle workout completion modal cancellation', async ({ page }) => {
-    // Sign in and navigate to workouts
-    await page.getByRole('button', { name: 'Sign In' }).click()
-    await page.getByRole('textbox', { name: 'Email address' }).fill('jordan.chen@ultracoach.dev')
-    await page.getByRole('textbox', { name: 'Password' }).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: 'Begin Your Expedition' }).click()
-
+    // Navigate to workouts
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()
 
@@ -100,23 +92,18 @@ test.describe('Workout Completion Flow', () => {
 
     // Verify modal is closed and workout remains planned
     await expect(page.getByText('Log Workout')).not.toBeVisible()
-    await expect(page.getByText('Planned')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Mark Complete' })).toBeVisible()
+    await expect(page.getByText('Planned').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Mark Complete' }).first()).toBeVisible()
   })
 
   test('should validate required fields in workout completion form', async ({ page }) => {
-    // Sign in and navigate to workouts
-    await page.getByRole('button', { name: 'Sign In' }).click()
-    await page.getByRole('textbox', { name: 'Email address' }).fill('jordan.chen@ultracoach.dev')
-    await page.getByRole('textbox', { name: 'Password' }).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: 'Begin Your Expedition' }).click()
-
+    // Navigate to workouts
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()
 
     // Open modal and change status to something that might require validation
     await page.getByRole('button', { name: 'Mark Complete' }).first().click()
-    await expect(page.getByText('Status*')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Status.*Completed/ })).toBeVisible()
 
     // Status should default to Completed, so Save should work
     const saveButton = page.getByRole('button', { name: 'Save Workout' })
@@ -127,16 +114,10 @@ test.describe('Workout Completion Flow', () => {
 
     // Should close modal and update workout
     await expect(page.getByText('Log Workout')).not.toBeVisible()
-    await expect(page.getByText('Completed')).toBeVisible()
+    await expect(page.getByText('Completed').first()).toBeVisible()
   })
 
   test('should display workout statistics after completion', async ({ page }) => {
-    // Sign in as runner
-    await page.getByRole('button', { name: 'Sign In' }).click()
-    await page.getByRole('textbox', { name: 'Email address' }).fill('jordan.chen@ultracoach.dev')
-    await page.getByRole('textbox', { name: 'Password' }).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: 'Begin Your Expedition' }).click()
-
     // Navigate to workouts and complete one
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()

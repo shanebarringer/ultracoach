@@ -8,7 +8,7 @@ import { config } from 'dotenv'
 import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { db } from '../src/lib/database'
+import { db } from '../src/lib/db'
 import { createLogger } from '../src/lib/logger'
 import { account, user } from '../src/lib/schema'
 

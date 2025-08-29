@@ -32,10 +32,10 @@ setup('authenticate', async ({ page }) => {
   }
 
   // Ensure we have essential dashboard content loaded
-  await expect(page.locator('body')).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
 
   // Wait for any dynamic content to stabilize
-  await page.waitForTimeout(5000)
+  await page.waitForTimeout(2000)
 
   // Verify we're authenticated by checking we're still on dashboard
   await expect(page).toHaveURL(/\/dashboard\/runner/)
