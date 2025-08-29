@@ -56,9 +56,21 @@ export default defineConfig({
       testMatch: /.*\.setup\.ts/,
     },
 
-    // Main test project with authentication
+    // Unauthenticated tests (auth flows, landing page)
+    {
+      name: 'chromium-unauth',
+      testMatch: /auth\.spec\.ts/,
+      use: { 
+        ...devices['Desktop Chrome'],
+        // No storage state - test authentication flows from scratch
+      },
+      dependencies: ['setup'], // Wait for auth setup to complete
+    },
+
+    // Authenticated tests (dashboard, features requiring login)
     {
       name: 'chromium',
+      testIgnore: /auth\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved authentication state

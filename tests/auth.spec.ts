@@ -3,7 +3,6 @@ import { expect, test } from '@playwright/test'
 import {
   assertAuthenticated,
   navigateAndWait,
-  navigateToDashboard,
   waitForAppReady,
 } from './utils/test-helpers'
 
@@ -17,12 +16,34 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should redirect to dashboard after successful runner login', async ({ page }) => {
-    await navigateToDashboard(page, 'runner')
+    await navigateAndWait(page, '/auth/signin')
+
+    // Fill in runner credentials
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
+
+    // Submit form
+    await page.click('button[type="submit"]')
+
+    // Wait for redirect to dashboard
+    await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
+    
     await assertAuthenticated(page, 'runner')
   })
 
   test('should redirect to dashboard after successful coach login', async ({ page }) => {
-    await navigateToDashboard(page, 'coach')
+    await navigateAndWait(page, '/auth/signin')
+
+    // Fill in coach credentials
+    await page.fill('input[type="email"]', 'marcus@ultracoach.dev')
+    await page.fill('input[type="password"]', 'UltraCoach2025!')
+
+    // Submit form
+    await page.click('button[type="submit"]')
+
+    // Wait for redirect to dashboard
+    await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
+    
     await assertAuthenticated(page, 'coach')
   })
 

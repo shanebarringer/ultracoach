@@ -30,9 +30,9 @@ const logger = createLogger('create-playwright-users')
 
 const PLAYWRIGHT_USERS = [
   {
-    email: 'sarah@ultracoach.dev',
+    email: 'emma@ultracoach.dev',
     password: 'UltraCoach2025!',
-    name: 'Sarah Mountain',
+    name: 'Emma Mountain',
     role: 'coach',
   },
   {
@@ -167,7 +167,7 @@ async function createPlaywrightUsers() {
     await db
       .update(user)
       .set({ role: 'user', userType: 'coach' })
-      .where(sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev')`)
+      .where(sql`email IN ('emma@ultracoach.dev', 'marcus@ultracoach.dev')`)
 
     // Fix runners
     await db
@@ -184,7 +184,7 @@ async function createPlaywrightUsers() {
       .select()
       .from(user)
       .where(
-        sql`email IN ('sarah@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+        sql`email IN ('emma@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
       )
 
     if (finalUsers.length !== PLAYWRIGHT_USERS.length) {
