@@ -67,26 +67,74 @@ jobs:
 
       - name: Start application
         run: |
-          echo "Starting Next.js application..."
-          pnpm dev &
-          echo $! > .next_pid
-          echo "App started in background"
-        timeout-minutes: 1
+          echo "🚀 Starting Next.js application..."
+          echo "Environment check:"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - PORT: 3001 (forced)"
+          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-20)..."
+
+          # Start the app in background with explicit port
+          PORT=3001 pnpm dev > app.log 2>&1 &
+          APP_PID=$!
+          echo $APP_PID > .next_pid
+
+          echo "✅ Next.js started with PID: $APP_PID"
+          echo "📝 Logs will be written to app.log"
+
+          # Give it a moment to start
+          sleep 3
+
+          # Check if process is still running
+          if kill -0 $APP_PID 2>/dev/null; then
+            echo "✅ Process is running"
+          else
+            echo "❌ Process died immediately - checking logs:"
+            cat app.log || echo "No logs found"
+            exit 1
+          fi
+        timeout-minutes: 2
 
       - name: Wait for application
         run: |
           echo "Waiting for application to be ready..."
-          for i in {1..30}; do
+          echo "Checking if Next.js process is running..."
+          ps aux | grep next || echo "Next.js process not found"
+
+          for i in {1..45}; do
+            # First try health endpoint
             if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
-              echo "Application is ready!"
+              echo "✅ Health endpoint is ready!"
+              curl -s http://localhost:3001/api/health | head -3
               exit 0
             fi
-            echo "Waiting... ($i/30)"
+            
+            # Fallback: try root endpoint  
+            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
+              echo "✅ Root endpoint is ready!"
+              exit 0
+            fi
+            
+            # Show more debugging info every 10 attempts
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "🔍 Debugging attempt $i/45:"
+              echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
+              echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
+              echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
+              echo "  - Recent app logs:"
+              tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
+            fi
+            
+            echo "Waiting... ($i/45) - checking again in 2s"
             sleep 2
           done
-          echo "Application failed to start within 60 seconds"
+
+          echo "❌ Application failed to start within 90 seconds"
+          echo "🔍 Final debugging info:"
+          echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
+          echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
+          echo "  - Process PID file: $(cat .next_pid 2>/dev/null || echo 'PID file not found')"
           exit 1
-        timeout-minutes: 2
+        timeout-minutes: 3
 
       - name: Create test users
         run: |
