@@ -33,10 +33,12 @@ const calculateOverallCompletionRate = (workouts: Array<{ status: string }>) => 
   return Math.round((completedWorkouts / workouts.length) * 100)
 }
 
-const calculateWeeklyAthletesActive = (workouts: Array<{ date: string; status: string; user_id: string }>) => {
+const calculateWeeklyAthletesActive = (
+  workouts: Array<{ date: string; status: string; user_id: string }>
+) => {
   const today = new Date()
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-  
+
   const activeAthletes = new Set<string>()
   workouts.forEach(w => {
     const workoutDate = new Date(w.date)
@@ -44,33 +46,37 @@ const calculateWeeklyAthletesActive = (workouts: Array<{ date: string; status: s
       activeAthletes.add(w.user_id)
     }
   })
-  
+
   return activeAthletes.size
 }
 
-const calculateCoachStats = (workouts: Array<{ date: string; status: string; user_id: string }>) => {
+const calculateCoachStats = (
+  workouts: Array<{ date: string; status: string; user_id: string }>
+) => {
   const today = new Date()
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
   const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate())
-  
+
   // This week's workouts
   const thisWeek = workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= weekAgo && workoutDate <= today
   })
-  
-  // This month's workouts  
+
+  // This month's workouts
   const thisMonth = workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= monthAgo && workoutDate <= today
   })
-  
+
   const weeklyCompleted = thisWeek.filter(w => w.status === 'completed').length
   const monthlyCompleted = thisMonth.filter(w => w.status === 'completed').length
-  
-  const weeklyCompletionRate = thisWeek.length > 0 ? Math.round((weeklyCompleted / thisWeek.length) * 100) : 0
-  const monthlyCompletionRate = thisMonth.length > 0 ? Math.round((monthlyCompleted / thisMonth.length) * 100) : 0
-  
+
+  const weeklyCompletionRate =
+    thisWeek.length > 0 ? Math.round((weeklyCompleted / thisWeek.length) * 100) : 0
+  const monthlyCompletionRate =
+    thisMonth.length > 0 ? Math.round((monthlyCompleted / thisMonth.length) * 100) : 0
+
   return {
     overallRate: calculateOverallCompletionRate(workouts),
     weeklyRate: weeklyCompletionRate,
@@ -79,7 +85,7 @@ const calculateCoachStats = (workouts: Array<{ date: string; status: string; use
     totalWorkoutsThisWeek: thisWeek.length,
     completedThisWeek: weeklyCompleted,
     totalWorkoutsThisMonth: thisMonth.length,
-    completedThisMonth: monthlyCompleted
+    completedThisMonth: monthlyCompleted,
   }
 }
 
@@ -200,7 +206,7 @@ function CoachDashboard() {
   const { typedTrainingPlans, coachStats } = useMemo(() => {
     const plans = trainingPlans as TrainingPlanWithRunner[]
     const stats = calculateCoachStats(recentWorkouts)
-    
+
     logger.debug('Coach dashboard data updated:', {
       plansCount: plans.length,
       runnersCount: runners.length,
@@ -208,10 +214,10 @@ function CoachDashboard() {
       coachStats: stats,
       loading,
     })
-    
-    return { 
-      typedTrainingPlans: plans, 
-      coachStats: stats 
+
+    return {
+      typedTrainingPlans: plans,
+      coachStats: stats,
     }
   }, [trainingPlans, runners.length, recentWorkouts, loading])
 
@@ -457,9 +463,9 @@ function CoachDashboard() {
               value={`${coachStats.completedThisWeek}/${coachStats.totalWorkoutsThisWeek}`}
               subtitle="completed"
               icon={ArrowTrendingUpIcon}
-              trend={{ 
-                value: coachStats.weeklyRate - coachStats.monthlyRate, 
-                direction: coachStats.weeklyRate > coachStats.monthlyRate ? 'up' : 'down'
+              trend={{
+                value: coachStats.weeklyRate - coachStats.monthlyRate,
+                direction: coachStats.weeklyRate > coachStats.monthlyRate ? 'up' : 'down',
               }}
               color="warning"
             />

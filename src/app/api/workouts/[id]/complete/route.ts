@@ -9,10 +9,7 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('api-workout-complete')
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
@@ -82,7 +79,10 @@ export async function POST(
 }
 
 // Mark workout as skipped
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getServerSession()
     if (!session?.user) {

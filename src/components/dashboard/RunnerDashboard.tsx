@@ -159,12 +159,12 @@ const calculateCompletionRate = (workouts: Workout[]) => {
 const calculateWeeklyCompletionRate = (workouts: Workout[]) => {
   const today = new Date()
   const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-  
+
   const weeklyWorkouts = workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= weekAgo && workoutDate <= today
   })
-  
+
   if (!weeklyWorkouts.length) return 0
   const completedWeekly = weeklyWorkouts.filter(w => w.status === 'completed').length
   return Math.round((completedWeekly / weeklyWorkouts.length) * 100)
@@ -174,31 +174,33 @@ const calculateMonthlyStats = (workouts: Workout[]) => {
   const today = new Date()
   const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate())
   const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, today.getDate())
-  
+
   const thisMonth = workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= monthAgo && workoutDate <= today
   })
-  
+
   const lastMonth = workouts.filter(w => {
     const workoutDate = new Date(w.date)
     return workoutDate >= twoMonthsAgo && workoutDate < monthAgo
   })
-  
+
   const thisMonthCompleted = thisMonth.filter(w => w.status === 'completed').length
   const lastMonthCompleted = lastMonth.filter(w => w.status === 'completed').length
-  
-  const thisMonthRate = thisMonth.length > 0 ? Math.round((thisMonthCompleted / thisMonth.length) * 100) : 0
-  const lastMonthRate = lastMonth.length > 0 ? Math.round((lastMonthCompleted / lastMonth.length) * 100) : 0
-  
+
+  const thisMonthRate =
+    thisMonth.length > 0 ? Math.round((thisMonthCompleted / thisMonth.length) * 100) : 0
+  const lastMonthRate =
+    lastMonth.length > 0 ? Math.round((lastMonthCompleted / lastMonth.length) * 100) : 0
+
   const trend = thisMonthRate - lastMonthRate
-  
+
   return {
     thisMonthRate,
     lastMonthRate,
     trend,
     thisMonthCompleted,
-    thisMonthTotal: thisMonth.length
+    thisMonthTotal: thisMonth.length,
   }
 }
 
@@ -339,32 +341,41 @@ function RunnerDashboard() {
           <Card className="bg-linear-to-br from-success/10 to-success/5 border border-success/20 p-4">
             <div className="text-center">
               <p className="text-xs text-success font-medium mb-1">OVERALL PROGRESS</p>
-              <p className="text-2xl font-bold text-foreground">{dashboardMetrics.completionRate}%</p>
+              <p className="text-2xl font-bold text-foreground">
+                {dashboardMetrics.completionRate}%
+              </p>
               <p className="text-sm text-foreground-600">All Time</p>
             </div>
           </Card>
-          
+
           <Card className="bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
             <div className="text-center">
               <p className="text-xs text-primary font-medium mb-1">THIS WEEK</p>
-              <p className="text-2xl font-bold text-foreground">{dashboardMetrics.weeklyCompletionRate}%</p>
+              <p className="text-2xl font-bold text-foreground">
+                {dashboardMetrics.weeklyCompletionRate}%
+              </p>
               <p className="text-sm text-foreground-600">Weekly Rate</p>
             </div>
           </Card>
-          
+
           <Card className="bg-linear-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
             <div className="text-center">
               <p className="text-xs text-warning font-medium mb-1">THIS MONTH</p>
               <div className="flex items-center justify-center gap-1">
-                <p className="text-2xl font-bold text-foreground">{dashboardMetrics.monthlyStats.thisMonthRate}%</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {dashboardMetrics.monthlyStats.thisMonthRate}%
+                </p>
                 {dashboardMetrics.monthlyStats.trend !== 0 && (
-                  <span className={`text-sm font-medium ${dashboardMetrics.monthlyStats.trend > 0 ? 'text-success' : 'text-danger'}`}>
+                  <span
+                    className={`text-sm font-medium ${dashboardMetrics.monthlyStats.trend > 0 ? 'text-success' : 'text-danger'}`}
+                  >
                     {dashboardMetrics.monthlyStats.trend > 0 ? '↗' : '↘'}
                   </span>
                 )}
               </div>
               <p className="text-sm text-foreground-600">
-                {dashboardMetrics.monthlyStats.thisMonthCompleted}/{dashboardMetrics.monthlyStats.thisMonthTotal} completed
+                {dashboardMetrics.monthlyStats.thisMonthCompleted}/
+                {dashboardMetrics.monthlyStats.thisMonthTotal} completed
               </p>
             </div>
           </Card>
@@ -398,9 +409,14 @@ function RunnerDashboard() {
           value={dashboardMetrics.completionRate}
           subtitle="%"
           icon={CheckCircleIcon}
-          trend={{ 
-            value: dashboardMetrics.monthlyStats.trend, 
-            direction: dashboardMetrics.monthlyStats.trend > 0 ? 'up' : dashboardMetrics.monthlyStats.trend < 0 ? 'down' : 'neutral'
+          trend={{
+            value: dashboardMetrics.monthlyStats.trend,
+            direction:
+              dashboardMetrics.monthlyStats.trend > 0
+                ? 'up'
+                : dashboardMetrics.monthlyStats.trend < 0
+                  ? 'down'
+                  : 'neutral',
           }}
           color="warning"
           testId="completion-rate"
