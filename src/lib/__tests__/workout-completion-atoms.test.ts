@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom } from '../atoms'
 
 // Mock fetch globally
-const mockFetch = vi.fn() as unknown as typeof fetch
-global.fetch = mockFetch
+const mockFetch = vi.fn()
+global.fetch = mockFetch as unknown as typeof fetch
 
 describe('Workout Completion Atoms', () => {
   let store: ReturnType<typeof createStore>
