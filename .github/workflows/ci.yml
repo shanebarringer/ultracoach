@@ -96,9 +96,9 @@ jobs:
 
       # Test user credentials
       TEST_COACH_EMAIL: testcoach@ultracoach.dev
-      TEST_COACH_PASSWORD: TestCoach123!
+      TEST_COACH_PASSWORD: UltraCoach2025!
       TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
-      TEST_RUNNER_PASSWORD: TestRunner123!
+      TEST_RUNNER_PASSWORD: RunnerPass2025!
 
       # Auth configuration - must be set in GitHub repository secrets
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
@@ -140,10 +140,10 @@ jobs:
           echo "Setting up test database schema..."
           # Verify psql is available
           which psql || (echo "ERROR: psql command not found" && exit 1)
-          
+
           # Test database connection
           PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -c "SELECT version();" || (echo "ERROR: Cannot connect to database" && exit 1)
-          
+
           # Apply all database migrations in order
           for migration in supabase/migrations/*.sql; do
             if [ -f "$migration" ]; then
@@ -335,10 +335,10 @@ jobs:
           echo "Setting up shard database schema..."
           # Verify psql is available
           which psql || (echo "ERROR: psql command not found" && exit 1)
-          
+
           # Test database connection
           PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -c "SELECT version();" || (echo "ERROR: Cannot connect to shard database" && exit 1)
-          
+
           # Apply all database migrations in order
           for migration in supabase/migrations/*.sql; do
             if [ -f "$migration" ]; then

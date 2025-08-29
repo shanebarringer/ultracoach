@@ -28,28 +28,76 @@ if (process.env.NODE_ENV !== 'test') {
 
 const logger = createLogger('create-playwright-users')
 
+/**
+ * Create a single user via Better Auth API with timeout handling
+ */
+async function createSingleUser(userData: (typeof PLAYWRIGHT_USERS)[0]) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+  try {
+    const response = await fetch('http://localhost:3001/api/auth/sign-up/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        email: userData.email,
+        password: userData.password,
+        name: userData.name,
+        userType: userData.role, // Use userType for Better Auth compatibility
+      }),
+    })
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      // Sanitize error message to avoid exposing sensitive information in CI logs
+      const sanitizedError =
+        response.status === 400
+          ? 'User already exists or validation failed'
+          : response.status === 500
+            ? 'Internal server error'
+            : `HTTP ${response.status}`
+      throw new Error(
+        `${sanitizedError}${process.env.NODE_ENV === 'development' ? `: ${errorText}` : ''}`
+      )
+    }
+
+    return { success: true, email: userData.email, role: userData.role }
+  } catch (error) {
+    clearTimeout(timeoutId)
+    return { success: false, email: userData.email, error: error.message }
+  }
+}
+
+// Use environment variables for passwords (with fallbacks for backwards compatibility)
+const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
+const RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!'
+
 const PLAYWRIGHT_USERS = [
   {
     email: 'emma@ultracoach.dev',
-    password: 'UltraCoach2025!',
+    password: COACH_PASSWORD,
     name: 'Emma Mountain',
     role: 'coach',
   },
   {
     email: 'marcus@ultracoach.dev',
-    password: 'UltraCoach2025!',
+    password: COACH_PASSWORD,
     name: 'Marcus Trail',
     role: 'coach',
   },
   {
     email: 'alex.rivera@ultracoach.dev',
-    password: 'RunnerPass2025!',
+    password: RUNNER_PASSWORD,
     name: 'Alex Rivera',
     role: 'runner',
   },
   {
     email: 'riley.parker@ultracoach.dev',
-    password: 'RunnerPass2025!',
+    password: RUNNER_PASSWORD,
     name: 'Riley Parker',
     role: 'runner',
   },
@@ -61,9 +109,14 @@ async function createPlaywrightUsers() {
 
     // Check if server is running (important for CI)
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+
       const healthCheck = await fetch('http://localhost:3001/api/health', {
-        timeout: 5000,
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
+
       if (!healthCheck.ok) {
         logger.error('❌ Server health check failed. Application may not be ready.')
         process.exit(1)
@@ -106,46 +159,28 @@ async function createPlaywrightUsers() {
       }
     }
 
-    // Create users via Better Auth API
-    logger.info('👥 Creating test users via Better Auth API...')
+    // Create users via Better Auth API (parallel for better performance)
+    logger.info('👥 Creating test users via Better Auth API (parallel)...')
+
+    // Create all users concurrently for better performance
+    const userPromises = PLAYWRIGHT_USERS.map(userData => createSingleUser(userData))
+    const results = await Promise.allSettled(userPromises)
+
+    // Process results and handle errors appropriately
     let successCount = 0
-    for (const userData of PLAYWRIGHT_USERS) {
-      try {
-        const response = await fetch('http://localhost:3001/api/auth/sign-up/email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: userData.email,
-            password: userData.password,
-            name: userData.name,
-            userType: userData.role, // Use userType for Better Auth compatibility
-          }),
-        })
+    for (const [index, result] of results.entries()) {
+      const userData = PLAYWRIGHT_USERS[index]
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          logger.error(
-            `❌ Failed to create ${userData.email}: HTTP ${response.status}: ${errorText}`
-          )
-
-          // In CI, we want to fail fast if user creation fails
-          if (process.env.CI) {
-            logger.error('CI environment detected - failing fast on user creation error')
-            process.exit(1)
-          }
-          continue
-        }
-
-        logger.info(`✅ Created user: ${userData.email} (${userData.role})`)
+      if (result.status === 'fulfilled' && result.value.success) {
+        logger.info(`✅ Created user: ${result.value.email} (${result.value.role})`)
         successCount++
-      } catch (error) {
-        logger.error(`❌ Error creating ${userData.email}:`, error)
+      } else {
+        const error = result.status === 'rejected' ? result.reason : result.value.error
+        logger.error(`❌ Failed to create ${userData.email}: ${error}`)
 
-        // In CI, fail fast on network errors
+        // In CI, we want to fail fast if user creation fails
         if (process.env.CI) {
-          logger.error('CI environment detected - failing fast on network error')
+          logger.error('CI environment detected - failing fast on user creation error')
           process.exit(1)
         }
       }
