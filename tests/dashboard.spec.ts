@@ -2,26 +2,27 @@ import { expect, test } from '@playwright/test'
 
 import { navigateToDashboard } from './utils/test-helpers'
 
-test.describe('Dashboard Functionality', () => {
-  test('runner dashboard should display training plans', async ({ page }) => {
+test.describe('Runner Dashboard', () => {
+  test('should display training plans and metrics', async ({ page }) => {
     await navigateToDashboard(page, 'runner')
 
     // Check for actual runner dashboard content
     await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
     await expect(page.locator('text=Welcome back, Alex Rivera')).toBeVisible({ timeout: 15000 })
 
-    // Check for metrics cards with more specific selectors
-    await expect(page.locator('text=ACTIVE TRAINING PLANS')).toBeVisible({ timeout: 15000 })
-    // Use more specific selector to avoid duplicate matches
-    await expect(
-      page.locator('[data-testid="metric-card"] span:has-text("expeditions")')
-    ).toBeVisible({ timeout: 15000 })
+    // Check for metrics cards with actual component selectors
+    await expect(page.locator('text=Active Training Plans')).toBeVisible({ timeout: 15000 })
+    // Check for the active plans metric card with expeditions subtitle
+    await expect(page.locator('[data-testid="active-plans-count"]')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('span.text-lg:has-text("expeditions")')).toBeVisible({ timeout: 15000 })
 
     // Verify we're still on the runner dashboard URL
     await expect(page).toHaveURL(/dashboard\/runner/)
   })
+})
 
-  test('coach dashboard should display runners', async ({ page }) => {
+test.describe('Coach Dashboard', () => {
+  test('should display runners and coach metrics', async ({ page }) => {
     await navigateToDashboard(page, 'coach')
 
     // Verify we successfully reached the coach dashboard
@@ -36,6 +37,9 @@ test.describe('Dashboard Functionality', () => {
     // The page should have some basic HTML structure even if CSS isn't loading
     await expect(page.locator('html')).toBeAttached()
   })
+})
+
+test.describe('Navigation Tests', () => {
 
   test('should navigate to training plans page', async ({ page }) => {
     // Navigate directly to weekly planner page (authentication via storage state)

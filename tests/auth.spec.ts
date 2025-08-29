@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import {
-  assertAuthenticated,
-  navigateAndWait,
-  waitForAppReady,
-} from './utils/test-helpers'
+import { assertAuthenticated, navigateAndWait, waitForAppReady } from './utils/test-helpers'
 
 test.describe('Authentication Flow', () => {
   test('should display signin page', async ({ page }) => {
@@ -27,7 +23,7 @@ test.describe('Authentication Flow', () => {
 
     // Wait for redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
-    
+
     await assertAuthenticated(page, 'runner')
   })
 
@@ -43,7 +39,7 @@ test.describe('Authentication Flow', () => {
 
     // Wait for redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
-    
+
     await assertAuthenticated(page, 'coach')
   })
 

@@ -50,30 +50,60 @@ export default defineConfig({
 
   /* Setup projects - run authentication before other tests */
   projects: [
-    // Setup project for authentication
+    // Setup project for runner authentication
     {
       name: 'setup',
-      testMatch: /.*\.setup\.ts/,
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    // Setup project for coach authentication
+    {
+      name: 'setup-coach',
+      testMatch: /auth-coach\.setup\.ts/,
     },
 
     // Unauthenticated tests (auth flows, landing page)
     {
       name: 'chromium-unauth',
       testMatch: /auth\.spec\.ts/,
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         // No storage state - test authentication flows from scratch
       },
       dependencies: ['setup'], // Wait for auth setup to complete
     },
 
-    // Authenticated tests (dashboard, features requiring login)
+    // Authenticated runner tests
     {
       name: 'chromium',
-      testIgnore: /auth\.spec\.ts/,
+      testMatch: /dashboard\.spec\.ts|race-import\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        // Use saved authentication state
+        // Use saved runner authentication state
+        storageState: './playwright/.auth/user.json',
+      },
+      dependencies: ['setup'], // Wait for auth setup to complete
+    },
+
+    // Authenticated coach tests
+    {
+      name: 'chromium-coach',
+      testMatch: /dashboard\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
+    // Other authenticated tests (use runner by default)
+    {
+      name: 'chromium-other',
+      testIgnore: /auth\.spec\.ts|dashboard\.spec\.ts|race-import\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state
         storageState: './playwright/.auth/user.json',
       },
       dependencies: ['setup'], // Wait for auth setup to complete
