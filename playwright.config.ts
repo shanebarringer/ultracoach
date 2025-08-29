@@ -76,7 +76,20 @@ export default defineConfig({
     // Authenticated runner tests
     {
       name: 'chromium',
-      testMatch: /dashboard\.spec\.ts|race-import\.spec\.ts/,
+      testMatch: /race-import\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state
+        storageState: './playwright/.auth/user.json',
+      },
+      dependencies: ['setup'], // Wait for auth setup to complete
+    },
+
+    // Authenticated runner dashboard tests
+    {
+      name: 'chromium-runner',
+      testMatch: /dashboard\.spec\.ts/,
+      testIgnore: /Coach Dashboard/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
@@ -89,6 +102,7 @@ export default defineConfig({
     {
       name: 'chromium-coach',
       testMatch: /dashboard\.spec\.ts/,
+      testIgnore: /Runner Dashboard|Navigation Tests/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state

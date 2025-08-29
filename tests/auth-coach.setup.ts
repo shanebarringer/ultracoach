@@ -22,10 +22,7 @@ setup('authenticate as coach', async ({ page }) => {
   // Submit the form
   await page.click('button[type="submit"]', { timeout: 30000 })
 
-  // Wait for "Welcome to Base Camp!" loading message to appear
-  await expect(page.locator('text=Welcome to Base Camp!')).toBeVisible({ timeout: 30000 })
-
-  // Wait for redirect to coach dashboard
+  // Wait for redirect to coach dashboard (loading message may not appear for direct login)
   await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 180000 })
 
   // Wait for dashboard content to stabilize
