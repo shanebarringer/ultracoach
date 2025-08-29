@@ -126,13 +126,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Install PostgreSQL client tools
+        run: |
+          echo "Installing PostgreSQL client tools..."
+          apt-get update
+          apt-get install -y postgresql-client
+          # Verify installation
+          psql --version
+          echo "PostgreSQL client tools installed successfully"
+
       - name: Set up test database schema
         run: |
           echo "Setting up test database schema..."
+          # Verify psql is available
+          which psql || (echo "ERROR: psql command not found" && exit 1)
+          
+          # Test database connection
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -c "SELECT version();" || (echo "ERROR: Cannot connect to database" && exit 1)
+          
           # Apply all database migrations in order
           for migration in supabase/migrations/*.sql; do
-            echo "Applying migration: $migration"
-            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration"
+            if [ -f "$migration" ]; then
+              echo "Applying migration: $migration"
+              PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration" || (echo "ERROR: Failed to apply migration $migration" && exit 1)
+            else
+              echo "WARNING: Migration file not found: $migration"
+            fi
           done
           echo "Database schema setup complete"
 
@@ -302,13 +321,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Install PostgreSQL client tools
+        run: |
+          echo "Installing PostgreSQL client tools for shard..."
+          apt-get update
+          apt-get install -y postgresql-client
+          # Verify installation
+          psql --version
+          echo "PostgreSQL client tools installed successfully"
+
       - name: Set up test database schema
         run: |
           echo "Setting up shard database schema..."
+          # Verify psql is available
+          which psql || (echo "ERROR: psql command not found" && exit 1)
+          
+          # Test database connection
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -c "SELECT version();" || (echo "ERROR: Cannot connect to shard database" && exit 1)
+          
+          # Apply all database migrations in order
           for migration in supabase/migrations/*.sql; do
-            echo "Applying migration: $migration"
-            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -f "$migration"
+            if [ -f "$migration" ]; then
+              echo "Applying migration: $migration"
+              PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -f "$migration" || (echo "ERROR: Failed to apply migration $migration" && exit 1)
+            else
+              echo "WARNING: Migration file not found: $migration"
+            fi
           done
+          echo "Shard database schema setup complete"
 
       - name: Start Next.js app
         run: |
