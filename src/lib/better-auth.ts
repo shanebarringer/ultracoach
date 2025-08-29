@@ -83,8 +83,8 @@ function getBetterAuthBaseUrl(): string {
 function getTrustedOrigins(): string[] {
   const origins: string[] = []
 
-  // Development origins
-  if (process.env.NODE_ENV === 'development') {
+  // Development and test origins
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     origins.push('http://localhost:3000')
     origins.push('http://localhost:3001')
   }
@@ -165,7 +165,7 @@ try {
 
     // Production-optimized cookie configuration
     advanced: {
-      useSecureCookies: process.env.NODE_ENV === 'production', // Force secure cookies in production
+      useSecureCookies: process.env.NODE_ENV === 'production', // Only secure cookies in production, not test
       cookiePrefix: 'better-auth', // Consistent cookie prefix
       crossSubDomainCookies: {
         enabled: false, // Disable for better security

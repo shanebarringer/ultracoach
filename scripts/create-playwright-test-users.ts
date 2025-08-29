@@ -14,7 +14,16 @@ import { account, user } from '../src/lib/schema'
 
 // Load environment variables - CI uses environment variables directly, not .env.local
 if (process.env.NODE_ENV !== 'test') {
-  config({ path: resolve(process.cwd(), '.env.local') })
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('fs')
+    const envPath = resolve(process.cwd(), '.env.local')
+    if (fs.existsSync(envPath)) {
+      config({ path: envPath })
+    }
+  } catch {
+    // Silently continue if .env.local doesn't exist or can't be loaded
+  }
 }
 
 const logger = createLogger('create-playwright-users')
