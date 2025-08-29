@@ -29,14 +29,14 @@ interface WorkoutLogData {
   wind_speed?: number
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const workoutId = params.id
+    const { id: workoutId } = await params
     const body: WorkoutLogData = await request.json()
 
     // Get the workout to ensure it belongs to the user
@@ -122,14 +122,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // Get workout details including parsed metrics
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const workoutId = params.id
+    const { id: workoutId } = await params
 
     const [workout] = await db
       .select()

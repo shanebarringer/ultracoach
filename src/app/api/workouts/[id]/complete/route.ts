@@ -9,14 +9,17 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('api-workout-complete')
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const workoutId = params.id
+    const { id: workoutId } = await params
     const body = await request.json()
 
     // Get the workout to ensure it belongs to the user
@@ -79,14 +82,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 // Mark workout as skipped
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const workoutId = params.id
+    const { id: workoutId } = await params
 
     // Update the workout status to skipped
     const [updatedWorkout] = await db
