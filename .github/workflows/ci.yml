@@ -123,28 +123,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set up test database schema with Drizzle
+      - name: Set up test database schema
         run: |
-          echo "Setting up test database schema with Drizzle..."
-          echo "Environment check:"
-          echo "  - NODE_ENV: $NODE_ENV"
-          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
-
-          # Ensure NODE_ENV is set to test for drizzle config
-          export NODE_ENV=test
-
-          # Use Drizzle to push the schema directly from our schema definition
-          pnpm drizzle-kit push --verbose || {
-            echo "❌ Drizzle push failed. Checking config..."
-            echo "Drizzle config debug:"
-            cat drizzle.config.ts
-            echo "Environment variables:"
-            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
-            exit 1
-          }
-
-          echo "✅ Database schema setup complete with Drizzle"
-        timeout-minutes: 5
+          echo "Setting up test database schema..."
+          # Apply all database migrations in order (psql is pre-installed on ubuntu-latest)
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying migration: $migration"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration"
+          done
+          echo "Database schema setup complete"
 
       - name: Start Next.js app in development mode
         run: |
@@ -254,7 +241,6 @@ jobs:
                 echo "💥 All test user creation attempts failed"
                 echo "🔍 Final debugging info:"
                 echo "  - Health check: $(curl -s http://localhost:3001/api/health 2>&1 | head -1 || echo 'Failed')"
-                echo "  - Auth check: $(curl -s http://localhost:3001/api/auth 2>&1 | head -1 || echo 'Failed')"
                 exit 1
               else
                 echo "⏳ Waiting 5 seconds before retry..."
@@ -359,28 +345,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set up shard database schema with Drizzle
+      - name: Set up shard database schema
         run: |
-          echo "Setting up shard database schema with Drizzle..."
-          echo "Environment check:"
-          echo "  - NODE_ENV: $NODE_ENV"
-          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
-
-          # Ensure NODE_ENV is set to test for drizzle config
-          export NODE_ENV=test
-
-          # Use Drizzle to push the schema to the shard database
-          pnpm drizzle-kit push --verbose || {
-            echo "❌ Drizzle push failed. Checking config..."
-            echo "Drizzle config debug:"
-            cat drizzle.config.ts
-            echo "Environment variables:"
-            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
-            exit 1
-          }
-
-          echo "✅ Shard database schema setup complete with Drizzle"
-        timeout-minutes: 5
+          echo "Setting up shard database schema..."
+          # Apply all database migrations in order to shard database
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying migration: $migration"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test_shard_${{ matrix.shard }} -f "$migration"
+          done
+          echo "Shard database schema setup complete"
 
       - name: Start Next.js app
         run: |

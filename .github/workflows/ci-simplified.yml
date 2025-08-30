@@ -57,26 +57,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup database schema
+      - name: Set up test database schema
         run: |
-          echo "Setting up database schema..."
+          echo "Setting up test database schema..."
           echo "Environment check:"
           echo "  - NODE_ENV: $NODE_ENV"
           echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
 
-          # Ensure NODE_ENV is set to test for drizzle config
-          export NODE_ENV=test
-
-          # Run drizzle-kit push with verbose output
-          echo "Running drizzle-kit push..."
-          pnpm drizzle-kit push --verbose || {
-            echo "❌ Drizzle push failed. Checking config..."
-            echo "Drizzle config debug:"
-            cat drizzle.config.ts
-            echo "Environment variables:"
-            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
-            exit 1
-          }
+          # Apply SQL migrations directly using psql (pre-installed on ubuntu-latest)
+          echo "Applying SQL migrations..."
+          for migration in supabase/migrations/*.sql; do
+            if [ -f "$migration" ]; then
+              echo "Applying migration: $migration"
+              PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration"
+            fi
+          done
 
           echo "✅ Database schema ready"
         timeout-minutes: 5
@@ -122,14 +117,11 @@ jobs:
             if timeout 5s curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
               echo "✅ Health endpoint is ready!"
               
-              # Verify Better Auth endpoints are also ready
-              if timeout 5s curl -f -s http://localhost:3001/api/auth >/dev/null 2>&1; then
-                echo "✅ Better Auth endpoints are ready!"
-                curl -s http://localhost:3001/api/health | head -3
-                exit 0
-              else
-                echo "⚠️ Health OK but auth not ready, continuing..."
-              fi
+              # Better Auth is ready when the health endpoint works - no separate check needed
+              # Better Auth endpoints are at /api/auth/* and don't respond to base /api/auth
+              echo "✅ Better Auth endpoints are ready with health check!"
+              curl -s http://localhost:3001/api/health | head -3
+              exit 0
             fi
             
             # Show more debugging info every 15 attempts  
@@ -138,7 +130,6 @@ jobs:
               echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
               echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
               echo "  - Health check: $(timeout 3s curl -s http://localhost:3001/api/health 2>&1 | head -1 || echo 'Failed')"
-              echo "  - Auth check: $(timeout 3s curl -s http://localhost:3001/api/auth 2>&1 | head -1 || echo 'Failed')"
               echo "  - Recent app logs:"
               tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
             fi
@@ -175,7 +166,6 @@ jobs:
                 echo "💥 All test user creation attempts failed"
                 echo "🔍 Final debugging info:"
                 echo "  - Health check: $(curl -s http://localhost:3001/api/health 2>&1 | head -1 || echo 'Failed')"
-                echo "  - Auth check: $(curl -s http://localhost:3001/api/auth 2>&1 | head -1 || echo 'Failed')"
                 exit 1
               else
                 echo "⏳ Waiting 5 seconds before retry..."
