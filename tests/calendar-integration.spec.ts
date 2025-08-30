@@ -19,8 +19,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display seeded workouts in calendar for test runner', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
-    await page.fill('input[type="password"]', 'TestRunner123!')
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
     await page.click('button[type="submit"]')
 
     // Wait for successful login and redirect
@@ -59,8 +59,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display seeded workouts in calendar for test coach', async ({ page }) => {
     // Login as test coach
-    await page.fill('input[type="email"]', 'testcoach@ultracoach.dev')
-    await page.fill('input[type="password"]', 'TestCoach123!')
+    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
+    await page.fill('input[type="password"]', 'UltraCoach2025!')
     await page.click('button[type="submit"]')
 
     // Wait for successful login and redirect
@@ -95,8 +95,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should handle calendar date navigation with workout data', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
-    await page.fill('input[type="password"]', 'TestRunner123!')
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
     await page.click('button[type="submit"]')
 
     // Wait for redirect and navigate to calendar
@@ -132,8 +132,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display correct workout types from seeded data', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'testrunner@ultracoach.dev')
-    await page.fill('input[type="password"]', 'TestRunner123!')
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
     await page.click('button[type="submit"]')
 
     await expect(page).toHaveURL('/dashboard/runner')
