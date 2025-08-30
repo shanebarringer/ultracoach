@@ -31,7 +31,7 @@ test.describe('Authentication Flow', () => {
     await navigateAndWait(page, '/auth/signin')
 
     // Fill in coach credentials
-    await page.fill('input[type="email"]', 'marcus@ultracoach.dev')
+    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
     await page.fill('input[type="password"]', 'UltraCoach2025!')
 
     // Submit form

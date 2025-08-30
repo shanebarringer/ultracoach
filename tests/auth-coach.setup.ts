@@ -12,7 +12,7 @@ setup('authenticate as coach', async ({ page }) => {
   await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 30000 })
 
   // Fill credentials for coach user
-  await page.fill('input[type="email"]', 'marcus@ultracoach.dev')
+  await page.fill('input[type="email"]', 'emma@ultracoach.dev')
   await page.fill('input[type="password"]', 'UltraCoach2025!')
 
   // Wait for React to hydrate and form to be ready
