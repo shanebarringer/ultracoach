@@ -99,48 +99,74 @@ jobs:
           echo "Checking if Next.js process is running..."
           ps aux | grep next || echo "Next.js process not found"
 
-          for i in {1..45}; do
-            # First try health endpoint
-            if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
+          # Extended wait time and better error handling for CI
+          for i in {1..60}; do
+            # First try health endpoint with timeout
+            if timeout 5s curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
               echo "✅ Health endpoint is ready!"
-              curl -s http://localhost:3001/api/health | head -3
-              exit 0
+              
+              # Verify Better Auth endpoints are also ready
+              if timeout 5s curl -f -s http://localhost:3001/api/auth >/dev/null 2>&1; then
+                echo "✅ Better Auth endpoints are ready!"
+                curl -s http://localhost:3001/api/health | head -3
+                exit 0
+              else
+                echo "⚠️ Health OK but auth not ready, continuing..."
+              fi
             fi
             
-            # Fallback: try root endpoint  
-            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
-              echo "✅ Root endpoint is ready!"
-              exit 0
-            fi
-            
-            # Show more debugging info every 10 attempts
-            if [ $((i % 10)) -eq 0 ]; then
-              echo "🔍 Debugging attempt $i/45:"
+            # Show more debugging info every 15 attempts  
+            if [ $((i % 15)) -eq 0 ]; then
+              echo "🔍 Debugging attempt $i/60:"
               echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
               echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
-              echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
+              echo "  - Health check: $(timeout 3s curl -s http://localhost:3001/api/health 2>&1 | head -1 || echo 'Failed')"
+              echo "  - Auth check: $(timeout 3s curl -s http://localhost:3001/api/auth 2>&1 | head -1 || echo 'Failed')"
               echo "  - Recent app logs:"
               tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
             fi
             
-            echo "Waiting... ($i/45) - checking again in 2s"
+            echo "Waiting... ($i/60) - checking again in 2s"
             sleep 2
           done
 
-          echo "❌ Application failed to start within 90 seconds"
+          echo "❌ Application failed to start within 120 seconds"
           echo "🔍 Final debugging info:"
           echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
           echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
           echo "  - Process PID file: $(cat .next_pid 2>/dev/null || echo 'PID file not found')"
+          echo "  - Full app logs:"
+          cat app.log 2>/dev/null | tail -20 || echo "No app logs available"
           exit 1
-        timeout-minutes: 3
+        timeout-minutes: 4
 
       - name: Create test users
         run: |
           echo "Creating test users..."
-          pnpm tsx scripts/create-playwright-test-users.ts
-          echo "Test users created"
-        timeout-minutes: 2
+
+          # Retry logic for user creation (CI can be flaky)
+          for attempt in {1..3}; do
+            echo "👥 Test user creation attempt $attempt/3..."
+            
+            if timeout 60s pnpm tsx scripts/create-playwright-test-users.ts; then
+              echo "✅ Test users created successfully!"
+              break
+            else
+              echo "❌ Test user creation failed (attempt $attempt/3)"
+              
+              if [ $attempt -eq 3 ]; then
+                echo "💥 All test user creation attempts failed"
+                echo "🔍 Final debugging info:"
+                echo "  - Health check: $(curl -s http://localhost:3001/api/health 2>&1 | head -1 || echo 'Failed')"
+                echo "  - Auth check: $(curl -s http://localhost:3001/api/auth 2>&1 | head -1 || echo 'Failed')"
+                exit 1
+              else
+                echo "⏳ Waiting 5 seconds before retry..."
+                sleep 5
+              fi
+            fi
+          done
+        timeout-minutes: 3
 
       - name: Seed test data
         run: |
@@ -158,8 +184,8 @@ jobs:
         timeout-minutes: 5
 
       - name: Run Playwright tests
-        run: npx playwright test --max-failures=3 --reporter=line
-        timeout-minutes: 10
+        run: npx playwright test --max-failures=10 --reporter=dot
+        timeout-minutes: 15
         env:
           CI: true
 

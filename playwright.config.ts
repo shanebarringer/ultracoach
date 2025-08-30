@@ -10,12 +10,18 @@ export default defineConfig({
   fullyParallel: false, // Keep false - tests within files still run sequentially (database safety)
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
+  /* Fail on flaky tests in CI (Context7 best practice) */
+  failOnFlakyTests: !!process.env.CI,
+  /* Limit failures to save CI resources */
+  maxFailures: process.env.CI ? 10 : undefined,
+  /* Reduce log verbosity in CI */
+  quiet: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Enable file-level parallelization for faster execution */
-  workers: process.env.CI ? 2 : 1, // Reduce workers for CI stability
+  /* Sequential workers for CI stability (Context7 best practice) */
+  workers: process.env.CI ? 1 : undefined, // CI: sequential for stability, Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['github'], ['html'], ['blob']] : 'html',
+  reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
   /* Global timeout for each test */
   timeout: process.env.CI ? 120000 : 60000, // CI: 2min, Local: 1min for compilation
   /* Global timeout for expect assertions */
