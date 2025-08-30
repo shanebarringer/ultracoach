@@ -91,10 +91,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
 
-      # Test user credentials
-      TEST_COACH_EMAIL: testcoach@ultracoach.dev
+      # Test user credentials (must match create-playwright-test-users.ts)
+      TEST_COACH_EMAIL: emma@ultracoach.dev
       TEST_COACH_PASSWORD: UltraCoach2025!
-      TEST_RUNNER_EMAIL: testrunner@ultracoach.dev
+      TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
       TEST_RUNNER_PASSWORD: RunnerPass2025!
 
       # Auth configuration - must be set in GitHub repository secrets
