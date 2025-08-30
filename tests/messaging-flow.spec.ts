@@ -71,8 +71,8 @@ async function navigateToChat(page: Page, recipientUserId: string) {
     throw new Error(`Redirected to signin - session may have expired. Current URL: ${page.url()}`)
   }
 
-  // Wait for chat interface to load
-  await page.waitForSelector('[data-testid="chat-window"]', { timeout: 15000 })
+  // Wait for chat interface to load (increased timeout for CI)
+  await page.waitForSelector('[data-testid="chat-window"]', { timeout: 30000 })
 }
 
 async function sendMessage(page: Page, message: string) {

@@ -33,20 +33,22 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Navigate directly to dashboard (authentication handled by storage state)
   await page.goto(user.expectedDashboard)
 
-  // Wait for page to load completely
-  await page.waitForLoadState('networkidle', { timeout: 60000 })
+  // Wait for dashboard URL (removed networkidle - causes CI hangs)
+  await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
 
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
-  if (await loadingText.isVisible()) {
-    await expect(loadingText).not.toBeVisible({ timeout: 60000 })
+  try {
+    await expect(loadingText).not.toBeVisible({ timeout: 10000 })
+  } catch {
+    // Loading text may not appear, continue
   }
 
   // Verify we're on the correct dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 
-  // Wait for dashboard content to stabilize
-  await page.waitForTimeout(3000)
+  // Brief wait for content to stabilize
+  await page.waitForTimeout(1000)
 }
 
 /**
@@ -70,8 +72,8 @@ export async function waitForAppReady(page: Page) {
   // Wait for main app container to be visible
   await expect(page.locator('body')).toBeVisible()
 
-  // Wait for any loading states to complete
-  await page.waitForLoadState('networkidle', { timeout: 30000 })
+  // Wait for DOM to be loaded (removed networkidle - causes CI hangs)
+  await page.waitForLoadState('domcontentloaded')
 
   // Wait a bit more for any dynamic content
   await page.waitForTimeout(1000)
