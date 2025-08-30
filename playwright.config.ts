@@ -18,8 +18,8 @@ export default defineConfig({
   quiet: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Sequential workers for CI stability (Context7 best practice) */
-  workers: process.env.CI ? 1 : undefined, // CI: sequential for stability, Local: auto
+  /* Limited workers for CI balance of speed vs stability */
+  workers: process.env.CI ? 2 : undefined, // CI: 2 workers for better performance, Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
   /* Global timeout for each test */
