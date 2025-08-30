@@ -126,9 +126,25 @@ jobs:
       - name: Set up test database schema with Drizzle
         run: |
           echo "Setting up test database schema with Drizzle..."
+          echo "Environment check:"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
+
+          # Ensure NODE_ENV is set to test for drizzle config
+          export NODE_ENV=test
+
           # Use Drizzle to push the schema directly from our schema definition
-          pnpm drizzle-kit push --verbose
-          echo "Database schema setup complete with Drizzle"
+          pnpm drizzle-kit push --verbose || {
+            echo "❌ Drizzle push failed. Checking config..."
+            echo "Drizzle config debug:"
+            cat drizzle.config.ts
+            echo "Environment variables:"
+            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
+            exit 1
+          }
+
+          echo "✅ Database schema setup complete with Drizzle"
+        timeout-minutes: 5
 
       - name: Start Next.js app in development mode
         run: |
@@ -346,9 +362,25 @@ jobs:
       - name: Set up shard database schema with Drizzle
         run: |
           echo "Setting up shard database schema with Drizzle..."
+          echo "Environment check:"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
+
+          # Ensure NODE_ENV is set to test for drizzle config
+          export NODE_ENV=test
+
           # Use Drizzle to push the schema to the shard database
-          pnpm drizzle-kit push --verbose
-          echo "Shard database schema setup complete with Drizzle"
+          pnpm drizzle-kit push --verbose || {
+            echo "❌ Drizzle push failed. Checking config..."
+            echo "Drizzle config debug:"
+            cat drizzle.config.ts
+            echo "Environment variables:"
+            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
+            exit 1
+          }
+
+          echo "✅ Shard database schema setup complete with Drizzle"
+        timeout-minutes: 5
 
       - name: Start Next.js app
         run: |

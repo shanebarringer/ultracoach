@@ -52,7 +52,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.13.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -60,9 +60,26 @@ jobs:
       - name: Setup database schema
         run: |
           echo "Setting up database schema..."
-          pnpm drizzle-kit push --verbose
-          echo "Database schema ready"
-        timeout-minutes: 2
+          echo "Environment check:"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-30)..."
+
+          # Ensure NODE_ENV is set to test for drizzle config
+          export NODE_ENV=test
+
+          # Run drizzle-kit push with verbose output
+          echo "Running drizzle-kit push..."
+          pnpm drizzle-kit push --verbose || {
+            echo "❌ Drizzle push failed. Checking config..."
+            echo "Drizzle config debug:"
+            cat drizzle.config.ts
+            echo "Environment variables:"
+            printenv | grep -E "(DATABASE_URL|NODE_ENV)" || echo "No relevant env vars found"
+            exit 1
+          }
+
+          echo "✅ Database schema ready"
+        timeout-minutes: 5
 
       - name: Start application
         run: |
