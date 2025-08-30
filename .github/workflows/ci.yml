@@ -276,6 +276,15 @@ jobs:
         timeout-minutes: 15
         env:
           CI: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: http://localhost:3001
+          NEXT_PUBLIC_BASE_URL: http://localhost:3001
+          TEST_COACH_EMAIL: emma@ultracoach.dev
+          TEST_COACH_PASSWORD: UltraCoach2025!
+          TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
+          TEST_RUNNER_PASSWORD: RunnerPass2025!
 
       - name: Cleanup
         if: always()
