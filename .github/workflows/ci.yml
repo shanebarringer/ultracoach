@@ -271,11 +271,46 @@ jobs:
         run: pnpm exec playwright install chromium --with-deps
         timeout-minutes: 5
 
+      - name: Verify app is ready before tests
+        run: |
+          echo "🔍 Checking if app is ready for tests..."
+          for i in {1..30}; do
+            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
+              echo "✅ App is responding on port 3001!"
+              curl -I http://localhost:3001/ | head -5
+              break
+            fi
+            echo "Waiting for app... ($i/30)"
+            sleep 2
+          done
+
+          # Final check
+          if ! curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
+            echo "❌ App is not responding after 60 seconds!"
+            echo "Checking processes:"
+            ps aux | grep -E '(next|node)' | head -10
+            echo "Checking port:"
+            netstat -tlnp 2>/dev/null | grep :3001 || echo "Port 3001 not listening"
+            echo "Recent app logs:"
+            tail -20 app.log 2>/dev/null || echo "No logs available"
+            exit 1
+          fi
+        timeout-minutes: 2
+
       - name: Run Playwright tests
-        run: npx playwright test --max-failures=10 --reporter=dot
+        run: |
+          echo "🎭 Starting Playwright tests..."
+          echo "Environment check:"
+          echo "  - CI: $CI"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - App URL: http://localhost:3001"
+
+          # Run tests with explicit config to skip webServer wait
+          npx playwright test --max-failures=10 --reporter=dot
         timeout-minutes: 15
         env:
           CI: true
+          PLAYWRIGHT_SKIP_WEBSERVER_WAIT: true
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
           NODE_ENV: test
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
