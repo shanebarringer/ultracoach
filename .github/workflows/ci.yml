@@ -63,7 +63,7 @@ jobs:
 
   playwright:
     # Run Playwright on main branch pushes and PR to CI-related branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
@@ -132,8 +132,32 @@ jobs:
 
       - name: Start Next.js app in development mode
         run: |
-          pnpm dev &
-          echo $! > .next_pid
+          echo "🚀 Starting Next.js application..."
+          echo "Environment check:"
+          echo "  - NODE_ENV: $NODE_ENV"
+          echo "  - PORT: 3001"
+          echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-20)..."
+
+          # Start the app in background with explicit port
+          PORT=3001 pnpm dev > app.log 2>&1 &
+          APP_PID=$!
+          echo $APP_PID > .next_pid
+
+          echo "✅ Next.js started with PID: $APP_PID"
+          echo "📝 Logs will be written to app.log"
+
+          # Give it a moment to start
+          sleep 3
+
+          # Check if process is still running
+          if kill -0 $APP_PID 2>/dev/null; then
+            echo "✅ Process is running"
+          else
+            echo "❌ Process died immediately - checking logs:"
+            cat app.log || echo "No logs found"
+            exit 1
+          fi
+        timeout-minutes: 2
         env:
           # Ensure all environment variables are passed to the app
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
@@ -171,10 +195,8 @@ jobs:
               echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
               echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
               echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
-              if [ -f .next_pid ]; then
-                NEXT_PID=$(cat .next_pid)
-                echo "  - Process status: $(ps -p $NEXT_PID -o pid,ppid,etime,cmd --no-headers 2>/dev/null || echo 'Process not found')"
-              fi
+              echo "  - Recent app logs:"
+              tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
             fi
             
             echo "Waiting... ($i/45) - checking again in 2s"
@@ -187,6 +209,7 @@ jobs:
           echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
           echo "  - Process PID file: $(cat .next_pid 2>/dev/null || echo 'PID file not found')"
           exit 1
+        timeout-minutes: 3
 
       - name: Debug CI environment before user creation
         run: pnpm tsx scripts/debug-ci-environment.ts
@@ -197,8 +220,12 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
 
-      - name: Create test users via Better Auth API
-        run: pnpm tsx scripts/create-playwright-test-users.ts
+      - name: Create test users
+        run: |
+          echo "Creating test users..."
+          pnpm tsx scripts/create-playwright-test-users.ts
+          echo "Test users created"
+        timeout-minutes: 2
         env:
           # Ensure test database is used
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
@@ -206,81 +233,49 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
 
-      - name: Pre-warm API endpoints to prevent test timeouts
+      - name: Seed test data
         run: |
-          echo "Pre-warming critical API endpoints..."
-          # Pre-compile slow API endpoints by making requests to them
-          # This prevents 80+ second compilation delays during tests
-
-          # Authenticate as test runner to get session cookie
-          echo "Authenticating as test runner..."
-          COOKIE=$(curl -s -i -X POST http://localhost:3001/api/auth/sign-in/email \
-            -H "Content-Type: application/json" \
-            -d '{"email":"alex.rivera@ultracoach.dev","password":"RunnerPass2025!"}' | grep -i set-cookie | head -1 | cut -d' ' -f2)
-
-          if [ ! -z "$COOKIE" ]; then
-            echo "Authentication successful, pre-warming endpoints..."
-            
-            # Pre-warm coach-runners API (this one takes 80+ seconds on cold start)
-            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/coach-runners >/dev/null || echo "Warning: coach-runners API pre-warm failed"
-            
-            # Pre-warm other critical APIs
-            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/workouts >/dev/null || echo "Warning: workouts API pre-warm failed"
-            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/training-plans >/dev/null || echo "Warning: training-plans API pre-warm failed"
-            curl -s -f -H "Cookie: $COOKIE" http://localhost:3001/api/notifications >/dev/null || echo "Warning: notifications API pre-warm failed"
-            
-            echo "✅ API endpoints pre-warmed successfully"
-          else
-            echo "⚠️ Could not authenticate for API pre-warming, tests may be slower"
-          fi
+          echo "Seeding test workouts..."
+          pnpm tsx scripts/seed-test-workouts.ts
+          echo "Test data seeded"
+        timeout-minutes: 1
+        env:
+          # Ensure test database is used
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
         timeout-minutes: 5
 
-      - name: Run Playwright tests with enhanced timeouts
-        run: npx playwright test --reporter=github,html
+      - name: Run Playwright tests
+        run: npx playwright test --max-failures=3 --reporter=line
+        timeout-minutes: 10
         env:
-          # Use test database for E2E tests
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
-          NODE_ENV: test
+          CI: true
 
-      - name: Stop Next.js app
+      - name: Cleanup
         if: always()
         run: |
           if [ -f .next_pid ]; then
-            kill $(cat .next_pid) || true
+            kill $(cat .next_pid) 2>/dev/null || true
             rm .next_pid
           fi
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-
-      - name: Upload test screenshots
-        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-screenshots
-          path: test-results/
-          retention-days: 30
-
-      - name: Upload blob report for test analysis
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-blob-report
-          path: blob-report/
-          retention-days: 30
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
 
   # Advanced parallel testing with sharding (optional, for maximum speed)
   playwright-sharded:
     # Only run sharded tests on main branch or specific PR branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || contains(github.head_ref, 'perf/') || contains(github.head_ref, 'test/') && !contains(github.head_ref, 'fix/ci-test-user-setup')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (contains(github.head_ref, 'perf/') || contains(github.head_ref, 'test/')) && !contains(github.head_ref, 'fix/ci-test-user-setup')
     runs-on: ubuntu-latest
 
     strategy:
