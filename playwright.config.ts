@@ -161,31 +161,31 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: process.env.CI
-      ? 'echo "Server already started by CI"'
-      : 'echo "Development server already running on port 3001"',
-    url: 'http://localhost:3001',
-    reuseExistingServer: true, // Always reuse existing server
-    timeout: process.env.CI ? 30000 : 5000, // Longer timeout for CI
-    env: {
-      NODE_ENV: 'test',
-      // Load test environment variables from environment
-      DATABASE_URL:
-        process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
-      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || randomBytes(32).toString('hex'),
-      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
-      NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001',
-      PORT: process.env.PORT || '3001',
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-      RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
-      ...(process.env.CI &&
-        {
-          // CI-specific environment variables will be set by GitHub Actions
-        }),
-    },
-  },
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: 'echo "Development server already running on port 3001"',
+        url: 'http://localhost:3001',
+        reuseExistingServer: true, // Always reuse existing server
+        timeout: 5000,
+        env: {
+          NODE_ENV: 'test',
+          // Load test environment variables from environment
+          DATABASE_URL:
+            process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+          BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || randomBytes(32).toString('hex'),
+          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
+          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001',
+          PORT: process.env.PORT || '3001',
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+          RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
+          ...(process.env.CI &&
+            {
+              // CI-specific environment variables will be set by GitHub Actions
+            }),
+        },
+      },
 })
