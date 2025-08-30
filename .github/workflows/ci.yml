@@ -305,8 +305,12 @@ jobs:
           echo "  - NODE_ENV: $NODE_ENV"
           echo "  - App URL: http://localhost:3001"
 
-          # Run tests with explicit config to skip webServer wait
-          npx playwright test --max-failures=10 --reporter=dot
+          # Verify the app is actually accessible
+          echo "Testing app connection..."
+          curl -v http://localhost:3001 2>&1 | head -20
+
+          # Run tests with explicit config to skip webServer wait and add global timeout
+          npx playwright test --max-failures=10 --reporter=dot --global-timeout=600000
         timeout-minutes: 15
         env:
           CI: true

@@ -91,6 +91,7 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 ### 🏗️ Phase D: Production Infrastructure (MEDIUM PRIORITY)
 
+- [ ] **Align Supabase/Drizzle architecture** - Choose between pure Drizzle migrations vs pure SQL migrations to eliminate schema drift issues
 - [ ] **Set up staging database** - Create Vercel preview environment with proper database isolation and seeding
 - [ ] **Implement backup procedures** - Automated database backups with encryption and recovery testing
 - [ ] **Create admin dashboard** - System health monitoring, user management, and operational tools for administrators
