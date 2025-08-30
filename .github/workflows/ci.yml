@@ -65,9 +65,6 @@ jobs:
     # Run Playwright on main branch pushes and PR to CI-related branches
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.55.0-noble
-      options: --user 1001
 
     services:
       postgres:
@@ -237,7 +234,9 @@ jobs:
             echo "⚠️ Could not authenticate for API pre-warming, tests may be slower"
           fi
 
-      # Skip browser installation - using Docker container with pre-installed browsers
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+        timeout-minutes: 5
 
       - name: Run Playwright tests with enhanced timeouts
         run: npx playwright test --reporter=github,html
