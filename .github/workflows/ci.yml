@@ -63,7 +63,7 @@ jobs:
 
   playwright:
     # Run Playwright on main branch pushes and PR to CI-related branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
@@ -280,7 +280,7 @@ jobs:
   # Advanced parallel testing with sharding (optional, for maximum speed)
   playwright-sharded:
     # Only run sharded tests on main branch or specific PR branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || contains(github.head_ref, 'perf/') || contains(github.head_ref, 'test/')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || contains(github.head_ref, 'perf/') || contains(github.head_ref, 'test/') && !contains(github.head_ref, 'fix/ci-test-user-setup')
     runs-on: ubuntu-latest
 
     strategy:
