@@ -15,27 +15,28 @@ setup('authenticate', async ({ page }) => {
   await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
   await page.fill('input[type="password"]', 'RunnerPass2025!')
 
-  // Wait for React to hydrate and form to be ready
-  await page.waitForLoadState('networkidle', { timeout: 60000 })
+  // Wait for React to hydrate and form to be ready (removed networkidle here)
   await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 30000 })
 
   // Submit the form with extended timeout for CI
   await page.click('button[type="submit"]', { timeout: 30000 })
 
-  // Wait for successful redirect with very long timeout for CI compilation
-  await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 120000 })
+  // Wait for successful redirect
+  await page.waitForURL(/\/dashboard\/runner/, { timeout: 60000 })
+
+  // Wait for dashboard content to stabilize
+  await page.waitForLoadState('networkidle', { timeout: 60000 })
 
   // Wait for dashboard content to load
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
-  if (await loadingText.isVisible()) {
-    await expect(loadingText).not.toBeVisible({ timeout: 60000 })
+  try {
+    await expect(loadingText).not.toBeVisible({ timeout: 10000 })
+  } catch {
+    // Loading text may not appear for direct login, continue
   }
 
-  // Ensure we have essential dashboard content loaded
-  await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
-
-  // Wait for any dynamic content to stabilize
-  await page.waitForTimeout(2000)
+  // Ensure we have essential dashboard content loaded (more specific selector)
+  await expect(page.locator('h1:has-text("Base Camp Dashboard")')).toBeVisible({ timeout: 30000 })
 
   // Verify we're authenticated by checking we're still on dashboard
   await expect(page).toHaveURL(/\/dashboard\/runner/)

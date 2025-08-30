@@ -325,11 +325,19 @@ UltraCoach - Conquer Your Mountain
       admin(), // Enable admin API for user management
       customSession(async ({ user, session }) => {
         // Ensure role is properly typed and available
-        const typedUser = user as typeof user & { userType?: string; fullName?: string }
-        logger.info('Custom session transformation:', {
+        const typedUser = user as typeof user & {
+          userType?: string
+          fullName?: string
+          role?: string
+        }
+        logger.info('🔍 Custom session transformation DEBUG:', {
+          userId: user.id,
+          email: user.email,
           originalUserType: typedUser.userType,
+          originalRole: typedUser.role,
           transformedRole: (typedUser.userType as 'runner' | 'coach') || 'runner',
           fullName: typedUser.fullName,
+          rawUser: JSON.stringify(user, null, 2),
         })
         return {
           user: {

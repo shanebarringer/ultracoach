@@ -84,12 +84,6 @@ const PLAYWRIGHT_USERS = [
     role: 'coach',
   },
   {
-    email: 'marcus@ultracoach.dev',
-    password: COACH_PASSWORD,
-    name: 'Marcus Trail',
-    role: 'coach',
-  },
-  {
     email: 'alex.rivera@ultracoach.dev',
     password: RUNNER_PASSWORD,
     name: 'Alex Rivera',
@@ -202,7 +196,7 @@ async function createPlaywrightUsers() {
     await db
       .update(user)
       .set({ role: 'user', userType: 'coach' })
-      .where(sql`email IN ('emma@ultracoach.dev', 'marcus@ultracoach.dev')`)
+      .where(sql`email = 'emma@ultracoach.dev'`)
 
     // Fix runners
     await db
@@ -219,7 +213,7 @@ async function createPlaywrightUsers() {
       .select()
       .from(user)
       .where(
-        sql`email IN ('emma@ultracoach.dev', 'marcus@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+        sql`email IN ('emma@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
       )
 
     if (finalUsers.length !== PLAYWRIGHT_USERS.length) {
@@ -233,7 +227,24 @@ async function createPlaywrightUsers() {
 
     logger.info('🔍 Final user verification (required for Playwright tests):')
     for (const user of finalUsers) {
-      logger.info(`  ✅ ${user.email}: role=${user.role}, userType=${user.userType}`)
+      logger.info(`  ✅ ${user.email}: role=${user.role}, userType=${user.userType}, id=${user.id}`)
+    }
+
+    // Enhanced debugging for emma@ultracoach.dev specifically
+    const emmaUser = finalUsers.find(u => u.email === 'emma@ultracoach.dev')
+    if (emmaUser) {
+      logger.info('🎯 Emma user detailed verification:', {
+        id: emmaUser.id,
+        email: emmaUser.email,
+        name: emmaUser.name,
+        role: emmaUser.role,
+        userType: emmaUser.userType,
+        createdAt: emmaUser.createdAt,
+        updatedAt: emmaUser.updatedAt,
+        emailVerified: emmaUser.emailVerified,
+      })
+    } else {
+      logger.error('❌ Emma user not found in final verification!')
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
