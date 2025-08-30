@@ -343,6 +343,7 @@ UltraCoach - Conquer Your Mountain
           user: {
             ...user,
             role: (typedUser.userType as 'runner' | 'coach') || 'runner', // Map userType to role for app compatibility
+            userType: typedUser.userType || 'runner', // Include userType explicitly
             fullName: typedUser.fullName || null,
           },
           session,

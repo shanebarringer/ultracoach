@@ -44,29 +44,46 @@ const TEST_CSV_CONTENT = `Name,Date,Location,Distance (miles),Distance Type,Elev
 
 test.describe('Race Import Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to races page (authentication handled by storage state)
+    // First go to the home page to ensure cookies are set
+    await page.goto('/')
+
+    // Then navigate to races page
     await page.goto('/races')
 
-    // Wait for races page to load
-    await page.waitForURL('**/races', { timeout: 30000 })
+    // Wait for either races page or potential redirect
+    await page.waitForURL(
+      url => {
+        const urlStr = url.toString()
+        return urlStr.includes('/races') || urlStr.includes('/auth/signin')
+      },
+      { timeout: 30000 }
+    )
 
     // Verify we're on races page (not redirected to signin)
     const currentUrl = page.url()
     if (currentUrl.includes('/auth/signin')) {
+      // Try to debug the auth issue
+      const cookies = await page.context().cookies()
+      console.error(
+        'Auth cookies present:',
+        cookies.map(c => c.name)
+      )
       throw new Error(`Authentication failed - redirected to signin: ${currentUrl}`)
+    }
+
+    // Wait for loading to complete if we're on the races page
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
     }
   })
 
   test('should open race import modal', async ({ page }) => {
-    // Wait for page content to load
-    await page.waitForTimeout(2000)
-
-    // Look for import button or similar trigger with more flexible selectors
-    const importButton = page
-      .locator('button')
-      .filter({ hasText: /import|add race/i })
-      .first()
-    await expect(importButton).toBeVisible({ timeout: 60000 })
+    // Look for import button with specific text
+    const importButton = page.locator('button:has-text("Import Races")')
+    await expect(importButton).toBeVisible({ timeout: 10000 })
 
     await importButton.click()
 
@@ -75,14 +92,16 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should handle GPX file upload', async ({ page }) => {
-    // Wait for page content
-    await page.waitForTimeout(2000)
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
 
     // Open import modal
-    const importButton = page
-      .locator('button')
-      .filter({ hasText: /import|add race/i })
-      .first()
+    const importButton = page.locator('button:has-text("Import Races")')
     await importButton.click()
 
     // Create a test GPX file
@@ -106,9 +125,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should handle CSV file upload', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     // Create a test CSV file
     const buffer = Buffer.from(TEST_CSV_CONTENT)
@@ -131,9 +158,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should validate file size limits', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     // Create a large file (simulate > 10MB)
     const largeContent = 'x'.repeat(11 * 1024 * 1024) // 11MB
@@ -151,9 +186,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should handle invalid GPX files', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     // Create invalid GPX content
     const invalidGPX = '<invalid>not valid gpx</invalid>'
@@ -174,9 +217,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should successfully import single race', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     // Upload valid GPX file
     const buffer = Buffer.from(TEST_GPX_CONTENT)
@@ -204,9 +255,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should handle duplicate race detection', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // First, import a race
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -228,7 +287,16 @@ test.describe('Race Import Flow', () => {
 
     // Try to import the same race again
     await page.reload()
-    await importButton.first().click()
+
+    // Wait for loading after reload
+    try {
+      await page
+        .locator('text=Loading race expeditions')
+        .waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {}
+
+    const importButtonAgain = page.locator('button:has-text("Import Races")')
+    await importButtonAgain.click()
 
     await fileInput.setInputFiles({
       name: 'test-race-duplicate.gpx',
@@ -246,9 +314,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should handle bulk CSV import', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     // Upload CSV file with multiple races
     const buffer = Buffer.from(TEST_CSV_CONTENT)
@@ -274,9 +350,17 @@ test.describe('Race Import Flow', () => {
   })
 
   test('should show progress indicator during import', async ({ page }) => {
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
     // Open import modal
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -312,8 +396,16 @@ test.describe('Race Import Edge Cases', () => {
       route.abort('failed')
     })
 
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -351,8 +443,16 @@ test.describe('Race Import Edge Cases', () => {
       })
     })
 
-    const importButton = page.locator('button:has-text("Import"), button:has-text("Add Race")')
-    await importButton.first().click()
+    // Wait for loading to complete
+    const loadingIndicator = page.locator('text=Loading race expeditions')
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Loading might have completed before we checked
+    }
+
+    const importButton = page.locator('button:has-text("Import Races")')
+    await importButton.click()
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')

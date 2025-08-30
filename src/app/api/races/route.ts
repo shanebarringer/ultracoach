@@ -1,5 +1,3 @@
-import { eq, isNull, or } from 'drizzle-orm'
-
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
@@ -18,24 +16,8 @@ export async function GET(_request: NextRequest) {
     }
 
     try {
-      let raceResults
-
-      if (session.user.userType === 'coach') {
-        // Coaches can see all races (their own + public races where created_by is null)
-        raceResults = await db
-          .select()
-          .from(races)
-          .where(or(eq(races.created_by, session.user.id), isNull(races.created_by)))
-          .orderBy(races.date)
-      } else {
-        // Runners can see races they're targeting in their training plans
-        // For now, show all public races (created_by is null) - we can enhance this later
-        raceResults = await db
-          .select()
-          .from(races)
-          .where(isNull(races.created_by))
-          .orderBy(races.date)
-      }
+      // All users can see all races - both coaches and runners may want to browse races
+      const raceResults = await db.select().from(races).orderBy(races.date)
 
       logger.info('Races fetched successfully', { count: raceResults.length })
       return NextResponse.json({ races: raceResults })
@@ -53,8 +35,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
 
-    if (!session || session.user.userType !== 'coach') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     const {
