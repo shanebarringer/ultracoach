@@ -68,7 +68,11 @@ async function createSingleUser(userData: (typeof PLAYWRIGHT_USERS)[0]) {
     return { success: true, email: userData.email, role: userData.role }
   } catch (error) {
     clearTimeout(timeoutId)
-    return { success: false, email: userData.email, error: error.message }
+    const errorMessage =
+      error.name === 'AbortError'
+        ? 'Request timeout after 10 seconds'
+        : error.message || 'Unknown error'
+    return { success: false, email: userData.email, error: errorMessage }
   }
 }
 

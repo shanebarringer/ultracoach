@@ -24,10 +24,7 @@ setup('authenticate as coach', async ({ page }) => {
   // Wait for either the success message or direct redirect
   await page.waitForURL(/\/dashboard\/coach/, { timeout: 60000 })
 
-  // Wait for dashboard content to stabilize
-  await page.waitForLoadState('networkidle', { timeout: 60000 })
-
-  // Wait for any loading states to complete
+  // Wait for any loading states to complete (removed networkidle - causes CI hangs)
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   try {
     await expect(loadingText).not.toBeVisible({ timeout: 10000 })

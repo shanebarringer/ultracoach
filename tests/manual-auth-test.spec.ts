@@ -5,8 +5,7 @@ test.describe('Manual Authentication Test', () => {
     // Navigate to signin page
     await page.goto('/auth/signin')
 
-    // Wait for page to load completely
-    await page.waitForLoadState('networkidle')
+    // Wait for page to load completely (removed networkidle - causes CI hangs)
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
     console.log('🧪 Testing login with alex.rivera@ultracoach.dev')
@@ -36,14 +35,13 @@ test.describe('Manual Authentication Test', () => {
     // Navigate to signin page
     await page.goto('/auth/signin')
 
-    // Wait for page to load completely
-    await page.waitForLoadState('networkidle')
+    // Wait for page to load completely (removed networkidle - causes CI hangs)
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
-    console.log('🧪 Testing login with sarah@ultracoach.dev')
+    console.log('🧪 Testing login with emma@ultracoach.dev')
 
     // Fill email
-    await page.fill('input[type="email"]', 'sarah@ultracoach.dev')
+    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
 
     // Fill password
     await page.fill('input[type="password"]', 'UltraCoach2025!')

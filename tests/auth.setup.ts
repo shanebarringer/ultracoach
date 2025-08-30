@@ -24,10 +24,7 @@ setup('authenticate', async ({ page }) => {
   // Wait for successful redirect
   await page.waitForURL(/\/dashboard\/runner/, { timeout: 60000 })
 
-  // Wait for dashboard content to stabilize
-  await page.waitForLoadState('networkidle', { timeout: 60000 })
-
-  // Wait for dashboard content to load
+  // Wait for dashboard content to load (removed networkidle - causes CI hangs)
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   try {
     await expect(loadingText).not.toBeVisible({ timeout: 10000 })

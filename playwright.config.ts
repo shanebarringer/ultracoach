@@ -79,16 +79,16 @@ export default defineConfig({
       dependencies: ['setup'], // Wait for auth setup to complete
     },
 
-    // Authenticated runner tests
+    // Authenticated coach tests for race import
     {
       name: 'chromium',
       testMatch: /race-import\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        // Use saved runner authentication state
-        storageState: './playwright/.auth/user.json',
+        // Use saved coach authentication state (race import is coach-only)
+        storageState: './playwright/.auth/coach.json',
       },
-      dependencies: ['setup'], // Wait for auth setup to complete
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
 
     // Authenticated runner dashboard tests
