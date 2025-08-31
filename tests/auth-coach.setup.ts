@@ -11,8 +11,9 @@ setup('authenticate as coach', async ({ page, context }) => {
   console.log('🧹 Cleared existing cookies')
 
   // Use UI login for reliability
-  await page.goto('/auth/signin')
-  console.log('📍 Navigated to signin page')
+  const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
+  await page.goto(`${baseUrl}/auth/signin`)
+  console.log(`📍 Navigated to signin page at ${page.url()}`)
 
   // Wait for form elements
   await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 30000 })

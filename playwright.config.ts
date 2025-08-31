@@ -87,10 +87,11 @@ export default defineConfig({
       testMatch: /race-import\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        // Use saved coach authentication state (race import is coach-only)
+        // Use saved coach authentication state
         storageState: './playwright/.auth/coach.json',
       },
-      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+      dependencies: ['setup-coach'], // Ensure coach auth setup completes first
+      teardown: undefined, // Prevent premature teardown
     },
 
     // Authenticated runner dashboard tests

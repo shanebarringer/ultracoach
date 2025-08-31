@@ -5,7 +5,8 @@ const authFile = path.join(__dirname, '../playwright/.auth/user.json')
 
 setup('authenticate', async ({ page }) => {
   // Use UI login for reliability
-  await page.goto('/auth/signin')
+  const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
+  await page.goto(`${baseUrl}/auth/signin`)
 
   // Wait for form elements
   await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 30000 })
