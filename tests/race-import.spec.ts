@@ -42,18 +42,57 @@ const TEST_CSV_CONTENT = `Name,Date,Location,Distance (miles),Distance Type,Elev
 "Leadville 100","2024-08-17","Leadville, CO",100,100M,15600,mountain,"https://leadvilleraceseries.com","High altitude mountain race"
 "UTMB","2024-08-30","Chamonix, France",103,Custom,32000,mountain,"https://utmb.world","Ultra Trail du Mont Blanc"`
 
+// This test suite uses coach authentication state configured in playwright.config.ts
+// The 'chromium' project has storageState: './playwright/.auth/coach.json'
 test.describe('Race Import Flow', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    console.log('🏁 Starting race import test setup...')
+
+    // Verify storage state was loaded
+    const storageState = await context.storageState()
+    console.log(
+      `📦 Storage state loaded: ${storageState.cookies.length} cookies, ${storageState.origins.length} origins`
+    )
+
+    // Check if we have auth cookies
+    const cookies = await context.cookies()
+    console.log(`🍪 Initial cookies: ${cookies.length} cookies`)
+
+    // Log specific auth cookies for debugging
+    const authCookies = cookies.filter(
+      c =>
+        c.name.includes('auth') ||
+        c.name.includes('session') ||
+        c.name === 'better-auth.session_token'
+    )
+
+    if (authCookies.length > 0) {
+      console.log(`🔐 Auth cookies found:`)
+      authCookies.forEach(c => {
+        console.log(`   - ${c.name}: ${c.value ? c.value.substring(0, 20) + '...' : 'empty'}`)
+      })
+    } else {
+      console.warn('⚠️ No auth/session cookies found in context!')
+      console.warn("   This likely means the auth setup failed or storage state wasn't loaded")
+    }
+
     // First go to the home page to ensure cookies are set
     await page.goto('/')
+    console.log('📍 Navigated to home page')
+
+    // Check cookies again after navigation
+    const cookiesAfterHome = await context.cookies()
+    console.log(`🍪 Cookies after home: ${cookiesAfterHome.length} cookies`)
 
     // Then navigate to races page
+    console.log('🚀 Navigating to races page...')
     await page.goto('/races')
 
     // Wait for either races page or potential redirect
     await page.waitForURL(
       url => {
         const urlStr = url.toString()
+        console.log(`🔄 Current URL: ${urlStr}`)
         return urlStr.includes('/races') || urlStr.includes('/auth/signin')
       },
       { timeout: 30000 }
@@ -62,21 +101,33 @@ test.describe('Race Import Flow', () => {
     // Verify we're on races page (not redirected to signin)
     const currentUrl = page.url()
     if (currentUrl.includes('/auth/signin')) {
-      // Try to debug the auth issue
-      const cookies = await page.context().cookies()
-      console.error(
-        'Auth cookies present:',
-        cookies.map(c => c.name)
-      )
+      // Debug the auth issue more thoroughly
+      const finalCookies = await page.context().cookies()
+      console.error('❌ Authentication failed - redirected to signin')
+      console.error('🍪 Cookies at failure:', {
+        count: finalCookies.length,
+        names: finalCookies.map(c => c.name),
+        sessionToken: finalCookies.find(c => c.name === 'better-auth.session_token')
+          ? 'present'
+          : 'missing',
+      })
+
+      // Try to check if the page has any error messages
+      const errorText = await page.textContent('body').catch(() => 'Could not get page text')
+      console.error('📄 Page content snippet:', errorText?.substring(0, 200))
+
       throw new Error(`Authentication failed - redirected to signin: ${currentUrl}`)
     }
+
+    console.log('✅ Successfully on races page')
 
     // Wait for loading to complete if we're on the races page
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+      console.log('✅ Race data loaded')
     } catch {
-      // Loading might have completed before we checked
+      console.log('ℹ️ Loading indicator not found or already hidden')
     }
   })
 

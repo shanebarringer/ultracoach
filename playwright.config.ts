@@ -60,12 +60,14 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+      timeout: 120000, // Give auth setup more time in CI
     },
 
     // Setup project for coach authentication
     {
       name: 'setup-coach',
       testMatch: /auth-coach\.setup\.ts/,
+      timeout: 120000, // Give auth setup more time in CI
     },
 
     // Unauthenticated tests (auth flows, landing page)
