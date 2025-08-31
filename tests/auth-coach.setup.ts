@@ -89,6 +89,9 @@ setup('authenticate as coach', async ({ page, context }) => {
   // Verify we're on coach dashboard
   await expect(page).toHaveURL(/\/dashboard\/coach/)
 
+  // Wait a moment to ensure all cookies are set
+  await page.waitForTimeout(1000)
+
   // Save authenticated state to file
   await page.context().storageState({ path: authFile })
   console.log(`💾 Saved coach auth state to ${authFile}`)

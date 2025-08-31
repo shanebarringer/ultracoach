@@ -61,6 +61,9 @@ setup('authenticate', async ({ page }) => {
   // Verify we're on runner dashboard
   await expect(page).toHaveURL(/\/dashboard\/runner/)
 
+  // Wait a moment to ensure all cookies are set
+  await page.waitForTimeout(1000)
+
   // Save authenticated state to file
   await page.context().storageState({ path: authFile })
 })
