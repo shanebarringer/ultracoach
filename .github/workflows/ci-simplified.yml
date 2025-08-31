@@ -83,24 +83,39 @@ jobs:
           echo "  - NODE_ENV: $NODE_ENV"
           echo "  - PORT: 3001 (forced)"
           echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-20)..."
+          echo "  - BETTER_AUTH_SECRET: $(echo $BETTER_AUTH_SECRET | cut -c1-10)..."
+          echo "  - BETTER_AUTH_URL: $BETTER_AUTH_URL"
 
-          # Start the app in background with explicit port
-          PORT=3001 pnpm dev > app.log 2>&1 &
+          # Ensure log file exists
+          touch app.log
+
+          # Start the app in background with better error capture
+          (PORT=3001 pnpm dev 2>&1 | tee app.log) &
           APP_PID=$!
           echo $APP_PID > .next_pid
 
           echo "✅ Next.js started with PID: $APP_PID"
-          echo "📝 Logs will be written to app.log"
+          echo "📝 Waiting for initialization..."
 
-          # Give it a moment to start
-          sleep 3
+          # Give it more time to start and output errors
+          sleep 10
+
+          # Show initial logs
+          echo "📋 Initial app output:"
+          head -30 app.log || echo "No logs yet"
 
           # Check if process is still running
           if kill -0 $APP_PID 2>/dev/null; then
-            echo "✅ Process is running"
+            echo "✅ Process is running after 10 seconds"
           else
-            echo "❌ Process died immediately - checking logs:"
+            echo "❌ Process died - full error logs:"
             cat app.log || echo "No logs found"
+            echo ""
+            echo "🔍 Debug info:"
+            echo "  - Node: $(node --version)"
+            echo "  - pnpm: $(pnpm --version)"
+            echo "  - Directory: $(pwd)"
+            echo "  - .next exists: $(test -d .next && echo 'Yes' || echo 'No')"
             exit 1
           fi
         timeout-minutes: 2
