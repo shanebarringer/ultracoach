@@ -141,23 +141,38 @@ jobs:
           echo "  - PORT: 3001"
           echo "  - DATABASE_URL: $(echo $DATABASE_URL | cut -c1-20)..."
 
-          # Start the app in background with explicit port
-          PORT=3001 pnpm dev > app.log 2>&1 &
+          # Start the app in background with better error capture
+          echo "📂 Current directory: $(pwd)"
+          echo "📦 Checking if dependencies are installed..."
+          ls -la node_modules/.bin/next 2>/dev/null || echo "⚠️ Next.js binary not found!"
+
+          # Use exec to properly capture the process and output
+          PORT=3001 exec pnpm dev > app.log 2>&1 &
           APP_PID=$!
           echo $APP_PID > .next_pid
 
           echo "✅ Next.js started with PID: $APP_PID"
-          echo "📝 Logs will be written to app.log"
+          echo "📝 Waiting for initialization..."
 
-          # Give it a moment to start
-          sleep 3
+          # Give it more time to start and capture errors
+          sleep 10
+
+          # Show initial logs
+          echo "📋 App startup logs:"
+          head -50 app.log || echo "No logs generated"
 
           # Check if process is still running
           if kill -0 $APP_PID 2>/dev/null; then
-            echo "✅ Process is running"
+            echo "✅ Process is still running after 10 seconds"
           else
-            echo "❌ Process died immediately - checking logs:"
+            echo "❌ Process died - full error output:"
             cat app.log || echo "No logs found"
+            echo ""
+            echo "🔍 Debug information:"
+            echo "  - Exit code: $?"
+            echo "  - Node version: $(node --version)"
+            echo "  - pnpm version: $(pnpm --version)"
+            echo "  - Next.js installed: $(pnpm ls next 2>/dev/null | grep -c next || echo 'Not found')"
             exit 1
           fi
         timeout-minutes: 2
@@ -403,21 +418,26 @@ jobs:
           done
           echo "Shard database schema setup complete"
 
-      - name: Start Next.js app
+      # App is already started in the main test job, no need to start again
+      # The sharded tests will use the existing running instance
+      - name: Verify app is ready
         run: |
-          pnpm dev &
-          echo $! > .next_pid
-
-      - name: Wait for app to be ready
-        run: |
-          for i in {1..30}; do
+          echo "Checking if app is already running for shard ${{ matrix.shard }}..."
+          if curl -f http://localhost:3001/api/health 2>/dev/null; then
+            echo "✅ App is ready for shard ${{ matrix.shard }}"
+          else
+            echo "❌ App not responding - may need to start separately for sharded tests"
+            # Start app only if not already running
+            pnpm dev &
+            echo $! > .next_pid_shard
+            sleep 10
             if curl -f http://localhost:3001/api/health 2>/dev/null; then
-              echo "App ready on shard ${{ matrix.shard }}"
-              exit 0
+              echo "✅ App started successfully for shard"
+            else
+              echo "❌ Failed to start app for shard"
+              exit 1
             fi
-            sleep 2
-          done
-          exit 1
+          fi
 
       - name: Create shard-specific test users
         run: pnpm tsx scripts/create-playwright-test-users.ts
