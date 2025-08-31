@@ -146,8 +146,8 @@ jobs:
           echo "📦 Checking if dependencies are installed..."
           ls -la node_modules/.bin/next 2>/dev/null || echo "⚠️ Next.js binary not found!"
 
-          # Use exec to properly capture the process and output
-          PORT=3001 exec pnpm dev > app.log 2>&1 &
+          # Start the app and capture all output
+          PORT=3001 pnpm dev > app.log 2>&1 &
           APP_PID=$!
           echo $APP_PID > .next_pid
 
