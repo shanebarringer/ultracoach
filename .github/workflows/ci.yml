@@ -325,7 +325,16 @@ jobs:
           curl -v http://localhost:3001 2>&1 | head -20
 
           # Run tests with explicit config to skip webServer wait and add global timeout
-          npx playwright test --max-failures=10 --reporter=dot --global-timeout=600000
+          # Continue even if some tests fail to allow artifact upload
+          npx playwright test --max-failures=10 --reporter=dot --global-timeout=600000 || TEST_EXIT_CODE=$?
+
+          # Report status but don't fail yet to allow artifact upload
+          if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then
+            echo "⚠️ Some tests failed with exit code: ${TEST_EXIT_CODE}"
+            echo "TEST_EXIT_CODE=${TEST_EXIT_CODE}" >> $GITHUB_ENV
+          else
+            echo "✅ All tests passed!"
+          fi
         timeout-minutes: 15
         env:
           CI: true
@@ -350,13 +359,23 @@ jobs:
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: |
             playwright-report/
             test-results/
           retention-days: 7
+
+      - name: Check test results
+        if: always()
+        run: |
+          # Check if any tests failed and exit with that code
+          if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then
+            echo "❌ Tests failed with exit code: ${TEST_EXIT_CODE}"
+            exit ${TEST_EXIT_CODE}
+          fi
+          echo "✅ All tests passed successfully!"
 
   # Advanced parallel testing with sharding (optional, for maximum speed)
   playwright-sharded:
