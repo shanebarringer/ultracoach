@@ -181,10 +181,8 @@ export default function RacesPage() {
       return
     }
 
-    if (session.user.userType !== 'coach') {
-      router.push('/dashboard')
-      return
-    }
+    // Both coaches and runners can access races page
+    // Removed coach-only restriction
 
     // Fetch races data using atom (only if we haven't attempted yet)
     if (!hasAttemptedLoad) {
@@ -328,7 +326,7 @@ export default function RacesPage() {
     )
   }
 
-  if (!session || session.user.userType !== 'coach') {
+  if (!session) {
     return null
   }
 

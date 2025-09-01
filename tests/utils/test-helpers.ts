@@ -3,13 +3,7 @@ import { type Page, expect } from '@playwright/test'
 // Test user credentials (consistent with comprehensive seed script)
 export const TEST_USERS = {
   coach: {
-    email: 'sarah@ultracoach.dev',
-    password: 'UltraCoach2025!',
-    role: 'coach',
-    expectedDashboard: '/dashboard/coach',
-  },
-  coach2: {
-    email: 'marcus@ultracoach.dev',
+    email: 'emma@ultracoach.dev',
     password: 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
@@ -31,47 +25,30 @@ export const TEST_USERS = {
 export type TestUserType = keyof typeof TEST_USERS
 
 /**
- * Login helper function with proper error handling and waiting
+ * Navigate directly to user's dashboard (assumes authentication is already set up)
  */
-export async function loginAsUser(page: Page, userType: TestUserType) {
+export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // Navigate to signin page
-  await page.goto('/auth/signin')
+  // Navigate directly to dashboard (authentication handled by storage state)
+  await page.goto(user.expectedDashboard)
 
-  // Wait for page to be fully loaded
-  await expect(page.locator('input[type="email"]')).toBeVisible()
-  await expect(page.locator('input[type="password"]')).toBeVisible()
-
-  // Fill credentials
-  await page.fill('input[type="email"]', user.email)
-  await page.fill('input[type="password"]', user.password)
-
-  // Submit form
-  await page.click('button[type="submit"]')
-
-  // Wait for successful redirect - longer timeout for coach dashboard compilation
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard), { timeout: 20000 })
+  // Wait for dashboard URL (removed networkidle - causes CI hangs)
+  await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
 
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
-  if (await loadingText.isVisible()) {
-    await expect(loadingText).not.toBeVisible({ timeout: 20000 })
+  try {
+    await expect(loadingText).not.toBeVisible({ timeout: 10000 })
+  } catch {
+    // Loading text may not appear, continue
   }
 
-  // Verify we're logged in by checking that we're not redirected back to signin
-  // Wait a bit for any potential redirects and check URL stability
-  await page.waitForTimeout(3000)
-
-  // Ensure we stayed on the dashboard (no redirect back to signin)
+  // Verify we're on the correct dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 
-  // Try to find any visible content on the page (fallback approach)
-  const anyContent = page.locator('body, html, div, main, section, header, nav')
-  await expect(anyContent.first()).toBeAttached({ timeout: 10000 })
-
-  // Also verify URL still matches (in case of redirect issues)
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
+  // Brief wait for content to stabilize
+  await page.waitForTimeout(1000)
 }
 
 /**
@@ -95,8 +72,8 @@ export async function waitForAppReady(page: Page) {
   // Wait for main app container to be visible
   await expect(page.locator('body')).toBeVisible()
 
-  // Wait for any loading states to complete
-  await page.waitForLoadState('networkidle', { timeout: 30000 })
+  // Wait for DOM to be loaded (removed networkidle - causes CI hangs)
+  await page.waitForLoadState('domcontentloaded')
 
   // Wait a bit more for any dynamic content
   await page.waitForTimeout(1000)

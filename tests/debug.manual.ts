@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('Debug Tests', () => {
-  test('should debug landing page content', async ({ page }) => {
+  test.skip('should debug landing page content', async ({ page }) => {
+    // Skip this test in CI - it's for manual debugging only
     await page.goto('/')
 
-    // Wait for page to load
-    await page.waitForLoadState('networkidle')
+    // Wait for specific content instead of networkidle
+    await page.waitForSelector('h1', { timeout: 30000 })
 
     // Take screenshot for debugging
     await page.screenshot({ path: 'debug-landing.png' })

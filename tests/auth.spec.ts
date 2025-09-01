@@ -1,11 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import {
-  assertAuthenticated,
-  loginAsUser,
-  navigateAndWait,
-  waitForAppReady,
-} from './utils/test-helpers'
+import { assertAuthenticated, navigateAndWait, waitForAppReady } from './utils/test-helpers'
 
 test.describe('Authentication Flow', () => {
   test('should display signin page', async ({ page }) => {
@@ -17,12 +12,34 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should redirect to dashboard after successful runner login', async ({ page }) => {
-    await loginAsUser(page, 'runner')
+    await navigateAndWait(page, '/auth/signin')
+
+    // Fill in runner credentials
+    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
+    await page.fill('input[type="password"]', 'RunnerPass2025!')
+
+    // Submit form
+    await page.click('button[type="submit"]')
+
+    // Wait for redirect to dashboard
+    await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
+
     await assertAuthenticated(page, 'runner')
   })
 
   test('should redirect to dashboard after successful coach login', async ({ page }) => {
-    await loginAsUser(page, 'coach')
+    await navigateAndWait(page, '/auth/signin')
+
+    // Fill in coach credentials
+    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
+    await page.fill('input[type="password"]', 'UltraCoach2025!')
+
+    // Submit form
+    await page.click('button[type="submit"]')
+
+    // Wait for redirect to dashboard
+    await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
+
     await assertAuthenticated(page, 'coach')
   })
 
@@ -40,7 +57,8 @@ test.describe('Authentication Flow', () => {
     await page.waitForTimeout(3000)
 
     // Check that we're still on signin page (not redirected to dashboard)
-    await expect(page).toHaveURL('/auth/signin')
+    // Allow for query parameters in the URL
+    await expect(page).toHaveURL(/\/auth\/signin/)
 
     // Look for various error indicators
     const hasErrorAttribute = await page.locator('input[type="email"]').getAttribute('aria-invalid')

@@ -4,6 +4,11 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('api/health')
 
+export async function HEAD() {
+  // Simple head response for connection checks
+  return new Response(null, { status: 200 })
+}
+
 export async function GET() {
   try {
     const healthData = {

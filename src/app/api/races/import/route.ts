@@ -45,11 +45,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
 
-    if (!session || session.user.userType !== 'coach') {
-      return NextResponse.json(
-        { error: 'Unauthorized - Only coaches can import races' },
-        { status: 401 }
-      )
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Apply rate limiting

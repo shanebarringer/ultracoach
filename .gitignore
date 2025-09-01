@@ -50,7 +50,10 @@ test-users.txt
 # Playwright test results and artifacts
 test-results/
 playwright-report/
+playwright/.auth
+blob-report/
 debug-*.png
+successful-*.png
 supabase/migrations_old/
 
 #mcp config

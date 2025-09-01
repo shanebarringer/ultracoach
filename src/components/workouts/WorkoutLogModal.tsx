@@ -14,12 +14,18 @@ import {
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
+import { useSetAtom } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { workoutLogFormAtom } from '@/lib/atoms'
+import {
+  completeWorkoutAtom,
+  logWorkoutDetailsAtom,
+  skipWorkoutAtom,
+  workoutLogFormAtom,
+} from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
@@ -75,6 +81,9 @@ export default function WorkoutLogModal({
   defaultToComplete = false,
 }: WorkoutLogModalProps) {
   const [formState, setFormState] = useAtom(workoutLogFormAtom)
+  const completeWorkout = useSetAtom(completeWorkoutAtom)
+  const logWorkoutDetails = useSetAtom(logWorkoutDetailsAtom)
+  const skipWorkout = useSetAtom(skipWorkoutAtom)
 
   // React Hook Form setup
   const {
@@ -128,50 +137,62 @@ export default function WorkoutLogModal({
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
+      // Build the payload for the API
       const payload = {
-        actualType: data.actualType,
-        actualDistance: data.actualDistance,
-        actualDuration: data.actualDuration,
-        workoutNotes: data.workoutNotes,
-        injuryNotes: data.injuryNotes,
-        status: data.status,
+        actual_type: data.actualType,
+        actual_distance: data.actualDistance,
+        actual_duration: data.actualDuration,
+        workout_notes: data.workoutNotes,
+        injury_notes: data.injuryNotes,
         category: data.category,
         intensity: data.intensity,
         terrain: data.terrain,
         elevation_gain: data.elevationGain,
       }
 
-      logger.info('Submitting workout log update:', { workoutId: workout.id, payload })
-
-      const response = await fetch(`/api/workouts/${workout.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      logger.info('Submitting workout log update:', {
+        workoutId: workout.id,
+        status: data.status,
+        payload,
       })
 
-      if (response.ok) {
-        logger.info('Workout updated successfully')
-        setFormState(prev => ({ ...prev, loading: false, error: '' }))
-        reset() // Reset form with react-hook-form
-        onSuccess()
-        onClose()
+      // Use the appropriate atom based on status
+      if (data.status === 'skipped') {
+        await skipWorkout(workout.id)
+      } else if (data.status === 'completed') {
+        // If we have actual data, use the log details atom, otherwise just mark complete
+        const hasActualData = data.actualDistance || data.actualDuration || data.workoutNotes
+        if (hasActualData) {
+          await logWorkoutDetails({ workoutId: workout.id, data: payload })
+        } else {
+          await completeWorkout({ workoutId: workout.id, data: {} })
+        }
       } else {
-        const errorData = await response.json()
-        logger.error('Failed to update workout:', errorData)
-        setFormState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorData.error || 'Failed to update workout',
-        }))
+        // For 'planned' status, just update the workout with the API directly
+        const response = await fetch(`/api/workouts/${workout.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...payload, status: 'planned' }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update workout')
+        }
       }
+
+      logger.info('Workout updated successfully')
+      setFormState(prev => ({ ...prev, loading: false, error: '' }))
+      reset() // Reset form with react-hook-form
+      onSuccess()
+      onClose()
     } catch (error) {
       logger.error('Error updating workout:', error)
       setFormState(prev => ({
         ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.',
+        error: error instanceof Error ? error.message : 'An error occurred. Please try again.',
       }))
     }
   }

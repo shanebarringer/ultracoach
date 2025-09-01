@@ -83,8 +83,8 @@ function getBetterAuthBaseUrl(): string {
 function getTrustedOrigins(): string[] {
   const origins: string[] = []
 
-  // Development origins
-  if (process.env.NODE_ENV === 'development') {
+  // Development and test origins
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     origins.push('http://localhost:3000')
     origins.push('http://localhost:3001')
   }
@@ -165,7 +165,7 @@ try {
 
     // Production-optimized cookie configuration
     advanced: {
-      useSecureCookies: process.env.NODE_ENV === 'production', // Force secure cookies in production
+      useSecureCookies: process.env.NODE_ENV === 'production', // Only secure cookies in production, not test
       cookiePrefix: 'better-auth', // Consistent cookie prefix
       crossSubDomainCookies: {
         enabled: false, // Disable for better security
@@ -325,16 +325,25 @@ UltraCoach - Conquer Your Mountain
       admin(), // Enable admin API for user management
       customSession(async ({ user, session }) => {
         // Ensure role is properly typed and available
-        const typedUser = user as typeof user & { userType?: string; fullName?: string }
-        logger.info('Custom session transformation:', {
+        const typedUser = user as typeof user & {
+          userType?: string
+          fullName?: string
+          role?: string
+        }
+        logger.info('🔍 Custom session transformation DEBUG:', {
+          userId: user.id,
+          email: user.email,
           originalUserType: typedUser.userType,
+          originalRole: typedUser.role,
           transformedRole: (typedUser.userType as 'runner' | 'coach') || 'runner',
           fullName: typedUser.fullName,
+          rawUser: JSON.stringify(user, null, 2),
         })
         return {
           user: {
             ...user,
             role: (typedUser.userType as 'runner' | 'coach') || 'runner', // Map userType to role for app compatibility
+            userType: typedUser.userType || 'runner', // Include userType explicitly
             fullName: typedUser.fullName || null,
           },
           session,

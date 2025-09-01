@@ -229,7 +229,12 @@ export default function SignIn() {
                   <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
                 </div>
               )}
-              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <form
+                className="space-y-6"
+                onSubmit={handleSubmit(onSubmit)}
+                method="post"
+                action="/api/auth/sign-in/email"
+              >
                 <div className="space-y-4">
                   <Controller
                     name="email"

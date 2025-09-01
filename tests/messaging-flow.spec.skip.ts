@@ -12,10 +12,10 @@ import { BrowserContext, Page, expect, test } from '@playwright/test'
 
 // Test credentials
 const COACH_CREDENTIALS = {
-  email: 'sarah@ultracoach.dev',
+  email: 'emma@ultracoach.dev',
   password: 'UltraCoach2025!',
-  name: 'Sarah Chen',
-  userId: '4rOAVOBibps2j5hAN9A8X5mM6B23bTSW',
+  name: 'Emma Mountain',
+  userId: '4rOAVOBibps2j5hAN9A8X5mM6B23bTSW', // TODO: Update with actual emma user ID
 }
 
 const RUNNER_CREDENTIALS = {
@@ -45,11 +45,11 @@ async function signIn(page: Page, credentials: typeof COACH_CREDENTIALS) {
   // Click sign in button
   await page.click('button[type="submit"]')
 
-  // Wait for redirect to dashboard or chat
+  // Wait for redirect to dashboard or chat (with generous timeout for CI)
   await page.waitForURL(
     url =>
       url.pathname.includes('/dashboard') || url.pathname.includes('/chat') || url.pathname === '/',
-    { timeout: 15000 }
+    { timeout: 30000 }
   )
 
   // Wait a bit for session to fully establish
@@ -71,8 +71,8 @@ async function navigateToChat(page: Page, recipientUserId: string) {
     throw new Error(`Redirected to signin - session may have expired. Current URL: ${page.url()}`)
   }
 
-  // Wait for chat interface to load
-  await page.waitForSelector('[data-testid="chat-window"]', { timeout: 15000 })
+  // Wait for chat interface to load (increased timeout for CI)
+  await page.waitForSelector('[data-testid="chat-window"]', { timeout: 30000 })
 }
 
 async function sendMessage(page: Page, message: string) {

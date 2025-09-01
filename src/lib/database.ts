@@ -6,8 +6,20 @@ import postgres from 'postgres'
 import { createLogger } from './logger'
 import * as schema from './schema'
 
-// Load environment variables
-config({ path: resolve(process.cwd(), '.env.local') })
+// Load environment variables (skip in CI/test where env vars are set directly)
+// Also check if .env.local exists before trying to load it
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('fs')
+    const envPath = resolve(process.cwd(), '.env.local')
+    if (fs.existsSync(envPath)) {
+      config({ path: envPath })
+    }
+  } catch {
+    // Silently continue if .env.local doesn't exist or can't be loaded
+  }
+}
 
 const logger = createLogger('database')
 
@@ -29,7 +41,7 @@ const client = postgres(process.env.DATABASE_URL, {
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: process.env.NODE_ENV === 'production' ? 3 : 5, // Conservative pool size for serverless
   idle_timeout: process.env.NODE_ENV === 'production' ? 30 : 300, // Seconds
-  connect_timeout: 10, // Seconds
+  connect_timeout: process.env.NODE_ENV === 'test' ? 60 : process.env.CI ? 30 : 10, // Extended timeout for CI/test
   prepare: false, // Required for Supabase transaction pooler
   transform: {
     undefined: null, // Transform undefined to null for PostgreSQL compatibility
