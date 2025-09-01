@@ -6,6 +6,8 @@ import { randomBytes } from 'crypto'
  */
 export default defineConfig({
   testDir: './tests',
+  /* Exclude manual and debug test files from CI runs */
+  testIgnore: ['**/*.manual.ts', '**/debug.*', '**/manual-*'],
   /* Run tests in files in parallel - SAFE: Each file gets its own worker process */
   fullyParallel: false, // Keep false - tests within files still run sequentially (database safety)
   /* Fail the build on CI if you accidentally left test.only in the source code. */

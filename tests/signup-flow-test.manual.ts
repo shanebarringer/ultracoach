@@ -138,7 +138,7 @@ test.describe('Signup Flow Test', () => {
 
     // Navigate to signup page
     await page.goto('/auth/signup')
-    await page.waitForLoadState('networkidle')
+    // Removed waitForLoadState('networkidle') - causes CI hangs
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
     // Fill form using helper function
@@ -179,7 +179,7 @@ test.describe('Signup Flow Test', () => {
 
     // Navigate to signup page
     await page.goto('/auth/signup')
-    await page.waitForLoadState('networkidle')
+    // Removed waitForLoadState('networkidle') - causes CI hangs
     await page.waitForSelector('input[type="email"]', { state: 'visible' })
 
     // Fill form using helper function
