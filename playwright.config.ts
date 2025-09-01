@@ -60,16 +60,16 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+      testDir: undefined, // Prevent running any tests beyond setup file
       timeout: 120000, // Give auth setup more time in CI
-      teardown: undefined, // Prevent teardown errors in CI
     },
 
     // Setup project for coach authentication
     {
       name: 'setup-coach',
       testMatch: /auth-coach\.setup\.ts/,
+      testDir: undefined, // Prevent running any tests beyond setup file
       timeout: 120000, // Give auth setup more time in CI
-      teardown: undefined, // Prevent teardown errors in CI
     },
 
     // Unauthenticated tests (auth flows, landing page)
@@ -93,7 +93,6 @@ export default defineConfig({
         storageState: './playwright/.auth/coach.json',
       },
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
-      teardown: undefined, // Prevent premature teardown
     },
 
     // Authenticated runner dashboard tests
