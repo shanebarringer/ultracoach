@@ -329,11 +329,15 @@ jobs:
           npx playwright test --list | head -20
           echo "Total tests to run: $(npx playwright test --list | wc -l)"
 
+          # Show which projects will run
+          echo "📋 Projects to run:"
+          npx playwright test --list-projects
+
           # Run tests with explicit config to skip webServer wait and add global timeout
           # Continue even if some tests fail to allow artifact upload
-          # Increased timeout to 15 minutes to accommodate all tests
+          # Increased timeout to 20 minutes to accommodate all tests
           # Run all projects to ensure proper setup dependencies
-          npx playwright test --max-failures=10 --reporter=dot --global-timeout=900000 --workers=2 || TEST_EXIT_CODE=$?
+          npx playwright test --max-failures=5 --reporter=dot --global-timeout=1200000 --workers=2 || TEST_EXIT_CODE=$?
 
           # Report status but don't fail yet to allow artifact upload
           if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then

@@ -13,7 +13,7 @@ export default defineConfig({
   /* Fail on flaky tests in CI (Context7 best practice) */
   failOnFlakyTests: !!process.env.CI,
   /* Limit failures to save CI resources */
-  maxFailures: process.env.CI ? 10 : undefined,
+  maxFailures: process.env.CI ? 5 : undefined,
   /* Reduce log verbosity in CI */
   quiet: !!process.env.CI,
   /* Retry on CI only */
@@ -60,7 +60,6 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
-      testDir: undefined, // Prevent running any tests beyond setup file
       timeout: 120000, // Give auth setup more time in CI
     },
 
@@ -68,7 +67,6 @@ export default defineConfig({
     {
       name: 'setup-coach',
       testMatch: /auth-coach\.setup\.ts/,
-      testDir: undefined, // Prevent running any tests beyond setup file
       timeout: 120000, // Give auth setup more time in CI
     },
 
