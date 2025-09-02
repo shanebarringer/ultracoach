@@ -4,7 +4,6 @@ import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/reac
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { LockIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
-import { z } from 'zod'
 
 import React from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -23,19 +22,9 @@ import {
 import type { User } from '@/lib/better-auth'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
+import { type SignInForm, signInSchema } from '@/types/forms'
 
 const logger = createLogger('SignIn')
-
-// Zod schema for signin form validation
-const signInSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
-})
-
-type SignInForm = z.infer<typeof signInSchema>
 
 export default function SignIn() {
   const [formState, setFormState] = useAtom(signInFormAtom)

@@ -56,7 +56,24 @@ debug-*.png
 successful-*.png
 supabase/migrations_old/
 
-#mcp config
+# mcp config
 .mcp.json
 
+# Development files
 dev.pid
+dev.log
+*.log
+
+# Debug and test files
+debug-*.js
+debug-*.mjs
+test-*.js
+
+# Supabase logs
+supabase/logs/
+
+# Context7 documentation cache
+.context7-docs/
+
+# Temporary migration backups
+supabase/migrations_backup/

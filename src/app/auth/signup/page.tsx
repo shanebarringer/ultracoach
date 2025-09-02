@@ -13,7 +13,6 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { FlagIcon, LockIcon, MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
-import { z } from 'zod'
 
 import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -25,24 +24,9 @@ import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { signUpFormAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
+import { type SignUpForm, signUpSchema } from '@/types/forms'
 
 const logger = createLogger('SignUp')
-
-// Zod schema for signup form validation
-const signUpSchema = z.object({
-  fullName: z
-    .string()
-    .min(1, 'Full name is required')
-    .min(2, 'Full name must be at least 2 characters'),
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['runner', 'coach'], { message: 'Please select your role' }),
-})
-
-type SignUpForm = z.infer<typeof signUpSchema>
 
 export default function SignUp() {
   const [formState, setFormState] = useAtom(signUpFormAtom)
