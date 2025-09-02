@@ -1,14 +1,16 @@
 # CodeRabbit Configuration for UltraCoach
 # AI-powered code review for ultramarathon coaching platform
+# This configuration applies to ALL branches and pull requests
 
 # Language and framework configuration
 language: "en-US"
 
 # Review settings
 reviews:
-  # Enable auto-review on all PRs
+  # Enable auto-review on all PRs across all branches
   auto_review:
     enabled: true
+    # Reviews all PRs regardless of target branch (main, develop, feature/*, etc.)
     
   # Review instructions
   path_instructions:
