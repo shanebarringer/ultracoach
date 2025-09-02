@@ -9,7 +9,7 @@ import { useCallback } from 'react'
 
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
 import { useNavigationItems } from '@/hooks/useNavigationItems'
-import { uiStateAtom } from '@/lib/atoms'
+import { uiStateAtom } from '@/lib/atoms/index'
 
 import MobileNavContent from './MobileNavContent'
 

@@ -5,7 +5,7 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, workoutsAtom } from '@/lib/atoms'
+import { loadingStatesAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 

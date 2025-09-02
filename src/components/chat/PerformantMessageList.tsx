@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { memo, useEffect, useRef } from 'react'
 
-import { conversationMessagesAtomsFamily } from '@/lib/atoms'
+import { conversationMessagesAtomsFamily } from '@/lib/atoms/index'
 
 import GranularMessage from './GranularMessage'
 

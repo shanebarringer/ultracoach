@@ -2,12 +2,12 @@
 
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
 
 import { useMemo, useState } from 'react'
 
-import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms'
+import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('CoachSelector')
@@ -27,7 +27,7 @@ interface CoachSelectorProps {
 export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
   // Use Jotai atoms instead of local state
   const coaches = useAtomValue(availableCoachesAtom)
-  const [, setRelationships] = useAtom(relationshipsAtom)
+  const setRelationships = useSetAtom(relationshipsAtom)
   const [, refreshAvailableCoaches] = useAtom(availableCoachesAtom)
 
   const [searchTerm, setSearchTerm] = useState('')

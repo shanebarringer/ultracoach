@@ -4,7 +4,7 @@ import { Button, Textarea } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Link2, Send } from 'lucide-react'
 
-import { messageInputAtom } from '@/lib/atoms'
+import { messageInputAtom } from '@/lib/atoms/index'
 import { Workout } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'

@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { LockIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
 import React from 'react'
@@ -18,7 +18,7 @@ import {
   sessionAtom,
   signInFormAtom,
   userAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
@@ -29,8 +29,8 @@ const logger = createLogger('SignIn')
 export default function SignIn() {
   const [formState, setFormState] = useAtom(signInFormAtom)
   const router = useRouter()
-  const [, setSession] = useAtom(sessionAtom)
-  const [, setUser] = useAtom(userAtom)
+  const setSession = useSetAtom(sessionAtom)
+  const setUser = useSetAtom(userAtom)
   const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
   const [isRedirecting, setIsRedirecting] = useAtom(authRedirectingAtom)
 

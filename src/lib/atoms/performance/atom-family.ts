@@ -1,0 +1,35 @@
+// AtomFamily patterns for efficient dynamic atoms
+import { atom } from 'jotai'
+import { atomFamily } from 'jotai/utils'
+
+import type { Workout, TrainingPlan } from '@/lib/supabase'
+
+// Workout atom family - creates individual atoms per workout ID
+export const workoutAtomFamily = atomFamily(
+  (workoutId: string) => atom<Workout | null>(null)
+)
+
+// Training plan atom family
+export const trainingPlanAtomFamily = atomFamily(
+  (planId: string) => atom<TrainingPlan | null>(null)
+)
+
+// Conversation message count family
+export const conversationMessageCountFamily = atomFamily(
+  (conversationId: string) => atom(0)
+)
+
+// Form field atom family for granular form updates
+export const formFieldAtomFamily = atomFamily(
+  ({ formId, fieldName }: { formId: string; fieldName: string }) => atom('')
+)
+
+// Loading state family for async operations
+export const loadingStateFamily = atomFamily(
+  (operationId: string) => atom(false)
+)
+
+// Error state family for async operations
+export const errorStateFamily = atomFamily(
+  (operationId: string) => atom<string | null>(null)
+)

@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 
 import { useSearchParams } from 'next/navigation'
 
-import { stravaActivitiesRefreshableAtom, stravaConnectionStatusAtom } from '@/lib/atoms'
+import { stravaActivitiesRefreshableAtom, stravaConnectionStatusAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 

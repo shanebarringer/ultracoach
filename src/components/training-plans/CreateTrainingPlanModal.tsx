@@ -24,7 +24,7 @@ import {
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'

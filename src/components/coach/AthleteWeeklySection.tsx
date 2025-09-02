@@ -17,7 +17,7 @@ import { memo, useMemo } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import { uiStateAtom } from '@/lib/atoms'
+import { uiStateAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'

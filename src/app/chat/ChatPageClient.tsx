@@ -8,7 +8,7 @@ import ConversationList from '@/components/chat/ConversationList'
 import NewMessageModal from '@/components/chat/NewMessageModal'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { chatUiStateAtom } from '@/lib/atoms'
+import { chatUiStateAtom } from '@/lib/atoms/index'
 import type { ServerSession } from '@/utils/auth-server'
 
 interface Props {

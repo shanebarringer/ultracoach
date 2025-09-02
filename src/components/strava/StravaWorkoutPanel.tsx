@@ -36,7 +36,7 @@ import {
   syncStatsAtom,
   triggerWorkoutMatchingAtom,
   workoutStravaShowPanelAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import type { StravaActivity } from '@/types/strava'

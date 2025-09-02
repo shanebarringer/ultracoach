@@ -18,7 +18,7 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
-import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms'
+import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'

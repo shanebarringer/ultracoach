@@ -10,7 +10,7 @@ import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Import after mocks
-import { messagesAtom, sendMessageActionAtom, sessionAtom } from '@/lib/atoms'
+import { messagesAtom, sendMessageActionAtom, sessionAtom } from '@/lib/atoms/index'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()

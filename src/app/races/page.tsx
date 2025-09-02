@@ -46,7 +46,7 @@ import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
-import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
+import { racesAtom, selectedRaceAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 

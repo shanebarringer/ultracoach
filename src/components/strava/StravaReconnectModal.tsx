@@ -32,7 +32,7 @@ import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
   stravaStateAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('StravaReconnectModal')

@@ -22,7 +22,7 @@ import { useRouter } from 'next/navigation'
 
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
-import { signUpFormAtom } from '@/lib/atoms'
+import { signUpFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { type SignUpForm, signUpSchema } from '@/types/forms'
 

@@ -18,7 +18,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms'
+import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
 // Create loadable atom for better UX

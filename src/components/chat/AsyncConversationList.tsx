@@ -8,7 +8,7 @@ import { Suspense } from 'react'
 
 import Link from 'next/link'
 
-import { asyncConversationsAtom } from '@/lib/atoms'
+import { asyncConversationsAtom } from '@/lib/atoms/index'
 import type { ConversationWithUser } from '@/lib/supabase'
 
 interface AsyncConversationListProps {

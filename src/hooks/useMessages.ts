@@ -16,7 +16,7 @@ import {
   selectedRecipientAtom,
   sendMessageActionAtom,
   uiStateAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Message, MessageWithUser } from '@/lib/supabase'
 

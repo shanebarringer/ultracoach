@@ -1,6 +1,6 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import {
   Action,
   KBarProvider as KBar,
@@ -35,7 +35,7 @@ import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
   workoutStravaShowPanelAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('KBarProvider')
@@ -104,7 +104,7 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   // Strava state atoms
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
   const [, refreshStravaActivities] = useAtom(stravaActivitiesRefreshableAtom)
-  const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
+  const setShowStravaPanel = useSetAtom(workoutStravaShowPanelAtom)
 
   // Extract userType for dependency array
   const userType = (session?.user as ExtendedUser)?.userType

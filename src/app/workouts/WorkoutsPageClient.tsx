@@ -20,7 +20,7 @@ import {
   uiStateAtom,
   workoutStravaShowPanelAtom,
   workoutsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'

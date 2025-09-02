@@ -9,7 +9,7 @@ import {
   relationshipsLoadableAtom,
   trainingPlansAtom,
   workoutsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'

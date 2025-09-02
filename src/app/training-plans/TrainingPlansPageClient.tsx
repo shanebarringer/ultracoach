@@ -12,7 +12,7 @@ import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingP
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
 import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useRefreshableTrainingPlans } from '@/hooks/useRefreshableTrainingPlans'
-import { filteredTrainingPlansAtom, trainingPlansLoadableAtom, uiStateAtom } from '@/lib/atoms'
+import { filteredTrainingPlansAtom, trainingPlansLoadableAtom, uiStateAtom } from '@/lib/atoms/index'
 import type { TrainingPlan } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
 

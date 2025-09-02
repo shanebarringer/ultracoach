@@ -9,7 +9,7 @@ import { CoachSelector } from '@/components/relationships/CoachSelector'
 import { RelationshipsList } from '@/components/relationships/RelationshipsList'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
-import { relationshipsAtom } from '@/lib/atoms'
+import { relationshipsAtom } from '@/lib/atoms/index'
 
 export function RelationshipsPageContent() {
   const { user } = useBetterAuth()

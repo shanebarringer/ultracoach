@@ -32,7 +32,7 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
-import { selectedMatchAtom, showWorkoutDiffModalAtom } from '@/lib/atoms'
+import { selectedMatchAtom, showWorkoutDiffModalAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { WorkoutDiscrepancy, WorkoutMatch } from '@/utils/workout-matching'
 

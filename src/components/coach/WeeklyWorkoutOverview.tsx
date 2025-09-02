@@ -7,7 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-
 
 import { memo, useEffect, useMemo, useState } from 'react'
 
-import { connectedRunnersAtom } from '@/lib/atoms'
+import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'

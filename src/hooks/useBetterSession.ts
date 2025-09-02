@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
 
-import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms'
+import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 

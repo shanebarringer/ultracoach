@@ -5,7 +5,7 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { sendTypingTimeoutRefsAtom, typingStatusAtom, typingTimeoutRefsAtom } from '@/lib/atoms'
+import { sendTypingTimeoutRefsAtom, typingStatusAtom, typingTimeoutRefsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useTypingStatus')

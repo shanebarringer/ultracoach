@@ -10,7 +10,7 @@ import {
   persistedStateAtom,
   workoutActionsAtom,
   workoutAnalyticsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
