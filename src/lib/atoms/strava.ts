@@ -63,7 +63,7 @@ export const stravaAutoReconnectAtom = atom<{
 export const syncProgressAtom = atom<Record<string, unknown>>({})
 
 // Strava connection atom
-export const stravaConnectionAtom = atom<unknown>(null)
+export const stravaConnectionAtom = atom<Record<string, any> | null>(null)
 
 // Sync stats atom (derived)
 export const syncStatsAtom = atom(get => {

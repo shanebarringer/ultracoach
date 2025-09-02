@@ -170,6 +170,8 @@ export interface OptimisticMessage extends MessageWithUser {
   isPending?: boolean
   hasError?: boolean
   isOptimistic?: boolean
+  tempId?: string
+  optimistic?: boolean
 }
 
 export interface ExtendedTrainingPlan extends TrainingPlan {

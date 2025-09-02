@@ -238,6 +238,7 @@ export const sendMessageActionAtom = atom(
         created_at: '',
         updated_at: '',
       },
+      read: false,
       optimistic: true,
     }
 
