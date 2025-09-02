@@ -118,7 +118,7 @@ async function testBetterAuthConfig() {
     // Test 6: Try importing Better Auth (without initializing)
     logger.info('6. Testing Better Auth import...')
     try {
-      const { auth } = await import('../src/lib/better-auth')
+      const { auth } = await import('../../src/lib/better-auth')
       logger.info('✅ Better Auth import successful')
 
       // Check if we can get the auth instance

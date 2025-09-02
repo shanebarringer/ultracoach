@@ -14,7 +14,7 @@ async function testAuthentication() {
 
   try {
     // Import auth only after environment variables are loaded
-    const { auth } = await import('../src/lib/better-auth')
+    const { auth } = await import('../../src/lib/better-auth')
 
     logger.info('✅ Better Auth imported successfully')
 

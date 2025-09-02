@@ -74,9 +74,9 @@ const SAMPLE_WORKOUTS = [
 
 async function seedTestWorkouts() {
   // Import modules after environment setup
-  const { db } = await import('../src/lib/db')
-  const { createLogger } = await import('../src/lib/logger')
-  const { workouts, user } = await import('../src/lib/schema')
+  const { db } = await import('../../src/lib/db')
+  const { createLogger } = await import('../../src/lib/logger')
+  const { workouts, user } = await import('../../src/lib/schema')
   const { eq } = await import('drizzle-orm')
 
   const logger = createLogger('seed-test-workouts')

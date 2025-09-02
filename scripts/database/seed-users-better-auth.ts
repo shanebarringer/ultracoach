@@ -68,8 +68,8 @@ async function signUpUser(userData: (typeof testUsers)[0]) {
 async function clearExistingUsers() {
   logger.info('🗑️ Clearing existing users and accounts...')
 
-  const { db } = await import('../src/lib/database')
-  const schema = await import('../src/lib/schema')
+  const { db } = await import('../../src/lib/database')
+  const schema = await import('../../src/lib/schema')
 
   // Delete accounts first (due to foreign key constraints)
   await db.delete(schema.account)

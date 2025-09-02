@@ -13,9 +13,9 @@ import { resolve } from 'path'
 import { Pool } from 'pg'
 import { promisify } from 'util'
 
-import { db } from '../src/lib/database'
-import { createLogger } from '../src/lib/logger'
-import * as schema from '../src/lib/schema'
+import { db } from '../../src/lib/database'
+import { createLogger } from '../../src/lib/logger'
+import * as schema from '../../src/lib/schema'
 
 // Load environment variables from .env.local BEFORE importing anything that uses them
 config({ path: resolve(process.cwd(), '.env.local') })
@@ -434,7 +434,7 @@ async function seedTestUsers() {
   const testUsersData = getTestUsersData()
 
   // Import Better Auth instance
-  const { auth } = await import('../src/lib/better-auth')
+  const { auth } = await import('../../src/lib/better-auth')
 
   for (const userData of testUsersData) {
     try {
@@ -473,7 +473,7 @@ async function seedTestUsers() {
 
       // Create credential account for password authentication
       // Import Better Auth instance to access password hashing
-      const { auth } = await import('../src/lib/better-auth')
+      const { auth } = await import('../../src/lib/better-auth')
 
       // Use Better Auth's internal password hashing
       const hashedPassword =
