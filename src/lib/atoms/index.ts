@@ -251,10 +251,11 @@ export const sendMessageActionAtom = atom(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          recipientId: payload.recipientId,
           content: payload.content,
+          recipientId: payload.recipientId,
           workoutId: payload.workoutId,
         }),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -271,9 +272,9 @@ export const sendMessageActionAtom = atom(
 
       return realMessage
     } catch (error) {
-      // Mark message as failed
+      // Remove optimistic message on failure
       set(messagesAtom, prev =>
-        prev.map(msg => (msg.tempId === tempId ? { ...msg, error: true } : msg))
+        prev.filter(msg => msg.tempId !== tempId)
       )
       throw error
     }
