@@ -1,8 +1,9 @@
 // Chat and messaging atoms
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
+import { atomWithStorage, atomFamily } from 'jotai/utils'
 
-import type { Conversation, OptimisticMessage } from '@/types/chat'
+import type { Conversation } from '@/types/chat'
+import type { OptimisticMessage } from '@/lib/supabase'
 
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
@@ -23,7 +24,6 @@ export const selectedConversationIdAtom = atom<string | null>(null)
 // Chat UI state atoms
 export const typingIndicatorAtom = atom<Record<string, boolean>>({})
 export const unreadMessagesCountAtom = atom<Record<string, number>>({})
-export const messageInputAtom = atom('')
 export const isTypingAtom = atom(false)
 
 // Chat preferences
@@ -32,6 +32,14 @@ export const chatNotificationsEnabledAtom = atomWithStorage('chatNotificationsEn
 
 // Current conversation atom
 export const currentConversationIdAtom = atom<string | null>(null)
+
+// Message input atom with proper structure
+export const messageInputAtom = atom({
+  message: '',
+  linkedWorkout: null as any,
+  linkType: null as string | null,
+  showWorkoutSelector: false,
+})
 
 // Chat UI state
 export const chatUiStateAtom = atom({
@@ -44,6 +52,12 @@ export const chatUiStateAtom = atom({
   activeView: 'list' as 'list' | 'conversation',
   unreadCounts: {} as Record<string, number>,
   lastRead: {} as Record<string, string>,
+  showNewMessage: false,
+  sending: false,
+  filterWorkoutId: null as string | null,
+  selectedChatWorkout: null as any,
+  showWorkoutModal: false,
+  hasInitiallyLoadedMessages: false,
 })
 
 // Message input state
@@ -87,4 +101,9 @@ export const selectedRecipientAtom = atom(
     } as any))
     set(currentConversationIdAtom, recipientId)
   }
+)
+
+// Conversation messages atoms family - using atomFamily for proper typing
+export const conversationMessagesAtomsFamily = atomFamily(
+  (conversationId: string) => atom<OptimisticMessage[]>([])
 )

@@ -47,3 +47,13 @@ export const workoutLinkSelectorSearchAtom = atom<string>('')
 // Typing status debouncing atoms
 export const typingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
 export const sendTypingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
+
+// Workout lookup map for quick access
+export const workoutLookupMapAtom = atom(get => {
+  const workouts = get(workoutsAtom)
+  return new Map(workouts.map(w => [w.id, w]))
+})
+
+// Workout diff modal atoms
+export const selectedMatchAtom = atom<any>(null)
+export const showWorkoutDiffModalAtom = atom(false)

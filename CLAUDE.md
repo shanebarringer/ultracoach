@@ -326,6 +326,78 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ---
 
+## 🎯 Jotai Atom Usage Patterns (IMPORTANT)
+
+**Proper usage of Jotai hooks for optimal performance and type safety:**
+
+### Reading Atoms
+```typescript
+// ✅ GOOD - Use useAtomValue when ONLY reading (no writing needed)
+const races = useAtomValue(racesAtom) // Just the value, no setter
+
+// ❌ BAD - Don't use useAtom if you only need the value
+const [races] = useAtom(racesAtom) // Creates unnecessary setter
+```
+
+### Writing to Atoms
+```typescript
+// ✅ GOOD - Use useSetAtom when ONLY writing (no reading needed)
+const setRaces = useSetAtom(racesAtom) // Just the setter, no subscription
+
+// ❌ BAD - Don't use useAtom if you only need the setter
+const [, setRaces] = useAtom(racesAtom) // Creates unnecessary subscription
+```
+
+### Reading and Writing (Same Atom)
+```typescript
+// ✅ GOOD - Use useAtom when you need BOTH read and write
+const [races, setRaces] = useAtom(racesAtom) // Same atom, both operations
+
+// ❌ BAD - Don't split unnecessarily in the same component
+const races = useAtomValue(racesAtom)     // These are the SAME atom
+const setRaces = useSetAtom(racesAtom)    // being accessed twice
+```
+
+**Key Point**: `racesAtom` is ONE atom. The different hooks (`useAtom`, `useAtomValue`, `useSetAtom`) are just different ways to access it based on your needs.
+
+### Common Patterns
+
+1. **Simple atoms vs Refreshable atoms**
+   ```typescript
+   // Simple atom - setter expects a value
+   const racesAtom = atom<Race[]>([])
+   const setRaces = useSetAtom(racesAtom)
+   setRaces(newRaces) // Pass the new value directly
+   
+   // Refreshable atom (write-only) - for async operations
+   const refreshRacesAtom = atom(
+     null,
+     async (get, set) => {
+       const races = await fetchRaces()
+       set(racesAtom, races)
+     }
+   )
+   const refresh = useSetAtom(refreshRacesAtom)
+   refresh() // Call with no arguments
+   ```
+
+2. **atomFamily for dynamic atoms**
+   ```typescript
+   // Creates atoms on demand based on parameters
+   const messagesByConversationFamily = atomFamily(
+     (conversationId: string) => atom<Message[]>([])
+   )
+   ```
+
+3. **splitAtom for list optimization**
+   ```typescript
+   // Split array atom into individual atoms for each item
+   const messagesAtom = atom<Message[]>([])
+   const messageAtomsAtom = splitAtom(messagesAtom)
+   const [messageAtoms] = useAtom(messageAtomsAtom)
+   // Each messageAtom can be updated independently
+   ```
+
 ## 🚨 TypeScript Code Quality Standards (CRITICAL)
 
 **NEVER use `any` type - this is strictly forbidden**

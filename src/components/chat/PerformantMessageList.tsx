@@ -1,6 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
+import { splitAtom } from 'jotai/utils'
 
 import { memo, useEffect, useRef } from 'react'
 
@@ -17,8 +18,11 @@ interface PerformantMessageListProps {
 const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMessageListProps) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
-  // Get split atoms for this conversation - each message gets its own atom
-  const [messageAtoms] = useAtom(conversationMessagesAtomsFamily(recipientId))
+  // Get the messages atom for this conversation
+  const messagesAtom = conversationMessagesAtomsFamily(recipientId)
+  // Split the array atom into individual atoms for each message
+  const messageAtomsAtom = splitAtom(messagesAtom as any)
+  const [messageAtoms] = useAtom(messageAtomsAtom)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

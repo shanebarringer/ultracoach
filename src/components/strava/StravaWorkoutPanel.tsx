@@ -296,32 +296,32 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                         <div className="flex justify-between">
                           <span className="text-foreground-600">Perfect</span>
                           <span className="font-medium text-success">
-                            {matchingSummary.byType.exact}
+                            {matchingSummary.byType?.exact?.matched || 0}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-foreground-600">Good</span>
                           <span className="font-medium text-primary">
-                            {matchingSummary.byType.probable}
+                            {matchingSummary.byType?.probable?.matched || 0}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-foreground-600">Possible</span>
                           <span className="font-medium text-warning">
-                            {matchingSummary.byType.possible}
+                            {matchingSummary.byType?.possible?.suggestions || 0}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-foreground-600">Conflicts</span>
                           <span className="font-medium text-danger">
-                            {matchingSummary.byType.conflicts}
+                            {matchingSummary.byType?.conflicts?.unmatched || 0}
                           </span>
                         </div>
                       </div>
-                      {matchingSummary.unmatchedWorkouts > 0 && (
+                      {matchingSummary.unmatchedWorkouts && matchingSummary.unmatchedWorkouts.length > 0 && (
                         <div className="text-xs p-2 bg-warning/10 rounded">
                           <span className="text-warning-600">
-                            {matchingSummary.unmatchedWorkouts} planned workouts have no matching
+                            {matchingSummary.unmatchedWorkouts.length} planned workouts have no matching
                             activities
                           </span>
                         </div>

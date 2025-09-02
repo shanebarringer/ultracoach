@@ -227,20 +227,18 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         id: 'strava-status',
         name: 'Strava Connection Status',
         subtitle:
-          connectionStatus === 'loading'
+          connectionStatus.status === 'loading'
             ? 'Checking connection...'
-            : connectionStatus === 'connected'
+            : connectionStatus.connected
               ? '✅ Connected'
-              : connectionStatus === 'disconnected'
-                ? '❌ Not connected'
-                : 'Check your Strava connection',
+              : '❌ Not connected',
         shortcut: ['s', 'c'],
         keywords: 'strava connection status check',
         icon: <Activity className="w-4 h-4" />,
         parent: 'strava',
         perform: () => {
           logger.info('Strava status command triggered')
-          if (connectionStatus === 'disconnected') {
+          if (!connectionStatus.connected) {
             logger.info('Redirecting to Strava connect')
             window.location.href = '/api/strava/connect'
           } else {

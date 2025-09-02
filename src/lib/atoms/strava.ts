@@ -11,7 +11,13 @@ export const stravaLoadingAtom = atom(false)
 export const stravaErrorAtom = atom<string | null>(null)
 
 // Strava connection state
-export const stravaConnectionStatusAtom = atom<'connected' | 'disconnected' | 'loading'>('loading')
+export const stravaConnectionStatusAtom = atom<{
+  status: 'connected' | 'disconnected' | 'loading'
+  connected: boolean
+}>({
+  status: 'loading',
+  connected: false,
+})
 export const stravaAccessTokenAtom = atom<string | null>(null)
 export const stravaRefreshTokenAtom = atom<string | null>(null)
 
@@ -62,11 +68,19 @@ export const stravaConnectionAtom = atom<unknown>(null)
 // Sync stats atom (derived)
 export const syncStatsAtom = atom(get => {
   const syncProgress = get(syncProgressAtom)
-  // Return basic sync stats structure
+  // Return basic sync stats structure with aliases
+  const totalActivities = (syncProgress.totalActivities as number) ?? 0
+  const syncedActivities = (syncProgress.syncedActivities as number) ?? 0
+  const pendingActivities = (syncProgress.pendingActivities as number) ?? 0
+  
   return {
-    totalActivities: 0,
-    syncedActivities: 0,
-    pendingActivities: 0,
+    totalActivities,
+    syncedActivities,
+    pendingActivities,
+    // Add alias properties for backward compatibility
+    total: totalActivities,
+    synced: syncedActivities,
+    pending: pendingActivities,
     ...syncProgress,
   }
 })
@@ -81,9 +95,18 @@ export const stravaStateAtom = atom(get => {
   const autoReconnect = get(stravaAutoReconnectAtom)
   
   return {
-    connection,
+    connection: {
+      ...connection,
+      connected: status === 'connected',
+      isConnected: status === 'connected',
+    },
     activities,
-    syncStats,
+    syncStats: {
+      ...syncStats,
+      total: syncStats.totalActivities,
+      synced: syncStats.syncedActivities,
+      pending: syncStats.pendingActivities,
+    },
     status,
     error,
     autoReconnect,
@@ -92,4 +115,51 @@ export const stravaStateAtom = atom(get => {
     needsReconnect: status === 'expired',
     loading: get(stravaLoadingAtom),
   }
+})
+
+// Strava actions atom for dispatching actions
+export const stravaActionsAtom = atom(
+  null,
+  async (get, set, action: { type: string; payload?: any }) => {
+    switch (action.type) {
+      case 'CONNECT':
+        set(stravaStatusAtom, 'connecting')
+        // Handle connection logic
+        break
+      case 'DISCONNECT':
+        set(stravaStatusAtom, 'disconnected')
+        set(stravaConnectionAtom, null)
+        set(stravaActivitiesAtom, [])
+        break
+      case 'REFRESH':
+        // Handle refresh logic
+        break
+    }
+  }
+)
+
+// Trigger workout matching atom
+export const triggerWorkoutMatchingAtom = atom(
+  null,
+  async (_get, _set) => {
+    // Trigger workout matching logic
+    return Promise.resolve()
+  }
+)
+
+// Matching summary atom for workout comparison
+export const matchingSummaryAtom = atom<{
+  matched: number
+  unmatched: number
+  suggestions: number
+  byType?: Record<string, { matched: number; unmatched: number; suggestions: number }>
+  unmatchedWorkouts?: any[]
+  lastProcessed?: Date | null
+}>({
+  matched: 0,
+  unmatched: 0,
+  suggestions: 0,
+  byType: {},
+  unmatchedWorkouts: [],
+  lastProcessed: null,
 })

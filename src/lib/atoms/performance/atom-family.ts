@@ -33,3 +33,13 @@ export const loadingStateFamily = atomFamily(
 export const errorStateFamily = atomFamily(
   (operationId: string) => atom<string | null>(null)
 )
+
+// Messages by conversation family for async loading
+export const messagesByConversationLoadableFamily = atomFamily((conversationId: string) => 
+  atom(async () => {
+    // Fetch messages for specific conversation
+    const response = await fetch(`/api/messages/conversation/${conversationId}`)
+    if (!response.ok) return []
+    return response.json()
+  })
+)

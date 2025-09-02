@@ -1,6 +1,6 @@
 // Coach-runner relationship atoms
 import { atom } from 'jotai'
-import { atomWithRefresh } from 'jotai/utils'
+import { atomWithRefresh, loadable } from 'jotai/utils'
 
 import { createLogger } from '../logger'
 import type { RelationshipData } from '@/types/relationships'
@@ -13,6 +13,9 @@ const isBrowser = typeof window !== 'undefined'
 export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
+
+// Loadable version for suspense support
+export const relationshipsLoadableAtom = loadable(relationshipsAtom)
 
 // Selected relationship atoms
 export const selectedRelationshipAtom = atom<RelationshipData | null>(null)
@@ -60,6 +63,42 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
     return data as User[]
   } catch (error) {
     logger.error('Error fetching connected runners', error)
+    return []
+  }
+})
+
+// Available coaches atom
+export const availableCoachesAtom = atomWithRefresh(async () => {
+  if (!isBrowser) return []
+  const logger = createLogger('AvailableCoachesAtom')
+  try {
+    const response = await fetch('/api/coaches/available', {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    return data as User[]
+  } catch (error) {
+    logger.error('Error fetching available coaches', error)
+    return []
+  }
+})
+
+// Available runners atom  
+export const availableRunnersAtom = atomWithRefresh(async () => {
+  if (!isBrowser) return []
+  const logger = createLogger('AvailableRunnersAtom')
+  try {
+    const response = await fetch('/api/runners/available', {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    return data as User[]
+  } catch (error) {
+    logger.error('Error fetching available runners', error)
     return []
   }
 })

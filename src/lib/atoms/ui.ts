@@ -33,7 +33,7 @@ export const toastMessagesAtom = atom<Array<{
 // Calendar UI state
 export const calendarUiStateAtom = atom({
   view: 'month' as 'week' | 'month' | 'day',
-  selectedDate: new Date(),
+  selectedDate: null as string | null,
   highlightedDates: [] as Date[],
   filterType: 'all' as 'all' | 'planned' | 'completed',
   showDetails: true,

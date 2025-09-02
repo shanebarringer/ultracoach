@@ -2,7 +2,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import type { Race } from '@/types/races'
+import type { Race } from '@/lib/supabase'
 
 // Core race atoms
 export const racesAtom = atom<Race[]>([])

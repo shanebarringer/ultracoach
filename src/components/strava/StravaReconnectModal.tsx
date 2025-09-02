@@ -75,7 +75,7 @@ const StravaReconnectModal = memo(
         action?: string
       }> = []
 
-      if (connectionStatus === 'disconnected') {
+      if (!connectionStatus.connected) {
         issues.push({
           type: 'error',
           message: 'Strava account is not connected',

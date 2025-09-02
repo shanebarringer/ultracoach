@@ -19,7 +19,7 @@ import {
   Textarea,
   useDisclosure,
 } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   CalendarIcon,
   EditIcon,
@@ -68,7 +68,7 @@ const TERRAIN_TYPES = [
 export default function RacesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [races, refreshRaces] = useAtom(racesAtom)
+  const [races, setRaces] = useAtom(racesAtom)
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
   const logger = useMemo(() => createLogger('RacesPage'), [])
 
@@ -127,15 +127,19 @@ export default function RacesPage() {
     if (!session?.user?.id) return
 
     try {
-      logger.debug('Triggering races refresh')
-      await refreshRaces()
+      logger.debug('Fetching races from API')
+      const response = await fetch('/api/races')
+      if (response.ok) {
+        const data = await response.json()
+        setRaces(data)
+      }
     } catch (error) {
-      logger.error('Error refreshing races:', error)
+      logger.error('Error fetching races:', error)
     } finally {
       setHasAttemptedLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, refreshRaces])
+  }, [session?.user?.id, setRaces])
 
   // Fetch training plan counts for all races
   const fetchTrainingPlanCounts = useCallback(async () => {

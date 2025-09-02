@@ -9,16 +9,9 @@ import { useMemo, useState } from 'react'
 
 import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
+import type { User } from '@/lib/supabase'
 
 const logger = createLogger('CoachSelector')
-
-interface Coach {
-  id: string
-  name: string
-  fullName: string | null
-  email: string
-  createdAt: string
-}
 
 interface CoachSelectorProps {
   onRelationshipCreated?: () => void
@@ -52,9 +45,8 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
   // Use useMemo for filtered coaches for better performance
   const filteredCoaches = useMemo(() => {
     return coaches.filter(
-      (coach: Coach) =>
-        coach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        coach.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (coach: User) =>
+        coach.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coach.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [coaches, searchTerm])
@@ -160,17 +152,17 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredCoaches.map((coach: Coach) => (
+              {filteredCoaches.map((coach: User) => (
                 <div
                   key={coach.id}
                   className="flex items-center gap-4 p-4 bg-default-50 hover:bg-default-100 rounded-lg transition-colors"
                 >
-                  <Avatar name={coach.name} size="md" className="flex-shrink-0" />
+                  <Avatar name={coach.full_name || coach.email} size="md" className="flex-shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-foreground truncate">
-                        {coach.fullName || coach.name}
+                        {coach.full_name || coach.email}
                       </h4>
                       <Chip size="sm" variant="flat" color="primary">
                         Coach

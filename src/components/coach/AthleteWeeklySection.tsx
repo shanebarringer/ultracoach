@@ -18,9 +18,8 @@ import { memo, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { uiStateAtom } from '@/lib/atoms/index'
-import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
-import type { Workout } from '@/lib/supabase'
+import type { User, Workout } from '@/lib/supabase'
 
 import WeeklyWorkoutCard from './WeeklyWorkoutCard'
 
@@ -70,7 +69,7 @@ function AthleteWeeklySection({
 
     logger.debug('Generated weekly workout grid', {
       athleteId: athlete.id,
-      athleteName: athlete.name,
+      athleteName: athlete.full_name || athlete.email,
       weekStart: weekStart.toISOString(),
       totalWorkouts: workouts.length,
       gridDays: grid.map(g => ({ day: g.day, workoutsCount: g.workouts.length })),
@@ -147,10 +146,10 @@ function AthleteWeeklySection({
         <div className="flex items-center justify-between w-full">
           {/* Athlete Info */}
           <div className="flex items-center gap-4">
-            <Avatar name={athlete.name || 'User'} size="lg" className="bg-primary text-white" />
+            <Avatar name={athlete.full_name || athlete.email || 'User'} size="lg" className="bg-primary text-white" />
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-semibold text-foreground">{athlete.name || 'User'}</h3>
+                <h3 className="text-xl font-semibold text-foreground">{athlete.full_name || athlete.email || 'User'}</h3>
                 <Chip
                   size="sm"
                   variant="flat"
