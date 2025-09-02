@@ -4,7 +4,7 @@
  *
  * Diagnose CI environment issues for test user creation
  */
-import { createLogger } from '../src/lib/logger'
+import { createLogger } from '../../src/lib/logger'
 
 const logger = createLogger('debug-ci-environment')
 

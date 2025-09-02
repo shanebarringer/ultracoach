@@ -8,9 +8,9 @@ import { config } from 'dotenv'
 import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { db } from '../src/lib/db'
-import { createLogger } from '../src/lib/logger'
-import { account, user } from '../src/lib/schema'
+import { db } from '../../src/lib/db'
+import { createLogger } from '../../src/lib/logger'
+import { account, user } from '../../src/lib/schema'
 
 // Load environment variables - CI uses environment variables directly, not .env.local
 if (process.env.NODE_ENV !== 'test') {

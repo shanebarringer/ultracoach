@@ -63,7 +63,7 @@ jobs:
 
   playwright:
     # Run Playwright on main branch pushes and PR to CI-related branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/codebase-cleanup' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
@@ -230,7 +230,7 @@ jobs:
         timeout-minutes: 3
 
       - name: Debug CI environment before user creation
-        run: pnpm tsx scripts/debug-ci-environment.ts
+        run: pnpm tsx scripts/debug/debug-ci-environment.ts
         env:
           # Ensure test database is used
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
@@ -246,7 +246,7 @@ jobs:
           for attempt in {1..3}; do
             echo "👥 Test user creation attempt $attempt/3..."
             
-            if timeout 60s pnpm tsx scripts/create-playwright-test-users.ts; then
+            if timeout 60s pnpm tsx scripts/testing/create-playwright-test-users.ts; then
               echo "✅ Test users created successfully!"
               break
             else
@@ -274,7 +274,7 @@ jobs:
       - name: Seed test data
         run: |
           echo "Seeding test workouts..."
-          pnpm tsx scripts/seed-test-workouts.ts
+          pnpm tsx scripts/database/seed-test-workouts.ts
           echo "Test data seeded"
         timeout-minutes: 1
         env:
@@ -474,7 +474,7 @@ jobs:
           fi
 
       - name: Create shard-specific test users
-        run: pnpm tsx scripts/create-playwright-test-users.ts
+        run: pnpm tsx scripts/testing/create-playwright-test-users.ts
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
