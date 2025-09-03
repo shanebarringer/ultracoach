@@ -1,5 +1,6 @@
 import { addYears, isAfter, isBefore, isValid, parseISO } from 'date-fns'
 import { and, eq, inArray } from 'drizzle-orm'
+import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -41,7 +42,59 @@ const VALID_CATEGORIES = [
 
 const VALID_TERRAINS = ['road', 'trail', 'track', 'treadmill'] as const
 
-// Validation helper functions
+// Zod validation schemas
+const BulkWorkoutSchema = z.object({
+  trainingPlanId: z.string().uuid('Invalid training plan ID format'),
+  date: z.string().refine(
+    dateStr => {
+      const date = parseISO(dateStr)
+      return (
+        isValid(date) &&
+        !isBefore(date, new Date('2020-01-01')) &&
+        !isAfter(date, addYears(new Date(), 5))
+      )
+    },
+    { message: 'Invalid date or date out of reasonable range (2020-2030)' }
+  ),
+  plannedType: z.string().min(1, 'Planned type is required').max(100, 'Planned type too long'),
+  plannedDistance: z
+    .number()
+    .min(VALIDATION_RULES.MIN_DISTANCE)
+    .max(VALIDATION_RULES.MAX_DISTANCE)
+    .optional()
+    .nullable(),
+  plannedDuration: z
+    .number()
+    .min(VALIDATION_RULES.MIN_DURATION)
+    .max(VALIDATION_RULES.MAX_DURATION)
+    .optional()
+    .nullable(),
+  notes: z.string().max(1000, 'Notes must be 1000 characters or less').optional(),
+  category: z.enum(VALID_CATEGORIES).optional().nullable(),
+  intensity: z
+    .number()
+    .min(VALIDATION_RULES.MIN_INTENSITY)
+    .max(VALIDATION_RULES.MAX_INTENSITY)
+    .optional()
+    .nullable(),
+  terrain: z.enum(VALID_TERRAINS).optional().nullable(),
+  elevationGain: z.number().min(0).max(VALIDATION_RULES.MAX_ELEVATION).optional().nullable(),
+})
+
+const BulkWorkoutRequestSchema = z.object({
+  workouts: z
+    .array(BulkWorkoutSchema)
+    .min(1, 'At least one workout is required')
+    .max(
+      VALIDATION_RULES.MAX_BULK_WORKOUTS,
+      `Maximum ${VALIDATION_RULES.MAX_BULK_WORKOUTS} workouts allowed`
+    ),
+})
+
+// Type inference handled directly in the function
+
+// Legacy validation helper functions (kept for finalWorkoutList processing)
+// TODO: Refactor to use Zod throughout
 function validateDate(dateString: string): { isValid: boolean; error?: string; date?: Date } {
   if (!dateString || typeof dateString !== 'string') {
     return { isValid: false, error: 'Date is required and must be a string' }
@@ -72,6 +125,9 @@ function validateDate(dateString: string): { isValid: boolean; error?: string; d
   return { isValid: true, date: parsedDate }
 }
 
+// Legacy validation functions - replaced by Zod schema validation above
+// Keeping commented for reference during refactoring
+/*
 function validateNumericRange(
   value: number | null | undefined,
   min: number,
@@ -126,118 +182,21 @@ function validateUUID(value: string, fieldName: string): { isValid: boolean; err
 
   return { isValid: true }
 }
+*/
 
+// Legacy validateBulkWorkout function - replaced by Zod schema validation above
+// Keeping function commented for reference during refactoring
+/*
 function validateBulkWorkout(
   workout: BulkWorkout,
   index: number
 ): { isValid: boolean; errors: string[] } {
-  const errors: string[] = []
-
-  // Validate training plan ID
-  const trainingPlanValidation = validateUUID(workout.trainingPlanId, 'trainingPlanId')
-  if (!trainingPlanValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${trainingPlanValidation.error}`)
-  }
-
-  // Validate date
-  const dateValidation = validateDate(workout.date)
-  if (!dateValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${dateValidation.error}`)
-  }
-
-  // Validate planned type (required)
-  if (
-    !workout.plannedType ||
-    typeof workout.plannedType !== 'string' ||
-    workout.plannedType.trim().length === 0
-  ) {
-    errors.push(`Workout ${index + 1}: plannedType is required`)
-  } else if (workout.plannedType.length > 100) {
-    errors.push(`Workout ${index + 1}: plannedType must be 100 characters or less`)
-  }
-
-  // Validate numeric fields
-  const distanceValidation = validateNumericRange(
-    workout.plannedDistance,
-    VALIDATION_RULES.MIN_DISTANCE,
-    VALIDATION_RULES.MAX_DISTANCE,
-    'plannedDistance'
-  )
-  if (!distanceValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${distanceValidation.error}`)
-  }
-
-  const durationValidation = validateNumericRange(
-    workout.plannedDuration,
-    VALIDATION_RULES.MIN_DURATION,
-    VALIDATION_RULES.MAX_DURATION,
-    'plannedDuration'
-  )
-  if (!durationValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${durationValidation.error}`)
-  }
-
-  const intensityValidation = validateNumericRange(
-    workout.intensity,
-    VALIDATION_RULES.MIN_INTENSITY,
-    VALIDATION_RULES.MAX_INTENSITY,
-    'intensity'
-  )
-  if (!intensityValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${intensityValidation.error}`)
-  }
-
-  const elevationValidation = validateNumericRange(
-    workout.elevationGain,
-    VALIDATION_RULES.MIN_ELEVATION,
-    VALIDATION_RULES.MAX_ELEVATION,
-    'elevationGain'
-  )
-  if (!elevationValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${elevationValidation.error}`)
-  }
-
-  // Validate enum fields
-  const categoryValidation = validateEnum(workout.category, VALID_CATEGORIES, 'category')
-  if (!categoryValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${categoryValidation.error}`)
-  }
-
-  const terrainValidation = validateEnum(workout.terrain, VALID_TERRAINS, 'terrain')
-  if (!terrainValidation.isValid) {
-    errors.push(`Workout ${index + 1}: ${terrainValidation.error}`)
-  }
-
-  // Validate notes length
-  if (workout.notes && typeof workout.notes === 'string' && workout.notes.length > 1000) {
-    errors.push(`Workout ${index + 1}: notes must be 1000 characters or less`)
-  }
-
-  return { isValid: errors.length === 0, errors }
+  // This function has been replaced by BulkWorkoutSchema Zod validation
+  // Old implementation removed to reduce code complexity
 }
+*/
 
-interface BulkWorkout {
-  trainingPlanId: string
-  date: string
-  plannedType: string
-  plannedDistance?: number | null
-  plannedDuration?: number | null
-  notes?: string
-  category?:
-    | 'easy'
-    | 'tempo'
-    | 'interval'
-    | 'long_run'
-    | 'race_simulation'
-    | 'recovery'
-    | 'strength'
-    | 'cross_training'
-    | 'rest'
-    | null
-  intensity?: number | null
-  terrain?: 'road' | 'trail' | 'track' | 'treadmill' | null
-  elevationGain?: number | null
-}
+// BulkWorkout type is now inferred from Zod schema above
 
 export async function POST(request: NextRequest) {
   try {
@@ -256,57 +215,33 @@ export async function POST(request: NextRequest) {
     }
 
     const requestBody = await request.json()
-    const { workouts: workoutList }: { workouts: BulkWorkout[] } = requestBody
 
-    // Basic array validation
-    if (!workoutList || !Array.isArray(workoutList) || workoutList.length === 0) {
-      return NextResponse.json({ error: 'No workouts provided' }, { status: 400 })
-    }
+    // Use Zod to validate the entire request
+    const validationResult = BulkWorkoutRequestSchema.safeParse(requestBody)
 
-    // Check maximum bulk limit to prevent abuse
-    if (workoutList.length > VALIDATION_RULES.MAX_BULK_WORKOUTS) {
-      return NextResponse.json(
-        {
-          error: `Too many workouts. Maximum allowed is ${VALIDATION_RULES.MAX_BULK_WORKOUTS}, received ${workoutList.length}`,
-        },
-        { status: 400 }
-      )
-    }
-
-    // Validate each workout
-    const allErrors: string[] = []
-    const validWorkouts: BulkWorkout[] = []
-
-    for (let i = 0; i < workoutList.length; i++) {
-      const workout = workoutList[i]
-      const validation = validateBulkWorkout(workout, i)
-
-      if (!validation.isValid) {
-        allErrors.push(...validation.errors)
-      } else {
-        validWorkouts.push(workout)
-      }
-    }
-
-    // If there are validation errors, return them all
-    if (allErrors.length > 0) {
+    if (!validationResult.success) {
+      const errors = validationResult.error.flatten()
       logger.warn('Bulk workout validation failed', {
         coachId: sessionUser.id,
-        totalWorkouts: workoutList.length,
-        validWorkouts: validWorkouts.length,
-        errorCount: allErrors.length,
-        errors: allErrors.slice(0, 10), // Log first 10 errors only
+        errors: errors.formErrors,
+        fieldErrors: errors.fieldErrors,
       })
 
       return NextResponse.json(
         {
           error: 'Validation failed',
-          details: allErrors,
-          summary: `${allErrors.length} validation error(s) found in ${workoutList.length} workout(s)`,
+          details: errors.formErrors.concat(
+            Object.entries(errors.fieldErrors).flatMap(
+              ([field, msgs]) => msgs?.map(msg => `${field}: ${msg}`) || []
+            )
+          ),
         },
         { status: 400 }
       )
     }
+
+    const { workouts: workoutList } = validationResult.data
+    const validWorkouts = workoutList // All workouts are valid after Zod validation
 
     // Continue with validated workouts
     const finalWorkoutList = validWorkouts
@@ -368,17 +303,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Delete existing workouts for the same dates to avoid duplicates
-    // const datesToClear = [...new Set(workoutList.map(w => w.date))]
-
-    for (const planId of trainingPlanIds) {
-      try {
-        await db.delete(workouts).where(eq(workouts.training_plan_id, planId))
-        // Note: Need to handle date filtering separately due to inArray with dates
-      } catch (deleteError) {
-        logger.error('Failed to clear existing workouts', deleteError)
-        // Continue anyway - we'll handle duplicates at insert
+    // Delete only conflicting workouts for the same dates (not ALL workouts)
+    try {
+      // Build date sets per plan (YYYY-MM-DD format for comparison)
+      const datesByPlan = new Map<string, Set<string>>()
+      for (const w of finalWorkoutList) {
+        const dateStr = w.date.split('T')[0] // Get YYYY-MM-DD part
+        const dates = datesByPlan.get(w.trainingPlanId) || new Set<string>()
+        dates.add(dateStr)
+        datesByPlan.set(w.trainingPlanId, dates)
       }
+
+      // Fetch existing workouts for affected plans
+      const existing = await db
+        .select({ id: workouts.id, planId: workouts.training_plan_id, date: workouts.date })
+        .from(workouts)
+        .where(inArray(workouts.training_plan_id, trainingPlanIds))
+
+      // Filter to only workouts on conflicting dates
+      const idsToDelete = existing
+        .filter(row => {
+          if (!row.planId) return false // Skip if no planId
+          const rowDateStr = row.date.toISOString().split('T')[0]
+          return datesByPlan.get(row.planId)?.has(rowDateStr)
+        })
+        .map(row => row.id)
+
+      // Only delete if we have conflicts
+      if (idsToDelete.length > 0) {
+        logger.info('Deleting conflicting workouts', {
+          count: idsToDelete.length,
+          plans: trainingPlanIds.length,
+        })
+        await db.delete(workouts).where(inArray(workouts.id, idsToDelete))
+      }
+    } catch (deleteError) {
+      logger.error('Failed to clear conflicting workouts', deleteError)
+      // Continue anyway - we'll handle duplicates at insert
     }
 
     // Prepare workouts for insertion with required user_id and title fields
@@ -424,54 +385,81 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create workouts' }, { status: 500 })
     }
 
-    // Send notification to runner about new weekly plan
+    // Send notifications to ALL affected runners
     if (insertedWorkouts && insertedWorkouts.length > 0) {
       try {
-        // Get runner info from the training plan
-        const firstPlan = trainingPlansData.find(
-          plan => plan.id === finalWorkoutList[0].trainingPlanId
-        )
-        if (firstPlan) {
-          const [runner] = await db
-            .select({
-              id: user.id,
-              full_name: user.fullName,
-            })
-            .from(user)
-            .where(eq(user.id, firstPlan.runner_id))
-            .limit(1)
-
-          if (runner) {
-            // Get coach info
-            const [coach] = await db
-              .select({
-                full_name: user.fullName,
-              })
-              .from(user)
-              .where(eq(user.id, sessionUser.id))
-              .limit(1)
-
-            const coachName = coach?.full_name || 'Your coach'
-            const workoutCount = insertedWorkouts.length
-
-            await db.insert(notifications).values({
-              user_id: runner.id,
-              title: '⛰️ New Weekly Expedition Plan',
-              message: `${coachName} has architected ${workoutCount} new summit ascents for your training expedition.`,
-              type: 'workout',
-              read: false,
-              created_at: new Date(),
-            })
-
-            logger.info('Bulk workout notification sent', {
-              coachId: sessionUser.id,
-              runnerId: runner.id,
-              workoutCount,
-            })
+        // Group workouts by runner to send per-recipient totals
+        const countByRunner = new Map<string, number>()
+        for (const workout of insertedWorkouts) {
+          const plan = trainingPlansData.find(p => p.id === workout.training_plan_id)
+          if (plan) {
+            countByRunner.set(plan.runner_id, (countByRunner.get(plan.runner_id) ?? 0) + 1)
           }
         }
+
+        // Get coach info once
+        const [coach] = await db
+          .select({
+            full_name: user.fullName,
+          })
+          .from(user)
+          .where(eq(user.id, sessionUser.id))
+          .limit(1)
+
+        const coachName = coach?.full_name || 'Your coach'
+
+        // Send individual notifications to each affected runner
+        const notificationPromises: Promise<void>[] = []
+        for (const [runnerId, workoutCount] of countByRunner.entries()) {
+          const notificationPromise = (async () => {
+            try {
+              // Get runner info for logging
+              const [runner] = await db
+                .select({
+                  id: user.id,
+                  full_name: user.fullName,
+                })
+                .from(user)
+                .where(eq(user.id, runnerId))
+                .limit(1)
+
+              if (runner) {
+                await db.insert(notifications).values({
+                  user_id: runner.id,
+                  title: '⛰️ New Weekly Expedition Plan',
+                  message: `${coachName} has architected ${workoutCount} new summit ascents for your training expedition.`,
+                  type: 'workout',
+                  read: false,
+                  created_at: new Date(),
+                })
+
+                logger.info('Bulk workout notification sent', {
+                  coachId: sessionUser.id,
+                  runnerId: runner.id,
+                  workoutCount,
+                })
+              }
+            } catch (error) {
+              logger.error('Failed to send notification to runner', {
+                runnerId,
+                error,
+              })
+            }
+          })()
+
+          notificationPromises.push(notificationPromise)
+        }
+
+        // Wait for all notifications to be sent
+        await Promise.all(notificationPromises)
+
+        logger.info('Bulk workout notifications completed', {
+          coachId: sessionUser.id,
+          totalRunners: countByRunner.size,
+          totalWorkouts: insertedWorkouts.length,
+        })
       } catch (error) {
-        logger.error('Failed to send notification for new weekly plan', error)
+        logger.error('Failed to send notifications for new weekly plan', error)
         // Don't fail the main request if notification fails
       }
     }

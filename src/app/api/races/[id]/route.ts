@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const logger = createLogger('api-races-id')
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: race, error } = await supabase.from('races').select('*').eq('id', id).single()
 
     if (error) {
-      console.error('Error fetching race:', error)
+      logger.error('Error fetching race:', error)
       return NextResponse.json({ error: 'Race not found' }, { status: 404 })
     }
 
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ race })
   } catch (error) {
-    console.error('Error in GET /api/races/[id]:', error)
+    logger.error('Error in GET /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -104,13 +107,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .single()
 
     if (error) {
-      console.error('Error updating race:', error)
+      logger.error('Error updating race:', error)
       return NextResponse.json({ error: 'Failed to update race' }, { status: 500 })
     }
 
     return NextResponse.json({ race })
   } catch (error) {
-    console.error('Error in PUT /api/races/[id]:', error)
+    logger.error('Error in PUT /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -152,7 +155,7 @@ export async function DELETE(
       .limit(1)
 
     if (planError) {
-      console.error('Error checking training plans:', planError)
+      logger.error('Error checking training plans:', planError)
       return NextResponse.json({ error: 'Failed to check race usage' }, { status: 500 })
     }
 
@@ -168,13 +171,13 @@ export async function DELETE(
     const { error } = await supabase.from('races').delete().eq('id', id)
 
     if (error) {
-      console.error('Error deleting race:', error)
+      logger.error('Error deleting race:', error)
       return NextResponse.json({ error: 'Failed to delete race' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in DELETE /api/races/[id]:', error)
+    logger.error('Error in DELETE /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,7 +1,17 @@
+import { z } from 'zod'
+
 import { NextRequest, NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase'
+
+const logger = createLogger('api-training-plans-archive')
+
+// Zod validation schema for archive request
+const ArchiveRequestSchema = z.object({
+  archived: z.boolean(),
+})
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +20,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const { id } = await params
-    const { archived } = await request.json()
+    const body = await request.json()
+
+    // Validate request body with Zod
+    const validationResult = ArchiveRequestSchema.safeParse(body)
+
+    if (!validationResult.success) {
+      return NextResponse.json({ error: validationResult.error.issues[0].message }, { status: 400 })
+    }
+
+    const { archived } = validationResult.data
     // Fetch the plan
     const { data: plan, error: planError } = await supabaseAdmin
       .from('training_plans')
@@ -18,8 +37,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq('id', id)
       .single()
     if (planError || !plan) {
-      console.error('Failed to fetch training plan for archive', planError)
+      logger.error('Failed to fetch training plan for archive', planError)
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+    }
+
+    // Authorization: coach owns the plan; allow runner only if product requirements permit
+    const isCoach = session.user.userType === 'coach'
+    const authorized =
+      (isCoach && session.user.id === plan.coach_id) ||
+      (!isCoach && session.user.id === plan.runner_id)
+
+    if (!authorized) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     // Update the archived status
     const { data: updatedPlan, error: updateError } = await supabaseAdmin
@@ -29,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .select()
       .single()
     if (updateError) {
-      console.error('Failed to update training plan archive status', updateError)
+      logger.error('Failed to update training plan archive status', updateError)
       return NextResponse.json({ error: 'Failed to update training plan' }, { status: 500 })
     }
     // Send notification to the other party about the archive/unarchive action
@@ -59,7 +88,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       ])
     } catch (error) {
-      console.error('Failed to send archive notification', error)
+      logger.error('Failed to send archive notification', error)
       // Don't fail the main request if notification fails
     }
     return NextResponse.json({
@@ -67,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       message: `Training plan ${archived ? 'archived' : 'restored'} successfully`,
     })
   } catch (error) {
-    console.error('API error in PATCH /training-plans/[id]/archive', error)
+    logger.error('API error in PATCH /training-plans/[id]/archive', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

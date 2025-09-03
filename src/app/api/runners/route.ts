@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('GET /api/runners - Starting request', {
       url: request.url,
-      headers: Object.fromEntries(request.headers.entries()),
+      // headers intentionally omitted from logs for security
     })
 
     const session = await getServerSession(request)
