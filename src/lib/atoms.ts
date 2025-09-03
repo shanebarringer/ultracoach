@@ -651,18 +651,24 @@ export const asyncConversationsAtom = atom(async get => {
   if (!isBrowser) return []
 
   const session = get(sessionAtom)
-  // Type guard and validation for Better Auth session
-  if (
-    !session ||
-    typeof session !== 'object' ||
-    !session.user ||
-    typeof session.user !== 'object'
-  ) {
+  type MinimalUser = {
+    id: string
+    email: string
+    name?: string
+    role?: string
+    userType?: 'runner' | 'coach'
+  }
+  const u = (session && typeof session === 'object' && (session as any).user) as Partial<MinimalUser> | undefined
+  if (!u || typeof u !== 'object' || !u.id || !u.email) {
     throw new Error('No session available')
   }
-
-  const user = session.user as { id: string; email: string; name?: string; role?: string }
-  if (!user.id) throw new Error('No user ID available')
+  const user: MinimalUser = {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    role: u.role,
+    userType: u.userType,
+  }
 
   try {
     const response = await fetch('/api/conversations', {
@@ -874,18 +880,24 @@ export const sendMessageActionAtom = atom(
     }
   ) => {
     const session = get(sessionAtom)
-    // Type guard and validation for Better Auth session
-    if (
-      !session ||
-      typeof session !== 'object' ||
-      !session.user ||
-      typeof session.user !== 'object'
-    ) {
+    type MinimalUser = {
+      id: string
+      email: string
+      name?: string
+      role?: string
+      userType?: 'runner' | 'coach'
+    }
+    const u = (session && typeof session === 'object' && (session as any).user) as Partial<MinimalUser> | undefined
+    if (!u || typeof u !== 'object' || !u.id || !u.email) {
       throw new Error('No session available')
     }
-
-    const user = session.user as { id: string; email: string; name?: string; role?: string }
-    if (!user.id) throw new Error('No user ID available')
+    const user: MinimalUser = {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      userType: u.userType,
+    }
 
     const { recipientId, content, workoutId } = payload
 
