@@ -5,17 +5,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy-key'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// For server-side operations with elevated privileges
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy-key'
-)
-
 // Database types
 export interface User {
   id: string
   email: string
-  role: 'runner' | 'coach'
+  userType: 'runner' | 'coach'
   full_name: string | null
   created_at: string
   updated_at: string

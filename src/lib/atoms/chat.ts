@@ -201,7 +201,7 @@ export const sendMessageActionAtom = atom(
       sender: {
         id: user.id,
         email: user.email,
-        role: (user.userType || 'runner') as 'runner' | 'coach',
+        userType: (user.userType || 'runner') as 'runner' | 'coach',
         full_name: user.name || '',
         created_at: '',
         updated_at: '',

@@ -884,7 +884,7 @@ export const sendMessageActionAtom = atom(
       throw new Error('No session available')
     }
 
-    const user = session.user as { id: string; email: string; name?: string; role?: string }
+    const user = session.user as { id: string; email: string; name?: string; userType?: string }
     if (!user.id) throw new Error('No user ID available')
 
     const { recipientId, content, workoutId } = payload
@@ -903,7 +903,7 @@ export const sendMessageActionAtom = atom(
         id: user.id,
         full_name: user.name || 'You',
         email: user.email || '',
-        role: (user.role || 'runner') as 'runner' | 'coach',
+        userType: (user.userType || 'runner') as 'runner' | 'coach',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },

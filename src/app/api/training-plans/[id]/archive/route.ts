@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const logger = createLogger('api-training-plans-archive')
 

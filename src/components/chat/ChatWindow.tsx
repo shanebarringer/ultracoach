@@ -217,7 +217,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             <h1 className="text-lg font-semibold text-foreground">
               {recipient.full_name || 'User'}
             </h1>
-            <p className="text-sm text-foreground-600 capitalize">{recipient.role}</p>
+            <p className="text-sm text-foreground-600 capitalize">{recipient.userType}</p>
           </div>
         </div>
 

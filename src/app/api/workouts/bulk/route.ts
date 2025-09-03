@@ -1,4 +1,4 @@
-import { addYears, format, isAfter, isBefore, isValid, parseISO, subDays } from 'date-fns'
+import { addYears, format, isAfter, isBefore, isValid, parseISO } from 'date-fns'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -45,17 +45,16 @@ const VALID_TERRAINS = ['road', 'trail', 'track', 'treadmill'] as const
 // Zod validation schemas
 const BulkWorkoutSchema = z.object({
   trainingPlanId: z.string().uuid('Invalid training plan ID format'),
-  date: z.string().refine(
-    dateStr => {
-      const date = parseISO(dateStr)
-      return (
+  date: z
+    .string()
+    .transform(dateStr => parseISO(dateStr))
+    .refine(
+      date =>
         isValid(date) &&
         !isBefore(date, new Date('2020-01-01')) &&
-        !isAfter(date, addYears(new Date(), 5))
-      )
-    },
-    { message: 'Invalid date or date out of reasonable range (2020-2030)' }
-  ),
+        !isAfter(date, addYears(new Date(), 5)),
+      { message: 'Invalid date or date out of reasonable range (2020-2030)' }
+    ),
   plannedType: z.string().min(1, 'Planned type is required').max(100, 'Planned type too long'),
   plannedDistance: z
     .number()
@@ -92,38 +91,6 @@ const BulkWorkoutRequestSchema = z.object({
 })
 
 // Type inference handled directly in the function
-
-// Legacy validation helper functions (kept for finalWorkoutList processing)
-// TODO: Refactor to use Zod throughout
-function validateDate(dateString: string): { isValid: boolean; error?: string; date?: Date } {
-  if (!dateString || typeof dateString !== 'string') {
-    return { isValid: false, error: 'Date is required and must be a string' }
-  }
-
-  // Parse ISO 8601 date format
-  const parsedDate = parseISO(dateString)
-
-  if (!isValid(parsedDate)) {
-    return { isValid: false, error: 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)' }
-  }
-
-  const now = new Date()
-  const maxFutureDate = addYears(now, 1) // Max 1 year in future
-  const minPastDate = subDays(now, VALIDATION_RULES.MAX_DATE_PAST)
-
-  if (isAfter(parsedDate, maxFutureDate)) {
-    return { isValid: false, error: 'Date cannot be more than 1 year in the future' }
-  }
-
-  if (isBefore(parsedDate, minPastDate)) {
-    return {
-      isValid: false,
-      error: `Date cannot be more than ${VALIDATION_RULES.MAX_DATE_PAST} days in the past`,
-    }
-  }
-
-  return { isValid: true, date: parsedDate }
-}
 
 // Legacy validation functions - replaced by Zod schema validation above
 // Keeping commented for reference during refactoring
@@ -308,7 +275,7 @@ export async function POST(request: NextRequest) {
       // Build date sets per plan (YYYY-MM-DD format for comparison)
       const datesByPlan = new Map<string, Set<string>>()
       for (const w of finalWorkoutList) {
-        const dateStr = w.date.split('T')[0] // Get YYYY-MM-DD part
+        const dateStr = format(w.date, 'yyyy-MM-dd') // Get YYYY-MM-DD part using date-fns
         const dates = datesByPlan.get(w.trainingPlanId) || new Set<string>()
         dates.add(dateStr)
         datesByPlan.set(w.trainingPlanId, dates)
@@ -350,18 +317,16 @@ export async function POST(request: NextRequest) {
         throw new Error(`Training plan not found for workout: ${workoutData.trainingPlanId}`)
       }
 
-      // Generate a descriptive title for the workout - use validated date
-      const dateValidation = validateDate(workoutData.date)
-      const workoutDate = dateValidation.date || parseISO(workoutData.date) // Fallback (should never hit)
+      // Generate a descriptive title for the workout - use Zod-parsed date
       const workoutTitle = workoutData.plannedType
-        ? `${workoutData.plannedType} - ${format(workoutDate, 'MM/dd/yyyy')}`
-        : `Workout - ${format(workoutDate, 'MM/dd/yyyy')}`
+        ? `${workoutData.plannedType} - ${format(workoutData.date, 'MM/dd/yyyy')}`
+        : `Workout - ${format(workoutData.date, 'MM/dd/yyyy')}`
 
       return {
         training_plan_id: workoutData.trainingPlanId,
         user_id: trainingPlan.runner_id, // Required field
         title: workoutTitle, // Required field
-        date: workoutDate,
+        date: workoutData.date,
         planned_type: workoutData.plannedType,
         planned_distance: workoutData.plannedDistance?.toString() || null,
         planned_duration: workoutData.plannedDuration || null,

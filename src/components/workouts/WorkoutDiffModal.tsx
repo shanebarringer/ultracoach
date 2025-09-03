@@ -435,7 +435,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                         <CardHeader className="bg-warning/5">
                           <h3 className="text-lg font-semibold text-warning flex items-center gap-2">
                             <Clock className="h-5 w-5" />
-                            Minor Issues ({categorizedDiscrepancies.moderate.length})
+                            Moderate Issues ({categorizedDiscrepancies.moderate.length})
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">

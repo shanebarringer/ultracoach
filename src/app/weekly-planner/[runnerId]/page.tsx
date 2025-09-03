@@ -45,13 +45,13 @@ export default function WeeklyPlannerRunnerPage() {
 
   // Derive selectedRunner directly from URL and session
   const selectedRunner = (() => {
-    if (session?.user?.role === 'runner' && session.user.id === runnerId) {
+    if (session?.user?.userType === 'runner' && session.user.id === runnerId) {
       // Runner viewing their own training - use session data
       return {
         id: session.user.id,
         email: session.user.email,
         full_name: session.user.name,
-        role: session.user.role,
+        userType: 'runner' as const,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as User
