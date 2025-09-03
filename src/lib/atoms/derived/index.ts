@@ -58,6 +58,16 @@ export const totalUnreadMessagesAtom = atom(get => {
   return Object.values(unreadCounts).reduce((sum, count) => sum + count, 0)
 })
 
+// Type guard for user object
+function isUserWithId(user: unknown): user is { id: string } {
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    'id' in user &&
+    typeof (user as { id: unknown }).id === 'string'
+  )
+}
+
 // User's active conversations
 export const activeConversationsAtom = atom(get => {
   const conversations = get(conversationsAtom)
@@ -68,9 +78,8 @@ export const activeConversationsAtom = atom(get => {
   // ConversationWithUser doesn't have participant1_id/participant2_id
   // It has sender and recipient properties
   return conversations.filter(conv => {
-    const userId = typeof user === 'object' && 'id' in user ? (user as { id: string }).id : null
-    if (!userId) return false
-    return conv.sender?.id === userId || conv.recipient?.id === userId
+    if (!isUserWithId(user)) return false
+    return conv.sender?.id === user.id || conv.recipient?.id === user.id
   })
 })
 

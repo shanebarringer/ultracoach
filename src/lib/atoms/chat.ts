@@ -5,6 +5,8 @@ import { atomFamily, atomWithStorage } from 'jotai/utils'
 import type { OptimisticMessage, Workout } from '@/lib/supabase'
 import type { Conversation } from '@/types/chat'
 
+import { sessionAtom } from './auth'
+
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
 export const messagesAtom = atom<OptimisticMessage[]>([])
@@ -113,4 +115,100 @@ export const selectedRecipientAtom = atom(
 // Conversation messages atoms family - using atomFamily for proper typing
 export const conversationMessagesAtomsFamily = atomFamily((_conversationId: string) =>
   atom<OptimisticMessage[]>([])
+)
+
+/**
+ * Write-only atom for sending messages between users.
+ * Implements optimistic updates for instant UI feedback while the message is sent to the backend.
+ * Automatically handles failure cases by removing optimistic messages if sending fails.
+ *
+ * @param payload.recipientId - The ID of the user to send the message to
+ * @param payload.content - The message content
+ * @param payload.workoutId - Optional workout ID to link the message to
+ * @returns The created message object from the server
+ * @throws Error if no session is available or if sending fails
+ */
+export const sendMessageActionAtom = atom(
+  null,
+  async (
+    get,
+    set,
+    payload: {
+      recipientId: string
+      content: string
+      workoutId?: string
+    }
+  ) => {
+    const session = get(sessionAtom)
+    // Type guard and validation for Better Auth session
+    if (
+      !session ||
+      typeof session !== 'object' ||
+      !session.user ||
+      typeof session.user !== 'object'
+    ) {
+      throw new Error('No session available')
+    }
+
+    const user = session.user as { id: string; email: string; name?: string; role?: string }
+    if (!user.id) throw new Error('No user ID available')
+
+    const tempId = `temp-${Date.now()}`
+    const optimisticMessage = {
+      id: tempId,
+      tempId,
+      conversation_id: '',
+      sender_id: user.id,
+      recipient_id: payload.recipientId,
+      content: payload.content,
+      workout_id: payload.workoutId || null,
+      created_at: new Date().toISOString(),
+      sender: {
+        id: user.id,
+        email: user.email,
+        role: (user.role || 'runner') as 'runner' | 'coach',
+        full_name: user.name || '',
+        created_at: '',
+        updated_at: '',
+      },
+      read: false,
+      optimistic: true,
+    }
+
+    // Add optimistic message immediately
+    set(messagesAtom, prev => [...prev, optimisticMessage])
+
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: payload.content,
+          recipientId: payload.recipientId,
+          workoutId: payload.workoutId,
+        }),
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send message')
+      }
+
+      const data = await response.json()
+      const realMessage = data.message || data
+
+      // Replace optimistic message with real message
+      set(messagesAtom, prev =>
+        prev.map(msg => (msg.tempId === tempId ? { ...realMessage, optimistic: false } : msg))
+      )
+
+      return realMessage
+    } catch (error) {
+      // Remove optimistic message on failure
+      set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))
+      throw error
+    }
+  }
 )
