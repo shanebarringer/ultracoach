@@ -22,7 +22,7 @@ export async function getServerSession(request: NextRequest) {
         id: session.user.id, // Use Better Auth ID directly for database queries
         email: session.user.email,
         name: session.user.name,
-        role: (session.user as { role?: string }).role || 'runner',
+        userType: (session.user as { userType?: string }).userType || 'runner',
       },
     }
   } catch (error) {

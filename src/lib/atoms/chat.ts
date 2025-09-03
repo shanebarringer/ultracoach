@@ -7,6 +7,14 @@ import type { Conversation } from '@/types/chat'
 
 import { sessionAtom } from './auth'
 
+// Message input interface
+interface MessageInput {
+  message: string
+  linkedWorkout: Workout | null
+  linkType: 'reference' | 'attachment'
+  showWorkoutSelector: boolean
+}
+
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
 export const messagesAtom = atom<OptimisticMessage[]>([])
@@ -15,8 +23,33 @@ export const messagesLoadingAtom = atom(false)
 
 // Async chat atoms with suspense support
 export const asyncConversationsAtom = atom(async () => {
-  // This would be populated with actual async data fetching
-  return [] as Conversation[]
+  // SSR-safe fetch for conversations
+  try {
+    const response = await fetch('/api/conversations', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      cache: 'no-store', // Ensure fresh data for SSR
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch conversations: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    // Validate and type-check the response
+    if (!Array.isArray(data.conversations)) {
+      throw new Error('Invalid conversations response format')
+    }
+
+    return data.conversations as Conversation[]
+  } catch (error) {
+    // Re-throw to trigger Suspense/ErrorBoundary
+    throw error instanceof Error ? error : new Error('Failed to fetch conversations')
+  }
 })
 
 // Selected conversation atoms
@@ -36,10 +69,10 @@ export const chatNotificationsEnabledAtom = atomWithStorage('chatNotificationsEn
 export const currentConversationIdAtom = atom<string | null>(null)
 
 // Message input atom with proper structure
-export const messageInputAtom = atom({
+export const messageInputAtom = atom<MessageInput>({
   message: '',
-  linkedWorkout: null as Workout | null,
-  linkType: null as string | null,
+  linkedWorkout: null,
+  linkType: 'reference',
   showWorkoutSelector: false,
 })
 
@@ -108,7 +141,9 @@ export const offlineMessageQueueAtom = atomWithStorage<OfflineMessage[]>('offlin
 export const selectedRecipientAtom = atom(
   get => get(currentConversationIdAtom),
   (get, set, recipientId: string | null) => {
+    // Sync both atoms to maintain consistency
     set(currentConversationIdAtom, recipientId)
+    set(selectedConversationIdAtom, recipientId)
   }
 )
 
@@ -150,7 +185,7 @@ export const sendMessageActionAtom = atom(
       throw new Error('No session available')
     }
 
-    const user = session.user as { id: string; email: string; name?: string; role?: string }
+    const user = session.user as { id: string; email: string; name?: string; userType?: string }
     if (!user.id) throw new Error('No user ID available')
 
     const tempId = `temp-${Date.now()}`
@@ -166,7 +201,7 @@ export const sendMessageActionAtom = atom(
       sender: {
         id: user.id,
         email: user.email,
-        role: (user.role || 'runner') as 'runner' | 'coach',
+        role: (user.userType || 'runner') as 'runner' | 'coach',
         full_name: user.name || '',
         created_at: '',
         updated_at: '',

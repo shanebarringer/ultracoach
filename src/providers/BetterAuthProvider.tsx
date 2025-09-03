@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 
 import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
+import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('BetterAuthProvider')
@@ -34,7 +35,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         } else if (session) {
           logger.info('Better Auth session restored:', session.user?.email)
           setSession(session)
-          setUser(session?.user || null)
+          setUser(session?.user ? (session.user as User) : null)
         } else {
           // No session found, which is normal for unauthenticated users
           setSession(null)

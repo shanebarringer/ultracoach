@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Check access permissions
-    if (session.user.role !== 'coach' && race.created_by !== session.user.id) {
+    if (session.user.userType !== 'coach' && race.created_by !== session.user.id) {
       // Runners can only see races they're targeting
       const { data: planWithRace } = await supabase
         .from('training_plans')
@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const session = await getServerSession(request)
 
-    if (!session || session.user.role !== 'coach') {
+    if (!session || session.user.userType !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -122,7 +122,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(request)
 
-    if (!session || session.user.role !== 'coach') {
+    if (!session || session.user.userType !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

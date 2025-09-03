@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Import after mocks
 import { messagesAtom, sendMessageActionAtom, sessionAtom } from '@/lib/atoms/index'
+import type { Session } from '@/lib/better-auth-client'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()
@@ -34,14 +35,24 @@ describe('Messaging Atoms', () => {
 
     // Reset atoms and mock session
     store.set(messagesAtom, [])
+    // Set a mock session that matches the Better Auth session structure
     store.set(sessionAtom, {
       user: {
         id: 'test-user-id',
         email: 'test@example.com',
-        role: 'coach',
-        fullName: 'Test User',
+        emailVerified: false,
+        name: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
-    })
+      session: {
+        id: 'session-id',
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        token: 'test-token',
+        ipAddress: '127.0.0.1',
+        userAgent: 'test',
+      },
+    } as Session)
   })
 
   afterEach(() => {

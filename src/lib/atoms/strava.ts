@@ -3,7 +3,7 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Workout } from '@/lib/supabase'
-import type { StravaActivity, StravaAthlete } from '@/types/strava'
+import type { StravaActivity, StravaAthlete, StravaConnection } from '@/types/strava'
 
 // Core Strava atoms
 export const stravaActivitiesAtom = atom<StravaActivity[]>([])
@@ -57,11 +57,24 @@ export const stravaAutoReconnectAtom = atom<{
   lastAttempt: null,
 })
 
+// Sync progress interface
+interface SyncProgress {
+  total?: number
+  synced?: number
+  failed?: number
+  status?: 'idle' | 'syncing' | 'completed' | 'error'
+  message?: string
+  // Additional properties for backward compatibility
+  totalActivities?: number
+  syncedActivities?: number
+  pendingActivities?: number
+}
+
 // Sync progress
-export const syncProgressAtom = atom<Record<string, unknown>>({})
+export const syncProgressAtom = atom<SyncProgress>({})
 
 // Strava connection atom
-export const stravaConnectionAtom = atom<Record<string, unknown> | null>(null)
+export const stravaConnectionAtom = atom<StravaConnection | null>(null)
 
 // Sync stats atom (derived)
 export const syncStatsAtom = atom(get => {
@@ -118,7 +131,19 @@ export const stravaStateAtom = atom(get => {
 // Strava actions atom for dispatching actions
 export const stravaActionsAtom = atom(
   null,
-  async (get, set, action: { type: string; payload?: Record<string, unknown> }) => {
+  async (
+    get,
+    set,
+    action: {
+      type: string
+      payload?: {
+        activities?: unknown[]
+        workoutId?: string
+        activityId?: string
+        [key: string]: unknown
+      }
+    }
+  ) => {
     switch (action.type) {
       case 'CONNECT':
         set(stravaStatusAtom, 'connecting')

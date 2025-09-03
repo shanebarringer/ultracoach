@@ -55,7 +55,7 @@ export default function MessageInput({
     setMessageInput(prev => ({
       ...prev,
       linkedWorkout: workout,
-      linkType: selectedLinkType,
+      linkType: selectedLinkType as 'reference' | 'attachment',
       showWorkoutSelector: false,
     }))
   }

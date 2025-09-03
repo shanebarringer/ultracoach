@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    if (sessionUser.role !== 'coach') {
+    if (sessionUser.userType !== 'coach') {
       return NextResponse.json({ error: 'Only coaches can create bulk workouts' }, { status: 403 })
     }
 

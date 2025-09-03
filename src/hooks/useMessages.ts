@@ -120,8 +120,9 @@ export function useMessages(recipientId?: string) {
           setChatUiState(prev => ({
             ...prev,
             hasInitiallyLoadedMessages: true,
-            currentRecipientId: targetId,
           }))
+          // Update the conversation ID using the proper atom
+          setCurrentConversationId(targetId)
         }
       } catch (error) {
         logger.error('Error fetching messages:', error)
@@ -140,6 +141,7 @@ export function useMessages(recipientId?: string) {
       setChatUiState,
       lastMessagesFetchTime,
       setLastMessagesFetchTime,
+      setCurrentConversationId,
     ]
   )
 

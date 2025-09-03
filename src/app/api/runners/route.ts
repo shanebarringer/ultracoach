@@ -35,14 +35,14 @@ export async function GET(request: NextRequest) {
     logger.info('Session result', {
       hasSession: !!session,
       hasUser: !!session?.user,
-      userRole: session?.user?.role,
+      userRole: session?.user?.userType,
       userId: session?.user?.id,
     })
 
-    if (!session?.user || session.user.role !== 'coach') {
+    if (!session?.user || session.user.userType !== 'coach') {
       logger.warn('Unauthorized access attempt', {
         hasSession: !!session,
-        userRole: session?.user?.role,
+        userRole: session?.user?.userType,
       })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

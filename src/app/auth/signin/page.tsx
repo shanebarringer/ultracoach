@@ -98,10 +98,10 @@ export default function SignIn() {
         if (sessionData?.data) {
           // Update Jotai atoms with complete session data
           setSession(sessionData.data)
-          setUser(sessionData.data.user)
+          setUser(sessionData.data.user as User)
 
-          // Extract role from session - customSession handles userType → role mapping
-          const userRole = (sessionData.data.user as User).role || 'runner'
+          // Extract role from session - customSession handles userType mapping
+          const userRole = (sessionData.data.user as User).userType || 'runner'
 
           logger.info('Final user role determined:', {
             userRole,

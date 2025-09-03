@@ -64,14 +64,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // Verify the user has permission to update this workout
     const canUpdate =
-      (sessionUser.role === 'coach' && plan.coach_id === sessionUser.id) ||
-      (sessionUser.role === 'runner' && plan.runner_id === sessionUser.id)
+      (sessionUser.userType === 'coach' && plan.coach_id === sessionUser.id) ||
+      (sessionUser.userType === 'runner' && plan.runner_id === sessionUser.id)
 
     if (!canUpdate) {
       logger.warn('User attempted to update unauthorized workout', {
         workoutId,
         userId: sessionUser.id,
-        userRole: sessionUser.role,
+        userRole: sessionUser.userType,
         planCoachId: plan.coach_id,
         planRunnerId: plan.runner_id,
       })
@@ -116,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updated_at: new Date(),
     }
 
-    if (sessionUser.role === 'runner') {
+    if (sessionUser.userType === 'runner') {
       // Runners can update their workout logs
       if (actualType !== undefined) updateData.actual_type = actualType
       if (actualDistance !== undefined)
@@ -149,7 +149,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Failed to update workout' }, { status: 500 })
     }
     // Send notification to coach when runner completes workout
-    if (sessionUser.role === 'runner' && status === 'completed') {
+    if (sessionUser.userType === 'runner' && status === 'completed') {
       try {
         // Get coach and runner info
         const [coach] = await db

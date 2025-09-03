@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // First, get active relationships for the user
     let activeRelationships: Array<{ coach_id: string; runner_id: string }> = []
 
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       const relationships = await db
         .select({ coach_id: coach_runners.coach_id, runner_id: coach_runners.runner_id })
         .from(coach_runners)
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch training plans based on active relationships using Drizzle
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       // For coaches: get training plans for connected runners
       const runnerIds = activeRelationships.map(rel => rel.runner_id)
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    if (sessionUser.role !== 'coach') {
+    if (sessionUser.userType !== 'coach') {
       return NextResponse.json({ error: 'Only coaches can create training plans' }, { status: 403 })
     }
 

@@ -44,8 +44,10 @@ export const messagesFetchTimestampAtom = atom<number>(0)
 export const workoutLinkSelectorSearchAtom = atom<string>('')
 
 // Typing status debouncing atoms
-export const typingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
-export const sendTypingTimeoutRefsAtom = atom<Record<string, NodeJS.Timeout | null>>({})
+export const typingTimeoutRefsAtom = atom<Record<string, ReturnType<typeof setTimeout> | null>>({})
+export const sendTypingTimeoutRefsAtom = atom<Record<string, ReturnType<typeof setTimeout> | null>>(
+  {}
+)
 
 // Workout lookup map for quick access
 export const workoutLookupMapAtom = atom(get => {
@@ -58,21 +60,50 @@ export const selectedMatchAtom = atom<WorkoutMatch | null>(null)
 export const showWorkoutDiffModalAtom = atom(false)
 
 // Advanced workout actions atoms
+// Workout action interfaces
+interface WorkoutActionPayload {
+  workoutId?: string
+  data?: {
+    actual_distance?: number
+    actual_duration?: number
+    actual_elevation?: number
+    notes?: string
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+interface OptimisticOperationPayload {
+  id?: string
+  tempId?: string
+  originalData?: unknown
+  newData?: unknown
+  [key: string]: unknown
+}
+
+interface ErrorRecoveryContext {
+  operation?: string
+  workoutId?: string
+  error?: Error
+  timestamp?: number
+  [key: string]: unknown
+}
+
 export const workoutActionsAtom = atom({
   type: '',
-  payload: null as Record<string, unknown> | null,
+  payload: null as WorkoutActionPayload | null,
 })
 
 export const optimisticOperationAtom = atom({
   type: '',
   action: '',
-  payload: null as Record<string, unknown> | null,
+  payload: null as OptimisticOperationPayload | null,
 })
 
 export const errorRecoveryAtom = atom({
   type: '',
   message: '',
-  context: null as Record<string, unknown> | null,
+  context: null as ErrorRecoveryContext | null,
 })
 
 export const persistedStateAtom = atom({
@@ -96,6 +127,16 @@ export const workoutAnalyticsAtom = atom({
   },
 })
 
+// Workout completion data interface
+interface WorkoutCompletionData {
+  actual_distance?: number
+  actual_duration?: number
+  actual_elevation?: number
+  actual_heart_rate_avg?: number
+  notes?: string
+  [key: string]: unknown
+}
+
 /**
  * Write-only atom for marking a workout as completed.
  * Optimistically updates the local state and syncs with the backend.
@@ -107,7 +148,7 @@ export const workoutAnalyticsAtom = atom({
  */
 export const completeWorkoutAtom = atom(
   null,
-  async (get, set, { workoutId, data }: { workoutId: string; data?: Record<string, unknown> }) => {
+  async (get, set, { workoutId, data }: { workoutId: string; data?: WorkoutCompletionData }) => {
     const { createLogger } = await import('@/lib/logger')
     const logger = createLogger('CompleteWorkoutAtom')
 
@@ -143,6 +184,21 @@ export const completeWorkoutAtom = atom(
   }
 )
 
+// Workout details interface for logging
+interface WorkoutDetails {
+  actual_distance?: number | null
+  actual_duration?: number | null
+  actual_elevation?: number | null
+  actual_heart_rate_avg?: number | null
+  actual_heart_rate_max?: number | null
+  actual_pace?: string | null
+  notes?: string | null
+  weather?: string | null
+  terrain?: string | null
+  perceived_effort?: number | null
+  [key: string]: unknown
+}
+
 /**
  * Write-only atom for logging workout details (distance, time, notes, etc).
  * Updates the workout with actual performance data after completion.
@@ -154,7 +210,7 @@ export const completeWorkoutAtom = atom(
  */
 export const logWorkoutDetailsAtom = atom(
   null,
-  async (get, set, { workoutId, data }: { workoutId: string; data: Record<string, unknown> }) => {
+  async (get, set, { workoutId, data }: { workoutId: string; data: WorkoutDetails }) => {
     const { createLogger } = await import('@/lib/logger')
     const logger = createLogger('LogWorkoutDetailsAtom')
 

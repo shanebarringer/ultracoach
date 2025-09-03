@@ -47,11 +47,11 @@ export function RelationshipsPageContent() {
 
       {/* Right Column - Find New Connections */}
       <div className="space-y-6">
-        {user.role === 'runner' && (
+        {user.userType === 'runner' && (
           <CoachSelector onRelationshipCreated={handleRelationshipChange} />
         )}
 
-        {user.role === 'coach' && (
+        {user.userType === 'coach' && (
           <RunnerSelector onRelationshipCreated={handleRelationshipChange} />
         )}
 
@@ -60,7 +60,7 @@ export function RelationshipsPageContent() {
           <CardBody className="p-6">
             <h3 className="text-lg font-semibold mb-3">How it Works</h3>
             <div className="space-y-2 text-sm text-default-600">
-              {user.role === 'runner' ? (
+              {user.userType === 'runner' ? (
                 <>
                   <p>• Browse available coaches and send connection requests</p>
                   <p>• Wait for coaches to accept your requests</p>

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     logger.debug('Fetching relationships for user', {
       userId: sessionUser.id,
-      role: sessionUser.role,
+      userType: sessionUser.userType,
       statusFilter: status,
     })
 
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     let runner_id: string
     let invited_by: 'coach' | 'runner'
 
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       coach_id = sessionUser.id
       runner_id = target_user_id
       invited_by = 'coach'

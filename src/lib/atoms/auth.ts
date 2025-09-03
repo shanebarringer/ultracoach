@@ -2,11 +2,11 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-// Auth types are used for type safety but not directly referenced
+import type { Session, User } from '@/lib/better-auth-client'
 
 // Core auth atoms
-export const sessionAtom = atom<Record<string, unknown> | null>(null)
-export const userAtom = atom<Record<string, unknown> | null>(null)
+export const sessionAtom = atom<Session | null>(null)
+export const userAtom = atom<User | null>(null)
 export const isAuthLoadingAtom = atom(true)
 
 // Auth state atoms

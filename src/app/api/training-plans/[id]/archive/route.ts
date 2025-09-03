@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     // Send notification to the other party about the archive/unarchive action
     try {
-      const recipientId = session.user.role === 'coach' ? plan.runner_id : plan.coach_id
+      const recipientId = session.user.userType === 'coach' ? plan.runner_id : plan.coach_id
       const { data: actor } = await supabaseAdmin
         .from('better_auth_users')
         .select('full_name')
@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         .single()
       const action = archived ? 'archived' : 'unarchived'
       const actorName =
-        actor?.full_name || (session.user.role === 'coach' ? 'Your coach' : 'Your runner')
+        actor?.full_name || (session.user.userType === 'coach' ? 'Your coach' : 'Your runner')
       await supabaseAdmin.from('notifications').insert([
         {
           user_id: recipientId,
