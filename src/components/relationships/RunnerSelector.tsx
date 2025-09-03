@@ -9,7 +9,11 @@ import { toast } from 'sonner'
 import { useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { availableRunnersAtom, connectingRunnerIdsAtom, runnerSearchTermAtom } from '@/lib/atoms/index'
+import {
+  availableRunnersAtom,
+  connectingRunnerIdsAtom,
+  runnerSearchTermAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('RunnerSelector')

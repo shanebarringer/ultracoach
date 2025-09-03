@@ -2,8 +2,8 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import type { StravaActivity, StravaAthlete } from '@/types/strava'
 import type { Workout } from '@/lib/supabase'
+import type { StravaActivity, StravaAthlete } from '@/types/strava'
 
 // Core Strava atoms
 export const stravaActivitiesAtom = atom<StravaActivity[]>([])
@@ -34,13 +34,10 @@ export const stravaSyncProgressAtom = atom({
 // Strava UI state
 export const workoutStravaShowPanelAtom = atom(false)
 export const stravaSelectedActivitiesAtom = atom<string[]>([])
-export const stravaActivitiesRefreshableAtom = atom(
-  null,
-  async (_get, _set) => {
-    // Refresh Strava activities logic
-    return Promise.resolve()
-  }
-)
+export const stravaActivitiesRefreshableAtom = atom(null, async (_get, _set) => {
+  // Refresh Strava activities logic
+  return Promise.resolve()
+})
 
 // Strava connection status atom
 export const stravaStatusAtom = atom<
@@ -73,7 +70,7 @@ export const syncStatsAtom = atom(get => {
   const totalActivities = (syncProgress.totalActivities as number) ?? 0
   const syncedActivities = (syncProgress.syncedActivities as number) ?? 0
   const pendingActivities = (syncProgress.pendingActivities as number) ?? 0
-  
+
   return {
     totalActivities,
     syncedActivities,
@@ -94,7 +91,7 @@ export const stravaStateAtom = atom(get => {
   const status = get(stravaStatusAtom)
   const error = get(stravaErrorAtom)
   const autoReconnect = get(stravaAutoReconnectAtom)
-  
+
   return {
     connection: {
       ...connection,
@@ -140,13 +137,10 @@ export const stravaActionsAtom = atom(
 )
 
 // Trigger workout matching atom
-export const triggerWorkoutMatchingAtom = atom(
-  null,
-  async (_get, _set) => {
-    // Trigger workout matching logic
-    return Promise.resolve()
-  }
-)
+export const triggerWorkoutMatchingAtom = atom(null, async (_get, _set) => {
+  // Trigger workout matching logic
+  return Promise.resolve()
+})
 
 // Matching summary atom for workout comparison
 export const matchingSummaryAtom = atom<{

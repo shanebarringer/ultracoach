@@ -318,14 +318,15 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                           </span>
                         </div>
                       </div>
-                      {matchingSummary.unmatchedWorkouts && matchingSummary.unmatchedWorkouts.length > 0 && (
-                        <div className="text-xs p-2 bg-warning/10 rounded">
-                          <span className="text-warning-600">
-                            {matchingSummary.unmatchedWorkouts.length} planned workouts have no matching
-                            activities
-                          </span>
-                        </div>
-                      )}
+                      {matchingSummary.unmatchedWorkouts &&
+                        matchingSummary.unmatchedWorkouts.length > 0 && (
+                          <div className="text-xs p-2 bg-warning/10 rounded">
+                            <span className="text-warning-600">
+                              {matchingSummary.unmatchedWorkouts.length} planned workouts have no
+                              matching activities
+                            </span>
+                          </div>
+                        )}
                       <div className="text-xs text-foreground-500">
                         Last analyzed:{' '}
                         {matchingSummary.lastProcessed

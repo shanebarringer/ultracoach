@@ -2,8 +2,9 @@
 import { atom } from 'jotai'
 import { atomWithRefresh, loadable } from 'jotai/utils'
 
-import { createLogger } from '../logger'
 import type { RelationshipData } from '@/types/relationships'
+
+import { createLogger } from '../logger'
 import type { User } from '../supabase'
 
 // Environment check
@@ -85,7 +86,7 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
   }
 })
 
-// Available runners atom  
+// Available runners atom
 export const availableRunnersAtom = atomWithRefresh(async () => {
   if (!isBrowser) return []
   const logger = createLogger('AvailableRunnersAtom')

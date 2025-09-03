@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /**
  * Script to migrate from monolithic atoms.ts to modular atom structure
  * This script will:
@@ -7,7 +6,6 @@
  * 2. Update all imports to use the new modular structure
  * 3. Remove the old atoms.ts file
  */
-
 import { exec } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -43,23 +41,23 @@ async function main() {
   const { stdout } = await execAsync(
     `grep -r "from '@/lib/atoms'" src --include="*.ts" --include="*.tsx" | cut -d: -f1 | sort -u`
   )
-  
+
   const files = stdout.trim().split('\n').filter(Boolean)
   console.log(`📄 Found ${files.length} files to update`)
 
   // Step 4: Update imports in each file
   for (const file of files) {
     if (file.includes('atoms/')) continue // Skip files in the new atoms directory
-    
+
     console.log(`  Updating ${file}...`)
     const content = await readFile(file, 'utf-8')
-    
+
     // Replace import from '@/lib/atoms' with '@/lib/atoms/index'
     const updatedContent = content.replace(
       /from\s+['"]@\/lib\/atoms['"]/g,
       "from '@/lib/atoms/index'"
     )
-    
+
     if (content !== updatedContent) {
       await writeFile(file, updatedContent)
       console.log(`  ✅ Updated ${file}`)

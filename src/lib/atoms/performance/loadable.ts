@@ -2,10 +2,10 @@
 import { atom } from 'jotai'
 import { loadable } from 'jotai/utils'
 
-import { asyncWorkoutsAtom } from '../workouts'
-import { asyncNotificationsAtom } from '../notifications'
 import { asyncConversationsAtom } from '../chat'
+import { asyncNotificationsAtom } from '../notifications'
 import { refreshableTrainingPlansAtom } from '../training-plans'
+import { asyncWorkoutsAtom } from '../workouts'
 
 // Example async atoms
 const fetchUserDataAtom = atom(async () => {
@@ -36,7 +36,7 @@ export const trainingPlansLoadableAtom = loadable(refreshableTrainingPlansAtom)
 export const isLoadingAtom = atom(get => {
   const userData = get(loadableUserDataAtom)
   const workouts = get(loadableWorkoutsAtom)
-  
+
   return userData.state === 'loading' || workouts.state === 'loading'
 })
 
@@ -45,13 +45,13 @@ export const errorsAtom = atom(get => {
   const errors: string[] = []
   const userData = get(loadableUserDataAtom)
   const workouts = get(loadableWorkoutsAtom)
-  
+
   if (userData.state === 'hasError') {
     errors.push(String(userData.error))
   }
   if (workouts.state === 'hasError') {
     errors.push(String(workouts.error))
   }
-  
+
   return errors
 })

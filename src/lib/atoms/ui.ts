@@ -37,12 +37,14 @@ export const loadingStatesAtom = atom({
 })
 
 // Toast notifications
-export const toastMessagesAtom = atom<Array<{
-  id: string
-  message: string
-  type: 'success' | 'error' | 'warning' | 'info'
-  duration?: number
-}>>([])
+export const toastMessagesAtom = atom<
+  Array<{
+    id: string
+    message: string
+    type: 'success' | 'error' | 'warning' | 'info'
+    duration?: number
+  }>
+>([])
 
 // Calendar UI state
 export const calendarUiStateAtom = atom({

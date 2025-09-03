@@ -2,8 +2,9 @@
 import { atom } from 'jotai'
 import { atomWithRefresh, atomWithStorage } from 'jotai/utils'
 
-import { createLogger } from '../logger'
 import type { ExtendedTrainingPlan } from '@/types/training'
+
+import { createLogger } from '../logger'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'

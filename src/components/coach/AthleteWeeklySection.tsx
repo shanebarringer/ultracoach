@@ -146,10 +146,16 @@ function AthleteWeeklySection({
         <div className="flex items-center justify-between w-full">
           {/* Athlete Info */}
           <div className="flex items-center gap-4">
-            <Avatar name={athlete.full_name || athlete.email || 'User'} size="lg" className="bg-primary text-white" />
+            <Avatar
+              name={athlete.full_name || athlete.email || 'User'}
+              size="lg"
+              className="bg-primary text-white"
+            />
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-semibold text-foreground">{athlete.full_name || athlete.email || 'User'}</h3>
+                <h3 className="text-xl font-semibold text-foreground">
+                  {athlete.full_name || athlete.email || 'User'}
+                </h3>
                 <Chip
                   size="sm"
                   variant="flat"

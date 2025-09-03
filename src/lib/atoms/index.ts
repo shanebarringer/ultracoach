@@ -1,3 +1,15 @@
+// Import needed types and utilities
+import { atom } from 'jotai'
+
+import type { User as BetterAuthUser, Session } from '../better-auth-client'
+import { createLogger } from '../logger'
+import type { PlanTemplate, Race, User, Workout } from '../supabase'
+import { sessionAtom } from './auth'
+// Import needed atoms from chat module
+import { messagesAtom } from './chat'
+// Import required atoms from modular files
+import { workoutsAtom, workoutsRefreshTriggerAtom } from './workouts'
+
 // Barrel exports for backward compatibility
 // This file re-exports all atoms from their modular locations
 // Allowing gradual migration while maintaining existing imports
@@ -21,18 +33,6 @@ export * from './performance/loadable'
 
 // Derived atoms
 export * from './derived'
-
-// Import needed types and utilities
-import { atom } from 'jotai'
-
-import type { User as BetterAuthUser, Session } from '../better-auth-client'
-import { createLogger } from '../logger'
-import type {
-  PlanTemplate,
-  Race,
-  User,
-  Workout,
-} from '../supabase'
 
 // Legacy atoms that need special handling
 // These are complex atoms that don't fit cleanly into a single category
@@ -150,9 +150,6 @@ export const logWorkoutDetailsAtom = atom(
   }
 )
 
-// Import required atoms from modular files
-import { workoutsAtom, workoutsRefreshTriggerAtom } from './workouts'
-
 // Skip workout atom
 export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) => {
   const logger = createLogger('SkipWorkoutAtom')
@@ -266,17 +263,11 @@ export const sendMessageActionAtom = atom(
       return realMessage
     } catch (error) {
       // Remove optimistic message on failure
-      set(messagesAtom, prev =>
-        prev.filter(msg => msg.tempId !== tempId)
-      )
+      set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))
       throw error
     }
   }
 )
-
-// Import needed atoms from chat module
-import { messagesAtom } from './chat'
-import { sessionAtom } from './auth'
 
 // Re-export utility functions and types from jotai/utils
 export { atomWithRefresh, atomWithStorage, loadable, splitAtom, unwrap } from 'jotai/utils'

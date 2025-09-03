@@ -1,9 +1,9 @@
 // Chat and messaging atoms
 import { atom } from 'jotai'
-import { atomWithStorage, atomFamily } from 'jotai/utils'
+import { atomFamily, atomWithStorage } from 'jotai/utils'
 
-import type { Conversation } from '@/types/chat'
 import type { OptimisticMessage, Workout } from '@/lib/supabase'
+import type { Conversation } from '@/types/chat'
 
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
@@ -88,8 +88,19 @@ export const typingStatusAtom = atom<
   >
 >({})
 
+// Offline message type
+export interface OfflineMessage {
+  id: string
+  recipientId: string
+  content: string
+  workoutId?: string
+  contextType?: string
+  timestamp: number
+  retryCount: number
+}
+
 // Offline message queue
-export const offlineMessageQueueAtom = atomWithStorage<OptimisticMessage[]>('offline-messages', [])
+export const offlineMessageQueueAtom = atomWithStorage<OfflineMessage[]>('offline-messages', [])
 
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
@@ -100,6 +111,6 @@ export const selectedRecipientAtom = atom(
 )
 
 // Conversation messages atoms family - using atomFamily for proper typing
-export const conversationMessagesAtomsFamily = atomFamily(
-  (_conversationId: string) => atom<OptimisticMessage[]>([])
+export const conversationMessagesAtomsFamily = atomFamily((_conversationId: string) =>
+  atom<OptimisticMessage[]>([])
 )

@@ -22,9 +22,9 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
+import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import type { ServerSession } from '@/utils/auth-server'
-import type { User } from '@/lib/supabase'
 
 // Enhanced memoization with custom comparison logic to prevent unnecessary re-renders
 const MemoizedMonthlyCalendar = memo(MonthlyCalendar, (prevProps, nextProps) => {

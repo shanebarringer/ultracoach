@@ -157,7 +157,11 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
                   key={coach.id}
                   className="flex items-center gap-4 p-4 bg-default-50 hover:bg-default-100 rounded-lg transition-colors"
                 >
-                  <Avatar name={coach.full_name || coach.email} size="md" className="flex-shrink-0" />
+                  <Avatar
+                    name={coach.full_name || coach.email}
+                    size="md"
+                    className="flex-shrink-0"
+                  />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">

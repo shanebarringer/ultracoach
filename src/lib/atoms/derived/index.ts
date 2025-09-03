@@ -1,11 +1,16 @@
 // Derived atoms - computed values from other atoms
 import { atom } from 'jotai'
 
-import { workoutsAtom, workoutSearchTermAtom, workoutTypeFilterAtom, workoutStatusFilterAtom } from '../workouts'
+import { userAtom } from '../auth'
+import { conversationsAtom, unreadMessagesCountAtom } from '../chat'
 import { notificationsAtom } from '../notifications'
 import { trainingPlansAtom } from '../training-plans'
-import { conversationsAtom, unreadMessagesCountAtom } from '../chat'
-import { userAtom } from '../auth'
+import {
+  workoutSearchTermAtom,
+  workoutStatusFilterAtom,
+  workoutTypeFilterAtom,
+  workoutsAtom,
+} from '../workouts'
 
 // Filtered workouts based on search and filters
 export const filteredWorkoutsAtom = atom(get => {
@@ -37,7 +42,7 @@ export const unreadNotificationsAtom = atom(get => {
 export const activeTrainingPlansAtom = atom(get => {
   const plans = get(trainingPlansAtom)
   const today = new Date()
-  
+
   return plans.filter(plan => {
     if (!plan.start_date) return false
     const startDate = new Date(plan.start_date)
@@ -57,9 +62,9 @@ export const totalUnreadMessagesAtom = atom(get => {
 export const activeConversationsAtom = atom(get => {
   const conversations = get(conversationsAtom)
   const user = get(userAtom)
-  
+
   if (!user) return []
-  
+
   // ConversationWithUser doesn't have participant1_id/participant2_id
   // It has sender and recipient properties
   return conversations.filter(conv => {
@@ -73,7 +78,7 @@ export const activeConversationsAtom = atom(get => {
 export const todaysWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const today = new Date().toISOString().split('T')[0]
-  
+
   return workouts.filter(workout => workout.date?.startsWith(today))
 })
 
@@ -85,7 +90,7 @@ export const thisWeeksWorkoutsAtom = atom(get => {
   startOfWeek.setDate(today.getDate() - today.getDay())
   const endOfWeek = new Date(today)
   endOfWeek.setDate(today.getDate() + (6 - today.getDay()))
-  
+
   return workouts.filter(workout => {
     if (!workout.date) return false
     const workoutDate = new Date(workout.date)
@@ -98,7 +103,7 @@ export const workoutCompletionRateAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const completed = workouts.filter(w => w.status === 'completed').length
   const total = workouts.length
-  
+
   return total > 0 ? (completed / total) * 100 : 0
 })
 

@@ -1,8 +1,8 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { splitAtom } from 'jotai/utils'
 import type { Atom, PrimitiveAtom } from 'jotai'
+import { splitAtom } from 'jotai/utils'
 
 import { memo, useEffect, useRef } from 'react'
 

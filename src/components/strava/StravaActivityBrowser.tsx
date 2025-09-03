@@ -46,7 +46,12 @@ import {
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { stravaActivitiesAtom, stravaActivitiesRefreshableAtom, stravaStateAtom, workoutsAtom } from '@/lib/atoms/index'
+import {
+  stravaActivitiesAtom,
+  stravaActivitiesRefreshableAtom,
+  stravaStateAtom,
+  workoutsAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { StravaActivity } from '@/types/strava'
 import {

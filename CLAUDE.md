@@ -331,6 +331,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 **Proper usage of Jotai hooks for optimal performance and type safety:**
 
 ### Reading Atoms
+
 ```typescript
 // ✅ GOOD - Use useAtomValue when ONLY reading (no writing needed)
 const races = useAtomValue(racesAtom) // Just the value, no setter
@@ -340,6 +341,7 @@ const [races] = useAtom(racesAtom) // Creates unnecessary setter
 ```
 
 ### Writing to Atoms
+
 ```typescript
 // ✅ GOOD - Use useSetAtom when ONLY writing (no reading needed)
 const setRaces = useSetAtom(racesAtom) // Just the setter, no subscription
@@ -349,6 +351,7 @@ const [, setRaces] = useAtom(racesAtom) // Creates unnecessary subscription
 ```
 
 ### Reading and Writing (Same Atom)
+
 ```typescript
 // ✅ GOOD - Use useAtom when you need BOTH read and write
 const [races, setRaces] = useAtom(racesAtom) // Same atom, both operations
@@ -363,30 +366,27 @@ const setRaces = useSetAtom(racesAtom)    // being accessed twice
 ### Common Patterns
 
 1. **Simple atoms vs Refreshable atoms**
+
    ```typescript
    // Simple atom - setter expects a value
    const racesAtom = atom<Race[]>([])
    const setRaces = useSetAtom(racesAtom)
    setRaces(newRaces) // Pass the new value directly
-   
+
    // Refreshable atom (write-only) - for async operations
-   const refreshRacesAtom = atom(
-     null,
-     async (get, set) => {
-       const races = await fetchRaces()
-       set(racesAtom, races)
-     }
-   )
+   const refreshRacesAtom = atom(null, async (get, set) => {
+     const races = await fetchRaces()
+     set(racesAtom, races)
+   })
    const refresh = useSetAtom(refreshRacesAtom)
    refresh() // Call with no arguments
    ```
 
 2. **atomFamily for dynamic atoms**
+
    ```typescript
    // Creates atoms on demand based on parameters
-   const messagesByConversationFamily = atomFamily(
-     (conversationId: string) => atom<Message[]>([])
-   )
+   const messagesByConversationFamily = atomFamily((conversationId: string) => atom<Message[]>([]))
    ```
 
 3. **splitAtom for list optimization**

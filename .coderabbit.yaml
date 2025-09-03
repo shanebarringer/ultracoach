@@ -3,7 +3,7 @@
 # This configuration applies to ALL branches and pull requests
 
 # Language and framework configuration
-language: "en-US"
+language: 'en-US'
 
 # Review settings
 reviews:
@@ -11,11 +11,11 @@ reviews:
   auto_review:
     enabled: true
     # Reviews all PRs regardless of target branch (main, develop, feature/*, etc.)
-    
+
   # Review instructions
   path_instructions:
     # TypeScript and TSX files
-    - path: "**/*.{ts,tsx}"
+    - path: '**/*.{ts,tsx}'
       instructions: |
         Review TypeScript/React code against the following standards:
         - Ensure proper TypeScript types (no 'any' types unless absolutely necessary)
@@ -26,9 +26,9 @@ reviews:
         - Verify HeroUI component usage follows Mountain Peak design system
         - Check for performance optimizations (memoization, lazy loading)
         - Ensure accessibility standards are met
-        
+
     # Test files
-    - path: "**/*.spec.{ts,tsx}"
+    - path: '**/*.spec.{ts,tsx}'
       instructions: |
         Review Playwright test code for:
         - Proper test structure and naming conventions
@@ -36,9 +36,9 @@ reviews:
         - Comprehensive test coverage for critical user flows
         - Proper cleanup and test isolation
         - Avoid using networkidle for real-time applications
-        
+
     # API routes
-    - path: "**/api/**/*.{ts,tsx}"
+    - path: '**/api/**/*.{ts,tsx}'
       instructions: |
         Review API routes for:
         - Proper authentication with Better Auth
@@ -47,27 +47,27 @@ reviews:
         - Database query optimization with Drizzle ORM
         - Rate limiting considerations
         - Security best practices (no exposed secrets)
-        
+
     # Database and schema files
-    - path: "**/schema.ts"
+    - path: '**/schema.ts'
       instructions: |
         Review database schema for:
         - Proper Drizzle ORM patterns
         - Appropriate indexes for performance
         - Data integrity constraints
         - Better Auth compatibility (role vs userType fields)
-        
+
     # Styling files
-    - path: "**/*.css"
+    - path: '**/*.css'
       instructions: |
         Review CSS for:
         - Tailwind CSS v3 best practices
         - Proper use of Mountain Peak design system colors
         - Mobile-first responsive design
         - Performance considerations (avoid excessive gradients)
-        
+
     # Configuration files
-    - path: "**/*.{json,yaml,yml}"
+    - path: '**/*.{json,yaml,yml}'
       instructions: |
         Review configuration files for:
         - No hardcoded secrets or sensitive data
@@ -79,11 +79,11 @@ reviews:
     # Enable AST-based code analysis
     ast-grep:
       essential_rules: true
-      
+
     # ESLint integration
     eslint:
       enabled: true
-      
+
     # TypeScript checking
     typescript:
       enabled: true
@@ -93,9 +93,9 @@ reviews:
 code_generation:
   docstrings:
     enabled: true
-    style: "jsdoc"
+    style: 'jsdoc'
     path_instructions:
-      - path: "**/*.{ts,tsx}"
+      - path: '**/*.{ts,tsx}'
         instructions: |
           Generate JSDoc-style documentation.
           Include parameter types and return types.
@@ -106,35 +106,35 @@ code_generation:
 security:
   enabled: true
   scan_dependencies: true
-  
+
 # Performance analysis
 performance:
   enabled: true
   bundle_size_check: true
-  
+
 # Custom commands
 commands:
-  - name: "check-types"
-    run: "pnpm typecheck"
-  - name: "lint"
-    run: "pnpm lint"
-  - name: "format-check"
-    run: "pnpm format:check"
-  - name: "test"
-    run: "pnpm test"
+  - name: 'check-types'
+    run: 'pnpm typecheck'
+  - name: 'lint'
+    run: 'pnpm lint'
+  - name: 'format-check'
+    run: 'pnpm format:check'
+  - name: 'test'
+    run: 'pnpm test'
 
 # Ignore patterns
 ignore:
-  - "node_modules/**"
-  - ".next/**"
-  - "dist/**"
-  - "build/**"
-  - ".env*"
-  - "*.min.js"
-  - "*.min.css"
-  - ".context7-docs/**"
-  - "coverage/**"
-  - ".playwright/**"
+  - 'node_modules/**'
+  - '.next/**'
+  - 'dist/**'
+  - 'build/**'
+  - '.env*'
+  - '*.min.js'
+  - '*.min.css'
+  - '.context7-docs/**'
+  - 'coverage/**'
+  - '.playwright/**'
 
 # Pull request settings
 pull_request:
@@ -142,16 +142,16 @@ pull_request:
   summary:
     enabled: true
     include_stats: true
-    
+
   # Feedback configuration
   feedback:
     enabled: true
-    sentiment: "constructive"
-    
+    sentiment: 'constructive'
+
   # Auto-merge settings (be careful with this)
   auto_merge:
     enabled: false
-    
+
 # Issue integration
 issues:
   link_issues: true
@@ -161,15 +161,15 @@ issues:
 notifications:
   # Notify on high-severity issues
   high_severity: true
-  
+
 # Rate limiting
 rate_limit:
   max_reviews_per_hour: 20
-  
+
 # Custom badges
 badges:
   enabled: true
   types:
-    - "security"
-    - "performance"
-    - "code-quality"
+    - 'security'
+    - 'performance'
+    - 'code-quality'

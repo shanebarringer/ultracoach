@@ -399,30 +399,32 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.major.map((discrepancy: WorkoutDiscrepancy, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-3 p-3 bg-danger/5 rounded-lg"
-                            >
-                              <AlertCircle className="h-5 w-5 text-danger flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="font-medium text-foreground capitalize">
-                                  {discrepancy.field} Mismatch
-                                </p>
-                                <p className="text-sm text-foreground-600 mb-2">
-                                  {discrepancy.description}
-                                </p>
-                                <div className="flex items-center gap-4 text-xs">
-                                  <span>
-                                    Planned: <strong>{discrepancy.planned}</strong>
-                                  </span>
-                                  <span>
-                                    Actual: <strong>{discrepancy.actual}</strong>
-                                  </span>
+                          {categorizedDiscrepancies.major.map(
+                            (discrepancy: WorkoutDiscrepancy, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-3 p-3 bg-danger/5 rounded-lg"
+                              >
+                                <AlertCircle className="h-5 w-5 text-danger flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-foreground capitalize">
+                                    {discrepancy.field} Mismatch
+                                  </p>
+                                  <p className="text-sm text-foreground-600 mb-2">
+                                    {discrepancy.description}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span>
+                                      Planned: <strong>{discrepancy.planned}</strong>
+                                    </span>
+                                    <span>
+                                      Actual: <strong>{discrepancy.actual}</strong>
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </CardBody>
                       </Card>
                     )}
@@ -437,30 +439,32 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.moderate.map((discrepancy: WorkoutDiscrepancy, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-3 p-3 bg-warning/5 rounded-lg"
-                            >
-                              <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="font-medium text-foreground capitalize">
-                                  {discrepancy.field} Difference
-                                </p>
-                                <p className="text-sm text-foreground-600 mb-2">
-                                  {discrepancy.description}
-                                </p>
-                                <div className="flex items-center gap-4 text-xs">
-                                  <span>
-                                    Planned: <strong>{discrepancy.planned}</strong>
-                                  </span>
-                                  <span>
-                                    Actual: <strong>{discrepancy.actual}</strong>
-                                  </span>
+                          {categorizedDiscrepancies.moderate.map(
+                            (discrepancy: WorkoutDiscrepancy, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-3 p-3 bg-warning/5 rounded-lg"
+                              >
+                                <Clock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-foreground capitalize">
+                                    {discrepancy.field} Difference
+                                  </p>
+                                  <p className="text-sm text-foreground-600 mb-2">
+                                    {discrepancy.description}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span>
+                                      Planned: <strong>{discrepancy.planned}</strong>
+                                    </span>
+                                    <span>
+                                      Actual: <strong>{discrepancy.actual}</strong>
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </CardBody>
                       </Card>
                     )}
@@ -475,30 +479,32 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.minor.map((discrepancy: WorkoutDiscrepancy, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg"
-                            >
-                              <Target className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                              <div>
-                                <p className="font-medium text-foreground capitalize">
-                                  {discrepancy.field} Variation
-                                </p>
-                                <p className="text-sm text-foreground-600 mb-2">
-                                  {discrepancy.description}
-                                </p>
-                                <div className="flex items-center gap-4 text-xs">
-                                  <span>
-                                    Planned: <strong>{discrepancy.planned}</strong>
-                                  </span>
-                                  <span>
-                                    Actual: <strong>{discrepancy.actual}</strong>
-                                  </span>
+                          {categorizedDiscrepancies.minor.map(
+                            (discrepancy: WorkoutDiscrepancy, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg"
+                              >
+                                <Target className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="font-medium text-foreground capitalize">
+                                    {discrepancy.field} Variation
+                                  </p>
+                                  <p className="text-sm text-foreground-600 mb-2">
+                                    {discrepancy.description}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span>
+                                      Planned: <strong>{discrepancy.planned}</strong>
+                                    </span>
+                                    <span>
+                                      Actual: <strong>{discrepancy.actual}</strong>
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </CardBody>
                       </Card>
                     )}

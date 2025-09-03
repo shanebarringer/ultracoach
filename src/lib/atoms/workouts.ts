@@ -3,6 +3,7 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Workout } from '@/lib/supabase'
+import type { WorkoutMatch } from '@/utils/workout-matching'
 
 // Core workout atoms
 export const workoutsAtom = atom<Workout[]>([])
@@ -24,15 +25,13 @@ export const selectedWorkoutIdAtom = atom<string | null>(null)
 export const workoutSearchTermAtom = atomWithStorage('workoutSearchTerm', '')
 export const workoutTypeFilterAtom = atomWithStorage('workoutTypeFilter', 'all')
 export const workoutStatusFilterAtom = atomWithStorage('workoutStatusFilter', 'all')
-export const workoutSortByAtom = atomWithStorage<'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'>(
-  'workoutSortBy',
-  'date-desc'
-)
+export const workoutSortByAtom = atomWithStorage<
+  'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'
+>('workoutSortBy', 'date-desc')
 export const workoutViewModeAtom = atomWithStorage<'grid' | 'list'>('workoutViewMode', 'grid')
-export const workoutQuickFilterAtom = atomWithStorage<'all' | 'today' | 'this-week' | 'completed' | 'planned'>(
-  'workoutQuickFilter',
-  'all'
-)
+export const workoutQuickFilterAtom = atomWithStorage<
+  'all' | 'today' | 'this-week' | 'completed' | 'planned'
+>('workoutQuickFilter', 'all')
 export const workoutShowAdvancedFiltersAtom = atomWithStorage('workoutShowAdvancedFilters', false)
 
 // Workout form atoms
@@ -55,7 +54,7 @@ export const workoutLookupMapAtom = atom(get => {
 })
 
 // Workout diff modal atoms
-export const selectedMatchAtom = atom<Record<string, unknown> | null>(null)
+export const selectedMatchAtom = atom<WorkoutMatch | null>(null)
 export const showWorkoutDiffModalAtom = atom(false)
 
 // Advanced workout actions atoms
