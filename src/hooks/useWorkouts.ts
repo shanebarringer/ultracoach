@@ -23,7 +23,10 @@ export function useWorkouts() {
     }
 
     setLoadingStates(prev => ({ ...prev, workouts: true }))
-    logger.debug('Fetching workouts for user', { userId: session.user.id, role: session.user.role })
+    logger.debug('Fetching workouts for user', {
+      userId: session.user.id,
+      userType: session.user.userType,
+    })
 
     try {
       const response = await fetch('/api/workouts', {
@@ -56,7 +59,7 @@ export function useWorkouts() {
     } finally {
       setLoadingStates(prev => ({ ...prev, workouts: false }))
     }
-  }, [session?.user?.id, session?.user?.role, setWorkouts, setLoadingStates])
+  }, [session?.user?.id, session?.user?.userType, setWorkouts, setLoadingStates])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {

@@ -60,7 +60,7 @@ export function useConversations() {
           sender: {
             id: session.user.id,
             email: session.user.email,
-            role: session.user.role,
+            role: session.user.userType,
             full_name: session.user.name || '',
             created_at: '', // Not available from session
             updated_at: '', // Not available from session

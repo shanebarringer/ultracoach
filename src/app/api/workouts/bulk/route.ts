@@ -1,4 +1,4 @@
-import { addYears, isAfter, isBefore, isValid, parseISO } from 'date-fns'
+import { addYears, format, isAfter, isBefore, isValid, parseISO, subDays } from 'date-fns'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -109,7 +109,7 @@ function validateDate(dateString: string): { isValid: boolean; error?: string; d
 
   const now = new Date()
   const maxFutureDate = addYears(now, 1) // Max 1 year in future
-  const minPastDate = new Date(now.getTime() - VALIDATION_RULES.MAX_DATE_PAST * 24 * 60 * 60 * 1000)
+  const minPastDate = subDays(now, VALIDATION_RULES.MAX_DATE_PAST)
 
   if (isAfter(parsedDate, maxFutureDate)) {
     return { isValid: false, error: 'Date cannot be more than 1 year in the future' }
@@ -352,10 +352,10 @@ export async function POST(request: NextRequest) {
 
       // Generate a descriptive title for the workout - use validated date
       const dateValidation = validateDate(workoutData.date)
-      const workoutDate = dateValidation.date || new Date(workoutData.date) // Fallback (should never hit)
+      const workoutDate = dateValidation.date || parseISO(workoutData.date) // Fallback (should never hit)
       const workoutTitle = workoutData.plannedType
-        ? `${workoutData.plannedType} - ${workoutDate.toLocaleDateString()}`
-        : `Workout - ${workoutDate.toLocaleDateString()}`
+        ? `${workoutData.plannedType} - ${format(workoutDate, 'MM/dd/yyyy')}`
+        : `Workout - ${format(workoutDate, 'MM/dd/yyyy')}`
 
       return {
         training_plan_id: workoutData.trainingPlanId,

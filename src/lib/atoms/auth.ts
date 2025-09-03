@@ -7,7 +7,7 @@ import type { Session, User } from '@/lib/better-auth-client'
 // Core auth atoms
 export const sessionAtom = atom<Session | null>(null)
 export const userAtom = atom<User | null>(null)
-export const isAuthLoadingAtom = atom(true)
+export const authLoadingAtom = atom(true)
 
 // Auth state atoms
 export const authErrorAtom = atom<string | null>(null)
