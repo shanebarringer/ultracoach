@@ -2,6 +2,8 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import type { Workout } from '@/lib/supabase'
+
 // Modal state atoms
 export const showCreateWorkoutModalAtom = atom(false)
 export const showCreateTrainingPlanModalAtom = atom(false)
@@ -51,7 +53,7 @@ export const calendarUiStateAtom = atom({
   showDetails: true,
   selectedWorkoutId: null as string | null,
   showWorkoutModal: false,
-  selectedCalendarWorkout: null as any,
+  selectedCalendarWorkout: null as Workout | null,
   showAddWorkoutModal: false,
   workoutsLoading: false,
   selectedRunnerId: null as string | null,

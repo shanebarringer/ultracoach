@@ -2,10 +2,12 @@
 
 import { useAtom } from 'jotai'
 import { splitAtom } from 'jotai/utils'
+import type { Atom, PrimitiveAtom } from 'jotai'
 
 import { memo, useEffect, useRef } from 'react'
 
 import { conversationMessagesAtomsFamily } from '@/lib/atoms/index'
+import type { OptimisticMessage } from '@/lib/supabase'
 
 import GranularMessage from './GranularMessage'
 
@@ -22,17 +24,17 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
   const messagesAtom = conversationMessagesAtomsFamily(recipientId)
   // Split the array atom into individual atoms for each message
   const messageAtomsAtom = splitAtom(messagesAtom)
-  const [messageAtoms] = useAtom(messageAtomsAtom)
+  const [messageAtoms] = useAtom(messageAtomsAtom) as [PrimitiveAtom<OptimisticMessage>[], unknown]
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
-  }, [(messageAtoms as any[]).length])
+  }, [messageAtoms.length])
 
   // If no messages, show empty state
-  if ((messageAtoms as any[]).length === 0) {
+  if (messageAtoms.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="text-center text-gray-500 dark:text-gray-400">
@@ -50,10 +52,10 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
       style={{ maxHeight: 'calc(100vh - 200px)' }}
     >
       {/* Each message atom renders independently - only re-renders when that specific message changes */}
-      {(messageAtoms as any[]).map((messageAtom: any, index: number) => (
+      {messageAtoms.map((messageAtom, index) => (
         <GranularMessage
           key={index} // Use index as key since atom identity is stable
-          messageAtom={messageAtom}
+          messageAtom={messageAtom as unknown as Atom<import('@/lib/supabase').MessageWithUser>}
           currentUserId={currentUserId}
         />
       ))}

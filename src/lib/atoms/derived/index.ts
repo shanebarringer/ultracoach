@@ -63,7 +63,7 @@ export const activeConversationsAtom = atom(get => {
   // ConversationWithUser doesn't have participant1_id/participant2_id
   // It has sender and recipient properties
   return conversations.filter(conv => {
-    const userId = typeof user === 'object' && 'id' in user ? (user as any).id : null
+    const userId = typeof user === 'object' && 'id' in user ? (user as { id: string }).id : null
     if (!userId) return false
     return conv.sender?.id === userId || conv.recipient?.id === userId
   })

@@ -28,7 +28,6 @@ import { atom } from 'jotai'
 import type { User as BetterAuthUser, Session } from '../better-auth-client'
 import { createLogger } from '../logger'
 import type {
-  OptimisticMessage,
   PlanTemplate,
   Race,
   User,

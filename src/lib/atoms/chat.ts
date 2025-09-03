@@ -3,7 +3,7 @@ import { atom } from 'jotai'
 import { atomWithStorage, atomFamily } from 'jotai/utils'
 
 import type { Conversation } from '@/types/chat'
-import type { OptimisticMessage } from '@/lib/supabase'
+import type { OptimisticMessage, Workout } from '@/lib/supabase'
 
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
@@ -36,7 +36,7 @@ export const currentConversationIdAtom = atom<string | null>(null)
 // Message input atom with proper structure
 export const messageInputAtom = atom({
   message: '',
-  linkedWorkout: null as any,
+  linkedWorkout: null as Workout | null,
   linkType: null as string | null,
   showWorkoutSelector: false,
 })
@@ -55,7 +55,7 @@ export const chatUiStateAtom = atom({
   showNewMessage: false,
   sending: false,
   filterWorkoutId: null as string | null,
-  selectedChatWorkout: null as any,
+  selectedChatWorkout: null as Workout | null,
   showWorkoutModal: false,
   hasInitiallyLoadedMessages: false,
   hasInitiallyLoadedConversations: false,
@@ -89,22 +89,17 @@ export const typingStatusAtom = atom<
 >({})
 
 // Offline message queue
-export const offlineMessageQueueAtom = atomWithStorage<any[]>('offline-messages', [])
+export const offlineMessageQueueAtom = atomWithStorage<OptimisticMessage[]>('offline-messages', [])
 
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
-  get => (get(chatUiStateAtom) as any).currentRecipientId,
+  get => get(currentConversationIdAtom),
   (get, set, recipientId: string | null) => {
-    set(chatUiStateAtom, prev => ({
-      ...prev,
-      currentRecipientId: recipientId,
-      selectedConversationId: recipientId, // Sync conversation selection
-    } as any))
     set(currentConversationIdAtom, recipientId)
   }
 )
 
 // Conversation messages atoms family - using atomFamily for proper typing
 export const conversationMessagesAtomsFamily = atomFamily(
-  (conversationId: string) => atom<OptimisticMessage[]>([])
+  (_conversationId: string) => atom<OptimisticMessage[]>([])
 )

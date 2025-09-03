@@ -3,6 +3,7 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { StravaActivity, StravaAthlete } from '@/types/strava'
+import type { Workout } from '@/lib/supabase'
 
 // Core Strava atoms
 export const stravaActivitiesAtom = atom<StravaActivity[]>([])
@@ -63,7 +64,7 @@ export const stravaAutoReconnectAtom = atom<{
 export const syncProgressAtom = atom<Record<string, unknown>>({})
 
 // Strava connection atom
-export const stravaConnectionAtom = atom<Record<string, any> | null>(null)
+export const stravaConnectionAtom = atom<Record<string, unknown> | null>(null)
 
 // Sync stats atom (derived)
 export const syncStatsAtom = atom(get => {
@@ -120,7 +121,7 @@ export const stravaStateAtom = atom(get => {
 // Strava actions atom for dispatching actions
 export const stravaActionsAtom = atom(
   null,
-  async (get, set, action: { type: string; payload?: any }) => {
+  async (get, set, action: { type: string; payload?: Record<string, unknown> }) => {
     switch (action.type) {
       case 'CONNECT':
         set(stravaStatusAtom, 'connecting')
@@ -153,7 +154,7 @@ export const matchingSummaryAtom = atom<{
   unmatched: number
   suggestions: number
   byType?: Record<string, { matched: number; unmatched: number; suggestions: number }>
-  unmatchedWorkouts?: any[]
+  unmatchedWorkouts?: Workout[]
   lastProcessed?: Date | null
 }>({
   matched: 0,

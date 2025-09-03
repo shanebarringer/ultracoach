@@ -55,25 +55,25 @@ export const workoutLookupMapAtom = atom(get => {
 })
 
 // Workout diff modal atoms
-export const selectedMatchAtom = atom<any>(null)
+export const selectedMatchAtom = atom<Record<string, unknown> | null>(null)
 export const showWorkoutDiffModalAtom = atom(false)
 
 // Advanced workout actions atoms
 export const workoutActionsAtom = atom({
   type: '',
-  payload: null as any,
+  payload: null as Record<string, unknown> | null,
 })
 
 export const optimisticOperationAtom = atom({
   type: '',
   action: '',
-  payload: null as any,
+  payload: null as Record<string, unknown> | null,
 })
 
 export const errorRecoveryAtom = atom({
   type: '',
   message: '',
-  context: null as any,
+  context: null as Record<string, unknown> | null,
 })
 
 export const persistedStateAtom = atom({

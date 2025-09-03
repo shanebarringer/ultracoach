@@ -2,7 +2,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import type { User, Session } from '@/types/auth'
+// Auth types are used for type safety but not directly referenced
 
 // Core auth atoms
 export const sessionAtom = atom<Record<string, unknown> | null>(null)
