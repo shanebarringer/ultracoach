@@ -24,23 +24,16 @@ export * from './derived'
 
 // Import needed types and utilities
 import { atom } from 'jotai'
-import { atomWithRefresh, atomWithStorage, loadable, splitAtom, unwrap } from 'jotai/utils'
 
 import type { User as BetterAuthUser, Session } from '../better-auth-client'
 import { createLogger } from '../logger'
 import type {
-  ConversationWithUser,
-  MessageWithUser,
-  Notification,
+  OptimisticMessage,
   PlanTemplate,
   Race,
-  TrainingPlan,
   User,
   Workout,
 } from '../supabase'
-
-// Environment check
-const isBrowser = typeof window !== 'undefined'
 
 // Legacy atoms that need special handling
 // These are complex atoms that don't fit cleanly into a single category
@@ -233,7 +226,7 @@ export const sendMessageActionAtom = atom(
       sender: {
         id: user.id,
         email: user.email,
-        role: user.role || 'runner',
+        role: (user.role || 'runner') as 'runner' | 'coach',
         full_name: user.name || '',
         created_at: '',
         updated_at: '',

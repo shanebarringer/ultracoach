@@ -48,6 +48,8 @@ export const createTrainingPlanFormAtom = atom({
   phases: [] as string[],
   difficulty: 'intermediate' as 'beginner' | 'intermediate' | 'advanced',
   template_id: null as string | null,
+  error: null as string | null,
+  loading: false,
 })
 
 // Workout log form
@@ -67,6 +69,8 @@ export const workoutLogFormAtom = atom({
   workout_notes: '',
   completed_at: null as string | null,
   strava_activity_id: null as string | null,
+  error: null as string | null,
+  loading: false,
 })
 
 // Auth success/redirect states

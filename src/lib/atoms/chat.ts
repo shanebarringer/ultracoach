@@ -58,6 +58,7 @@ export const chatUiStateAtom = atom({
   selectedChatWorkout: null as any,
   showWorkoutModal: false,
   hasInitiallyLoadedMessages: false,
+  hasInitiallyLoadedConversations: false,
 })
 
 // Message input state

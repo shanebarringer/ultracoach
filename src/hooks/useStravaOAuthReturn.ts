@@ -18,7 +18,7 @@ const logger = createLogger('useStravaOAuthReturn')
  */
 export function useStravaOAuthReturn(onSuccess?: () => void) {
   const searchParams = useSearchParams()
-  const [, refreshConnectionStatus] = useAtom(stravaConnectionStatusAtom)
+  const [, setConnectionStatus] = useAtom(stravaConnectionStatusAtom)
   const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
 
   useEffect(() => {
@@ -27,8 +27,8 @@ export function useStravaOAuthReturn(onSuccess?: () => void) {
 
     if (success === 'strava_connected') {
       logger.info('Strava OAuth success detected, refreshing connection status')
-      // Refresh both connection status and activities
-      refreshConnectionStatus()
+      // Update connection status and refresh activities
+      setConnectionStatus({ status: 'connected', connected: true })
       refreshActivities()
       // Call custom callback if provided (for settings page refresh)
       onSuccess?.()
@@ -64,5 +64,5 @@ export function useStravaOAuthReturn(onSuccess?: () => void) {
         window.history.replaceState({}, '', url.toString())
       }
     }
-  }, [searchParams, refreshConnectionStatus, refreshActivities, onSuccess])
+  }, [searchParams, setConnectionStatus, refreshActivities, onSuccess])
 }

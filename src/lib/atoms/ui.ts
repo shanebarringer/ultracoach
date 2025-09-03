@@ -22,6 +22,18 @@ export const compactModeAtom = atomWithStorage('compactMode', false)
 export const globalLoadingAtom = atom(false)
 export const globalLoadingMessageAtom = atom<string | null>(null)
 
+// Component-specific loading states
+export const loadingStatesAtom = atom({
+  workouts: false,
+  trainingPlans: false,
+  messages: false,
+  notifications: false,
+  relationships: false,
+  strava: false,
+  races: false,
+  conversations: false,
+})
+
 // Toast notifications
 export const toastMessagesAtom = atom<Array<{
   id: string
@@ -50,14 +62,3 @@ export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme
 
 // Runners page tab
 export const runnersPageTabAtom = atom<'connected' | 'discover'>('connected')
-
-// Loading states
-export const loadingStatesAtom = atom({
-  workouts: false,
-  trainingPlans: false,
-  messages: false,
-  notifications: false,
-  relationships: false,
-  strava: false,
-  races: false,
-})

@@ -8,7 +8,7 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { Notification } from '@/lib/supabase'
+import type { Notification } from '@/types/notifications'
 import { toast } from '@/lib/toast'
 
 const logger = createLogger('useNotifications')

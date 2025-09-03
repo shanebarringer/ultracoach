@@ -74,7 +74,7 @@ export default function MessageInput({
         {/* Workout context display */}
         {messageInput.linkedWorkout && (
           <div className="relative">
-            <WorkoutContext workout={messageInput.linkedWorkout} linkType={messageInput.linkType} />
+            <WorkoutContext workout={messageInput.linkedWorkout} linkType={messageInput.linkType || undefined} />
             <Button
               size="sm"
               variant="light"

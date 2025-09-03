@@ -112,7 +112,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
     if (!comparisonData) return { major: [], moderate: [], minor: [] }
 
     return comparisonData.meta.discrepancies.reduce(
-      (acc, discrepancy) => {
+      (acc: Record<string, any[]>, discrepancy: any) => {
         acc[discrepancy.severity].push(discrepancy)
         return acc
       },
@@ -399,7 +399,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.major.map((discrepancy, index) => (
+                          {categorizedDiscrepancies.major.map((discrepancy: any, index: number) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-danger/5 rounded-lg"
@@ -437,7 +437,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.moderate.map((discrepancy, index) => (
+                          {categorizedDiscrepancies.moderate.map((discrepancy: any, index: number) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-warning/5 rounded-lg"
@@ -475,7 +475,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                           </h3>
                         </CardHeader>
                         <CardBody className="space-y-3">
-                          {categorizedDiscrepancies.minor.map((discrepancy, index) => (
+                          {categorizedDiscrepancies.minor.map((discrepancy: any, index: number) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg"
@@ -525,7 +525,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                     </h3>
                   </CardHeader>
                   <CardBody className="space-y-3">
-                    {meta.suggestions.map((suggestion, index) => (
+                    {meta.suggestions.map((suggestion: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-start gap-3 p-3 bg-success/5 rounded-lg"

@@ -57,3 +57,42 @@ export const workoutLookupMapAtom = atom(get => {
 // Workout diff modal atoms
 export const selectedMatchAtom = atom<any>(null)
 export const showWorkoutDiffModalAtom = atom(false)
+
+// Advanced workout actions atoms
+export const workoutActionsAtom = atom({
+  type: '',
+  payload: null as any,
+})
+
+export const optimisticOperationAtom = atom({
+  type: '',
+  action: '',
+  payload: null as any,
+})
+
+export const errorRecoveryAtom = atom({
+  type: '',
+  message: '',
+  context: null as any,
+})
+
+export const persistedStateAtom = atom({
+  lastSync: new Date().toISOString(),
+  uiPreferences: {},
+})
+
+export const workoutAnalyticsAtom = atom({
+  completionRate: 0,
+  streak: {
+    current: 0,
+    longest: 0,
+  },
+  thisWeek: {
+    planned: 0,
+    completed: 0,
+  },
+  thisMonth: {
+    planned: 0,
+    completed: 0,
+  },
+})

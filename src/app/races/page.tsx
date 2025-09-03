@@ -19,7 +19,7 @@ import {
   Textarea,
   useDisclosure,
 } from '@heroui/react'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtom } from 'jotai'
 import {
   CalendarIcon,
   EditIcon,
