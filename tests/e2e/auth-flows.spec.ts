@@ -10,9 +10,19 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test.beforeEach(async ({ page }) => {
     // Start from the home page
     await page.goto('/')
+
+    // Wait for the page to be fully loaded and auth status to be determined
+    // This ensures the Sign Up/Sign In buttons are visible
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+      // Ignore networkidle timeout as it might hang with real-time features
+    })
   })
 
   test('should complete sign up flow and update auth atoms', async ({ page }) => {
+    // Wait for auth status to load and Sign Up button to be visible
+    await page.waitForSelector('button:has-text("Sign Up")', { state: 'visible', timeout: 10000 })
+
     // Navigate to sign up
     await page.getByRole('button', { name: /sign up/i }).click()
     await expect(page).toHaveURL('/auth/signup')
@@ -44,13 +54,16 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should complete sign in flow and update session atom', async ({ page }) => {
+    // Wait for auth status to load and Sign In button to be visible
+    await page.waitForSelector('button:has-text("Sign In")', { state: 'visible', timeout: 10000 })
+
     // Navigate to sign in
     await page.getByRole('button', { name: /sign in/i }).click()
     await expect(page).toHaveURL('/auth/signin')
 
-    // Use existing test credentials
-    await page.getByLabel(/email/i).fill('runner@example.com')
-    await page.getByLabel(/password/i).fill('password123')
+    // Use existing test credentials (from environment)
+    await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
+    await page.getByLabel(/password/i).fill('RunnerPass2025!')
 
     // Submit form
     await page.getByRole('button', { name: /sign in/i }).click()
@@ -59,14 +72,14 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
     // Verify session is established
-    await expect(page.getByText('runner@example.com')).toBeVisible()
+    await expect(page.getByText('alex.rivera@ultracoach.dev')).toBeVisible()
   })
 
   test('should handle sign out and clear auth atoms', async ({ page }) => {
     // First sign in
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill('runner@example.com')
-    await page.getByLabel(/password/i).fill('password123')
+    await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
+    await page.getByLabel(/password/i).fill('RunnerPass2025!')
     await page.getByRole('button', { name: /sign in/i }).click()
 
     // Wait for dashboard
@@ -79,6 +92,9 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should redirect to home page
     await expect(page).toHaveURL('/')
 
+    // Wait for auth state to clear and Sign In button to appear
+    await page.waitForSelector('button:has-text("Sign In")', { state: 'visible', timeout: 10000 })
+
     // Verify auth state is cleared (sign in button visible)
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
 
@@ -89,8 +105,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test('should maintain role-based access with isCoachAtom/isRunnerAtom', async ({ page }) => {
     // Sign in as coach
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill('coach@example.com')
-    await page.getByLabel(/password/i).fill('password123')
+    await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+    await page.getByLabel(/password/i).fill('UltraCoach2025!')
     await page.getByRole('button', { name: /sign in/i }).click()
 
     // Should redirect to coach dashboard
@@ -108,8 +124,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test('should persist auth state across page refreshes', async ({ page }) => {
     // Sign in
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill('runner@example.com')
-    await page.getByLabel(/password/i).fill('password123')
+    await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
+    await page.getByLabel(/password/i).fill('RunnerPass2025!')
     await page.getByRole('button', { name: /sign in/i }).click()
 
     // Wait for dashboard
@@ -120,7 +136,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Should still be authenticated
     await expect(page).toHaveURL('/dashboard/runner')
-    await expect(page.getByText('runner@example.com')).toBeVisible()
+    await expect(page.getByText('alex.rivera@ultracoach.dev')).toBeVisible()
 
     // Auth-dependent features should still work
     await page.getByRole('link', { name: /workouts/i }).click()
@@ -154,8 +170,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page).toHaveURL('/auth/signin')
 
     // Sign in
-    await page.getByLabel(/email/i).fill('runner@example.com')
-    await page.getByLabel(/password/i).fill('password123')
+    await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
+    await page.getByLabel(/password/i).fill('RunnerPass2025!')
     await page.getByRole('button', { name: /sign in/i }).click()
 
     // Should redirect to originally requested page
