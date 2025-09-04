@@ -336,9 +336,9 @@ jobs:
           # Run tests with explicit config to skip webServer wait and add global timeout
           # Continue even if some tests fail to allow artifact upload
           # Increased timeout to 20 minutes to accommodate all tests
-          # Run all projects to ensure proper setup dependencies
-          # Added list reporter for better debugging in CI
-          npx playwright test --max-failures=3 --reporter=list --global-timeout=1200000 --workers=1 || TEST_EXIT_CODE=$?
+          # Use dot reporter for CI output and html for artifacts
+          # Use 2 workers as configured in playwright.config.ts for better performance
+          npx playwright test --max-failures=3 --reporter=dot --reporter=html --global-timeout=1200000 || TEST_EXIT_CODE=$?
 
           # Report status but don't fail yet to allow artifact upload
           if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then
