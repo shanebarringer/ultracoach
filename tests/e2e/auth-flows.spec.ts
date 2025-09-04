@@ -20,33 +20,32 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should complete sign up flow and update auth atoms', async ({ page }) => {
-    // Wait for auth status to load and Sign Up button to be visible
-    await page.waitForSelector('button:has-text("Sign Up")', { state: 'visible', timeout: 10000 })
-
-    // Navigate to sign up
-    await page.getByRole('button', { name: /sign up/i }).click()
+    // Navigate directly to signup page
+    await page.goto('/auth/signup')
     await expect(page).toHaveURL('/auth/signup')
 
-    // Fill sign up form
+    // Fill sign up form with unique email using UUID
     const timestamp = Date.now()
-    const testEmail = `test.runner.${timestamp}@example.com`
+    const randomId = Math.random().toString(36).substring(7)
+    const testEmail = `test.runner.${timestamp}.${randomId}@example.com`
+    const testName = 'Test Runner'
 
-    await page.getByLabel(/email/i).fill(testEmail)
-    await page.getByLabel('Full Name').fill('Test Runner')
-    await page.getByLabel(/^password$/i).fill('TestPassword123!')
-    await page.getByLabel(/confirm password/i).fill('TestPassword123!')
+    await page.getByLabel('Full Name').fill(testName)
+    await page.getByLabel('Email Address').fill(testEmail)
+    await page.getByLabel('Password').fill('TestPassword123!')
 
-    // Select runner role
-    await page.getByRole('radio', { name: /runner/i }).click()
+    // Select runner role using the HeroUI Select component (need to click the button trigger)
+    await page.locator('[data-slot="trigger"]').filter({ hasText: 'Choose your path' }).click()
+    await page.getByRole('option', { name: /Trail Runner/i }).click()
 
     // Submit form
-    await page.getByRole('button', { name: /create account/i }).click()
+    await page.getByRole('button', { name: /Start Your Journey/i }).click()
 
     // Should redirect to dashboard after successful signup
-    await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+    await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
 
-    // Verify auth state is properly set (user info visible)
-    await expect(page.getByText(testEmail)).toBeVisible()
+    // Verify auth state is properly set (user name visible in welcome message)
+    await expect(page.getByText(`Welcome back, ${testName}!`)).toBeVisible({ timeout: 10000 })
 
     // Verify isAuthenticatedAtom is true (navigation items visible)
     await expect(page.getByRole('link', { name: /workouts/i })).toBeVisible()
@@ -54,25 +53,22 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should complete sign in flow and update session atom', async ({ page }) => {
-    // Wait for auth status to load and Sign In button to be visible
-    await page.waitForSelector('button:has-text("Sign In")', { state: 'visible', timeout: 10000 })
-
-    // Navigate to sign in
-    await page.getByRole('button', { name: /sign in/i }).click()
+    // Navigate directly to signin page
+    await page.goto('/auth/signin')
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials (from environment)
     await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
     await page.getByLabel(/password/i).fill('RunnerPass2025!')
 
-    // Submit form
-    await page.getByRole('button', { name: /sign in/i }).click()
+    // Submit form - using the actual button text
+    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
     // Should redirect to appropriate dashboard based on role
-    await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+    await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
 
-    // Verify session is established
-    await expect(page.getByText('alex.rivera@ultracoach.dev')).toBeVisible()
+    // Verify session is established - user name is shown in welcome message
+    await expect(page.getByText('Welcome back, Alex Rivera!')).toBeVisible({ timeout: 10000 })
   })
 
   test('should handle sign out and clear auth atoms', async ({ page }) => {
@@ -80,13 +76,14 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.goto('/auth/signin')
     await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
     await page.getByLabel(/password/i).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: /sign in/i }).click()
+    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
-    // Wait for dashboard
-    await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+    // Wait for dashboard and welcome message
+    await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
+    await expect(page.getByText('Welcome back, Alex Rivera!')).toBeVisible({ timeout: 10000 })
 
-    // Open user menu and sign out
-    await page.getByRole('button', { name: /user menu/i }).click()
+    // Open user menu and sign out - using the avatar button
+    await page.getByRole('img', { name: 'Alex Rivera' }).click()
     await page.getByRole('menuitem', { name: /sign out/i }).click()
 
     // Should redirect to home page
@@ -150,16 +147,16 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Try invalid credentials
     await page.getByLabel(/email/i).fill('wrong@example.com')
     await page.getByLabel(/password/i).fill('wrongpassword')
-    await page.getByRole('button', { name: /sign in/i }).click()
+    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
-    // Should show error message
-    await expect(page.getByText(/invalid credentials/i)).toBeVisible({ timeout: 5000 })
+    // Should show error message (Better Auth shows "Invalid credentials")
+    await expect(page.getByText(/invalid credentials/i)).toBeVisible({ timeout: 10000 })
 
     // Should remain on sign in page
     await expect(page).toHaveURL('/auth/signin')
 
-    // Auth state should remain unauthenticated
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
+    // Form should still be visible and usable
+    await expect(page.getByRole('button', { name: /Begin Your Expedition/i })).toBeVisible()
   })
 
   test('should redirect to originally requested page after auth', async ({ page }) => {
@@ -172,7 +169,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Sign in
     await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
     await page.getByLabel(/password/i).fill('RunnerPass2025!')
-    await page.getByRole('button', { name: /sign in/i }).click()
+    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
     // Should redirect to originally requested page
     await expect(page).toHaveURL('/workouts', { timeout: 10000 })

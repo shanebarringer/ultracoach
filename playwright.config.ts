@@ -75,7 +75,7 @@ export default defineConfig({
     // Unauthenticated tests (auth flows, landing page)
     {
       name: 'chromium-unauth',
-      testMatch: /auth\.spec\.ts/,
+      testMatch: [/auth\.spec\.ts/, /auth-flows\.spec\.ts/],
       use: {
         ...devices['Desktop Chrome'],
         // No storage state - test authentication flows from scratch
@@ -124,7 +124,7 @@ export default defineConfig({
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
-      testIgnore: /auth\.spec\.ts|dashboard\.spec\.ts|race-import\.spec\.ts/,
+      testIgnore: /auth\.spec\.ts|auth-flows\.spec\.ts|dashboard\.spec\.ts|race-import\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
