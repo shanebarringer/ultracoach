@@ -1,7 +1,15 @@
-// Training plan management atoms
+/**
+ * Training plan management atoms
+ *
+ * This module manages all training plan related state including
+ * plans, templates, forms, and filtering.
+ *
+ * @module atoms/training-plans
+ */
 import { atom } from 'jotai'
 import { atomWithRefresh, atomWithStorage } from 'jotai/utils'
 
+import type { PlanTemplate } from '@/lib/supabase'
 import type { ExtendedTrainingPlan } from '@/types/training'
 
 import { createLogger } from '../logger'
@@ -62,3 +70,9 @@ export const trainingPlanSortByAtom = atomWithStorage<'name' | 'start_date' | 'c
 export const trainingPlanFormDataAtom = atom<Partial<ExtendedTrainingPlan>>({})
 export const isEditingTrainingPlanAtom = atom(false)
 export const editingTrainingPlanIdAtom = atom<string | null>(null)
+
+/**
+ * Plan templates list atom - stores available training plan templates
+ * Migrated from barrel file for better organization
+ */
+export const planTemplatesAtom = atom<PlanTemplate[]>([])

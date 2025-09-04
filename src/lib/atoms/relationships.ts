@@ -1,4 +1,11 @@
-// Coach-runner relationship atoms
+/**
+ * Coach-runner relationship atoms
+ *
+ * This module manages all coach-runner relationship state including
+ * connections, invitations, and user discovery.
+ *
+ * @module atoms/relationships
+ */
 import { atom } from 'jotai'
 import { atomWithRefresh, loadable } from 'jotai/utils'
 
@@ -41,6 +48,12 @@ export const connectCoachFormAtom = atom({
 // Search and connection state
 export const runnerSearchTermAtom = atom<string>('')
 export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
+
+/**
+ * Runners list atom - stores all available runners
+ * Migrated from barrel file for better organization
+ */
+export const runnersAtom = atom<User[]>([])
 
 // Connected runners atom for coaches
 export const connectedRunnersAtom = atomWithRefresh(async () => {

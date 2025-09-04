@@ -1,8 +1,16 @@
-// UI state management atoms
+/**
+ * UI state management atoms
+ *
+ * This module manages all UI-related state including modals, drawers,
+ * loading states, theme preferences, and component-specific UI states.
+ *
+ * @module atoms/ui
+ */
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import type { Workout } from '@/lib/supabase'
+import type { User as BetterAuthUser } from '@/lib/better-auth-client'
+import type { User, Workout } from '@/lib/supabase'
 
 // Modal state atoms
 export const showCreateWorkoutModalAtom = atom(false)
@@ -66,3 +74,48 @@ export const themeModeAtom = atomWithStorage<'light' | 'dark'>('ultracoach-theme
 
 // Runners page tab
 export const runnersPageTabAtom = atom<'connected' | 'discover'>('connected')
+
+/**
+ * Extended UI state atom - combines all UI-related state
+ * Migrated from barrel file for better organization and to prevent circular dependencies
+ *
+ * This comprehensive atom manages various UI states across the application
+ * including modals, filters, selections, and drawer states.
+ */
+export const uiStateAtom = atom({
+  // Modal states
+  showCreateTrainingPlan: false,
+  showLogWorkout: false,
+  showNewMessage: false,
+  isAddWorkoutModalOpen: false,
+  isWorkoutLogModalOpen: false,
+  isNewMessageModalOpen: false,
+
+  // Selection states
+  selectedWorkout: null as Workout | null,
+  selectedRunner: null as User | null,
+  selectedAthleteForWorkout: null as (User | BetterAuthUser) | null,
+  selectedConversationUserId: null as string | null,
+
+  // Filter states
+  workoutFilter: 'all' as 'all' | 'planned' | 'completed' | 'skipped',
+  showArchived: false,
+
+  // Calendar state
+  currentWeek: new Date(),
+
+  // Feature flags
+  useSuspense: false,
+  defaultToComplete: false,
+
+  // Connection status
+  connectionStatus: 'connected' as 'connected' | 'reconnecting' | 'disconnected',
+
+  // Drawer states
+  isDrawerOpen: false,
+  isDrawerPinned: false,
+
+  // Context states
+  workoutContext: null as string | null,
+  expandedNotes: {} as Record<string, boolean>,
+})

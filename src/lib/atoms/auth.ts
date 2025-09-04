@@ -1,12 +1,31 @@
-// Authentication and user session atoms
+/**
+ * Authentication atoms for Better Auth integration
+ *
+ * This module manages all authentication-related state including sessions,
+ * user data, auth status tracking, and persisted preferences.
+ *
+ * @module atoms/auth
+ */
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Session, User } from '@/lib/better-auth-client'
 
 // Core auth atoms
+
+/**
+ * Current session atom - holds the active Better Auth session
+ */
 export const sessionAtom = atom<Session | null>(null)
+
+/**
+ * Current user atom - holds the authenticated user data
+ */
 export const userAtom = atom<User | null>(null)
+
+/**
+ * Auth loading state - tracks authentication initialization
+ */
 export const authLoadingAtom = atom(true)
 
 // Auth state atoms
@@ -24,8 +43,9 @@ export const userRoleAtom = atom(get => {
   const session = get(sessionAtom)
   if (!session?.user) return null
   // Use userType field for coach/runner differentiation (as per CLAUDE.md)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (session.user as any).userType || 'runner'
+  // The session user might not have the extended fields, check if it exists
+  const user = session.user as User
+  return user.userType || 'runner'
 })
 
 export const isCoachAtom = atom(get => {
@@ -36,4 +56,15 @@ export const isCoachAtom = atom(get => {
 export const isRunnerAtom = atom(get => {
   const role = get(userRoleAtom)
   return role === 'runner'
+})
+
+/**
+ * Composite auth state atom - combines all auth-related state
+ * Migrated from barrel file for better organization
+ */
+export const authStateAtom = atom({
+  user: null as User | null,
+  session: null as Session | null,
+  loading: true,
+  error: null as string | null,
 })
