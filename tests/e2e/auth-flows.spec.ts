@@ -14,7 +14,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
   test('should complete sign up flow and update auth atoms', async ({ page }) => {
     // Navigate to sign up
-    await page.getByRole('link', { name: /sign up/i }).click()
+    await page.getByRole('button', { name: /sign up/i }).click()
     await expect(page).toHaveURL('/auth/signup')
 
     // Fill sign up form
@@ -45,7 +45,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
   test('should complete sign in flow and update session atom', async ({ page }) => {
     // Navigate to sign in
-    await page.getByRole('link', { name: /sign in/i }).click()
+    await page.getByRole('button', { name: /sign in/i }).click()
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials
@@ -79,8 +79,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should redirect to home page
     await expect(page).toHaveURL('/')
 
-    // Verify auth state is cleared (sign in link visible)
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
+    // Verify auth state is cleared (sign in button visible)
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
 
     // Protected routes should not be accessible
     await expect(page.getByRole('link', { name: /workouts/i })).not.toBeVisible()
@@ -143,7 +143,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page).toHaveURL('/auth/signin')
 
     // Auth state should remain unauthenticated
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible()
   })
 
   test('should redirect to originally requested page after auth', async ({ page }) => {

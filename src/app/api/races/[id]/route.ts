@@ -27,14 +27,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Check access permissions
     if (session.user.userType !== 'coach' && race.created_by !== session.user.id) {
       // Runners can only see races they're targeting
-      const { data: planWithRace } = await supabase
+      const { data: plansWithRace } = await supabase
         .from('training_plans')
         .select('id')
         .eq('runner_id', session.user.id)
         .eq('race_id', id)
-        .single()
+        .limit(1)
 
-      if (!planWithRace) {
+      if (!plansWithRace || plansWithRace.length === 0) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }

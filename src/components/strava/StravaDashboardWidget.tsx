@@ -201,7 +201,7 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
   }, [setShowStravaPanel])
 
   const handleViewActivity = useCallback((activityId: string) => {
-    window.open(`https://www.strava.com/activities/${activityId}`, '_blank')
+    window.open(`https://www.strava.com/activities/${activityId}`, '_blank', 'noopener,noreferrer')
   }, [])
 
   return (

@@ -142,7 +142,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
     if (comparisonData) {
       const url = `https://www.strava.com/activities/${comparisonData.meta.activityId}`
       logger.debug('Opening Strava activity', { url })
-      window.open(url, '_blank')
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
   }, [comparisonData])
 
