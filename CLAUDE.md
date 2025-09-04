@@ -179,6 +179,22 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 - `scripts/create-test-users-automated.ts` - Creates test users via browser automation
 - `scripts/test-better-auth-signin.ts` - Tests sign-in functionality
 
+### Client-Side Navigation Best Practices (CRITICAL - Added 2025-09-04):
+
+**NEVER use `window.location.href` for navigation in Next.js client components!**
+
+- **✅ CORRECT**: Use `router.push()` from `useRouter` hook
+- **❌ WRONG**: `window.location.href = '/dashboard'` (causes full page reload)
+- **✅ CORRECT**: Remove HTML form attributes when using client-side submission
+- **❌ WRONG**: Mix `onSubmit` handler with `method="post" action="/api/..."`
+
+### Environment Variables in Client Components:
+
+- **✅ CORRECT**: Use `NEXT_PUBLIC_` prefix for client-accessible env vars
+- **❌ WRONG**: Try to access `process.env.NODE_ENV` in client components
+- Add to `.env.local`: `NEXT_PUBLIC_APP_ENV=development`
+- Add to Vercel: `NEXT_PUBLIC_APP_ENV=production`
+
 ### Error Symptoms:
 
 - "User not found" during sign-in with correct credentials

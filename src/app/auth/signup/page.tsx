@@ -75,13 +75,19 @@ export default function SignUp() {
         logger.info('Sign up successful:', { userRole: data.role })
         setFormState(prev => ({ ...prev, loading: false }))
 
-        // In test environment, skip onboarding and redirect directly to dashboard
+        // Determine dashboard URL based on role
+        const dashboardUrl = data.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+
+        // In development environment, skip onboarding and redirect directly to dashboard
         if (
-          process.env.NODE_ENV === 'test' ||
+          process.env.NEXT_PUBLIC_APP_ENV === 'development' ||
           (typeof window !== 'undefined' && window.location.port === '3001')
         ) {
-          logger.info('Test environment detected, skipping onboarding and redirecting to dashboard')
-          router.push('/dashboard')
+          logger.info(
+            'Development environment detected, skipping onboarding and redirecting to dashboard'
+          )
+          // Use Next.js router for client-side navigation (best practice)
+          router.push(dashboardUrl)
         } else {
           // Show onboarding flow after successful signup in production
           setShowOnboarding(true)
@@ -98,8 +104,10 @@ export default function SignUp() {
 
   const handleOnboardingComplete = () => {
     logger.info('Onboarding completed, redirecting to dashboard')
-    // Redirect to dashboard which will handle role-based routing
-    router.push('/dashboard')
+    // Use Next.js router for navigation (best practice)
+    const role = formState.userType || 'runner'
+    const dashboardUrl = role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+    router.push(dashboardUrl)
   }
 
   const handleOnboardingClose = () => {
@@ -123,12 +131,7 @@ export default function SignUp() {
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
-            <form
-              className="space-y-6"
-              onSubmit={handleSubmit(onSubmit)}
-              method="post"
-              action="/api/auth/sign-up/email"
-            >
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
                 <Controller
                   name="fullName"
