@@ -25,8 +25,9 @@ export const userAtom = atom<User | null>(null)
 
 /**
  * Auth loading state - tracks authentication initialization
+ * Set to false initially to show UI immediately for unauthenticated users
  */
-export const authLoadingAtom = atom(true)
+export const authLoadingAtom = atom(false)
 
 // Auth state atoms
 export const authErrorAtom = atom<string | null>(null)
@@ -65,6 +66,6 @@ export const isRunnerAtom = atom(get => {
 export const authStateAtom = atom({
   user: null as User | null,
   session: null as Session | null,
-  loading: true,
+  loading: false, // Set to false initially to show UI immediately
   error: null as string | null,
 })

@@ -11,12 +11,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Start from the home page
     await page.goto('/')
 
-    // Wait for the page to be fully loaded and auth status to be determined
-    // This ensures the Sign Up/Sign In buttons are visible
+    // Wait for the page to be fully loaded
+    // NOTE: Do NOT use networkidle - it hangs with real-time features (per Context7 docs)
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
-      // Ignore networkidle timeout as it might hang with real-time features
-    })
+
+    // Give React time to hydrate
+    await page.waitForTimeout(500)
   })
 
   test('should complete sign up flow and update auth atoms', async ({ page }) => {

@@ -21,8 +21,10 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     if (typeof window === 'undefined') return
 
     // Get initial session
-    const getSession = async () => {
+    const getSession = async (isInitial = false) => {
       try {
+        // Only set loading for initial session check, not periodic refreshes
+        if (isInitial) setAuthLoading(true)
         const { data: session, error } = await authClient.getSession()
 
         if (error) {
@@ -51,8 +53,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
-    // Get initial session
-    getSession()
+    // Get initial session - pass isInitial flag
+    getSession(true)
 
     // Set up periodic session refresh to prevent staleness
     // This helps fix the issue where users need manual refresh after login
