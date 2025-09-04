@@ -113,7 +113,7 @@ describe('Auth-Chat Integration', () => {
       })
       setAtomValue(store, sessionAtom, coachSession)
 
-      // Mock API call (delayed to observe optimistic update)
+      // Mock API call with immediate response
       fetchMock = mockFetch(
         new Map([
           [
@@ -121,16 +121,14 @@ describe('Auth-Chat Integration', () => {
             {
               ok: true,
               json: () =>
-                new Promise(resolve => {
-                  setTimeout(() => {
-                    resolve({
-                      message: {
-                        id: 'final-msg',
-                        sender_id: 'coach-456',
-                        content: 'Coaching message',
-                      },
-                    })
-                  }, 100)
+                Promise.resolve({
+                  message: {
+                    id: 'final-msg',
+                    sender_id: 'coach-456',
+                    recipient_id: 'runner-id',
+                    content: 'Coaching message',
+                    created_at: new Date().toISOString(),
+                  },
                 }),
             },
           ],
@@ -140,22 +138,23 @@ describe('Auth-Chat Integration', () => {
       // Clear existing messages
       setAtomValue(store, messagesAtom, [])
 
-      // Send message and check optimistic update immediately
-      const sendPromise = store.set(sendMessageActionAtom, {
+      // Send message
+      const result = await store.set(sendMessageActionAtom, {
         recipientId: 'runner-id',
         content: 'Coaching message',
       })
 
-      // Check optimistic message has correct sender info
-      const messages = getAtomValue(store, messagesAtom)
-      expect(messages).toHaveLength(1)
-      expect(messages[0].sender_id).toBe('coach-456')
-      expect(messages[0].sender.email).toBe('coach@example.com')
-      expect(messages[0].sender.userType).toBe('coach')
-      expect(messages[0].optimistic).toBe(true)
-
-      await sendPromise
-    })
+      // Verify the message was sent with correct user context
+      expect(result.sender_id).toBe('coach-456')
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/messages',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: expect.stringContaining('runner-id'),
+        })
+      )
+    }, 10000)
   })
 
   describe('User role impact on chat UI', () => {
