@@ -7,6 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
+import { navigateToPage, signIn, waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Chat Messaging System', () => {
   test.describe('Coach-Runner Messaging', () => {

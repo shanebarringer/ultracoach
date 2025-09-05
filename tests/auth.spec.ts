@@ -87,18 +87,29 @@ test.describe('Landing Page', () => {
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
 
-    // Try multiple selectors for sign in link
-    const signInLink = page.locator('a[href="/auth/signin"]').first()
-    const signInLinkByRole = page.getByRole('link', { name: /sign in/i })
+    // Wait for header to be rendered
+    await page.waitForSelector('nav', { timeout: 5000 })
 
-    // Click whichever is available
-    if (await signInLink.isVisible()) {
+    // Try multiple selectors - Button as Link might render differently
+    const signInButton = page.getByRole('button', { name: /sign in/i })
+    const signInLink = page.getByRole('link', { name: /sign in/i })
+    const signInByText = page.getByText('Sign In').first()
+    const signInByHref = page.locator('[href="/auth/signin"]').first()
+
+    // Click whichever is visible
+    if (await signInButton.isVisible()) {
+      await signInButton.click()
+    } else if (await signInLink.isVisible()) {
       await signInLink.click()
-    } else if (await signInLinkByRole.isVisible()) {
-      await signInLinkByRole.click()
+    } else if (await signInByText.isVisible()) {
+      await signInByText.click()
+    } else if (await signInByHref.isVisible()) {
+      await signInByHref.click()
     } else {
-      // If no sign in link, we might already be redirected or need to wait
-      await page.waitForTimeout(2000)
+      // Log what's on the page to help debug
+      const bodyText = await page.locator('body').innerText()
+      console.log('Page content:', bodyText.substring(0, 500))
+      throw new Error('Could not find Sign In button/link')
     }
 
     // Should navigate to signin page
