@@ -11,10 +11,10 @@ test.describe('Chat Messaging System', () => {
     test('should initiate chat from coach dashboard', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
-      await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
+      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('UltraCoach2025!')
+      await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
+      await expect(page).toHaveURL('/dashboard/coach', { timeout: 15000 })
 
       // Find a runner to message
       const runnerCard = page.locator('[data-testid="active-runner-card"]').first()

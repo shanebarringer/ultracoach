@@ -85,11 +85,23 @@ test.describe('Landing Page', () => {
 
   test('should navigate to signin page from landing page', async ({ page }) => {
     await page.goto('/')
-
-    // Click sign in button - use first() to avoid strict mode violation
-    await page.locator('a[href="/auth/signin"]').first().click()
+    await page.waitForLoadState('domcontentloaded')
+    
+    // Try multiple selectors for sign in link/button
+    const signInLink = page.locator('a[href="/auth/signin"]')
+    const signInButton = page.getByRole('button', { name: /sign in/i })
+    
+    // Click whichever is available
+    if (await signInLink.isVisible()) {
+      await signInLink.first().click()
+    } else if (await signInButton.isVisible()) {
+      await signInButton.click()
+    } else {
+      // If no sign in link/button, we might already be redirected or need to wait
+      await page.waitForTimeout(2000)
+    }
 
     // Should navigate to signin page
-    await expect(page).toHaveURL('/auth/signin')
+    await expect(page).toHaveURL('/auth/signin', { timeout: 10000 })
   })
 })

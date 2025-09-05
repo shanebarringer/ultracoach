@@ -333,7 +333,7 @@ function RunnerDashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
           <p className="text-foreground-600">
-            Welcome back, {session?.user?.name as string}! Track your journey to peak performance
+            Welcome back, {(session?.user?.fullName || session?.user?.name || 'Athlete') as string}! Track your journey to peak performance
           </p>
         </div>
 

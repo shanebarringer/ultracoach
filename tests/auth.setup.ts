@@ -8,58 +8,46 @@ setup('authenticate', async ({ page }) => {
   const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
   await page.goto(`${baseUrl}/auth/signin`)
 
-  // Wait for form elements
+  // Wait for page to be fully loaded including CSS
+  await page.waitForLoadState('domcontentloaded')
+  
+  // Wait for CSS to load by checking for a styled element
+  await page.waitForSelector('h1:has-text("UltraCoach")', { state: 'visible', timeout: 30000 })
+
+  // Wait for form elements with more specific selectors
   await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 30000 })
   await page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 30000 })
 
-  // Fill credentials
-  await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-  await page.fill('input[type="password"]', 'RunnerPass2025!')
+  // Fill credentials using more specific selectors
+  await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
+  await page.locator('input[type="password"]').fill('RunnerPass2025!')
 
-  // Submit form
-  await page.click('button[type="submit"]')
+  // Submit form - look for the specific button text
+  const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
+  await submitButton.click()
 
-  // Wait for navigation after form submission
-  await page.waitForURL(
-    url => {
-      const path = new URL(url).pathname
-      return path.includes('/dashboard') || path === '/'
-    },
-    { timeout: 60000 }
-  )
+  // Wait for navigation after form submission - using best practices
+  await page.waitForURL('**/dashboard/**', { 
+    timeout: 60000,
+    waitUntil: 'domcontentloaded' 
+  })
 
-  // Navigate to runner dashboard if not there
+  // Ensure we're on the runner dashboard
   if (!page.url().includes('/dashboard/runner')) {
     await page.goto('/dashboard/runner')
-    await page.waitForURL(/\/dashboard\/runner/, { timeout: 30000 })
+    await page.waitForURL('**/dashboard/runner', { 
+      timeout: 30000,
+      waitUntil: 'domcontentloaded' 
+    })
   }
 
-  // Wait for dashboard content - be flexible with selectors
-  const dashboardIndicators = [
-    page.locator('text=Base Camp Dashboard'),
-    page.locator('h1:has-text("Base Camp Dashboard")'),
-    page.locator('[data-testid="runner-dashboard"]'),
-    page.locator('text=Your Training'),
-  ]
+  // Wait for dashboard content using best practices
+  // Look for the welcome message that confirms authentication  
+  const welcomeMessage = page.locator('text=/Welcome back.*Alex Rivera/i')
+  await expect(welcomeMessage).toBeVisible({ timeout: 10000 })
 
-  // Wait for at least one dashboard indicator
-  let dashboardLoaded = false
-  for (const indicator of dashboardIndicators) {
-    try {
-      await indicator.waitFor({ state: 'visible', timeout: 5000 })
-      dashboardLoaded = true
-      break
-    } catch {
-      // Try next indicator
-    }
-  }
-
-  if (!dashboardLoaded) {
-    throw new Error('Runner dashboard did not load properly')
-  }
-
-  // Verify we're on runner dashboard
-  await expect(page).toHaveURL(/\/dashboard\/runner/)
+  // Final verification
+  await expect(page).toHaveURL(/dashboard\/runner/)
 
   // Wait a moment to ensure all cookies are set
   await page.waitForTimeout(1000)

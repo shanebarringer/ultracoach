@@ -75,12 +75,12 @@ export default defineConfig({
     // Unauthenticated tests (auth flows, landing page)
     {
       name: 'chromium-unauth',
-      testMatch: [/auth\.spec\.ts/, /auth-flows\.spec\.ts/],
+      testMatch: ['**/auth*.spec.ts', '**/e2e/auth*.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         // No storage state - test authentication flows from scratch
       },
-      dependencies: ['setup'], // Wait for auth setup to complete
+      // No dependencies - unauth flows should start fresh without pre-auth state
     },
 
     // Authenticated coach tests for race import
@@ -99,7 +99,7 @@ export default defineConfig({
     {
       name: 'chromium-runner',
       testMatch: /dashboard\.spec\.ts/,
-      testIgnore: /Coach Dashboard/,
+      grep: /Runner Dashboard|Navigation Tests/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
@@ -112,7 +112,7 @@ export default defineConfig({
     {
       name: 'chromium-coach',
       testMatch: /dashboard\.spec\.ts/,
-      testIgnore: /Runner Dashboard|Navigation Tests/,
+      grep: /Coach Dashboard/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state
@@ -124,7 +124,7 @@ export default defineConfig({
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
-      testIgnore: /auth\.spec\.ts|auth-flows\.spec\.ts|dashboard\.spec\.ts|race-import\.spec\.ts/,
+      testIgnore: /\/(auth(?:-flows)?|dashboard|race-import)\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
