@@ -15,7 +15,7 @@ test.describe('Workout Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
@@ -219,7 +219,7 @@ test.describe('Workout Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
@@ -348,7 +348,7 @@ test.describe('Workout Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to workouts
       await page.getByRole('link', { name: /workouts/i }).click()
@@ -381,7 +381,7 @@ test.describe('Workout Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Check initial stats on dashboard
       const initialStats = {

@@ -15,7 +15,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
@@ -121,7 +121,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
@@ -225,7 +225,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Navigate to runners management
@@ -258,7 +258,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Open second tab as runner
@@ -266,7 +266,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page2.goto('/auth/signin')
       await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page2.getByRole('button', { name: /sign in/i }).click()
+      await page2.getByLabel(/password/i).press('Enter')
       await expect(page2).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
       // Coach sends connection request
@@ -299,7 +299,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Navigate to runners management

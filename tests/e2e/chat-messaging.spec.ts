@@ -43,7 +43,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
       // Navigate to chat
@@ -86,7 +86,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Tab 2: Runner
@@ -94,7 +94,7 @@ test.describe('Chat Messaging System', () => {
       await page2.goto('/auth/signin')
       await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page2.getByRole('button', { name: /sign in/i }).click()
+      await page2.getByLabel(/password/i).press('Enter')
       await expect(page2).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
       // Coach navigates to chat
@@ -134,7 +134,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Check for unread message indicator
       const unreadBadge = page.locator('[data-testid="unread-badge"]')
@@ -185,7 +185,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
       await page.getByRole('link', { name: /messages/i }).click()
@@ -227,7 +227,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
       await page.getByRole('link', { name: /messages/i }).click()
@@ -270,7 +270,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
       await page.getByRole('link', { name: /messages/i }).click()
@@ -310,7 +310,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to settings
       await page.getByRole('link', { name: /settings/i }).click()
@@ -351,14 +351,14 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Tab 2: Runner
       const page2 = await context.newPage()
       await page2.goto('/auth/signin')
       await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page2.getByRole('button', { name: /sign in/i }).click()
+      await page2.getByLabel(/password/i).press('Enter')
 
       // Both navigate to messages
       await page.getByRole('link', { name: /messages/i }).click()
@@ -396,7 +396,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
       await page.getByRole('link', { name: /messages/i }).click()
@@ -433,7 +433,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
       await page.getByRole('link', { name: /messages/i }).click()
@@ -468,7 +468,7 @@ test.describe('Chat Messaging System', () => {
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
       await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
       await page.getByRole('link', { name: /messages/i }).click()

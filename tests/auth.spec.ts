@@ -87,17 +87,17 @@ test.describe('Landing Page', () => {
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
 
-    // Try multiple selectors for sign in link/button
+    // Try multiple selectors for sign in link
     const signInLink = page.locator('a[href="/auth/signin"]').first()
-    const signInButton = page.getByRole('button', { name: /sign in/i })
+    const signInLinkByRole = page.getByRole('link', { name: /sign in/i })
 
     // Click whichever is available
     if (await signInLink.isVisible()) {
       await signInLink.click()
-    } else if (await signInButton.isVisible()) {
-      await signInButton.click()
+    } else if (await signInLinkByRole.isVisible()) {
+      await signInLinkByRole.click()
     } else {
-      // If no sign in link/button, we might already be redirected or need to wait
+      // If no sign in link, we might already be redirected or need to wait
       await page.waitForTimeout(2000)
     }
 

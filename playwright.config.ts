@@ -124,7 +124,8 @@ export default defineConfig({
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
-      testIgnore: /\/(auth(?:-flows)?|dashboard|race-import)\.spec\.ts$/,
+      testMatch: '**/*.spec.ts',
+      grepInvert: /auth|dashboard|race-import/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

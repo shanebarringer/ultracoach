@@ -11,9 +11,9 @@ test.describe('Training Plan Management', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('UltraCoach2025!')
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
@@ -280,9 +280,9 @@ test.describe('Training Plan Management', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('RunnerPass2025!')
+      await page.getByLabel(/password/i).press('Enter')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
@@ -409,9 +409,9 @@ test.describe('Training Plan Management', () => {
     test('should update selectedTrainingPlanAtom on selection', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('UltraCoach2025!')
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to training plans
       await page.getByRole('link', { name: /training plans/i }).click()
@@ -432,9 +432,9 @@ test.describe('Training Plan Management', () => {
     test('should update trainingPlanFormDataAtom during creation', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('UltraCoach2025!')
+      await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to training plans
       await page.getByRole('link', { name: /training plans/i }).click()
@@ -462,9 +462,9 @@ test.describe('Training Plan Management', () => {
     test('should sync training plan updates across components', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
-      await page.getByRole('button', { name: /sign in/i }).click()
+      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
+      await page.getByLabel(/password/i).fill('UltraCoach2025!')
+      await page.getByLabel(/password/i).press('Enter')
 
       // Open dashboard - should show plan count
       const initialPlanCount = await page.locator('[data-testid="total-plans-count"]').textContent()
