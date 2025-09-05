@@ -6,6 +6,8 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { TEST_USERS } from '../utils/test-helpers'
+
 test.describe('Chat Messaging System', () => {
   test.describe('Coach-Runner Messaging', () => {
     test('should initiate chat from coach dashboard', async ({ page }) => {
@@ -39,8 +41,8 @@ test.describe('Chat Messaging System', () => {
     test('should send and receive messages', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
@@ -82,16 +84,16 @@ test.describe('Chat Messaging System', () => {
       // Open two browser tabs for real-time testing
       // Tab 1: Coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Tab 2: Runner
       const page2 = await context.newPage()
       await page2.goto('/auth/signin')
-      await page2.getByLabel(/email/i).fill('runner@example.com')
-      await page2.getByLabel(/password/i).fill('password123')
+      await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page2.getByRole('button', { name: /sign in/i }).click()
       await expect(page2).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
@@ -130,8 +132,8 @@ test.describe('Chat Messaging System', () => {
     test('should mark messages as read', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Check for unread message indicator
@@ -181,8 +183,8 @@ test.describe('Chat Messaging System', () => {
     test('should handle message attachments and links', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to chat
@@ -223,8 +225,8 @@ test.describe('Chat Messaging System', () => {
     test('should search messages', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to messages
@@ -266,8 +268,8 @@ test.describe('Chat Messaging System', () => {
     test('should create group conversation', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to messages
@@ -306,8 +308,8 @@ test.describe('Chat Messaging System', () => {
     test('should handle notifications preferences', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to settings
@@ -347,15 +349,15 @@ test.describe('Chat Messaging System', () => {
       // Setup two tabs for real-time testing
       // Tab 1: Coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Tab 2: Runner
       const page2 = await context.newPage()
       await page2.goto('/auth/signin')
-      await page2.getByLabel(/email/i).fill('runner@example.com')
-      await page2.getByLabel(/password/i).fill('password123')
+      await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page2.getByRole('button', { name: /sign in/i }).click()
 
       // Both navigate to messages
@@ -392,8 +394,8 @@ test.describe('Chat Messaging System', () => {
     test('should handle optimistic updates', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to chat
@@ -429,8 +431,8 @@ test.describe('Chat Messaging System', () => {
     test('should update conversation list order', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to messages
@@ -464,8 +466,8 @@ test.describe('Chat Messaging System', () => {
     test('should handle message deletion', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to chat

@@ -10,7 +10,7 @@ setup('authenticate', async ({ page }) => {
 
   // Wait for page to be fully loaded including CSS
   await page.waitForLoadState('domcontentloaded')
-  
+
   // Wait for CSS to load by checking for a styled element
   await page.waitForSelector('h1:has-text("UltraCoach")', { state: 'visible', timeout: 30000 })
 
@@ -27,22 +27,22 @@ setup('authenticate', async ({ page }) => {
   await submitButton.click()
 
   // Wait for navigation after form submission - using best practices
-  await page.waitForURL('**/dashboard/**', { 
+  await page.waitForURL('**/dashboard/**', {
     timeout: 60000,
-    waitUntil: 'domcontentloaded' 
+    waitUntil: 'domcontentloaded',
   })
 
   // Ensure we're on the runner dashboard
   if (!page.url().includes('/dashboard/runner')) {
     await page.goto('/dashboard/runner')
-    await page.waitForURL('**/dashboard/runner', { 
+    await page.waitForURL('**/dashboard/runner', {
       timeout: 30000,
-      waitUntil: 'domcontentloaded' 
+      waitUntil: 'domcontentloaded',
     })
   }
 
   // Wait for dashboard content using best practices
-  // Look for the welcome message that confirms authentication  
+  // Look for the welcome message that confirms authentication
   const welcomeMessage = page.locator('text=/Welcome back.*Alex Rivera/i')
   await expect(welcomeMessage).toBeVisible({ timeout: 10000 })
 

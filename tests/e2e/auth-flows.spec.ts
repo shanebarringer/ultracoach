@@ -13,7 +13,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Wait for the page to be fully loaded
     await page.waitForLoadState('domcontentloaded')
-    
+
     // Wait for CSS to be loaded by checking for a styled element
     await page.waitForSelector('h1', { state: 'visible', timeout: 10000 })
 
@@ -25,10 +25,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate directly to signup page
     await page.goto('/auth/signup')
     await page.waitForLoadState('domcontentloaded')
-    
+
     // Wait for React to hydrate
     await page.waitForTimeout(2000)
-    
+
     // Wait for form to be visible
     await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
     await expect(page).toHaveURL('/auth/signup')
@@ -43,11 +43,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     const nameInput = page.locator('input[id="fullName"]')
     const emailInput = page.locator('input[id="email"]')
     const passwordInput = page.locator('input[id="password"]')
-    
+
     await nameInput.fill(testName)
     await emailInput.fill(testEmail)
     await passwordInput.fill('TestPassword123!')
-    
+
     // Verify fields are filled
     await expect(nameInput).toHaveValue(testName)
     await expect(emailInput).toHaveValue(testEmail)
@@ -60,7 +60,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Wait for dashboard redirect
     await page.waitForURL('**/dashboard/**', { timeout: 20000 })
-    
+
     // Should redirect to dashboard after successful signup
     await expect(page).toHaveURL('/dashboard/runner')
 
@@ -72,7 +72,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     const welcomeMessage = page.locator('text=/Welcome back.*Test Runner/i')
     // Also check for alternative elements that might show the user is authenticated
     const dashboardElement = page.locator('text="Base Camp Dashboard"')
-    
+
     // Either the welcome message with name or at least the dashboard should be visible
     await expect(welcomeMessage.or(dashboardElement)).toBeVisible({ timeout: 10000 })
   })
@@ -81,10 +81,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate directly to signin page
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
-    
+
     // Wait for React to hydrate and form to be interactive
     await page.waitForTimeout(2000)
-    
+
     // Wait for form to be visible
     await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
     await expect(page).toHaveURL('/auth/signin')
@@ -92,10 +92,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Use existing test credentials - using id selectors
     const emailInput = page.locator('input[type="email"]')
     const passwordInput = page.locator('input[type="password"]')
-    
+
     await emailInput.fill('alex.rivera@ultracoach.dev')
     await passwordInput.fill('RunnerPass2025!')
-    
+
     // Ensure values are filled
     await expect(emailInput).toHaveValue('alex.rivera@ultracoach.dev')
     await expect(passwordInput).toHaveValue('RunnerPass2025!')
@@ -105,7 +105,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Wait for dashboard redirect
     await page.waitForURL('**/dashboard/**', { timeout: 15000 })
-    
+
     // Should redirect to appropriate dashboard based on role
     await expect(page).toHaveURL('/dashboard/runner')
 
@@ -139,7 +139,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Check if we're on the home page and look for navigation links or buttons
     const signInLink = page.getByRole('link', { name: /sign in/i })
     const signInButton = page.getByRole('button', { name: /sign in/i })
-    
+
     // Either a link or button should be visible
     await expect(signInLink.or(signInButton)).toBeVisible({ timeout: 10000 })
 
@@ -152,7 +152,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000) // Wait for React hydration
-    
+
     await page.locator('input[type="email"]').fill('emma@ultracoach.dev')
     await page.locator('input[type="password"]').fill('UltraCoach2025!')
     await page.locator('input[type="password"]').press('Enter')
@@ -176,7 +176,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000) // Wait for React hydration
-    
+
     await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
     await page.locator('input[type="password"]').fill('RunnerPass2025!')
     await page.locator('input[type="password"]').press('Enter')
@@ -194,7 +194,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to workouts page to verify auth works
     await page.goto('/workouts')
     await expect(page).toHaveURL('/workouts')
-    
+
     // Verify we're still authenticated (not redirected to signin)
     await expect(page).not.toHaveURL('/auth/signin')
   })
@@ -228,11 +228,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Middleware doesn't currently redirect to signin for /workouts, so let's test with /dashboard
     await page.goto('/dashboard/runner')
-    
+
     // Should redirect to sign in (middleware only checks /dashboard routes)
     await page.waitForURL('**/auth/signin', { timeout: 10000 })
     await expect(page).toHaveURL('/auth/signin')
-    
+
     // Wait for React hydration
     await page.waitForTimeout(2000)
 

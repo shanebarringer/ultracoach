@@ -6,13 +6,15 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { TEST_USERS } from '../utils/test-helpers'
+
 test.describe('Coach-Runner Relationship Management', () => {
   test.describe('Coach Perspective', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
@@ -117,8 +119,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
@@ -221,8 +223,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     test('should update coachRunnerRelationshipAtom on connection', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
@@ -254,16 +256,16 @@ test.describe('Coach-Runner Relationship Management', () => {
     test('should sync relationship changes in real-time', async ({ context, page }) => {
       // Sign in as coach in first tab
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 
       // Open second tab as runner
       const page2 = await context.newPage()
       await page2.goto('/auth/signin')
-      await page2.getByLabel(/email/i).fill('runner@example.com')
-      await page2.getByLabel(/password/i).fill('password123')
+      await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page2.getByRole('button', { name: /sign in/i }).click()
       await expect(page2).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
@@ -295,8 +297,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     test('should handle relationship status transitions', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
 

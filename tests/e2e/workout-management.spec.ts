@@ -6,13 +6,15 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { TEST_USERS } from '../utils/test-helpers'
+
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
@@ -215,8 +217,8 @@ test.describe('Workout Management', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('coach@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
       await page.getByRole('button', { name: /sign in/i }).click()
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
@@ -344,8 +346,8 @@ test.describe('Workout Management', () => {
     test('should update filteredWorkoutsAtom when filters change', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Navigate to workouts
@@ -377,8 +379,8 @@ test.describe('Workout Management', () => {
     test('should update workoutStatsAtom after completion', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('runner@example.com')
-      await page.getByLabel(/password/i).fill('password123')
+      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
+      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
       await page.getByRole('button', { name: /sign in/i }).click()
 
       // Check initial stats on dashboard

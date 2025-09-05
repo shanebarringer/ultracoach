@@ -86,14 +86,14 @@ test.describe('Landing Page', () => {
   test('should navigate to signin page from landing page', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
-    
+
     // Try multiple selectors for sign in link/button
-    const signInLink = page.locator('a[href="/auth/signin"]')
+    const signInLink = page.locator('a[href="/auth/signin"]').first()
     const signInButton = page.getByRole('button', { name: /sign in/i })
-    
+
     // Click whichever is available
     if (await signInLink.isVisible()) {
-      await signInLink.first().click()
+      await signInLink.click()
     } else if (await signInButton.isVisible()) {
       await signInButton.click()
     } else {
