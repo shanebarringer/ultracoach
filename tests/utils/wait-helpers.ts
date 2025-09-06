@@ -8,14 +8,14 @@ export async function waitForPageReady(page: Page) {
   // Wait for initial HTML load
   await page.waitForLoadState('domcontentloaded')
 
-  // Wait for network to settle (but with a reasonable timeout)
-  try {
-    await page.waitForLoadState('networkidle', { timeout: 5000 })
-  } catch {
-    // Continue even if network doesn't fully settle
-  }
+  // IMPORTANT: Don't use networkidle with real-time features (WebSocket connections)
+  // as per Playwright best practices documentation
 
-  // Wait for React hydration by checking for interactive elements
+  // Wait for React hydration - CRITICAL for Next.js apps
+  // As per Context7 docs, always wait 2000ms for hydration
+  await page.waitForTimeout(2000)
+
+  // Then verify interactive elements are present
   await page.waitForFunction(
     () => {
       const buttons = document.querySelectorAll('button, a[href]')
@@ -33,8 +33,8 @@ export async function waitForNavigation(page: Page) {
   // Wait for nav element
   await page.waitForSelector('nav', { state: 'visible', timeout: 10000 })
 
-  // Wait a bit for React hydration
-  await page.waitForTimeout(500)
+  // Wait for React hydration - increased from 500ms to 2000ms per best practices
+  await page.waitForTimeout(2000)
 }
 
 /**
@@ -91,7 +91,7 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   if (clicked) {
     // Wait for navigation to complete
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(500) // Small delay for React
+    await page.waitForTimeout(2000) // Proper React hydration wait per Context7 docs
   }
 
   return clicked
