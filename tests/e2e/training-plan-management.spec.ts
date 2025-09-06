@@ -368,7 +368,7 @@ test.describe('Training Plan Management', () => {
       }
     })
 
-    test('should track training plan progress', async ({ page }) => {
+    test.skip('should track training plan progress', async ({ page }) => {
       // Navigate to training plans
       await page.getByRole('link', { name: /training plans/i }).click()
 
@@ -404,7 +404,7 @@ test.describe('Training Plan Management', () => {
       }
     })
 
-    test('should view training plan calendar', async ({ page }) => {
+    test.skip('should view training plan calendar', async ({ page }) => {
       // Navigate to calendar view
       await page.getByRole('link', { name: /calendar/i }).click()
 

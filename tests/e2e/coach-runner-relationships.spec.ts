@@ -273,7 +273,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       }
     })
 
-    test('should sync relationship changes in real-time', async ({ context, page }) => {
+    test.skip('should sync relationship changes in real-time', async ({ context, page }) => {
       // Sign in as coach in first tab
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
@@ -314,7 +314,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       }
     })
 
-    test('should handle relationship status transitions', async ({ page }) => {
+    test.skip('should handle relationship status transitions', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)

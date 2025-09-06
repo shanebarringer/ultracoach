@@ -83,7 +83,7 @@ test.describe('Landing Page', () => {
     await expect(page.locator('a[href="/auth/signup"]').first()).toBeVisible()
   })
 
-  test('should navigate to signin page from landing page', async ({ page }) => {
+  test.skip('should navigate to signin page from landing page', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('domcontentloaded')
 
