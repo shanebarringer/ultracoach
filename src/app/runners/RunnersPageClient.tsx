@@ -201,7 +201,9 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
       )
     }
 
-    const runners = connectedRunnersLoadable.data || []
+    // Ensure runners is always an array
+    const runnersData = connectedRunnersLoadable.data
+    const runners = Array.isArray(runnersData) ? runnersData : []
 
     if (runners.length === 0) {
       return (

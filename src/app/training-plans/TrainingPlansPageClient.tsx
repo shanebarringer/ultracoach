@@ -46,10 +46,12 @@ export default function TrainingPlansPageClient({ user }: Props) {
   // Get plans and loading state from loadable
   const getPlans = () => {
     if (trainingPlansLoadable.state === 'hasData') {
-      const plans = trainingPlansLoadable.data || []
-      return uiState.showArchived ? plans : (plans as TrainingPlan[]).filter(p => !p.archived)
+      const plansData = trainingPlansLoadable.data
+      const plans = Array.isArray(plansData) ? plansData : []
+      return uiState.showArchived ? plans : plans.filter(p => !p.archived)
     }
-    return filteredPlans // Fallback
+    // Fallback - ensure filteredPlans is an array
+    return Array.isArray(filteredPlans) ? filteredPlans : []
   }
 
   const isLoading = trainingPlansLoadable.state === 'loading'

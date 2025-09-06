@@ -112,7 +112,8 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
 
   // Memoize runners data to prevent unnecessary re-renders
   const runnersData = useMemo(() => {
-    return runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+    const data = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+    return Array.isArray(data) ? data : []
   }, [runnersLoadable])
 
   // Filter athletes based on selection

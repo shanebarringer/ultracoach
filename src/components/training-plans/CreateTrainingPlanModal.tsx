@@ -112,7 +112,8 @@ export default function CreateTrainingPlanModal({
     if (isOpen) {
       const fetchInitialData = async () => {
         // Fetch races using atom refresh
-        if (races.length === 0) {
+        const racesArray = Array.isArray(races) ? races : []
+        if (racesArray.length === 0) {
           try {
             const response = await fetch('/api/races')
             if (response.ok) {
@@ -150,7 +151,7 @@ export default function CreateTrainingPlanModal({
       }
       fetchInitialData()
     }
-  }, [isOpen, races.length, setRaces, planTemplates.length, setPlanTemplates])
+  }, [isOpen, races, setRaces, planTemplates.length, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
@@ -351,7 +352,7 @@ export default function CreateTrainingPlanModal({
                   elevation_gain_feet: 0,
                   distance_miles: 0,
                 },
-                ...races,
+                ...(Array.isArray(races) ? races : []),
               ]}
             >
               {item => (

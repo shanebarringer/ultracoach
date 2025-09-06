@@ -57,8 +57,9 @@ export const runnersAtom = atom<User[]>([])
 
 // Connected runners atom for coaches
 export const connectedRunnersAtom = atomWithRefresh(async () => {
-  // Only execute on client-side to prevent build-time fetch errors
+  // Return empty array for SSR to ensure consistency
   if (!isBrowser) return []
+
   const logger = createLogger('ConnectedRunnersAtom')
   try {
     logger.debug('Fetching connected runners...')
@@ -73,8 +74,11 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
       return []
     }
     const data = await response.json()
-    logger.debug('Connected runners fetched', { count: data.length })
-    return data as User[]
+
+    // Ensure data is an array
+    const runners = Array.isArray(data) ? data : []
+    logger.debug('Connected runners fetched', { count: runners.length })
+    return runners as User[]
   } catch (error) {
     logger.error('Error fetching connected runners', error)
     return []
@@ -92,7 +96,8 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
     })
     if (!response.ok) return []
     const data = await response.json()
-    return data as User[]
+    // Ensure data is an array
+    return Array.isArray(data) ? (data as User[]) : []
   } catch (error) {
     logger.error('Error fetching available coaches', error)
     return []
@@ -110,7 +115,8 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
     })
     if (!response.ok) return []
     const data = await response.json()
-    return data as User[]
+    // Ensure data is an array
+    return Array.isArray(data) ? (data as User[]) : []
   } catch (error) {
     logger.error('Error fetching available runners', error)
     return []

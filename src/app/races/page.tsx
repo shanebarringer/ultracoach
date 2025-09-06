@@ -86,9 +86,12 @@ export default function RacesPage() {
     [hasAttemptedLoad, races.length]
   )
 
-  // Filter and search races
+  // Filter and search races - with defensive check for races array
   const filteredRaces = useMemo(() => {
-    return races.filter((race: Race) => {
+    // Ensure races is always an array
+    const racesArray = Array.isArray(races) ? races : []
+
+    return racesArray.filter((race: Race) => {
       const matchesSearch =
         !searchQuery ||
         race.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -143,13 +146,14 @@ export default function RacesPage() {
 
   // Fetch training plan counts for all races
   const fetchTrainingPlanCounts = useCallback(async () => {
-    if (races.length === 0) return
+    const racesArray = Array.isArray(races) ? races : []
+    if (racesArray.length === 0) return
 
     try {
       const counts: Record<string, number> = {}
 
       // Fetch counts for each race in parallel
-      const countPromises = races.map(async (race: Race) => {
+      const countPromises = racesArray.map(async (race: Race) => {
         try {
           const response = await fetch(`/api/races/${race.id}/training-plans`, {
             credentials: 'include',
@@ -196,10 +200,11 @@ export default function RacesPage() {
 
   // Fetch training plan counts when races are loaded
   useEffect(() => {
-    if (races.length > 0) {
+    const racesArray = Array.isArray(races) ? races : []
+    if (racesArray.length > 0) {
       fetchTrainingPlanCounts()
     }
-  }, [races.length, fetchTrainingPlanCounts])
+  }, [races, fetchTrainingPlanCounts])
 
   const handleOpenModal = (race?: Race) => {
     if (race) {
