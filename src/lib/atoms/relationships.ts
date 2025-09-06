@@ -96,8 +96,9 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
     })
     if (!response.ok) return []
     const data = await response.json()
-    // Ensure data is an array
-    return Array.isArray(data) ? (data as User[]) : []
+    // API returns { coaches: [...] }, extract the array
+    const coaches = data.coaches || data
+    return Array.isArray(coaches) ? (coaches as User[]) : []
   } catch (error) {
     logger.error('Error fetching available coaches', error)
     return []
@@ -115,8 +116,9 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
     })
     if (!response.ok) return []
     const data = await response.json()
-    // Ensure data is an array
-    return Array.isArray(data) ? (data as User[]) : []
+    // API returns { runners: [...] }, extract the array
+    const runners = data.runners || data
+    return Array.isArray(runners) ? (runners as User[]) : []
   } catch (error) {
     logger.error('Error fetching available runners', error)
     return []

@@ -144,7 +144,8 @@ test.describe('Chat Messaging System', () => {
       }
 
       // Navigate to messages
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Open conversation with unread messages
       const unreadConversation = page
@@ -186,7 +187,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Open a conversation
       const conversation = page.locator('[data-testid="conversation-item"]').first()
@@ -228,7 +230,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Open search
       const searchButton = page.getByRole('button', { name: /search/i })
@@ -271,7 +274,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Create group conversation if feature exists
       const newGroupButton = page.getByRole('button', { name: /new group/i })
@@ -359,7 +363,8 @@ test.describe('Chat Messaging System', () => {
       await page2.getByLabel(/password/i).press('Enter')
 
       // Both navigate to messages
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
       await page2.getByRole('link', { name: /messages/i }).click()
 
       // Open same conversation
@@ -397,7 +402,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Open a conversation
       const conversation = page.locator('[data-testid="conversation-item"]').first()
@@ -434,7 +440,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to messages
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Get initial conversation order
       const conversations = page.locator('[data-testid="conversation-item"]')
@@ -469,7 +476,8 @@ test.describe('Chat Messaging System', () => {
       await page.getByLabel(/password/i).press('Enter')
 
       // Navigate to chat
-      await page.getByRole('link', { name: /messages/i }).click()
+      await page.goto('/chat')
+      await page.waitForURL('/chat', { timeout: 10000 })
 
       // Open a conversation
       const conversation = page.locator('[data-testid="conversation-item"]').first()
