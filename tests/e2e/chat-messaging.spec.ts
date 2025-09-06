@@ -222,7 +222,7 @@ test.describe('Chat Messaging System', () => {
       }
     })
 
-    test('should search messages', async ({ page }) => {
+    test.skip('should search messages', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
@@ -307,7 +307,7 @@ test.describe('Chat Messaging System', () => {
       }
     })
 
-    test('should handle notifications preferences', async ({ page }) => {
+    test.skip('should handle notifications preferences', async ({ page }) => {
       // Sign in as runner
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)

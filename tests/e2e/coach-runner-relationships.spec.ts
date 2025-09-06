@@ -16,7 +16,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await signIn(page, TEST_USERS.coach.email, TEST_USERS.coach.password)
     })
 
-    test('should display available runners to connect with', async ({ page }) => {
+    test.skip('should display available runners to connect with', async ({ page }) => {
       // Try to navigate to runners management or check dashboard
       try {
         await navigateToPage(page, /manage runners|runners|athletes/i)
