@@ -4,7 +4,7 @@ import { Button, Textarea } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Link2, Send } from 'lucide-react'
 
-import { messageInputAtom } from '@/lib/atoms'
+import { messageInputAtom } from '@/lib/atoms/index'
 import { Workout } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'
@@ -55,7 +55,7 @@ export default function MessageInput({
     setMessageInput(prev => ({
       ...prev,
       linkedWorkout: workout,
-      linkType: selectedLinkType,
+      linkType: selectedLinkType as 'reference' | 'attachment',
       showWorkoutSelector: false,
     }))
   }
@@ -74,7 +74,10 @@ export default function MessageInput({
         {/* Workout context display */}
         {messageInput.linkedWorkout && (
           <div className="relative">
-            <WorkoutContext workout={messageInput.linkedWorkout} linkType={messageInput.linkType} />
+            <WorkoutContext
+              workout={messageInput.linkedWorkout}
+              linkType={messageInput.linkType || undefined}
+            />
             <Button
               size="sm"
               variant="light"

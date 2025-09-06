@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // First, get active relationships for the user to verify message permissions
     let activeRelationships: Array<{ coach_id: string; runner_id: string }> = []
 
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       const relationships = await db
         .select({ coach_id: coach_runners.coach_id, runner_id: coach_runners.runner_id })
         .from(coach_runners)
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Get authorized user IDs (users the current user can message)
     const authorizedUserIds = new Set<string>()
     activeRelationships.forEach(rel => {
-      if (sessionUser.role === 'coach') {
+      if (sessionUser.userType === 'coach') {
         authorizedUserIds.add(rel.runner_id)
       } else {
         authorizedUserIds.add(rel.coach_id)
@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     logger.info('Fetched conversations successfully', {
       userId: sessionUser.id,
-      userRole: sessionUser.role,
+      userRole: sessionUser.userType,
       conversationsCount: conversations.length,
       authorizedPartnersCount: authorizedUserIds.size,
     })

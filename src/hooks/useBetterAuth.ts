@@ -2,7 +2,7 @@ import { useAtom } from 'jotai'
 
 import { useEffect } from 'react'
 
-import { authStateAtom } from '@/lib/atoms'
+import { authStateAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
 import type { Session, User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'

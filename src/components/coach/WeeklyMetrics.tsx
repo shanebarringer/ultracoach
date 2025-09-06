@@ -12,9 +12,8 @@ import {
 
 import { memo, useMemo } from 'react'
 
-import type { User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
-import type { Workout } from '@/lib/supabase'
+import type { User, Workout } from '@/lib/supabase'
 
 const logger = createLogger('WeeklyMetrics')
 

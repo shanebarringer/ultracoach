@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     logger.debug('Fetching relationships for user', {
       userId: sessionUser.id,
-      role: sessionUser.role,
+      userType: sessionUser.userType,
       statusFilter: status,
     })
 
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
         id: r.id,
         status: r.status,
         other_party_role: r.other_party.role,
-        other_party_email: r.other_party.email,
+        // email intentionally omitted from logs for privacy
       })),
     })
 
@@ -163,23 +163,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'target_user_id is required' }, { status: 400 })
     }
 
-    // Verify the target user exists
-    const targetUser = await db.select().from(user).where(eq(user.id, target_user_id)).limit(1)
+    // Verify the target user exists (and fetch userType)
+    const [target] = await db
+      .select({ id: user.id, userType: user.userType })
+      .from(user)
+      .where(eq(user.id, target_user_id))
+      .limit(1)
 
-    if (targetUser.length === 0) {
+    if (!target) {
       return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
     }
 
-    // Determine coach and runner based on roles
+    // Prevent self-relationships
+    if (target.id === sessionUser.id) {
+      return NextResponse.json(
+        { error: 'Cannot create a relationship with yourself' },
+        { status: 400 }
+      )
+    }
+
+    // Determine coach and runner based on roles; enforce cross-role pairing
     let coach_id: string
     let runner_id: string
     let invited_by: 'coach' | 'runner'
 
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
+      // Coaches can only create relationships with runners
+      if (target.userType !== 'runner') {
+        return NextResponse.json({ error: 'Target user must be a runner' }, { status: 400 })
+      }
       coach_id = sessionUser.id
       runner_id = target_user_id
       invited_by = 'coach'
     } else {
+      // Runners can only create relationships with coaches
+      if (target.userType !== 'coach') {
+        return NextResponse.json({ error: 'Target user must be a coach' }, { status: 400 })
+      }
       coach_id = target_user_id
       runner_id = sessionUser.id
       invited_by = 'runner'

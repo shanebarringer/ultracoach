@@ -8,12 +8,12 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Tab, Tabs } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
 
 import { useMemo, useState } from 'react'
 
-import { relationshipsAtom } from '@/lib/atoms'
+import { relationshipsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { RelationshipData } from '@/types/relationships'
 
@@ -29,7 +29,7 @@ interface RelationshipsListProps {
 export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListProps) {
   // Use Jotai atoms instead of local state
   const relationships = useAtomValue(relationshipsAtom)
-  const [, setRelationships] = useAtom(relationshipsAtom)
+  const setRelationships = useSetAtom(relationshipsAtom)
 
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'active' | 'inactive'>('all')

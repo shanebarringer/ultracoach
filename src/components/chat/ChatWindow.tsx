@@ -13,7 +13,7 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { chatUiStateAtom, offlineMessageQueueAtom, uiStateAtom } from '@/lib/atoms'
+import { chatUiStateAtom, offlineMessageQueueAtom, uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
@@ -217,7 +217,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
             <h1 className="text-lg font-semibold text-foreground">
               {recipient.full_name || 'User'}
             </h1>
-            <p className="text-sm text-foreground-600 capitalize">{recipient.role}</p>
+            <p className="text-sm text-foreground-600 capitalize">{recipient.userType}</p>
           </div>
         </div>
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const logger = createLogger('TrainingPlanAPI')
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from('training_plans')
       .select('*, runners:runner_id(*), coaches:coach_id(*)')
       .eq('id', id)
-    if (session.user.role === 'coach') {
+    if (session.user.userType === 'coach') {
       trainingPlanQuery = trainingPlanQuery.eq('coach_id', session.user.id)
     } else {
       trainingPlanQuery = trainingPlanQuery.eq('runner_id', session.user.id)
@@ -67,7 +67,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
     const hasAccess =
-      session.user.role === 'coach'
+      session.user.userType === 'coach'
         ? plan.coach_id === session.user.id
         : plan.runner_id === session.user.id
     if (!hasAccess) {

@@ -8,7 +8,7 @@ import { Suspense } from 'react'
 
 import Link from 'next/link'
 
-import { asyncConversationsAtom } from '@/lib/atoms'
+import { asyncConversationsAtom } from '@/lib/atoms/index'
 import type { ConversationWithUser } from '@/lib/supabase'
 
 interface AsyncConversationListProps {
@@ -104,14 +104,14 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
                           name: 'text-white font-semibold',
                         }}
                       />
-                      {partner?.role && (
+                      {partner?.userType && (
                         <Chip
                           size="sm"
-                          color={getRoleColor(partner.role)}
+                          color={getRoleColor(partner.userType)}
                           variant="solid"
                           className="absolute -bottom-1 -right-1 min-w-unit-5 h-unit-5 text-tiny"
                         >
-                          {partner.role === 'coach' ? '🏔️' : '🏃'}
+                          {partner.userType === 'coach' ? '🏔️' : '🏃'}
                         </Chip>
                       )}
                     </div>
@@ -121,14 +121,14 @@ function ConversationListContent({ selectedUserId }: ConversationListContentProp
                           <h3 className="text-sm font-semibold text-foreground truncate">
                             {partnerName}
                           </h3>
-                          {partner?.role && (
+                          {partner?.userType && (
                             <Chip
                               size="sm"
-                              color={getRoleColor(partner.role)}
+                              color={getRoleColor(partner.userType)}
                               variant="flat"
                               className="text-tiny capitalize"
                             >
-                              {partner.role}
+                              {partner.userType}
                             </Chip>
                           )}
                         </div>

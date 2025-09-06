@@ -7,10 +7,9 @@ import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-
 
 import { memo, useEffect, useMemo, useState } from 'react'
 
-import { connectedRunnersAtom } from '@/lib/atoms'
-import type { User } from '@/lib/better-auth'
+import { connectedRunnersAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { Workout } from '@/lib/supabase'
+import type { User, Workout } from '@/lib/supabase'
 
 import AthleteWeeklySection from './AthleteWeeklySection'
 import WeeklyMetrics from './WeeklyMetrics'
@@ -113,7 +112,8 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
 
   // Memoize runners data to prevent unnecessary re-renders
   const runnersData = useMemo(() => {
-    return runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+    const data = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+    return Array.isArray(data) ? data : []
   }, [runnersLoadable])
 
   // Filter athletes based on selection
@@ -230,7 +230,7 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
                 size="sm"
               >
                 {runnersData.map((runner: User) => (
-                  <SelectItem key={runner.id}>{runner.name || runner.email}</SelectItem>
+                  <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
                 ))}
               </Select>
               <span className="text-xs text-foreground/60">

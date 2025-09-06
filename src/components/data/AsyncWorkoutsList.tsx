@@ -1,5 +1,5 @@
 import { Card, CardBody } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { MountainSnowIcon } from 'lucide-react'
 
 import React from 'react'
@@ -7,7 +7,7 @@ import React from 'react'
 import { WorkoutListSkeleton } from '@/components/ui/LoadingSkeletons'
 import { DataListSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import WorkoutCard from '@/components/workouts/WorkoutCard'
-import { asyncWorkoutsAtom, uiStateAtom } from '@/lib/atoms'
+import { asyncWorkoutsAtom, uiStateAtom } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 
 interface AsyncWorkoutsListProps {
@@ -30,8 +30,8 @@ function WorkoutsContent({
   getWorkoutIntensityColor,
 }: WorkoutsContentProps) {
   // This will suspend until workouts are loaded
-  const [workouts] = useAtom(asyncWorkoutsAtom)
-  const [uiState] = useAtom(uiStateAtom)
+  const workouts = useAtomValue(asyncWorkoutsAtom)
+  const uiState = useAtomValue(uiStateAtom)
 
   // Filter workouts based on UI state
   const filteredWorkouts = workouts.filter((workout: Workout) => {

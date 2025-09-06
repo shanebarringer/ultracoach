@@ -19,9 +19,10 @@ import {
   filteredWorkoutsAtom,
   trainingPlansAtom,
   workoutStatsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
+import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import type { ServerSession } from '@/utils/auth-server'
 
@@ -212,12 +213,12 @@ export default function CalendarPageClient({ user }: Props) {
                       setCalendarUiState(prev => ({ ...prev, selectedRunnerId: runnerId || null }))
                     }}
                   >
-                    <SelectItem key="all">All Runners</SelectItem>
-                    {connectedRunners.map(
-                      (runner: { id: string; full_name?: string; email: string }) => (
+                    {[
+                      <SelectItem key="all">All Runners</SelectItem>,
+                      ...connectedRunners.map((runner: User) => (
                         <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
-                      )
-                    )}
+                      )),
+                    ]}
                   </Select>
                 )}
 

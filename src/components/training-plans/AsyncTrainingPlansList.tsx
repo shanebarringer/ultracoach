@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { TrainingPlanGridSkeleton } from '@/components/ui/LoadingSkeletons'
 import { DataListSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
-import { asyncTrainingPlansAtom, uiStateAtom } from '@/lib/atoms'
+import { asyncTrainingPlansAtom, uiStateAtom } from '@/lib/atoms/index'
 import type { TrainingPlan } from '@/lib/supabase'
 
 import TrainingPlanCard from './TrainingPlanCard'

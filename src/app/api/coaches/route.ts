@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    // Use transformed session data that maps userType → role via customSession plugin
-    if ((sessionUser as User & { role?: 'coach' | 'runner' }).role !== 'runner') {
+    // Check userType from the session
+    if (sessionUser.userType !== 'runner') {
       return NextResponse.json({ error: 'Only runners can access coaches' }, { status: 403 })
     }
 

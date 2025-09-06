@@ -5,7 +5,7 @@ import { useSetAtom } from 'jotai'
 
 import { useCallback } from 'react'
 
-import { trainingPlansAtom } from '@/lib/atoms'
+import { trainingPlansAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan } from '@/lib/supabase'
 

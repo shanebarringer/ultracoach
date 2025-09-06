@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
-import { chatUiStateAtom, conversationsAtom, loadingStatesAtom } from '@/lib/atoms'
+import { chatUiStateAtom, conversationsAtom, loadingStatesAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Message } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
@@ -60,7 +60,7 @@ export function useConversations() {
           sender: {
             id: session.user.id,
             email: session.user.email,
-            role: session.user.role,
+            userType: session.user.userType,
             full_name: session.user.name || '',
             created_at: '', // Not available from session
             updated_at: '', // Not available from session

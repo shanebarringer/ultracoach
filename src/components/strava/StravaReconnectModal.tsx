@@ -32,7 +32,7 @@ import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
   stravaStateAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('StravaReconnectModal')
@@ -75,7 +75,7 @@ const StravaReconnectModal = memo(
         action?: string
       }> = []
 
-      if (connectionStatus === 'disconnected') {
+      if (!connectionStatus.connected) {
         issues.push({
           type: 'error',
           message: 'Strava account is not connected',

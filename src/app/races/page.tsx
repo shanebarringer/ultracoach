@@ -46,7 +46,7 @@ import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
-import { racesAtom, selectedRaceAtom } from '@/lib/atoms'
+import { racesAtom, selectedRaceAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
@@ -68,7 +68,7 @@ const TERRAIN_TYPES = [
 export default function RacesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [races, refreshRaces] = useAtom(racesAtom)
+  const [races, setRaces] = useAtom(racesAtom)
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
   const logger = useMemo(() => createLogger('RacesPage'), [])
 
@@ -86,9 +86,12 @@ export default function RacesPage() {
     [hasAttemptedLoad, races.length]
   )
 
-  // Filter and search races
+  // Filter and search races - with defensive check for races array
   const filteredRaces = useMemo(() => {
-    return races.filter((race: Race) => {
+    // Ensure races is always an array
+    const racesArray = Array.isArray(races) ? races : []
+
+    return racesArray.filter((race: Race) => {
       const matchesSearch =
         !searchQuery ||
         race.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,25 +130,30 @@ export default function RacesPage() {
     if (!session?.user?.id) return
 
     try {
-      logger.debug('Triggering races refresh')
-      await refreshRaces()
+      logger.debug('Fetching races from API')
+      const response = await fetch('/api/races')
+      if (response.ok) {
+        const data = await response.json()
+        setRaces(data)
+      }
     } catch (error) {
-      logger.error('Error refreshing races:', error)
+      logger.error('Error fetching races:', error)
     } finally {
       setHasAttemptedLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, refreshRaces])
+  }, [session?.user?.id, setRaces])
 
   // Fetch training plan counts for all races
   const fetchTrainingPlanCounts = useCallback(async () => {
-    if (races.length === 0) return
+    const racesArray = Array.isArray(races) ? races : []
+    if (racesArray.length === 0) return
 
     try {
       const counts: Record<string, number> = {}
 
       // Fetch counts for each race in parallel
-      const countPromises = races.map(async (race: Race) => {
+      const countPromises = racesArray.map(async (race: Race) => {
         try {
           const response = await fetch(`/api/races/${race.id}/training-plans`, {
             credentials: 'include',
@@ -192,10 +200,11 @@ export default function RacesPage() {
 
   // Fetch training plan counts when races are loaded
   useEffect(() => {
-    if (races.length > 0) {
+    const racesArray = Array.isArray(races) ? races : []
+    if (racesArray.length > 0) {
       fetchTrainingPlanCounts()
     }
-  }, [races.length, fetchTrainingPlanCounts])
+  }, [races, fetchTrainingPlanCounts])
 
   const handleOpenModal = (race?: Race) => {
     if (race) {

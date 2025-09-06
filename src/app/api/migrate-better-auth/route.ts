@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { createLogger } from '@/lib/logger'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const logger = createLogger('migrate-better-auth')
 

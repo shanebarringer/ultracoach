@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { refreshableTrainingPlansAtom } from '@/lib/atoms'
+import { refreshableTrainingPlansAtom } from '@/lib/atoms/index'
 
 export function useRefreshableTrainingPlans() {
   const [trainingPlans, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)

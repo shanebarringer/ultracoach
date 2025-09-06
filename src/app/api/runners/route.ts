@@ -28,21 +28,21 @@ export async function GET(request: NextRequest) {
   try {
     logger.info('GET /api/runners - Starting request', {
       url: request.url,
-      headers: Object.fromEntries(request.headers.entries()),
+      // headers intentionally omitted from logs for security
     })
 
     const session = await getServerSession(request)
     logger.info('Session result', {
       hasSession: !!session,
       hasUser: !!session?.user,
-      userRole: session?.user?.role,
+      userRole: session?.user?.userType,
       userId: session?.user?.id,
     })
 
-    if (!session?.user || session.user.role !== 'coach') {
+    if (!session?.user || session.user.userType !== 'coach') {
       logger.warn('Unauthorized access attempt', {
         hasSession: !!session,
-        userRole: session?.user?.role,
+        userRole: session?.user?.userType,
       })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

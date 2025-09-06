@@ -2,10 +2,10 @@
 
 import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 
 import { DashboardSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
-import { asyncWorkoutsAtom } from '@/lib/atoms'
+import { asyncWorkoutsAtom } from '@/lib/atoms/workouts'
 import type { Workout } from '@/lib/supabase'
 
 interface RecentActivityProps {
@@ -24,7 +24,7 @@ interface RecentActivityContentProps {
 }
 
 function RecentActivityContent({ title, subtitle, limit }: RecentActivityContentProps) {
-  const [workouts] = useAtom(asyncWorkoutsAtom)
+  const workouts = useAtomValue(asyncWorkoutsAtom)
 
   // Filter to completed workouts and limit results
   const recentWorkouts = workouts

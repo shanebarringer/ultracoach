@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // First, get active coach-runner relationships for authorization
     let authorizedUserIds: string[] = []
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       const relationships = await db
         .select({ runner_id: coach_runners.runner_id })
         .from(coach_runners)
@@ -53,19 +53,19 @@ export async function GET(request: NextRequest) {
 
     // Allow runners to see workouts even if they don't have active relationships yet
     // This handles the case where workouts exist but relationships might not be set up properly
-    if (authorizedUserIds.length === 0 && sessionUser.role === 'runner') {
+    if (authorizedUserIds.length === 0 && sessionUser.userType === 'runner') {
       logger.info(
         'No active relationships found for runner, but allowing access to their own workouts',
         {
           userId: sessionUser.id,
-          role: sessionUser.role,
+          role: sessionUser.userType,
         }
       )
       // Don't return empty - continue to allow runner to see their workouts
-    } else if (authorizedUserIds.length === 0 && sessionUser.role === 'coach') {
+    } else if (authorizedUserIds.length === 0 && sessionUser.userType === 'coach') {
       logger.info('No active relationships found for coach', {
         userId: sessionUser.id,
-        role: sessionUser.role,
+        role: sessionUser.userType,
       })
       return NextResponse.json({ workouts: [] })
     }
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     // Handle workouts with and without training plans
     const conditions = []
 
-    if (sessionUser.role === 'coach') {
+    if (sessionUser.userType === 'coach') {
       // Check runnerId authorization first
       if (runnerId && !authorizedUserIds.includes(runnerId)) {
         logger.warn('Coach attempted to access unauthorized runner workouts', {
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
     logger.debug('Successfully fetched workouts', {
       count: cleanedWorkouts.length,
       sessionUser: sessionUser.id,
-      sessionRole: sessionUser.role,
+      sessionRole: sessionUser.userType,
       requestedRunnerId: runnerId,
       authorizedUserIds,
       cleanedWorkouts: cleanedWorkouts.map(w => ({
@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    if (sessionUser.role !== 'coach') {
+    if (sessionUser.userType !== 'coach') {
       return NextResponse.json({ error: 'Only coaches can create workouts' }, { status: 403 })
     }
 

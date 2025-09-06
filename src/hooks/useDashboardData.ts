@@ -9,7 +9,7 @@ import {
   relationshipsLoadableAtom,
   trainingPlansAtom,
   workoutsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User, Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
@@ -98,7 +98,7 @@ export function useDashboardData() {
           ({
             id: rel.other_party.id,
             email: rel.other_party.email,
-            role: rel.other_party.role,
+            userType: rel.other_party.role as 'runner' | 'coach',
             full_name: rel.other_party.full_name,
             created_at: new Date().toISOString(), // Default value for compatibility
             updated_at: new Date().toISOString(), // Default value for compatibility
