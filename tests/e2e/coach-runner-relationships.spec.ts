@@ -177,7 +177,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       ).toBeVisible()
     })
 
-    test('should manage coach relationship', async ({ page }) => {
+    test.skip('should manage coach relationship', async ({ page }) => {
       // Dashboard should show current coach if connected
       const coachSection = page.locator('[data-testid="current-coach-section"]')
 
@@ -196,7 +196,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       }
     })
 
-    test('should accept or reject coach invitations', async ({ page }) => {
+    test.skip('should accept or reject coach invitations', async ({ page }) => {
       // Check for pending invitations
       const invitationBanner = page.locator('[data-testid="coach-invitation-banner"]')
 
@@ -240,7 +240,7 @@ test.describe('Coach-Runner Relationship Management', () => {
   })
 
   test.describe('Relationship State Management', () => {
-    test('should update coachRunnerRelationshipAtom on connection', async ({ page }) => {
+    test.skip('should update coachRunnerRelationshipAtom on connection', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)

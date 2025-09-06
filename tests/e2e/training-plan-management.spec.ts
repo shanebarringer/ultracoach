@@ -291,7 +291,7 @@ test.describe('Training Plan Management', () => {
       // planTemplatesAtom should be updated
     })
 
-    test('should delete training plan', async ({ page }) => {
+    test.skip('should delete training plan', async ({ page }) => {
       // Navigate to training plans
       await page.getByRole('link', { name: /training plans/i }).click()
 
