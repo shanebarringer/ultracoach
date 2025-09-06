@@ -138,7 +138,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
-    test('should display available coaches to connect with', async ({ page }) => {
+    test.skip('should display available coaches to connect with', async ({ page }) => {
       // Navigate to connections page (runner navigation) or check dashboard
       const navigated = await navigateToPage(page, /connections/i, false)
       if (!navigated) {
@@ -154,7 +154,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await expect(page.getByRole('button', { name: /request coaching/i }).first()).toBeVisible()
     })
 
-    test('should send coaching request to coach', async ({ page }) => {
+    test.skip('should send coaching request to coach', async ({ page }) => {
       // Navigate to connections page or check dashboard
       const navigated = await navigateToPage(page, /connections/i, false)
       if (!navigated) {

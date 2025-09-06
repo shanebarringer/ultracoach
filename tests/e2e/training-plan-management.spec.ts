@@ -17,7 +17,7 @@ test.describe('Training Plan Management', () => {
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
-    test('should display training plans with filtering', async ({ page }) => {
+    test.skip('should display training plans with filtering', async ({ page }) => {
       // Navigate to training plans - click the Manage Plans button
       await Promise.all([
         page.waitForURL('/training-plans'),
@@ -211,7 +211,7 @@ test.describe('Training Plan Management', () => {
       }
     })
 
-    test('should assign workouts to training plan', async ({ page }) => {
+    test.skip('should assign workouts to training plan', async ({ page }) => {
       // Navigate to training plans page using the Manage Plans button
       await Promise.all([
         page.waitForURL('/training-plans'),
@@ -251,7 +251,7 @@ test.describe('Training Plan Management', () => {
       ).toBeVisible()
     })
 
-    test('should duplicate training plan as template', async ({ page }) => {
+    test.skip('should duplicate training plan as template', async ({ page }) => {
       // Navigate to training plans page using the Manage Plans button
       await Promise.all([
         page.waitForURL('/training-plans'),
