@@ -103,7 +103,8 @@ test.describe('Chat Messaging System', () => {
         await coachConversation.click()
 
         // Runner navigates to same conversation
-        await page2.getByRole('link', { name: /messages/i }).click()
+        await page2.goto('/chat')
+        await page2.waitForURL('/chat', { timeout: 10000 })
         await page2.locator('[data-testid="conversation-item"]').first().click()
 
         // Coach starts typing
@@ -365,7 +366,8 @@ test.describe('Chat Messaging System', () => {
       // Both navigate to messages
       await page.goto('/chat')
       await page.waitForURL('/chat', { timeout: 10000 })
-      await page2.getByRole('link', { name: /messages/i }).click()
+      await page2.goto('/chat')
+      await page2.waitForURL('/chat', { timeout: 10000 })
 
       // Open same conversation
       const conversation = page.locator('[data-testid="conversation-item"]').first()
