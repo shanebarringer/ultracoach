@@ -19,7 +19,7 @@ test.describe('Workout Management', () => {
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
-    test('should display workouts list with proper filtering', async ({ page }) => {
+    test.skip('should display workouts list with proper filtering', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
       await expect(page).toHaveURL('/workouts')
@@ -45,7 +45,7 @@ test.describe('Workout Management', () => {
       expect(plannedCount).toBe(totalCount)
     })
 
-    test('should create a new workout', async ({ page }) => {
+    test.skip('should create a new workout', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
 

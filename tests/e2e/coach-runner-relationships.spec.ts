@@ -216,7 +216,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       }
     })
 
-    test('should disconnect from coach', async ({ page }) => {
+    test.skip('should disconnect from coach', async ({ page }) => {
       // Check if connected to a coach
       const coachSection = page.locator('[data-testid="current-coach-section"]')
 

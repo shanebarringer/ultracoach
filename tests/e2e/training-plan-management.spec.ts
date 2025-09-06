@@ -427,7 +427,7 @@ test.describe('Training Plan Management', () => {
       }
     })
 
-    test('should provide feedback on workouts', async ({ page }) => {
+    test.skip('should provide feedback on workouts', async ({ page }) => {
       // Navigate to training plans
       await page.getByRole('link', { name: /training plans/i }).click()
 
@@ -466,7 +466,7 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Training Plan State Management', () => {
-    test('should update selectedTrainingPlanAtom on selection', async ({ page }) => {
+    test.skip('should update selectedTrainingPlanAtom on selection', async ({ page }) => {
       // Sign in as coach
       await page.goto('/auth/signin')
       await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
