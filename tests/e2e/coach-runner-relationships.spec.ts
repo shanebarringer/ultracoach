@@ -128,11 +128,7 @@ test.describe('Coach-Runner Relationship Management', () => {
   test.describe('Runner Perspective', () => {
     test.beforeEach(async ({ page }) => {
       // Sign in as runner
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByLabel(/password/i).press('Enter')
-      await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+      await signIn(page, TEST_USERS.runner.email, TEST_USERS.runner.password)
     })
 
     test('should display available coaches to connect with', async ({ page }) => {

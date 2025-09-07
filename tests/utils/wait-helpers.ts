@@ -44,12 +44,12 @@ export async function signIn(page: Page, email: string, password: string) {
   await page.goto('/auth/signin')
   await waitForPageReady(page)
 
-  // Fill credentials
-  await page.getByLabel(/email/i).fill(email)
-  await page.getByLabel(/password/i).fill(password)
+  // Fill credentials using type selectors which are more reliable
+  await page.locator('input[type="email"]').fill(email)
+  await page.locator('input[type="password"]').fill(password)
 
-  // Submit form
-  await page.getByLabel(/password/i).press('Enter')
+  // Submit form using the button with mountain-themed text
+  await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
   // Wait for navigation to dashboard
   await page.waitForURL(/\/dashboard\/(coach|runner)/, { timeout: 15000 })
