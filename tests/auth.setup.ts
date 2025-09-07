@@ -3,65 +3,59 @@ import path from 'path'
 
 const authFile = path.join(__dirname, '../playwright/.auth/user.json')
 
-setup('authenticate', async ({ page }) => {
-  // Use UI login for reliability
-  const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
+setup('authenticate', async ({ page, context }) => {
+  console.log('🔐 Starting runner authentication setup...')
+  
+  const baseUrl = process.env.CI ? 'http://localhost:3001' : 'http://localhost:3001'
+  
+  // Navigate to signin page
   await page.goto(`${baseUrl}/auth/signin`)
-
-  // Wait for page to be fully loaded
+  console.log('📍 Navigated to signin page')
+  
+  // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
-
-  // CRITICAL: Wait for React hydration - Required for Next.js apps
-  // As per Context7 docs, always wait 2000ms for hydration
-  await page.waitForTimeout(2000)
-
-  // Wait for form elements to be visible and ready
-  const emailInput = page.locator('input[type="email"]')
-  const passwordInput = page.locator('input[type="password"]')
-
-  await emailInput.waitFor({ state: 'visible', timeout: 30000 })
-  await passwordInput.waitFor({ state: 'visible', timeout: 30000 })
-
-  // Clear and type into email field (more reliable for React forms)
-  await emailInput.click()
-  await emailInput.clear()
-  await page.keyboard.type('alex.rivera@ultracoach.dev', { delay: 50 })
-
-  // Tab to password field and type
-  await page.keyboard.press('Tab')
-  await page.keyboard.type('RunnerPass2025!', { delay: 50 })
-
-  // Wait a moment for form state to update
-  await page.waitForTimeout(1000)
-
-  // Submit form by pressing Enter
-  await page.keyboard.press('Enter')
-
-  // Wait for navigation - use specific dashboard URL pattern
-  await page.waitForURL('**/dashboard/**', {
-    timeout: 20000,
-    waitUntil: 'domcontentloaded',
+  
+  // Use the API directly instead of form submission to avoid JavaScript issues
+  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
+    data: {
+      email: 'alex.rivera@ultracoach.dev',
+      password: 'RunnerPass2025!',
+    },
+    headers: {
+      'Content-Type': 'application/json',
+    },
   })
-
-  // Ensure we're on the runner dashboard
-  if (!page.url().includes('/dashboard/runner')) {
-    await page.goto('/dashboard/runner')
-    await page.waitForURL('**/dashboard/runner', {
-      timeout: 30000,
-      waitUntil: 'domcontentloaded',
-    })
+  
+  if (!response.ok()) {
+    console.error('Auth API response status:', response.status())
+    console.error('Auth API response:', await response.text())
+    throw new Error(`Authentication API failed with status ${response.status()}`)
   }
-
-  // Wait for dashboard content using best practices
-  // Simply verify we're on a dashboard URL
-  await page.waitForTimeout(2000) // Give dashboard time to load
-
-  // Final verification
-  await expect(page).toHaveURL(/dashboard\/runner/)
-
-  // Wait a moment to ensure all cookies are set
-  await page.waitForTimeout(1000)
-
-  // Save authenticated state to file
-  await page.context().storageState({ path: authFile })
+  
+  console.log('✅ Authentication API successful')
+  
+  // The API call should have set cookies, now navigate to dashboard
+  await page.goto(`${baseUrl}/dashboard/runner`)
+  await page.waitForLoadState('domcontentloaded')
+  
+  // Verify we're on the dashboard
+  const currentUrl = page.url()
+  console.log('🔄 Current URL after auth:', currentUrl)
+  
+  if (!currentUrl.includes('/dashboard')) {
+    // If redirected to signin, try refreshing to pick up cookies
+    await page.reload()
+    await page.waitForLoadState('domcontentloaded')
+    
+    const finalUrl = page.url()
+    if (!finalUrl.includes('/dashboard')) {
+      throw new Error('Authentication failed - could not access dashboard after API auth')
+    }
+  }
+  
+  console.log('✅ Successfully navigated to dashboard')
+  
+  // Save the authentication state
+  await context.storageState({ path: authFile })
+  console.log(`💾 Saved authentication state to ${authFile}`)
 })
