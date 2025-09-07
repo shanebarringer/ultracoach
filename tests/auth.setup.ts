@@ -8,42 +8,38 @@ setup('authenticate', async ({ page }) => {
   const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
   await page.goto(`${baseUrl}/auth/signin`)
 
-  // Wait for page to be fully loaded including CSS
+  // Wait for page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Wait for CSS to load by checking for a styled element - check for Base Camp Access text
-  await page.waitForSelector('text="Base Camp Access"', { state: 'visible', timeout: 30000 })
-
-  // Wait for form elements with more specific selectors
-  await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 30000 })
-  await page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 30000 })
-
-  // Fill credentials using more specific selectors
-  await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
-  await page.locator('input[type="password"]').fill('RunnerPass2025!')
-
-  // Submit form - look for the specific button text and ensure it's ready
-  const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
-  await expect(submitButton).toBeVisible()
-  await expect(submitButton).toBeEnabled()
-
-  // Try clicking with force option in case there's an overlay
-  await submitButton.click({ force: true })
-
-  // Wait a moment for form submission to process
+  // CRITICAL: Wait for React hydration - Required for Next.js apps
+  // As per Context7 docs, always wait 2000ms for hydration
   await page.waitForTimeout(2000)
 
-  // Check if we have any error messages
-  const errorElement = page.locator('text=/Invalid|incorrect|failed/i')
-  if (await errorElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-    const errorText = await errorElement.textContent()
-    console.log('Login error detected:', errorText)
-  }
+  // Wait for form elements to be visible and ready
+  const emailInput = page.locator('input[type="email"]')
+  const passwordInput = page.locator('input[type="password"]')
 
-  // Wait for navigation after form submission - using best practices
-  // Try different URL patterns in case the runner redirects differently
-  await page.waitForURL(/\/(dashboard|welcome|home)/, {
-    timeout: 60000,
+  await emailInput.waitFor({ state: 'visible', timeout: 30000 })
+  await passwordInput.waitFor({ state: 'visible', timeout: 30000 })
+
+  // Clear and type into email field (more reliable for React forms)
+  await emailInput.click()
+  await emailInput.clear()
+  await page.keyboard.type('alex.rivera@ultracoach.dev', { delay: 50 })
+
+  // Tab to password field and type
+  await page.keyboard.press('Tab')
+  await page.keyboard.type('RunnerPass2025!', { delay: 50 })
+
+  // Wait a moment for form state to update
+  await page.waitForTimeout(1000)
+
+  // Submit form by pressing Enter
+  await page.keyboard.press('Enter')
+
+  // Wait for navigation - use specific dashboard URL pattern
+  await page.waitForURL('**/dashboard/**', {
+    timeout: 20000,
     waitUntil: 'domcontentloaded',
   })
 
