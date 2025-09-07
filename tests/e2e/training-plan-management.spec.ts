@@ -8,12 +8,11 @@ import { expect, test } from '@playwright/test'
 
 test.describe('Training Plan Management', () => {
   test.describe('Coach Training Plan Management', () => {
+    test.use({ storageState: './playwright/.auth/coach.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as coach
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('emma@ultracoach.dev')
-      await page.getByLabel(/password/i).fill('UltraCoach2025!')
-      await page.getByLabel(/password/i).press('Enter')
+      // Navigate directly to the coach dashboard - we're already authenticated
+      await page.goto('/dashboard/coach')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
@@ -337,12 +336,11 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Runner Training Plan Experience', () => {
+    test.use({ storageState: './playwright/.auth/user.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as runner
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
-      await page.getByLabel(/password/i).fill('RunnerPass2025!')
-      await page.getByLabel(/password/i).press('Enter')
+      // Navigate directly to the runner dashboard - we're already authenticated
+      await page.goto('/dashboard/runner')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 

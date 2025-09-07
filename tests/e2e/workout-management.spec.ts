@@ -10,12 +10,11 @@ import { TEST_USERS } from '../utils/test-helpers'
 
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
+    test.use({ storageState: './playwright/.auth/user.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as runner
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByLabel(/password/i).press('Enter')
+      // Navigate directly to the runner dashboard - we're already authenticated
+      await page.goto('/dashboard/runner')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
@@ -214,12 +213,11 @@ test.describe('Workout Management', () => {
   })
 
   test.describe('Coach Workout Management', () => {
+    test.use({ storageState: './playwright/.auth/coach.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as coach
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByLabel(/password/i).press('Enter')
+      // Navigate directly to the coach dashboard - we're already authenticated
+      await page.goto('/dashboard/coach')
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 

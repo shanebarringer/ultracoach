@@ -11,9 +11,12 @@ import { navigateToPage, signIn, waitForNavigation, waitForPageReady } from '../
 
 test.describe('Coach-Runner Relationship Management', () => {
   test.describe('Coach Perspective', () => {
+    test.use({ storageState: './playwright/.auth/coach.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as coach
-      await signIn(page, TEST_USERS.coach.email, TEST_USERS.coach.password)
+      // Navigate directly to the coach dashboard - we're already authenticated
+      await page.goto('/dashboard/coach')
+      await waitForPageReady(page)
     })
 
     test('should display available runners to connect with', async ({ page }) => {
@@ -126,9 +129,12 @@ test.describe('Coach-Runner Relationship Management', () => {
   })
 
   test.describe('Runner Perspective', () => {
+    test.use({ storageState: './playwright/.auth/user.json' })
+    
     test.beforeEach(async ({ page }) => {
-      // Sign in as runner
-      await signIn(page, TEST_USERS.runner.email, TEST_USERS.runner.password)
+      // Navigate directly to the runner dashboard - we're already authenticated
+      await page.goto('/dashboard/runner')
+      await waitForPageReady(page)
     })
 
     test('should display available coaches to connect with', async ({ page }) => {
