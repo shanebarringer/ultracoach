@@ -166,9 +166,6 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.waitForURL('/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
-      // Get first coach's email before clicking Connect
-      const firstCoachEmail = await page.locator('text=@ultracoach.dev').first().textContent()
-
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
