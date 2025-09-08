@@ -81,8 +81,15 @@ test.describe('Workout Management', () => {
     })
 
     test('should edit an existing workout', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
+      await waitForPageReady(page)
+
+      // Wait for workout cards to be visible
+      await page.waitForSelector('[data-testid="workout-card"]', {
+        state: 'visible',
+        timeout: 10000,
+      })
 
       // Click edit on first workout
       const workoutCard = page.locator('[data-testid="workout-card"]').first()
@@ -109,8 +116,15 @@ test.describe('Workout Management', () => {
     })
 
     test('should log workout completion', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
+      await waitForPageReady(page)
+
+      // Wait for workout cards to be visible
+      await page.waitForSelector('[data-testid="workout-card"]', {
+        state: 'visible',
+        timeout: 10000,
+      })
 
       // Find a planned workout
       const plannedWorkout = page
