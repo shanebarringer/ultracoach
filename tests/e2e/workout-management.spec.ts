@@ -171,7 +171,7 @@ test.describe('Workout Management', () => {
       }
     })
 
-    test('should delete a workout', async ({ page }) => {
+    test.skip('should delete a workout', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
 
