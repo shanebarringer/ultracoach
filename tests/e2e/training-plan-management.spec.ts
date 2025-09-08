@@ -484,7 +484,7 @@ test.describe('Training Plan Management', () => {
       await expect(page.getByText(/plan details/i)).toBeVisible()
     })
 
-    test.skip('should update trainingPlanFormDataAtom during creation', async ({ page }) => {
+    test('should update trainingPlanFormDataAtom during creation', async ({ page }) => {
       // Navigate directly to training plans page - we're already authenticated
       await page.goto('/training-plans')
       await waitForPageReady(page)
@@ -520,7 +520,7 @@ test.describe('Training Plan Management', () => {
       // expect(nameValue).toBe('Test Plan')
     })
 
-    test.skip('should sync training plan updates across components', async ({ page }) => {
+    test('should sync training plan updates across components', async ({ page }) => {
       // Navigate directly to dashboard - we're already authenticated
       await page.goto('/dashboard/coach')
       await waitForPageReady(page)

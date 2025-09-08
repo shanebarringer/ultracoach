@@ -4,9 +4,14 @@
  * Tests the complete workout creation, editing, logging, and deletion flows,
  * ensuring proper state management with Jotai atoms.
  */
-import { expect, test } from '@playwright/test'
+import { Page, expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
+
+// Helper function to wait for page to be ready
+function waitForPageReady(page: Page): Promise<void> {
+  return page.waitForLoadState('domcontentloaded')
+}
 
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
@@ -18,7 +23,7 @@ test.describe('Workout Management', () => {
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
-    test.skip('should display workouts list with proper filtering', async ({ page }) => {
+    test('should display workouts list with proper filtering', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
       await expect(page).toHaveURL('/workouts')
@@ -44,7 +49,7 @@ test.describe('Workout Management', () => {
       expect(plannedCount).toBe(totalCount)
     })
 
-    test.skip('should create a new workout', async ({ page }) => {
+    test('should create a new workout', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
 
@@ -83,7 +88,15 @@ test.describe('Workout Management', () => {
     test('should edit an existing workout', async ({ page }) => {
       // Navigate directly to workouts page - we're already authenticated
       await page.goto('/workouts')
-      await waitForPageReady(page)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for either workouts or empty state to be visible
+      await page.waitForSelector(
+        '[data-testid="workout-card"], h3:has-text("No training sessions found")',
+        {
+          timeout: 10000,
+        }
+      )
 
       // Check if there are any workout cards
       const workoutCards = page.locator('[data-testid="workout-card"]')
@@ -122,7 +135,15 @@ test.describe('Workout Management', () => {
     test('should log workout completion', async ({ page }) => {
       // Navigate directly to workouts page - we're already authenticated
       await page.goto('/workouts')
-      await waitForPageReady(page)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for either workouts or empty state to be visible
+      await page.waitForSelector(
+        '[data-testid="workout-card"], h3:has-text("No training sessions found")',
+        {
+          timeout: 10000,
+        }
+      )
 
       // Check if there are any workout cards
       const workoutCards = page.locator('[data-testid="workout-card"]')
@@ -171,7 +192,7 @@ test.describe('Workout Management', () => {
       }
     })
 
-    test.skip('should delete a workout', async ({ page }) => {
+    test('should delete a workout', async ({ page }) => {
       // Navigate to workouts page
       await page.getByRole('link', { name: /workouts/i }).click()
 
@@ -205,8 +226,17 @@ test.describe('Workout Management', () => {
     })
 
     test('should sync workout with Strava', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for either workouts or empty state to be visible
+      await page.waitForSelector(
+        '[data-testid="workout-card"], h3:has-text("No training sessions found")',
+        {
+          timeout: 10000,
+        }
+      )
 
       // Find a completed workout
       const completedWorkout = page
