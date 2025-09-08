@@ -11,6 +11,8 @@ import { atomFamily } from 'jotai/utils'
 
 import type { TrainingPlan, Workout } from '@/lib/supabase'
 
+import { trainingPlansAtom } from '../training-plans'
+import { workoutsAtom } from '../workouts'
 import { createAtomFamilyWithCleanup } from './cleanup'
 
 /**
@@ -23,7 +25,20 @@ import { createAtomFamilyWithCleanup } from './cleanup'
  * // Clean up when done: workoutAtomFamily.remove('workout-123')
  * ```
  */
-export const workoutAtomFamily = atomFamily((_workoutId: string) => atom<Workout | null>(null))
+export const workoutAtomFamily = atomFamily((workoutId: string) =>
+  atom(
+    get => {
+      // First try to get from the main workouts atom
+      const workouts = get(workoutsAtom)
+      const workout = workouts.find(w => w.id === workoutId)
+      return workout || null
+    },
+    (_get, set, newWorkout: Workout | null) => {
+      // Allow direct setting if needed
+      set(workoutAtomFamily(workoutId), newWorkout)
+    }
+  )
+)
 
 /**
  * Training plan atom family - creates individual atoms per plan ID
@@ -35,8 +50,19 @@ export const workoutAtomFamily = atomFamily((_workoutId: string) => atom<Workout
  * // Clean up when done: trainingPlanAtomFamily.remove('plan-456')
  * ```
  */
-export const trainingPlanAtomFamily = atomFamily((_planId: string) =>
-  atom<TrainingPlan | null>(null)
+export const trainingPlanAtomFamily = atomFamily((planId: string) =>
+  atom(
+    get => {
+      // First try to get from the main training plans atom
+      const plans = get(trainingPlansAtom)
+      const plan = plans.find(p => p.id === planId)
+      return plan || null
+    },
+    (_get, set, newPlan: TrainingPlan | null) => {
+      // Allow direct setting if needed
+      set(trainingPlanAtomFamily(planId), newPlan)
+    }
+  )
 )
 
 /**
