@@ -12,8 +12,8 @@ export async function waitForPageReady(page: Page) {
   // as per Playwright best practices documentation
 
   // Wait for React hydration - CRITICAL for Next.js apps
-  // As per Context7 docs, always wait 2000ms for hydration
-  await page.waitForTimeout(2000)
+  // As per Context7 docs, always wait 2000ms for hydration (3000ms in CI for extra stability)
+  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
 
   // Then verify interactive elements are present
   await page.waitForFunction(
@@ -33,8 +33,8 @@ export async function waitForNavigation(page: Page) {
   // Wait for nav element
   await page.waitForSelector('nav', { state: 'visible', timeout: 10000 })
 
-  // Wait for React hydration - increased from 500ms to 2000ms per best practices
-  await page.waitForTimeout(2000)
+  // Wait for React hydration - increased from 500ms to 2000ms per best practices (3000ms in CI)
+  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
 }
 
 /**
@@ -91,7 +91,7 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   if (clicked) {
     // Wait for navigation to complete
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(2000) // Proper React hydration wait per Context7 docs
+    await page.waitForTimeout(process.env.CI ? 3000 : 2000) // Proper React hydration wait per Context7 docs (3000ms in CI)
   }
 
   return clicked

@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test'
 test.describe('Training Plan Management', () => {
   test.describe('Coach Training Plan Management', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
-    
+
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the coach dashboard - we're already authenticated
       await page.goto('/dashboard/coach')
@@ -337,7 +337,7 @@ test.describe('Training Plan Management', () => {
 
   test.describe('Runner Training Plan Experience', () => {
     test.use({ storageState: './playwright/.auth/user.json' })
-    
+
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
       await page.goto('/dashboard/runner')

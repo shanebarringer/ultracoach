@@ -11,7 +11,7 @@ import { TEST_USERS } from '../utils/test-helpers'
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
     test.use({ storageState: './playwright/.auth/user.json' })
-    
+
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
       await page.goto('/dashboard/runner')
@@ -214,7 +214,7 @@ test.describe('Workout Management', () => {
 
   test.describe('Coach Workout Management', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
-    
+
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the coach dashboard - we're already authenticated
       await page.goto('/dashboard/coach')
