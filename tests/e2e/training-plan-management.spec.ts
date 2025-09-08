@@ -4,7 +4,12 @@
  * Tests the complete training plan creation, editing, assignment, and progress tracking,
  * ensuring proper state management with Jotai atoms.
  */
-import { expect, test } from '@playwright/test'
+import { Page, expect, test } from '@playwright/test'
+
+// Helper function to wait for page to be ready
+function waitForPageReady(page: Page): Promise<void> {
+  return page.waitForLoadState('domcontentloaded')
+}
 
 test.describe('Training Plan Management', () => {
   test.describe('Coach Training Plan Management', () => {

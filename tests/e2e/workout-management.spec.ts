@@ -24,8 +24,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should display workouts list with proper filtering', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
 
       // Should display workouts list
@@ -50,8 +50,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should create a new workout', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
 
       // Click create workout button
       await page.getByRole('button', { name: /new workout/i }).click()
@@ -193,8 +193,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should delete a workout', async ({ page }) => {
-      // Navigate to workouts page
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
 
       // Count initial workouts
       const initialCount = await page.locator('[data-testid="workout-card"]').count()
@@ -393,15 +393,11 @@ test.describe('Workout Management', () => {
   })
 
   test.describe('Workout State Management', () => {
-    test('should update filteredWorkoutsAtom when filters change', async ({ page }) => {
-      // Sign in as runner
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByLabel(/password/i).press('Enter')
+    test.use({ storageState: './playwright/.auth/user.json' })
 
-      // Navigate to workouts
-      await page.getByRole('link', { name: /workouts/i }).click()
+    test('should update filteredWorkoutsAtom when filters change', async ({ page }) => {
+      // Navigate directly to workouts page - we're already authenticated
+      await page.goto('/workouts')
 
       // Apply date filter
       await page.getByLabel(/from date/i).fill('2024-12-01')
@@ -427,11 +423,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should update workoutStatsAtom after completion', async ({ page }) => {
-      // Sign in as runner
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.runner.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page.getByLabel(/password/i).press('Enter')
+      // Navigate directly to dashboard - we're already authenticated
+      await page.goto('/dashboard/runner')
 
       // Check initial stats on dashboard
       const initialStats = {
@@ -439,8 +432,8 @@ test.describe('Workout Management', () => {
         completed: await page.locator('[data-testid="completed-workouts"]').textContent(),
       }
 
-      // Navigate to workouts and complete one
-      await page.getByRole('link', { name: /workouts/i }).click()
+      // Navigate directly to workouts page
+      await page.goto('/workouts')
 
       const plannedWorkout = page
         .locator('[data-testid="workout-card"][data-status="planned"]')
