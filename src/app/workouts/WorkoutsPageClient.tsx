@@ -32,6 +32,11 @@ const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogMo
   ssr: false,
 })
 
+const AddWorkoutModal = dynamic(() => import('@/components/workouts/AddWorkoutModal'), {
+  loading: () => null,
+  ssr: false,
+})
+
 interface Props {
   user: ServerSession['user']
 }
@@ -174,7 +179,7 @@ export default function WorkoutsPageClient({ user }: Props) {
                   <Button
                     variant="solid"
                     color="primary"
-                    onPress={() => setUiState(prev => ({ ...prev, showAddWorkoutModal: true }))}
+                    onPress={() => setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: true }))}
                     startContent={<Plus className="h-4 w-4" />}
                   >
                     New Workout
@@ -269,6 +274,19 @@ export default function WorkoutsPageClient({ user }: Props) {
               onSuccess={handleLogWorkoutSuccess}
               workout={uiState.selectedWorkout as Workout}
               defaultToComplete={uiState.defaultToComplete}
+            />
+          )}
+
+          {/* Add Workout Modal */}
+          {uiState.isAddWorkoutModalOpen && (
+            <AddWorkoutModal
+              isOpen={uiState.isAddWorkoutModalOpen}
+              onClose={() => setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: false }))}
+              onSuccess={() => {
+                setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: false }))
+                // Refresh workouts would go here if needed
+              }}
+              trainingPlanId="" // Empty string for standalone workouts not tied to a plan
             />
           )}
 

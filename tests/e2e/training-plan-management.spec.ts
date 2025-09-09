@@ -497,16 +497,8 @@ test.describe('Training Plan Management', () => {
       // Wait for page to be interactive and find create button
       await page.waitForSelector('button', { state: 'visible', timeout: 10000 })
 
-      // Start creating plan - try multiple selectors
-      const createButton = page
-        .locator('button:has-text("Create"), button:has-text("New"), button:has-text("Add")')
-        .first()
-      if (await createButton.isVisible()) {
-        await createButton.click()
-      } else {
-        // Fallback: click any button that might open the create modal
-        await page.getByRole('button').first().click()
-      }
+      // Start creating plan - look for "Create Expedition" button
+      await page.getByRole('button', { name: /create expedition/i }).click()
 
       // Fill form step by step
       await page.getByLabel(/plan title/i).fill('Test Plan')

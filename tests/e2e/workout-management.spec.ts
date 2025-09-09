@@ -292,8 +292,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should create workout for runner', async ({ page }) => {
-      // Navigate to training plans or workouts
-      await page.getByRole('link', { name: /training plans/i }).click()
+      // Navigate to training plans using the actual button text
+      await page.getByRole('link', { name: /manage plans/i }).click()
 
       // Select a runner
       const runnerSelector = page.getByRole('combobox', { name: /select runner/i })
