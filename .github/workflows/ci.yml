@@ -302,7 +302,10 @@ jobs:
           NODE_ENV: test
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+        run: |
+          # Install Playwright browser without system deps
+          # GitHub Actions Ubuntu runners already have most required dependencies
+          pnpm exec playwright install chromium
         timeout-minutes: 5
 
       - name: Verify app is ready before tests
@@ -497,7 +500,9 @@ jobs:
         run: pnpm tsx scripts/testing/create-playwright-test-users.ts
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+        run: |
+          # Install Playwright browser without system deps
+          pnpm exec playwright install chromium
 
       - name: Set up Playwright MCP for sharded testing
         run: |
