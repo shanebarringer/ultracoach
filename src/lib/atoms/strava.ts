@@ -34,9 +34,21 @@ export const stravaSyncProgressAtom = atom({
 // Strava UI state
 export const workoutStravaShowPanelAtom = atom(false)
 export const stravaSelectedActivitiesAtom = atom<string[]>([])
-export const stravaActivitiesRefreshableAtom = atom(null, async (_get, _set) => {
-  // Refresh Strava activities logic
-  return Promise.resolve()
+export const stravaActivitiesRefreshableAtom = atom(null, async (_get, set) => {
+  // Reset activities to trigger a refetch
+  set(stravaActivitiesAtom, [])
+
+  // Fetch fresh activities from the API
+  try {
+    const response = await fetch('/api/strava/activities')
+    if (response.ok) {
+      const data = await response.json()
+      set(stravaActivitiesAtom, data.activities || [])
+    }
+  } catch (error) {
+    console.error('Failed to refresh Strava activities:', error)
+    set(stravaActivitiesAtom, [])
+  }
 })
 
 // Strava connection status atom

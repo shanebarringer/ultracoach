@@ -22,8 +22,23 @@ export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
 
+// Async atom that fetches relationships
+export const relationshipsAsyncAtom = atom(async () => {
+  try {
+    const response = await fetch('/api/relationships')
+    if (response.ok) {
+      const data = await response.json()
+      return Array.isArray(data) ? data : data.relationships || []
+    }
+    return []
+  } catch (error) {
+    console.error('Failed to fetch relationships:', error)
+    return []
+  }
+})
+
 // Loadable version for suspense support
-export const relationshipsLoadableAtom = loadable(relationshipsAtom)
+export const relationshipsLoadableAtom = loadable(relationshipsAsyncAtom)
 
 // Selected relationship atoms
 export const selectedRelationshipAtom = atom<RelationshipData | null>(null)
