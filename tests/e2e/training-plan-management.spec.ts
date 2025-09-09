@@ -160,12 +160,12 @@ test.describe('Training Plan Management', () => {
       // Modify plan details
       const updatedName = `Updated Plan ${Date.now()}`
 
-      await page.getByLabel('Plan Title').clear()
+      await page.getByLabel('Plan Title').fill('')
       await page.getByLabel('Plan Title').fill(updatedName)
 
       // Update phases
       await page.getByRole('tab', { name: /phases/i }).click()
-      await page.getByLabel(/base phase duration/i).clear()
+      await page.getByLabel(/base phase duration/i).fill('')
       await page.getByLabel(/base phase duration/i).fill('4')
 
       // Save changes
@@ -279,7 +279,7 @@ test.describe('Training Plan Management', () => {
 
       // Modify template name
       const templateName = `Template - ${originalName}`
-      await page.getByLabel(/template name/i).clear()
+      await page.getByLabel(/template name/i).fill('')
       await page.getByLabel(/template name/i).fill(templateName)
 
       // Save template

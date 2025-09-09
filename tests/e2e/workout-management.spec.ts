@@ -148,9 +148,9 @@ test.describe('Workout Management', () => {
       // Modify workout details
       const updatedName = `Updated Run ${Date.now()}`
 
-      await page.getByLabel(/workout name/i).clear()
+      await page.getByLabel(/workout name/i).fill('')
       await page.getByLabel(/workout name/i).fill(updatedName)
-      await page.getByLabel(/intensity/i).clear()
+      await page.getByLabel(/intensity/i).fill('')
       await page.getByLabel(/intensity/i).fill('8')
 
       // Save changes
@@ -412,7 +412,7 @@ test.describe('Workout Management', () => {
           await workoutCard.getByRole('button', { name: /edit/i }).click()
 
           // Modify workout
-          await page.getByLabel(/intensity/i).clear()
+          await page.getByLabel(/intensity/i).fill('')
           await page.getByLabel(/intensity/i).fill('7')
           await page
             .getByLabel(/coach notes/i)

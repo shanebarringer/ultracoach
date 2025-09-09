@@ -374,7 +374,7 @@ test.describe('Chat Messaging System', () => {
           // isTypingAtom should be updated
 
           // Coach stops typing
-          await page.getByPlaceholder(/type a message/i).clear()
+          await page.getByPlaceholder(/type a message/i).fill('')
 
           // Typing indicator should disappear
           await expect(page2.locator('[data-testid="typing-indicator"]')).not.toBeVisible({
