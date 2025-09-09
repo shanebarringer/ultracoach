@@ -19,7 +19,7 @@ setup('authenticate', async ({ page, context }) => {
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
       email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
-      password: process.env.TEST_RUNNER_PASSWORD || 'Test123!@#',
+      password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
     },
     headers: {
       'Content-Type': 'application/json',

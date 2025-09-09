@@ -4,19 +4,19 @@ import { type Page, expect } from '@playwright/test'
 export const TEST_USERS = {
   coach: {
     email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
-    password: process.env.TEST_COACH_PASSWORD || 'Test123!@#',
+    password: process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   runner: {
     email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
-    password: process.env.TEST_RUNNER_PASSWORD || 'Test123!@#',
+    password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
   runner2: {
     email: 'riley.parker@ultracoach.dev',
-    password: 'Test123!@#',
+    password: 'RunnerPass2025!',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },

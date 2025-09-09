@@ -91,11 +91,11 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
 
-      # Test user credentials (standardized across all tests)
+      # Test user credentials (must match database)
       TEST_COACH_EMAIL: emma@ultracoach.dev
-      TEST_COACH_PASSWORD: Test123!@#
+      TEST_COACH_PASSWORD: UltraCoach2025!
       TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
-      TEST_RUNNER_PASSWORD: Test123!@#
+      TEST_RUNNER_PASSWORD: RunnerPass2025!
       TEST_ADMIN_EMAIL: sarah.wilson@ultracoach.dev
       TEST_ADMIN_PASSWORD: Test123!@#
       TEST_SECOND_COACH_EMAIL: michael.chen@ultracoach.dev
