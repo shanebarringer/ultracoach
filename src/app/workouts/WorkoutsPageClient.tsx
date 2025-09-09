@@ -2,7 +2,7 @@
 
 import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { Activity, Mountain, Users } from 'lucide-react'
+import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
 import { useCallback, useMemo, useState } from 'react'
 
@@ -168,16 +168,28 @@ export default function WorkoutsPageClient({ user }: Props) {
                 </p>
               </div>
 
-              {/* Strava Panel Toggle */}
-              <Button
-                variant={showStravaPanel ? 'solid' : 'bordered'}
-                color="primary"
-                onPress={handleToggleStravaPanel}
-                startContent={<Activity className="h-4 w-4" />}
-                className="hidden sm:flex"
-              >
-                Strava Sync
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {!isCoach && (
+                  <Button
+                    variant="solid"
+                    color="primary"
+                    onPress={() => setUiState(prev => ({ ...prev, showAddWorkoutModal: true }))}
+                    startContent={<Plus className="h-4 w-4" />}
+                  >
+                    New Workout
+                  </Button>
+                )}
+                <Button
+                  variant={showStravaPanel ? 'solid' : 'bordered'}
+                  color="primary"
+                  onPress={handleToggleStravaPanel}
+                  startContent={<Activity className="h-4 w-4" />}
+                  className="hidden sm:flex"
+                >
+                  Strava Sync
+                </Button>
+              </div>
             </div>
 
             {/* Coach Controls */}

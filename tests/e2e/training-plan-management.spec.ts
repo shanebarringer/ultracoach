@@ -509,17 +509,17 @@ test.describe('Training Plan Management', () => {
       }
 
       // Fill form step by step
-      await page.getByLabel(/plan name/i).fill('Test Plan')
+      await page.getByLabel(/plan title/i).fill('Test Plan')
 
       // Form should auto-save (if implemented)
       // trainingPlanFormDataAtom should update with each field
 
       // Cancel and reopen
       await page.getByRole('button', { name: /cancel/i }).click()
-      await page.getByRole('button', { name: /create plan/i }).click()
+      await page.getByRole('button', { name: /create expedition/i }).click()
 
       // If form persistence is implemented, fields should retain values
-      const nameValue = await page.getByLabel(/plan name/i).inputValue()
+      const nameValue = await page.getByLabel(/plan title/i).inputValue()
 
       // This would only work if form persistence is implemented
       // expect(nameValue).toBe('Test Plan')

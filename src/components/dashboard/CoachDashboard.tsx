@@ -375,7 +375,12 @@ function CoachDashboard() {
             <CardHeader className="flex justify-between items-center pb-4">
               <div>
                 <h3 className="text-xl font-semibold text-foreground">Training Expeditions</h3>
-                <p className="text-sm text-foreground-600">Active summit challenges</p>
+                <p className="text-sm text-foreground-600">
+                  Active summit challenges
+                  <span data-testid="total-plans-count" className="ml-1">
+                    ({typedTrainingPlans.length})
+                  </span>
+                </p>
               </div>
               <Button
                 as={Link}

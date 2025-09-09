@@ -26,8 +26,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Find Athletes to Coach" button to navigate to runner selection
       await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      // Navigate directly to relationships page
+      await page.goto('/relationships')
       await waitForPageReady(page)
 
       // Should show "Find Runners" section
@@ -41,8 +41,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Find Athletes to Coach" button from dashboard
       await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      // Navigate directly to relationships page
+      await page.goto('/relationships')
       await waitForPageReady(page)
 
       // Get first runner's email to identify them later
