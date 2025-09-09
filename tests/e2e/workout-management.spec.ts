@@ -79,8 +79,8 @@ test.describe('Workout Management', () => {
 
       await page.getByLabel('Date').fill('2024-12-25')
 
-      // Select workout type from dropdown
-      await page.getByLabel('Workout Type').click()
+      // Select workout type from dropdown - HeroUI Select needs button click
+      await page.locator('button:has-text("Select type...")').click()
       await page.getByRole('option', { name: 'Long Run' }).click()
 
       // Fill optional fields if they exist
@@ -330,8 +330,8 @@ test.describe('Workout Management', () => {
     })
 
     test('should view runner workout progress', async ({ page }) => {
-      // Navigate to dashboard
-      await expect(page.getByText(/my runners/i)).toBeVisible()
+      // Navigate to dashboard - look for Active Athletes section
+      await expect(page.getByText(/active athletes/i)).toBeVisible()
 
       // Click on a runner card if available
       const runnerCard = page.locator('[data-testid="active-runner-card"]').first()

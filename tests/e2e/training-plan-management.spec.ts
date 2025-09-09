@@ -498,7 +498,7 @@ test.describe('Training Plan Management', () => {
       await page.waitForSelector('button', { state: 'visible', timeout: 10000 })
 
       // Start creating plan - look for "Create Expedition" button
-      await page.getByRole('button', { name: /create expedition/i }).click()
+      await page.getByRole('button', { name: 'Create Expedition' }).click()
 
       // Fill form step by step
       await page.getByLabel('Plan Title').fill('Test Plan')
@@ -530,7 +530,7 @@ test.describe('Training Plan Management', () => {
       await waitForPageReady(page)
 
       // Create a new plan (simplified)
-      await page.getByRole('button', { name: /create plan/i }).click()
+      await page.getByRole('button', { name: 'Create Expedition' }).click()
       await page.getByLabel('Plan Title').fill(`Quick Plan ${Date.now()}`)
       await page.getByRole('button', { name: /create/i }).click()
 
