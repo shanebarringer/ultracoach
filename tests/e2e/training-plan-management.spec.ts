@@ -89,7 +89,7 @@ test.describe('Training Plan Management', () => {
       // Fill plan details
       const planName = `Ultra Training ${Date.now()}`
 
-      await page.getByLabel(/plan title/i).fill(planName)
+      await page.getByLabel('Plan Title').fill(planName)
       await page.getByLabel(/description/i).fill('Comprehensive ultra marathon training plan')
 
       // Select runner - click the actual select button, not the label
@@ -158,8 +158,8 @@ test.describe('Training Plan Management', () => {
       // Modify plan details
       const updatedName = `Updated Plan ${Date.now()}`
 
-      await page.getByLabel(/plan name/i).clear()
-      await page.getByLabel(/plan name/i).fill(updatedName)
+      await page.getByLabel('Plan Title').clear()
+      await page.getByLabel('Plan Title').fill(updatedName)
 
       // Update phases
       await page.getByRole('tab', { name: /phases/i }).click()
@@ -501,7 +501,7 @@ test.describe('Training Plan Management', () => {
       await page.getByRole('button', { name: /create expedition/i }).click()
 
       // Fill form step by step
-      await page.getByLabel(/plan title/i).fill('Test Plan')
+      await page.getByLabel('Plan Title').fill('Test Plan')
 
       // Form should auto-save (if implemented)
       // trainingPlanFormDataAtom should update with each field
@@ -511,7 +511,7 @@ test.describe('Training Plan Management', () => {
       await page.getByRole('button', { name: /create expedition/i }).click()
 
       // If form persistence is implemented, fields should retain values
-      const nameValue = await page.getByLabel(/plan title/i).inputValue()
+      const nameValue = await page.getByLabel('Plan Title').inputValue()
 
       // This would only work if form persistence is implemented
       // expect(nameValue).toBe('Test Plan')
@@ -531,7 +531,7 @@ test.describe('Training Plan Management', () => {
 
       // Create a new plan (simplified)
       await page.getByRole('button', { name: /create plan/i }).click()
-      await page.getByLabel(/plan name/i).fill(`Quick Plan ${Date.now()}`)
+      await page.getByLabel('Plan Title').fill(`Quick Plan ${Date.now()}`)
       await page.getByRole('button', { name: /create/i }).click()
 
       // Return to dashboard

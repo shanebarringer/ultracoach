@@ -286,7 +286,7 @@ export default function WorkoutsPageClient({ user }: Props) {
                 setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: false }))
                 // Refresh workouts would go here if needed
               }}
-              trainingPlanId="" // Empty string for standalone workouts not tied to a plan
+              // trainingPlanId is optional for standalone workouts
             />
           )}
 
