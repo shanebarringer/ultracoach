@@ -18,8 +18,8 @@ setup('authenticate as coach', async ({ page, context }) => {
   // Use the API directly instead of form submission to avoid JavaScript issues
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
-      email: 'emma@ultracoach.dev',
-      password: 'UltraCoach2025!',
+      email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
+      password: process.env.TEST_COACH_PASSWORD || 'Test123!@#',
     },
     headers: {
       'Content-Type': 'application/json',

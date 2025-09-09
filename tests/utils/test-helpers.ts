@@ -1,22 +1,22 @@
 import { type Page, expect } from '@playwright/test'
 
-// Test user credentials (consistent with comprehensive seed script)
+// Test user credentials (from environment variables or defaults)
 export const TEST_USERS = {
   coach: {
-    email: 'emma@ultracoach.dev',
-    password: 'UltraCoach2025!',
+    email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
+    password: process.env.TEST_COACH_PASSWORD || 'Test123!@#',
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   runner: {
-    email: 'alex.rivera@ultracoach.dev',
-    password: 'RunnerPass2025!',
+    email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
+    password: process.env.TEST_RUNNER_PASSWORD || 'Test123!@#',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
   runner2: {
     email: 'riley.parker@ultracoach.dev',
-    password: 'RunnerPass2025!',
+    password: 'Test123!@#',
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
