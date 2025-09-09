@@ -176,7 +176,10 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       // Coach should move to pending connections or be connected
       // The exact UI behavior may vary based on the implementation
-      await page.waitForTimeout(1000) // Give UI time to update
+      // Wait for any success toast or UI update
+      await page
+        .waitForSelector('[role="status"]', { state: 'visible', timeout: 5000 })
+        .catch(() => {})
     })
 
     test.skip('should manage coach relationship', async ({ page }) => {
@@ -264,8 +267,10 @@ test.describe('Coach-Runner Relationship Management', () => {
           .getByRole('button', { name: /connect/i })
           .click()
 
-        // Wait for connection to process (simulating acceptance)
-        await page.waitForTimeout(1000)
+        // Wait for connection to process
+        await page
+          .waitForSelector('[role="status"]', { state: 'visible', timeout: 5000 })
+          .catch(() => {})
 
         // If connection is auto-accepted in test environment
         const newCount = await page.locator('[data-testid="active-runner-card"]').count()

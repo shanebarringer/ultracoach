@@ -234,8 +234,12 @@ test.describe('Chat Messaging System', () => {
         if (await unreadConversation.isVisible()) {
           await unreadConversation.click()
 
-          // Messages should be marked as read
-          await page.waitForTimeout(1000) // Wait for read status update
+          // Wait for read status update
+          await page
+            .waitForFunction(() => !document.querySelector('[data-testid="unread-indicator"]'), {
+              timeout: 5000,
+            })
+            .catch(() => {})
 
           // Return to conversation list
           await page.getByRole('button', { name: /back/i }).click()

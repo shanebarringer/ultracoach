@@ -94,7 +94,8 @@ test.describe('Training Plan Management', () => {
 
       // Select runner - click the actual select button, not the label
       await page.getByRole('button', { name: /Select Runner.*Loading/i }).click()
-      await page.waitForTimeout(500) // Wait for dropdown to open
+      // Wait for dropdown options to be visible
+      await page.waitForSelector('[role="option"]', { state: 'visible' })
       const runnerOption = page.getByRole('option').first()
       if (await runnerOption.isVisible()) {
         await runnerOption.click()
@@ -106,7 +107,8 @@ test.describe('Training Plan Management', () => {
 
       // Select target race (optional)
       await page.getByText('Select a target race expedition...').click()
-      await page.waitForTimeout(500)
+      // Wait for race options to be visible
+      await page.waitForSelector('[role="option"]', { state: 'visible' })
       // Select "No specific race" option or first available race
       const raceOptions = page.getByRole('option')
       const firstRaceOption = raceOptions.first()

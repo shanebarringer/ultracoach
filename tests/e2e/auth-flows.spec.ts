@@ -17,8 +17,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Wait for CSS to be loaded by checking for a styled element
     await page.waitForSelector('h1', { state: 'visible', timeout: 10000 })
 
-    // Give React time to hydrate
-    await page.waitForTimeout(1000)
+    // Wait for specific element that indicates app is ready
+    await page.waitForSelector('h1', { state: 'visible' })
   })
 
   test('should complete sign up flow and update auth atoms', async ({ page }) => {
@@ -26,8 +26,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.goto('/auth/signup')
     await page.waitForLoadState('domcontentloaded')
 
-    // Wait for React to hydrate
-    await page.waitForTimeout(2000)
+    // Wait for form to be interactive
+    await page.waitForSelector('form', { state: 'visible' })
+    await page.waitForFunction(() => {
+      const form = document.querySelector('form')
+      return form && form.querySelector('input')
+    })
 
     // Wait for form to be visible
     await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
@@ -132,11 +136,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should redirect to home page
     await expect(page).toHaveURL('/')
 
-    // Wait for page to load
+    // Wait for page to load and sign out to complete
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(1000) // Give React time to update
 
-    // Check if we're on the home page and look for navigation links or buttons
+    // Wait for sign in elements to appear, indicating sign out completed
     const signInLink = page.getByRole('link', { name: /sign in/i })
     const signInButton = page.getByRole('button', { name: /sign in/i })
 
@@ -151,7 +154,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Sign in as coach
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(2000) // Wait for React hydration
+    await page.waitForSelector('form', { state: 'visible' })
+    await page.waitForFunction(() => {
+      const form = document.querySelector('form')
+      return form && form.querySelector('input[type="email"]')
+    })
 
     await page.locator('input[type="email"]').fill('emma@ultracoach.dev')
     await page.locator('input[type="password"]').fill('UltraCoach2025!')
@@ -175,7 +182,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Sign in
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(2000) // Wait for React hydration
+    await page.waitForSelector('form', { state: 'visible' })
+    await page.waitForFunction(() => {
+      const form = document.querySelector('form')
+      return form && form.querySelector('input[type="email"]')
+    })
 
     await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
     await page.locator('input[type="password"]').fill('RunnerPass2025!')
@@ -203,7 +214,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to sign in
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(2000) // Wait for React hydration
+    await page.waitForSelector('form', { state: 'visible' })
+    await page.waitForFunction(() => {
+      const form = document.querySelector('form')
+      return form && form.querySelector('input[type="email"]')
+    })
 
     // Try invalid credentials
     await page.locator('input[type="email"]').fill('wrong@example.com')
@@ -233,8 +248,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.waitForURL('**/auth/signin', { timeout: 10000 })
     await expect(page).toHaveURL('/auth/signin')
 
-    // Wait for React hydration
-    await page.waitForTimeout(2000)
+    // Wait for form to be interactive
+    await page.waitForSelector('form', { state: 'visible' })
+    await page.waitForFunction(() => {
+      const form = document.querySelector('form')
+      return form && form.querySelector('input[type="email"]')
+    })
 
     // Sign in
     await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')

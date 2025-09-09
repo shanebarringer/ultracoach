@@ -35,8 +35,13 @@ test.describe('Workout Management', () => {
         .isVisible()
 
       if (!hasWorkouts && !hasEmptyState) {
-        // If neither workouts nor empty state, wait a bit for data to load
-        await page.waitForTimeout(2000)
+        // Wait for either workouts or empty state to appear
+        await page
+          .waitForSelector('[data-testid="workout-card"], text="No training plans"', {
+            state: 'visible',
+            timeout: 5000,
+          })
+          .catch(() => {})
       }
 
       // Skip the test if no workouts are available
@@ -84,7 +89,8 @@ test.describe('Workout Management', () => {
       // Select workout type from dropdown - HeroUI Select needs special handling
       await page.locator('button:has-text("Select type...")').click()
       // Wait for dropdown to appear and use text-based selector
-      await page.waitForTimeout(500) // Give dropdown time to open
+      // Wait for dropdown options to be visible
+      await page.waitForSelector('[role="option"]', { state: 'visible' })
       await page.locator('li[role="option"]:has-text("Long Run")').click()
 
       // Fill optional fields if they exist

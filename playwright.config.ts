@@ -1,9 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 import { randomBytes } from 'crypto'
-import dotenv from 'dotenv'
-
-// Load test environment variables
-dotenv.config({ path: '.env.test' })
 
 /**
  * @see https://playwright.dev/docs/test-configuration

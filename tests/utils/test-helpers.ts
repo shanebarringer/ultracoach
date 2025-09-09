@@ -47,8 +47,8 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Verify we're on the correct dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 
-  // Brief wait for content to stabilize
-  await page.waitForTimeout(1000)
+  // Wait for content to be ready
+  await page.waitForLoadState('domcontentloaded')
 }
 
 /**
@@ -75,8 +75,8 @@ export async function waitForAppReady(page: Page) {
   // Wait for DOM to be loaded (removed networkidle - causes CI hangs)
   await page.waitForLoadState('domcontentloaded')
 
-  // Wait a bit more for any dynamic content
-  await page.waitForTimeout(1000)
+  // Wait for body to be visible as indicator of readiness
+  await page.waitForSelector('body', { state: 'visible' })
 }
 
 /**
@@ -104,7 +104,8 @@ export async function dismissModals(page: Page) {
     const closeButton = page.locator(selector)
     if (await closeButton.isVisible()) {
       await closeButton.click()
-      await page.waitForTimeout(500)
+      // Wait for modal to be hidden
+      await page.waitForSelector(selector, { state: 'hidden' }).catch(() => {})
     }
   }
 }
@@ -118,8 +119,8 @@ export async function assertAuthenticated(page: Page, userType: TestUserType) {
   // Check URL matches expected dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 
-  // Wait for page to stabilize and any immediate redirects
-  await page.waitForTimeout(2000)
+  // Wait for URL to stabilize
+  await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 5000 })
 
   // Final verification - ensure we're still on dashboard URL (not redirected back to signin)
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
@@ -147,6 +148,6 @@ export async function submitForm(page: Page, submitSelector = 'button[type="subm
 
   await submitButton.click()
 
-  // Wait for any loading states
-  await page.waitForTimeout(1000)
+  // Wait for potential navigation or loading states
+  await page.waitForLoadState('domcontentloaded')
 }

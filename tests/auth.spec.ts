@@ -53,8 +53,8 @@ test.describe('Authentication Flow', () => {
     // Click sign in
     await page.click('button[type="submit"]')
 
-    // Wait for error state
-    await page.waitForTimeout(3000)
+    // Wait for either error message or staying on signin page
+    await page.waitForURL(/\/auth\/signin/, { timeout: 3000 }).catch(() => {})
 
     // Check that we're still on signin page (not redirected to dashboard)
     // Allow for query parameters in the URL
