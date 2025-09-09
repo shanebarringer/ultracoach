@@ -5,6 +5,7 @@
  * ensuring proper state management with Jotai atoms.
  */
 import { Page, expect, test } from '@playwright/test'
+import { addMonths, format } from 'date-fns'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -116,8 +117,9 @@ test.describe('Training Plan Management', () => {
         await firstRaceOption.click()
       }
 
-      // Fill target date
-      await page.getByLabel(/target race date/i).fill('2025-04-01')
+      // Fill target date (3 months from now)
+      const targetDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd')
+      await page.getByLabel(/target race date/i).fill(targetDate)
 
       // Select distance
       await page.getByText('Select distance...').click()

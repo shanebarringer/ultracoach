@@ -5,6 +5,7 @@
  * ensuring proper state management with Jotai atoms.
  */
 import { Page, expect, test } from '@playwright/test'
+import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
 import { TEST_USERS } from '../utils/test-helpers'
 
@@ -84,7 +85,9 @@ test.describe('Workout Management', () => {
       // Fill workout form
       // The AddWorkoutModal doesn't have a workout name field, it uses date and type to identify workouts
 
-      await page.getByLabel('Date').fill('2024-12-25')
+      // Use a date 7 days from now
+      const workoutDate = format(addDays(new Date(), 7), 'yyyy-MM-dd')
+      await page.getByLabel('Date').fill(workoutDate)
 
       // Select workout type from dropdown - HeroUI Select needs special handling
       await page.locator('button:has-text("Select type...")').click()
@@ -325,7 +328,9 @@ test.describe('Workout Management', () => {
 
         // Fill workout details
         await page.getByLabel(/workout name/i).fill(`Coach Assigned Run for ${runnerName}`)
-        await page.getByLabel(/date/i).fill('2024-12-26')
+        // Use a date 8 days from now
+        const secondWorkoutDate = format(addDays(new Date(), 8), 'yyyy-MM-dd')
+        await page.getByLabel(/date/i).fill(secondWorkoutDate)
         await page.getByLabel(/type/i).selectOption('tempo')
         await page.getByLabel(/distance/i).fill('10')
         await page.getByLabel(/target pace/i).fill('7:30')
@@ -381,7 +386,9 @@ test.describe('Workout Management', () => {
 
         // Create workout template
         await page.getByLabel(/workout template/i).selectOption('base_run')
-        await page.getByLabel(/date/i).fill('2024-12-27')
+        // Use a date 9 days from now
+        const thirdWorkoutDate = format(addDays(new Date(), 9), 'yyyy-MM-dd')
+        await page.getByLabel(/date/i).fill(thirdWorkoutDate)
         await page.getByLabel(/base distance/i).fill('8')
 
         // Apply to selected runners
@@ -437,8 +444,11 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
 
       // Apply date filter
-      await page.getByLabel(/from date/i).fill('2024-12-01')
-      await page.getByLabel(/to date/i).fill('2024-12-31')
+      // Use current month start and end dates
+      const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd')
+      const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd')
+      await page.getByLabel(/from date/i).fill(monthStart)
+      await page.getByLabel(/to date/i).fill(monthEnd)
       await page.getByRole('button', { name: /apply filter/i }).click()
 
       // Should only show workouts in date range
@@ -453,8 +463,8 @@ test.describe('Workout Management', () => {
           .textContent()
         if (dateText) {
           const workoutDate = new Date(dateText)
-          expect(workoutDate >= new Date('2024-12-01')).toBe(true)
-          expect(workoutDate <= new Date('2024-12-31')).toBe(true)
+          expect(workoutDate >= startOfMonth(new Date())).toBe(true)
+          expect(workoutDate <= endOfMonth(new Date())).toBe(true)
         }
       }
     })
