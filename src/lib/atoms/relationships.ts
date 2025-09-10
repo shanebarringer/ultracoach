@@ -90,8 +90,8 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
     }
     const data = await response.json()
 
-    // Ensure data is an array
-    const runners = Array.isArray(data) ? data : []
+    // Extract runners array from response object
+    const runners = Array.isArray(data) ? data : data.runners || []
     logger.debug('Connected runners fetched', { count: runners.length })
     return runners as User[]
   } catch (error) {
