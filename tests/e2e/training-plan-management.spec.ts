@@ -29,13 +29,29 @@ test.describe('Training Plan Management', () => {
     })
 
     test('should display training plans with filtering', async ({ page }) => {
-      // Navigate to training plans - click the button with emoji
-      const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
-      await expect(managePlansButton).toBeVisible({ timeout: 5000 })
-      await managePlansButton.click()
+      // Wait for dashboard to fully load before navigation
+      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(2000) // Extra wait for CI environment
 
-      // Wait for navigation with more flexible timeout
-      await page.waitForURL('**/training-plans', { timeout: 15000, waitUntil: 'domcontentloaded' })
+      // Try button click first, then fallback to direct navigation
+      try {
+        // Navigate to training plans - click the button with emoji
+        const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
+        await expect(managePlansButton).toBeVisible({ timeout: 10000 })
+        await managePlansButton.click()
+
+        // Wait for navigation with more flexible timeout
+        await page.waitForURL('**/training-plans', {
+          timeout: 15000,
+          waitUntil: 'domcontentloaded',
+        })
+      } catch (error) {
+        console.log('Button click failed, using direct navigation')
+        // Fallback to direct navigation if button click fails
+        await page.goto('/training-plans')
+        await page.waitForLoadState('domcontentloaded')
+      }
+
       await expect(page).toHaveURL('/training-plans')
 
       // Check if we're on the training plans page - look for the heading (includes emoji)

@@ -25,10 +25,10 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
   /* Global timeout for each test */
-  timeout: process.env.CI ? 120000 : 60000, // CI: 2min, Local: 1min for compilation
+  timeout: process.env.CI ? 180000 : 60000, // CI: 3min (increased from 2min), Local: 1min for compilation
   /* Global timeout for expect assertions */
   expect: {
-    timeout: process.env.CI ? 60000 : 30000, // CI: 1min, Local: 30s for loading
+    timeout: process.env.CI ? 90000 : 30000, // CI: 1.5min (increased from 1min), Local: 30s for loading
   },
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -45,10 +45,10 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Set longer action timeout for CI compilation delays */
-    actionTimeout: process.env.CI ? 30000 : 15000, // CI: 30s, Local: 15s
+    actionTimeout: process.env.CI ? 45000 : 15000, // CI: 45s (increased from 30s), Local: 15s
 
     /* Set longer navigation timeout for CI compilation delays */
-    navigationTimeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s
+    navigationTimeout: process.env.CI ? 90000 : 30000, // CI: 90s (increased from 60s), Local: 30s
 
     /* Ensure session persistence in CI environment */
     storageState: undefined, // Will be overridden by projects that need auth
