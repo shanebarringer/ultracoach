@@ -28,7 +28,7 @@ export const relationshipsAsyncAtom = atom(async () => {
   if (!isBrowser) return []
 
   try {
-    const response = await fetch('/api/relationships')
+    const response = await fetch('/api/coach-runners')
     if (response.ok) {
       const data = await response.json()
       return Array.isArray(data) ? data : data.relationships || []

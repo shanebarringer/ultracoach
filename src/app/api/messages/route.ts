@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Recipient ID is required' }, { status: 400 })
     }
 
-    // Verify that the user has an active relationship with the recipient
-    const hasActiveRelationship = await db
+    // Verify that the user has a relationship with the recipient (active or pending)
+    const hasRelationship = await db
       .select()
       .from(coach_runners)
       .where(
@@ -54,16 +54,16 @@ export async function GET(request: NextRequest) {
               eq(coach_runners.coach_id, recipientId)
             )
           ),
-          eq(coach_runners.status, 'active')
+          or(
+            eq(coach_runners.status, 'active'),
+            eq(coach_runners.status, 'pending') // Allow messages for pending relationships
+          )
         )
       )
       .limit(1)
 
-    if (hasActiveRelationship.length === 0) {
-      return NextResponse.json(
-        { error: 'No active relationship found with this user' },
-        { status: 403 }
-      )
+    if (hasRelationship.length === 0) {
+      return NextResponse.json({ error: 'No relationship found with this user' }, { status: 403 })
     }
 
     // Fetch messages between the current user and the recipient
@@ -208,10 +208,10 @@ export async function POST(request: NextRequest) {
     logger.info('🔍 MESSAGE POST DEBUG: Checking relationship', {
       sessionUserId: sessionUser.id,
       recipientId,
-      checking: 'active relationship',
+      checking: 'active or pending relationship',
     })
 
-    const hasActiveRelationship = await db
+    const hasRelationship = await db
       .select()
       .from(coach_runners)
       .where(
@@ -228,25 +228,25 @@ export async function POST(request: NextRequest) {
               eq(coach_runners.coach_id, recipientId)
             )
           ),
-          eq(coach_runners.status, 'active')
+          or(
+            eq(coach_runners.status, 'active'),
+            eq(coach_runners.status, 'pending') // Allow messages for pending relationships
+          )
         )
       )
       .limit(1)
 
     logger.info('🔍 MESSAGE POST DEBUG: Relationship check result', {
-      foundRelationships: hasActiveRelationship.length,
-      relationships: hasActiveRelationship,
+      foundRelationships: hasRelationship.length,
+      relationships: hasRelationship,
     })
 
-    if (hasActiveRelationship.length === 0) {
-      logger.error('🔍 MESSAGE POST DEBUG: No active relationship found - returning 403', {
+    if (hasRelationship.length === 0) {
+      logger.error('🔍 MESSAGE POST DEBUG: No relationship found - returning 403', {
         sessionUserId: sessionUser.id,
         recipientId,
       })
-      return NextResponse.json(
-        { error: 'No active relationship found with this user' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'No relationship found with this user' }, { status: 403 })
     }
 
     // Verify the recipient exists

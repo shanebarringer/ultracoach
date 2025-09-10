@@ -16,7 +16,7 @@ export interface RelationshipData {
     name: string
     full_name: string | null
     email: string
-    role: 'coach' | 'runner'
+    role: 'coach' | 'runner' // This contains the userType value from the database
   }
 }
 
