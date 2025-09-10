@@ -24,6 +24,9 @@ export const relationshipsErrorAtom = atom<string | null>(null)
 
 // Async atom that fetches relationships
 export const relationshipsAsyncAtom = atom(async () => {
+  // Return empty array for SSR to prevent URL errors
+  if (!isBrowser) return []
+
   try {
     const response = await fetch('/api/relationships')
     if (response.ok) {

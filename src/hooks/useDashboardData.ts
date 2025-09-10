@@ -88,6 +88,7 @@ export function useDashboardData() {
         if (!rel.other_party) {
           return false
         }
+        // Check role property (as defined in RelationshipData type)
         if (!rel.other_party.role) {
           return false
         }
@@ -98,7 +99,7 @@ export function useDashboardData() {
           ({
             id: rel.other_party.id,
             email: rel.other_party.email,
-            userType: rel.other_party.role as 'runner' | 'coach',
+            userType: rel.other_party.role as 'runner' | 'coach', // Map role to userType
             full_name: rel.other_party.full_name,
             created_at: new Date().toISOString(), // Default value for compatibility
             updated_at: new Date().toISOString(), // Default value for compatibility

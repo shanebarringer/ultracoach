@@ -8,12 +8,12 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Tab, Tabs } from '@heroui/react'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { toast } from 'sonner'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { relationshipsAtom } from '@/lib/atoms/index'
+import { relationshipsAtom, relationshipsLoadableAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { RelationshipData } from '@/types/relationships'
 
@@ -27,15 +27,22 @@ interface RelationshipsListProps {
 }
 
 export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListProps) {
-  // Use Jotai atoms instead of local state
-  const relationships = useAtomValue(relationshipsAtom)
-  const setRelationships = useSetAtom(relationshipsAtom)
+  // Use Jotai atoms - both the loadable for initial load and regular for updates
+  const relationshipsLoadable = useAtomValue(relationshipsLoadableAtom)
+  const [relationships, setRelationships] = useAtom(relationshipsAtom)
 
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'active' | 'inactive'>('all')
 
-  // Derive loading state from the atom's data
-  const loading = relationships.length === 0
+  // Sync loadable data to regular atom
+  useEffect(() => {
+    if (relationshipsLoadable.state === 'hasData' && relationshipsLoadable.data) {
+      setRelationships(relationshipsLoadable.data)
+    }
+  }, [relationshipsLoadable, setRelationships])
+
+  // Derive loading state from the loadable state
+  const loading = relationshipsLoadable.state === 'loading'
 
   // Refresh relationships function
   const refreshRelationships = async () => {
