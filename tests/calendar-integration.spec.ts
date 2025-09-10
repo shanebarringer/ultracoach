@@ -11,7 +11,7 @@ import { expect, test } from '@playwright/test'
 // 4. Calendar UI may not have the expected data-testid attributes
 //
 // To re-enable: Remove .skip and update tests to use test-helpers.ts
-test.describe.skip('Calendar Database Integration', () => {
+test.describe('Calendar Database Integration', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to sign-in page first
     await page.goto('/auth/signin')

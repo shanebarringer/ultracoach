@@ -15,14 +15,14 @@ const COACH_CREDENTIALS = {
   email: 'emma@ultracoach.dev',
   password: 'UltraCoach2025!',
   name: 'Emma Mountain',
-  userId: '4rOAVOBibps2j5hAN9A8X5mM6B23bTSW', // TODO: Update with actual emma user ID
+  userId: 'c3HWnxRfbQ8kUbATjsVEMZURVLdTddEQ', // Updated with actual emma user ID
 }
 
 const RUNNER_CREDENTIALS = {
   email: 'riley.parker@ultracoach.dev',
   password: 'RunnerPass2025!',
   name: 'Riley Parker',
-  userId: 'NU12c66I1ACHqNvmRFJDAY6pr0w0OVZL', // Updated with new user ID
+  userId: 'gLjsdc0nO2QwaajQSp9nMH7PqNtdssWH', // Updated with actual user ID
 }
 
 // Alternative runner credentials for testing
@@ -30,7 +30,7 @@ const ALT_RUNNER_CREDENTIALS = {
   email: 'alex.rivera@ultracoach.dev',
   password: 'RunnerPass2025!',
   name: 'Alex Rivera',
-  userId: 'btQaqCnR9fzWxCJpg6M6Kolf8JCPmJap', // Updated with new user ID
+  userId: '11IIOMv5CTucdjk0YXUubKVr3i61wLUZ', // Updated with actual user ID
 }
 
 async function signIn(page: Page, credentials: typeof COACH_CREDENTIALS) {
