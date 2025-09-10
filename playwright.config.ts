@@ -123,11 +123,62 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
 
+    // Training plan management tests (need coach auth)
+    {
+      name: 'chromium-training-plans',
+      testMatch: /training-plan-management\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state for training plans
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
+    // Chat messaging tests - Coach tests
+    {
+      name: 'chromium-messaging-coach',
+      testMatch: /chat-messaging\.spec\.ts/,
+      grep: /Coach Tests/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state for coach tests
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
+    // Chat messaging tests - Runner tests
+    {
+      name: 'chromium-messaging-runner',
+      testMatch: /chat-messaging\.spec\.ts/,
+      grep: /Runner Tests/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state for runner tests
+        storageState: './playwright/.auth/user.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
+    // Chat messaging tests - Other tests
+    {
+      name: 'chromium-messaging-other',
+      testMatch: /chat-messaging\.spec\.ts/,
+      grepInvert: /Coach Tests|Runner Tests/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state by default
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
-      grepInvert: /auth|dashboard|race-import/,
+      grepInvert: /auth|dashboard|race-import|training-plan-management|chat-messaging/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

@@ -93,7 +93,7 @@ async function waitForMessage(page: Page, message: string, timeout = 15000) {
   await page.waitForSelector(`text="${message}"`, { timeout })
 }
 
-test.describe('Messaging System E2E', () => {
+test.describe.skip('Messaging System E2E', () => {
   test.describe.configure({ mode: 'parallel' })
 
   test('Coach can send message to runner', async ({ browser }) => {
@@ -305,7 +305,7 @@ test.describe('Messaging System E2E', () => {
   })
 })
 
-test.describe('Message Features', () => {
+test.describe.skip('Message Features', () => {
   test('Workout context messaging', async ({ browser }) => {
     const context = await browser.newContext()
     const page = await context.newPage()

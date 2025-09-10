@@ -46,10 +46,12 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
       return []
     }
     const data = await response.json()
-    // Ensure data is an array
-    const plans = Array.isArray(data) ? data : []
-    logger.debug('Training plans fetched', { count: plans.length })
-    return plans as ExtendedTrainingPlan[]
+    // API returns { trainingPlans: [...] } so extract the array
+    const plans = data.trainingPlans || data
+    // Ensure it's an array
+    const plansArray = Array.isArray(plans) ? plans : []
+    logger.debug('Training plans fetched', { count: plansArray.length })
+    return plansArray as ExtendedTrainingPlan[]
   } catch (error) {
     logger.error('Error fetching training plans', error)
     return []

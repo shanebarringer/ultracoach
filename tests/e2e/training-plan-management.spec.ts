@@ -7,6 +7,12 @@
 import { Page, expect, test } from '@playwright/test'
 import { addMonths, format } from 'date-fns'
 
+import {
+  selectHeroUIOption,
+  waitForHeroUIReady,
+  waitForLoadingComplete,
+} from '../utils/heroui-helpers'
+
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
   return page.waitForLoadState('domcontentloaded')
@@ -22,13 +28,14 @@ test.describe('Training Plan Management', () => {
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 
-    test.skip('should display training plans with filtering', async ({ page }) => {
-      // Navigate to training plans - click the Manage Plans button
-      await Promise.all([
-        page.waitForURL('/training-plans'),
-        page.getByText('⛰️ Manage Plans').click(),
-      ])
+    test('should display training plans with filtering', async ({ page }) => {
+      // Navigate to training plans - click the button with emoji
+      const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
+      await expect(managePlansButton).toBeVisible({ timeout: 5000 })
+      await managePlansButton.click()
 
+      // Wait for navigation with more flexible timeout
+      await page.waitForURL('**/training-plans', { timeout: 15000, waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL('/training-plans')
 
       // Check if we're on the training plans page - look for the heading (includes emoji)
@@ -72,12 +79,16 @@ test.describe('Training Plan Management', () => {
       }
     })
 
-    // Skip this test in CI - complex form interactions often fail
+    // Skip temporarily - dropdown interaction issues with HeroUI Select
     test.skip('should create a new training plan', async ({ page }) => {
-      // Navigate to training plans page using the Manage Plans button
+      // Navigate to training plans page - click the button with emoji
+      const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
+      await expect(managePlansButton).toBeVisible({ timeout: 5000 })
+
+      // Click and wait for navigation
       await Promise.all([
-        page.waitForURL('/training-plans'),
-        page.getByText('⛰️ Manage Plans').click(),
+        page.waitForURL('**/training-plans', { timeout: 15000 }),
+        managePlansButton.click(),
       ])
 
       // Wait for the page to load and click Create Expedition button
@@ -93,28 +104,60 @@ test.describe('Training Plan Management', () => {
       await page.getByLabel('Plan Title').fill(planName)
       await page.getByLabel(/description/i).fill('Comprehensive ultra marathon training plan')
 
-      // Select runner - click the actual select button, not the label
-      await page.getByRole('button', { name: /Select Runner.*Loading/i }).click()
-      // Wait for dropdown options to be visible
-      await page.waitForSelector('[role="option"]', { state: 'visible' })
-      const runnerOption = page.getByRole('option').first()
-      if (await runnerOption.isVisible()) {
-        await runnerOption.click()
+      // Wait for any loading to complete
+      await waitForHeroUIReady(page)
+      await waitForLoadingComplete(page)
+
+      // Try to select runner - but it's optional if no runners are connected
+      const runnerDropdown = page.getByRole('button', { name: /Select Runner/i })
+      const dropdownText = await runnerDropdown.textContent()
+
+      if (dropdownText?.includes('Loading')) {
+        // Wait a bit for loading to complete
+        await page.waitForTimeout(3000)
+        const updatedText = await runnerDropdown.textContent()
+
+        if (updatedText?.includes('Loading')) {
+          console.log(
+            'Runners still loading after 3s - likely no runners connected, skipping selection'
+          )
+        } else if (!updatedText?.includes('No connected')) {
+          // Try to select a runner if available
+          try {
+            await runnerDropdown.click()
+            await page.waitForTimeout(500)
+
+            const runnerOption = page.getByRole('option').first()
+            if (await runnerOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+              await runnerOption.click()
+            } else {
+              // Close dropdown if no options
+              await page.keyboard.press('Escape')
+            }
+          } catch (error) {
+            console.log('Could not select runner:', error)
+          }
+        }
       }
 
       // Select plan type
-      await page.getByText('Select plan type...').click()
-      await page.getByRole('option', { name: /race.*specific/i }).click()
+      const planTypeDropdown = page.getByText('Select plan type...')
+      await planTypeDropdown.click()
+      await page.waitForTimeout(500)
+      // Click on the "Race Specific" option element
+      await page.locator('option[value="race_specific"]').click()
 
       // Select target race (optional)
-      await page.getByText('Select a target race expedition...').click()
-      // Wait for race options to be visible
-      await page.waitForSelector('[role="option"]', { state: 'visible' })
-      // Select "No specific race" option or first available race
-      const raceOptions = page.getByRole('option')
-      const firstRaceOption = raceOptions.first()
-      if (await firstRaceOption.isVisible()) {
-        await firstRaceOption.click()
+      const targetRaceDropdown = page.getByText('Select a target race expedition...')
+      await targetRaceDropdown.click()
+      await page.waitForTimeout(500)
+      // Try to select first race or "No specific race"
+      try {
+        await page.getByText('No specific race').click()
+      } catch {
+        // If "No specific race" doesn't exist, click the first visible option
+        const firstOption = page.locator('[role="listbox"] > div').first()
+        await firstOption.click()
       }
 
       // Fill target date (3 months from now)
@@ -122,12 +165,18 @@ test.describe('Training Plan Management', () => {
       await page.getByLabel(/target race date/i).fill(targetDate)
 
       // Select distance
-      await page.getByText('Select distance...').click()
-      await page.getByRole('option', { name: /50K/i }).click()
+      const distanceDropdown = page.getByText('Select distance...')
+      await distanceDropdown.click()
+      await page.waitForTimeout(500)
+      // Click on "50K" text directly
+      await page.getByText('50K', { exact: true }).click()
 
       // Select goal type
-      await page.getByText('Select goal type...').click()
-      await page.getByRole('option', { name: /completion/i }).click()
+      const goalTypeDropdown = page.getByText('Select goal type...')
+      await goalTypeDropdown.click()
+      await page.waitForTimeout(500)
+      // Click on "Completion" text directly
+      await page.getByText('Completion').click()
 
       // Create plan
       await page.getByRole('button', { name: /create.*plan/i }).click()
