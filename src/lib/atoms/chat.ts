@@ -256,6 +256,23 @@ export const sendMessageActionAtom = atom(
         prev.map(msg => (msg.tempId === tempId ? { ...realMessage, optimistic: false } : msg))
       )
 
+      // Trigger a refetch of messages to ensure UI is in sync
+      // This is a workaround for the real-time updates being disabled
+      setTimeout(async () => {
+        try {
+          const refreshResponse = await fetch(`/api/messages?recipientId=${payload.recipientId}`)
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json()
+            const fetchedMessages = refreshData.messages || []
+
+            // Update messages atom with fetched messages
+            set(messagesAtom, fetchedMessages)
+          }
+        } catch (error) {
+          console.error('Failed to refresh messages after sending:', error)
+        }
+      }, 500)
+
       return realMessage
     } catch (error) {
       // Remove optimistic message on failure
