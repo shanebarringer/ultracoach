@@ -134,7 +134,6 @@ test.describe('Race Import Flow', () => {
 
   test('should open race import modal', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000) // Extra wait for CI
 
     // Look for import button with multiple possible selectors
@@ -160,7 +159,6 @@ test.describe('Race Import Flow', () => {
 
   test('should handle GPX file upload', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000) // Extra wait for CI
 
     // Wait for loading to complete
@@ -209,7 +207,6 @@ test.describe('Race Import Flow', () => {
 
   test('should handle CSV file upload', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000) // Extra wait for CI
 
     // Wait for loading to complete
@@ -258,7 +255,6 @@ test.describe('Race Import Flow', () => {
 
   test('should validate file size limits', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000) // Extra wait for CI
 
     // Wait for loading to complete
@@ -303,7 +299,6 @@ test.describe('Race Import Flow', () => {
   test('should handle invalid GPX files', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -369,7 +364,6 @@ test.describe('Race Import Flow', () => {
   test('should successfully import single race', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -442,7 +436,6 @@ test.describe('Race Import Flow', () => {
   test('should handle duplicate race detection', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -536,7 +529,6 @@ test.describe('Race Import Flow', () => {
   test('should handle bulk CSV import', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -607,7 +599,6 @@ test.describe('Race Import Flow', () => {
   test('should show progress indicator during import', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -688,7 +679,6 @@ test.describe('Race Import Edge Cases', () => {
 
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -771,7 +761,6 @@ test.describe('Race Import Edge Cases', () => {
 
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
-    await page.waitForLoadState('networkidle')
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
