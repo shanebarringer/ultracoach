@@ -8,7 +8,7 @@ const logger = createLogger('test-preview-signout')
 
 async function testSignout() {
   const previewUrl =
-    'https://ultracoach-git-refactor-jotai-atoms-modulariz-ccdb01-shane-hehims-projects.vercel.app'
+    'https://ultracoach-git-refactor-jotai-atom-6ba6ae-shane-hehims-projects.vercel.app'
 
   logger.info('Testing signout on preview deployment...')
 
@@ -71,7 +71,7 @@ async function testSignout() {
     if (sessionAfterResponse.ok) {
       const sessionData = await sessionAfterResponse.json()
       logger.info('Session after signout:', sessionData)
-      if (sessionData.session || sessionData.user) {
+      if (sessionData && (sessionData.session || sessionData.user)) {
         logger.error('❌ Session still exists after signout!')
       } else {
         logger.info('✅ Session successfully cleared')

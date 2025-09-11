@@ -110,6 +110,7 @@ function getTrustedOrigins(): string[] {
       'https://ultracoach-git-preview-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-staging-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-test-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-refactor-jotai-atom-6ba6ae-shane-hehims-projects.vercel.app',
     ]
     origins.push(...previewUrls)
   }
