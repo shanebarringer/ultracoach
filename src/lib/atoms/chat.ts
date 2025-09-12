@@ -215,16 +215,19 @@ export const sendMessageActionAtom = atom(
       content: payload.content,
       workout_id: payload.workoutId || null,
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       sender: {
         id: user.id,
         email: user.email,
         userType: (user.userType || 'runner') as 'runner' | 'coach',
-        full_name: user.name || '',
-        created_at: '',
-        updated_at: '',
+        full_name: user.name || user.email || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
       read: false,
       optimistic: true,
+      // Add additional fields that might be expected
+      context_type: payload.workoutId ? 'workout' : 'general',
     }
 
     // Add optimistic message immediately
@@ -251,27 +254,25 @@ export const sendMessageActionAtom = atom(
       const data = await response.json()
       const realMessage = data.message || data
 
+      // Ensure the real message has sender data
+      const messageWithSender = {
+        ...realMessage,
+        sender: realMessage.sender || {
+          id: user.id,
+          email: user.email,
+          userType: (user.userType || 'runner') as 'runner' | 'coach',
+          full_name: user.name || user.email || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        optimistic: false,
+      }
+
       // Replace optimistic message with real message
-      set(messagesAtom, prev =>
-        prev.map(msg => (msg.tempId === tempId ? { ...realMessage, optimistic: false } : msg))
-      )
+      set(messagesAtom, prev => prev.map(msg => (msg.tempId === tempId ? messageWithSender : msg)))
 
-      // Trigger a refetch of messages to ensure UI is in sync
-      // This is a workaround for the real-time updates being disabled
-      setTimeout(async () => {
-        try {
-          const refreshResponse = await fetch(`/api/messages?recipientId=${payload.recipientId}`)
-          if (refreshResponse.ok) {
-            const refreshData = await refreshResponse.json()
-            const fetchedMessages = refreshData.messages || []
-
-            // Update messages atom with fetched messages
-            set(messagesAtom, fetchedMessages)
-          }
-        } catch (error) {
-          console.error('Failed to refresh messages after sending:', error)
-        }
-      }, 500)
+      // Don't refetch - the optimistic update and replacement should be enough
+      // The polling mechanism in useMessages will catch any missed updates
 
       return realMessage
     } catch (error) {

@@ -2,7 +2,7 @@
 
 import { MagnifyingGlassIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import { Avatar, Button, Card, CardBody, Chip, Input } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { loadable } from 'jotai/utils'
 import { toast } from 'sonner'
 
@@ -11,6 +11,7 @@ import { useMemo } from 'react'
 import { useSession } from '@/hooks/useBetterSession'
 import {
   availableRunnersAtom,
+  connectedRunnersAtom,
   connectingRunnerIdsAtom,
   runnerSearchTermAtom,
 } from '@/lib/atoms/index'
@@ -30,6 +31,8 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
   const runnersLoadable = useAtomValue(availableRunnersLoadableAtom)
   const [searchTerm, setSearchTerm] = useAtom(runnerSearchTermAtom)
   const [connectingIds, setConnectingIds] = useAtom(connectingRunnerIdsAtom)
+  const refreshConnectedRunners = useSetAtom(connectedRunnersAtom)
+  const refreshAvailableRunners = useSetAtom(availableRunnersAtom)
 
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
@@ -91,6 +94,12 @@ export function RunnerSelector({ onRelationshipCreated }: RunnerSelectorProps) {
 
       logger.info('Connection request sent successfully', { runnerId })
       toast.success('Connection request sent to runner!')
+
+      // Refresh the connected runners atom to update dashboard
+      refreshConnectedRunners()
+
+      // Also refresh available runners to remove the connected runner
+      refreshAvailableRunners()
 
       // Notify parent component to refresh connected runners
       onRelationshipCreated?.()
