@@ -54,6 +54,7 @@ playwright/.auth
 blob-report/
 debug-*.png
 successful-*.png
+playwright-results.txt
 supabase/migrations_old/
 
 # mcp config

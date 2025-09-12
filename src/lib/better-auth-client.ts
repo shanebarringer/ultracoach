@@ -2,6 +2,8 @@ import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
 import type { auth } from '@/lib/better-auth'
+// Re-exported types from better-auth
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Session, User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
 
@@ -154,4 +156,5 @@ export const authClient = {
   },
 }
 
-export type { Session, User }
+export type { Session } from './better-auth'
+export type { User } from './better-auth'

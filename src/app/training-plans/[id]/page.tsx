@@ -22,7 +22,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms'
+import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -511,19 +511,19 @@ export default function TrainingPlanDetailPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <UserIcon className="w-4 h-4 text-secondary" />
                       <h3 className="font-semibold text-secondary">
-                        {session.user.role === 'coach' ? 'Runner' : 'Coach'}
+                        {session.user.userType === 'coach' ? 'Runner' : 'Coach'}
                       </h3>
                     </div>
                     <p className="text-foreground font-medium">
-                      {session.user.role === 'coach'
+                      {session.user.userType === 'coach'
                         ? extendedTrainingPlan.runners?.full_name || 'Runner not found'
                         : extendedTrainingPlan.coaches?.full_name || 'Coach not found'}
                     </p>
-                    {(session.user.role === 'coach'
+                    {(session.user.userType === 'coach'
                       ? extendedTrainingPlan.runners?.email
                       : extendedTrainingPlan.coaches?.email) && (
                       <p className="text-foreground/70 text-sm">
-                        {session.user.role === 'coach'
+                        {session.user.userType === 'coach'
                           ? extendedTrainingPlan.runners?.email
                           : extendedTrainingPlan.coaches?.email}
                       </p>
@@ -573,7 +573,7 @@ export default function TrainingPlanDetailPage() {
                 <CalendarIcon className="w-5 h-5 text-success" />
                 Workouts
               </h2>
-              {session.user.role === 'coach' && (
+              {session.user.userType === 'coach' && (
                 <Button
                   color="success"
                   onPress={() => setShowAddWorkout(true)}
@@ -592,11 +592,11 @@ export default function TrainingPlanDetailPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">No workouts yet</h3>
                 <p className="text-foreground/70 mb-4">
-                  {session.user.role === 'coach'
+                  {session.user.userType === 'coach'
                     ? 'Add workouts to get started with this training plan.'
                     : 'Your coach will add workouts to this training plan.'}
                 </p>
-                {session.user.role === 'coach' && (
+                {session.user.userType === 'coach' && (
                   <Button
                     color="success"
                     onPress={() => setShowAddWorkout(true)}
@@ -690,7 +690,7 @@ export default function TrainingPlanDetailPage() {
                                 </div>
 
                                 <div className="flex gap-2 mt-4">
-                                  {session.user.role === 'runner' &&
+                                  {session.user.userType === 'runner' &&
                                     workout.status === 'planned' && (
                                       <button
                                         onClick={() => handleLogWorkout(workout)}
@@ -699,7 +699,7 @@ export default function TrainingPlanDetailPage() {
                                         Log Workout
                                       </button>
                                     )}
-                                  {session.user.role === 'runner' &&
+                                  {session.user.userType === 'runner' &&
                                     workout.status === 'completed' && (
                                       <button
                                         onClick={() => handleLogWorkout(workout)}

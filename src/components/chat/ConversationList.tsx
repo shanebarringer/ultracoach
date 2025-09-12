@@ -93,14 +93,14 @@ const ConversationItem = memo(
                   name: 'text-white font-semibold',
                 }}
               />
-              {partner?.role && (
+              {partner?.userType && (
                 <Chip
                   size="sm"
-                  color={getRoleColor(partner.role)}
+                  color={getRoleColor(partner.userType)}
                   variant="solid"
                   className="absolute -bottom-1 -right-1 min-w-unit-5 h-unit-5 text-tiny"
                 >
-                  {partner.role === 'coach' ? '🏔️' : '🏃'}
+                  {partner.userType === 'coach' ? '🏔️' : '🏃'}
                 </Chip>
               )}
             </div>
@@ -108,14 +108,14 @@ const ConversationItem = memo(
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground truncate">{partnerName}</h3>
-                  {partner?.role && (
+                  {partner?.userType && (
                     <Chip
                       size="sm"
-                      color={getRoleColor(partner.role)}
+                      color={getRoleColor(partner.userType)}
                       variant="flat"
                       className="text-tiny capitalize"
                     >
-                      {partner.role}
+                      {partner.userType}
                     </Chip>
                   )}
                 </div>

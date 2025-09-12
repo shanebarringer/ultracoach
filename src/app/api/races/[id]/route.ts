@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+
+const logger = createLogger('api-races-id')
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,28 +20,28 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: race, error } = await supabase.from('races').select('*').eq('id', id).single()
 
     if (error) {
-      console.error('Error fetching race:', error)
+      logger.error('Error fetching race:', error)
       return NextResponse.json({ error: 'Race not found' }, { status: 404 })
     }
 
     // Check access permissions
-    if (session.user.role !== 'coach' && race.created_by !== session.user.id) {
+    if (session.user.userType !== 'coach' && race.created_by !== session.user.id) {
       // Runners can only see races they're targeting
-      const { data: planWithRace } = await supabase
+      const { data: plansWithRace } = await supabase
         .from('training_plans')
         .select('id')
         .eq('runner_id', session.user.id)
         .eq('race_id', id)
-        .single()
+        .limit(1)
 
-      if (!planWithRace) {
+      if (!plansWithRace || plansWithRace.length === 0) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
     return NextResponse.json({ race })
   } catch (error) {
-    console.error('Error in GET /api/races/[id]:', error)
+    logger.error('Error in GET /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -47,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const session = await getServerSession(request)
 
-    if (!session || session.user.role !== 'coach') {
+    if (!session || session.user.userType !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -104,13 +107,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .single()
 
     if (error) {
-      console.error('Error updating race:', error)
+      logger.error('Error updating race:', error)
       return NextResponse.json({ error: 'Failed to update race' }, { status: 500 })
     }
 
     return NextResponse.json({ race })
   } catch (error) {
-    console.error('Error in PUT /api/races/[id]:', error)
+    logger.error('Error in PUT /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -122,7 +125,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(request)
 
-    if (!session || session.user.role !== 'coach') {
+    if (!session || session.user.userType !== 'coach') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -152,7 +155,7 @@ export async function DELETE(
       .limit(1)
 
     if (planError) {
-      console.error('Error checking training plans:', planError)
+      logger.error('Error checking training plans:', planError)
       return NextResponse.json({ error: 'Failed to check race usage' }, { status: 500 })
     }
 
@@ -168,13 +171,13 @@ export async function DELETE(
     const { error } = await supabase.from('races').delete().eq('id', id)
 
     if (error) {
-      console.error('Error deleting race:', error)
+      logger.error('Error deleting race:', error)
       return NextResponse.json({ error: 'Failed to delete race' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in DELETE /api/races/[id]:', error)
+    logger.error('Error in DELETE /api/races/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

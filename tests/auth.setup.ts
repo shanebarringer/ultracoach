@@ -3,67 +3,59 @@ import path from 'path'
 
 const authFile = path.join(__dirname, '../playwright/.auth/user.json')
 
-setup('authenticate', async ({ page }) => {
-  // Use UI login for reliability
-  const baseUrl = process.env.CI ? 'http://localhost:3001' : ''
+setup('authenticate', async ({ page, context }) => {
+  console.log('🔐 Starting runner authentication setup...')
+
+  const baseUrl = process.env.CI ? 'http://localhost:3001' : 'http://localhost:3001'
+
+  // Navigate to signin page
   await page.goto(`${baseUrl}/auth/signin`)
+  console.log('📍 Navigated to signin page')
 
-  // Wait for form elements
-  await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 30000 })
-  await page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 30000 })
+  // Wait for the page to be fully loaded
+  await page.waitForLoadState('domcontentloaded')
 
-  // Fill credentials
-  await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-  await page.fill('input[type="password"]', 'RunnerPass2025!')
-
-  // Submit form
-  await page.click('button[type="submit"]')
-
-  // Wait for navigation after form submission
-  await page.waitForURL(
-    url => {
-      const path = new URL(url).pathname
-      return path.includes('/dashboard') || path === '/'
+  // Use the API directly instead of form submission to avoid JavaScript issues
+  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
+    data: {
+      email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
+      password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
     },
-    { timeout: 60000 }
-  )
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
 
-  // Navigate to runner dashboard if not there
-  if (!page.url().includes('/dashboard/runner')) {
-    await page.goto('/dashboard/runner')
-    await page.waitForURL(/\/dashboard\/runner/, { timeout: 30000 })
+  if (!response.ok()) {
+    console.error('Auth API response status:', response.status())
+    console.error('Auth API response:', await response.text())
+    throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
-  // Wait for dashboard content - be flexible with selectors
-  const dashboardIndicators = [
-    page.locator('text=Base Camp Dashboard'),
-    page.locator('h1:has-text("Base Camp Dashboard")'),
-    page.locator('[data-testid="runner-dashboard"]'),
-    page.locator('text=Your Training'),
-  ]
+  console.log('✅ Authentication API successful')
 
-  // Wait for at least one dashboard indicator
-  let dashboardLoaded = false
-  for (const indicator of dashboardIndicators) {
-    try {
-      await indicator.waitFor({ state: 'visible', timeout: 5000 })
-      dashboardLoaded = true
-      break
-    } catch {
-      // Try next indicator
+  // The API call should have set cookies, now navigate to dashboard
+  await page.goto(`${baseUrl}/dashboard/runner`)
+  await page.waitForLoadState('domcontentloaded')
+
+  // Verify we're on the dashboard
+  const currentUrl = page.url()
+  console.log('🔄 Current URL after auth:', currentUrl)
+
+  if (!currentUrl.includes('/dashboard')) {
+    // If redirected to signin, try refreshing to pick up cookies
+    await page.reload()
+    await page.waitForLoadState('domcontentloaded')
+
+    const finalUrl = page.url()
+    if (!finalUrl.includes('/dashboard')) {
+      throw new Error('Authentication failed - could not access dashboard after API auth')
     }
   }
 
-  if (!dashboardLoaded) {
-    throw new Error('Runner dashboard did not load properly')
-  }
+  console.log('✅ Successfully navigated to dashboard')
 
-  // Verify we're on runner dashboard
-  await expect(page).toHaveURL(/\/dashboard\/runner/)
-
-  // Wait a moment to ensure all cookies are set
-  await page.waitForTimeout(1000)
-
-  // Save authenticated state to file
-  await page.context().storageState({ path: authFile })
+  // Save the authentication state
+  await context.storageState({ path: authFile })
+  console.log(`💾 Saved authentication state to ${authFile}`)
 })

@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, Target } from 'lucide-react'
 
 import { memo } from 'react'
 
-import { workoutAtomFamily } from '@/lib/atoms'
+import { workoutAtomFamily } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 
 type WorkoutAtom = import('jotai').Atom<Workout | null>

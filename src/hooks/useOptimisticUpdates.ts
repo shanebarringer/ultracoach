@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { useCallback, useMemo } from 'react'
 
-import { messagesAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms'
+import { messagesAtom, trainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { MessageWithUser, TrainingPlan, Workout } from '@/lib/supabase'
 

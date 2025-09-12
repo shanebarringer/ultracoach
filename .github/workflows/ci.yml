@@ -63,7 +63,7 @@ jobs:
 
   playwright:
     # Run Playwright on main branch pushes and PR to CI-related branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/codebase-cleanup' && github.event_name == 'pull_request')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/codebase-cleanup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/jotai-atoms-modularization' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
@@ -91,11 +91,15 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
       SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
 
-      # Test user credentials (must match create-playwright-test-users.ts)
+      # Test user credentials (must match database)
       TEST_COACH_EMAIL: emma@ultracoach.dev
       TEST_COACH_PASSWORD: UltraCoach2025!
       TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
       TEST_RUNNER_PASSWORD: RunnerPass2025!
+      TEST_ADMIN_EMAIL: sarah.wilson@ultracoach.dev
+      TEST_ADMIN_PASSWORD: Test123!@#
+      TEST_SECOND_COACH_EMAIL: michael.chen@ultracoach.dev
+      TEST_SECOND_COACH_PASSWORD: Test123!@#
 
       # Auth configuration - must be set in GitHub repository secrets
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
@@ -132,6 +136,25 @@ jobs:
             PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test -f "$migration"
           done
           echo "Database schema setup complete"
+
+          # Add test data for coach-runner relationships
+          echo "Adding test data for unconnected coaches and runners..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_test << EOF
+          -- Create additional test coaches (unconnected)
+          INSERT INTO better_auth_users (id, email, name, full_name, role, user_type, email_verified, created_at, updated_at)
+          VALUES 
+            ('test-coach-1-unconnected', 'test.coach@ultracoach.dev', 'Test Coach', 'Test Coach One', 'user', 'coach', true, NOW(), NOW()),
+            ('test-coach-2-unconnected', 'test.coach2@ultracoach.dev', 'Coach Two', 'Test Coach Two', 'user', 'coach', true, NOW(), NOW())
+          ON CONFLICT (id) DO NOTHING;
+
+          -- Create additional test runners (unconnected)
+          INSERT INTO better_auth_users (id, email, name, full_name, role, user_type, email_verified, created_at, updated_at)
+          VALUES 
+            ('test-runner-1-unconnected', 'test.runner@ultracoach.dev', 'Test Runner', 'Test Runner One', 'user', 'runner', true, NOW(), NOW()),
+            ('test-runner-2-unconnected', 'test.runner2@ultracoach.dev', 'Runner Two', 'Test Runner Two', 'user', 'runner', true, NOW(), NOW())
+          ON CONFLICT (id) DO NOTHING;
+          EOF
+          echo "Test data setup complete"
 
       - name: Start Next.js app in development mode
         run: |
@@ -283,7 +306,10 @@ jobs:
           NODE_ENV: test
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+        run: |
+          # Install Playwright browser without system deps
+          # GitHub Actions Ubuntu runners already have most required dependencies
+          pnpm exec playwright install chromium
         timeout-minutes: 5
 
       - name: Verify app is ready before tests
@@ -324,21 +350,22 @@ jobs:
           echo "Testing app connection..."
           curl -v http://localhost:3001 2>&1 | head -20
 
-          # Show test configuration
+          # Show test configuration (avoid --list flag which causes EPIPE errors)
           echo "🎭 Playwright test configuration:"
-          npx playwright test --list | head -20
-          echo "Total tests to run: $(npx playwright test --list | wc -l)"
+          echo "  - Test files found: $(find tests -name '*.spec.ts' 2>/dev/null | wc -l)"
+          echo "  - E2E test files: $(find tests/e2e -name '*.spec.ts' 2>/dev/null | wc -l)"
 
           # Show test summary
           echo "📋 Test summary:"
-          echo "  - Total spec files: $(ls tests/*.spec.ts 2>/dev/null | wc -l)"
+          echo "  - Total spec files: $(ls tests/*.spec.ts tests/e2e/*.spec.ts 2>/dev/null | wc -l)"
+          echo "  - Setup files: $(ls tests/*.setup.ts 2>/dev/null | wc -l)"
 
           # Run tests with explicit config to skip webServer wait and add global timeout
           # Continue even if some tests fail to allow artifact upload
           # Increased timeout to 20 minutes to accommodate all tests
-          # Run all projects to ensure proper setup dependencies
-          # Added list reporter for better debugging in CI
-          npx playwright test --max-failures=3 --reporter=list --global-timeout=1200000 --workers=1 || TEST_EXIT_CODE=$?
+          # Use dot reporter for CI output and html for artifacts
+          # Use 2 workers as configured in playwright.config.ts for better performance
+          npx playwright test --max-failures=3 --reporter=dot --reporter=html --global-timeout=1200000 || TEST_EXIT_CODE=$?
 
           # Report status but don't fail yet to allow artifact upload
           if [ "${TEST_EXIT_CODE:-0}" -ne 0 ]; then
@@ -477,7 +504,9 @@ jobs:
         run: pnpm tsx scripts/testing/create-playwright-test-users.ts
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+        run: |
+          # Install Playwright browser without system deps
+          pnpm exec playwright install chromium
 
       - name: Set up Playwright MCP for sharded testing
         run: |

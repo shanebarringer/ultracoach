@@ -94,7 +94,7 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-456/log', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workoutData),
       })
@@ -124,7 +124,7 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-789/log', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(comprehensiveData),
       })

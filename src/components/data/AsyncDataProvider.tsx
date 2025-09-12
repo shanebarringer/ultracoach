@@ -6,7 +6,7 @@ import { useAtom } from 'jotai'
 import { ReactNode, Suspense } from 'react'
 
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { uiStateAtom } from '@/lib/atoms'
+import { uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncDataProvider')

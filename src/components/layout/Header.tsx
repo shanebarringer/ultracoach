@@ -21,7 +21,7 @@ import Link from 'next/link'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
-import { themeModeAtom, uiStateAtom } from '@/lib/atoms'
+import { themeModeAtom, uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Header')

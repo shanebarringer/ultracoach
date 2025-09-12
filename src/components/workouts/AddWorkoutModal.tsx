@@ -21,7 +21,7 @@ interface AddWorkoutModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  trainingPlanId: string
+  trainingPlanId?: string // Made optional for standalone workouts
   initialDate?: string // Pre-populate the date field
 }
 
@@ -108,7 +108,7 @@ export default function AddWorkoutModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          trainingPlanId,
+          trainingPlanId: trainingPlanId || null, // Handle optional trainingPlanId
           date: formData.date,
           plannedType: formData.plannedType,
           plannedDistance: formData.plannedDistance ? parseFloat(formData.plannedDistance) : null,

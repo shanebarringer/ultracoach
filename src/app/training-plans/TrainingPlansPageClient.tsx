@@ -12,7 +12,11 @@ import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingP
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
 import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useRefreshableTrainingPlans } from '@/hooks/useRefreshableTrainingPlans'
-import { filteredTrainingPlansAtom, trainingPlansLoadableAtom, uiStateAtom } from '@/lib/atoms'
+import {
+  filteredTrainingPlansAtom,
+  trainingPlansLoadableAtom,
+  uiStateAtom,
+} from '@/lib/atoms/index'
 import type { TrainingPlan } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
 
@@ -42,10 +46,12 @@ export default function TrainingPlansPageClient({ user }: Props) {
   // Get plans and loading state from loadable
   const getPlans = () => {
     if (trainingPlansLoadable.state === 'hasData') {
-      const plans = trainingPlansLoadable.data || []
-      return uiState.showArchived ? plans : (plans as TrainingPlan[]).filter(p => !p.archived)
+      const plansData = trainingPlansLoadable.data
+      const plans = Array.isArray(plansData) ? plansData : []
+      return uiState.showArchived ? plans : plans.filter(p => !p.archived)
     }
-    return filteredPlans // Fallback
+    // Fallback - ensure filteredPlans is an array
+    return Array.isArray(filteredPlans) ? filteredPlans : []
   }
 
   const isLoading = trainingPlansLoadable.state === 'loading'

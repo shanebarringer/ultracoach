@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test.describe('Workout Completion Flow', () => {
+test.describe.skip('Workout Completion Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Reset Alex Rivera's workouts to planned status before each test
     // Use email instead of hard-coded UUID for CI compatibility

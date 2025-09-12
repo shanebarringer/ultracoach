@@ -31,7 +31,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
-import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms'
+import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
@@ -201,7 +201,9 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
       )
     }
 
-    const runners = connectedRunnersLoadable.data || []
+    // Ensure runners is always an array
+    const runnersData = connectedRunnersLoadable.data
+    const runners = Array.isArray(runnersData) ? runnersData : []
 
     if (runners.length === 0) {
       return (

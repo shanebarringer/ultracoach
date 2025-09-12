@@ -1,0 +1,21 @@
+
+Running 102 tests using 6 workers
+🔐 Starting runner authentication setup...
+🔐 Starting coach authentication setup...
+📍 Navigated to signin page
+📍 Navigated to signin page
+·F✅ Authentication API successful
+✅ Coach authentication API successful
+FF××·🔐 Starting coach authentication setup...
+🔐 Starting runner authentication setup...
+📍 Navigated to signin page
+📍 Navigated to signin page
+✅ Coach authentication API successful
+✅ Authentication API successful
+F🔄 Current URL after auth: http://localhost:3001/dashboard/coach
+✅ Successfully navigated to coach dashboard
+💾 Saved coach authentication state to /Users/MXB5594/playground/ultracoach/playwright/.auth/coach.json
+🔄 Current URL after auth: http://localhost:3001/dashboard/runner
+✅ Successfully navigated to dashboard
+💾 Saved authentication state to /Users/MXB5594/playground/ultracoach/playwright/.auth/user.json
+±±···°··

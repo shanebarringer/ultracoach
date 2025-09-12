@@ -6,7 +6,7 @@ import { useAtom, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, trainingPlansAtom } from '@/lib/atoms'
+import { loadingStatesAtom, trainingPlansAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useTrainingPlansData')

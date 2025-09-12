@@ -12,7 +12,7 @@ import { useAtom } from 'jotai'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { stravaConnectionStatusAtom, stravaStateAtom } from '@/lib/atoms'
+import { stravaConnectionStatusAtom, stravaStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('StravaAutoReconnect')

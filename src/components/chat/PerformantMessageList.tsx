@@ -1,10 +1,13 @@
 'use client'
 
 import { useAtom } from 'jotai'
+import type { Atom, PrimitiveAtom } from 'jotai'
+import { splitAtom } from 'jotai/utils'
 
 import { memo, useEffect, useRef } from 'react'
 
-import { conversationMessagesAtomsFamily } from '@/lib/atoms'
+import { conversationMessagesAtomsFamily } from '@/lib/atoms/index'
+import type { OptimisticMessage } from '@/lib/supabase'
 
 import GranularMessage from './GranularMessage'
 
@@ -17,8 +20,11 @@ interface PerformantMessageListProps {
 const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMessageListProps) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
-  // Get split atoms for this conversation - each message gets its own atom
-  const [messageAtoms] = useAtom(conversationMessagesAtomsFamily(recipientId))
+  // Get the messages atom for this conversation
+  const messagesAtom = conversationMessagesAtomsFamily(recipientId)
+  // Split the array atom into individual atoms for each message
+  const messageAtomsAtom = splitAtom(messagesAtom)
+  const [messageAtoms] = useAtom(messageAtomsAtom) as [PrimitiveAtom<OptimisticMessage>[], unknown]
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -49,7 +55,7 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
       {messageAtoms.map((messageAtom, index) => (
         <GranularMessage
           key={index} // Use index as key since atom identity is stable
-          messageAtom={messageAtom}
+          messageAtom={messageAtom as unknown as Atom<import('@/lib/supabase').MessageWithUser>}
           currentUserId={currentUserId}
         />
       ))}

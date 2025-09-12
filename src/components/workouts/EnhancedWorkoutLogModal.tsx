@@ -39,7 +39,7 @@ import { z } from 'zod'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms'
+import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'

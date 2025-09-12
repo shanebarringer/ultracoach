@@ -215,6 +215,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                   <div
                     key={message.id}
                     className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    data-testid="message"
                   >
                     <div
                       className={`max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'order-1' : 'order-2'}`}

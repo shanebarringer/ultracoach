@@ -110,6 +110,7 @@ function getTrustedOrigins(): string[] {
       'https://ultracoach-git-preview-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-staging-shane-hehims-projects.vercel.app',
       'https://ultracoach-git-test-shane-hehims-projects.vercel.app',
+      'https://ultracoach-git-refactor-jotai-atom-6ba6ae-shane-hehims-projects.vercel.app',
     ]
     origins.push(...previewUrls)
   }
@@ -180,11 +181,19 @@ try {
       maxPasswordLength: 128,
       forgotPasswordEnabled: true, // Enable password reset functionality
       sendResetPassword: async ({ user, url, token }) => {
-        logger.info('Password reset requested:', {
-          email: user.email,
-          resetUrl: url,
-          token: token.substring(0, 8) + '...', // Only log partial token for security
-        })
+        // Only log sensitive information in development
+        if (process.env.NODE_ENV === 'development') {
+          logger.info('Password reset requested (dev):', {
+            email: user.email,
+            resetUrl: url,
+            tokenPreview: token.substring(0, 8) + '...',
+          })
+        } else {
+          logger.info('Password reset requested', {
+            email: user.email,
+            // URL and token omitted in production logs for security
+          })
+        }
 
         // Generate HTML email template
         const htmlTemplate = `
@@ -330,15 +339,24 @@ UltraCoach - Conquer Your Mountain
           fullName?: string
           role?: string
         }
-        logger.info('🔍 Custom session transformation DEBUG:', {
+        // Reduce verbosity and PII in production logs
+        const logLevel = process.env.NODE_ENV === 'production' ? 'debug' : 'info'
+        const logPayload = {
           userId: user.id,
-          email: user.email,
           originalUserType: typedUser.userType,
-          originalRole: typedUser.role,
           transformedRole: (typedUser.userType as 'runner' | 'coach') || 'runner',
-          fullName: typedUser.fullName,
-          rawUser: JSON.stringify(user, null, 2),
-        })
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+          // Include more details in development
+          Object.assign(logPayload, {
+            email: user.email,
+            originalRole: typedUser.role,
+            fullName: typedUser.fullName,
+          })
+        }
+
+        logger[logLevel]('Custom session transformation', logPayload)
         return {
           user: {
             ...user,
@@ -379,7 +397,7 @@ export { auth }
 
 export type Session = typeof auth.$Infer.Session
 export type User = typeof auth.$Infer.Session.user & {
-  role: 'runner' | 'coach'
+  userType: 'runner' | 'coach'
   fullName?: string | null
 }
 
