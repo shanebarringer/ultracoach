@@ -5,7 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
+import { createLogger } from '@/lib/logger'
 import { coach_runners, user } from '@/lib/schema'
+
+const logger = createLogger('api-coaches-available')
 
 // GET /api/coaches/available - Get available coaches for the authenticated runner
 export async function GET(request: NextRequest) {
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
     const sessionUser = session.user as User
 
     // Only runners can browse for coaches - use transformed session data
-    if ((sessionUser as User & { role?: 'coach' | 'runner' }).role !== 'runner') {
+    if ((sessionUser as User & { userType?: 'coach' | 'runner' }).userType !== 'runner') {
       return NextResponse.json({ error: 'Only runners can browse for coaches' }, { status: 403 })
     }
 
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ coaches: availableCoaches })
   } catch (error) {
-    console.error('Error fetching available coaches:', error)
+    logger.error('Error fetching available coaches:', error)
     return NextResponse.json({ error: 'Failed to fetch available coaches' }, { status: 500 })
   }
 }

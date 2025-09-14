@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { useEffect } from 'react'
 
-import { themeModeAtom } from '@/lib/atoms'
+import { themeModeAtom } from '@/lib/atoms/index'
 
 export function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const [themeMode] = useAtom(themeModeAtom)

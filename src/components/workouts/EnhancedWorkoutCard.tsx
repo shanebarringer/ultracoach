@@ -18,7 +18,7 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
-import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms'
+import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
@@ -243,7 +243,11 @@ const StravaStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
 
     if (stravaData.status === 'synced' && stravaData.activity) {
       // Open Strava activity in new tab
-      window.open(`https://www.strava.com/activities/${stravaData.activity.id}`, '_blank')
+      window.open(
+        `https://www.strava.com/activities/${stravaData.activity.id}`,
+        '_blank',
+        'noopener,noreferrer'
+      )
     } else if (stravaData.status === 'syncable') {
       // Future: Trigger sync for this specific workout
       logger.debug('Sync workout to Strava requested:', { workoutId: workout?.id })
@@ -317,7 +321,11 @@ const StravaActionButton = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) 
     if (!actionData) return
 
     if (actionData.type === 'view' && actionData.activity) {
-      window.open(`https://www.strava.com/activities/${actionData.activity.id}`, '_blank')
+      window.open(
+        `https://www.strava.com/activities/${actionData.activity.id}`,
+        '_blank',
+        'noopener,noreferrer'
+      )
     } else if (actionData.type === 'sync') {
       // Future: Implement actual sync to Strava
       logger.debug('Sync workout to Strava action triggered:', { workoutId: workout?.id })

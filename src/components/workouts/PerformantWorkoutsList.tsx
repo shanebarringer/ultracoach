@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { memo } from 'react'
 
-import { filteredWorkoutsAtom } from '@/lib/atoms'
+import { filteredWorkoutsAtom } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 
 import GranularWorkoutCard from './GranularWorkoutCard'

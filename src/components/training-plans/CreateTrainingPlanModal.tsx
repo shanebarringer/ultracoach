@@ -24,7 +24,7 @@ import {
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -61,7 +61,7 @@ export default function CreateTrainingPlanModal({
   onSuccess,
 }: CreateTrainingPlanModalProps) {
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
-  const [races, refreshRaces] = useAtom(racesAtom)
+  const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
   // Use Jotai atom instead of local state
   const connectedRunners = useAtomValue(connectedRunnersAtom)
@@ -112,9 +112,14 @@ export default function CreateTrainingPlanModal({
     if (isOpen) {
       const fetchInitialData = async () => {
         // Fetch races using atom refresh
-        if (races.length === 0) {
+        const racesArray = Array.isArray(races) ? races : []
+        if (racesArray.length === 0) {
           try {
-            await refreshRaces()
+            const response = await fetch('/api/races')
+            if (response.ok) {
+              const data = await response.json()
+              setRaces(data)
+            }
           } catch (err) {
             logger.error('Error fetching races:', err)
           }
@@ -146,7 +151,7 @@ export default function CreateTrainingPlanModal({
       }
       fetchInitialData()
     }
-  }, [isOpen, races.length, refreshRaces, planTemplates.length, setPlanTemplates])
+  }, [isOpen, races, setRaces, planTemplates.length, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
@@ -347,7 +352,7 @@ export default function CreateTrainingPlanModal({
                   elevation_gain_feet: 0,
                   distance_miles: 0,
                 },
-                ...races,
+                ...(Array.isArray(races) ? races : []),
               ]}
             >
               {item => (

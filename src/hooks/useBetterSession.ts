@@ -1,7 +1,8 @@
 import { useAtom } from 'jotai'
 
-import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms'
+import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
+import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('useBetterSession')
@@ -45,8 +46,8 @@ export function useBetterSession() {
         return { success: false, error: error.message }
       }
 
-      setSession(session as Record<string, unknown>)
-      setUser((session?.user as Record<string, unknown>) || null)
+      setSession(session)
+      setUser(session?.user ? (session.user as User) : null)
 
       return { success: true, session }
     } catch (error) {
@@ -80,11 +81,8 @@ export function useSession() {
             id: (user?.id as string) || '',
             email: (user?.email as string) || '',
             name: (user?.name as string) || '',
-            role: (user?.role as 'runner' | 'coach') || 'runner',
-            userType:
-              (user?.userType as 'runner' | 'coach') ||
-              (user?.role as 'runner' | 'coach') ||
-              'runner',
+            role: (user?.userType as 'runner' | 'coach') || 'runner',
+            userType: (user?.userType as 'runner' | 'coach') || 'runner',
           },
         }
       : null,

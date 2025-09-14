@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { useCallback } from 'react'
 
-import { asyncWorkoutsAtom, workoutsAtom, workoutsRefreshTriggerAtom } from '@/lib/atoms'
+import { asyncWorkoutsAtom, workoutsAtom, workoutsRefreshTriggerAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 

@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation'
 import ChatWindow from '@/components/chat/ChatWindow'
 import ConversationList from '@/components/chat/ConversationList'
 import Layout from '@/components/layout/Layout'
-import { selectedRecipientAtom } from '@/lib/atoms'
+import { selectedRecipientAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
 

@@ -1,27 +1,30 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useSetAtom } from 'jotai'
 
 import { useEffect } from 'react'
 
-import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms'
+import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
+import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('BetterAuthProvider')
 
 export function BetterAuthProvider({ children }: { children: React.ReactNode }) {
-  const [, setSession] = useAtom(sessionAtom)
-  const [, setUser] = useAtom(userAtom)
-  const [, setAuthLoading] = useAtom(authLoadingAtom)
+  const setSession = useSetAtom(sessionAtom)
+  const setUser = useSetAtom(userAtom)
+  const setAuthLoading = useSetAtom(authLoadingAtom)
 
   useEffect(() => {
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
 
     // Get initial session
-    const getSession = async () => {
+    const getSession = async (isInitial = false) => {
       try {
+        // Only set loading for initial session check, not periodic refreshes
+        if (isInitial) setAuthLoading(true)
         const { data: session, error } = await authClient.getSession()
 
         if (error) {
@@ -34,7 +37,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         } else if (session) {
           logger.info('Better Auth session restored:', session.user?.email)
           setSession(session)
-          setUser(session?.user || null)
+          setUser(session?.user ? (session.user as User) : null)
         } else {
           // No session found, which is normal for unauthenticated users
           setSession(null)
@@ -50,8 +53,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
-    // Get initial session
-    getSession()
+    // Get initial session - pass isInitial flag
+    getSession(true)
 
     // Set up periodic session refresh to prevent staleness
     // This helps fix the issue where users need manual refresh after login

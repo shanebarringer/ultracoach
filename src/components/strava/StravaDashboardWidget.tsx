@@ -24,7 +24,7 @@ import {
   syncStatsAtom,
   triggerWorkoutMatchingAtom,
   workoutStravaShowPanelAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import type { StravaActivity } from '@/types/strava'
@@ -201,7 +201,7 @@ const StravaDashboardWidget = memo(({ className = '' }: StravaDashboardWidgetPro
   }, [setShowStravaPanel])
 
   const handleViewActivity = useCallback((activityId: string) => {
-    window.open(`https://www.strava.com/activities/${activityId}`, '_blank')
+    window.open(`https://www.strava.com/activities/${activityId}`, '_blank', 'noopener,noreferrer')
   }, [])
 
   return (

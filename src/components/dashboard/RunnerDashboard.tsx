@@ -27,7 +27,7 @@ import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { uiStateAtom } from '@/lib/atoms'
+import { uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
@@ -333,7 +333,8 @@ function RunnerDashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
           <p className="text-foreground-600">
-            Welcome back, {session?.user?.name as string}! Track your journey to peak performance
+            Welcome back, {(session?.user?.name || 'Athlete') as string}! Track your journey to peak
+            performance
           </p>
         </div>
 

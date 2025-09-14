@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 
 import { memo, useCallback, useMemo } from 'react'
 
-import { chatUiStateAtom, workoutLookupMapAtom } from '@/lib/atoms'
+import { chatUiStateAtom, workoutLookupMapAtom } from '@/lib/atoms/index'
 import type { MessageWithUser } from '@/lib/supabase'
 
 import WorkoutContext from './WorkoutContext'

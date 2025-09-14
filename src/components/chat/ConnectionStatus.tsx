@@ -6,7 +6,7 @@ import { Loader2, Wifi, WifiOff } from 'lucide-react'
 
 import { useEffect } from 'react'
 
-import { uiStateAtom } from '@/lib/atoms'
+import { uiStateAtom } from '@/lib/atoms/index'
 
 export default function ConnectionStatus() {
   const [uiState, setUiState] = useAtom(uiStateAtom)

@@ -2,7 +2,7 @@
 
 import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
-import { Activity, Mountain, Users } from 'lucide-react'
+import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
 import { useCallback, useMemo, useState } from 'react'
 
@@ -20,7 +20,7 @@ import {
   uiStateAtom,
   workoutStravaShowPanelAtom,
   workoutsAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
@@ -28,6 +28,11 @@ import type { ServerSession } from '@/utils/auth-server'
 const logger = createLogger('WorkoutsPageClient')
 
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
+  loading: () => null,
+  ssr: false,
+})
+
+const AddWorkoutModal = dynamic(() => import('@/components/workouts/AddWorkoutModal'), {
   loading: () => null,
   ssr: false,
 })
@@ -168,16 +173,28 @@ export default function WorkoutsPageClient({ user }: Props) {
                 </p>
               </div>
 
-              {/* Strava Panel Toggle */}
-              <Button
-                variant={showStravaPanel ? 'solid' : 'bordered'}
-                color="primary"
-                onPress={handleToggleStravaPanel}
-                startContent={<Activity className="h-4 w-4" />}
-                className="hidden sm:flex"
-              >
-                Strava Sync
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {!isCoach && (
+                  <Button
+                    variant="solid"
+                    color="primary"
+                    onPress={() => setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: true }))}
+                    startContent={<Plus className="h-4 w-4" />}
+                  >
+                    New Workout
+                  </Button>
+                )}
+                <Button
+                  variant={showStravaPanel ? 'solid' : 'bordered'}
+                  color="primary"
+                  onPress={handleToggleStravaPanel}
+                  startContent={<Activity className="h-4 w-4" />}
+                  className="hidden sm:flex"
+                >
+                  Strava Sync
+                </Button>
+              </div>
             </div>
 
             {/* Coach Controls */}
@@ -257,6 +274,19 @@ export default function WorkoutsPageClient({ user }: Props) {
               onSuccess={handleLogWorkoutSuccess}
               workout={uiState.selectedWorkout as Workout}
               defaultToComplete={uiState.defaultToComplete}
+            />
+          )}
+
+          {/* Add Workout Modal */}
+          {uiState.isAddWorkoutModalOpen && (
+            <AddWorkoutModal
+              isOpen={uiState.isAddWorkoutModalOpen}
+              onClose={() => setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: false }))}
+              onSuccess={() => {
+                setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: false }))
+                // Refresh workouts would go here if needed
+              }}
+              // trainingPlanId is optional for standalone workouts
             />
           )}
 

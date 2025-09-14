@@ -27,7 +27,7 @@ import {
   TableRow,
   Tooltip,
 } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   Activity,
   AlertTriangle,
@@ -46,7 +46,12 @@ import {
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { stravaActivitiesRefreshableAtom, stravaStateAtom, workoutsAtom } from '@/lib/atoms'
+import {
+  stravaActivitiesAtom,
+  stravaActivitiesRefreshableAtom,
+  stravaStateAtom,
+  workoutsAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { StravaActivity } from '@/types/strava'
 import {
@@ -100,7 +105,8 @@ const StravaActivityBrowser = memo(
   ({ isOpen, onClose, onActivitySelected, onBulkSync }: StravaActivityBrowserProps) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [stravaState] = useAtom(stravaStateAtom)
-    const [activities, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
+    const activities = useAtomValue(stravaActivitiesAtom)
+    const refreshActivities = useSetAtom(stravaActivitiesRefreshableAtom)
     const [workouts] = useAtom(workoutsAtom)
 
     // State management

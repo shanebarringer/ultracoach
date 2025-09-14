@@ -20,7 +20,7 @@ import { Calendar, Link2, MapPin, Target } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useWorkouts } from '@/hooks/useWorkouts'
-import { workoutLinkSelectorSearchAtom } from '@/lib/atoms'
+import { workoutLinkSelectorSearchAtom } from '@/lib/atoms/index'
 import { Workout } from '@/lib/supabase'
 
 interface WorkoutLinkSelectorProps {

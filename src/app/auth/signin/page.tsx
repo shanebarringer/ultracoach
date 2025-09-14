@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { LockIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
 import React from 'react'
@@ -18,7 +18,7 @@ import {
   sessionAtom,
   signInFormAtom,
   userAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
@@ -29,8 +29,8 @@ const logger = createLogger('SignIn')
 export default function SignIn() {
   const [formState, setFormState] = useAtom(signInFormAtom)
   const router = useRouter()
-  const [, setSession] = useAtom(sessionAtom)
-  const [, setUser] = useAtom(userAtom)
+  const setSession = useSetAtom(sessionAtom)
+  const setUser = useSetAtom(userAtom)
   const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
   const [isRedirecting, setIsRedirecting] = useAtom(authRedirectingAtom)
 
@@ -98,10 +98,10 @@ export default function SignIn() {
         if (sessionData?.data) {
           // Update Jotai atoms with complete session data
           setSession(sessionData.data)
-          setUser(sessionData.data.user)
+          setUser(sessionData.data.user as User)
 
-          // Extract role from session - customSession handles userType → role mapping
-          const userRole = (sessionData.data.user as User).role || 'runner'
+          // Extract role from session - customSession handles userType mapping
+          const userRole = (sessionData.data.user as User).userType || 'runner'
 
           logger.info('Final user role determined:', {
             userRole,
@@ -117,27 +117,17 @@ export default function SignIn() {
           // This should fix the refresh issue on preview deployments
           await new Promise(resolve => setTimeout(resolve, 500))
 
-          // Use window.location in preview/production to force complete page reload
-          // This ensures server-side authentication is properly synchronized
+          // Determine the dashboard URL based on user role
+          const dashboardUrl = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+
           logger.info('✅ Redirecting authenticated user to dashboard', {
             userRole,
             userId: sessionData.data.user.id,
-            isProduction: process.env.NODE_ENV === 'production',
-            useHardRedirect: process.env.NODE_ENV === 'production' || !!process.env.VERCEL_URL,
+            dashboardUrl,
           })
 
-          // In preview/production deployments, use hard redirect to ensure session sync
-          if (
-            typeof window !== 'undefined' &&
-            (process.env.NODE_ENV === 'production' || process.env.VERCEL_URL)
-          ) {
-            logger.info(
-              'Using window.location for preview/production redirect to ensure session sync'
-            )
-            window.location.href = '/dashboard'
-          } else {
-            router.push('/dashboard')
-          }
+          // Use Next.js router for client-side navigation (best practice)
+          router.push(dashboardUrl)
         } else {
           logger.error('Failed to get session data after sign in')
           setIsRedirecting(false)
@@ -218,12 +208,7 @@ export default function SignIn() {
                   <p className="text-sm text-green-700 dark:text-green-400">{successMessage}</p>
                 </div>
               )}
-              <form
-                className="space-y-6"
-                onSubmit={handleSubmit(onSubmit)}
-                method="post"
-                action="/api/auth/sign-in/email"
-              >
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
                 <div className="space-y-4">
                   <Controller
                     name="email"

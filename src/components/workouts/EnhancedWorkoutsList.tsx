@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
 import { memo, useEffect, useMemo } from 'react'
@@ -17,7 +17,7 @@ import {
   workoutStatusFilterAtom,
   workoutTypeFilterAtom,
   workoutViewModeAtom,
-} from '@/lib/atoms'
+} from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
@@ -35,7 +35,7 @@ type SortOption = 'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'
 
 const EnhancedWorkoutsList = memo(
   ({ userRole, onEditWorkout, onLogWorkout, variant = 'default' }: EnhancedWorkoutsListProps) => {
-    const [workouts] = useAtom(filteredWorkoutsAtom)
+    const workouts = useAtomValue(filteredWorkoutsAtom)
     const searchParams = useSearchParams()
 
     // Centralized filtering and sorting state using atoms
