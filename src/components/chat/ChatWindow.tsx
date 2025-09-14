@@ -283,7 +283,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         <PerformantMessageList
           recipientId={recipientId}
           currentUserId={(session?.user?.id as string) || ''}
-          messages={messages}
         />
 
         {/* Typing Indicator */}
