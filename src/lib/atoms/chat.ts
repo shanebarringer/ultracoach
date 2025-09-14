@@ -1,6 +1,6 @@
 // Chat and messaging atoms
 import { atom } from 'jotai'
-import { atomFamily, atomWithStorage } from 'jotai/utils'
+import { atomWithStorage } from 'jotai/utils'
 
 import type { OptimisticMessage, Workout } from '@/lib/supabase'
 import type { Conversation } from '@/types/chat'
@@ -147,27 +147,9 @@ export const selectedRecipientAtom = atom(
   }
 )
 
-// Conversation messages atoms family - stores messages per conversation
-export const conversationMessagesAtomsFamily = atomFamily((_conversationId: string) =>
-  atom<OptimisticMessage[]>([])
-)
-
-// Async atom family for fetching messages - separate from storage
-export const fetchConversationMessagesFamily = atomFamily((conversationId: string) =>
-  atom(async () => {
-    try {
-      const response = await fetch(`/api/conversations/${conversationId}/messages`)
-      if (response.ok) {
-        const data = await response.json()
-        return Array.isArray(data) ? data : data.messages || []
-      }
-      return []
-    } catch (error) {
-      console.error(`Failed to fetch messages for conversation ${conversationId}:`, error)
-      return []
-    }
-  })
-)
+// Note: Removed conversationMessagesAtomsFamily and fetchConversationMessagesFamily
+// We now use derived atoms to filter messages from the global messagesAtom
+// This follows Jotai best practices: derive state, don't duplicate it
 
 /**
  * Write-only atom for sending messages between users.

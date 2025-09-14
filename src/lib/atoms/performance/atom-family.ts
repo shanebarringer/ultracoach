@@ -114,25 +114,9 @@ export const loadingStateFamily = atomFamily((_operationId: string) => atom(fals
  */
 export const errorStateFamily = atomFamily((_operationId: string) => atom<string | null>(null))
 
-/**
- * Messages by conversation family for async loading
- * Fetches and caches messages for individual conversations
- *
- * @example
- * ```typescript
- * const messagesAtom = messagesByConversationLoadableFamily('conv-123')
- * const messages = await get(messagesAtom) // Triggers fetch if not cached
- * // Clean up: messagesByConversationLoadableFamily.remove('conv-123')
- * ```
- */
-export const messagesByConversationLoadableFamily = atomFamily((conversationId: string) =>
-  atom(async () => {
-    // Fetch messages for specific conversation
-    const response = await fetch(`/api/messages/conversation/${conversationId}`)
-    if (!response.ok) return []
-    return response.json()
-  })
-)
+// Note: Removed messagesByConversationLoadableFamily
+// Messages are now filtered from the global messagesAtom using derived atoms
+// This follows Jotai best practices: derive state, don't duplicate it
 
 /**
  * Enhanced atom families with built-in cleanup mechanisms

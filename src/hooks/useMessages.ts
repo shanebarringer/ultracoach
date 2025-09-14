@@ -1,9 +1,8 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import { loadable } from 'jotai/utils'
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -12,7 +11,6 @@ import {
   currentConversationIdAtom,
   loadingStatesAtom,
   messagesAtom,
-  messagesByConversationLoadableFamily,
   messagesFetchTimestampAtom,
   selectedRecipientAtom,
   sendMessageActionAtom,
@@ -37,16 +35,6 @@ export function useMessages(recipientId?: string) {
 
   // Use ref to track loaded conversations without causing re-renders
   const loadedConversationsRef = useRef<Set<string>>(new Set())
-
-  // Wrap async atom with loadable for client component compatibility
-  const loadableMessagesAtom = useMemo(
-    () =>
-      recipientId ? loadable(messagesByConversationLoadableFamily(recipientId)) : messagesAtom,
-    [recipientId]
-  )
-
-  // Use atomFamily for conversation-specific messages
-  const [conversationMessages] = useAtom(loadableMessagesAtom)
 
   // Use action atom for sending messages
   const [, sendMessageAction] = useAtom(sendMessageActionAtom)
@@ -339,24 +327,11 @@ export function useMessages(recipientId?: string) {
     }
   }, [recipientId, setChatUiState, fetchMessages, setUiState])
 
-  // Get messages for current conversation using loadable pattern
+  // Get messages for current conversation by filtering global messages
   const getConversationMessages = () => {
-    if (!recipientId) return []
+    if (!recipientId || !session?.user?.id) return []
 
-    if (
-      conversationMessages &&
-      typeof conversationMessages === 'object' &&
-      'state' in conversationMessages
-    ) {
-      // Using loadable atom
-      if (conversationMessages.state === 'hasData') {
-        return conversationMessages.data || []
-      }
-      return []
-    }
-
-    // Fallback to filtering global messages
-    if (!session?.user?.id) return []
+    // Filter messages for this specific conversation
     return messages.filter(
       message =>
         (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
@@ -365,16 +340,6 @@ export function useMessages(recipientId?: string) {
   }
 
   const getLoadingState = () => {
-    if (!recipientId) return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
-
-    if (
-      conversationMessages &&
-      typeof conversationMessages === 'object' &&
-      'state' in conversationMessages
-    ) {
-      return conversationMessages.state === 'loading'
-    }
-
     return loadingStates.messages && !chatUiState.hasInitiallyLoadedMessages
   }
 
