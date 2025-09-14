@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom } from 'jotai'
-import type { Atom, PrimitiveAtom } from 'jotai'
+import type { PrimitiveAtom } from 'jotai'
 import { splitAtom } from 'jotai/utils'
 
 import { memo, useEffect, useRef } from 'react'
@@ -22,7 +22,7 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
 
   // Get the messages atom for this conversation
   const messagesAtom = conversationMessagesAtomsFamily(recipientId)
-  // Split the array atom into individual atoms for each message
+  // Split the array into individual atoms for each message
   const messageAtomsAtom = splitAtom(messagesAtom)
   const [messageAtoms] = useAtom(messageAtomsAtom) as [PrimitiveAtom<OptimisticMessage>[], unknown]
 
@@ -55,7 +55,7 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
       {messageAtoms.map((messageAtom, index) => (
         <GranularMessage
           key={index} // Use index as key since atom identity is stable
-          messageAtom={messageAtom as unknown as Atom<import('@/lib/supabase').MessageWithUser>}
+          messageAtom={messageAtom}
           currentUserId={currentUserId}
         />
       ))}
