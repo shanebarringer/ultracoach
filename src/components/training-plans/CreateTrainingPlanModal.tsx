@@ -118,7 +118,7 @@ export default function CreateTrainingPlanModal({
             const response = await fetch('/api/races')
             if (response.ok) {
               const data = await response.json()
-              setRaces(data)
+              setRaces(data || [])
             }
           } catch (err) {
             logger.error('Error fetching races:', err)

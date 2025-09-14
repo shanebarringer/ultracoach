@@ -2,12 +2,53 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
 // Core race atoms
 export const racesAtom = atom<Race[]>([])
 export const racesLoadingAtom = atom(false)
 export const racesErrorAtom = atom<string | null>(null)
+
+// Async race fetching atom with refresh trigger
+export const racesRefreshTriggerAtom = atom(0)
+
+export const asyncRacesAtom = atom(
+  async get => {
+    get(racesRefreshTriggerAtom) // Subscribe to refresh trigger
+    const logger = createLogger('AsyncRacesAtom')
+
+    try {
+      logger.debug('Fetching races...')
+      const response = await fetch('/api/races', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        logger.error(`Failed to fetch races: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch races: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      logger.info('Races fetched successfully', { count: data.length || 0 })
+      return data || []
+    } catch (error) {
+      logger.error('Error fetching races:', error)
+      return []
+    }
+  },
+  (_, set, newValue: Race[]) => {
+    set(racesAtom, newValue)
+  }
+)
+
+// Refresh action atom
+export const refreshRacesAtom = atom(null, (_, set) => {
+  set(racesRefreshTriggerAtom, prev => prev + 1)
+})
 
 // Selected race atoms
 export const selectedRaceAtom = atom<Race | null>(null)

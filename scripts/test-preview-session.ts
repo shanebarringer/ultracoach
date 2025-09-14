@@ -30,7 +30,7 @@ async function testSession() {
     if (sessionResponse.ok) {
       const sessionData = await sessionResponse.json()
       logger.info('Current session data:', JSON.stringify(sessionData, null, 2))
-      
+
       if (sessionData && (sessionData.session || sessionData.user)) {
         logger.info('✅ Active session found')
         logger.info('User:', sessionData.user)
@@ -65,7 +65,7 @@ async function testSession() {
 
     const signOutText = await signOutResponse.text()
     logger.info('Sign out response status:', signOutResponse.status)
-    
+
     if (signOutResponse.ok) {
       try {
         const data = JSON.parse(signOutText)
@@ -91,7 +91,7 @@ async function testSession() {
     if (sessionAfterResponse.ok) {
       const sessionData = await sessionAfterResponse.json()
       logger.info('Session after signout:', JSON.stringify(sessionData, null, 2))
-      
+
       if (sessionData && (sessionData.session || sessionData.user)) {
         logger.error('❌ Session still exists after signout!')
       } else {
@@ -109,7 +109,6 @@ async function testSession() {
     logger.info('- Sessions should use secure cookies in production')
     logger.info('- SameSite should be set appropriately for cross-origin requests')
     logger.info('- Domain should match the deployment URL')
-    
   } catch (error) {
     logger.error('Network error:', error)
   }
