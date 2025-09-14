@@ -41,6 +41,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { asyncRacesAtom, racesAtom, refreshRacesAtom, selectedRaceAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
@@ -56,9 +57,10 @@ const DISTANCE_TYPES = [
 ]
 
 const TERRAIN_TYPES = [
-  { key: 'trail', label: 'Trail' },
-  { key: 'road', label: 'Road' },
-  { key: 'mixed', label: 'Mixed' },
+  { key: 'trail', label: 'Trail/Single Track' },
+  { key: 'mountain', label: 'Mountain/Technical' },
+  { key: 'road', label: 'Road/Paved' },
+  { key: 'mixed', label: 'Mixed Terrain' },
 ]
 
 // Inner component that uses the async atom
@@ -308,6 +310,7 @@ function RacesContent() {
                   size="lg"
                   variant="flat"
                   startContent={<UploadIcon className="w-5 h-5" />}
+                  aria-label="Import races from GPX or CSV files"
                 >
                   Import Races
                 </Button>
@@ -316,6 +319,7 @@ function RacesContent() {
                   color="primary"
                   size="lg"
                   startContent={<PlusIcon className="w-5 h-5" />}
+                  aria-label="Add a new race manually"
                 >
                   Add New Race
                 </Button>
@@ -339,6 +343,7 @@ function RacesContent() {
                   onSelectionChange={keys => setDistanceFilter(Array.from(keys).join(''))}
                   className="w-32"
                   variant="bordered"
+                  aria-label="Filter races by distance"
                   startContent={<FilterIcon className="w-4 h-4 text-foreground-400" />}
                 >
                   <SelectItem key="all">All Distances</SelectItem>
@@ -355,6 +360,7 @@ function RacesContent() {
                   onSelectionChange={keys => setTerrainFilter(Array.from(keys).join(''))}
                   className="w-32"
                   variant="bordered"
+                  aria-label="Filter races by terrain type"
                   startContent={<MountainSnowIcon className="w-4 h-4 text-foreground-400" />}
                 >
                   <SelectItem key="all">All Terrain</SelectItem>
@@ -522,6 +528,7 @@ function RacesContent() {
                   setTerrainFilter('all')
                 }}
                 className="ml-2 text-primary"
+                aria-label="Clear all search filters"
               >
                 Clear filters
               </Button>
@@ -548,6 +555,7 @@ function RacesContent() {
               color="primary"
               size="lg"
               startContent={<PlusIcon className="w-5 h-5" />}
+              aria-label="Add your first race to get started"
             >
               Add Your First Race
             </Button>
@@ -626,6 +634,7 @@ function RacesContent() {
                       variant="light"
                       size="sm"
                       onPress={() => handleOpenModal(race)}
+                      aria-label={`Edit ${race.name} race details`}
                     >
                       <EditIcon className="w-4 h-4" />
                     </Button>
@@ -635,6 +644,7 @@ function RacesContent() {
                       size="sm"
                       onPress={() => handleDelete(race.id)}
                       className="text-danger"
+                      aria-label={`Delete ${race.name} race`}
                     >
                       <TrashIcon className="w-4 h-4" />
                     </Button>
@@ -731,9 +741,11 @@ function RacesContent() {
 export default function RacesPageClient() {
   return (
     <Layout>
-      <Suspense fallback={<RacesPageSkeleton />}>
-        <RacesContent />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<RacesPageSkeleton />}>
+          <RacesContent />
+        </Suspense>
+      </ErrorBoundary>
     </Layout>
   )
 }

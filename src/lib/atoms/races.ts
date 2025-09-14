@@ -28,20 +28,23 @@ export const asyncRacesAtom = atom(
       })
 
       if (!response.ok) {
-        logger.error(`Failed to fetch races: ${response.status} ${response.statusText}`)
-        throw new Error(`Failed to fetch races: ${response.statusText}`)
+        const errorMessage = `Failed to fetch races: ${response.status} ${response.statusText}`
+        logger.error(errorMessage)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
       logger.info('Races fetched successfully', { count: data.length || 0 })
       return data || []
     } catch (error) {
+      // Re-throw to let Suspense boundary handle it
       logger.error('Error fetching races:', error)
-      return []
+      throw error
     }
   },
   (_, set, newValue: Race[]) => {
     set(racesAtom, newValue)
+    set(racesErrorAtom, null) // Clear any existing errors when data is set
   }
 )
 
