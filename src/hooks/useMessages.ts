@@ -1,8 +1,9 @@
 'use client'
 
 import { useAtom } from 'jotai'
+import { loadable } from 'jotai/utils'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -37,10 +38,15 @@ export function useMessages(recipientId?: string) {
   // Use ref to track loaded conversations without causing re-renders
   const loadedConversationsRef = useRef<Set<string>>(new Set())
 
-  // Use atomFamily for conversation-specific messages
-  const [conversationMessages] = useAtom(
-    recipientId ? messagesByConversationLoadableFamily(recipientId) : messagesAtom
+  // Wrap async atom with loadable for client component compatibility
+  const loadableMessagesAtom = useMemo(
+    () =>
+      recipientId ? loadable(messagesByConversationLoadableFamily(recipientId)) : messagesAtom,
+    [recipientId]
   )
+
+  // Use atomFamily for conversation-specific messages
+  const [conversationMessages] = useAtom(loadableMessagesAtom)
 
   // Use action atom for sending messages
   const [, sendMessageAction] = useAtom(sendMessageActionAtom)
