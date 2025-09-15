@@ -33,11 +33,14 @@ describe('Workout Completion Atoms', () => {
         data: { actual_distance: 5.2 },
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actual_distance: 5.2 }),
-      })
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/workouts/workout-123/complete',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actual_distance: 5.2 }),
+        }
+      )
     })
 
     it('should handle network errors gracefully', async () => {
@@ -93,7 +96,7 @@ describe('Workout Completion Atoms', () => {
         data: workoutData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-456/log', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-456/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workoutData),
@@ -123,7 +126,7 @@ describe('Workout Completion Atoms', () => {
         data: comprehensiveData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-789/log', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-789/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(comprehensiveData),
@@ -146,9 +149,12 @@ describe('Workout Completion Atoms', () => {
 
       await store.set(skipWorkoutAtom, 'workout-999')
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-999/complete', {
-        method: 'DELETE',
-      })
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/workouts/workout-999/complete',
+        {
+          method: 'DELETE',
+        }
+      )
     })
 
     it('should handle skip workout errors', async () => {
@@ -176,11 +182,14 @@ describe('Workout Completion Atoms', () => {
 
         await store.set(completeWorkoutAtom, { workoutId, data: {} })
 
-        expect(fetch).toHaveBeenCalledWith(`/api/workouts/${workoutId}/complete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        })
+        expect(fetch).toHaveBeenCalledWith(
+          `http://localhost:3000/api/workouts/${workoutId}/complete`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          }
+        )
       }
     })
 
@@ -195,11 +204,14 @@ describe('Workout Completion Atoms', () => {
         data: {},
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-empty/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/workouts/workout-empty/complete',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }
+      )
     })
   })
 })
