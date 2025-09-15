@@ -1,6 +1,6 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 
 import { memo, useCallback, useMemo } from 'react'
 
@@ -35,8 +35,8 @@ const formatTime = (dateString: string) => {
 
 // Memoized individual message component - only re-renders when THIS message changes
 const GranularMessage = memo(({ messageAtom, currentUserId }: GranularMessageProps) => {
-  const [message] = useAtom(messageAtom)
-  const [workoutLookupMap] = useAtom(workoutLookupMapAtom)
+  const message = useAtomValue(messageAtom)
+  const workoutLookupMap = useAtomValue(workoutLookupMapAtom)
   const [, setChatUiState] = useAtom(chatUiStateAtom)
 
   // Optimized workout lookup using Map for O(1) performance instead of array.find()

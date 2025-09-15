@@ -3,9 +3,9 @@
 ## 📋 Current Status
 
 - **Active Milestone**: Testing Infrastructure & Quality Assurance ⚡ **IN PROGRESS 2025-09-01**
-- **Last Updated**: 2025-09-01
+- **Last Updated**: 2025-09-14
 - **Current Focus**: CI/CD pipeline stabilization, comprehensive testing, and production hardening
-- **Recent Achievement**: CI pipeline fixed - core Playwright tests passing reliably after major simplification
+- **Recent Achievement**: Fixed critical messaging display issue using Jotai best practices (2025-09-14)
 - **Major Progress**: 13+ completed milestones with 222+ core tasks, production-ready platform with comprehensive Strava integration
 - **Current Phase**: Phase 9 - Testing Infrastructure & Quality Assurance (transition from feature development to production readiness)
 - **✅ STATUS**: Core platform feature-complete, transitioning to production hardening and testing infrastructure
@@ -45,12 +45,13 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Fix Invalid CI Commands** - ✅ **COMPLETED 2025-09-01** - Removed problematic --list-projects command
 - [x] **Temporarily Disable Sharded Tests** - ✅ **COMPLETED 2025-09-01** - Disabled to maintain green CI while fixing
 
-### 🧪 **Phase A2: Test Coverage Restoration (📋 PLANNED)**
+### 🧪 **Phase A2: Test Coverage Restoration (🔄 IN PROGRESS)**
 
 **Goal**: Gradually re-enable and fix temporarily disabled tests
 
+- [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern
 - [ ] **Re-enable race-import.spec.ts** - Fix and re-enable race import tests
-- [ ] **Re-enable messaging-flow.spec.ts** - Fix and re-enable messaging tests
+- [ ] **Re-enable messaging-flow.spec.ts** - Fix and re-enable messaging tests (ready after messaging fix)
 - [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests
 - [ ] **Re-enable calendar-integration.spec.ts** - Fix and re-enable calendar tests
 - [ ] **Fix Sharded Test Infrastructure** - Resolve test user creation issues for parallel execution

@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest) {
       const raceResults = await db.select().from(races).orderBy(races.date)
 
       logger.info('Races fetched successfully', { count: raceResults.length })
-      return NextResponse.json({ races: raceResults })
+      return NextResponse.json(raceResults)
     } catch (error) {
       logger.error('Error fetching races:', error)
       return NextResponse.json({ error: 'Failed to fetch races' }, { status: 500 })

@@ -1,12 +1,12 @@
 'use client'
 
-import { useAtom } from 'jotai'
-import type { Atom, PrimitiveAtom } from 'jotai'
+import { atom, useAtom, useAtomValue } from 'jotai'
+import type { PrimitiveAtom } from 'jotai'
 import { splitAtom } from 'jotai/utils'
 
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
 
-import { conversationMessagesAtomsFamily } from '@/lib/atoms/index'
+import { messagesAtom, sessionAtom } from '@/lib/atoms/index'
 import type { OptimisticMessage } from '@/lib/supabase'
 
 import GranularMessage from './GranularMessage'
@@ -19,12 +19,33 @@ interface PerformantMessageListProps {
 // High-performance message list using splitAtom pattern
 const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMessageListProps) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const session = useAtomValue(sessionAtom)
 
-  // Get the messages atom for this conversation
-  const messagesAtom = conversationMessagesAtomsFamily(recipientId)
-  // Split the array atom into individual atoms for each message
-  const messageAtomsAtom = splitAtom(messagesAtom)
-  const [messageAtoms] = useAtom(messageAtomsAtom) as [PrimitiveAtom<OptimisticMessage>[], unknown]
+  // Create a derived atom that filters messages for this conversation
+  // This follows Jotai best practices: derive state, don't duplicate it
+  const filteredMessagesAtom = useMemo(
+    () =>
+      atom(get => {
+        const allMessages = get(messagesAtom)
+        if (!session?.user?.id) return []
+
+        // Filter messages for this specific conversation
+        return allMessages.filter(
+          message =>
+            (message.sender_id === session.user.id && message.recipient_id === recipientId) ||
+            (message.sender_id === recipientId && message.recipient_id === session.user.id)
+        )
+      }),
+    [recipientId, session?.user?.id]
+  )
+
+  // Split the filtered array into individual atoms for each message
+  // This enables granular updates - only the changed message re-renders
+  const messageAtomsAtom = useMemo(
+    () => splitAtom(filteredMessagesAtom as PrimitiveAtom<OptimisticMessage[]>),
+    [filteredMessagesAtom]
+  )
+  const [messageAtoms] = useAtom(messageAtomsAtom)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -55,7 +76,7 @@ const PerformantMessageList = memo(({ recipientId, currentUserId }: PerformantMe
       {messageAtoms.map((messageAtom, index) => (
         <GranularMessage
           key={index} // Use index as key since atom identity is stable
-          messageAtom={messageAtom as unknown as Atom<import('@/lib/supabase').MessageWithUser>}
+          messageAtom={messageAtom}
           currentUserId={currentUserId}
         />
       ))}

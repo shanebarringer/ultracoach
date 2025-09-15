@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { Filter, X } from 'lucide-react'
 
 import { useCallback, useEffect, useRef } from 'react'
@@ -43,7 +43,7 @@ interface ChatWindowProps {
 export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) {
   const { data: session } = useSession()
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
-  const [uiState] = useAtom(uiStateAtom)
+  const uiState = useAtomValue(uiStateAtom)
   const [offlineQueue, setOfflineQueue] = useAtom(offlineMessageQueueAtom)
 
   // Use Jotai hooks for state management
@@ -196,8 +196,8 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
     : null
 
   // Get workouts that have messages for filtering options
-  const workoutsWithMessages = workouts.filter((workout: { id: string | null }) =>
-    messages.some((msg: { workout_id: string | null }) => msg.workout_id === workout.id)
+  const workoutsWithMessages = workouts.filter(workout =>
+    messages.some(msg => msg.workout_id === workout.id)
   )
 
   if (loading) {

@@ -284,6 +284,18 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
+- **Messaging System Refactor (2025-09-14)**: ✅ **COMPLETED** - Fixed critical messaging display issue
+  - **Issue**: Messages were sending successfully but not displaying in UI due to atom family disconnect
+  - **Root Cause**: Duplicate state management - messages stored in global `messagesAtom` but read from conversation-specific atom families
+  - **Solution**: Applied Jotai best practice "derive state, don't duplicate it"
+  - **Changes Made**:
+    - Refactored `PerformantMessageList` to use derived atom pattern with `splitAtom` for granular updates
+    - Simplified `useMessages` hook to filter from global `messagesAtom` instead of using atom families
+    - Removed unused `conversationMessagesAtomsFamily` and `fetchConversationMessagesFamily`
+    - Fixed TypeScript errors with proper `PrimitiveAtom` type assertions
+  - **Best Practices Applied**: See `.context7-docs/jotai/best-practices.md` for complete Jotai patterns
+  - **Result**: Messaging now works correctly with simpler, more maintainable code following Jotai best practices
+
 - **CI/CD Pipeline Stabilization (2025-09-01)**: ✅ **COMPLETED** - Critical testing infrastructure improvements
   - **Major Fix**: Resolved persistent CI failures by simplifying test suite from 56 to 20 stable core tests
   - **Key Issues Fixed**:
