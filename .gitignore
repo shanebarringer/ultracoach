@@ -77,4 +77,4 @@ supabase/logs/
 .context7-docs/
 
 # Temporary migration backups
-supabase/migrations_backup/
+supabase/migrations_backup/coderabbit-response.md
