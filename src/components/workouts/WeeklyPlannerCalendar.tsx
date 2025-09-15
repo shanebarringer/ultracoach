@@ -498,7 +498,11 @@ export default function WeeklyPlannerCalendar({
     setSaving(true)
     try {
       // Find the runner's training plan
-      const plansResponse = await fetch(`/api/training-plans?runnerId=${runner.id}`)
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const plansResponse = await fetch(`${baseUrl}/api/training-plans?runnerId=${runner.id}`, {
+        credentials: 'include',
+      })
       if (!plansResponse.ok) {
         throw new Error('Failed to find training plan')
       }
@@ -527,11 +531,12 @@ export default function WeeklyPlannerCalendar({
         }))
 
       // Bulk create workouts
-      const response = await fetch('/api/workouts/bulk', {
+      const response = await fetch(`${baseUrl}/api/workouts/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           workouts: workoutsToCreate,
         }),

@@ -244,6 +244,7 @@ export const completeWorkoutAtom = atom(
       const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data || {}),
       })
 
@@ -308,6 +309,7 @@ export const logWorkoutDetailsAtom = atom(
       const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       })
 

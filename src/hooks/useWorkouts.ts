@@ -46,6 +46,7 @@ export function useWorkouts() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify(updates),
         })
 

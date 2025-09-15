@@ -171,11 +171,14 @@ export default function WorkoutLogModal({
         }
       } else {
         // For 'planned' status, just update the workout with the API directly
-        const response = await fetch(`/api/workouts/${workout.id}`, {
+        const baseUrl =
+          typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+        const response = await fetch(`${baseUrl}/api/workouts/${workout.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({ ...payload, status: 'planned' }),
         })
 

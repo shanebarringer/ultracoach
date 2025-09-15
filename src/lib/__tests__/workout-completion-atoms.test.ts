@@ -38,6 +38,7 @@ describe('Workout Completion Atoms', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ actual_distance: 5.2 }),
         }
       )

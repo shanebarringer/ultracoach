@@ -60,6 +60,11 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 **Goal**: Implement monitoring, error tracking, and security hardening for production
 
+- [ ] **API Client Refactoring (HIGH PRIORITY)** - Replace fetch with axios and implement interceptors for credentials
+  - Replace all manual `credentials: 'include'` calls with axios HTTP client
+  - Set up axios interceptors to automatically include authentication cookies
+  - Implement consistent error handling and request/response transformations
+  - Improve baseUrl handling with environment-aware configuration
 - [ ] **Error Monitoring Setup (Sentry)** - Production error tracking and alerting system
 - [ ] **Structured Logging Enhancement** - Log aggregation and monitoring dashboard
 - [ ] **Database Backup Strategy** - Automated backups with encryption and recovery testing

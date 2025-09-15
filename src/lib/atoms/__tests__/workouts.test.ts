@@ -298,6 +298,7 @@ describe('Workouts Atoms', () => {
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               actual_distance: 10.5,
               actual_duration: 65,
@@ -366,6 +367,7 @@ describe('Workouts Atoms', () => {
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               actual_distance: 12,
               actual_duration: 70,
@@ -406,6 +408,7 @@ describe('Workouts Atoms', () => {
           'http://localhost:3000/api/workouts/w1/complete',
           expect.objectContaining({
             method: 'DELETE',
+            credentials: 'include',
           })
         )
 

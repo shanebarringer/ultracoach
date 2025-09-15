@@ -23,10 +23,8 @@ interface Props {
  * No authentication logic needed - user is guaranteed to exist and have correct role.
  */
 export default function DashboardRouter({ user }: Props) {
-  logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user:', {
+  logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user', {
     role: user.role,
-    email: user.email,
-    fullUser: JSON.stringify(user, null, 2),
   })
 
   // Handle invalid roles gracefully (should not happen with server-side validation)
