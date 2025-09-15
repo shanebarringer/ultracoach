@@ -5,6 +5,9 @@ import { atomWithStorage } from 'jotai/utils'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
+// Module-level logger for better performance
+const logger = createLogger('RacesAtom')
+
 // Core race atoms
 export const racesAtom = atom<Race[]>([])
 export const racesLoadingAtom = atom(false)
@@ -16,7 +19,6 @@ export const racesRefreshTriggerAtom = atom(0)
 export const asyncRacesAtom = atom(
   async get => {
     get(racesRefreshTriggerAtom) // Subscribe to refresh trigger
-    const logger = createLogger('AsyncRacesAtom')
 
     try {
       logger.debug('Fetching races...')

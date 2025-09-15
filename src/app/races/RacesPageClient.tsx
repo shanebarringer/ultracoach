@@ -78,9 +78,8 @@ function RacesContent() {
 
   // Update local races when async races are fetched
   useEffect(() => {
-    if (races && races.length > 0) {
-      setLocalRaces(races)
-    }
+    // Always set races, even if empty, to clear stale data
+    setLocalRaces(races || [])
   }, [races, setLocalRaces])
 
   // Filter and search races
@@ -722,9 +721,8 @@ function RacesContent() {
         isOpen={isImportOpen}
         onClose={onImportClose}
         onSuccess={() => {
-          // Refresh races after successful import
+          // Refresh races after successful import - counts will be fetched via useEffect
           refresh()
-          fetchTrainingPlanCounts()
         }}
       />
     </div>
