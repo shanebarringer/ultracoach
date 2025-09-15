@@ -100,6 +100,7 @@ describe('Workout Completion Atoms', () => {
       expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-456/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(workoutData),
       })
     })
@@ -130,6 +131,7 @@ describe('Workout Completion Atoms', () => {
       expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-789/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(comprehensiveData),
       })
     })
@@ -154,6 +156,7 @@ describe('Workout Completion Atoms', () => {
         'http://localhost:3000/api/workouts/workout-999/complete',
         {
           method: 'DELETE',
+          credentials: 'include',
         }
       )
     })
@@ -188,6 +191,7 @@ describe('Workout Completion Atoms', () => {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({}),
           }
         )
@@ -210,6 +214,7 @@ describe('Workout Completion Atoms', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({}),
         }
       )

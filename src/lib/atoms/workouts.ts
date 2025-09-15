@@ -354,6 +354,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
     const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
       method: 'DELETE',
+      credentials: 'include',
     })
 
     if (!response.ok) {
