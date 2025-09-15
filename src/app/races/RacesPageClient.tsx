@@ -217,6 +217,7 @@ function RacesContent() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           distance_miles: parseFloat(formData.distance_miles),
@@ -244,6 +245,7 @@ function RacesContent() {
     try {
       const response = await fetch(`/api/races/${raceId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -345,14 +347,9 @@ function RacesContent() {
                   variant="bordered"
                   aria-label="Filter races by distance"
                   startContent={<FilterIcon className="w-4 h-4 text-foreground-400" />}
+                  items={[{ key: 'all', label: 'All Distances' }, ...DISTANCE_TYPES]}
                 >
-                  <SelectItem key="all">All Distances</SelectItem>
-                  <SelectItem key="50K">50K (31.07 miles)</SelectItem>
-                  <SelectItem key="50M">50 Mile</SelectItem>
-                  <SelectItem key="100K">100K (62.14 miles)</SelectItem>
-                  <SelectItem key="100M">100 Mile</SelectItem>
-                  <SelectItem key="Marathon">Marathon (26.2 miles)</SelectItem>
-                  <SelectItem key="Custom">Custom Distance</SelectItem>
+                  {item => <SelectItem key={item.key}>{item.label}</SelectItem>}
                 </Select>
                 <Select
                   placeholder="Terrain"
@@ -362,14 +359,9 @@ function RacesContent() {
                   variant="bordered"
                   aria-label="Filter races by terrain type"
                   startContent={<MountainSnowIcon className="w-4 h-4 text-foreground-400" />}
+                  items={[{ key: 'all', label: 'All Terrain' }, ...TERRAIN_TYPES]}
                 >
-                  <SelectItem key="all">All Terrain</SelectItem>
-                  <SelectItem key="trail">Trail/Single Track</SelectItem>
-                  <SelectItem key="mountain">Mountain/Technical</SelectItem>
-                  <SelectItem key="road">Road/Paved</SelectItem>
-                  <SelectItem key="mixed">Mixed Terrain</SelectItem>
-                  <SelectItem key="desert">Desert</SelectItem>
-                  <SelectItem key="forest">Forest/Wooded</SelectItem>
+                  {item => <SelectItem key={item.key}>{item.label}</SelectItem>}
                 </Select>
               </div>
             </div>
@@ -418,15 +410,15 @@ function RacesContent() {
                     }}
                     variant="bordered"
                     startContent={<RouteIcon className="w-4 h-4 text-foreground-400" />}
+                    items={DISTANCE_TYPES}
                   >
-                    {DISTANCE_TYPES.map(type => (
-                      <SelectItem key={type.key}>{type.label}</SelectItem>
-                    ))}
+                    {item => <SelectItem key={item.key}>{item.label}</SelectItem>}
                   </Select>
                   <Input
                     label="Distance (Miles)"
                     type="number"
                     step="0.01"
+                    min="0"
                     placeholder="Enter distance"
                     value={formData.distance_miles}
                     onChange={e =>
@@ -451,6 +443,8 @@ function RacesContent() {
                   <Input
                     label="Elevation Gain (feet)"
                     type="number"
+                    min="0"
+                    step="1"
                     placeholder="Enter elevation gain"
                     value={formData.elevation_gain_feet}
                     onChange={e =>
@@ -471,10 +465,9 @@ function RacesContent() {
                     }}
                     variant="bordered"
                     startContent={getTerrainIcon(formData.terrain_type)}
+                    items={TERRAIN_TYPES}
                   >
-                    {TERRAIN_TYPES.map(type => (
-                      <SelectItem key={type.key}>{type.label}</SelectItem>
-                    ))}
+                    {item => <SelectItem key={item.key}>{item.label}</SelectItem>}
                   </Select>
                   <Input
                     label="Website URL"

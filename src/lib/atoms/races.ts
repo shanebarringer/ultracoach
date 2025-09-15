@@ -49,8 +49,8 @@ export const asyncRacesAtom = atom(
 )
 
 // Refresh action atom
-export const refreshRacesAtom = atom(null, (_, set) => {
-  set(racesRefreshTriggerAtom, prev => prev + 1)
+export const refreshRacesAtom = atom(null, (get, set) => {
+  set(racesRefreshTriggerAtom, get(racesRefreshTriggerAtom) + 1)
 })
 
 // Selected race atoms
