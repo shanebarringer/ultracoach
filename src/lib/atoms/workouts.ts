@@ -22,7 +22,10 @@ export const asyncWorkoutsAtom = atom(async get => {
   try {
     logger.debug('Fetching workouts...')
 
-    const response = await fetch('/api/workouts', {
+    // Determine the base URL based on environment
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+
+    const response = await fetch(`${baseUrl}/api/workouts`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -236,7 +239,9 @@ export const completeWorkoutAtom = atom(
     const logger = createLogger('CompleteWorkoutAtom')
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data || {}),
@@ -298,7 +303,9 @@ export const logWorkoutDetailsAtom = atom(
     const logger = createLogger('LogWorkoutDetailsAtom')
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}/log`, {
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -342,7 +349,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
   const logger = createLogger('SkipWorkoutAtom')
 
   try {
-    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+    const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
       method: 'DELETE',
     })
 
