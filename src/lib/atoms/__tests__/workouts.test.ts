@@ -270,7 +270,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/complete',
+              'http://localhost:3000/api/workouts/w1/complete',
               {
                 ok: true,
                 json: () =>
@@ -294,7 +294,7 @@ describe('Workouts Atoms', () => {
         })
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
+          'http://localhost:3000/api/workouts/w1/complete',
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -336,7 +336,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/log',
+              'http://localhost:3000/api/workouts/w1/log',
               {
                 ok: true,
                 json: () =>
@@ -362,7 +362,7 @@ describe('Workouts Atoms', () => {
         })
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/log',
+          'http://localhost:3000/api/workouts/w1/log',
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -387,7 +387,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/complete',
+              'http://localhost:3000/api/workouts/w1/complete',
               {
                 ok: true,
                 json: () =>
@@ -403,7 +403,7 @@ describe('Workouts Atoms', () => {
         const result = await store.set(skipWorkoutAtom, 'w1')
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
+          'http://localhost:3000/api/workouts/w1/complete',
           expect.objectContaining({
             method: 'DELETE',
           })
