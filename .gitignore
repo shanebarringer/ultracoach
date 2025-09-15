@@ -78,3 +78,5 @@ supabase/logs/
 
 # Temporary migration backups
 supabase/migrations_backup/coderabbit-response.md
+# CodeRabbit review response files
+coderabbit-response.md
