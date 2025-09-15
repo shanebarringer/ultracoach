@@ -5,7 +5,7 @@ import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import { useAtomValue } from 'jotai'
 
 import { DashboardSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
-import { asyncWorkoutsAtom } from '@/lib/atoms/workouts'
+import { asyncWorkoutsAtom, completedWorkoutsAtom } from '@/lib/atoms/workouts'
 import type { Workout } from '@/lib/supabase'
 
 interface RecentActivityProps {
@@ -24,13 +24,13 @@ interface RecentActivityContentProps {
 }
 
 function RecentActivityContent({ title, subtitle, limit }: RecentActivityContentProps) {
-  const workouts = useAtomValue(asyncWorkoutsAtom)
+  // Trigger async workouts loading for Suspense
+  useAtomValue(asyncWorkoutsAtom)
 
-  // Filter to completed workouts and limit results
-  const recentWorkouts = workouts
-    .filter((workout: Workout) => workout.status === 'completed')
-    .sort((a: Workout, b: Workout) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, limit)
+  const completedWorkouts = useAtomValue(completedWorkoutsAtom)
+
+  // The completedWorkoutsAtom already filters and sorts, just limit results
+  const recentWorkouts = completedWorkouts.slice(0, limit)
 
   return (
     <Card

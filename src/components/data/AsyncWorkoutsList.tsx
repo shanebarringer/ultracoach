@@ -7,7 +7,7 @@ import React from 'react'
 import { WorkoutListSkeleton } from '@/components/ui/LoadingSkeletons'
 import { DataListSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import WorkoutCard from '@/components/workouts/WorkoutCard'
-import { asyncWorkoutsAtom, uiStateAtom } from '@/lib/atoms/index'
+import { asyncWorkoutsAtom, uiStateAtom, workoutsAtom } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 
 interface AsyncWorkoutsListProps {
@@ -29,8 +29,10 @@ function WorkoutsContent({
   getWorkoutTypeIcon,
   getWorkoutIntensityColor,
 }: WorkoutsContentProps) {
-  // This will suspend until workouts are loaded
-  const workouts = useAtomValue(asyncWorkoutsAtom)
+  // Trigger async workouts loading for Suspense
+  useAtomValue(asyncWorkoutsAtom)
+  // Get the actual workouts data
+  const workouts = useAtomValue(workoutsAtom)
   const uiState = useAtomValue(uiStateAtom)
 
   // Filter workouts based on UI state

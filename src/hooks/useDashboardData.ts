@@ -1,17 +1,21 @@
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import {
+  asyncWorkoutsAtom,
+  completedWorkoutsAtom,
   loadingStatesAtom,
+  refreshWorkoutsAtom,
   relationshipsAtom,
   relationshipsLoadableAtom,
   trainingPlansAtom,
+  upcomingWorkoutsAtom,
   workoutsAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { TrainingPlan, User, Workout } from '@/lib/supabase'
+import type { TrainingPlan, User } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('useDashboardData')
@@ -22,7 +26,21 @@ export function useDashboardData() {
   const { data: session } = useSession()
   // Use Jotai atoms for centralized state management
   const [trainingPlans, setTrainingPlans] = useAtom(trainingPlansAtom)
-  const [workouts, setWorkouts] = useAtom(workoutsAtom)
+  const [, setWorkouts] = useAtom(workoutsAtom)
+
+  // Trigger async workouts loading and sync to main atom
+  const asyncWorkouts = useAtomValue(asyncWorkoutsAtom)
+
+  // Update the main workouts atom when async workouts are fetched
+  useEffect(() => {
+    if (asyncWorkouts) {
+      setWorkouts(asyncWorkouts)
+    }
+  }, [asyncWorkouts, setWorkouts])
+
+  const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
+  const completedWorkouts = useAtomValue(completedWorkoutsAtom)
+  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [relationships, setRelationships] = useAtom(relationshipsAtom)
   const relationshipsLoadable = useAtomValue(relationshipsLoadableAtom)
@@ -33,7 +51,6 @@ export function useDashboardData() {
     setLoadingStates(prev => ({
       ...prev,
       trainingPlans: true,
-      workouts: true,
     }))
 
     try {
@@ -44,12 +61,8 @@ export function useDashboardData() {
         setTrainingPlans(plansData.trainingPlans || [])
       }
 
-      // Fetch workouts
-      const workoutsResponse = await fetch('/api/workouts')
-      if (workoutsResponse.ok) {
-        const workoutsData = await workoutsResponse.json()
-        setWorkouts(workoutsData.workouts || [])
-      }
+      // Workouts are now handled by asyncWorkoutsAtom - just trigger a refresh
+      refreshWorkouts()
 
       // Relationships are now handled by the relationshipsAtom automatically
     } catch (error) {
@@ -58,10 +71,9 @@ export function useDashboardData() {
       setLoadingStates(prev => ({
         ...prev,
         trainingPlans: false,
-        workouts: false,
       }))
     }
-  }, [session?.user?.id, setTrainingPlans, setWorkouts, setLoadingStates])
+  }, [session?.user?.id, setTrainingPlans, refreshWorkouts, setLoadingStates])
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -120,23 +132,19 @@ export function useDashboardData() {
     return relationshipRunners.length > 0 ? relationshipRunners : fallbackRunners
   }, [relationships, trainingPlans])
 
-  const recentWorkouts = useMemo(
-    () => workouts.filter((w: Workout) => w.status === 'completed').slice(0, 5),
-    [workouts]
-  )
+  // Use derived atoms directly, they're already filtered and sorted
+  const recentWorkouts = useMemo(() => completedWorkouts.slice(0, 5), [completedWorkouts])
 
-  const upcomingWorkouts = useMemo(() => {
-    return workouts
-      .filter((w: Workout) => w.status === 'planned' && new Date(w.date) >= new Date())
-      .slice(0, 5)
-  }, [workouts])
+  const upcomingWorkoutsLimited = useMemo(() => {
+    return upcomingWorkouts.slice(0, 5)
+  }, [upcomingWorkouts])
 
   return {
     trainingPlans,
     runners,
     recentWorkouts,
-    upcomingWorkouts,
+    upcomingWorkouts: upcomingWorkoutsLimited,
     relationships,
-    loading: loadingStates.trainingPlans || loadingStates.workouts,
+    loading: loadingStates.trainingPlans,
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -22,7 +22,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms/index'
+import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -46,8 +46,9 @@ export default function TrainingPlanDetailPage() {
 
   // Use Jotai atoms for centralized state management
   const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
-  const allWorkouts = useAtomValue(asyncWorkoutsAtom)
+  const allWorkouts = useAtomValue(workoutsAtom)
   const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
   const trainingPlan = useMemo(() => {
@@ -138,6 +139,9 @@ export default function TrainingPlanDetailPage() {
       return
     }
 
+    // Trigger workout refresh when component mounts
+    refreshWorkouts()
+
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
       fetchExtendedPlanData()
@@ -156,16 +160,19 @@ export default function TrainingPlanDetailPage() {
     fetchExtendedPlanData,
     planId,
     allTrainingPlans.length,
+    refreshWorkouts,
   ])
 
   const handleAddWorkoutSuccess = () => {
     // Refresh both atoms to get updated data
     refreshTrainingPlans()
+    refreshWorkouts()
   }
 
   const handleLogWorkoutSuccess = () => {
     // Refresh atoms and clear selected workout
     refreshTrainingPlans()
+    refreshWorkouts()
     setSelectedWorkout(null)
   }
 

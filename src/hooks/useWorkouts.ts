@@ -1,11 +1,16 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { loadingStatesAtom, workoutsAtom } from '@/lib/atoms/index'
+import {
+  completedWorkoutsAtom,
+  refreshWorkoutsAtom,
+  upcomingWorkoutsAtom,
+  workoutsAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
@@ -14,52 +19,24 @@ const logger = createLogger('useWorkouts')
 export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
-  const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
+  const refresh = useSetAtom(refreshWorkoutsAtom)
+  const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
+  const completedWorkouts = useAtomValue(completedWorkoutsAtom)
 
-  const fetchWorkouts = useCallback(async () => {
-    if (!session?.user?.id) {
-      logger.debug('No session user ID, skipping workout fetch')
-      return
-    }
-
-    setLoadingStates(prev => ({ ...prev, workouts: true }))
-    logger.debug('Fetching workouts for user', {
-      userId: session.user.id,
-      userType: session.user.userType,
-    })
-
-    try {
-      const response = await fetch('/api/workouts', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+  // Trigger initial fetch when session is available
+  useEffect(() => {
+    if (session?.user?.id) {
+      logger.debug('Session available, triggering workout refresh', {
+        userId: session.user.id,
       })
-
-      if (!response.ok) {
-        logger.error(`Failed to fetch workouts: ${response.status} ${response.statusText}`)
-        throw new Error(`Failed to fetch workouts: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      logger.debug('Successfully fetched workouts', {
-        count: data.workouts?.length || 0,
-        workouts: data.workouts?.slice(0, 3)?.map((w: Workout) => ({
-          id: w.id,
-          date: w.date,
-          planned_type: w.planned_type,
-          training_plan_id: w.training_plan_id,
-        })),
-      })
-
-      setWorkouts(data.workouts || [])
-    } catch (error) {
-      logger.error('Error fetching workouts:', error)
-      setWorkouts([])
-    } finally {
-      setLoadingStates(prev => ({ ...prev, workouts: false }))
+      refresh()
     }
-  }, [session?.user?.id, session?.user?.userType, setWorkouts, setLoadingStates])
+  }, [session?.user?.id, refresh])
+
+  const fetchWorkouts = useCallback(() => {
+    logger.debug('Triggering workout refresh')
+    refresh()
+  }, [refresh])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
@@ -78,12 +55,13 @@ export function useWorkouts() {
 
         const data = await response.json()
 
-        // Update local state
+        // Update local state and trigger refresh
         setWorkouts(prev =>
           prev.map(workout =>
             workout.id === workoutId ? { ...workout, ...data.workout } : workout
           )
         )
+        refresh()
 
         return data.workout
       } catch (error) {
@@ -91,7 +69,7 @@ export function useWorkouts() {
         throw error
       }
     },
-    [setWorkouts]
+    [setWorkouts, refresh]
   )
 
   const deleteWorkout = useCallback(
@@ -99,34 +77,33 @@ export function useWorkouts() {
       try {
         const response = await fetch(`/api/workouts/${workoutId}`, {
           method: 'DELETE',
+          credentials: 'include',
         })
 
         if (!response.ok) {
           throw new Error('Failed to delete workout')
         }
 
-        // Update local state
+        // Update local state and trigger refresh
         setWorkouts(prev => prev.filter(workout => workout.id !== workoutId))
+        refresh()
       } catch (error) {
         logger.error('Error deleting workout:', error)
         throw error
       }
     },
-    [setWorkouts]
+    [setWorkouts, refresh]
   )
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchWorkouts()
-    }
-  }, [session?.user?.id, fetchWorkouts])
 
   return {
     workouts,
-    loading: loadingStates.workouts,
+    upcomingWorkouts,
+    completedWorkouts,
+    loading: false, // Remove loading state since we're using Suspense
     fetchWorkouts,
     updateWorkout,
     deleteWorkout,
+    refresh,
     error: null,
   }
 }

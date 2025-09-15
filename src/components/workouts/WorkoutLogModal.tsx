@@ -23,6 +23,7 @@ import { Controller, useForm } from 'react-hook-form'
 import {
   completeWorkoutAtom,
   logWorkoutDetailsAtom,
+  refreshWorkoutsAtom,
   skipWorkoutAtom,
   workoutLogFormAtom,
 } from '@/lib/atoms/index'
@@ -84,6 +85,7 @@ export default function WorkoutLogModal({
   const completeWorkout = useSetAtom(completeWorkoutAtom)
   const logWorkoutDetails = useSetAtom(logWorkoutDetailsAtom)
   const skipWorkout = useSetAtom(skipWorkoutAtom)
+  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // React Hook Form setup
   const {
@@ -184,6 +186,10 @@ export default function WorkoutLogModal({
 
       logger.info('Workout updated successfully')
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
+
+      // Trigger a refresh to ensure all components update
+      refreshWorkouts()
+
       reset() // Reset form with react-hook-form
       onSuccess()
       onClose()
