@@ -215,11 +215,9 @@ test.describe('Workout Atoms Functionality', () => {
             expect(statusUpdate).toBeVisible({ timeout: 5000 }),
           ]).catch(() => {
             // At least the modal should have closed
-            console.log('No success indication found, but modal closed')
           })
         }
       } else {
-        console.log('No planned workouts available to test completion')
       }
     })
 
@@ -303,9 +301,7 @@ test.describe('Workout Atoms Functionality', () => {
       const calendarCount = await calendarEvents.count()
 
       // All pages should have consistent data (counts may differ due to filtering)
-      console.log(
-        `Workouts page: ${workoutsPageCount}, Dashboard: ${dashboardCount}, Calendar: ${calendarCount}`
-      )
+      // Data: Workouts page: ${workoutsPageCount}, Dashboard: ${dashboardCount}, Calendar: ${calendarCount}
 
       // At least if workouts exist on one page, they should exist on others
       if (workoutsPageCount > 0) {

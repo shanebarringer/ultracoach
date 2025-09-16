@@ -1,9 +1,17 @@
+import type { WebpackPluginInstance } from 'webpack'
+
 import type { NextConfig } from 'next'
 
-// Conditional import for code-inspector-plugin to handle production builds
-let codeInspectorPlugin: any = null
+// Properly typed plugin factory for code-inspector-plugin
+let codeInspectorFactory: ((options: { bundler: string }) => WebpackPluginInstance) | null = null
 try {
-  codeInspectorPlugin = require('code-inspector-plugin').codeInspectorPlugin
+  const mod: unknown = require('code-inspector-plugin')
+  if (mod && typeof mod === 'object' && 'codeInspectorPlugin' in mod) {
+    const factory = (mod as { codeInspectorPlugin: unknown }).codeInspectorPlugin
+    if (typeof factory === 'function') {
+      codeInspectorFactory = factory as (options: { bundler: string }) => WebpackPluginInstance
+    }
+  }
 } catch (e) {
   // code-inspector-plugin not available (production build where dev dependencies are skipped)
 }
@@ -11,8 +19,8 @@ try {
 const nextConfig: NextConfig = {
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
-    if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorPlugin) {
-      config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
+    if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorFactory) {
+      config.plugins.push(codeInspectorFactory({ bundler: 'webpack' }))
     }
 
     // Ignore pg-native module since it's not available in browser environments

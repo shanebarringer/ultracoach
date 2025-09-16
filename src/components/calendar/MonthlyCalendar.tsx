@@ -22,7 +22,7 @@ import {
   TrendingUpIcon,
 } from 'lucide-react'
 
-import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -120,62 +120,69 @@ export default function MonthlyCalendar({
   }, [])
 
   // Enhanced keyboard navigation for calendar grid
-  const handleCalendarKeyDown = useCallback((event: React.KeyboardEvent, day: WorkoutDay) => {
-    if (!calendarDays || calendarDays.length === 0) return
+  const handleCalendarKeyDown = useCallback(
+    (event: React.KeyboardEvent, day: WorkoutDay) => {
+      if (!calendarDays || calendarDays.length === 0) return
 
-    const currentIndex = calendarDays.findIndex(d => d.date.compare(day.date) === 0)
-    if (currentIndex === -1) return
+      const currentIndex = calendarDays.findIndex(d => d.date.compare(day.date) === 0)
+      if (currentIndex === -1) return
 
-    let nextIndex: number | null = null
+      let nextIndex: number | null = null
 
-    switch (event.key) {
-      case 'ArrowLeft':
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : null
-        break
-      case 'ArrowRight':
-        nextIndex = currentIndex < calendarDays.length - 1 ? currentIndex + 1 : null
-        break
-      case 'ArrowUp':
-        nextIndex = currentIndex >= 7 ? currentIndex - 7 : null
-        break
-      case 'ArrowDown':
-        nextIndex = currentIndex + 7 < calendarDays.length ? currentIndex + 7 : null
-        break
-      case 'Home':
-        nextIndex = Math.floor(currentIndex / 7) * 7 // First day of current week
-        break
-      case 'End':
-        nextIndex = Math.min(Math.floor(currentIndex / 7) * 7 + 6, calendarDays.length - 1) // Last day of current week
-        break
-      case 'PageUp':
+      switch (event.key) {
+        case 'ArrowLeft':
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : null
+          break
+        case 'ArrowRight':
+          nextIndex = currentIndex < calendarDays.length - 1 ? currentIndex + 1 : null
+          break
+        case 'ArrowUp':
+          nextIndex = currentIndex >= 7 ? currentIndex - 7 : null
+          break
+        case 'ArrowDown':
+          nextIndex = currentIndex + 7 < calendarDays.length ? currentIndex + 7 : null
+          break
+        case 'Home':
+          nextIndex = Math.floor(currentIndex / 7) * 7 // First day of current week
+          break
+        case 'End':
+          nextIndex = Math.min(Math.floor(currentIndex / 7) * 7 + 6, calendarDays.length - 1) // Last day of current week
+          break
+        case 'PageUp':
+          event.preventDefault()
+          navigateMonth('prev')
+          return
+        case 'PageDown':
+          event.preventDefault()
+          navigateMonth('next')
+          return
+        default:
+          return
+      }
+
+      if (nextIndex !== null) {
         event.preventDefault()
-        navigateMonth('prev')
-        return
-      case 'PageDown':
-        event.preventDefault()
-        navigateMonth('next')
-        return
-      default:
-        return
-    }
+        const nextDay = calendarDays[nextIndex]
+        setFocusedDate(nextDay.date)
+        setAnnounceText(
+          `Focus moved to ${nextDay.date.toDate(getLocalTimeZone()).toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })}`
+        )
 
-    if (nextIndex !== null) {
-      event.preventDefault()
-      const nextDay = calendarDays[nextIndex]
-      setFocusedDate(nextDay.date)
-      setAnnounceText(`Focus moved to ${nextDay.date.toDate(getLocalTimeZone()).toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric'
-      })}`)
-
-      // Focus the next calendar cell
-      setTimeout(() => {
-        const nextCell = calendarRef.current?.querySelector(`[data-date="${nextDay.date.toString()}"]`) as HTMLElement
-        nextCell?.focus()
-      }, 0)
-    }
-  }, [calendarDays, navigateMonth])
+        // Focus the next calendar cell
+        setTimeout(() => {
+          const nextCell = calendarRef.current?.querySelector(
+            `[data-date="${nextDay.date.toString()}"]`
+          ) as HTMLElement
+          nextCell?.focus()
+        }, 0)
+      }
+    },
+    [calendarDays, navigateMonth]
+  )
 
   // Auto-focus management for accessibility
   useEffect(() => {
@@ -269,12 +276,17 @@ export default function MonthlyCalendar({
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           {announceText}
         </div>
-        <div ref={announcementRef} aria-live="assertive" aria-atomic="true" className="sr-only"></div>
+        <div
+          ref={announcementRef}
+          aria-live="assertive"
+          aria-atomic="true"
+          className="sr-only"
+        ></div>
 
         {/* Hidden keyboard navigation instructions for screen readers */}
         <div id="calendar-instructions" className="sr-only">
-          Use arrow keys to navigate between dates. Press Home for first day of week, End for last day of week.
-          Page Up and Page Down to change months. Enter or Space to select a date.
+          Use arrow keys to navigate between dates. Press Home for first day of week, End for last
+          day of week. Page Up and Page Down to change months. Enter or Space to select a date.
         </div>
       </CardHeader>
 
@@ -343,7 +355,9 @@ export default function MonthlyCalendar({
                   aria-current={day.isToday ? 'date' : undefined}
                   aria-selected={focusedDate ? focusedDate.compare(day.date) === 0 : false}
                   data-date={day.date.toString()}
-                  tabIndex={day.isToday || (focusedDate && focusedDate.compare(day.date) === 0) ? 0 : -1}
+                  tabIndex={
+                    day.isToday || (focusedDate && focusedDate.compare(day.date) === 0) ? 0 : -1
+                  }
                   onKeyDown={e => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()

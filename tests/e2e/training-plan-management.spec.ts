@@ -56,7 +56,6 @@ test.describe('Training Plan Management', () => {
           waitUntil: 'domcontentloaded',
         })
       } catch (error) {
-        console.log('Button click failed, using direct navigation')
         // Fallback to direct navigation if button click fails
         await page.goto('/training-plans')
         await page.waitForLoadState('domcontentloaded')
@@ -144,9 +143,7 @@ test.describe('Training Plan Management', () => {
         const updatedText = await runnerDropdown.textContent()
 
         if (updatedText?.includes('Loading')) {
-          console.log(
-            'Runners still loading after 3s - likely no runners connected, skipping selection'
-          )
+          // Runners still loading after 3s - likely no runners connected, skipping selection
         } else if (!updatedText?.includes('No connected')) {
           // Try to select a runner if available
           try {
@@ -160,9 +157,7 @@ test.describe('Training Plan Management', () => {
               // Close dropdown if no options
               await page.keyboard.press('Escape')
             }
-          } catch (error) {
-            console.log('Could not select runner:', error)
-          }
+          } catch (error) {}
         }
       }
 
@@ -582,7 +577,6 @@ test.describe('Training Plan Management', () => {
 
       if (buttonCount === 0) {
         // User is a runner, skip this test
-        console.log('User is a runner, skipping coach-only test')
         return
       }
 
@@ -614,7 +608,6 @@ test.describe('Training Plan Management', () => {
       // Check if redirected to coach dashboard
       const url = page.url()
       if (!url.includes('/dashboard/coach')) {
-        console.log('User is not a coach, skipping coach-only test')
         return
       }
 
@@ -629,7 +622,6 @@ test.describe('Training Plan Management', () => {
       const createBtn = page.getByRole('button', { name: 'Create Expedition' })
       const btnCount = await createBtn.count()
       if (btnCount === 0) {
-        console.log('Create button not found, skipping test')
         return
       }
       await createBtn.click()

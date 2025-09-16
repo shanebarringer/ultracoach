@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { Logger } from 'tslog'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { type TestUserType, navigateToDashboard } from './utils/test-helpers'
+
+const logger = new Logger({ name: 'tests/race-import.spec' })
 
 const TEST_GPX_CONTENT = `<?xml version="1.0"?>
 <gpx version="1.1" creator="TestCreator">
@@ -47,17 +50,13 @@ const TEST_CSV_CONTENT = `Name,Date,Location,Distance (miles),Distance Type,Elev
 // The 'chromium' project has storageState: './playwright/.auth/coach.json'
 test.describe('Race Import Flow', () => {
   test.beforeEach(async ({ page, context }) => {
-    console.log('🏁 Starting race import test setup...')
+    logger.info('🏁 Starting race import test setup...')
 
     // Verify storage state was loaded
     const storageState = await context.storageState()
-    console.log(
-      `📦 Storage state loaded: ${storageState.cookies.length} cookies, ${storageState.origins.length} origins`
-    )
 
     // Check if we have auth cookies
     const cookies = await context.cookies()
-    console.log(`🍪 Initial cookies: ${cookies.length} cookies`)
 
     // Log specific auth cookies for debugging
     const authCookies = cookies.filter(
@@ -67,33 +66,21 @@ test.describe('Race Import Flow', () => {
         c.name === 'better-auth.session_token'
     )
 
-    if (authCookies.length > 0) {
-      console.log(`🔐 Auth cookies found:`)
-      authCookies.forEach(c => {
-        console.log(`   - ${c.name}: ${c.value ? c.value.substring(0, 20) + '...' : 'empty'}`)
-      })
-    } else {
-      console.warn('⚠️ No auth/session cookies found in context!')
-      console.warn("   This likely means the auth setup failed or storage state wasn't loaded")
-    }
+    // Auth cookies check removed - handled by test failures if auth is broken
 
     // First go to the home page to ensure cookies are set
     await page.goto('/')
-    console.log('📍 Navigated to home page')
 
     // Check cookies again after navigation
     const cookiesAfterHome = await context.cookies()
-    console.log(`🍪 Cookies after home: ${cookiesAfterHome.length} cookies`)
 
     // Then navigate to races page
-    console.log('🚀 Navigating to races page...')
     await page.goto('/races')
 
     // Wait for either races page or potential redirect
     await page.waitForURL(
       url => {
         const urlStr = url.toString()
-        console.log(`🔄 Current URL: ${urlStr}`)
         return urlStr.includes('/races') || urlStr.includes('/auth/signin')
       },
       { timeout: 30000 }
@@ -104,32 +91,18 @@ test.describe('Race Import Flow', () => {
     if (currentUrl.includes('/auth/signin')) {
       // Debug the auth issue more thoroughly
       const finalCookies = await page.context().cookies()
-      console.error('❌ Authentication failed - redirected to signin')
-      console.error('🍪 Cookies at failure:', {
-        count: finalCookies.length,
-        names: finalCookies.map(c => c.name),
-        sessionToken: finalCookies.find(c => c.name === 'better-auth.session_token')
-          ? 'present'
-          : 'missing',
-      })
 
       // Try to check if the page has any error messages
       const errorText = await page.textContent('body').catch(() => 'Could not get page text')
-      console.error('📄 Page content snippet:', errorText?.substring(0, 200))
 
       throw new Error(`Authentication failed - redirected to signin: ${currentUrl}`)
     }
-
-    console.log('✅ Successfully on races page')
 
     // Wait for loading to complete if we're on the races page
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
-      console.log('✅ Race data loaded')
-    } catch {
-      console.log('ℹ️ Loading indicator not found or already hidden')
-    }
+    } catch {}
   })
 
   test('should open race import modal', async ({ page }) => {
@@ -145,7 +118,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - may require coach role or different page')
       test.skip()
       return
     }
@@ -178,7 +150,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping GPX upload test')
       test.skip()
       return
     }
@@ -248,7 +219,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping CSV upload test')
       test.skip()
       return
     }
@@ -296,7 +266,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping file size validation test')
       test.skip()
       return
     }
@@ -354,7 +323,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping invalid GPX test')
       test.skip()
       return
     }
@@ -363,7 +331,6 @@ test.describe('Race Import Flow', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -420,7 +387,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping single race import test')
       test.skip()
       return
     }
@@ -429,7 +395,6 @@ test.describe('Race Import Flow', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -495,7 +460,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping duplicate race detection test')
       test.skip()
       return
     }
@@ -504,7 +468,6 @@ test.describe('Race Import Flow', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -592,7 +555,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping bulk CSV import test')
       test.skip()
       return
     }
@@ -601,7 +563,6 @@ test.describe('Race Import Flow', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -665,7 +626,6 @@ test.describe('Race Import Flow', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping progress indicator test')
       test.skip()
       return
     }
@@ -674,7 +634,6 @@ test.describe('Race Import Flow', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -748,7 +707,6 @@ test.describe('Race Import Edge Cases', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping network failure test')
       test.skip()
       return
     }
@@ -757,7 +715,6 @@ test.describe('Race Import Edge Cases', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 
@@ -831,7 +788,6 @@ test.describe('Race Import Edge Cases', () => {
     // Check if button is visible (might require coach role)
     const isVisible = await importButton.isVisible().catch(() => false)
     if (!isVisible) {
-      console.log('Import button not visible - skipping rate limiting test')
       test.skip()
       return
     }
@@ -840,7 +796,6 @@ test.describe('Race Import Edge Cases', () => {
     try {
       await importButton.click({ timeout: 10000 })
     } catch (clickError) {
-      console.log('Regular click failed, trying with force option')
       await importButton.click({ force: true, timeout: 5000 })
     }
 

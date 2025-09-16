@@ -2,8 +2,11 @@ import { expect, test as setup } from '@playwright/test'
 import path from 'path'
 import { Logger } from 'tslog'
 
-// Conditional fs import to avoid Vercel build issues
-const fs = typeof window === 'undefined' ? require('fs') : null
+import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD } from './utils/test-helpers'
+
+// Conditional fs import (typed) to avoid Vercel build issues
+const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
+const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
 const logger = new Logger({ name: 'tests/auth.setup' })
 
@@ -12,7 +15,7 @@ const authFile = path.join(__dirname, '../playwright/.auth/user.json')
 setup('authenticate', async ({ page, context }) => {
   logger.info('🔐 Starting runner authentication setup...')
 
-  const baseUrl = process.env.CI ? 'http://localhost:3001' : 'http://localhost:3001'
+  const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
 
   // Navigate to signin page
   await page.goto(`${baseUrl}/auth/signin`)
@@ -24,8 +27,8 @@ setup('authenticate', async ({ page, context }) => {
   // Use the API directly instead of form submission to avoid JavaScript issues
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
-      email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
-      password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
+      email: TEST_RUNNER_EMAIL,
+      password: TEST_RUNNER_PASSWORD,
     },
     headers: {
       'Content-Type': 'application/json',
@@ -33,8 +36,8 @@ setup('authenticate', async ({ page, context }) => {
   })
 
   if (!response.ok()) {
-    logger.error('Auth API response status:', response.status())
-    logger.error('Auth API response:', await response.text())
+    const body = await response.text()
+    logger.error('Auth API failed', { status: response.status(), body: body.slice(0, 500) })
     throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
@@ -66,6 +69,10 @@ setup('authenticate', async ({ page, context }) => {
   if (fs) {
     fs.mkdirSync(authDir, { recursive: true })
     logger.info(`📁 Created auth directory: ${authDir}`)
+  } else {
+    logger.warn(
+      'FS not available; skipping auth directory creation. Storage write may fail if parent dir is missing.'
+    )
   }
 
   // Save the authentication state

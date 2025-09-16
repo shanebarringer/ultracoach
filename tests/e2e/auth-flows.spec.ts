@@ -6,6 +6,13 @@
  */
 import { expect, test } from '@playwright/test'
 
+import {
+  TEST_COACH_EMAIL,
+  TEST_COACH_PASSWORD,
+  TEST_RUNNER_EMAIL,
+  TEST_RUNNER_PASSWORD,
+} from '../utils/test-helpers'
+
 test.describe('Authentication Flows with Jotai Atoms', () => {
   test.beforeEach(async ({ page }) => {
     // Start from the home page
@@ -97,12 +104,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     const emailInput = page.locator('input[type="email"]')
     const passwordInput = page.locator('input[type="password"]')
 
-    await emailInput.fill('alex.rivera@ultracoach.dev')
-    await passwordInput.fill('RunnerPass2025!')
+    await emailInput.fill(TEST_RUNNER_EMAIL)
+    await passwordInput.fill(TEST_RUNNER_PASSWORD)
 
     // Ensure values are filled
-    await expect(emailInput).toHaveValue('alex.rivera@ultracoach.dev')
-    await expect(passwordInput).toHaveValue('RunnerPass2025!')
+    await expect(emailInput).toHaveValue(TEST_RUNNER_EMAIL)
+    await expect(passwordInput).toHaveValue(TEST_RUNNER_PASSWORD)
 
     // Submit form using the button click (more reliable for React forms)
     await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
@@ -134,8 +141,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test('should handle sign out and clear auth atoms', async ({ page }) => {
     // First sign in
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill('alex.rivera@ultracoach.dev')
-    await page.getByLabel(/password/i).fill('RunnerPass2025!')
+    await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
+    await page.getByLabel(/password/i).fill(TEST_RUNNER_PASSWORD)
     await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
     // Wait for dashboard redirect and content to load
@@ -186,8 +193,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
       return form && form.querySelector('input[type="email"]')
     })
 
-    await page.locator('input[type="email"]').fill('emma@ultracoach.dev')
-    await page.locator('input[type="password"]').fill('UltraCoach2025!')
+    await page.locator('input[type="email"]').fill(TEST_COACH_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_COACH_PASSWORD)
     await page.locator('input[type="password"]').press('Enter')
 
     // Should redirect to coach dashboard
@@ -214,8 +221,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
       return form && form.querySelector('input[type="email"]')
     })
 
-    await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
-    await page.locator('input[type="password"]').fill('RunnerPass2025!')
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
     await page.locator('input[type="password"]').press('Enter')
 
     // Wait for dashboard
@@ -283,8 +290,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     })
 
     // Sign in
-    await page.locator('input[type="email"]').fill('alex.rivera@ultracoach.dev')
-    await page.locator('input[type="password"]').fill('RunnerPass2025!')
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
     await page.locator('input[type="password"]').press('Enter')
 
     // Should redirect to dashboard (middleware doesn't preserve original URL)
