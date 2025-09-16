@@ -61,7 +61,10 @@ export function useWorkouts() {
     logger.debug('Fetching workouts (imperative)')
 
     // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+    const baseUrl =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001')
 
     try {
       const response = await fetch(`${baseUrl}/api/workouts`, {

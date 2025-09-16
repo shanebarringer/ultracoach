@@ -109,9 +109,9 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const userRole = isValidUserRole(roleCandidate) ? roleCandidate : 'runner'
 
     // ENHANCED DEBUG: Track role detection with type safety
-    logger.info('🔍 AUTH DEBUG - Type-Safe Session Data:', {
+    logger.debug('🔍 AUTH DEBUG - Type-Safe Session Data:', {
       userId: user.id,
-      email: user.email,
+      email: user.email?.replace(/(^..).+(@.*$)/, '$1***$2'),
       rawRole: user.role,
       rawUserType: user.userType,
       resolvedRole: userRole,

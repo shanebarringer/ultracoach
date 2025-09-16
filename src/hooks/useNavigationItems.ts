@@ -72,10 +72,12 @@ export function useNavigationItems(session: Session | null): NavItem[] {
       },
     ]
 
+    const [dashboardItem, connectionsItem, calendarItem, workoutsItem, messagesItem] = baseItems
+
     if (session.user.userType === 'coach') {
       return [
-        baseItems[0], // Dashboard
-        baseItems[1], // Relationships
+        dashboardItem,
+        connectionsItem,
         {
           href: '/runners',
           label: 'Runners',
@@ -88,7 +90,7 @@ export function useNavigationItems(session: Session | null): NavItem[] {
           icon: MapPin,
           description: 'Browse race events',
         },
-        baseItems[2], // Calendar
+        calendarItem,
         {
           href: '/weekly-planner',
           label: 'Planner',
@@ -107,7 +109,8 @@ export function useNavigationItems(session: Session | null): NavItem[] {
           icon: FileText,
           description: 'Create & manage plans',
         },
-        ...baseItems.slice(3), // Workouts, Messages
+        workoutsItem,
+        messagesItem,
         {
           href: '/settings',
           label: 'Settings',
@@ -118,14 +121,17 @@ export function useNavigationItems(session: Session | null): NavItem[] {
     }
 
     return [
-      ...baseItems.slice(0, 3), // Dashboard, Relationships, Calendar
+      dashboardItem,
+      connectionsItem,
+      calendarItem,
       {
         href: '/weekly-planner',
         label: 'My Training',
         icon: CalendarDays,
         description: 'View your training plan',
       },
-      ...baseItems.slice(3), // Workouts, Messages
+      workoutsItem,
+      messagesItem,
       {
         href: '/settings',
         label: 'Settings',

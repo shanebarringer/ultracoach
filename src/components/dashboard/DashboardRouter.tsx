@@ -23,10 +23,13 @@ interface Props {
  * Receives authenticated user data from Server Component parents.
  * No authentication logic needed - user is guaranteed to exist and have correct role.
  */
-export default function DashboardRouter({ user }: Props) {
-  // Hydrate workouts at this entry point to ensure data consistency
+// Internal component to handle workout hydration inside Suspense boundary
+function WorkoutsHydrator() {
   useHydrateWorkouts()
+  return null // Invisible component that just handles hydration
+}
 
+export default function DashboardRouter({ user }: Props) {
   logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user', {
     userType: user.userType,
   })
@@ -45,6 +48,7 @@ export default function DashboardRouter({ user }: Props) {
               </p>
             </div>
             <Suspense fallback={<RunnerDashboardSkeleton />}>
+              <WorkoutsHydrator />
               <RunnerDashboard />
             </Suspense>
           </div>
@@ -63,6 +67,7 @@ export default function DashboardRouter({ user }: Props) {
               user.userType === 'coach' ? <CoachDashboardSkeleton /> : <RunnerDashboardSkeleton />
             }
           >
+            <WorkoutsHydrator />
             {user.userType === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
           </Suspense>
         </div>

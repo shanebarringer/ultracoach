@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Checkbox } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
 import React, { Suspense, useCallback, useEffect } from 'react'
@@ -32,8 +32,8 @@ interface Props {
  */
 export default function TrainingPlansPageClient({ user }: Props) {
   const [uiState, setUiState] = useAtom(uiStateAtom)
-  const [filteredPlans] = useAtom(filteredTrainingPlansAtom)
-  const [trainingPlansLoadable] = useAtom(trainingPlansLoadableAtom)
+  const filteredPlans = useAtomValue(filteredTrainingPlansAtom)
+  const trainingPlansLoadable = useAtomValue(trainingPlansLoadableAtom)
 
   // Initialize the refreshable training plans
   const { refreshTrainingPlans } = useRefreshableTrainingPlans()
@@ -204,7 +204,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <TrainingPlanCard
                       key={plan.id}
                       plan={plan}
-                      userRole={user.userType as 'runner' | 'coach'}
+                      userRole={user.userType}
                       onArchiveChange={handleArchiveChange}
                     />
                   ))}

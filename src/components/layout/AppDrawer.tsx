@@ -94,7 +94,7 @@ export default function AppDrawer() {
         <DrawerBody>
           <MobileNavContent
             session={session}
-            status={status}
+            status={status as 'loading' | 'authenticated' | 'unauthenticated'}
             userNavItems={userNavItems}
             handleSignOut={handleSignOut}
             handleMenuClose={uiState.isDrawerPinned ? handleForceClose : onClose}
