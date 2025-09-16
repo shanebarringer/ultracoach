@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -22,7 +22,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { asyncWorkoutsAtom, refreshableTrainingPlansAtom } from '@/lib/atoms/index'
+import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -46,8 +46,9 @@ export default function TrainingPlanDetailPage() {
 
   // Use Jotai atoms for centralized state management
   const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
-  const allWorkouts = useAtomValue(asyncWorkoutsAtom)
+  const allWorkouts = useAtomValue(workoutsAtom)
   const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
   const trainingPlan = useMemo(() => {
@@ -88,7 +89,9 @@ export default function TrainingPlanDetailPage() {
 
     try {
       // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`)
+      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
+        credentials: 'include',
+      })
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
         setExtendedPlanData(prev => ({
@@ -101,7 +104,10 @@ export default function TrainingPlanDetailPage() {
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(`/api/training-plans/${trainingPlan.previous_plan_id}`)
+        const prevPlanResponse = await fetch(
+          `/api/training-plans/${trainingPlan.previous_plan_id}`,
+          { credentials: 'include' }
+        )
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
           setExtendedPlanData(prev => ({
@@ -114,7 +120,9 @@ export default function TrainingPlanDetailPage() {
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`)
+        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
+          credentials: 'include',
+        })
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
           setExtendedPlanData(prev => ({
@@ -138,6 +146,9 @@ export default function TrainingPlanDetailPage() {
       return
     }
 
+    // Trigger workout refresh when component mounts
+    refreshWorkouts()
+
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
       fetchExtendedPlanData()
@@ -156,16 +167,19 @@ export default function TrainingPlanDetailPage() {
     fetchExtendedPlanData,
     planId,
     allTrainingPlans.length,
+    refreshWorkouts,
   ])
 
   const handleAddWorkoutSuccess = () => {
     // Refresh both atoms to get updated data
     refreshTrainingPlans()
+    refreshWorkouts()
   }
 
   const handleLogWorkoutSuccess = () => {
     // Refresh atoms and clear selected workout
     refreshTrainingPlans()
+    refreshWorkouts()
     setSelectedWorkout(null)
   }
 
@@ -185,6 +199,7 @@ export default function TrainingPlanDetailPage() {
     try {
       const response = await fetch(`/api/training-plans/${planId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
       if (response.ok) {
         commonToasts.trainingPlanDeleted()
@@ -798,22 +813,24 @@ export default function TrainingPlanDetailPage() {
                             </div>
 
                             <div className="flex gap-2 mt-4">
-                              {session.user.role === 'runner' && workout.status === 'planned' && (
-                                <button
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
-                                >
-                                  Log Workout
-                                </button>
-                              )}
-                              {session.user.role === 'runner' && workout.status === 'completed' && (
-                                <button
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                                >
-                                  Edit Log
-                                </button>
-                              )}
+                              {session.user.userType === 'runner' &&
+                                workout.status === 'planned' && (
+                                  <button
+                                    onClick={() => handleLogWorkout(workout)}
+                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
+                                  >
+                                    Log Workout
+                                  </button>
+                                )}
+                              {session.user.userType === 'runner' &&
+                                workout.status === 'completed' && (
+                                  <button
+                                    onClick={() => handleLogWorkout(workout)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
+                                  >
+                                    Edit Log
+                                  </button>
+                                )}
                             </div>
                           </div>
                         </div>

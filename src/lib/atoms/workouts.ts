@@ -3,23 +3,121 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Workout } from '@/lib/supabase'
+import {
+  compareDatesAsc,
+  compareDatesDesc,
+  isWorkoutUpcoming,
+  isWorkoutWithinDays,
+} from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
-// Core workout atoms
+// Helper function to unwrap API response shapes
+function unwrapWorkout(json: unknown): Workout {
+  return typeof json === 'object' && json !== null && 'workout' in json
+    ? (json as { workout: Workout }).workout
+    : (json as Workout)
+}
+
+// Core workout atoms with initial value from async fetch
 export const workoutsAtom = atom<Workout[]>([])
-export const workoutsLoadingAtom = atom(false)
-export const workoutsErrorAtom = atom<string | null>(null)
 export const workoutsRefreshTriggerAtom = atom(0)
 
 // Async workout atom with suspense support
-export const asyncWorkoutsAtom = atom(async () => {
-  // This would be populated with actual async data fetching
-  return [] as Workout[]
+export const asyncWorkoutsAtom = atom(async get => {
+  // Subscribe to refresh trigger to refetch when needed
+  get(workoutsRefreshTriggerAtom)
+
+  const { createLogger } = await import('@/lib/logger')
+  const logger = createLogger('AsyncWorkoutsAtom')
+
+  try {
+    logger.debug('Fetching workouts...')
+
+    // Determine the base URL based on environment
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+
+    const response = await fetch(`${baseUrl}/api/workouts`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
+      logger.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    const data = await response.json()
+    const workouts = data.workouts || []
+
+    logger.info('Workouts fetched successfully', {
+      count: workouts.length,
+      sample: workouts.slice(0, 3).map((w: Workout) => ({
+        id: w.id,
+        date: w.date,
+        status: w.status,
+        planned_type: w.planned_type,
+      })),
+    })
+
+    return workouts as Workout[]
+  } catch (error) {
+    logger.error('Error fetching workouts:', error)
+    throw error // Re-throw to let Suspense boundary handle it
+  }
+})
+
+// Combined atom that fetches and stores workouts
+export const workoutsWithSuspenseAtom = atom(get => {
+  // When this is accessed, it will trigger the async fetch
+  const asyncWorkouts = get(asyncWorkoutsAtom)
+  // Return the value (this will suspend until resolved)
+  return asyncWorkouts
+})
+
+// Refresh action atom
+export const refreshWorkoutsAtom = atom(null, (get, set) => {
+  set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+})
+
+// Hydration atom to sync async workouts with sync atom
+export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
+  set(workoutsAtom, workouts)
 })
 
 // Selected workout atoms
 export const selectedWorkoutAtom = atom<Workout | null>(null)
 export const selectedWorkoutIdAtom = atom<string | null>(null)
+
+// Derived atoms for filtered views
+export const upcomingWorkoutsAtom = atom(get => {
+  const workouts = get(workoutsAtom)
+
+  return workouts
+    .filter((w: Workout) => {
+      // Use date-fns to check if workout is upcoming (today or future)
+      return isWorkoutUpcoming(w.date) && w.status === 'planned'
+    })
+    .sort((a, b) => compareDatesAsc(a.date, b.date))
+})
+
+export const completedWorkoutsAtom = atom(get => {
+  const workouts = get(workoutsAtom)
+  return workouts
+    .filter((w: Workout) => w.status === 'completed')
+    .sort((a, b) => compareDatesDesc(a.date, b.date))
+})
+
+export const thisWeekWorkoutsAtom = atom(get => {
+  const workouts = get(workoutsAtom)
+
+  return workouts.filter((w: Workout) => {
+    // Use date-fns to check if workout is within the next 7 days
+    return isWorkoutWithinDays(w.date, 7)
+  })
+})
 
 // Workout filtering atoms
 export const workoutSearchTermAtom = atomWithStorage('workoutSearchTerm', '')
@@ -153,9 +251,12 @@ export const completeWorkoutAtom = atom(
     const logger = createLogger('CompleteWorkoutAtom')
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data || {}),
       })
 
@@ -163,7 +264,8 @@ export const completeWorkoutAtom = atom(
         throw new Error('Failed to complete workout')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new status
       const workouts = get(workoutsAtom)
@@ -172,8 +274,8 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh for any dependent atoms
-      set(workoutsRefreshTriggerAtom, Date.now())
+      // Trigger refresh to ensure all components update
+      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
       return updatedWorkout
@@ -215,9 +317,12 @@ export const logWorkoutDetailsAtom = atom(
     const logger = createLogger('LogWorkoutDetailsAtom')
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}/log`, {
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       })
 
@@ -225,7 +330,8 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error('Failed to log workout details')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new details
       const workouts = get(workoutsAtom)
@@ -234,8 +340,8 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh for any dependent atoms
-      set(workoutsRefreshTriggerAtom, Date.now())
+      // Trigger refresh to ensure all components update
+      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
       return updatedWorkout
@@ -259,15 +365,18 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
   const logger = createLogger('SkipWorkoutAtom')
 
   try {
-    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+    const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
       method: 'DELETE',
+      credentials: 'include',
     })
 
     if (!response.ok) {
       throw new Error('Failed to skip workout')
     }
 
-    const updatedWorkout = await response.json()
+    const json: unknown = await response.json()
+    const updatedWorkout: Workout = unwrapWorkout(json)
 
     // Update the workouts atom with the new status
     const workouts = get(workoutsAtom)
@@ -276,8 +385,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Trigger refresh for any dependent atoms
-    set(workoutsRefreshTriggerAtom, Date.now())
+    // Trigger refresh to ensure all components update
+    set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
     return updatedWorkout

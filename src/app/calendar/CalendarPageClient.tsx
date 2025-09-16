@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { useWorkouts } from '@/hooks/useWorkouts'
+import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
   connectedRunnersAtom,
@@ -75,6 +75,7 @@ interface Props {
  * Receives authenticated user data from Server Component parent.
  */
 export default function CalendarPageClient({ user }: Props) {
+  useHydrateWorkouts() // Hydrate workouts at entry point
   const router = useRouter()
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
   const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)

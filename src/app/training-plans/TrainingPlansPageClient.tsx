@@ -1,10 +1,10 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Checkbox } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
-import React, { Suspense, useCallback, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
@@ -32,8 +32,8 @@ interface Props {
  */
 export default function TrainingPlansPageClient({ user }: Props) {
   const [uiState, setUiState] = useAtom(uiStateAtom)
-  const [filteredPlans] = useAtom(filteredTrainingPlansAtom)
-  const [trainingPlansLoadable] = useAtom(trainingPlansLoadableAtom)
+  const filteredPlans = useAtomValue(filteredTrainingPlansAtom)
+  const trainingPlansLoadable = useAtomValue(trainingPlansLoadableAtom)
 
   // Initialize the refreshable training plans
   const { refreshTrainingPlans } = useRefreshableTrainingPlans()
@@ -44,15 +44,15 @@ export default function TrainingPlansPageClient({ user }: Props) {
   }, [refreshTrainingPlans])
 
   // Get plans and loading state from loadable
-  const getPlans = () => {
+  const plansData = trainingPlansLoadable.state === 'hasData' ? trainingPlansLoadable.data : null
+  const plans = useMemo<TrainingPlan[]>(() => {
     if (trainingPlansLoadable.state === 'hasData') {
-      const plansData = trainingPlansLoadable.data
-      const plans = Array.isArray(plansData) ? plansData : []
-      return uiState.showArchived ? plans : plans.filter(p => !p.archived)
+      const list: TrainingPlan[] = Array.isArray(plansData) ? (plansData as TrainingPlan[]) : []
+      return uiState.showArchived ? list : list.filter(p => !p.archived)
     }
     // Fallback - ensure filteredPlans is an array
-    return Array.isArray(filteredPlans) ? filteredPlans : []
-  }
+    return Array.isArray(filteredPlans) ? (filteredPlans as TrainingPlan[]) : []
+  }, [trainingPlansLoadable.state, plansData, uiState.showArchived, filteredPlans])
 
   const isLoading = trainingPlansLoadable.state === 'loading'
   const hasError = trainingPlansLoadable.state === 'hasError'
@@ -96,7 +96,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                   <div>
                     <h1 className="text-3xl font-bold text-foreground">🏔️ Training Expeditions</h1>
                     <p className="text-foreground/70 mt-1 text-lg">
-                      {user.role === 'coach'
+                      {user.userType === 'coach'
                         ? 'Design summit quests for your athletes'
                         : 'Your personalized path to peak performance'}
                     </p>
@@ -120,19 +120,20 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     size="sm"
                     onPress={refreshTrainingPlans}
                     isIconOnly
+                    aria-label="Refresh training plans"
                     className="border-primary/20 hover:border-primary/40"
                   >
                     <RefreshCw className="h-4 w-4" />
                   </Button>
 
-                  {user.role === 'coach' && (
+                  {user.userType === 'coach' && (
                     <Button
                       color="primary"
                       onPress={handleCreatePlanClick}
                       startContent={<Plus className="h-4 w-4" />}
                       className="bg-primary font-medium"
                     >
-                      Create Expedition
+                      Create Your First Expedition
                     </Button>
                   )}
                 </div>
@@ -167,7 +168,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
             </Card>
           ) : (
             <Suspense fallback={<TrainingPlansPageSkeleton />}>
-              {getPlans().length === 0 ? (
+              {plans.length === 0 ? (
                 <Card className="border-dashed border-2 border-primary/20">
                   <CardBody className="text-center py-16">
                     <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -181,11 +182,11 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <p className="text-foreground/70 mb-6 max-w-md mx-auto">
                       {uiState.showArchived
                         ? 'No training plans have been archived yet. Archive completed expeditions to keep your dashboard organized.'
-                        : user.role === 'coach'
+                        : user.userType === 'coach'
                           ? 'Start building your first summit quest! Create personalized training expeditions to guide your athletes to peak performance.'
                           : 'Your coach will create customized training expeditions designed specifically for your goals and abilities.'}
                     </p>
-                    {user.role === 'coach' && !uiState.showArchived && (
+                    {user.userType === 'coach' && !uiState.showArchived && (
                       <Button
                         color="primary"
                         size="lg"
@@ -200,11 +201,11 @@ export default function TrainingPlansPageClient({ user }: Props) {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {getPlans().map((plan: TrainingPlan) => (
+                  {plans.map((plan: TrainingPlan) => (
                     <TrainingPlanCard
                       key={plan.id}
                       plan={plan}
-                      userRole={user.role as 'runner' | 'coach'}
+                      userRole={user.userType}
                       onArchiveChange={handleArchiveChange}
                     />
                   ))}

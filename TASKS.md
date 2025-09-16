@@ -49,17 +49,30 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 **Goal**: Gradually re-enable and fix temporarily disabled tests
 
+#### CodeRabbit AI Fixes (✅ COMPLETED 2025-09-16)
+
+- [x] **Fix fetchWorkouts Promise Implementation** - ✅ **COMPLETED** - Modified fetchWorkouts to return real Promise that awaits actual data completion
+- [x] **Add Suspense Boundary to WorkoutsPageClient** - ✅ **COMPLETED** - Wrapped WorkoutsPageClient with Suspense using WorkoutsPageSkeleton
+- [x] **Add Suspense Boundary to DashboardRouter** - ✅ **COMPLETED** - Wrapped DashboardRouter with Suspense in both coach and runner dashboard pages
+
+#### Test Re-enablement Tasks
+
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern
 - [ ] **Re-enable race-import.spec.ts** - Fix and re-enable race import tests
 - [ ] **Re-enable messaging-flow.spec.ts** - Fix and re-enable messaging tests (ready after messaging fix)
-- [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests
-- [ ] **Re-enable calendar-integration.spec.ts** - Fix and re-enable calendar tests
+- [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests (depends on Suspense fixes)
+- [ ] **Re-enable calendar-integration.spec.ts** - Fix and re-enable calendar tests (depends on Promise fix)
 - [ ] **Fix Sharded Test Infrastructure** - Resolve test user creation issues for parallel execution
 
 ### 🛡️ **Phase B: Production Infrastructure Hardening (📋 PLANNED)**
 
 **Goal**: Implement monitoring, error tracking, and security hardening for production
 
+- [ ] **API Client Refactoring (HIGH PRIORITY)** - Replace fetch with axios and implement interceptors for credentials
+  - Replace all manual `credentials: 'include'` calls with axios HTTP client
+  - Set up axios interceptors to automatically include authentication cookies
+  - Implement consistent error handling and request/response transformations
+  - Improve baseUrl handling with environment-aware configuration
 - [ ] **Error Monitoring Setup (Sentry)** - Production error tracking and alerting system
 - [ ] **Structured Logging Enhancement** - Log aggregation and monitoring dashboard
 - [ ] **Database Backup Strategy** - Automated backups with encryption and recovery testing

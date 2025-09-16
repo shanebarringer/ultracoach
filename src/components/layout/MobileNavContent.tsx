@@ -20,10 +20,10 @@ interface MobileNavContentProps {
       id: string
       email: string
       name: string
-      role: 'runner' | 'coach'
+      userType: 'runner' | 'coach'
     }
   } | null
-  status: string
+  status: 'loading' | 'authenticated' | 'unauthenticated'
   userNavItems: NavItem[]
   handleSignOut: () => Promise<void>
   handleMenuClose: () => void
@@ -60,7 +60,7 @@ function MobileNavContent({
                 {session.user.name}
               </div>
               <div className="text-xs text-default-500 truncate capitalize">
-                {session.user.role}
+                {session.user.userType}
               </div>
             </div>
           </div>
@@ -111,9 +111,12 @@ function MobileNavContent({
             </Link>
 
             <Button
-              onClick={() => {
-                handleSignOut()
-                handleMenuClose()
+              onClick={async () => {
+                try {
+                  await handleSignOut()
+                } finally {
+                  handleMenuClose()
+                }
               }}
               variant="light"
               startContent={<LogOut className="h-4 w-4" />}
