@@ -1,3 +1,8 @@
+import { Suspense } from 'react'
+
+import { headers } from 'next/headers'
+
+import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireAuth } from '@/utils/auth-server'
 
 import WorkoutsPageClient from './WorkoutsPageClient'
@@ -12,9 +17,16 @@ export const dynamic = 'force-dynamic'
  * Server-side validation provides better security and UX.
  */
 export default async function WorkoutsPage() {
+  // Force dynamic rendering prior to auth check
+  await headers()
+
   // Server-side authentication - forces dynamic rendering
   const session = await requireAuth()
 
-  // Pass authenticated user data to Client Component
-  return <WorkoutsPageClient user={session.user} />
+  // Pass authenticated user data to Client Component wrapped in Suspense
+  return (
+    <Suspense fallback={<WorkoutsPageSkeleton />}>
+      <WorkoutsPageClient user={session.user} />
+    </Suspense>
+  )
 }

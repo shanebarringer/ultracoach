@@ -3,12 +3,23 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Workout } from '@/lib/supabase'
+import {
+  compareDatesAsc,
+  compareDatesDesc,
+  isWorkoutUpcoming,
+  isWorkoutWithinDays,
+} from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
+
+// Helper function to unwrap API response shapes
+function unwrapWorkout(json: unknown): Workout {
+  return typeof json === 'object' && json !== null && 'workout' in json
+    ? (json as { workout: Workout }).workout
+    : (json as Workout)
+}
 
 // Core workout atoms with initial value from async fetch
 export const workoutsAtom = atom<Workout[]>([])
-export const workoutsLoadingAtom = atom(false)
-export const workoutsErrorAtom = atom<string | null>(null)
 export const workoutsRefreshTriggerAtom = atom(0)
 
 // Async workout atom with suspense support
@@ -71,6 +82,11 @@ export const refreshWorkoutsAtom = atom(null, (get, set) => {
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 })
 
+// Hydration atom to sync async workouts with sync atom
+export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
+  set(workoutsAtom, workouts)
+})
+
 // Selected workout atoms
 export const selectedWorkoutAtom = atom<Workout | null>(null)
 export const selectedWorkoutIdAtom = atom<string | null>(null)
@@ -78,32 +94,28 @@ export const selectedWorkoutIdAtom = atom<string | null>(null)
 // Derived atoms for filtered views
 export const upcomingWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
   return workouts
     .filter((w: Workout) => {
-      const workoutDate = new Date(w.date)
-      return workoutDate >= today && w.status === 'planned'
+      // Use date-fns to check if workout is upcoming (today or future)
+      return isWorkoutUpcoming(w.date) && w.status === 'planned'
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => compareDatesAsc(a.date, b.date))
 })
 
 export const completedWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   return workouts
     .filter((w: Workout) => w.status === 'completed')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => compareDatesDesc(a.date, b.date))
 })
 
 export const thisWeekWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date()
-  const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   return workouts.filter((w: Workout) => {
-    const workoutDate = new Date(w.date)
-    return workoutDate >= today && workoutDate <= weekFromToday
+    // Use date-fns to check if workout is within the next 7 days
+    return isWorkoutWithinDays(w.date, 7)
   })
 })
 
@@ -244,6 +256,7 @@ export const completeWorkoutAtom = atom(
       const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data || {}),
       })
 
@@ -251,7 +264,8 @@ export const completeWorkoutAtom = atom(
         throw new Error('Failed to complete workout')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new status
       const workouts = get(workoutsAtom)
@@ -308,6 +322,7 @@ export const logWorkoutDetailsAtom = atom(
       const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       })
 
@@ -315,7 +330,8 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error('Failed to log workout details')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new details
       const workouts = get(workoutsAtom)
@@ -352,13 +368,15 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
     const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
       method: 'DELETE',
+      credentials: 'include',
     })
 
     if (!response.ok) {
       throw new Error('Failed to skip workout')
     }
 
-    const updatedWorkout = await response.json()
+    const json: unknown = await response.json()
+    const updatedWorkout: Workout = unwrapWorkout(json)
 
     // Update the workouts atom with the new status
     const workouts = get(workoutsAtom)

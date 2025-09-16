@@ -27,8 +27,6 @@ import {
   workoutTypeFilterAtom,
   workoutViewModeAtom,
   workoutsAtom,
-  workoutsErrorAtom,
-  workoutsLoadingAtom,
   workoutsRefreshTriggerAtom,
 } from '@/lib/atoms/workouts'
 
@@ -75,20 +73,6 @@ describe('Workouts Atoms', () => {
       expect(workouts).toHaveLength(2)
       expect(workouts[0].name).toBe('Morning Run')
       expect(workouts[1].name).toBe('Afternoon Workout')
-    })
-
-    it('should track loading state', () => {
-      expect(getAtomValue(store, workoutsLoadingAtom)).toBe(false)
-
-      setAtomValue(store, workoutsLoadingAtom, true)
-      expect(getAtomValue(store, workoutsLoadingAtom)).toBe(true)
-    })
-
-    it('should track error state', () => {
-      expect(getAtomValue(store, workoutsErrorAtom)).toBe(null)
-
-      setAtomValue(store, workoutsErrorAtom, 'Failed to fetch workouts')
-      expect(getAtomValue(store, workoutsErrorAtom)).toBe('Failed to fetch workouts')
     })
 
     it('should track refresh trigger', () => {
@@ -270,7 +254,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/complete',
+              'http://localhost:3000/api/workouts/w1/complete',
               {
                 ok: true,
                 json: () =>
@@ -294,10 +278,11 @@ describe('Workouts Atoms', () => {
         })
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
+          'http://localhost:3000/api/workouts/w1/complete',
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               actual_distance: 10.5,
               actual_duration: 65,
@@ -336,7 +321,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/log',
+              'http://localhost:3000/api/workouts/w1/log',
               {
                 ok: true,
                 json: () =>
@@ -362,10 +347,11 @@ describe('Workouts Atoms', () => {
         })
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/log',
+          'http://localhost:3000/api/workouts/w1/log',
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               actual_distance: 12,
               actual_duration: 70,
@@ -387,7 +373,7 @@ describe('Workouts Atoms', () => {
         fetchMock = mockFetch(
           new Map([
             [
-              '/api/workouts/w1/complete',
+              'http://localhost:3000/api/workouts/w1/complete',
               {
                 ok: true,
                 json: () =>
@@ -403,9 +389,10 @@ describe('Workouts Atoms', () => {
         const result = await store.set(skipWorkoutAtom, 'w1')
 
         expect(fetchMock).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
+          'http://localhost:3000/api/workouts/w1/complete',
           expect.objectContaining({
             method: 'DELETE',
+            credentials: 'include',
           })
         )
 

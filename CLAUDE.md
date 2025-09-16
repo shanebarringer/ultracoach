@@ -284,6 +284,31 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
+- **CodeRabbit AI Improvements (2025-09-15)**: ✅ **COMPLETED** - Addressed 15 nitpick comments for enhanced code robustness
+  - **Issue**: CodeRabbit AI identified edge cases, type safety gaps, and potential bugs in date utilities and workout atoms
+  - **Critical Fixes Applied**:
+    - **Edge-time drift prevention**: Added `startOfDay()` normalization to `toLocalYMD()` to prevent timezone conversion issues
+    - **Hydration bug fix**: Fixed empty array hydration bug that caused stale UI when backend returns empty results
+    - **Response shape type safety**: Created `unwrapWorkout()` helper to handle inconsistent API response shapes (`{ workout }` vs bare object)
+    - **Test stabilization**: Added `vi.setSystemTime()` to prevent flaky time-dependent tests
+    - **Function naming clarity**: Renamed `getCurrentWeekRange()` to `getRollingWeekRange()` with accurate documentation
+  - **Enhanced Test Coverage**: Added ISO string test for `normalizeToEndOfDay` and boundary test for `isWorkoutWithinDays`
+  - **Code Quality**: Removed unused `workoutsLoadingAtom` and `workoutsErrorAtom` (replaced by Suspense pattern)
+  - **Documentation**: Updated `.context7-docs/date-fns/best-practices.md` with CodeRabbit AI learnings and patterns
+  - **Result**: Eliminated edge cases, enhanced type safety, and improved test reliability across date utility system
+
+- **CodeRabbit AI Improvements Phase 2 (2025-09-15)**: ✅ **COMPLETED** - Advanced date parsing and hydration architecture fixes
+  - **Issue**: Additional CodeRabbit AI review identified UTC vs Local timezone drift and forced Suspense issues
+  - **Critical Fixes Applied**:
+    - **Smart Date Parsing**: Created `parseInput()` helper that detects date format and uses appropriate parser
+    - **UTC Drift Prevention**: Date-only strings ("2024-03-15") now parse in local timezone instead of UTC
+    - **Hydration Architecture**: Moved `useHydrateWorkouts()` from generic hook to top-level entry points
+    - **Component Architecture**: Prevents unexpected Suspense boundaries in workout-consuming components
+    - **Testing Enhancement**: Added 7 new test cases for mixed date format scenarios (38/38 tests passing)
+    - **Format Detection**: ISO strings with time use `parseISO()`, date-only strings use `parse()` with format
+  - **Entry Points Updated**: DashboardRouter, WorkoutsPageClient, CalendarPageClient now handle hydration
+  - **Result**: Bulletproof timezone handling and cleaner component architecture with backward compatibility
+
 - **Messaging System Refactor (2025-09-14)**: ✅ **COMPLETED** - Fixed critical messaging display issue
   - **Issue**: Messages were sending successfully but not displaying in UI due to atom family disconnect
   - **Root Cause**: Duplicate state management - messages stored in global `messagesAtom` but read from conversation-specific atom families

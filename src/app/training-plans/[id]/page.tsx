@@ -89,7 +89,9 @@ export default function TrainingPlanDetailPage() {
 
     try {
       // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`)
+      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
+        credentials: 'include',
+      })
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
         setExtendedPlanData(prev => ({
@@ -102,7 +104,10 @@ export default function TrainingPlanDetailPage() {
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(`/api/training-plans/${trainingPlan.previous_plan_id}`)
+        const prevPlanResponse = await fetch(
+          `/api/training-plans/${trainingPlan.previous_plan_id}`,
+          { credentials: 'include' }
+        )
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
           setExtendedPlanData(prev => ({
@@ -115,7 +120,9 @@ export default function TrainingPlanDetailPage() {
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`)
+        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
+          credentials: 'include',
+        })
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
           setExtendedPlanData(prev => ({
@@ -192,6 +199,7 @@ export default function TrainingPlanDetailPage() {
     try {
       const response = await fetch(`/api/training-plans/${planId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
       if (response.ok) {
         commonToasts.trainingPlanDeleted()
@@ -805,22 +813,24 @@ export default function TrainingPlanDetailPage() {
                             </div>
 
                             <div className="flex gap-2 mt-4">
-                              {session.user.role === 'runner' && workout.status === 'planned' && (
-                                <button
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
-                                >
-                                  Log Workout
-                                </button>
-                              )}
-                              {session.user.role === 'runner' && workout.status === 'completed' && (
-                                <button
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                                >
-                                  Edit Log
-                                </button>
-                              )}
+                              {session.user.userType === 'runner' &&
+                                workout.status === 'planned' && (
+                                  <button
+                                    onClick={() => handleLogWorkout(workout)}
+                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
+                                  >
+                                    Log Workout
+                                  </button>
+                                )}
+                              {session.user.userType === 'runner' &&
+                                workout.status === 'completed' && (
+                                  <button
+                                    onClick={() => handleLogWorkout(workout)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
+                                  >
+                                    Edit Log
+                                  </button>
+                                )}
                             </div>
                           </div>
                         </div>

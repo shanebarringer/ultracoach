@@ -14,7 +14,7 @@ import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { useWorkouts } from '@/hooks/useWorkouts'
+import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   loadingStatesAtom,
   uiStateAtom,
@@ -48,6 +48,7 @@ interface Props {
  * Receives authenticated user data from Server Component parent.
  */
 export default function WorkoutsPageClient({ user }: Props) {
+  useHydrateWorkouts() // Hydrate workouts at entry point
   useWorkouts() // Initialize workouts data
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
@@ -58,7 +59,7 @@ export default function WorkoutsPageClient({ user }: Props) {
   const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
   const { runners } = useDashboardData() // Get runner data for coach view
 
-  const isCoach = user.role === 'coach'
+  const isCoach = user.userType === 'coach'
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -167,7 +168,7 @@ export default function WorkoutsPageClient({ user }: Props) {
                   Training Log
                 </h1>
                 <p className="text-foreground-600 mt-2 text-lg">
-                  {user.role === 'coach'
+                  {user.userType === 'coach'
                     ? 'Guide your athletes to their summit'
                     : 'Track your ascent to peak performance'}
                 </p>
