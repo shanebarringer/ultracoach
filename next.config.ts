@@ -1,11 +1,17 @@
-import { codeInspectorPlugin } from 'code-inspector-plugin'
-
 import type { NextConfig } from 'next'
+
+// Conditional import for code-inspector-plugin to handle production builds
+let codeInspectorPlugin: any = null
+try {
+  codeInspectorPlugin = require('code-inspector-plugin').codeInspectorPlugin
+} catch (e) {
+  // code-inspector-plugin not available (production build where dev dependencies are skipped)
+}
 
 const nextConfig: NextConfig = {
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
-    if (dev && !isServer && process.env.NODE_ENV !== 'test') {
+    if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorPlugin) {
       config.plugins.push(codeInspectorPlugin({ bundler: 'webpack' }))
     }
 
