@@ -6,6 +6,7 @@ import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import {
+  asyncWorkoutsAtom,
   completedWorkoutsAtom,
   refreshWorkoutsAtom,
   upcomingWorkoutsAtom,
@@ -16,12 +17,37 @@ import type { Workout } from '@/lib/supabase'
 
 const logger = createLogger('useWorkouts')
 
+/**
+ * Hook to hydrate the synchronous workoutsAtom from the async Suspense-based atom
+ * This ensures data consistency between the two atoms and prevents data mismatches
+ */
+export function useHydrateWorkouts() {
+  const setWorkouts = useSetAtom(workoutsAtom)
+
+  // This will trigger Suspense if not already loaded
+  const asyncWorkouts = useAtomValue(asyncWorkoutsAtom)
+
+  useEffect(() => {
+    if (asyncWorkouts && asyncWorkouts.length > 0) {
+      logger.debug('Hydrating workouts atom from async data', {
+        count: asyncWorkouts.length,
+      })
+      setWorkouts(asyncWorkouts)
+    }
+  }, [asyncWorkouts, setWorkouts])
+
+  return asyncWorkouts
+}
+
 export function useWorkouts() {
   const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
   const refresh = useSetAtom(refreshWorkoutsAtom)
   const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
   const completedWorkouts = useAtomValue(completedWorkoutsAtom)
+
+  // Hydrate workouts from async atom to ensure consistency
+  useHydrateWorkouts()
 
   // Trigger initial fetch when session is available
   useEffect(() => {

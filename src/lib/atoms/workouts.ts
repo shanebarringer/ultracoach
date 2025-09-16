@@ -3,6 +3,12 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 import type { Workout } from '@/lib/supabase'
+import {
+  compareDatesAsc,
+  compareDatesDesc,
+  isWorkoutUpcoming,
+  isWorkoutWithinDays,
+} from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
 // Core workout atoms with initial value from async fetch
@@ -71,6 +77,11 @@ export const refreshWorkoutsAtom = atom(null, (get, set) => {
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 })
 
+// Hydration atom to sync async workouts with sync atom
+export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
+  set(workoutsAtom, workouts)
+})
+
 // Selected workout atoms
 export const selectedWorkoutAtom = atom<Workout | null>(null)
 export const selectedWorkoutIdAtom = atom<string | null>(null)
@@ -78,32 +89,28 @@ export const selectedWorkoutIdAtom = atom<string | null>(null)
 // Derived atoms for filtered views
 export const upcomingWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
   return workouts
     .filter((w: Workout) => {
-      const workoutDate = new Date(w.date)
-      return workoutDate >= today && w.status === 'planned'
+      // Use date-fns to check if workout is upcoming (today or future)
+      return isWorkoutUpcoming(w.date) && w.status === 'planned'
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => compareDatesAsc(a.date, b.date))
 })
 
 export const completedWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   return workouts
     .filter((w: Workout) => w.status === 'completed')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => compareDatesDesc(a.date, b.date))
 })
 
 export const thisWeekWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date()
-  const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   return workouts.filter((w: Workout) => {
-    const workoutDate = new Date(w.date)
-    return workoutDate >= today && workoutDate <= weekFromToday
+    // Use date-fns to check if workout is within the next 7 days
+    return isWorkoutWithinDays(w.date, 7)
   })
 })
 
