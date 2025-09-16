@@ -25,7 +25,7 @@ import {
  */
 export const toLocalYMD = (date: Date | string): string => {
   const d = typeof date === 'string' ? parseISO(date) : date
-  return format(d, 'yyyy-MM-dd')
+  return format(startOfDay(d), 'yyyy-MM-dd')
 }
 
 /**
@@ -72,10 +72,10 @@ export const isWorkoutPast = (workoutDate: Date | string): boolean => {
 }
 
 /**
- * Checks if a workout is within the next N days
+ * Checks if a workout is within the next N days (inclusive range)
  * @param workoutDate - Workout date as Date object or ISO string
  * @param days - Number of days to look ahead
- * @returns True if workout is within the specified range
+ * @returns True if workout is within the specified range (includes today and day N)
  */
 export const isWorkoutWithinDays = (workoutDate: Date | string, days: number): boolean => {
   const workout = normalizeToStartOfDay(workoutDate)
@@ -125,10 +125,10 @@ export const areSameDay = (dateA: Date | string, dateB: Date | string): boolean 
 }
 
 /**
- * Gets the start and end of the current week
- * @returns Object with start and end dates for the current week
+ * Gets a rolling 7-day window starting today (start-of-day)
+ * @returns Object with start (today) and end (7 days from today) dates
  */
-export const getCurrentWeekRange = (): { start: Date; end: Date } => {
+export const getRollingWeekRange = (): { start: Date; end: Date } => {
   const today = new Date()
   const start = startOfDay(today)
   const end = startOfDay(addDays(today, 7))

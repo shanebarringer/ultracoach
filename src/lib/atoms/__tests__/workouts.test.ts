@@ -27,8 +27,6 @@ import {
   workoutTypeFilterAtom,
   workoutViewModeAtom,
   workoutsAtom,
-  workoutsErrorAtom,
-  workoutsLoadingAtom,
   workoutsRefreshTriggerAtom,
 } from '@/lib/atoms/workouts'
 
@@ -77,19 +75,6 @@ describe('Workouts Atoms', () => {
       expect(workouts[1].name).toBe('Afternoon Workout')
     })
 
-    it('should track loading state', () => {
-      expect(getAtomValue(store, workoutsLoadingAtom)).toBe(false)
-
-      setAtomValue(store, workoutsLoadingAtom, true)
-      expect(getAtomValue(store, workoutsLoadingAtom)).toBe(true)
-    })
-
-    it('should track error state', () => {
-      expect(getAtomValue(store, workoutsErrorAtom)).toBe(null)
-
-      setAtomValue(store, workoutsErrorAtom, 'Failed to fetch workouts')
-      expect(getAtomValue(store, workoutsErrorAtom)).toBe('Failed to fetch workouts')
-    })
 
     it('should track refresh trigger', () => {
       const initialValue = getAtomValue(store, workoutsRefreshTriggerAtom)

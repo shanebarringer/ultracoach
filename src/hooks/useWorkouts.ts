@@ -28,12 +28,10 @@ export function useHydrateWorkouts() {
   const asyncWorkouts = useAtomValue(asyncWorkoutsAtom)
 
   useEffect(() => {
-    if (asyncWorkouts && asyncWorkouts.length > 0) {
-      logger.debug('Hydrating workouts atom from async data', {
-        count: asyncWorkouts.length,
-      })
-      setWorkouts(asyncWorkouts)
-    }
+    logger.debug('Hydrating workouts atom from async data', {
+      count: asyncWorkouts?.length ?? 0,
+    })
+    setWorkouts(asyncWorkouts ?? [])
   }, [asyncWorkouts, setWorkouts])
 
   return asyncWorkouts
@@ -80,17 +78,19 @@ export function useWorkouts() {
           throw new Error('Failed to update workout')
         }
 
-        const data = await response.json()
+        const json: unknown = await response.json()
+        const updated: Workout =
+          (typeof json === 'object' && json !== null && 'workout' in json
+            ? (json as { workout: Workout }).workout
+            : (json as Workout))
 
         // Update local state and trigger refresh
         setWorkouts(prev =>
-          prev.map(workout =>
-            workout.id === workoutId ? { ...workout, ...data.workout } : workout
-          )
+          prev.map(workout => (workout.id === workoutId ? { ...workout, ...updated } : workout))
         )
         refresh()
 
-        return data.workout
+        return updated
       } catch (error) {
         logger.error('Error updating workout:', error)
         throw error

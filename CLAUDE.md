@@ -284,6 +284,19 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 📝 Recent Project Notes
 
+- **CodeRabbit AI Improvements (2025-09-15)**: ✅ **COMPLETED** - Addressed 15 nitpick comments for enhanced code robustness
+  - **Issue**: CodeRabbit AI identified edge cases, type safety gaps, and potential bugs in date utilities and workout atoms
+  - **Critical Fixes Applied**:
+    - **Edge-time drift prevention**: Added `startOfDay()` normalization to `toLocalYMD()` to prevent timezone conversion issues
+    - **Hydration bug fix**: Fixed empty array hydration bug that caused stale UI when backend returns empty results
+    - **Response shape type safety**: Created `unwrapWorkout()` helper to handle inconsistent API response shapes (`{ workout }` vs bare object)
+    - **Test stabilization**: Added `vi.setSystemTime()` to prevent flaky time-dependent tests
+    - **Function naming clarity**: Renamed `getCurrentWeekRange()` to `getRollingWeekRange()` with accurate documentation
+  - **Enhanced Test Coverage**: Added ISO string test for `normalizeToEndOfDay` and boundary test for `isWorkoutWithinDays`
+  - **Code Quality**: Removed unused `workoutsLoadingAtom` and `workoutsErrorAtom` (replaced by Suspense pattern)
+  - **Documentation**: Updated `.context7-docs/date-fns/best-practices.md` with CodeRabbit AI learnings and patterns
+  - **Result**: Eliminated edge cases, enhanced type safety, and improved test reliability across date utility system
+
 - **Messaging System Refactor (2025-09-14)**: ✅ **COMPLETED** - Fixed critical messaging display issue
   - **Issue**: Messages were sending successfully but not displaying in UI due to atom family disconnect
   - **Root Cause**: Duplicate state management - messages stored in global `messagesAtom` but read from conversation-specific atom families

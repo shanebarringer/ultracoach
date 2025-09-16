@@ -1,14 +1,14 @@
 /**
  * Tests for date utility functions
  */
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   areSameDay,
   compareDatesAsc,
   compareDatesDesc,
   formatDateForDisplay,
-  getCurrentWeekRange,
+  getRollingWeekRange,
   isWorkoutPast,
   isWorkoutUpcoming,
   isWorkoutWithinDays,
@@ -18,6 +18,8 @@ import {
 } from '../date'
 
 describe('Date Utilities', () => {
+  beforeAll(() => vi.setSystemTime(new Date('2024-03-16T10:00:00Z')))
+  afterAll(() => vi.useRealTimers())
   describe('toLocalYMD', () => {
     it('should format Date object to YYYY-MM-DD', () => {
       const date = new Date('2024-03-15T14:30:00')
@@ -59,6 +61,15 @@ describe('Date Utilities', () => {
     it('should normalize Date to end of day', () => {
       const date = new Date('2024-03-15T14:30:45.123')
       const normalized = normalizeToEndOfDay(date)
+      expect(normalized.getHours()).toBe(23)
+      expect(normalized.getMinutes()).toBe(59)
+      expect(normalized.getSeconds()).toBe(59)
+      expect(normalized.getMilliseconds()).toBe(999)
+    })
+
+    it('should normalize ISO string to end of day', () => {
+      const dateString = '2024-03-15T14:30:45.123Z'
+      const normalized = normalizeToEndOfDay(dateString)
       expect(normalized.getHours()).toBe(23)
       expect(normalized.getMinutes()).toBe(59)
       expect(normalized.getSeconds()).toBe(59)
@@ -128,6 +139,13 @@ describe('Date Utilities', () => {
 
       expect(isWorkoutWithinDays(yesterday, 7)).toBe(false)
     })
+
+    it('should include exactly N days ahead (inclusive end)', () => {
+      const n = 7
+      const nDaysFromNow = new Date()
+      nDaysFromNow.setDate(nDaysFromNow.getDate() + n)
+      expect(isWorkoutWithinDays(nDaysFromNow, n)).toBe(true)
+    })
   })
 
   describe('compareDatesAsc', () => {
@@ -196,9 +214,9 @@ describe('Date Utilities', () => {
     })
   })
 
-  describe('getCurrentWeekRange', () => {
-    it('should return start and end of current week', () => {
-      const { start, end } = getCurrentWeekRange()
+  describe('getRollingWeekRange', () => {
+    it('should return rolling 7-day window starting today', () => {
+      const { start, end } = getRollingWeekRange()
 
       // Start should be today at 00:00:00
       const today = new Date()

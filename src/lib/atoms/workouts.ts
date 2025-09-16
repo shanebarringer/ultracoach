@@ -11,10 +11,15 @@ import {
 } from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
+// Helper function to unwrap API response shapes
+function unwrapWorkout(json: unknown): Workout {
+  return typeof json === 'object' && json !== null && 'workout' in json
+    ? (json as { workout: Workout }).workout
+    : (json as Workout)
+}
+
 // Core workout atoms with initial value from async fetch
 export const workoutsAtom = atom<Workout[]>([])
-export const workoutsLoadingAtom = atom(false)
-export const workoutsErrorAtom = atom<string | null>(null)
 export const workoutsRefreshTriggerAtom = atom(0)
 
 // Async workout atom with suspense support
@@ -259,7 +264,8 @@ export const completeWorkoutAtom = atom(
         throw new Error('Failed to complete workout')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new status
       const workouts = get(workoutsAtom)
@@ -324,7 +330,8 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error('Failed to log workout details')
       }
 
-      const updatedWorkout = await response.json()
+      const json: unknown = await response.json()
+      const updatedWorkout: Workout = unwrapWorkout(json)
 
       // Update the workouts atom with the new details
       const workouts = get(workoutsAtom)
@@ -368,7 +375,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       throw new Error('Failed to skip workout')
     }
 
-    const updatedWorkout = await response.json()
+    const json: unknown = await response.json()
+    const updatedWorkout: Workout = unwrapWorkout(json)
 
     // Update the workouts atom with the new status
     const workouts = get(workoutsAtom)
