@@ -1,4 +1,7 @@
+import { Suspense } from 'react'
+
 import DashboardRouter from '@/components/dashboard/DashboardRouter'
+import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireRunner } from '@/utils/auth-server'
 
 // Force dynamic rendering for this route
@@ -14,6 +17,10 @@ export default async function RunnerDashboardPage() {
   // Server-side authentication and role validation - forces dynamic rendering
   const session = await requireRunner()
 
-  // Pass authenticated runner data to Client Component
-  return <DashboardRouter user={session.user} />
+  // Pass authenticated runner data to Client Component wrapped in Suspense
+  return (
+    <Suspense fallback={<RunnerDashboardSkeleton />}>
+      <DashboardRouter user={session.user} />
+    </Suspense>
+  )
 }

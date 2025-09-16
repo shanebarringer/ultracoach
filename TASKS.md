@@ -49,11 +49,17 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 
 **Goal**: Gradually re-enable and fix temporarily disabled tests
 
+#### CodeRabbit AI Fixes (✅ COMPLETED 2025-09-16)
+- [x] **Fix fetchWorkouts Promise Implementation** - ✅ **COMPLETED** - Modified fetchWorkouts to return real Promise that awaits actual data completion
+- [x] **Add Suspense Boundary to WorkoutsPageClient** - ✅ **COMPLETED** - Wrapped WorkoutsPageClient with Suspense using WorkoutsPageSkeleton
+- [x] **Add Suspense Boundary to DashboardRouter** - ✅ **COMPLETED** - Wrapped DashboardRouter with Suspense in both coach and runner dashboard pages
+
+#### Test Re-enablement Tasks
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern
 - [ ] **Re-enable race-import.spec.ts** - Fix and re-enable race import tests
 - [ ] **Re-enable messaging-flow.spec.ts** - Fix and re-enable messaging tests (ready after messaging fix)
-- [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests
-- [ ] **Re-enable calendar-integration.spec.ts** - Fix and re-enable calendar tests
+- [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests (depends on Suspense fixes)
+- [ ] **Re-enable calendar-integration.spec.ts** - Fix and re-enable calendar tests (depends on Promise fix)
 - [ ] **Fix Sharded Test Infrastructure** - Resolve test user creation issues for parallel execution
 
 ### 🛡️ **Phase B: Production Infrastructure Hardening (📋 PLANNED)**

@@ -1,3 +1,6 @@
+import { Suspense } from 'react'
+
+import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireAuth } from '@/utils/auth-server'
 
 import WorkoutsPageClient from './WorkoutsPageClient'
@@ -15,6 +18,10 @@ export default async function WorkoutsPage() {
   // Server-side authentication - forces dynamic rendering
   const session = await requireAuth()
 
-  // Pass authenticated user data to Client Component
-  return <WorkoutsPageClient user={session.user} />
+  // Pass authenticated user data to Client Component wrapped in Suspense
+  return (
+    <Suspense fallback={<WorkoutsPageSkeleton />}>
+      <WorkoutsPageClient user={session.user} />
+    </Suspense>
+  )
 }

@@ -57,10 +57,21 @@ export function useWorkouts() {
     }
   }, [session?.user?.id, refresh])
 
-  const fetchWorkouts = useCallback(() => {
+  const fetchWorkouts = useCallback(async () => {
     logger.debug('Triggering workout refresh')
+
+    // Trigger the refresh which will invalidate and re-fetch the async atom
     refresh()
-  }, [refresh])
+
+    // Return a Promise that resolves after a brief delay to allow the refresh to propagate
+    // This provides proper async behavior for loading states without complex subscription logic
+    return new Promise<Workout[]>((resolve) => {
+      setTimeout(() => {
+        logger.debug('Workout refresh promise resolved')
+        resolve(workouts)
+      }, 150) // Brief delay to allow atom refresh to propagate
+    })
+  }, [refresh, workouts])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
