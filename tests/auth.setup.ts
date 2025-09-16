@@ -1,6 +1,8 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
-import fs from 'fs'
+
+// Conditional fs import to avoid Vercel build issues
+const fs = typeof window === 'undefined' ? require('fs') : null
 
 const authFile = path.join(__dirname, '../playwright/.auth/user.json')
 
@@ -58,7 +60,7 @@ setup('authenticate', async ({ page, context }) => {
 
   // Ensure the directory exists before saving authentication state
   const authDir = path.dirname(authFile)
-  if (!fs.existsSync(authDir)) {
+  if (fs && !fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, { recursive: true })
     console.log(`📁 Created auth directory: ${authDir}`)
   }
