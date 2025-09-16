@@ -747,3 +747,82 @@ export const GenericContentSkeleton = ({
     </div>
   </div>
 )
+
+// Calendar Page Skeleton
+export const CalendarPageSkeleton = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Header Section */}
+    <div className="mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <Skeleton className="h-8 w-48 rounded mb-2" />
+          <Skeleton className="h-5 w-80 rounded" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-40 rounded" />
+          <Skeleton className="h-9 w-28 rounded" />
+        </div>
+      </div>
+    </div>
+
+    {/* Calendar Grid */}
+    <div className="relative">
+      <Card className="mb-8">
+        <CardBody className="p-6">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-7 w-32 rounded" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-8 w-8 rounded" />
+            </div>
+          </div>
+
+          {/* Days of Week Header */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="p-2 text-center">
+                <Skeleton className="h-4 w-8 rounded mx-auto" />
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {[...Array(35)].map((_, i) => (
+              <div key={i} className="aspect-square border border-divider rounded-lg p-2">
+                <Skeleton className="h-5 w-6 rounded mb-2" />
+                {/* Some cells have workout indicators */}
+                {Math.random() > 0.7 && (
+                  <div className="space-y-1">
+                    <Skeleton className="h-2 w-full rounded" />
+                    <Skeleton className="h-2 w-3/4 rounded" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardBody className="p-6">
+              <Skeleton className="h-6 w-32 rounded mb-4" />
+              <div className="space-y-3">
+                {[...Array(4)].map((_, j) => (
+                  <div key={j} className="flex justify-between">
+                    <Skeleton className="h-4 w-24 rounded" />
+                    <Skeleton className="h-4 w-16 rounded" />
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </div>
+)

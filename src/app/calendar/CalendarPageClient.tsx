@@ -4,7 +4,7 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom } from 'jotai'
 
-import { memo, useCallback, useRef } from 'react'
+import { Suspense, memo, useCallback, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -12,14 +12,15 @@ import { useRouter } from 'next/navigation'
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
   connectedRunnersAtom,
   filteredWorkoutsAtom,
-  trainingPlansAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
+import { refreshableTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
@@ -69,20 +70,18 @@ interface Props {
 }
 
 /**
- * Calendar Page Client Component
+ * Calendar Content Component (uses async atoms with Suspense)
  *
- * Handles calendar interactivity and state management.
- * Receives authenticated user data from Server Component parent.
+ * Handles calendar content that requires async data loading.
  */
-export default function CalendarPageClient({ user }: Props) {
-  useHydrateWorkouts() // Hydrate workouts at entry point
+function CalendarContent({ user }: Props) {
   const router = useRouter()
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
   const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
   const [workoutStats] = useAtom(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
-  const [trainingPlans] = useAtom(trainingPlansAtom)
-  const [connectedRunners] = useAtom(connectedRunnersAtom)
+  const [trainingPlans] = useAtom(refreshableTrainingPlansAtom) // Using async atom
+  const [connectedRunners] = useAtom(connectedRunnersAtom) // Already async
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
@@ -413,5 +412,21 @@ export default function CalendarPageClient({ user }: Props) {
         )}
       </ModernErrorBoundary>
     </Layout>
+  )
+}
+
+/**
+ * Calendar Page Client Component
+ *
+ * Handles calendar interactivity and state management.
+ * Receives authenticated user data from Server Component parent.
+ */
+export default function CalendarPageClient({ user }: Props) {
+  useHydrateWorkouts() // Hydrate workouts at entry point
+
+  return (
+    <Suspense fallback={<CalendarPageSkeleton />}>
+      <CalendarContent user={user} />
+    </Suspense>
   )
 }

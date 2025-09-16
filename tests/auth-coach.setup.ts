@@ -19,7 +19,7 @@ setup('authenticate as coach', async ({ page, context }) => {
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
       email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
-      password: process.env.TEST_COACH_PASSWORD || 'Test123!@#',
+      password: process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!',
     },
     headers: {
       'Content-Type': 'application/json',
