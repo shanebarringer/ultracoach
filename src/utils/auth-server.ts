@@ -103,9 +103,9 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const { user } = rawSession
 
     // Extract role using type-safe approach
-    // Priority 1: Use 'role' field from customSession plugin transformation
-    // Priority 2: Fall back to 'userType' field if role not present
-    const roleCandidate = user.role || user.userType
+    // Priority 1: Use 'userType' field as source of truth (per CLAUDE.md documentation)
+    // Priority 2: Fall back to 'role' field for backward compatibility
+    const roleCandidate = user.userType || user.role
     const userRole = isValidUserRole(roleCandidate) ? roleCandidate : 'runner'
 
     // ENHANCED DEBUG: Track role detection with type safety

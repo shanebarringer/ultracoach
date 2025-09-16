@@ -28,12 +28,12 @@ export default function DashboardRouter({ user }: Props) {
   useHydrateWorkouts()
 
   logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user', {
-    role: user.role,
+    userType: user.userType,
   })
 
-  // Handle invalid roles gracefully (should not happen with server-side validation)
-  if (!user.role || (user.role !== 'coach' && user.role !== 'runner')) {
-    logger.warn('Invalid user role received, showing fallback', { role: user.role })
+  // Handle invalid userType gracefully (should not happen with server-side validation)
+  if (!user.userType || (user.userType !== 'coach' && user.userType !== 'runner')) {
+    logger.warn('Invalid user userType received, showing fallback', { userType: user.userType })
     return (
       <Layout>
         <ModernErrorBoundary>
@@ -60,10 +60,10 @@ export default function DashboardRouter({ user }: Props) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Suspense
             fallback={
-              user.role === 'coach' ? <CoachDashboardSkeleton /> : <RunnerDashboardSkeleton />
+              user.userType === 'coach' ? <CoachDashboardSkeleton /> : <RunnerDashboardSkeleton />
             }
           >
-            {user.role === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
+            {user.userType === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
           </Suspense>
         </div>
       </ModernErrorBoundary>

@@ -59,7 +59,7 @@ export default function WorkoutsPageClient({ user }: Props) {
   const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
   const { runners } = useDashboardData() // Get runner data for coach view
 
-  const isCoach = user.role === 'coach'
+  const isCoach = user.userType === 'coach'
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -168,7 +168,7 @@ export default function WorkoutsPageClient({ user }: Props) {
                   Training Log
                 </h1>
                 <p className="text-foreground-600 mt-2 text-lg">
-                  {user.role === 'coach'
+                  {user.userType === 'coach'
                     ? 'Guide your athletes to their summit'
                     : 'Track your ascent to peak performance'}
                 </p>

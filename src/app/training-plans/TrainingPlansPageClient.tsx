@@ -96,7 +96,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                   <div>
                     <h1 className="text-3xl font-bold text-foreground">🏔️ Training Expeditions</h1>
                     <p className="text-foreground/70 mt-1 text-lg">
-                      {user.role === 'coach'
+                      {user.userType === 'coach'
                         ? 'Design summit quests for your athletes'
                         : 'Your personalized path to peak performance'}
                     </p>
@@ -125,7 +125,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <RefreshCw className="h-4 w-4" />
                   </Button>
 
-                  {user.role === 'coach' && (
+                  {user.userType === 'coach' && (
                     <Button
                       color="primary"
                       onPress={handleCreatePlanClick}
@@ -181,11 +181,11 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <p className="text-foreground/70 mb-6 max-w-md mx-auto">
                       {uiState.showArchived
                         ? 'No training plans have been archived yet. Archive completed expeditions to keep your dashboard organized.'
-                        : user.role === 'coach'
+                        : user.userType === 'coach'
                           ? 'Start building your first summit quest! Create personalized training expeditions to guide your athletes to peak performance.'
                           : 'Your coach will create customized training expeditions designed specifically for your goals and abilities.'}
                     </p>
-                    {user.role === 'coach' && !uiState.showArchived && (
+                    {user.userType === 'coach' && !uiState.showArchived && (
                       <Button
                         color="primary"
                         size="lg"
@@ -204,7 +204,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <TrainingPlanCard
                       key={plan.id}
                       plan={plan}
-                      userRole={user.role as 'runner' | 'coach'}
+                      userRole={user.userType as 'runner' | 'coach'}
                       onArchiveChange={handleArchiveChange}
                     />
                   ))}

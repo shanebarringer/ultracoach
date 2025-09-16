@@ -24,7 +24,7 @@ interface NavItem {
 
 interface Session {
   user: {
-    role: 'runner' | 'coach'
+    userType: 'runner' | 'coach'
   }
 }
 
@@ -72,7 +72,7 @@ export function useNavigationItems(session: Session | null): NavItem[] {
       },
     ]
 
-    if (session.user.role === 'coach') {
+    if (session.user.userType === 'coach') {
       return [
         baseItems[0], // Dashboard
         baseItems[1], // Relationships

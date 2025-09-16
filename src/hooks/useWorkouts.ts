@@ -57,21 +57,38 @@ export function useWorkouts() {
     }
   }, [session?.user?.id, refresh])
 
-  const fetchWorkouts = useCallback(async () => {
-    logger.debug('Triggering workout refresh')
+  const fetchWorkouts = useCallback(async (): Promise<Workout[]> => {
+    logger.debug('Fetching workouts (imperative)')
 
-    // Trigger the refresh which will invalidate and re-fetch the async atom
-    refresh()
+    // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
 
-    // Return a Promise that resolves after a brief delay to allow the refresh to propagate
-    // This provides proper async behavior for loading states without complex subscription logic
-    return new Promise<Workout[]>((resolve) => {
-      setTimeout(() => {
-        logger.debug('Workout refresh promise resolved')
-        resolve(workouts)
-      }, 150) // Brief delay to allow atom refresh to propagate
-    })
-  }, [refresh, workouts])
+    try {
+      const response = await fetch(`${baseUrl}/api/workouts`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
+        logger.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      const data: unknown = await response.json()
+      const freshWorkouts = (data as { workouts?: Workout[] })?.workouts ?? []
+
+      // Update both the sync atom and trigger async atom refresh
+      setWorkouts(freshWorkouts)
+      refresh() // Keep async atom cache in sync for other consumers
+
+      logger.debug('Workout fetch completed', { count: freshWorkouts.length })
+      return freshWorkouts
+    } catch (error) {
+      logger.error('Error fetching workouts:', error)
+      throw error
+    }
+  }, [refresh, setWorkouts])
 
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {

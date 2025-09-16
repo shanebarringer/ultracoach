@@ -20,7 +20,7 @@ interface MobileNavContentProps {
       id: string
       email: string
       name: string
-      role: 'runner' | 'coach'
+      userType: 'runner' | 'coach'
     }
   } | null
   status: string
@@ -60,7 +60,7 @@ function MobileNavContent({
                 {session.user.name}
               </div>
               <div className="text-xs text-default-500 truncate capitalize">
-                {session.user.role}
+                {session.user.userType}
               </div>
             </div>
           </div>

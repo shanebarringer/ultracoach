@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
 
+import { headers } from 'next/headers'
+
 import DashboardRouter from '@/components/dashboard/DashboardRouter'
 import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireRunner } from '@/utils/auth-server'
@@ -14,6 +16,9 @@ export const dynamic = 'force-dynamic'
  * Server-side role validation provides better security and UX.
  */
 export default async function RunnerDashboardPage() {
+  // Force dynamic rendering prior to auth check
+  await headers()
+
   // Server-side authentication and role validation - forces dynamic rendering
   const session = await requireRunner()
 
