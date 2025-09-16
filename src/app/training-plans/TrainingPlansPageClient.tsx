@@ -45,13 +45,13 @@ export default function TrainingPlansPageClient({ user }: Props) {
 
   // Get plans and loading state from loadable
   const plansData = trainingPlansLoadable.state === 'hasData' ? trainingPlansLoadable.data : null
-  const getPlans = useMemo(() => {
+  const plans = useMemo<TrainingPlan[]>(() => {
     if (trainingPlansLoadable.state === 'hasData') {
-      const plans = Array.isArray(plansData) ? plansData : []
-      return uiState.showArchived ? plans : plans.filter(p => !p.archived)
+      const list: TrainingPlan[] = Array.isArray(plansData) ? (plansData as TrainingPlan[]) : []
+      return uiState.showArchived ? list : list.filter(p => !p.archived)
     }
     // Fallback - ensure filteredPlans is an array
-    return Array.isArray(filteredPlans) ? filteredPlans : []
+    return Array.isArray(filteredPlans) ? (filteredPlans as TrainingPlan[]) : []
   }, [trainingPlansLoadable.state, plansData, uiState.showArchived, filteredPlans])
 
   const isLoading = trainingPlansLoadable.state === 'loading'
@@ -120,6 +120,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     size="sm"
                     onPress={refreshTrainingPlans}
                     isIconOnly
+                    aria-label="Refresh training plans"
                     className="border-primary/20 hover:border-primary/40"
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -132,7 +133,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                       startContent={<Plus className="h-4 w-4" />}
                       className="bg-primary font-medium"
                     >
-                      Create Expedition
+                      Create Your First Expedition
                     </Button>
                   )}
                 </div>
@@ -167,7 +168,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
             </Card>
           ) : (
             <Suspense fallback={<TrainingPlansPageSkeleton />}>
-              {getPlans.length === 0 ? (
+              {plans.length === 0 ? (
                 <Card className="border-dashed border-2 border-primary/20">
                   <CardBody className="text-center py-16">
                     <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -200,7 +201,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {getPlans.map((plan: TrainingPlan) => (
+                  {plans.map((plan: TrainingPlan) => (
                     <TrainingPlanCard
                       key={plan.id}
                       plan={plan}
