@@ -75,7 +75,6 @@ describe('Workouts Atoms', () => {
       expect(workouts[1].name).toBe('Afternoon Workout')
     })
 
-
     it('should track refresh trigger', () => {
       const initialValue = getAtomValue(store, workoutsRefreshTriggerAtom)
       expect(initialValue).toBe(0)

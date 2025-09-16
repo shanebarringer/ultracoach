@@ -7,6 +7,7 @@ import RunnerDashboard from '@/components/dashboard/RunnerDashboard'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { CoachDashboardSkeleton, RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { createLogger } from '@/lib/logger'
 import type { ServerSession } from '@/utils/auth-server'
 
@@ -23,6 +24,9 @@ interface Props {
  * No authentication logic needed - user is guaranteed to exist and have correct role.
  */
 export default function DashboardRouter({ user }: Props) {
+  // Hydrate workouts at this entry point to ensure data consistency
+  useHydrateWorkouts()
+
   logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user', {
     role: user.role,
   })

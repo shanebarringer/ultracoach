@@ -44,8 +44,8 @@ export function useWorkouts() {
   const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
   const completedWorkouts = useAtomValue(completedWorkoutsAtom)
 
-  // Hydrate workouts from async atom to ensure consistency
-  useHydrateWorkouts()
+  // Note: Hydration is now handled at top-level components (DashboardRouter, page clients)
+  // to avoid forcing Suspense on all consumers of this hook
 
   // Trigger initial fetch when session is available
   useEffect(() => {
@@ -80,9 +80,9 @@ export function useWorkouts() {
 
         const json: unknown = await response.json()
         const updated: Workout =
-          (typeof json === 'object' && json !== null && 'workout' in json
+          typeof json === 'object' && json !== null && 'workout' in json
             ? (json as { workout: Workout }).workout
-            : (json as Workout))
+            : (json as Workout)
 
         // Update local state and trigger refresh
         setWorkouts(prev =>

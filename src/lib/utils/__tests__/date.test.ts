@@ -20,6 +20,39 @@ import {
 describe('Date Utilities', () => {
   beforeAll(() => vi.setSystemTime(new Date('2024-03-16T10:00:00Z')))
   afterAll(() => vi.useRealTimers())
+
+  describe('Date parsing (internal parseInput behavior)', () => {
+    it('should handle Date objects correctly', () => {
+      const date = new Date('2024-03-15T14:30:00')
+      const result = toLocalYMD(date)
+      expect(result).toBe('2024-03-15')
+    })
+
+    it('should handle ISO strings with time (contains T) as ISO dates', () => {
+      const isoString = '2024-03-15T14:30:00.000Z'
+      const result = toLocalYMD(isoString)
+      expect(result).toBe('2024-03-15')
+    })
+
+    it('should handle date-only strings (YYYY-MM-DD) as local dates', () => {
+      const dateOnlyString = '2024-03-15'
+      const result = toLocalYMD(dateOnlyString)
+      expect(result).toBe('2024-03-15')
+    })
+
+    it('should prevent timezone drift for date-only strings', () => {
+      // This test ensures date-only strings are parsed in local timezone
+      const dateOnlyString = '2024-12-25' // Christmas
+      const result = normalizeToStartOfDay(dateOnlyString)
+
+      // Should be December 25th at 00:00:00 in local timezone
+      expect(result.getMonth()).toBe(11) // 0-based months (11 = December)
+      expect(result.getDate()).toBe(25)
+      expect(result.getHours()).toBe(0)
+      expect(result.getMinutes()).toBe(0)
+    })
+  })
+
   describe('toLocalYMD', () => {
     it('should format Date object to YYYY-MM-DD', () => {
       const date = new Date('2024-03-15T14:30:00')
@@ -172,6 +205,13 @@ describe('Date Utilities', () => {
       const date2 = '2024-01-02T00:00:00.000Z'
       expect(compareDatesAsc(date1, date2)).toBeLessThan(0)
     })
+
+    it('should work with mixed date-only and ISO strings', () => {
+      const dateOnly = '2024-01-01'
+      const isoString = '2024-01-02T00:00:00.000Z'
+      expect(compareDatesAsc(dateOnly, isoString)).toBeLessThan(0)
+      expect(compareDatesAsc(isoString, dateOnly)).toBeGreaterThan(0)
+    })
   })
 
   describe('compareDatesDesc', () => {
@@ -211,6 +251,18 @@ describe('Date Utilities', () => {
       const date1 = '2024-01-01T08:00:00.000Z'
       const date2 = '2024-01-01T18:00:00.000Z'
       expect(areSameDay(date1, date2)).toBe(true)
+    })
+
+    it('should work with date-only strings', () => {
+      const date1 = '2024-01-01'
+      const date2 = '2024-01-01'
+      expect(areSameDay(date1, date2)).toBe(true)
+    })
+
+    it('should work with mixed date-only and ISO strings for same day', () => {
+      const dateOnly = '2024-01-01'
+      const isoString = '2024-01-01T23:59:59.000Z'
+      expect(areSameDay(dateOnly, isoString)).toBe(true)
     })
   })
 

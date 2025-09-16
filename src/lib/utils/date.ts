@@ -13,9 +13,23 @@ import {
   isBefore,
   isSameDay,
   isWithinInterval,
+  parse as parseFmt,
   parseISO,
   startOfDay,
 } from 'date-fns'
+
+/**
+ * Parses date inputs safely to prevent UTC vs local timezone drift:
+ * - Date objects: returned as-is
+ * - ISO strings with time ("T"): parsed as ISO to preserve time information
+ * - Date-only strings (YYYY-MM-DD): parsed as local date to avoid UTC drift
+ * @param date - Date object or string to parse
+ * @returns Parsed Date object in the correct timezone
+ */
+const parseInput = (date: Date | string): Date => {
+  if (typeof date !== 'string') return date
+  return date.includes('T') ? parseISO(date) : parseFmt(date, 'yyyy-MM-dd', new Date())
+}
 
 /**
  * Converts a date to YYYY-MM-DD format in local timezone
@@ -24,7 +38,7 @@ import {
  * @returns Date string in YYYY-MM-DD format
  */
 export const toLocalYMD = (date: Date | string): string => {
-  const d = typeof date === 'string' ? parseISO(date) : date
+  const d = parseInput(date)
   return format(startOfDay(d), 'yyyy-MM-dd')
 }
 
@@ -35,7 +49,7 @@ export const toLocalYMD = (date: Date | string): string => {
  * @returns Date at 00:00:00.000 local time
  */
 export const normalizeToStartOfDay = (date: Date | string): Date => {
-  const d = typeof date === 'string' ? parseISO(date) : date
+  const d = parseInput(date)
   return startOfDay(d)
 }
 
@@ -45,7 +59,7 @@ export const normalizeToStartOfDay = (date: Date | string): Date => {
  * @returns Date at 23:59:59.999 local time
  */
 export const normalizeToEndOfDay = (date: Date | string): Date => {
-  const d = typeof date === 'string' ? parseISO(date) : date
+  const d = parseInput(date)
   return endOfDay(d)
 }
 
@@ -95,8 +109,8 @@ export const isWorkoutWithinDays = (workoutDate: Date | string, days: number): b
  * @returns Negative if A < B, positive if A > B, 0 if equal
  */
 export const compareDatesAsc = (dateA: Date | string, dateB: Date | string): number => {
-  const a = typeof dateA === 'string' ? parseISO(dateA) : dateA
-  const b = typeof dateB === 'string' ? parseISO(dateB) : dateB
+  const a = parseInput(dateA)
+  const b = parseInput(dateB)
   return compareAsc(a, b)
 }
 
@@ -107,8 +121,8 @@ export const compareDatesAsc = (dateA: Date | string, dateB: Date | string): num
  * @returns Negative if A > B, positive if A < B, 0 if equal
  */
 export const compareDatesDesc = (dateA: Date | string, dateB: Date | string): number => {
-  const a = typeof dateA === 'string' ? parseISO(dateA) : dateA
-  const b = typeof dateB === 'string' ? parseISO(dateB) : dateB
+  const a = parseInput(dateA)
+  const b = parseInput(dateB)
   return compareDesc(a, b)
 }
 
@@ -119,8 +133,8 @@ export const compareDatesDesc = (dateA: Date | string, dateB: Date | string): nu
  * @returns True if both dates are on the same day
  */
 export const areSameDay = (dateA: Date | string, dateB: Date | string): boolean => {
-  const a = typeof dateA === 'string' ? parseISO(dateA) : dateA
-  const b = typeof dateB === 'string' ? parseISO(dateB) : dateB
+  const a = parseInput(dateA)
+  const b = parseInput(dateB)
   return isSameDay(a, b)
 }
 
@@ -145,6 +159,6 @@ export const formatDateForDisplay = (
   date: Date | string,
   formatStr: string = 'MMM d, yyyy'
 ): string => {
-  const d = typeof date === 'string' ? parseISO(date) : date
+  const d = parseInput(date)
   return format(d, formatStr)
 }
