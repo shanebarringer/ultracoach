@@ -29,8 +29,8 @@ test.describe('Training Plan Management', () => {
     })
 
     test('should display training plans with filtering', async ({ page }) => {
-      // Wait for dashboard to fully load before navigation
-      await page.waitForLoadState('networkidle')
+      // Wait for dashboard to fully load before navigation (Suspense-aware)
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(2000) // Extra wait for CI environment
 
       // Try button click first, then fallback to direct navigation
