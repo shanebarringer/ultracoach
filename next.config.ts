@@ -1,15 +1,21 @@
-import type { WebpackPluginInstance } from 'webpack'
-
 import type { NextConfig } from 'next'
 
+// Define minimal webpack plugin interface inline (no external webpack import needed)
+interface WebpackPlugin {
+  apply(compiler: any): void
+}
+
+type CodeInspectorFactory = (options: { bundler: string }) => WebpackPlugin
+
 // Properly typed plugin factory for code-inspector-plugin
-let codeInspectorFactory: ((options: { bundler: string }) => WebpackPluginInstance) | null = null
+let codeInspectorFactory: CodeInspectorFactory | null = null
 try {
   const mod: unknown = require('code-inspector-plugin')
   if (mod && typeof mod === 'object' && 'codeInspectorPlugin' in mod) {
     const factory = (mod as { codeInspectorPlugin: unknown }).codeInspectorPlugin
     if (typeof factory === 'function') {
-      codeInspectorFactory = factory as (options: { bundler: string }) => WebpackPluginInstance
+      // @ts-ignore - Plugin structure verified at runtime, not build time
+      codeInspectorFactory = factory as CodeInspectorFactory
     }
   }
 } catch (e) {
