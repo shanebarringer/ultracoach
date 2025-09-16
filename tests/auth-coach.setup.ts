@@ -1,5 +1,6 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
+import fs from 'fs'
 
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
@@ -54,6 +55,13 @@ setup('authenticate as coach', async ({ page, context }) => {
   }
 
   console.log('✅ Successfully navigated to coach dashboard')
+
+  // Ensure the directory exists before saving authentication state
+  const authDir = path.dirname(authFile)
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true })
+    console.log(`📁 Created auth directory: ${authDir}`)
+  }
 
   // Save the authentication state
   await context.storageState({ path: authFile })

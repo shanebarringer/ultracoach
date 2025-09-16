@@ -209,25 +209,19 @@ test.describe('Race Import Flow', () => {
       // Processing might happen too quickly to detect
     }
 
-    // Wait for the parsed data to appear or error message
-    await page.waitForFunction(
-      () => {
-        const raceData = document.querySelector('text=Test Ultra Race')
-        const errorMessage = document.querySelector('text=/error|failed|invalid/i')
-        return raceData !== null || errorMessage !== null
-      },
-      { timeout: 90000 }
-    )
+    // Wait for parsed data OR an error message using Playwright locators
+    const parsedOrError = page
+      .getByText('Test Ultra Race')
+      .or(page.getByText(/error|failed|invalid/i))
+    await expect(parsedOrError).toBeVisible({ timeout: 90000 })
 
     // Check if race data was parsed successfully
-    const raceElement = page.locator('text=Test Ultra Race')
-    const errorElement = page.locator('text=/error|failed|invalid/i')
+    const raceElement = page.getByText('Test Ultra Race')
+    const errorElement = page.getByText(/error|failed|invalid/i)
 
-    // If there's an error, log it and still try to verify the race was parsed
+    // If there's an error, note it but continue to verify the race was parsed
     if (await errorElement.isVisible({ timeout: 1000 }).catch(() => false)) {
-      console.log(
-        'File processing may have encountered an error, but checking for race data anyway'
-      )
+      // File processing may have encountered an error, but checking for race data anyway
     }
 
     await expect(raceElement).toBeVisible({ timeout: 30000 })
@@ -321,7 +315,9 @@ test.describe('Race Import Flow', () => {
     })
 
     // Should show file size error
-    await expect(page.locator('text=File size exceeds, text=too large')).toBeVisible()
+    await expect(
+      page.getByText(/file size exceeds/i).or(page.getByText(/too large/i))
+    ).toBeVisible()
   })
 
   test('should handle invalid GPX files', async ({ page }) => {
@@ -385,8 +381,11 @@ test.describe('Race Import Flow', () => {
     // Wait for processing
     await page.waitForTimeout(2000)
 
-    // Should show parse error
-    await expect(page.locator('text=Failed to parse, text=Invalid GPX')).toBeVisible()
+    // Should show parse error using proper Playwright .or() combinator
+    const parseError = page
+      .getByText('Failed to parse')
+      .or(page.getByText('Invalid GPX'))
+    await expect(parseError).toBeVisible()
   })
 
   test('should successfully import single race', async ({ page }) => {
@@ -452,8 +451,11 @@ test.describe('Race Import Flow', () => {
     const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
     await uploadButton.click()
 
-    // Should see success message
-    await expect(page.locator('text=successfully imported, text=Import successful')).toBeVisible({
+    // Should see success message using proper Playwright .or() combinator
+    const successMessage = page
+      .getByText('successfully imported')
+      .or(page.getByText('Import successful'))
+    await expect(successMessage).toBeVisible({
       timeout: 10000,
     })
 
@@ -521,8 +523,11 @@ test.describe('Race Import Flow', () => {
     const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
     await uploadButton.click()
 
-    // Wait for first import to complete
-    await expect(page.locator('text=successfully imported, text=Import successful')).toBeVisible({
+    // Wait for first import to complete using proper Playwright .or() combinator
+    const firstImportSuccess = page
+      .getByText('successfully imported')
+      .or(page.getByText('Import successful'))
+    await expect(firstImportSuccess).toBeVisible({
       timeout: 10000,
     })
 
@@ -548,10 +553,11 @@ test.describe('Race Import Flow', () => {
     await page.waitForTimeout(2000)
     await uploadButton.click()
 
-    // Should show duplicate detection warning
-    await expect(
-      page.locator('text=Duplicate race, text=similar race may already exist')
-    ).toBeVisible({ timeout: 10000 })
+    // Should show duplicate detection warning using proper Playwright .or() combinator
+    const duplicateWarning = page
+      .getByText('Duplicate race')
+      .or(page.getByText('similar race may already exist'))
+    await expect(duplicateWarning).toBeVisible({ timeout: 10000 })
   })
 
   test('should handle bulk CSV import', async ({ page }) => {
@@ -618,8 +624,11 @@ test.describe('Race Import Flow', () => {
     const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
     await uploadButton.click()
 
-    // Should see bulk import success message
-    await expect(page.locator('text=Bulk import completed, text=successful')).toBeVisible({
+    // Should see bulk import success message using proper Playwright .or() combinator
+    const bulkImportSuccess = page
+      .getByText('Bulk import completed')
+      .or(page.getByText('successful'))
+    await expect(bulkImportSuccess).toBeVisible({
       timeout: 15000,
     })
   })
@@ -687,8 +696,11 @@ test.describe('Race Import Flow', () => {
     // Should see progress indicator
     await expect(page.locator('[role="progressbar"], .progress')).toBeVisible()
 
-    // Wait for completion
-    await expect(page.locator('text=successfully imported, text=Import successful')).toBeVisible({
+    // Wait for completion using proper Playwright .or() combinator
+    const completionSuccess = page
+      .getByText('successfully imported')
+      .or(page.getByText('Import successful'))
+    await expect(completionSuccess).toBeVisible({
       timeout: 10000,
     })
   })
@@ -764,8 +776,11 @@ test.describe('Race Import Edge Cases', () => {
     const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
     await uploadButton.click()
 
-    // Should show network error message
-    await expect(page.locator('text=network error, text=check your connection')).toBeVisible({
+    // Should show network error message using proper Playwright .or() combinator
+    const networkError = page
+      .getByText('network error')
+      .or(page.getByText('check your connection'))
+    await expect(networkError).toBeVisible({
       timeout: 15000,
     })
   })
@@ -846,8 +861,11 @@ test.describe('Race Import Edge Cases', () => {
     const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
     await uploadButton.click()
 
-    // Should show rate limit message
-    await expect(page.locator('text=Rate limit exceeded, text=try again')).toBeVisible({
+    // Should show rate limit message using proper Playwright .or() combinator
+    const rateLimitError = page
+      .getByText('Rate limit exceeded')
+      .or(page.getByText('try again'))
+    await expect(rateLimitError).toBeVisible({
       timeout: 10000,
     })
   })

@@ -51,6 +51,7 @@ export default function MonthlyCalendar({
   className = '',
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => today(getLocalTimeZone()))
+  const [announceText, setAnnounceText] = useState('')
 
   // Generate calendar grid for the current month
   const calendarDays = useMemo(() => {
@@ -105,7 +106,13 @@ export default function MonthlyCalendar({
 
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setCurrentMonth(prev => {
-      return direction === 'prev' ? prev.subtract({ months: 1 }) : prev.add({ months: 1 })
+      const newMonth = direction === 'prev' ? prev.subtract({ months: 1 }) : prev.add({ months: 1 })
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        year: 'numeric',
+      })
+      setAnnounceText(`Navigated to ${formatter.format(newMonth.toDate(getLocalTimeZone()))}}`)
+      return newMonth
     })
   }, [])
 
@@ -161,7 +168,7 @@ export default function MonthlyCalendar({
             variant="light"
             size="sm"
             onPress={() => navigateMonth('prev')}
-            aria-label="Previous month"
+            aria-label={`Previous month, navigate to ${new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentMonth.subtract({ months: 1 }).toDate(getLocalTimeZone()))}`}
           >
             <ChevronLeftIcon className="w-4 h-4" />
           </Button>
@@ -169,7 +176,11 @@ export default function MonthlyCalendar({
           <Button
             variant="light"
             size="sm"
-            onPress={() => setCurrentMonth(today(getLocalTimeZone()))}
+            onPress={() => {
+              setCurrentMonth(today(getLocalTimeZone()))
+              setAnnounceText('Navigated to current month')
+            }}
+            aria-label="Go to current month"
           >
             Today
           </Button>
@@ -179,18 +190,23 @@ export default function MonthlyCalendar({
             variant="light"
             size="sm"
             onPress={() => navigateMonth('next')}
-            aria-label="Next month"
+            aria-label={`Next month, navigate to ${new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentMonth.add({ months: 1 }).toDate(getLocalTimeZone()))}`}
           >
             <ChevronRightIcon className="w-4 h-4" />
           </Button>
+        </div>
+
+        {/* Screen reader announcements for navigation */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announceText}
         </div>
       </CardHeader>
 
       <CardBody className="px-6 pb-6">
         {/* Week headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-2" role="row">
           {weekDays.map(day => (
-            <div key={day} className="text-center text-sm font-medium text-foreground-600 py-2">
+            <div key={day} className="text-center text-sm font-medium text-foreground-600 py-2" role="columnheader">
               {day}
             </div>
           ))}
@@ -207,10 +223,20 @@ export default function MonthlyCalendar({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1" role="grid" aria-label={`Calendar for ${formatMonthYear}`}>
             {calendarDays.map((day, index) => {
               const isCurrentMonth = day.date.month === currentMonth.month
               const dayNumber = day.date.day
+              const formattedDate = day.date.toDate(getLocalTimeZone()).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })
+              const workoutSummary = day.workouts.length > 0
+                ? `, ${day.workouts.length} workout${day.workouts.length > 1 ? 's' : ''} scheduled: ${day.workouts.map(w => w.planned_type?.replace('_', ' ') || 'workout').join(', ')}`
+                : ''
+              const statusInfo = day.isToday ? ', today' : day.isPastDue ? ', past due' : ''
 
               return (
                 <div
@@ -222,6 +248,15 @@ export default function MonthlyCalendar({
                   ${day.isPastDue ? 'bg-danger-50 dark:bg-danger-50/20' : ''}
                 `}
                   onClick={() => onDateClick?.(day.date)}
+                  role="gridcell"
+                  aria-label={`${formattedDate}${workoutSummary}${statusInfo}`}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onDateClick?.(day.date)
+                    }
+                  }}
                 >
                   {/* Day number */}
                   <div
@@ -250,6 +285,16 @@ export default function MonthlyCalendar({
                             onClick={e => {
                               e.stopPropagation()
                               onWorkoutClick?.(workout)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${workout.planned_type?.replace('_', ' ') || 'Workout'}, ${workout.status || 'planned'}, ${workout.planned_distance ? workout.planned_distance + ' miles' : ''} ${workout.planned_duration ? workout.planned_duration + ' minutes' : ''}, click for details`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                onWorkoutClick?.(workout)
+                              }
                             }}
                           >
                             <div className="flex items-center gap-1 truncate">
@@ -317,22 +362,23 @@ export default function MonthlyCalendar({
         )}
 
         {/* Legend */}
-        <div className="mt-4 pt-4 border-t border-divider">
+        <div className="mt-4 pt-4 border-t border-divider" role="group" aria-labelledby="calendar-legend">
+          <h3 id="calendar-legend" className="sr-only">Calendar workout status legend</h3>
           <div className="flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-success-100 dark:bg-success-100/20"></div>
+            <div className="flex items-center gap-2" role="listitem">
+              <div className="w-3 h-3 rounded bg-success-100 dark:bg-success-100/20" aria-hidden="true"></div>
               <span>Completed</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-primary-100 dark:bg-primary-100/20"></div>
+            <div className="flex items-center gap-2" role="listitem">
+              <div className="w-3 h-3 rounded bg-primary-100 dark:bg-primary-100/20" aria-hidden="true"></div>
               <span>Planned</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-warning-100 dark:bg-warning-100/20"></div>
+            <div className="flex items-center gap-2" role="listitem">
+              <div className="w-3 h-3 rounded bg-warning-100 dark:bg-warning-100/20" aria-hidden="true"></div>
               <span>High Intensity</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-danger-100 dark:bg-danger-100/20"></div>
+            <div className="flex items-center gap-2" role="listitem">
+              <div className="w-3 h-3 rounded bg-danger-100 dark:bg-danger-100/20" aria-hidden="true"></div>
               <span>Missed/Skipped</span>
             </div>
           </div>
