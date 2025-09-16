@@ -382,9 +382,7 @@ test.describe('Race Import Flow', () => {
     await page.waitForTimeout(2000)
 
     // Should show parse error using proper Playwright .or() combinator
-    const parseError = page
-      .getByText('Failed to parse')
-      .or(page.getByText('Invalid GPX'))
+    const parseError = page.getByText('Failed to parse').or(page.getByText('Invalid GPX'))
     await expect(parseError).toBeVisible()
   })
 
@@ -777,9 +775,7 @@ test.describe('Race Import Edge Cases', () => {
     await uploadButton.click()
 
     // Should show network error message using proper Playwright .or() combinator
-    const networkError = page
-      .getByText('network error')
-      .or(page.getByText('check your connection'))
+    const networkError = page.getByText('network error').or(page.getByText('check your connection'))
     await expect(networkError).toBeVisible({
       timeout: 15000,
     })
@@ -862,9 +858,7 @@ test.describe('Race Import Edge Cases', () => {
     await uploadButton.click()
 
     // Should show rate limit message using proper Playwright .or() combinator
-    const rateLimitError = page
-      .getByText('Rate limit exceeded')
-      .or(page.getByText('try again'))
+    const rateLimitError = page.getByText('Rate limit exceeded').or(page.getByText('try again'))
     await expect(rateLimitError).toBeVisible({
       timeout: 10000,
     })

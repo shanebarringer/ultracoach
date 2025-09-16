@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   Activity,
   AlertCircle,
@@ -48,16 +48,17 @@ interface ProcessedActivity {
  * This component reads from async atoms directly and throws promises
  */
 const AsyncStravaDashboardWidget = memo(({ className = '' }: AsyncStravaDashboardWidgetProps) => {
-  const [stravaState] = useAtom(stravaStateAtom)
+  // Optimize Jotai hooks: use useAtomValue for read-only, useSetAtom for write-only
+  const stravaState = useAtomValue(stravaStateAtom)
 
   // Read from async atom directly - this will suspend if data is loading
   const connectionStatus = useAtomValue(stravaConnectionStatusAtom)
 
-  const [, refreshActivities] = useAtom(stravaActivitiesRefreshableAtom)
-  const [syncStats] = useAtom(syncStatsAtom)
-  const [, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
-  const [, dispatchStravaAction] = useAtom(stravaActionsAtom)
-  const [, triggerMatching] = useAtom(triggerWorkoutMatchingAtom)
+  const refreshActivities = useSetAtom(stravaActivitiesRefreshableAtom)
+  const syncStats = useAtomValue(syncStatsAtom)
+  const setShowStravaPanel = useSetAtom(workoutStravaShowPanelAtom)
+  const dispatchStravaAction = useSetAtom(stravaActionsAtom)
+  const triggerMatching = useSetAtom(triggerWorkoutMatchingAtom)
   const [isSyncing, setIsSyncing] = useState(false)
 
   // Handle OAuth return and refresh status

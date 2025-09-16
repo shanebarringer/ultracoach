@@ -2,6 +2,8 @@
 
 import { Suspense } from 'react'
 
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+
 import { AsyncRelationshipsList } from './AsyncRelationshipsList'
 import { RelationshipsListSkeleton } from './RelationshipsListSkeleton'
 
@@ -10,13 +12,15 @@ interface RelationshipsListProps {
 }
 
 /**
- * RelationshipsList component with Suspense boundary
- * Provides seamless loading experience using Suspense pattern
+ * RelationshipsList component with Error Boundary and Suspense
+ * Provides robust error handling and seamless loading experience
  */
 export function RelationshipsList({ onRelationshipUpdated }: RelationshipsListProps) {
   return (
-    <Suspense fallback={<RelationshipsListSkeleton />}>
-      <AsyncRelationshipsList onRelationshipUpdated={onRelationshipUpdated} />
-    </Suspense>
+    <ModernErrorBoundary>
+      <Suspense fallback={<RelationshipsListSkeleton />}>
+        <AsyncRelationshipsList onRelationshipUpdated={onRelationshipUpdated} />
+      </Suspense>
+    </ModernErrorBoundary>
   )
 }

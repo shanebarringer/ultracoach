@@ -2,6 +2,8 @@
 
 import { Suspense } from 'react'
 
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+
 import AsyncStravaDashboardWidget from './AsyncStravaDashboardWidget'
 import { StravaDashboardWidgetSkeleton } from './StravaDashboardWidgetSkeleton'
 
@@ -10,14 +12,16 @@ interface StravaDashboardWidgetProps {
 }
 
 /**
- * Strava integration widget with Suspense boundary
- * Provides seamless loading experience using Suspense pattern
+ * Strava integration widget with Error Boundary and Suspense
+ * Provides robust error handling and seamless loading experience
  */
 const StravaDashboardWidget = ({ className = '' }: StravaDashboardWidgetProps) => {
   return (
-    <Suspense fallback={<StravaDashboardWidgetSkeleton className={className} />}>
-      <AsyncStravaDashboardWidget className={className} />
-    </Suspense>
+    <ModernErrorBoundary>
+      <Suspense fallback={<StravaDashboardWidgetSkeleton className={className} />}>
+        <AsyncStravaDashboardWidget className={className} />
+      </Suspense>
+    </ModernErrorBoundary>
   )
 }
 
