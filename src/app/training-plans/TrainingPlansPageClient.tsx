@@ -4,7 +4,7 @@ import { Button, Card, CardBody, CardHeader, Checkbox } from '@heroui/react'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
-import React, { Suspense, useCallback, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
@@ -44,15 +44,15 @@ export default function TrainingPlansPageClient({ user }: Props) {
   }, [refreshTrainingPlans])
 
   // Get plans and loading state from loadable
-  const getPlans = () => {
+  const plansData = trainingPlansLoadable.state === 'hasData' ? trainingPlansLoadable.data : null
+  const getPlans = useMemo(() => {
     if (trainingPlansLoadable.state === 'hasData') {
-      const plansData = trainingPlansLoadable.data
       const plans = Array.isArray(plansData) ? plansData : []
       return uiState.showArchived ? plans : plans.filter(p => !p.archived)
     }
     // Fallback - ensure filteredPlans is an array
     return Array.isArray(filteredPlans) ? filteredPlans : []
-  }
+  }, [trainingPlansLoadable.state, plansData, uiState.showArchived, filteredPlans])
 
   const isLoading = trainingPlansLoadable.state === 'loading'
   const hasError = trainingPlansLoadable.state === 'hasError'
@@ -167,7 +167,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
             </Card>
           ) : (
             <Suspense fallback={<TrainingPlansPageSkeleton />}>
-              {getPlans().length === 0 ? (
+              {getPlans.length === 0 ? (
                 <Card className="border-dashed border-2 border-primary/20">
                   <CardBody className="text-center py-16">
                     <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -200,7 +200,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {getPlans().map((plan: TrainingPlan) => (
+                  {getPlans.map((plan: TrainingPlan) => (
                     <TrainingPlanCard
                       key={plan.id}
                       plan={plan}
