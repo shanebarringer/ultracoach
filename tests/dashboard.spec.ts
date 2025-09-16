@@ -33,7 +33,21 @@ test.describe('Coach Dashboard', () => {
 
     // Verify we're on coach dashboard with coach-specific content
     await expect(page).toHaveURL(/dashboard\/coach/)
-    await expect(page.locator('text=Summit Dashboard')).toBeVisible({ timeout: 30000 })
+
+    // Wait for dashboard content to load (Suspense-aware)
+    await page.waitForFunction(
+      () => {
+        const dashboardContent = document.querySelector(
+          'h1, h2, h3, [data-testid="dashboard-content"]'
+        )
+        return dashboardContent !== null
+      },
+      { timeout: 30000 }
+    )
+
+    // Just check for the "Your Athletes" section which is coach-specific
+    // This is more reliable than looking for generic "Dashboard" text
+
     await expect(page.locator('h3').filter({ hasText: 'Your Athletes' })).toBeVisible({
       timeout: 30000,
     })

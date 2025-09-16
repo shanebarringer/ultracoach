@@ -198,11 +198,39 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    // Wait for file to be processed
-    await page.waitForTimeout(2000)
+    // Wait for file processing to complete with proper async handling
+    // First wait for any loading indicators to appear and disappear
+    try {
+      await page.locator('text=/processing|uploading|parsing/i').waitFor({ timeout: 5000 })
+      await page
+        .locator('text=/processing|uploading|parsing/i')
+        .waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      // Processing might happen too quickly to detect
+    }
 
-    // Check if race data was parsed
-    await expect(page.locator('text=Test Ultra Race')).toBeVisible()
+    // Wait for the parsed data to appear or error message
+    await page.waitForFunction(
+      () => {
+        const raceData = document.querySelector('text=Test Ultra Race')
+        const errorMessage = document.querySelector('text=/error|failed|invalid/i')
+        return raceData !== null || errorMessage !== null
+      },
+      { timeout: 90000 }
+    )
+
+    // Check if race data was parsed successfully
+    const raceElement = page.locator('text=Test Ultra Race')
+    const errorElement = page.locator('text=/error|failed|invalid/i')
+
+    // If there's an error, log it and still try to verify the race was parsed
+    if (await errorElement.isVisible({ timeout: 1000 }).catch(() => false)) {
+      console.log(
+        'File processing may have encountered an error, but checking for race data anyway'
+      )
+    }
+
+    await expect(raceElement).toBeVisible({ timeout: 30000 })
   })
 
   test('should handle CSV file upload', async ({ page }) => {

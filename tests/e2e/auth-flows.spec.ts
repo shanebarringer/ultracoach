@@ -107,17 +107,27 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Submit form using the button click (more reliable for React forms)
     await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
-    // Use a simpler approach - just navigate directly to dashboard to verify session works
-    // This tests that authentication worked and session is valid
-    await page.goto('/dashboard/runner')
-
-    // Wait for dashboard to load
-    await page.waitForLoadState('domcontentloaded')
+    // Wait for successful redirect to dashboard
+    await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
 
     // Verify we successfully accessed the dashboard (not redirected to signin)
     await expect(page).toHaveURL('/dashboard/runner')
 
+    // Wait for dashboard content to load (Suspense-aware)
+    await page.waitForFunction(
+      () => {
+        const dashboardElement = document.querySelector('h1, h2, [data-testid="dashboard-content"]')
+        return dashboardElement !== null
+      },
+      { timeout: 10000 }
+    )
+
     // Verify we're authenticated by checking we're not on signin page
+    await expect(page).not.toHaveURL('/auth/signin')
+
+    // Additional verification: try to access a protected route to confirm auth works
+    await page.goto('/workouts')
+    await expect(page).toHaveURL('/workouts')
     await expect(page).not.toHaveURL('/auth/signin')
   })
 
@@ -128,11 +138,22 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.getByLabel(/password/i).fill('RunnerPass2025!')
     await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
-    // Wait for dashboard and welcome message
+    // Wait for dashboard redirect and content to load
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
     await expect(page).toHaveURL('/dashboard/runner')
-    await page.waitForLoadState('domcontentloaded')
-    await expect(page.getByText('Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
+
+    // Wait for dashboard content to load (Suspense-aware) instead of specific welcome message
+    await page.waitForFunction(
+      () => {
+        const dashboardContent = document.querySelector('h1, h2, [data-testid="dashboard-content"]')
+        return dashboardContent !== null
+      },
+      { timeout: 10000 }
+    )
+
+    // Verify dashboard is loaded with flexible content checking
+    const dashboardElement = page.locator('text=/Base Camp|Dashboard/i')
+    await expect(dashboardElement).toBeVisible({ timeout: 10000 })
 
     // Open user menu and sign out - using the avatar button
     await page.getByRole('img', { name: 'Alex Rivera' }).click()

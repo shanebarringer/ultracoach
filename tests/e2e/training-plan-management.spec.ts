@@ -31,7 +31,17 @@ test.describe('Training Plan Management', () => {
     test('should display training plans with filtering', async ({ page }) => {
       // Wait for dashboard to fully load before navigation (Suspense-aware)
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000) // Extra wait for CI environment
+
+      // Wait for dashboard content to be ready instead of arbitrary timeout
+      await page.waitForFunction(
+        () => {
+          const dashboardContent = document.querySelector(
+            'h1, h2, [data-testid="dashboard-content"]'
+          )
+          return dashboardContent !== null
+        },
+        { timeout: 10000 }
+      )
 
       // Try button click first, then fallback to direct navigation
       try {
