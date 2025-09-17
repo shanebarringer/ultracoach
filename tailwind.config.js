@@ -11,8 +11,5 @@ module.exports = {
     extend: {},
   },
   darkMode: 'class',
-  plugins: [
-    heroui(),
-    require('@tailwindcss/forms'),
-  ],
+  plugins: [heroui(), require('@tailwindcss/forms')],
 }
