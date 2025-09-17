@@ -109,10 +109,12 @@
     "strava-v3": "^2.2.1",
     "tslog": "^4.9.3",
     "typescript": "^5",
-    "zod": "^4.0.7"
+    "zod": "^4.0.7",
+    "@eslint/eslintrc": "^3",
+    "@types/papaparse": "^5.3.16",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.4.4",
     "@playwright/test": "^1.54.1",
     "@testing-library/jest-dom": "^6.6.3",
@@ -121,7 +123,6 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/bcrypt": "^5.0.2",
     "@types/classnames": "^2.3.4",
-    "@types/papaparse": "^5.3.16",
     "@vitejs/plugin-react": "^4.6.0",
     "code-inspector-plugin": "^1.2.2",
     "concurrently": "^9.2.0",
@@ -129,7 +130,6 @@
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
-    "tailwindcss": "^4.1.11",
     "tsx": "^4.20.3",
     "vitest": "^3.2.4"
   }
