@@ -111,11 +111,11 @@
     "typescript": "^5",
     "zod": "^4.0.7",
     "@eslint/eslintrc": "^3",
+    "@next/eslint-plugin-next": "^15.4.4",
     "@types/papaparse": "^5.3.16",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^15.4.4",
     "@playwright/test": "^1.54.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

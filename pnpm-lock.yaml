@@ -29,6 +29,9 @@ dependencies:
   '@internationalized/date':
     specifier: 3.8.2
     version: 3.8.2
+  '@next/eslint-plugin-next':
+    specifier: ^15.4.4
+    version: 15.5.3
   '@react-aria/i18n':
     specifier: 3.12.11
     version: 3.12.11(react-dom@19.1.1)(react@19.1.1)
@@ -169,9 +172,6 @@ dependencies:
     version: 4.1.9
 
 devDependencies:
-  '@next/eslint-plugin-next':
-    specifier: ^15.4.4
-    version: 15.5.3
   '@playwright/test':
     specifier: ^1.54.1
     version: 1.55.0
@@ -3980,7 +3980,7 @@ packages:
       }
     dependencies:
       fast-glob: 3.3.1
-    dev: true
+    dev: false
 
   /@next/swc-darwin-arm64@15.3.5:
     resolution:
@@ -4103,6 +4103,7 @@ packages:
     dependencies:
       '@nodelib/fs.stat': 2.0.5
       run-parallel: 1.2.0
+    dev: false
 
   /@nodelib/fs.stat@2.0.5:
     resolution:
@@ -4110,6 +4111,7 @@ packages:
         integrity: sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A==,
       }
     engines: { node: '>= 8' }
+    dev: false
 
   /@nodelib/fs.walk@1.2.8:
     resolution:
@@ -4120,6 +4122,7 @@ packages:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
+    dev: false
 
   /@nolyfill/is-core-module@1.0.39:
     resolution:
@@ -9172,6 +9175,7 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       fill-range: 7.1.1
+    dev: false
 
   /browserslist@4.26.2:
     resolution:
@@ -11068,6 +11072,7 @@ packages:
       glob-parent: 5.1.2
       merge2: 1.4.1
       micromatch: 4.0.8
+    dev: false
 
   /fast-glob@3.3.3:
     resolution:
@@ -11111,6 +11116,7 @@ packages:
       }
     dependencies:
       reusify: 1.1.0
+    dev: false
 
   /fdir@6.5.0(picomatch@4.0.3):
     resolution:
@@ -11150,6 +11156,7 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       to-regex-range: 5.0.1
+    dev: false
 
   /find-up@5.0.0:
     resolution:
@@ -11448,6 +11455,7 @@ packages:
     engines: { node: '>= 6' }
     dependencies:
       is-glob: 4.0.3
+    dev: false
 
   /glob-parent@6.0.2:
     resolution:
@@ -11966,6 +11974,7 @@ packages:
         integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==,
       }
     engines: { node: '>=0.10.0' }
+    dev: false
 
   /is-finalizationregistry@1.1.1:
     resolution:
@@ -12006,6 +12015,7 @@ packages:
     engines: { node: '>=0.10.0' }
     dependencies:
       is-extglob: 2.1.1
+    dev: false
 
   /is-inside-container@1.0.0:
     resolution:
@@ -12051,6 +12061,7 @@ packages:
         integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==,
       }
     engines: { node: '>=0.12.0' }
+    dev: false
 
   /is-potential-custom-element-name@1.0.1:
     resolution:
@@ -12812,6 +12823,7 @@ packages:
         integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==,
       }
     engines: { node: '>= 8' }
+    dev: false
 
   /micromatch@4.0.8:
     resolution:
@@ -12822,6 +12834,7 @@ packages:
     dependencies:
       braces: 3.0.3
       picomatch: 2.3.1
+    dev: false
 
   /mime-db@1.52.0:
     resolution:
@@ -13514,6 +13527,7 @@ packages:
         integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==,
       }
     engines: { node: '>=8.6' }
+    dev: false
 
   /picomatch@4.0.3:
     resolution:
@@ -13806,6 +13820,7 @@ packages:
       {
         integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==,
       }
+    dev: false
 
   /randombytes@2.1.0:
     resolution:
@@ -14174,6 +14189,7 @@ packages:
         integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==,
       }
     engines: { iojs: '>=1.0.0', node: '>=0.10.0' }
+    dev: false
 
   /rollup@4.50.2:
     resolution:
@@ -14237,6 +14253,7 @@ packages:
       }
     dependencies:
       queue-microtask: 1.2.3
+    dev: false
 
   /rxjs@7.8.2:
     resolution:
@@ -15137,6 +15154,7 @@ packages:
     engines: { node: '>=8.0' }
     dependencies:
       is-number: 7.0.0
+    dev: false
 
   /tough-cookie@2.5.0:
     resolution:
