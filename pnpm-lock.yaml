@@ -100,6 +100,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.16.3
+      postcss:
+        specifier: ^8.5.6
+        version: 8.5.6
       postgres:
         specifier: ^3.4.7
         version: 3.4.7
