@@ -104,6 +104,9 @@ dependencies:
   framer-motion:
     specifier: ^12.23.3
     version: 12.23.13(react-dom@19.1.1)(react@19.1.1)
+  is-ci:
+    specifier: ^4.1.0
+    version: 4.1.0
   jotai:
     specifier: ^2.12.5
     version: 2.14.0(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.1)
@@ -7415,6 +7418,11 @@ packages:
     engines: {node: '>=6.0'}
     dev: false
 
+  /ci-info@4.3.0:
+    resolution: {integrity: sha512-l+2bNRMiQgcfILUi33labAZYIWlH1kWDp+ecNo5iisRKrbm0xcRyCww71/YU0Fkw0mAFpz9bJayXPjey6vkmaQ==}
+    engines: {node: '>=8'}
+    dev: false
+
   /citty@0.1.6:
     resolution: {integrity: sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==}
     dependencies:
@@ -9238,6 +9246,13 @@ packages:
   /is-callable@1.2.7:
     resolution: {integrity: sha512-1BC0BVFhS/p0qtw6enp8e+8OD0UrK0oFLztSjNzhcKA3WDuJxxAPXzPuPtKkjEY9UUoEWlX/8fgKeu2S8i9JTA==}
     engines: {node: '>= 0.4'}
+    dev: false
+
+  /is-ci@4.1.0:
+    resolution: {integrity: sha512-Ab9bQDQ11lWootZUI5qxgN2ZXwxNI5hTwnsvOc1wyxQ7zQ8OkEDw79mI0+9jI3x432NfwbVRru+3noJfXF6lSQ==}
+    hasBin: true
+    dependencies:
+      ci-info: 4.3.0
     dev: false
 
   /is-core-module@2.16.1:
