@@ -44,19 +44,25 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Wait for dashboard URL (removed networkidle - causes CI hangs)
   await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
 
+  // Wait for Suspense boundary to resolve by checking for dashboard content
+  const dashboardTestId =
+    userType === 'coach'
+      ? '[data-testid="coach-dashboard-content"]'
+      : '[data-testid="runner-dashboard-content"]'
+
+  // Wait for the dashboard content to be visible (indicates Suspense resolved)
+  await expect(page.locator(dashboardTestId)).toBeVisible({ timeout: 30000 })
+
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   try {
-    await expect(loadingText).not.toBeVisible({ timeout: 10000 })
+    await expect(loadingText).not.toBeVisible({ timeout: 5000 })
   } catch {
     // Loading text may not appear, continue
   }
 
   // Verify we're on the correct dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
-
-  // Wait for content to be ready
-  await page.waitForLoadState('domcontentloaded')
 }
 
 /**

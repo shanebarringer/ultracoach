@@ -226,7 +226,7 @@ function CoachDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="coach-dashboard-content">
       {/* Page Header with Quick Stats */}
       <div className="flex flex-col lg:flex-row justify-between gap-6">
         <div>

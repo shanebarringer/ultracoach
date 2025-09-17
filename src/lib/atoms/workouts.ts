@@ -22,10 +22,19 @@ function unwrapWorkout(json: unknown): Workout {
 export const workoutsAtom = atom<Workout[]>([])
 export const workoutsRefreshTriggerAtom = atom(0)
 
+// Cache to prevent re-fetching on every render
+let workoutsCache: { data: Workout[]; timestamp: number } | null = null
+const CACHE_DURATION = 5000 // 5 seconds cache to prevent flicker
+
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
+
+  // Check cache to prevent unnecessary re-fetches
+  if (workoutsCache && Date.now() - workoutsCache.timestamp < CACHE_DURATION) {
+    return workoutsCache.data
+  }
 
   const { createLogger } = await import('@/lib/logger')
   const logger = createLogger('AsyncWorkoutsAtom')
@@ -36,17 +45,23 @@ export const asyncWorkoutsAtom = atom(async get => {
     // Determine the base URL based on environment
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
 
+    // Create an AbortController with timeout for the fetch
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
     const response = await fetch(`${baseUrl}/api/workouts`, {
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-    })
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId))
 
     if (!response.ok) {
       const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
       logger.error(errorMessage)
-      throw new Error(errorMessage)
+      // Return empty array instead of throwing to prevent infinite Suspense
+      return []
     }
 
     const data = await response.json()
@@ -62,10 +77,24 @@ export const asyncWorkoutsAtom = atom(async get => {
       })),
     })
 
+    // Cache the result to prevent re-fetching
+    workoutsCache = {
+      data: workouts as Workout[],
+      timestamp: Date.now(),
+    }
+
     return workouts as Workout[]
   } catch (error) {
+    // Handle abort errors specifically
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn('Workouts fetch timed out after 10 seconds')
+      return [] // Return empty array on timeout
+    }
+
     logger.error('Error fetching workouts:', error)
-    throw error // Re-throw to let Suspense boundary handle it
+    // Return empty array instead of throwing to prevent infinite Suspense
+    // This allows the dashboard to still render with no workouts
+    return []
   }
 })
 
@@ -79,6 +108,8 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, (get, set) => {
+  // Clear cache to force a real refresh
+  workoutsCache = null
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 })
 

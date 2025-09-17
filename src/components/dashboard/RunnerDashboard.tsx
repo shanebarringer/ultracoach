@@ -327,7 +327,7 @@ function RunnerDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="runner-dashboard-content">
       {/* Enhanced Header Section */}
       <div className="flex justify-between items-start">
         <div>

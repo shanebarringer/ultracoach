@@ -14,10 +14,14 @@ test.describe('Runner Dashboard', () => {
 
     // Verify we're on runner dashboard with runner-specific content
     await expect(page).toHaveURL(/dashboard\/runner/)
-    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 30000 })
 
-    // Check that the page has loaded with dashboard content (skip specific content checks for now)
-    // The runner dashboard dynamically loads content, so we just verify the main heading is present
+    // Wait for Suspense to resolve and dashboard content to load
+    await expect(page.locator('[data-testid="runner-dashboard-content"]')).toBeVisible({
+      timeout: 30000,
+    })
+
+    // Verify runner-specific content is displayed
+    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -34,24 +38,17 @@ test.describe('Coach Dashboard', () => {
     // Verify we're on coach dashboard with coach-specific content
     await expect(page).toHaveURL(/dashboard\/coach/)
 
-    // Wait for dashboard content to load (Suspense-aware)
-    await page.waitForFunction(
-      () => {
-        const dashboardContent = document.querySelector(
-          'h1, h2, h3, [data-testid="dashboard-content"]'
-        )
-        return dashboardContent !== null
-      },
-      { timeout: 30000 }
-    )
-
-    // Just check for the "Your Athletes" section which is coach-specific
-    // This is more reliable than looking for generic "Dashboard" text
-
-    await expect(page.locator('h3').filter({ hasText: 'Your Athletes' })).toBeVisible({
+    // Wait for Suspense to resolve and dashboard content to load
+    // Using Playwright's web-first assertions instead of waitForFunction
+    await expect(page.locator('[data-testid="coach-dashboard-content"]')).toBeVisible({
       timeout: 30000,
     })
-    await expect(page.locator('text=Training Expeditions')).toBeVisible({ timeout: 30000 })
+
+    // Check for coach-specific content
+    await expect(page.locator('h3').filter({ hasText: 'Your Athletes' })).toBeVisible({
+      timeout: 10000,
+    })
+    await expect(page.locator('text=Training Expeditions')).toBeVisible({ timeout: 10000 })
   })
 })
 
