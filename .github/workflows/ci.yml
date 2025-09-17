@@ -63,7 +63,7 @@ jobs:
 
   playwright:
     # Run Playwright on main branch pushes and PR to CI-related branches
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/codebase-cleanup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/jotai-atoms-modularization' && github.event_name == 'pull_request') || (github.head_ref == 'fix/runner-atoms' && github.event_name == 'pull_request')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.head_ref == 'fix/playwright-ci-tests' && github.event_name == 'pull_request') || (github.head_ref == 'fix/ci-test-user-setup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/codebase-cleanup' && github.event_name == 'pull_request') || (github.head_ref == 'refactor/jotai-atoms-modularization' && github.event_name == 'pull_request') || (github.head_ref == 'fix/runner-atoms' && github.event_name == 'pull_request') || (github.head_ref == 'fix/calendar-suspense-migration-and-test-stabilization' && github.event_name == 'pull_request')
     runs-on: ubuntu-latest
 
     services:
