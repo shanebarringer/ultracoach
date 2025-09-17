@@ -70,6 +70,9 @@
     "@supabase/supabase-js": "^2.50.5",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@we-gold/gpxjs": "^1.1.0",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
@@ -95,6 +98,7 @@
     "strava-v3": "^2.2.1",
     "tailwindcss": "^4.1.11",
     "tslog": "^4.9.3",
+    "typescript": "^5",
     "zod": "^4.0.7"
   },
   "devDependencies": {
@@ -109,11 +113,8 @@
     "@types/bcrypt": "^5.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/classnames": "^2.3.4",
-    "@types/node": "^20",
     "@types/papaparse": "^5.3.16",
     "@types/pg": "^8.15.4",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.6.0",
     "better-sqlite3": "^12.2.0",
     "code-inspector-plugin": "^1.2.2",
@@ -130,7 +131,6 @@
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "tsx": "^4.20.3",
-    "typescript": "^5",
     "vitest": "^3.2.4"
   }
 }

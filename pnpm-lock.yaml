@@ -38,6 +38,15 @@ dependencies:
   '@tailwindcss/postcss':
     specifier: ^4.1.11
     version: 4.1.13
+  '@types/node':
+    specifier: ^20
+    version: 20.19.16
+  '@types/react':
+    specifier: ^19
+    version: 19.1.13
+  '@types/react-dom':
+    specifier: ^19
+    version: 19.1.9(@types/react@19.1.13)
   '@we-gold/gpxjs':
     specifier: ^1.1.0
     version: 1.1.0
@@ -113,6 +122,9 @@ dependencies:
   tslog:
     specifier: ^4.9.3
     version: 4.9.3
+  typescript:
+    specifier: ^5
+    version: 5.9.2
   zod:
     specifier: ^4.0.7
     version: 4.1.9
@@ -151,21 +163,12 @@ devDependencies:
   '@types/classnames':
     specifier: ^2.3.4
     version: 2.3.4
-  '@types/node':
-    specifier: ^20
-    version: 20.19.16
   '@types/papaparse':
     specifier: ^5.3.16
     version: 5.3.16
   '@types/pg':
     specifier: ^8.15.4
     version: 8.15.5
-  '@types/react':
-    specifier: ^19
-    version: 19.1.13
-  '@types/react-dom':
-    specifier: ^19
-    version: 19.1.9(@types/react@19.1.13)
   '@vitejs/plugin-react':
     specifier: ^4.6.0
     version: 4.7.0(vite@7.1.5)
@@ -214,9 +217,6 @@ devDependencies:
   tsx:
     specifier: ^4.20.3
     version: 4.20.5
-  typescript:
-    specifier: ^5
-    version: 5.9.2
   vitest:
     specifier: ^3.2.4
     version: 3.2.4(@types/node@20.19.16)(jsdom@26.1.0)(tsx@4.20.5)
@@ -15231,7 +15231,6 @@ packages:
       }
     engines: { node: '>=14.17' }
     hasBin: true
-    dev: true
 
   /unbox-primitive@1.1.0:
     resolution:
