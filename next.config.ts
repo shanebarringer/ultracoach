@@ -1,3 +1,5 @@
+import path from 'path'
+
 import type { NextConfig } from 'next'
 
 // Define minimal webpack plugin interface inline (no external webpack import needed)
@@ -30,9 +32,11 @@ const nextConfig: NextConfig = {
     }
 
     // Ignore pg-native module since it's not available in browser environments
+    // Add explicit path alias resolution for Vercel compatibility
     config.resolve.alias = {
       ...config.resolve.alias,
       'pg-native': false,
+      '@': path.resolve(__dirname, 'src'),
     }
     return config
   },
