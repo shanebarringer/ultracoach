@@ -71,6 +71,9 @@ dependencies:
   date-fns:
     specifier: ^4.1.0
     version: 4.1.0
+  dotenv:
+    specifier: ^17.2.0
+    version: 17.2.2
   drizzle-kit:
     specifier: ^0.31.4
     version: 0.31.4
@@ -178,9 +181,6 @@ devDependencies:
   concurrently:
     specifier: ^9.2.0
     version: 9.2.1
-  dotenv:
-    specifier: ^17.2.0
-    version: 17.2.2
   drizzle-seed:
     specifier: ^0.3.1
     version: 0.3.1(drizzle-orm@0.44.3)
@@ -9995,6 +9995,7 @@ packages:
         integrity: sha512-Sf2LSQP+bOlhKWWyhFsn0UsfdK/kCWRv1iuA2gXAwt3dyNabr6QSj00I2V10pidqz69soatm9ZwZvpQMTIOd5Q==,
       }
     engines: { node: '>=12' }
+    dev: false
 
   /drizzle-kit@0.31.4:
     resolution:
