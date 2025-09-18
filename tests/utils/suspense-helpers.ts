@@ -217,6 +217,43 @@ export async function verifyDashboardAccess(
 }
 
 /**
+ * Waits for file upload error conditions without expecting preview tab selection.
+ * Used for invalid files that fail to parse or process.
+ */
+export async function waitForFileUploadError(
+  page: Page,
+  timeout = 30000,
+  logger?: Logger<unknown>
+): Promise<void> {
+  logger?.info('Starting waitForFileUploadError - waiting for error conditions')
+
+  // First wait for any loading indicators to appear and disappear
+  try {
+    await page.locator('text=/processing|uploading|parsing|loading/i').waitFor({ timeout: 5000 })
+    await page
+      .locator('text=/processing|uploading|parsing|loading/i')
+      .waitFor({ state: 'hidden', timeout: Math.min(15000, timeout) })
+    logger?.debug('Loading indicators cleared')
+  } catch {
+    logger?.debug('No loading indicators detected')
+  }
+
+  // Wait for preview tab to appear (it will exist but not be selected for errors)
+  try {
+    const previewTab = page.getByTestId('preview-tab')
+    await previewTab.waitFor({ state: 'visible', timeout: 15000 })
+    logger?.debug('Preview tab visible (but may not be selected for errors)')
+  } catch (error) {
+    logger?.debug('Preview tab not found - this is OK for error cases')
+  }
+
+  // For error cases, we just wait a bit for any error messages to appear
+  // Don't expect preview tab to be selected since parsing failed
+  await page.waitForTimeout(3000)
+  logger?.debug('Error processing wait completed')
+}
+
+/**
  * Waits for real-time data updates to propagate.
  * Useful for chat, notifications, and live updates.
  */
