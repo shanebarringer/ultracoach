@@ -86,10 +86,40 @@ export async function waitForFileUploadProcessing(
     // Processing might happen too quickly to detect
   }
 
+  // Wait for preview tab to be selected (indicates processing complete)
+  try {
+    const previewTab = page.getByRole('tab', { name: 'Preview' })
+    await previewTab.waitFor({ state: 'visible', timeout: 15000 })
+
+    // Wait for preview tab to become selected
+    await page.waitForFunction(
+      () => {
+        const previewTab = document.querySelector('[role="tab"]')
+        return (
+          previewTab &&
+          previewTab.getAttribute('aria-selected') === 'true' &&
+          previewTab.textContent?.includes('Preview')
+        )
+      },
+      {},
+      { timeout: 15000 }
+    )
+  } catch {
+    // Preview tab might not exist or be selectable
+  }
+
   if (expectedContent) {
-    // Wait for specific content to appear or error message
+    // Wait for specific content to appear in preview area or error message
     await page.waitForFunction(
       content => {
+        // Check if preview tab is active first
+        const previewTab = document.querySelector('[role="tab"][aria-selected="true"]')
+        const isPreviewActive = previewTab && previewTab.textContent?.includes('Preview')
+
+        if (!isPreviewActive) {
+          return false // Don't proceed until preview tab is active
+        }
+
         // Use XPath to find elements containing the expected text
         const xpath = `//*[contains(text(), "${content}")]`
         const expectedElement = document.evaluate(

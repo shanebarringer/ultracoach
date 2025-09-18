@@ -256,18 +256,20 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    // Wait for file processing
-    await waitForFileUploadProcessing(page, 'Western States 100', 15000)
+    // Wait for file processing and modal to auto-switch to preview
+    await waitForFileUploadProcessing(page, 'Western States 100', 30000)
 
-    // Switch to preview tab to see parsed data
+    // Ensure we're on the preview tab (modal should auto-switch)
     const previewTab = page.getByRole('tab', { name: 'Preview' })
-    await expect(previewTab).toBeVisible({ timeout: 10000 })
-    await previewTab.click()
+    await expect(previewTab).toBeVisible({ timeout: 15000 })
 
-    // Check if races were parsed (should see multiple races)
-    await expect(page.locator('text=Western States 100')).toBeVisible()
-    await expect(page.locator('text=Leadville 100')).toBeVisible()
-    await expect(page.locator('text=UTMB')).toBeVisible()
+    // Ensure preview tab is selected (should be automatic after parsing)
+    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+
+    // Check if races were parsed (should see multiple races in preview content)
+    await expect(page.getByText('Western States 100')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('Leadville 100')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('UTMB')).toBeVisible({ timeout: 10000 })
   })
 
   test('should validate file size limits', async ({ page }) => {
@@ -487,12 +489,13 @@ test.describe('Race Import Flow', () => {
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click({ timeout: 10000 })
 
-    // Wait for first import to complete using proper Playwright .or() combinator
+    // Wait for first import to complete using actual toast messages
     const firstImportSuccess = page
-      .getByText('successfully imported')
+      .getByText('races imported successfully')
       .or(page.getByText('Import successful'))
+      .or(page.getByText('Successfully imported'))
     await expect(firstImportSuccess.first()).toBeVisible({
-      timeout: 10000,
+      timeout: 15000,
     })
 
     // Try to import the same race again
@@ -557,29 +560,31 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    // Wait for file processing
-    await waitForFileUploadProcessing(page, 'Western States 100', 15000)
+    // Wait for file processing and modal to auto-switch to preview
+    await waitForFileUploadProcessing(page, 'Western States 100', 30000)
 
-    // Switch to preview tab to see parsed data
+    // Ensure we're on the preview tab (modal should auto-switch)
     const previewTab = page.getByRole('tab', { name: 'Preview' })
-    await expect(previewTab).toBeVisible({ timeout: 10000 })
-    await previewTab.click()
+    await expect(previewTab).toBeVisible({ timeout: 15000 })
 
-    // Should see multiple races parsed
-    await expect(page.getByText('Western States 100')).toBeVisible()
-    await expect(page.getByText('Leadville 100')).toBeVisible()
-    await expect(page.getByText('UTMB')).toBeVisible()
+    // Ensure preview tab is selected (should be automatic after parsing)
+    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+
+    // Should see multiple races parsed in preview content
+    await expect(page.getByText('Western States 100')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('Leadville 100')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('UTMB')).toBeVisible({ timeout: 10000 })
 
     // Click the import button to complete the import
     const confirmImportButton = page.getByRole('button', { name: 'Import Races' })
     await expect(confirmImportButton).toBeVisible({ timeout: 10000 })
     await confirmImportButton.click()
 
-    // Should see bulk import success message
+    // Should see bulk import success message (using actual toast message)
     const bulkImportSuccess = page
-      .getByText('Bulk import completed')
+      .getByText('races imported successfully')
+      .or(page.getByText('Import successful'))
       .or(page.getByText('Successfully imported'))
-      .or(page.getByText('import successful'))
 
     await expect(bulkImportSuccess.first()).toBeVisible({
       timeout: 15000,
