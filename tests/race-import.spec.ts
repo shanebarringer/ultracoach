@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { Logger } from 'tslog'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
+import { waitForFileUploadProcessing } from './utils/suspense-helpers'
 import { type TestUserType, navigateToDashboard } from './utils/test-helpers'
 
 const logger = new Logger({ name: 'tests/race-import.spec' })
@@ -19,13 +20,49 @@ const TEST_GPX_CONTENT = `<?xml version="1.0"?>
         <ele>100</ele>
         <time>2024-06-15T08:00:00Z</time>
       </trkpt>
-      <trkpt lat="37.7849" lon="-122.4094">
-        <ele>150</ele>
-        <time>2024-06-15T08:15:00Z</time>
+      <trkpt lat="37.7754" lon="-122.4189">
+        <ele>105</ele>
+        <time>2024-06-15T08:01:00Z</time>
       </trkpt>
-      <trkpt lat="37.7949" lon="-122.3994">
-        <ele>200</ele>
-        <time>2024-06-15T08:30:00Z</time>
+      <trkpt lat="37.7759" lon="-122.4184">
+        <ele>110</ele>
+        <time>2024-06-15T08:02:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7764" lon="-122.4179">
+        <ele>115</ele>
+        <time>2024-06-15T08:03:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7769" lon="-122.4174">
+        <ele>120</ele>
+        <time>2024-06-15T08:04:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7774" lon="-122.4169">
+        <ele>125</ele>
+        <time>2024-06-15T08:05:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7779" lon="-122.4164">
+        <ele>130</ele>
+        <time>2024-06-15T08:06:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7784" lon="-122.4159">
+        <ele>135</ele>
+        <time>2024-06-15T08:07:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7789" lon="-122.4154">
+        <ele>140</ele>
+        <time>2024-06-15T08:08:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7794" lon="-122.4149">
+        <ele>145</ele>
+        <time>2024-06-15T08:09:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7799" lon="-122.4144">
+        <ele>150</ele>
+        <time>2024-06-15T08:10:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7804" lon="-122.4139">
+        <ele>155</ele>
+        <time>2024-06-15T08:11:00Z</time>
       </trkpt>
     </trkseg>
   </trk>
@@ -34,10 +71,10 @@ const TEST_GPX_CONTENT = `<?xml version="1.0"?>
     <desc>Race start line</desc>
     <ele>100</ele>
   </wpt>
-  <wpt lat="37.7949" lon="-122.3994">
+  <wpt lat="37.7804" lon="-122.4139">
     <name>Finish</name>
     <desc>Race finish line</desc>
-    <ele>200</ele>
+    <ele>155</ele>
   </wpt>
 </gpx>`
 
@@ -102,7 +139,9 @@ test.describe('Race Import Flow', () => {
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
-    } catch {}
+    } catch (error) {
+      logger.debug('Loading state check failed (expected in fast CI):', { error: String(error) })
+    }
   })
 
   test('should open race import modal', async ({ page }) => {
@@ -112,7 +151,7 @@ test.describe('Race Import Flow', () => {
     // Look for import button with multiple possible selectors
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -144,13 +183,8 @@ test.describe('Race Import Flow', () => {
     // Open import modal with data-testid selector
     const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
     await importButton.click({ timeout: 30000 })
 
     // Create a test GPX file
@@ -166,34 +200,26 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    // Wait for file processing to complete with proper async handling
-    // First wait for any loading indicators to appear and disappear
-    try {
-      await page.locator('text=/processing|uploading|parsing/i').waitFor({ timeout: 5000 })
-      await page
-        .locator('text=/processing|uploading|parsing/i')
-        .waitFor({ state: 'hidden', timeout: 30000 })
-    } catch {
-      // Processing might happen too quickly to detect
-    }
+    // Wait for file processing to complete using Suspense-aware helper
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000)
 
-    // Wait for parsing to complete - check for either success or error
-    // First check if there's a parse error message (more specific)
+    // Wait for parsing to complete - fail test if parse error occurs
+    // Check for parse error and fail test to catch regressions
     const parseError = page.locator('text="Parse failed"').first()
     const hasParseError = await parseError.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasParseError) {
-      // Log the error for debugging
+      // Get error details for debugging
       const errorDetails = await page
         .locator('text=/Failed to parse/i')
         .first()
         .textContent()
-        .catch(() => '')
-      console.log('GPX parsing failed in CI:', errorDetails)
+        .catch(() => 'Unknown parse error')
 
-      // Skip the test if GPX parsing fails (likely CI environment issue)
-      test.skip()
-      return
+      logger.error('GPX parsing failed:', { errorDetails })
+
+      // Fail the test with detailed error message
+      throw new Error(`GPX parsing failed: ${errorDetails}. This indicates a regression in GPX parser that needs fixing.`)
     }
 
     // If no error, wait for the race data to appear
@@ -216,13 +242,8 @@ test.describe('Race Import Flow', () => {
     // Open import modal with data-testid selector
     const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
     await importButton.click({ timeout: 30000 })
 
     // Create a test CSV file
@@ -260,13 +281,8 @@ test.describe('Race Import Flow', () => {
     // Open import modal with data-testid selector
     const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
     await importButton.click({ timeout: 30000 })
 
     // Create a large file (simulate > 10MB)
@@ -314,7 +330,7 @@ test.describe('Race Import Flow', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -378,7 +394,7 @@ test.describe('Race Import Flow', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -458,7 +474,7 @@ test.describe('Race Import Flow', () => {
     // First, import a race with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -512,7 +528,9 @@ test.describe('Race Import Flow', () => {
       await page
         .locator('text=Loading race expeditions')
         .waitFor({ state: 'hidden', timeout: 30000 })
-    } catch {}
+    } catch (error) {
+      logger.debug('Loading state check failed (expected in fast CI):', { error: String(error) })
+    }
 
     const importButtonAgain = page.locator('button:has-text("Import Races")')
     await importButtonAgain.click()
@@ -561,7 +579,7 @@ test.describe('Race Import Flow', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -592,7 +610,7 @@ test.describe('Race Import Flow', () => {
     // Should see multiple races parsed - use more specific selector for count
     await expect(page.getByText('3 races ready for import')).toBeVisible()
 
-    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
+    const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
 
     // Should see bulk import success message using proper Playwright .or() combinator
@@ -632,7 +650,7 @@ test.describe('Race Import Flow', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -659,7 +677,7 @@ test.describe('Race Import Flow', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
+    const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
 
     // Should see progress indicator
@@ -713,7 +731,7 @@ test.describe('Race Import Edge Cases', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -740,7 +758,7 @@ test.describe('Race Import Edge Cases', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
+    const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
 
     // Should show network error message using proper Playwright .or() combinator
@@ -794,7 +812,7 @@ test.describe('Race Import Edge Cases', () => {
     // Open import modal with multiple strategies
     const importButton = page
       .locator('button:has-text("Import Races")')
-      .or(page.getByRole('button', { name: /import.*race/i }))
+      .or(page.getByTestId('import-races-button'))
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
@@ -821,7 +839,7 @@ test.describe('Race Import Edge Cases', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
+    const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
 
     // Should show rate limit message using proper Playwright .or() combinator
