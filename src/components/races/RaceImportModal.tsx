@@ -208,7 +208,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             },
           })
         } catch (error) {
-          logger.error('Error parsing GPX file:', error)
+          logger.error('Error parsing GPX file:', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          })
           reject(new Error(`Failed to parse GPX file: ${error}`))
         }
       }
@@ -663,6 +669,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                   Upload Files
                 </div>
               }
+              data-testid="upload-tab"
             >
               <div className="space-y-4">
                 {/* Drag and Drop Zone */}
@@ -765,6 +772,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                   Preview ({parsedRaces.length})
                 </div>
               }
+              data-testid="preview-tab"
             >
               <div className="space-y-4">
                 {parsedRaces.length > 0 ? (
@@ -826,7 +834,12 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           </Tabs>
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose} disabled={isUploading}>
+          <Button
+            variant="light"
+            onPress={onClose}
+            disabled={isUploading}
+            data-testid="cancel-import"
+          >
             Cancel
           </Button>
           {selectedTab === 'preview' && parsedRaces.length > 0 && (
@@ -835,6 +848,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
               onPress={handleImport}
               disabled={isUploading}
               isLoading={isUploading}
+              data-testid="import-races-button"
             >
               {isUploading
                 ? 'Importing...'

@@ -312,6 +312,7 @@ function RacesContent() {
                   variant="flat"
                   startContent={<UploadIcon className="w-5 h-5" />}
                   aria-label="Import races from GPX or CSV files"
+                  data-testid="import-races-modal-trigger"
                 >
                   Import Races
                 </Button>
