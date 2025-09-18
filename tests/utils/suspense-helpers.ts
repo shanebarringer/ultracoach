@@ -69,82 +69,81 @@ export async function waitForFormSubmission(page: Page, timeout = 15000): Promis
 
 /**
  * Waits for file upload processing to complete.
- * Handles loading indicators and parsed data appearance.
+ * Uses data-testid attributes and Context7-approved waiting strategies.
  */
 export async function waitForFileUploadProcessing(
   page: Page,
   expectedContent?: string,
   timeout = 90000
 ): Promise<void> {
+  console.log('[Test] Starting waitForFileUploadProcessing, expectedContent:', expectedContent)
+
   // First wait for any loading indicators to appear and disappear
   try {
     await page.locator('text=/processing|uploading|parsing|loading/i').waitFor({ timeout: 5000 })
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout })
+    console.log('[Test] Loading indicators cleared')
   } catch {
-    // Processing might happen too quickly to detect
+    console.log('[Test] No loading indicators detected')
   }
 
   // Wait for preview tab to be selected (indicates processing complete)
   try {
-    const previewTab = page.getByRole('tab', { name: 'Preview' })
+    const previewTab = page.getByTestId('preview-tab')
     await previewTab.waitFor({ state: 'visible', timeout: 15000 })
+    console.log('[Test] Preview tab visible')
 
-    // Wait for preview tab to become selected
-    await page.waitForFunction(
-      () => {
-        const previewTab = document.querySelector('[role="tab"]')
-        return (
-          previewTab &&
-          previewTab.getAttribute('aria-selected') === 'true' &&
-          previewTab.textContent?.includes('Preview')
-        )
-      },
-      {},
-      { timeout: 15000 }
-    )
-  } catch {
-    // Preview tab might not exist or be selectable
+    // Wait for preview tab to become selected using aria-selected
+    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+    console.log('[Test] Preview tab selected')
+
+    // Wait for preview content to load
+    const previewContent = page.getByTestId('preview-content')
+    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
+    console.log('[Test] Preview content visible')
+  } catch (error) {
+    console.log('[Test] Preview tab error:', error)
+    throw error
   }
 
   if (expectedContent) {
-    // Wait for specific content to appear in preview area or error message
-    await page.waitForFunction(
-      content => {
-        // Check if preview tab is active first
-        const previewTab = document.querySelector('[role="tab"][aria-selected="true"]')
-        const isPreviewActive = previewTab && previewTab.textContent?.includes('Preview')
+    console.log('[Test] Waiting for specific content:', expectedContent)
 
-        if (!isPreviewActive) {
-          return false // Don't proceed until preview tab is active
+    // Wait for race list to be populated
+    const raceList = page.getByTestId('race-list')
+    await raceList.waitFor({ state: 'visible', timeout: 15000 })
+
+    // Wait for the specific race name to appear
+    try {
+      const raceElement = page.getByTestId('race-name-0').filter({ hasText: expectedContent })
+      await raceElement.waitFor({ state: 'visible', timeout })
+      console.log('[Test] Found expected race content:', expectedContent)
+    } catch (error) {
+      // Check if there are any error messages instead
+      const errorSelectors = [
+        'text=/error|failed|invalid/i',
+        '[data-testid*="error"]',
+        '.text-danger',
+      ]
+
+      for (const selector of errorSelectors) {
+        try {
+          const errorElement = page.locator(selector).first()
+          if (await errorElement.isVisible()) {
+            const errorText = await errorElement.textContent()
+            console.log('[Test] Found error message instead:', errorText)
+            throw new Error(`Expected "${expectedContent}" but found error: ${errorText}`)
+          }
+        } catch {
+          // Continue to next selector
         }
+      }
 
-        // Use XPath to find elements containing the expected text
-        const xpath = `//*[contains(text(), "${content}")]`
-        const expectedElement = document.evaluate(
-          xpath,
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        ).singleNodeValue
-
-        // Use XPath for error messages too
-        const errorXpath = `//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'error') or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'failed') or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'invalid')]`
-        const errorMessage = document.evaluate(
-          errorXpath,
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        ).singleNodeValue
-
-        return expectedElement !== null || errorMessage !== null
-      },
-      expectedContent,
-      { timeout }
-    )
+      console.log('[Test] Content not found and no errors detected')
+      throw error
+    }
   }
 }
 

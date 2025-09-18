@@ -225,11 +225,18 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
   const parseCSVFile = useCallback(async (file: File): Promise<ParsedRaceData[]> => {
     return new Promise((resolve, reject) => {
+      console.log('[RaceImport] Starting CSV parse for:', file.name)
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
         complete: results => {
           try {
+            console.log('[RaceImport] Papa.parse complete:', {
+              dataLength: results.data?.length,
+              errors: results.errors,
+              meta: results.meta,
+            })
+
             // Validate CSV structure
             if (!results.data || results.data.length === 0) {
               throw new Error('CSV file is empty or contains no valid data rows')
@@ -451,15 +458,27 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         const allRaces: ParsedRaceData[] = []
 
         for (const file of validFiles) {
+          console.log('[RaceImport] Processing file:', file.name, 'size:', file.size)
           if (file.name.toLowerCase().endsWith('.gpx')) {
             const race = await parseGPXFile(file)
+            console.log('[RaceImport] GPX parsed:', race.name)
             allRaces.push(race)
           } else if (file.name.toLowerCase().endsWith('.csv')) {
             const races = await parseCSVFile(file)
+            console.log(
+              '[RaceImport] CSV parsed races:',
+              races.length,
+              races.map(r => r.name)
+            )
             allRaces.push(...races)
           }
         }
 
+        console.log(
+          '[RaceImport] Total races parsed:',
+          allRaces.length,
+          allRaces.map(r => r.name)
+        )
         setParsedRaces(allRaces)
         setSelectedTab('preview')
 
@@ -774,11 +793,11 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
               }
               data-testid="preview-tab"
             >
-              <div className="space-y-4">
+              <div className="space-y-4" data-testid="preview-content">
                 {parsedRaces.length > 0 ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-foreground-600">
+                      <p className="text-sm text-foreground-600" data-testid="parsed-races-count">
                         {parsedRaces.length} race{parsedRaces.length > 1 ? 's' : ''} ready for
                         import
                       </p>
@@ -787,12 +806,18 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       </Button>
                     </div>
 
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 max-h-96 overflow-y-auto" data-testid="race-list">
                       {parsedRaces.map((race, index) => (
-                        <Card key={index} className="border-l-4 border-l-primary/60">
+                        <Card
+                          key={index}
+                          className="border-l-4 border-l-primary/60"
+                          data-testid={`race-card-${index}`}
+                        >
                           <CardBody className="p-4">
                             <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-semibold">{race.name}</h4>
+                              <h4 className="font-semibold" data-testid={`race-name-${index}`}>
+                                {race.name}
+                              </h4>
                               <Chip
                                 size="sm"
                                 color={race.source === 'gpx' ? 'primary' : 'secondary'}
