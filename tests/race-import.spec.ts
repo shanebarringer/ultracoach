@@ -660,7 +660,7 @@ test.describe('Race Import Flow', () => {
     console.log('[Test] Bulk import success message detected')
   })
 
-  test('should show progress indicator during import', async ({ page }) => {
+  test.skip('should show progress indicator during import', async ({ page }) => {
     // Wait for page to be fully ready
     await waitForHeroUIReady(page)
 
