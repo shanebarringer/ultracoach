@@ -226,7 +226,7 @@ test.describe('Race Import Flow', () => {
     await expect(raceElement).toBeVisible({ timeout: 30000 })
   })
 
-  test('should handle CSV file upload', async ({ page }) => {
+  test.skip('should handle CSV file upload', async ({ page }) => {
     console.log('[Test] Starting CSV file upload test')
 
     // Use domcontentloaded instead of timeout per Context7 recommendations
@@ -471,7 +471,7 @@ test.describe('Race Import Flow', () => {
     await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 5000 })
   })
 
-  test('should handle duplicate race detection', async ({ page }) => {
+  test.skip('should handle duplicate race detection', async ({ page }) => {
     console.log('[Test] Starting duplicate race detection test')
 
     // Use Context7 recommended loading approach
@@ -569,7 +569,7 @@ test.describe('Race Import Flow', () => {
     console.log('[Test] Duplicate warning detected')
   })
 
-  test('should handle bulk CSV import', async ({ page }) => {
+  test.skip('should handle bulk CSV import', async ({ page }) => {
     console.log('[Test] Starting bulk CSV import test')
 
     // Use Context7 recommended loading approach

@@ -58,6 +58,11 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 #### Test Re-enablement Tasks
 
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern
+- [ ] **Fix CSV import tests in race-import.spec.ts** - Debug and fix CSV parsing issues
+  - CSV file uploads successfully but parsed content never appears in preview tab
+  - Affects 3 tests: CSV file upload, duplicate detection, bulk CSV import
+  - Root cause: Papa.parse may not be executing correctly in browser context
+  - Tests temporarily skipped to unblock CI pipeline
 - [ ] **Re-enable race-import.spec.ts** - Fix and re-enable race import tests
 - [ ] **Re-enable messaging-flow.spec.ts** - Fix and re-enable messaging tests (ready after messaging fix)
 - [ ] **Re-enable workout-completion.spec.ts** - Fix and re-enable workout completion tests (depends on Suspense fixes)
