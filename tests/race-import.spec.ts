@@ -256,8 +256,13 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    // Wait for file to be processed
-    await page.waitForTimeout(3000)
+    // Wait for file processing
+    await waitForFileUploadProcessing(page, 'Western States 100', 15000)
+
+    // Switch to preview tab to see parsed data
+    const previewTab = page.getByRole('tab', { name: 'Preview' })
+    await expect(previewTab).toBeVisible({ timeout: 10000 })
+    await previewTab.click()
 
     // Check if races were parsed (should see multiple races)
     await expect(page.locator('text=Western States 100')).toBeVisible()
@@ -421,7 +426,7 @@ test.describe('Race Import Flow', () => {
     const successMessage = page
       .getByText('successfully imported')
       .or(page.getByText('Import successful'))
-    await expect(successMessage).toBeVisible({
+    await expect(successMessage.first()).toBeVisible({
       timeout: 10000,
     })
 
@@ -486,7 +491,7 @@ test.describe('Race Import Flow', () => {
     const firstImportSuccess = page
       .getByText('successfully imported')
       .or(page.getByText('Import successful'))
-    await expect(firstImportSuccess).toBeVisible({
+    await expect(firstImportSuccess.first()).toBeVisible({
       timeout: 10000,
     })
 
