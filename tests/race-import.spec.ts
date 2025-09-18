@@ -164,7 +164,7 @@ test.describe('Race Import Flow', () => {
     const buffer = Buffer.from(TEST_GPX_CONTENT)
 
     // File input might be hidden, use force or direct file setting
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
 
     // Set files directly without checking visibility (file inputs are often hidden)
     await fileInput.setInputFiles({
@@ -183,11 +183,7 @@ test.describe('Race Import Flow', () => {
 
     if (hasParseError) {
       // Get error details for debugging
-      const errorDetails = await page
-        .locator('text=/Failed to parse/i')
-        .first()
-        .textContent()
-        .catch(() => 'Unknown parse error')
+      const errorDetails = await parseError.textContent().catch(() => 'Unknown parse error')
 
       logger.error('GPX parsing failed:', { errorDetails })
 
@@ -230,7 +226,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] Created CSV buffer with content length:', buffer.length)
 
     // Look for file upload input and set files with proper validation
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-races.csv',
       mimeType: 'text/csv',
@@ -306,7 +302,7 @@ test.describe('Race Import Flow', () => {
     const largeContent = 'x'.repeat(11 * 1024 * 1024) // 11MB
     const buffer = Buffer.from(largeContent)
 
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'large-file.gpx',
       mimeType: 'application/gpx+xml',
@@ -332,7 +328,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Extra wait for React hydration in CI
-    await page.waitForTimeout(process.env.CI ? 3000 : 1000)
+    // Wait removed - folded into waitForHeroUIReady
 
     // Check for overlays that might intercept clicks
     const overlays = page.locator(
@@ -361,7 +357,7 @@ test.describe('Race Import Flow', () => {
     const invalidGPX = '<invalid>not valid gpx</invalid>'
     const buffer = Buffer.from(invalidGPX)
 
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'invalid.gpx',
       mimeType: 'application/gpx+xml',
@@ -389,7 +385,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Extra wait for React hydration in CI
-    await page.waitForTimeout(process.env.CI ? 3000 : 1000)
+    // Wait removed - folded into waitForHeroUIReady
 
     // Check for overlays that might intercept clicks
     const overlays = page.locator(
@@ -410,7 +406,7 @@ test.describe('Race Import Flow', () => {
 
     // Upload valid GPX file
     const buffer = Buffer.from(TEST_GPX_CONTENT)
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-race.gpx',
       mimeType: 'application/gpx+xml',
@@ -465,7 +461,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] Import modal opened')
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-race.gpx',
       mimeType: 'application/gpx+xml',
@@ -516,7 +512,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] Import modal reopened for duplicate test')
 
     // Upload the same GPX file again
-    const fileInputAgain = page.locator('input[type="file"]')
+    const fileInputAgain = page.locator('[role="dialog"] input[type="file"]')
     await fileInputAgain.setInputFiles({
       name: 'test-race-duplicate.gpx',
       mimeType: 'application/gpx+xml',
@@ -566,7 +562,7 @@ test.describe('Race Import Flow', () => {
     const buffer = Buffer.from(TEST_CSV_CONTENT)
     logger.info('[Test] Created CSV buffer with length:', buffer.length)
 
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'bulk-races.csv',
       mimeType: 'text/csv',
@@ -644,7 +640,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Extra wait for React hydration in CI
-    await page.waitForTimeout(process.env.CI ? 3000 : 1000)
+    // Wait removed - folded into waitForHeroUIReady
 
     // Check for overlays that might intercept clicks
     const overlays = page.locator(
@@ -664,7 +660,7 @@ test.describe('Race Import Flow', () => {
     await importButton.click({ timeout: 30000 })
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-race.gpx',
       mimeType: 'application/gpx+xml',
@@ -712,7 +708,7 @@ test.describe('Race Import Edge Cases', () => {
     }
 
     // Extra wait for React hydration in CI
-    await page.waitForTimeout(process.env.CI ? 3000 : 1000)
+    // Wait removed - folded into waitForHeroUIReady
 
     // Check for overlays that might intercept clicks
     const overlays = page.locator(
@@ -738,7 +734,7 @@ test.describe('Race Import Edge Cases', () => {
     }
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-race.gpx',
       mimeType: 'application/gpx+xml',
@@ -786,7 +782,7 @@ test.describe('Race Import Edge Cases', () => {
     }
 
     // Extra wait for React hydration in CI
-    await page.waitForTimeout(process.env.CI ? 3000 : 1000)
+    // Wait removed - folded into waitForHeroUIReady
 
     // Check for overlays that might intercept clicks
     const overlays = page.locator(
@@ -812,7 +808,7 @@ test.describe('Race Import Edge Cases', () => {
     }
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
-    const fileInput = page.locator('input[type="file"]')
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-race.gpx',
       mimeType: 'application/gpx+xml',

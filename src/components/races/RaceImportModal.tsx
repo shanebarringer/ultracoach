@@ -15,7 +15,7 @@ import {
   Tabs,
 } from '@heroui/react'
 import { parseGPX } from '@we-gold/gpxjs'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { FileIcon, MapIcon, TableIcon, UploadIcon } from 'lucide-react'
 import Papa from 'papaparse'
 
@@ -74,8 +74,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
   // Use Jotai atoms for import progress tracking
   const setImportProgress = useSetAtom(raceImportProgressAtom)
-  const setImportErrors = useSetAtom(raceImportErrorsAtom)
-  const importErrors = useAtomValue(raceImportErrorsAtom)
+  const [importErrors, setImportErrors] = useAtom(raceImportErrorsAtom)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -155,7 +154,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           }
 
           // Extract race data from validated GPX
-          const name = track?.name || gpx.metadata?.name || file.name.replace('.gpx', '')
+          const name = gpx.metadata?.name || track?.name || file.name.replace('.gpx', '')
 
           // Calculate total distance in miles
           const totalDistance = totalDistanceMeters ? totalDistanceMeters / 1609.34 : 0 // Convert meters to miles
@@ -222,7 +221,11 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           })
-          reject(new Error(`Failed to parse GPX file: ${error}`))
+          reject(
+            new Error(
+              `Failed to parse GPX file: ${error instanceof Error ? error.message : String(error)}`
+            )
+          )
         }
       }
       reader.onerror = () => reject(new Error('Failed to read file'))
@@ -231,15 +234,27 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
   }, [])
 
   const parseCSVFile = useCallback(async (file: File): Promise<ParsedRaceData[]> => {
+    // Helper functions for robust CSV header mapping
+    const normalizeKey = (k: string): string => {
+      return k.toLowerCase().replace(/[\s_()]/g, '')
+    }
+
+    const valueFrom = (row: Record<string, string>, candidates: string[]): string | undefined => {
+      const map = new Map(Object.keys(row).map(k => [normalizeKey(k), k]))
+      for (const c of candidates) {
+        const nk = normalizeKey(c)
+        const orig = map.get(nk)
+        if (orig && row[orig]) return row[orig]
+      }
+      return undefined
+    }
+
     return new Promise((resolve, reject) => {
-      console.log(
-        '[RaceImport] Starting CSV parse for:',
-        file.name,
-        'size:',
-        file.size,
-        'type:',
-        file.type
-      )
+      logger.debug('Starting CSV parse', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      })
 
       // Step 1: Use FileReader to read file content as text for better browser compatibility
       const fileReader = new FileReader()
@@ -247,34 +262,36 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       fileReader.onload = event => {
         try {
           const csvText = event.target?.result as string
-          console.log('[RaceImport] FileReader completed, text length:', csvText?.length)
+          logger.debug('FileReader completed', { textLength: csvText?.length })
 
           if (!csvText || csvText.trim().length === 0) {
             throw new Error('File is empty or could not be read')
           }
 
           // Step 2: Parse the text string with Papa.parse
-          console.log('[RaceImport] Starting Papa.parse on text string')
+          logger.debug('Starting Papa.parse on text string')
           Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
             error: (error: Error) => {
-              console.error('[RaceImport] Papa.parse failed with error:', error)
+              logger.error('Papa.parse failed', { error: error.message })
               reject(new Error(`CSV parsing engine failed: ${error.message}`))
             },
             complete: results => {
               try {
-                console.log('[RaceImport] Papa.parse complete:', {
+                logger.info('Papa.parse complete', {
                   dataLength: results.data?.length,
-                  errors: results.errors,
-                  meta: results.meta,
+                  errorCount: results.errors?.length || 0,
+                  metaDelimiter: results.meta?.delimiter,
                   hasData: !!results.data,
-                  firstRow: results.data?.[0],
+                  fieldsFound: results.meta?.fields?.length || 0,
                 })
 
                 // Check for Papa.parse errors first
                 if (results.errors && results.errors.length > 0) {
-                  console.error('[RaceImport] Papa.parse encountered errors:', results.errors)
+                  logger.error('Papa.parse encountered errors', {
+                    errors: results.errors.map(err => ({ row: err.row, message: err.message })),
+                  })
                   const errorMessages = results.errors
                     .map(err => `Row ${err.row}: ${err.message}`)
                     .join('; ')
@@ -315,77 +332,79 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                 ;(results.data as Record<string, string>[]).forEach(
                   (row: Record<string, string>, index: number) => {
                     try {
-                      // Flexible column mapping with multiple possible column names
+                      // Robust column mapping using normalized headers
                       const getName = () => {
-                        for (const col of [
-                          'name',
-                          'race_name',
-                          'race name',
-                          'event_name',
-                          'event name',
-                          'title',
-                        ]) {
-                          if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
-                            return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
-                          }
-                        }
-                        return `Race ${index + 1}`
+                        return (
+                          valueFrom(row, [
+                            'name',
+                            'race_name',
+                            'race name',
+                            'event_name',
+                            'event name',
+                            'title',
+                            'racename',
+                            'eventname',
+                          ]) || `Race ${index + 1}`
+                        )
                       }
 
                       const getDate = () => {
-                        for (const col of [
+                        return valueFrom(row, [
                           'date',
                           'race_date',
                           'race date',
                           'event_date',
                           'event date',
-                        ]) {
-                          if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
-                            return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
-                          }
-                        }
-                        return undefined
+                          'racedate',
+                          'eventdate',
+                        ])
                       }
 
                       const getLocation = () => {
-                        for (const col of ['location', 'place', 'city', 'venue', 'where']) {
-                          if (row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]) {
-                            return row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
-                          }
-                        }
-                        return undefined
+                        return valueFrom(row, [
+                          'location',
+                          'place',
+                          'city',
+                          'venue',
+                          'where',
+                          'state',
+                          'country',
+                        ])
                       }
 
                       const getDistance = () => {
-                        for (const col of [
+                        const distStr = valueFrom(row, [
                           'distance',
                           'distance_miles',
                           'distance miles',
+                          'distance(miles)',
                           'miles',
                           'race_distance',
-                        ]) {
-                          const value = row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
-                          if (value) {
-                            const parsed = parseFloat(value)
-                            return !isNaN(parsed) && parsed >= 0 ? parsed : 0
-                          }
+                          'racedistance',
+                          'dist',
+                        ])
+                        if (distStr) {
+                          const parsed = parseFloat(distStr)
+                          return !isNaN(parsed) && parsed >= 0 ? parsed : 0
                         }
                         return 0
                       }
 
                       const getElevation = () => {
-                        for (const col of [
+                        const elevStr = valueFrom(row, [
                           'elevation',
                           'elevation_gain',
                           'elevation gain',
+                          'elevation gain(ft)',
+                          'elevationgain',
                           'elevation_feet',
                           'climb',
-                        ]) {
-                          const value = row[col] || row[col.toLowerCase()] || row[col.toUpperCase()]
-                          if (value) {
-                            const parsed = parseInt(value)
-                            return !isNaN(parsed) && parsed >= 0 ? parsed : 0
-                          }
+                          'vert',
+                          'ascent',
+                        ])
+                        if (elevStr) {
+                          const parsed = parseInt(elevStr)
+                          return !isNaN(parsed) && parsed >= 0 ? parsed : 0
                         }
                         return 0
                       }
@@ -406,12 +425,24 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                         date: getDate(),
                         location: getLocation(),
                         distance_miles: getDistance(),
-                        distance_type: row.distance_type || row.type || 'Custom',
+                        distance_type:
+                          valueFrom(row, ['distance_type', 'distancetype', 'type', 'category']) ||
+                          'Custom',
                         elevation_gain_feet: getElevation(),
-                        terrain_type: (row.terrain_type || row.terrain || 'mixed').toLowerCase(),
-                        website_url: row.website_url || row.website || row.url,
+                        terrain_type: (
+                          valueFrom(row, ['terrain_type', 'terraintype', 'terrain', 'surface']) ||
+                          'mixed'
+                        ).toLowerCase(),
+                        website_url: valueFrom(row, [
+                          'website_url',
+                          'websiteurl',
+                          'website',
+                          'url',
+                          'link',
+                        ]),
                         notes:
-                          row.notes || `Imported from CSV file: ${file.name}, Row ${index + 1}`,
+                          valueFrom(row, ['notes', 'description', 'comments', 'details']) ||
+                          `Imported from CSV file: ${file.name}, Row ${index + 1}`,
                         source: 'csv',
                       }
 
@@ -464,7 +495,10 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             },
           })
         } catch (fileReaderError) {
-          console.error('[RaceImport] FileReader parsing failed:', fileReaderError)
+          logger.error('FileReader parsing failed', {
+            error:
+              fileReaderError instanceof Error ? fileReaderError.message : String(fileReaderError),
+          })
           reject(
             new Error(
               `Failed to parse CSV content: ${fileReaderError instanceof Error ? fileReaderError.message : 'Unknown error'}`
@@ -474,19 +508,19 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       }
 
       // FileReader error handler
-      fileReader.onerror = event => {
-        console.error('[RaceImport] FileReader failed:', event)
+      fileReader.onerror = _event => {
+        logger.error('FileReader failed', { event: 'FileReader error event' })
         reject(new Error(`Failed to read file: ${file.name}`))
       }
 
       // FileReader abort handler
       fileReader.onabort = () => {
-        console.error('[RaceImport] FileReader aborted')
+        logger.warn('FileReader aborted')
         reject(new Error(`File reading was aborted: ${file.name}`))
       }
 
       // Step 3: Start reading the file as text
-      console.log('[RaceImport] Starting FileReader.readAsText()')
+      logger.debug('Starting FileReader.readAsText()')
       fileReader.readAsText(file)
     })
   }, [])
@@ -528,7 +562,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       }
 
       try {
-        console.log('[RaceImport] Starting file processing with', validFiles.length, 'files')
+        logger.info('Starting file processing', { fileCount: validFiles.length })
         setImportErrors([]) // Clear any previous errors
         setImportProgress({
           current: 0,
@@ -540,7 +574,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
         for (let i = 0; i < validFiles.length; i++) {
           const file = validFiles[i]
-          console.log('[RaceImport] Processing file:', file.name, 'size:', file.size)
+          logger.debug('Processing file', { fileName: file.name, fileSize: file.size })
           setImportProgress({
             current: i + 1,
             total: validFiles.length,
@@ -549,7 +583,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
           if (file.name.toLowerCase().endsWith('.gpx')) {
             const race = await parseGPXFile(file)
-            console.log('[RaceImport] GPX parsed:', race.name)
+            logger.info('GPX parsed successfully', { raceName: race.name })
             allRaces.push(race)
           } else if (file.name.toLowerCase().endsWith('.csv')) {
             setImportProgress({
@@ -558,20 +592,18 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
               message: `Parsing CSV data from ${file.name}...`,
             })
             const races = await parseCSVFile(file)
-            console.log(
-              '[RaceImport] CSV parsed races:',
-              races.length,
-              races.map(r => r.name)
-            )
+            logger.info('CSV parsed successfully', {
+              raceCount: races.length,
+              raceNames: races.map(r => r.name),
+            })
             allRaces.push(...races)
           }
         }
 
-        console.log(
-          '[RaceImport] Total races parsed:',
-          allRaces.length,
-          allRaces.map(r => r.name)
-        )
+        logger.info('Total races parsed', {
+          totalCount: allRaces.length,
+          raceNames: allRaces.map(r => r.name),
+        })
         setImportProgress({
           current: validFiles.length,
           total: validFiles.length,
@@ -586,11 +618,16 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           `Imported ${allRaces.length} race${allRaces.length > 1 ? 's' : ''} from ${validFiles.length} file${validFiles.length > 1 ? 's' : ''}`
         )
       } catch (error) {
-        console.error('[RaceImport] Error during file processing:', error)
+        logger.error('Error during file processing', {
+          error: error instanceof Error ? error.message : String(error),
+        })
         logger.error('Error parsing files:', error)
         setImportProgress({ current: 0, total: 0, message: '' }) // Clear processing status on error
         setImportErrors([String(error)]) // Store error in atom
-        toast.error('Parse failed', `Failed to parse files: ${error}`)
+        toast.error(
+          'Parse failed',
+          `Failed to parse files: ${error instanceof Error ? error.message : String(error)}`
+        )
       }
     },
     [parseGPXFile, parseCSVFile, setImportProgress, setImportErrors]
