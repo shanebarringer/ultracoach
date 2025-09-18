@@ -155,11 +155,8 @@ test.describe('Race Import Flow', () => {
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
 
     await expect(importButton).toBeVisible({ timeout: 15000 })
     await importButton.click()
@@ -336,11 +333,8 @@ test.describe('Race Import Flow', () => {
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
 
     // Try to click with force option if needed
     try {
@@ -393,25 +387,12 @@ test.describe('Race Import Flow', () => {
       // No overlays or already hidden
     }
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Open import modal using the modal trigger
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
-    // Try to click with force option if needed
-    try {
-      await importButton.click({ timeout: 10000 })
-    } catch (clickError) {
-      await importButton.click({ force: true, timeout: 5000 })
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click({ timeout: 30000 })
 
     // Upload valid GPX file
     const buffer = Buffer.from(TEST_GPX_CONTENT)
@@ -473,25 +454,12 @@ test.describe('Race Import Flow', () => {
       // No overlays or already hidden
     }
 
-    // First, import a race with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // First, import a race using the modal trigger
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
-    // Try to click with force option if needed
-    try {
-      await importButton.click({ timeout: 10000 })
-    } catch (clickError) {
-      await importButton.click({ force: true, timeout: 5000 })
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click({ timeout: 30000 })
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -585,11 +553,8 @@ test.describe('Race Import Flow', () => {
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
 
     // Try to click with force option if needed
     try {
@@ -649,25 +614,12 @@ test.describe('Race Import Flow', () => {
       // No overlays or already hidden
     }
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Open import modal using the modal trigger
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
-
-    // Try to click with force option if needed
-    try {
-      await importButton.click({ timeout: 10000 })
-    } catch (clickError) {
-      await importButton.click({ force: true, timeout: 5000 })
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click({ timeout: 30000 })
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -737,11 +689,8 @@ test.describe('Race Import Edge Cases', () => {
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
 
     // Try to click with force option if needed
     try {
@@ -818,11 +767,8 @@ test.describe('Race Import Edge Cases', () => {
       .or(page.locator('button').filter({ hasText: /import/i }))
 
     // Check if button is visible (might require coach role)
-    const isVisible = await importButton.isVisible().catch(() => false)
-    if (!isVisible) {
-      test.skip()
-      return
-    }
+    // Verify import button is visible (require coach role)
+    await expect(importButton).toBeVisible({ timeout: 30000 })
 
     // Try to click with force option if needed
     try {
