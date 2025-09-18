@@ -22,7 +22,8 @@ export const asyncRacesAtom = atom(
 
     try {
       logger.debug('Fetching races...')
-      const response = await fetch('/api/races', {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const response = await fetch(`${baseUrl}/api/races`, {
         headers: {
           'Content-Type': 'application/json',
         },

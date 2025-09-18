@@ -115,7 +115,8 @@ export default function CreateTrainingPlanModal({
         const racesArray = Array.isArray(races) ? races : []
         if (racesArray.length === 0) {
           try {
-            const response = await fetch('/api/races')
+            const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+            const response = await fetch(`${baseUrl}/api/races`)
             if (response.ok) {
               const data = await response.json()
               setRaces(data || [])
