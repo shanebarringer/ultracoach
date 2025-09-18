@@ -194,7 +194,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       lat: p.latitude,
                       lon: p.longitude,
                       ele: p.elevation || undefined,
-                      time: p.time instanceof Date ? p.time.toISOString() : (p.time || undefined),
+                      time: p.time instanceof Date ? p.time.toISOString() : p.time || undefined,
                     })) || [],
                 })) || [],
               waypoints:

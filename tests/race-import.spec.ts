@@ -219,7 +219,9 @@ test.describe('Race Import Flow', () => {
       logger.error('GPX parsing failed:', { errorDetails })
 
       // Fail the test with detailed error message
-      throw new Error(`GPX parsing failed: ${errorDetails}. This indicates a regression in GPX parser that needs fixing.`)
+      throw new Error(
+        `GPX parsing failed: ${errorDetails}. This indicates a regression in GPX parser that needs fixing.`
+      )
     }
 
     // If no error, wait for the race data to appear
