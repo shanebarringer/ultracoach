@@ -5,6 +5,7 @@
  * These utilities follow Playwright best practices and Context7 recommendations.
  */
 import { Page, expect } from '@playwright/test'
+import { Logger } from 'tslog'
 
 /**
  * Waits for dashboard content to be loaded and ready for interaction.
@@ -74,9 +75,10 @@ export async function waitForFormSubmission(page: Page, timeout = 15000): Promis
 export async function waitForFileUploadProcessing(
   page: Page,
   expectedContent?: string,
-  timeout = 90000
+  timeout = 90000,
+  logger?: Logger<unknown>
 ): Promise<void> {
-  console.log('[Test] Starting waitForFileUploadProcessing, expectedContent:', expectedContent)
+  logger?.info('Starting waitForFileUploadProcessing', { expectedContent })
 
   // First wait for any loading indicators to appear and disappear
   try {
@@ -84,32 +86,32 @@ export async function waitForFileUploadProcessing(
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout })
-    console.log('[Test] Loading indicators cleared')
+    logger?.debug('Loading indicators cleared')
   } catch {
-    console.log('[Test] No loading indicators detected')
+    logger?.debug('No loading indicators detected')
   }
 
   // Wait for preview tab to be selected (indicates processing complete)
   try {
     const previewTab = page.getByTestId('preview-tab')
     await previewTab.waitFor({ state: 'visible', timeout: 15000 })
-    console.log('[Test] Preview tab visible')
+    logger?.debug('Preview tab visible')
 
     // Wait for preview tab to become selected using aria-selected
     await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
-    console.log('[Test] Preview tab selected')
+    logger?.debug('Preview tab selected')
 
     // Wait for preview content to load
     const previewContent = page.getByTestId('preview-content')
     await previewContent.waitFor({ state: 'visible', timeout: 15000 })
-    console.log('[Test] Preview content visible')
+    logger?.debug('Preview content visible')
   } catch (error) {
-    console.log('[Test] Preview tab error:', error)
+    logger?.error('Preview tab error', { error })
     throw error
   }
 
   if (expectedContent) {
-    console.log('[Test] Waiting for specific content:', expectedContent)
+    logger?.info('Waiting for specific content', { expectedContent })
 
     // Wait for race list to be populated
     const raceList = page.getByTestId('race-list')
@@ -119,7 +121,7 @@ export async function waitForFileUploadProcessing(
     try {
       const raceElement = page.getByTestId('race-name-0').filter({ hasText: expectedContent })
       await raceElement.waitFor({ state: 'visible', timeout })
-      console.log('[Test] Found expected race content:', expectedContent)
+      logger?.info('Found expected race content', { expectedContent })
     } catch (error) {
       // Check if there are any error messages instead
       const errorSelectors = [
@@ -133,7 +135,7 @@ export async function waitForFileUploadProcessing(
           const errorElement = page.locator(selector).first()
           if (await errorElement.isVisible()) {
             const errorText = await errorElement.textContent()
-            console.log('[Test] Found error message instead:', errorText)
+            logger?.warn('Found error message instead', { errorText, expectedContent })
             throw new Error(`Expected "${expectedContent}" but found error: ${errorText}`)
           }
         } catch {
@@ -141,7 +143,7 @@ export async function waitForFileUploadProcessing(
         }
       }
 
-      console.log('[Test] Content not found and no errors detected')
+      logger?.warn('Content not found and no errors detected', { expectedContent })
       throw error
     }
   }

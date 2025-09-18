@@ -129,7 +129,7 @@ export default function CreateTrainingPlanModal({
               credentials: 'include',
               headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
               },
               signal: controller.signal,
             })
@@ -151,7 +151,7 @@ export default function CreateTrainingPlanModal({
               credentials: 'include', // Include cookies for authentication
               headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
               },
               signal: controller.signal,
             })

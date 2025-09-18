@@ -3,7 +3,7 @@ import { Logger } from 'tslog'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { waitForFileUploadProcessing } from './utils/suspense-helpers'
-import { type TestUserType, navigateToDashboard } from './utils/test-helpers'
+// Removed unused imports: TestUserType, navigateToDashboard
 
 const logger = new Logger({ name: 'tests/race-import.spec' })
 
@@ -89,27 +89,14 @@ test.describe('Race Import Flow', () => {
   test.beforeEach(async ({ page, context }) => {
     logger.info('🏁 Starting race import test setup...')
 
-    // Verify storage state was loaded
-    const storageState = await context.storageState()
-
-    // Check if we have auth cookies
-    const cookies = await context.cookies()
-
-    // Log specific auth cookies for debugging
-    const authCookies = cookies.filter(
-      c =>
-        c.name.includes('auth') ||
-        c.name.includes('session') ||
-        c.name === 'better-auth.session_token'
-    )
+    // Auth state verification handled implicitly by test failures
 
     // Auth cookies check removed - handled by test failures if auth is broken
 
     // First go to the home page to ensure cookies are set
     await page.goto('/')
 
-    // Check cookies again after navigation
-    const cookiesAfterHome = await context.cookies()
+    // Navigate to races page after home visit
 
     // Then navigate to races page
     await page.goto('/races')
@@ -126,12 +113,6 @@ test.describe('Race Import Flow', () => {
     // Verify we're on races page (not redirected to signin)
     const currentUrl = page.url()
     if (currentUrl.includes('/auth/signin')) {
-      // Debug the auth issue more thoroughly
-      const finalCookies = await page.context().cookies()
-
-      // Try to check if the page has any error messages
-      const errorText = await page.textContent('body').catch(() => 'Could not get page text')
-
       throw new Error(`Authentication failed - redirected to signin: ${currentUrl}`)
     }
 
@@ -146,19 +127,13 @@ test.describe('Race Import Flow', () => {
 
   test('should open race import modal', async ({ page }) => {
     // Wait for page to fully load
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForHeroUIReady(page)
 
-    // Look for import button with multiple possible selectors
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Use consistent data-testid selector
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
     // Verify import button is visible (require coach role)
     await expect(importButton).toBeVisible({ timeout: 30000 })
-
-    await expect(importButton).toBeVisible({ timeout: 15000 })
     await importButton.click()
 
     // Check if modal opened
@@ -167,7 +142,7 @@ test.describe('Race Import Flow', () => {
 
   test('should handle GPX file upload', async ({ page }) => {
     // Wait for page to fully load
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForHeroUIReady(page)
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -198,11 +173,11 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for file processing to complete using Suspense-aware helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000, logger)
 
     // Wait for parsing to complete - fail test if parse error occurs
     // Check for parse error and fail test to catch regressions
-    const parseError = page.locator('text="Parse failed"').first()
+    const parseError = page.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i).first()
     const hasParseError = await parseError.isVisible({ timeout: 5000 }).catch(() => false)
 
     if (hasParseError) {
@@ -227,7 +202,7 @@ test.describe('Race Import Flow', () => {
   })
 
   test.skip('should handle CSV file upload', async ({ page }) => {
-    console.log('[Test] Starting CSV file upload test')
+    logger.info('[Test] Starting CSV file upload test')
 
     // Use domcontentloaded instead of timeout per Context7 recommendations
     await page.waitForLoadState('domcontentloaded')
@@ -236,22 +211,22 @@ test.describe('Race Import Flow', () => {
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
-      console.log('[Test] Loading indicator cleared')
+      logger.info('[Test] Loading indicator cleared')
     } catch {
-      console.log('[Test] No loading indicator detected')
+      logger.info('[Test] No loading indicator detected')
     }
 
     // Open import modal with data-testid selector
     const importButton = page.getByTestId('import-races-modal-trigger')
     await expect(importButton).toBeVisible({ timeout: 30000 })
-    console.log('[Test] Import button visible')
+    logger.info('[Test] Import button visible')
 
     await importButton.click({ timeout: 30000 })
-    console.log('[Test] Import modal opened')
+    logger.info('[Test] Import modal opened')
 
     // Create a test CSV file using Context7 buffer upload pattern
     const buffer = Buffer.from(TEST_CSV_CONTENT)
-    console.log('[Test] Created CSV buffer with content length:', buffer.length)
+    logger.info('[Test] Created CSV buffer with content length:', buffer.length)
 
     // Look for file upload input and set files with proper validation
     const fileInput = page.locator('input[type="file"]')
@@ -260,40 +235,40 @@ test.describe('Race Import Flow', () => {
       mimeType: 'text/csv',
       buffer,
     })
-    console.log('[Test] File input set with CSV buffer')
+    logger.info('[Test] File input set with CSV buffer')
 
     // Step 1: Verify file was received by checking for processing message
-    console.log('[Test] Step 1: Checking for processing status...')
+    logger.info('[Test] Step 1: Checking for processing status...')
     try {
       await page.locator('text=/Processing|Preparing|Parsing/i').waitFor({ timeout: 5000 })
-      console.log('[Test] Processing message appeared')
+      logger.info('[Test] Processing message appeared')
     } catch {
-      console.log('[Test] No processing message detected, checking for immediate completion')
+      logger.info('[Test] No processing message detected, checking for immediate completion')
     }
 
     // Step 2: Wait for Papa.parse to complete and data to be set
-    console.log('[Test] Step 2: Waiting for CSV parsing completion...')
+    logger.info('[Test] Step 2: Waiting for CSV parsing completion...')
     const previewTab = page.getByTestId('preview-tab')
     await expect(previewTab).toBeVisible({ timeout: 10000 })
     await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
-    console.log('[Test] Preview tab automatically selected after parsing')
+    logger.info('[Test] Preview tab automatically selected after parsing')
 
     // Step 3: Verify content is loaded in preview area
-    console.log('[Test] Step 3: Verifying parsed content is displayed...')
+    logger.info('[Test] Step 3: Verifying parsed content is displayed...')
     const previewContent = page.getByTestId('preview-content')
     await previewContent.waitFor({ state: 'visible', timeout: 15000 })
 
     const raceList = page.getByTestId('race-list')
     await raceList.waitFor({ state: 'visible', timeout: 15000 })
-    console.log('[Test] Race list container visible')
+    logger.info('[Test] Race list container visible')
 
     // Step 4: Check for specific race names using data-testid selectors
-    console.log('[Test] Step 4: Checking for specific race content...')
+    logger.info('[Test] Step 4: Checking for specific race content...')
     const firstRaceElement = page.getByTestId('race-name-0')
     await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
 
     const firstRaceText = await firstRaceElement.textContent()
-    console.log('[Test] First race element text:', firstRaceText)
+    logger.info('[Test] First race element text:', firstRaceText)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
@@ -304,12 +279,12 @@ test.describe('Race Import Flow', () => {
     await expect(leadville).toBeVisible({ timeout: 15000 })
     await expect(utmb).toBeVisible({ timeout: 15000 })
 
-    console.log('[Test] All race names verified successfully')
+    logger.info('[Test] All race names verified successfully')
   })
 
   test('should validate file size limits', async ({ page }) => {
     // Wait for page to fully load
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForHeroUIReady(page)
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -368,13 +343,9 @@ test.describe('Race Import Flow', () => {
       // No overlays or already hidden
     }
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Use consistent data-testid selector
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
     // Verify import button is visible (require coach role)
     await expect(importButton).toBeVisible({ timeout: 30000 })
 
@@ -397,7 +368,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for processing
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     // Should show parse error using proper Playwright .or() combinator
     const parseError = page.getByText('Failed to parse').or(page.getByText('Invalid GPX'))
@@ -446,17 +417,16 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for parsing
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     // Switch to preview tab where the import button is located
     const previewTab = page.getByTestId('preview-tab')
     await previewTab.click()
 
-    // Wait for preview content to load
-    await page.waitForTimeout(1000)
-
-    // Find and click import button using data-testid
+    // Click import when the button is visible and enabled
     const uploadButton = page.getByTestId('import-races-button')
+    await expect(uploadButton).toBeVisible({ timeout: 10000 })
+    await expect(uploadButton).toBeEnabled()
     await uploadButton.click({ timeout: 10000 })
 
     // Should see success message using proper Playwright .or() combinator
@@ -472,7 +442,7 @@ test.describe('Race Import Flow', () => {
   })
 
   test.skip('should handle duplicate race detection', async ({ page }) => {
-    console.log('[Test] Starting duplicate race detection test')
+    logger.info('[Test] Starting duplicate race detection test')
 
     // Use Context7 recommended loading approach
     await page.waitForLoadState('domcontentloaded')
@@ -482,16 +452,16 @@ test.describe('Race Import Flow', () => {
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
-      console.log('[Test] Loading indicator cleared')
+      logger.info('[Test] Loading indicator cleared')
     } catch {
-      console.log('[Test] No loading indicator detected')
+      logger.info('[Test] No loading indicator detected')
     }
 
     // First, import a race using the modal trigger
     const importButton = page.getByTestId('import-races-modal-trigger')
     await expect(importButton).toBeVisible({ timeout: 30000 })
     await importButton.click({ timeout: 30000 })
-    console.log('[Test] Import modal opened')
+    logger.info('[Test] Import modal opened')
 
     const buffer = Buffer.from(TEST_GPX_CONTENT)
     const fileInput = page.locator('input[type="file"]')
@@ -500,22 +470,22 @@ test.describe('Race Import Flow', () => {
       mimeType: 'application/gpx+xml',
       buffer,
     })
-    console.log('[Test] First GPX file uploaded')
+    logger.info('[Test] First GPX file uploaded')
 
     // Wait for processing using improved helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000, logger)
 
     // Find and click import button using data-testid
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click({ timeout: 10000 })
-    console.log('[Test] First import initiated')
+    logger.info('[Test] First import initiated')
 
     // Wait for first import to complete using specific toast messages
     const firstImportSuccess = page
       .getByText('Import successful')
       .or(page.getByText('races imported successfully'))
     await expect(firstImportSuccess.first()).toBeVisible({ timeout: 15000 })
-    console.log('[Test] First import successful')
+    logger.info('[Test] First import successful')
 
     // Close modal and try to import the same race again
     const closeButton = page.locator('[aria-label="Close"], .modal-close, button:has-text("Close")')
@@ -533,16 +503,16 @@ test.describe('Race Import Flow', () => {
       await page
         .locator('text=Loading race expeditions')
         .waitFor({ state: 'hidden', timeout: 30000 })
-      console.log('[Test] Page reloaded and ready')
+      logger.info('[Test] Page reloaded and ready')
     } catch (error) {
-      console.log('[Test] Loading state check failed (expected in fast CI):', error)
+      logger.info('[Test] Loading state check failed (expected in fast CI):', error)
     }
 
     // Open import modal again
     const importButtonAgain = page.getByTestId('import-races-modal-trigger')
     await expect(importButtonAgain).toBeVisible({ timeout: 30000 })
     await importButtonAgain.click()
-    console.log('[Test] Import modal reopened for duplicate test')
+    logger.info('[Test] Import modal reopened for duplicate test')
 
     // Upload the same GPX file again
     const fileInputAgain = page.locator('input[type="file"]')
@@ -551,26 +521,26 @@ test.describe('Race Import Flow', () => {
       mimeType: 'application/gpx+xml',
       buffer,
     })
-    console.log('[Test] Duplicate GPX file uploaded')
+    logger.info('[Test] Duplicate GPX file uploaded')
 
     // Wait for processing
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000, logger)
 
     // Click import button again
     const uploadButtonAgain = page.getByTestId('import-races-button')
     await uploadButtonAgain.click()
-    console.log('[Test] Duplicate import initiated')
+    logger.info('[Test] Duplicate import initiated')
 
     // Should show duplicate detection warning
     const duplicateWarning = page
       .getByText('Duplicate race detected')
       .or(page.getByText('similar race may already exist'))
     await expect(duplicateWarning.first()).toBeVisible({ timeout: 15000 })
-    console.log('[Test] Duplicate warning detected')
+    logger.info('[Test] Duplicate warning detected')
   })
 
   test.skip('should handle bulk CSV import', async ({ page }) => {
-    console.log('[Test] Starting bulk CSV import test')
+    logger.info('[Test] Starting bulk CSV import test')
 
     // Use Context7 recommended loading approach
     await page.waitForLoadState('domcontentloaded')
@@ -580,20 +550,20 @@ test.describe('Race Import Flow', () => {
     const loadingIndicator = page.locator('text=Loading race expeditions')
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
-      console.log('[Test] Loading indicator cleared')
+      logger.info('[Test] Loading indicator cleared')
     } catch {
-      console.log('[Test] No loading indicator detected')
+      logger.info('[Test] No loading indicator detected')
     }
 
     // Open import modal with data-testid selector
     const importButton = page.getByTestId('import-races-modal-trigger')
     await expect(importButton).toBeVisible({ timeout: 30000 })
     await importButton.click({ timeout: 30000 })
-    console.log('[Test] Import modal opened')
+    logger.info('[Test] Import modal opened')
 
     // Upload CSV file with multiple races using Context7 buffer pattern
     const buffer = Buffer.from(TEST_CSV_CONTENT)
-    console.log('[Test] Created CSV buffer with length:', buffer.length)
+    logger.info('[Test] Created CSV buffer with length:', buffer.length)
 
     const fileInput = page.locator('input[type="file"]')
     await fileInput.setInputFiles({
@@ -601,40 +571,40 @@ test.describe('Race Import Flow', () => {
       mimeType: 'text/csv',
       buffer,
     })
-    console.log('[Test] Bulk CSV file uploaded')
+    logger.info('[Test] Bulk CSV file uploaded')
 
     // Step 1: Verify file was received by checking for processing status
-    console.log('[Test] Step 1: Checking for bulk processing status...')
+    logger.info('[Test] Step 1: Checking for bulk processing status...')
     try {
       await page.locator('text=/Processing|Preparing|Parsing CSV/i').waitFor({ timeout: 5000 })
-      console.log('[Test] Processing message appeared for bulk import')
+      logger.info('[Test] Processing message appeared for bulk import')
     } catch {
-      console.log('[Test] No processing message detected, checking for immediate completion')
+      logger.info('[Test] No processing message detected, checking for immediate completion')
     }
 
     // Step 2: Wait for CSV parsing to complete and preview tab activation
-    console.log('[Test] Step 2: Waiting for bulk CSV parsing completion...')
+    logger.info('[Test] Step 2: Waiting for bulk CSV parsing completion...')
     const previewTab = page.getByTestId('preview-tab')
     await expect(previewTab).toBeVisible({ timeout: 10000 })
     await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 20000 })
-    console.log('[Test] Preview tab automatically selected after bulk parsing')
+    logger.info('[Test] Preview tab automatically selected after bulk parsing')
 
     // Step 3: Verify content structure is loaded
-    console.log('[Test] Step 3: Verifying bulk parsed content structure...')
+    logger.info('[Test] Step 3: Verifying bulk parsed content structure...')
     const previewContent = page.getByTestId('preview-content')
     await previewContent.waitFor({ state: 'visible', timeout: 15000 })
 
     const raceList = page.getByTestId('race-list')
     await raceList.waitFor({ state: 'visible', timeout: 15000 })
-    console.log('[Test] Bulk race list container visible')
+    logger.info('[Test] Bulk race list container visible')
 
     // Step 4: Verify individual race elements are rendered
-    console.log('[Test] Step 4: Checking for bulk CSV race content...')
+    logger.info('[Test] Step 4: Checking for bulk CSV race content...')
     const firstRaceElement = page.getByTestId('race-name-0')
     await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
 
     const firstRaceText = await firstRaceElement.textContent()
-    console.log('[Test] First race in bulk import:', firstRaceText)
+    logger.info('[Test] First race in bulk import:', firstRaceText)
 
     // Verify all expected races are present
     const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
@@ -644,20 +614,20 @@ test.describe('Race Import Flow', () => {
     await expect(westernStates).toBeVisible({ timeout: 15000 })
     await expect(leadville).toBeVisible({ timeout: 15000 })
     await expect(utmb).toBeVisible({ timeout: 15000 })
-    console.log('[Test] All races verified in bulk preview')
+    logger.info('[Test] All races verified in bulk preview')
 
     // Click the import button to complete the bulk import
     const confirmImportButton = page.getByTestId('import-races-button')
     await expect(confirmImportButton).toBeVisible({ timeout: 10000 })
     await confirmImportButton.click()
-    console.log('[Test] Bulk import initiated')
+    logger.info('[Test] Bulk import initiated')
 
     // Should see bulk import success message
     const bulkImportSuccess = page
       .getByText('Bulk import completed')
       .or(page.getByText('races imported successfully'))
     await expect(bulkImportSuccess.first()).toBeVisible({ timeout: 20000 })
-    console.log('[Test] Bulk import success message detected')
+    logger.info('[Test] Bulk import success message detected')
   })
 
   test.skip('should show progress indicator during import', async ({ page }) => {
@@ -700,7 +670,7 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
@@ -753,13 +723,9 @@ test.describe('Race Import Edge Cases', () => {
       // No overlays or already hidden
     }
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Use consistent data-testid selector
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
     // Verify import button is visible (require coach role)
     await expect(importButton).toBeVisible({ timeout: 30000 })
 
@@ -778,7 +744,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
@@ -831,13 +797,9 @@ test.describe('Race Import Edge Cases', () => {
       // No overlays or already hidden
     }
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
+    // Use consistent data-testid selector
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Check if button is visible (might require coach role)
     // Verify import button is visible (require coach role)
     await expect(importButton).toBeVisible({ timeout: 30000 })
 
@@ -856,7 +818,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
