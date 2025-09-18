@@ -410,8 +410,8 @@ test.describe('Race Import Flow', () => {
     // Wait for parsing
     await page.waitForTimeout(2000)
 
-    // Find and click import/upload button
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    // Find and click import/upload button - use more specific selector
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Should see success message using proper Playwright .or() combinator
@@ -481,7 +481,7 @@ test.describe('Race Import Flow', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Wait for first import to complete using proper Playwright .or() combinator
@@ -577,10 +577,10 @@ test.describe('Race Import Flow', () => {
 
     await page.waitForTimeout(3000)
 
-    // Should see multiple races parsed
-    await expect(page.locator('text=3 race')).toBeVisible() // "3 races from 1 file" or similar
+    // Should see multiple races parsed - use more specific selector for count
+    await expect(page.getByText('3 races ready for import')).toBeVisible()
 
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Should see bulk import success message using proper Playwright .or() combinator
@@ -647,7 +647,7 @@ test.describe('Race Import Flow', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Should see progress indicator
@@ -728,7 +728,7 @@ test.describe('Race Import Edge Cases', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Should show network error message using proper Playwright .or() combinator
@@ -809,7 +809,7 @@ test.describe('Race Import Edge Cases', () => {
 
     await page.waitForTimeout(2000)
 
-    const uploadButton = page.locator('button:has-text("Import"), button:has-text("Upload")')
+    const uploadButton = page.getByRole('button', { name: /import.*race/i }).first()
     await uploadButton.click()
 
     // Should show rate limit message using proper Playwright .or() combinator
