@@ -15,7 +15,7 @@ import {
   Tabs,
 } from '@heroui/react'
 import { parseGPX } from '@we-gold/gpxjs'
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { FileIcon, MapIcon, TableIcon, UploadIcon } from 'lucide-react'
 import Papa from 'papaparse'
 
@@ -75,6 +75,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
   // Use Jotai atoms for import progress tracking
   const setImportProgress = useSetAtom(raceImportProgressAtom)
   const setImportErrors = useSetAtom(raceImportErrorsAtom)
+  const importErrors = useAtomValue(raceImportErrorsAtom)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -528,6 +529,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
       try {
         console.log('[RaceImport] Starting file processing with', validFiles.length, 'files')
+        setImportErrors([]) // Clear any previous errors
         setImportProgress({
           current: 0,
           total: validFiles.length,
@@ -760,7 +762,8 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
     setParsedRaces([])
     setSelectedTab('upload')
     setUploadProgress(0)
-  }, [])
+    setImportErrors([]) // Clear errors when resetting
+  }, [setImportErrors])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside">
@@ -791,6 +794,27 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
               data-testid="upload-tab"
             >
               <div className="space-y-4">
+                {/* Error Display */}
+                {importErrors.length > 0 && (
+                  <Card className="border-danger bg-danger/5">
+                    <CardBody className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-danger flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">!</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-danger font-semibold mb-2">Import Error</h4>
+                          {importErrors.map((error, index) => (
+                            <p key={index} className="text-danger-600 text-sm">
+                              {error}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+
                 {/* Drag and Drop Zone */}
                 <Card
                   className={`border-2 border-dashed transition-colors ${

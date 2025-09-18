@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { Logger } from 'tslog'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
-import { waitForFileUploadProcessing, waitForFileUploadError } from './utils/suspense-helpers'
+import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
 
 // Removed unused imports: TestUserType, navigateToDashboard
 
@@ -371,8 +371,8 @@ test.describe('Race Import Flow', () => {
     // Wait for error processing (invalid file won't show preview tab)
     await waitForFileUploadError(page, 30000, logger)
 
-    // Should show parse error using proper Playwright .or() combinator
-    const parseError = page.getByText('Failed to parse').or(page.getByText('Invalid GPX'))
+    // Should show parse error for invalid GPX structure
+    const parseError = page.getByText('Invalid GPX file: Missing required GPX XML structure')
     await expect(parseError).toBeVisible()
   })
 
