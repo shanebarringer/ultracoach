@@ -90,8 +90,26 @@ export async function waitForFileUploadProcessing(
     // Wait for specific content to appear or error message
     await page.waitForFunction(
       content => {
-        const expectedElement = document.querySelector(`text=${content}`)
-        const errorMessage = document.querySelector('text=/error|failed|invalid/i')
+        // Use XPath to find elements containing the expected text
+        const xpath = `//*[contains(text(), "${content}")]`
+        const expectedElement = document.evaluate(
+          xpath,
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue
+
+        // Use XPath for error messages too
+        const errorXpath = `//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'error') or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'failed') or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'invalid')]`
+        const errorMessage = document.evaluate(
+          errorXpath,
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue
+
         return expectedElement !== null || errorMessage !== null
       },
       expectedContent,

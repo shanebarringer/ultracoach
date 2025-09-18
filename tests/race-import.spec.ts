@@ -536,32 +536,12 @@ test.describe('Race Import Flow', () => {
     // Extra wait for React hydration in CI
     await page.waitForTimeout(process.env.CI ? 3000 : 1000)
 
-    // Check for overlays that might intercept clicks
-    const overlays = page.locator(
-      '[style*="pointer-events: none"], .loading-overlay, .modal-backdrop'
-    )
-    try {
-      await overlays.first().waitFor({ state: 'hidden', timeout: 5000 })
-    } catch {
-      // No overlays or already hidden
-    }
+    // Open import modal with standard data-testid selector
+    const importButton = page.getByTestId('import-races-modal-trigger')
 
-    // Open import modal with multiple strategies
-    const importButton = page
-      .locator('button:has-text("Import Races")')
-      .or(page.getByTestId('import-races-button'))
-      .or(page.locator('button').filter({ hasText: /import/i }))
-
-    // Check if button is visible (might require coach role)
     // Verify import button is visible (require coach role)
     await expect(importButton).toBeVisible({ timeout: 30000 })
-
-    // Try to click with force option if needed
-    try {
-      await importButton.click({ timeout: 10000 })
-    } catch (clickError) {
-      await importButton.click({ force: true, timeout: 5000 })
-    }
+    await importButton.click({ timeout: 30000 })
 
     // Upload CSV file with multiple races
     const buffer = Buffer.from(TEST_CSV_CONTENT)
@@ -572,19 +552,31 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    await page.waitForTimeout(3000)
+    // Wait for file processing
+    await waitForFileUploadProcessing(page, 'Western States 100', 15000)
 
-    // Should see multiple races parsed - use more specific selector for count
-    await expect(page.getByText('3 races ready for import')).toBeVisible()
+    // Switch to preview tab to see parsed data
+    const previewTab = page.getByRole('tab', { name: 'Preview' })
+    await expect(previewTab).toBeVisible({ timeout: 10000 })
+    await previewTab.click()
 
-    const uploadButton = page.getByTestId('import-races-button')
-    await uploadButton.click()
+    // Should see multiple races parsed
+    await expect(page.getByText('Western States 100')).toBeVisible()
+    await expect(page.getByText('Leadville 100')).toBeVisible()
+    await expect(page.getByText('UTMB')).toBeVisible()
 
-    // Should see bulk import success message using proper Playwright .or() combinator
+    // Click the import button to complete the import
+    const confirmImportButton = page.getByRole('button', { name: 'Import Races' })
+    await expect(confirmImportButton).toBeVisible({ timeout: 10000 })
+    await confirmImportButton.click()
+
+    // Should see bulk import success message
     const bulkImportSuccess = page
       .getByText('Bulk import completed')
-      .or(page.getByText('successful'))
-    await expect(bulkImportSuccess).toBeVisible({
+      .or(page.getByText('Successfully imported'))
+      .or(page.getByText('import successful'))
+
+    await expect(bulkImportSuccess.first()).toBeVisible({
       timeout: 15000,
     })
   })
