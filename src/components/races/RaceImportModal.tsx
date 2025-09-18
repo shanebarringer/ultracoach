@@ -15,13 +15,13 @@ import {
   Tabs,
 } from '@heroui/react'
 import { parseGPX } from '@we-gold/gpxjs'
+import { useSetAtom } from 'jotai'
 import { FileIcon, MapIcon, TableIcon, UploadIcon } from 'lucide-react'
 import Papa from 'papaparse'
 
 import { useCallback, useState } from 'react'
-import { useSetAtom } from 'jotai'
 
-import { raceImportProgressAtom, raceImportErrorsAtom } from '@/lib/atoms/races'
+import { raceImportErrorsAtom, raceImportProgressAtom } from '@/lib/atoms/races'
 import { createLogger } from '@/lib/logger'
 import { retryWithBackoff } from '@/lib/rate-limiter'
 import { toast } from '@/lib/toast'
@@ -252,7 +252,9 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             // Check for Papa.parse errors first
             if (results.errors && results.errors.length > 0) {
               console.error('[RaceImport] Papa.parse encountered errors:', results.errors)
-              const errorMessages = results.errors.map(err => `Row ${err.row}: ${err.message}`).join('; ')
+              const errorMessages = results.errors
+                .map(err => `Row ${err.row}: ${err.message}`)
+                .join('; ')
               throw new Error(`CSV parsing failed: ${errorMessages}`)
             }
 
@@ -428,10 +430,6 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
               )
             )
           }
-        },
-        error: error => {
-          logger.error('Papa Parse error:', error)
-          reject(new Error(`CSV parsing error: ${error.message}`))
         },
       })
     })
