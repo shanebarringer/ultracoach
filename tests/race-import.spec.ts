@@ -249,28 +249,53 @@ test.describe('Race Import Flow', () => {
     await importButton.click({ timeout: 30000 })
     console.log('[Test] Import modal opened')
 
-    // Create a test CSV file
+    // Create a test CSV file using Context7 buffer upload pattern
     const buffer = Buffer.from(TEST_CSV_CONTENT)
     console.log('[Test] Created CSV buffer with content length:', buffer.length)
 
-    // Look for file upload input
+    // Look for file upload input and set files with proper validation
     const fileInput = page.locator('input[type="file"]')
     await fileInput.setInputFiles({
       name: 'test-races.csv',
       mimeType: 'text/csv',
       buffer,
     })
-    console.log('[Test] File input set')
+    console.log('[Test] File input set with CSV buffer')
 
-    // Wait for file processing using improved helper with data-testid support
-    await waitForFileUploadProcessing(page, 'Western States 100', 60000)
+    // Step 1: Verify file was received by checking for processing message
+    console.log('[Test] Step 1: Checking for processing status...')
+    try {
+      await page.locator('text=/Processing|Preparing|Parsing/i').waitFor({ timeout: 5000 })
+      console.log('[Test] Processing message appeared')
+    } catch {
+      console.log('[Test] No processing message detected, checking for immediate completion')
+    }
 
-    // Double-check that preview content is fully loaded
+    // Step 2: Wait for Papa.parse to complete and data to be set
+    console.log('[Test] Step 2: Waiting for CSV parsing completion...')
+    const previewTab = page.getByTestId('preview-tab')
+    await expect(previewTab).toBeVisible({ timeout: 10000 })
+    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
+    console.log('[Test] Preview tab automatically selected after parsing')
+
+    // Step 3: Verify content is loaded in preview area
+    console.log('[Test] Step 3: Verifying parsed content is displayed...')
+    const previewContent = page.getByTestId('preview-content')
+    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
+
     const raceList = page.getByTestId('race-list')
-    await expect(raceList).toBeVisible({ timeout: 15000 })
-    console.log('[Test] Race list visible')
+    await raceList.waitFor({ state: 'visible', timeout: 15000 })
+    console.log('[Test] Race list container visible')
 
-    // Verify all expected races are present using more specific selectors
+    // Step 4: Check for specific race names using data-testid selectors
+    console.log('[Test] Step 4: Checking for specific race content...')
+    const firstRaceElement = page.getByTestId('race-name-0')
+    await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
+
+    const firstRaceText = await firstRaceElement.textContent()
+    console.log('[Test] First race element text:', firstRaceText)
+
+    // Verify expected races are present
     const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
     const leadville = page.getByTestId('race-list').getByText('Leadville 100')
     const utmb = page.getByTestId('race-list').getByText('UTMB')
@@ -279,7 +304,7 @@ test.describe('Race Import Flow', () => {
     await expect(leadville).toBeVisible({ timeout: 15000 })
     await expect(utmb).toBeVisible({ timeout: 15000 })
 
-    console.log('[Test] All race names verified')
+    console.log('[Test] All race names verified successfully')
   })
 
   test('should validate file size limits', async ({ page }) => {
@@ -566,7 +591,7 @@ test.describe('Race Import Flow', () => {
     await importButton.click({ timeout: 30000 })
     console.log('[Test] Import modal opened')
 
-    // Upload CSV file with multiple races
+    // Upload CSV file with multiple races using Context7 buffer pattern
     const buffer = Buffer.from(TEST_CSV_CONTENT)
     console.log('[Test] Created CSV buffer with length:', buffer.length)
 
@@ -578,15 +603,40 @@ test.describe('Race Import Flow', () => {
     })
     console.log('[Test] Bulk CSV file uploaded')
 
-    // Wait for file processing using improved helper with extended timeout for bulk import
-    await waitForFileUploadProcessing(page, 'Western States 100', 60000)
+    // Step 1: Verify file was received by checking for processing status
+    console.log('[Test] Step 1: Checking for bulk processing status...')
+    try {
+      await page.locator('text=/Processing|Preparing|Parsing CSV/i').waitFor({ timeout: 5000 })
+      console.log('[Test] Processing message appeared for bulk import')
+    } catch {
+      console.log('[Test] No processing message detected, checking for immediate completion')
+    }
 
-    // Double-check preview content is loaded with races
+    // Step 2: Wait for CSV parsing to complete and preview tab activation
+    console.log('[Test] Step 2: Waiting for bulk CSV parsing completion...')
+    const previewTab = page.getByTestId('preview-tab')
+    await expect(previewTab).toBeVisible({ timeout: 10000 })
+    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 20000 })
+    console.log('[Test] Preview tab automatically selected after bulk parsing')
+
+    // Step 3: Verify content structure is loaded
+    console.log('[Test] Step 3: Verifying bulk parsed content structure...')
+    const previewContent = page.getByTestId('preview-content')
+    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
+
     const raceList = page.getByTestId('race-list')
-    await expect(raceList).toBeVisible({ timeout: 15000 })
-    console.log('[Test] Race list visible')
+    await raceList.waitFor({ state: 'visible', timeout: 15000 })
+    console.log('[Test] Bulk race list container visible')
 
-    // Verify specific races using data-testid selectors
+    // Step 4: Verify individual race elements are rendered
+    console.log('[Test] Step 4: Checking for bulk CSV race content...')
+    const firstRaceElement = page.getByTestId('race-name-0')
+    await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
+
+    const firstRaceText = await firstRaceElement.textContent()
+    console.log('[Test] First race in bulk import:', firstRaceText)
+
+    // Verify all expected races are present
     const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
     const leadville = page.getByTestId('race-list').getByText('Leadville 100')
     const utmb = page.getByTestId('race-list').getByText('UTMB')
@@ -594,7 +644,7 @@ test.describe('Race Import Flow', () => {
     await expect(westernStates).toBeVisible({ timeout: 15000 })
     await expect(leadville).toBeVisible({ timeout: 15000 })
     await expect(utmb).toBeVisible({ timeout: 15000 })
-    console.log('[Test] All races verified in preview')
+    console.log('[Test] All races verified in bulk preview')
 
     // Click the import button to complete the bulk import
     const confirmImportButton = page.getByTestId('import-races-button')

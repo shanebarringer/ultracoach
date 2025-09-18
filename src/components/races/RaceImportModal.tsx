@@ -19,7 +19,9 @@ import { FileIcon, MapIcon, TableIcon, UploadIcon } from 'lucide-react'
 import Papa from 'papaparse'
 
 import { useCallback, useState } from 'react'
+import { useSetAtom } from 'jotai'
 
+import { raceImportProgressAtom, raceImportErrorsAtom } from '@/lib/atoms/races'
 import { createLogger } from '@/lib/logger'
 import { retryWithBackoff } from '@/lib/rate-limiter'
 import { toast } from '@/lib/toast'
@@ -69,6 +71,10 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedTab, setSelectedTab] = useState('upload')
+
+  // Use Jotai atoms for import progress tracking
+  const setImportProgress = useSetAtom(raceImportProgressAtom)
+  const setImportErrors = useSetAtom(raceImportErrorsAtom)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -229,13 +235,26 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
+        error: (error: Error) => {
+          console.error('[RaceImport] Papa.parse failed with error:', error)
+          reject(new Error(`CSV parsing engine failed: ${error.message}`))
+        },
         complete: results => {
           try {
             console.log('[RaceImport] Papa.parse complete:', {
               dataLength: results.data?.length,
               errors: results.errors,
               meta: results.meta,
+              hasData: !!results.data,
+              firstRow: results.data?.[0],
             })
+
+            // Check for Papa.parse errors first
+            if (results.errors && results.errors.length > 0) {
+              console.error('[RaceImport] Papa.parse encountered errors:', results.errors)
+              const errorMessages = results.errors.map(err => `Row ${err.row}: ${err.message}`).join('; ')
+              throw new Error(`CSV parsing failed: ${errorMessages}`)
+            }
 
             // Validate CSV structure
             if (!results.data || results.data.length === 0) {
@@ -455,15 +474,34 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       }
 
       try {
+        console.log('[RaceImport] Starting file processing with', validFiles.length, 'files')
+        setImportProgress({
+          current: 0,
+          total: validFiles.length,
+          message: 'Preparing files...',
+        })
+
         const allRaces: ParsedRaceData[] = []
 
-        for (const file of validFiles) {
+        for (let i = 0; i < validFiles.length; i++) {
+          const file = validFiles[i]
           console.log('[RaceImport] Processing file:', file.name, 'size:', file.size)
+          setImportProgress({
+            current: i + 1,
+            total: validFiles.length,
+            message: `Processing ${file.name}...`,
+          })
+
           if (file.name.toLowerCase().endsWith('.gpx')) {
             const race = await parseGPXFile(file)
             console.log('[RaceImport] GPX parsed:', race.name)
             allRaces.push(race)
           } else if (file.name.toLowerCase().endsWith('.csv')) {
+            setImportProgress({
+              current: i + 1,
+              total: validFiles.length,
+              message: `Parsing CSV data from ${file.name}...`,
+            })
             const races = await parseCSVFile(file)
             console.log(
               '[RaceImport] CSV parsed races:',
@@ -479,7 +517,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           allRaces.length,
           allRaces.map(r => r.name)
         )
+        setImportProgress({
+          current: validFiles.length,
+          total: validFiles.length,
+          message: 'Finalizing import...',
+        })
         setParsedRaces(allRaces)
+        setImportProgress({ current: 0, total: 0, message: '' }) // Clear processing status
         setSelectedTab('preview')
 
         toast.success(
@@ -487,11 +531,14 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           `Imported ${allRaces.length} race${allRaces.length > 1 ? 's' : ''} from ${validFiles.length} file${validFiles.length > 1 ? 's' : ''}`
         )
       } catch (error) {
+        console.error('[RaceImport] Error during file processing:', error)
         logger.error('Error parsing files:', error)
+        setImportProgress({ current: 0, total: 0, message: '' }) // Clear processing status on error
+        setImportErrors([String(error)]) // Store error in atom
         toast.error('Parse failed', `Failed to parse files: ${error}`)
       }
     },
-    [parseGPXFile, parseCSVFile]
+    [parseGPXFile, parseCSVFile, setImportProgress, setImportErrors]
   )
 
   const handleDrop = useCallback(
