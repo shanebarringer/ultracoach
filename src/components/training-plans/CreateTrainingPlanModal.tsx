@@ -118,9 +118,9 @@ export default function CreateTrainingPlanModal({
             const baseUrl =
               typeof window !== 'undefined'
                 ? ''
-                : process.env.NEXT_PUBLIC_API_BASE_URL ??
+                : (process.env.NEXT_PUBLIC_API_BASE_URL ??
                   process.env.API_BASE_URL ??
-                  'http://localhost:3001'
+                  'http://localhost:3001')
             const response = await fetch(`${baseUrl}/api/races`, {
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
