@@ -146,7 +146,7 @@ test.describe('Race Import Flow', () => {
 
   test('should open race import modal', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForTimeout(2000) // Extra wait for CI
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     // Look for import button with multiple possible selectors
     const importButton = page
@@ -167,7 +167,7 @@ test.describe('Race Import Flow', () => {
 
   test('should handle GPX file upload', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForTimeout(2000) // Extra wait for CI
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -309,7 +309,7 @@ test.describe('Race Import Flow', () => {
 
   test('should validate file size limits', async ({ page }) => {
     // Wait for page to fully load
-    await page.waitForTimeout(2000) // Extra wait for CI
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     // Wait for loading to complete
     const loadingIndicator = page.locator('text=Loading race expeditions')
@@ -397,7 +397,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for processing
-    await page.waitForTimeout(2000)
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     // Should show parse error using proper Playwright .or() combinator
     const parseError = page.getByText('Failed to parse').or(page.getByText('Invalid GPX'))
@@ -446,7 +446,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for parsing
-    await page.waitForTimeout(2000)
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     // Switch to preview tab where the import button is located
     const previewTab = page.getByTestId('preview-tab')
@@ -700,7 +700,7 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    await page.waitForTimeout(2000)
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
@@ -778,7 +778,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await page.waitForTimeout(2000)
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
@@ -856,7 +856,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await page.waitForTimeout(2000)
+    await waitForFileUploadProcessing(page, undefined, 30000)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
