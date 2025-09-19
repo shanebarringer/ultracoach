@@ -51,16 +51,21 @@ export function useWorkouts() {
   const fetchWorkouts = useCallback(async (): Promise<Workout[]> => {
     logger.debug('Fetching workouts (imperative)')
 
-    // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
-    const baseUrl =
-      typeof window !== 'undefined'
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001')
-
     try {
-      const response = await fetch(`${baseUrl}/api/workouts`, {
+      // Check authentication first (client-side only)
+      if (typeof window !== 'undefined') {
+        const { authClient } = await import('@/lib/better-auth-client')
+        const session = await authClient.getSession()
+        if (!session?.user) {
+          logger.debug('No authenticated session found')
+          return []
+        }
+      }
+
+      // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
+      const response = await fetch('/api/workouts', {
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
@@ -72,9 +77,15 @@ export function useWorkouts() {
       const data: unknown = await response.json()
       const freshWorkouts = (data as { workouts?: Workout[] })?.workouts ?? []
 
-      // Update both the sync atom and trigger async atom refresh
-      setWorkouts(freshWorkouts)
-      refresh() // Keep async atom cache in sync for other consumers
+      // Wait for state updates to complete before resolving
+      await new Promise(resolve => {
+        // Update both the sync atom and trigger async atom refresh
+        setWorkouts(freshWorkouts)
+        refresh() // Keep async atom cache in sync for other consumers
+
+        // Use setTimeout to ensure state updates have completed
+        setTimeout(resolve, 0)
+      })
 
       logger.debug('Workout fetch completed', { count: freshWorkouts.length })
       return freshWorkouts

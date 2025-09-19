@@ -4,7 +4,7 @@ import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, Suspense } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -47,13 +47,21 @@ interface Props {
  * Handles workout interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */
-export default function WorkoutsPageClient({ user }: Props) {
-  useHydrateWorkouts() // Hydrate workouts at entry point
+function WorkoutsPageClientInner({ user }: Props) {
+  // Hydrate workouts at entry point - this will trigger Suspense if needed
+  const hydratedWorkouts = useHydrateWorkouts()
   useWorkouts() // Initialize workouts data
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [loadingStates] = useAtom(loadingStatesAtom)
   const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
+
+  logger.debug('WorkoutsPageClient rendering', {
+    userType: user.userType,
+    workoutCount: workouts.length,
+    hydratedCount: hydratedWorkouts?.length || 0,
+    loading: loadingStates.workouts,
+  })
 
   // Coach-specific state and data
   const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
@@ -258,15 +266,11 @@ export default function WorkoutsPageClient({ user }: Props) {
           {/* Note: Filtering is now handled by the enhanced workouts list component */}
 
           {/* Enhanced Workout List with Advanced Filtering */}
-          {loadingStates.workouts ? (
-            <WorkoutsPageSkeleton />
-          ) : (
-            <EnhancedWorkoutsList
-              userRole={user?.role as 'runner' | 'coach'}
-              onLogWorkout={handleWorkoutPress}
-              variant="default"
-            />
-          )}
+          <EnhancedWorkoutsList
+            userRole={user?.role as 'runner' | 'coach'}
+            onLogWorkout={handleWorkoutPress}
+            variant="default"
+          />
 
           {uiState.selectedWorkout && (
             <WorkoutLogModal
@@ -296,5 +300,13 @@ export default function WorkoutsPageClient({ user }: Props) {
         </div>
       </ModernErrorBoundary>
     </Layout>
+  )
+}
+
+export default function WorkoutsPageClient({ user }: Props) {
+  return (
+    <Suspense fallback={<WorkoutsPageSkeleton />}>
+      <WorkoutsPageClientInner user={user} />
+    </Suspense>
   )
 }
