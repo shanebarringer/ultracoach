@@ -58,30 +58,57 @@ export async function waitForAtom<T>(
 /**
  * Mock fetch for API calls
  */
-export function mockFetch(responses: Map<string, { ok: boolean; json: () => Promise<any> }>) {
+export function mockFetch(responses: Map<string, { ok: boolean; json: () => Promise<unknown> }>) {
   const fetchMock = vi.fn((url: string | Request | URL) => {
     const urlStr = typeof url === 'string' ? url : String(url)
     const response = responses.get(urlStr)
 
     if (!response) {
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        json: () => Promise.resolve({ error: 'Not found' }),
-      })
+      return Promise.resolve(
+        createMockFetchResponse({ error: 'Not found' }, { ok: false, status: 404 })
+      )
     }
 
-    return Promise.resolve(response)
+    return Promise.resolve(createMockFetchResponse(response))
   })
 
-  global.fetch = fetchMock as any
+  global.fetch = fetchMock as unknown as typeof fetch
   return fetchMock
+}
+
+/**
+ * Mock session user type
+ */
+interface MockSessionUser {
+  id: string
+  email: string
+  emailVerified: boolean
+  name: string
+  role: string
+  userType: 'runner' | 'coach'
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Mock session type
+ */
+interface MockSession {
+  user: MockSessionUser
+  session: {
+    id: string
+    expiresAt: Date
+    token: string
+  }
 }
 
 /**
  * Create a mock session for testing
  */
-export function createMockSession(overrides?: Partial<any>) {
+export function createMockSession(overrides?: {
+  user?: Partial<MockSessionUser>
+  session?: Partial<{ id: string; expiresAt: Date; token: string }>
+}): MockSession {
   return {
     user: {
       id: 'test-user-id',
@@ -93,7 +120,7 @@ export function createMockSession(overrides?: Partial<any>) {
       createdAt: new Date(),
       updatedAt: new Date(),
       ...overrides?.user,
-    } as any, // Type assertion for test flexibility
+    },
     session: {
       id: 'session-id',
       expiresAt: new Date(Date.now() + 1000 * 60 * 60),
@@ -104,9 +131,29 @@ export function createMockSession(overrides?: Partial<any>) {
 }
 
 /**
+ * Mock workout type
+ */
+interface MockWorkout {
+  id: string
+  user_id: string
+  training_plan_id: string | null
+  date: string
+  type: string
+  planned_type: string
+  name: string
+  description: string
+  distance: number
+  duration: number
+  intensity: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Create a mock workout for testing
  */
-export function createMockWorkout(overrides?: Partial<any>) {
+export function createMockWorkout(overrides?: Partial<MockWorkout>): MockWorkout {
   return {
     id: 'workout-1',
     user_id: 'test-user-id',
@@ -123,7 +170,7 @@ export function createMockWorkout(overrides?: Partial<any>) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
-  } as any
+  }
 }
 
 /**
@@ -288,9 +335,25 @@ export function subscribeToAtom<T>(
 }
 
 /**
+ * Mock authenticated session type for Better Auth
+ */
+interface MockAuthenticatedSession {
+  data: {
+    user: {
+      id: string
+      email: string
+      userType: 'runner' | 'coach'
+      role: string
+    }
+  }
+}
+
+/**
  * Create mock authenticated session for Better Auth
  */
-export function createMockAuthenticatedSession(overrides?: Partial<any>) {
+export function createMockAuthenticatedSession(overrides?: {
+  user?: Partial<{ id: string; email: string; userType: 'runner' | 'coach'; role: string }>
+}): MockAuthenticatedSession {
   return {
     data: {
       user: {
@@ -314,20 +377,31 @@ export function createMockUnauthenticatedSession() {
 }
 
 /**
- * Create mock fetch response
+ * Mock fetch response interface
  */
-export function createMockFetchResponse(
-  data: any,
+interface MockFetchResponse<T = unknown> {
+  ok: boolean
+  status: number
+  statusText: string
+  json: () => Promise<T>
+  text: () => Promise<string>
+}
+
+/**
+ * Create mock fetch response with proper typing
+ */
+export function createMockFetchResponse<T = unknown>(
+  data: T,
   options: { ok?: boolean; status?: number; statusText?: string } = {}
-) {
+): MockFetchResponse<T> {
   const { ok = true, status = 200, statusText = 'OK' } = options
 
   return {
     ok,
     status,
     statusText,
-    json: async () => data,
-    text: async () => JSON.stringify(data),
+    json: async (): Promise<T> => data,
+    text: async (): Promise<string> => JSON.stringify(data),
   }
 }
 
@@ -344,15 +418,23 @@ export function createMockFetchError(status: number, statusText: string, errorTe
 }
 
 /**
+ * Mock get session function type
+ */
+type MockGetSession = { mockResolvedValue: (value: unknown) => void }
+
+/**
  * Setup Better Auth mocks with authenticated session
  */
-export function setupAuthenticatedMocks(mockGetSession: any, userOverrides?: Partial<any>) {
+export function setupAuthenticatedMocks(
+  mockGetSession: MockGetSession,
+  userOverrides?: Partial<{ id: string; email: string; userType: 'runner' | 'coach'; role: string }>
+): void {
   mockGetSession.mockResolvedValue(createMockAuthenticatedSession({ user: userOverrides }))
 }
 
 /**
  * Setup Better Auth mocks with unauthenticated session
  */
-export function setupUnauthenticatedMocks(mockGetSession: any) {
+export function setupUnauthenticatedMocks(mockGetSession: MockGetSession): void {
   mockGetSession.mockResolvedValue(createMockUnauthenticatedSession())
 }

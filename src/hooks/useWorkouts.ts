@@ -64,7 +64,7 @@ export function useWorkouts() {
 
       // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
       const response = await fetch('/api/workouts', {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Accept: 'application/json' },
         credentials: 'same-origin',
       })
 
@@ -80,9 +80,6 @@ export function useWorkouts() {
       // Update both the sync atom and trigger async atom refresh
       setWorkouts(freshWorkouts)
       refresh() // Keep async atom cache in sync for other consumers
-
-      // Wait for state updates to complete before resolving
-      await Promise.resolve()
 
       logger.debug('Workout fetch completed', { count: freshWorkouts.length })
       return freshWorkouts
@@ -100,7 +97,7 @@ export function useWorkouts() {
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
+          credentials: 'same-origin',
           body: JSON.stringify(updates),
         })
 
@@ -134,7 +131,7 @@ export function useWorkouts() {
       try {
         const response = await fetch(`/api/workouts/${workoutId}`, {
           method: 'DELETE',
-          credentials: 'include',
+          credentials: 'same-origin',
         })
 
         if (!response.ok) {

@@ -1,7 +1,7 @@
 import { createStore } from 'jotai'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom } from '../atoms'
+import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom, workoutsAtom } from '../atoms'
 import {
   createMockFetchError,
   createMockFetchResponse,
@@ -243,6 +243,185 @@ describe('Workout Completion Atoms', () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({}),
+      })
+    })
+  })
+
+  describe('204 No Content Response Handling', () => {
+    describe('Success Cases - Workout Exists Locally', () => {
+      beforeEach(() => {
+        // Set up workout in local state for successful tests
+        const mockWorkout = {
+          id: 'workout-123',
+          user_id: 'test-user-id',
+          training_plan_id: null,
+          date: new Date().toISOString(),
+          type: 'long_run',
+          planned_type: 'long_run',
+          name: 'Test Long Run',
+          description: 'Test workout description',
+          distance: 20,
+          duration: 180,
+          intensity: 5,
+          status: 'planned',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+        store.set(workoutsAtom, [mockWorkout])
+      })
+
+      it('should handle 204 response from completeWorkoutAtom when workout exists locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        await store.set(completeWorkoutAtom, {
+          workoutId: 'workout-123',
+          data: { actual_distance: 5.2 },
+        })
+
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ actual_distance: 5.2 }),
+        })
+
+        // Check that workout was updated in local state
+        const workouts = store.get(workoutsAtom)
+        const updatedWorkout = workouts.find(w => w.id === 'workout-123')
+        expect(updatedWorkout?.status).toBe('completed')
+        expect(updatedWorkout?.actual_distance).toBe(5.2)
+      })
+
+      it('should handle 204 response from logWorkoutDetailsAtom when workout exists locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        const workoutData = {
+          actual_distance: 8.2,
+          actual_duration: 58,
+          intensity: 7,
+          workout_notes: 'Great tempo run!',
+        }
+
+        await store.set(logWorkoutDetailsAtom, {
+          workoutId: 'workout-123',
+          data: workoutData,
+        })
+
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(workoutData),
+        })
+
+        // Check that workout was updated in local state
+        const workouts = store.get(workoutsAtom)
+        const updatedWorkout = workouts.find(w => w.id === 'workout-123')
+        expect(updatedWorkout?.actual_distance).toBe(8.2)
+        expect(updatedWorkout?.actual_duration).toBe(58)
+        expect(updatedWorkout?.intensity).toBe(7)
+        expect(updatedWorkout?.workout_notes).toBe('Great tempo run!')
+      })
+
+      it('should handle 204 response from skipWorkoutAtom when workout exists locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        await store.set(skipWorkoutAtom, 'workout-123')
+
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        })
+
+        // Check that workout was updated in local state
+        const workouts = store.get(workoutsAtom)
+        const updatedWorkout = workouts.find(w => w.id === 'workout-123')
+        expect(updatedWorkout?.status).toBe('skipped')
+      })
+    })
+
+    describe('Failure Cases - Workout Not Found Locally', () => {
+      beforeEach(() => {
+        // Set up empty local state for failure tests
+        store.set(workoutsAtom, [])
+      })
+
+      it('should throw error when completeWorkoutAtom gets 204 but workout not found locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        await expect(
+          store.set(completeWorkoutAtom, {
+            workoutId: 'workout-999',
+            data: { actual_distance: 5.2 },
+          })
+        ).rejects.toThrow('Workout workout-999 not found in local state. Please refresh the page.')
+      })
+
+      it('should throw error when logWorkoutDetailsAtom gets 204 but workout not found locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        await expect(
+          store.set(logWorkoutDetailsAtom, {
+            workoutId: 'workout-999',
+            data: { actual_distance: 8.2 },
+          })
+        ).rejects.toThrow('Workout workout-999 not found in local state. Please refresh the page.')
+      })
+
+      it('should throw error when skipWorkoutAtom gets 204 but workout not found locally', async () => {
+        // Mock 204 No Content response
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 204,
+          statusText: 'No Content',
+          json: async () => {
+            throw new Error('204 responses have no content')
+          },
+        })
+
+        await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow(
+          'Workout workout-999 not found in local state. Please refresh the page.'
+        )
       })
     })
   })

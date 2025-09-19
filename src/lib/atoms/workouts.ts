@@ -331,8 +331,12 @@ export const completeWorkoutAtom = atom(
       let updatedWorkout: Workout
       if (response.status === 204) {
         // Handle 204 No Content - find existing workout and mark as completed
-        updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
-        updatedWorkout = { ...updatedWorkout, status: 'completed', ...data }
+        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+        if (!existingWorkout) {
+          logger.error('Workout not found in local state after completion', { workoutId })
+          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+        }
+        updatedWorkout = { ...existingWorkout, status: 'completed', ...data }
       } else {
         const json: unknown = await response.json()
         updatedWorkout = unwrapWorkout(json)
@@ -422,8 +426,12 @@ export const logWorkoutDetailsAtom = atom(
       let updatedWorkout: Workout
       if (response.status === 204) {
         // Handle 204 No Content - find existing workout and apply updates
-        updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
-        updatedWorkout = { ...updatedWorkout, ...data } as Workout
+        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+        if (!existingWorkout) {
+          logger.error('Workout not found in local state during logging', { workoutId })
+          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+        }
+        updatedWorkout = { ...existingWorkout, ...data } as Workout
       } else {
         const json: unknown = await response.json()
         updatedWorkout = unwrapWorkout(json)
@@ -492,8 +500,12 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     let updatedWorkout: Workout
     if (response.status === 204) {
       // Handle 204 No Content - find existing workout and mark as skipped
-      updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
-      updatedWorkout = { ...updatedWorkout, status: 'skipped' }
+      const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+      if (!existingWorkout) {
+        logger.error('Workout not found in local state during skip', { workoutId })
+        throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      }
+      updatedWorkout = { ...existingWorkout, status: 'skipped' }
     } else {
       const json: unknown = await response.json()
       updatedWorkout = unwrapWorkout(json)
