@@ -69,7 +69,8 @@ export function mockFetch(responses: Map<string, { ok: boolean; json: () => Prom
       )
     }
 
-    return Promise.resolve(createMockFetchResponse(response))
+    // Return the response directly since it's already a mock fetch response
+    return Promise.resolve(response)
   })
 
   global.fetch = fetchMock as unknown as typeof fetch
