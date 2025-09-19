@@ -77,15 +77,12 @@ export function useWorkouts() {
       const data: unknown = await response.json()
       const freshWorkouts = (data as { workouts?: Workout[] })?.workouts ?? []
 
-      // Wait for state updates to complete before resolving
-      await new Promise(resolve => {
-        // Update both the sync atom and trigger async atom refresh
-        setWorkouts(freshWorkouts)
-        refresh() // Keep async atom cache in sync for other consumers
+      // Update both the sync atom and trigger async atom refresh
+      setWorkouts(freshWorkouts)
+      refresh() // Keep async atom cache in sync for other consumers
 
-        // Use setTimeout to ensure state updates have completed
-        setTimeout(resolve, 0)
-      })
+      // Wait for state updates to complete before resolving
+      await Promise.resolve()
 
       logger.debug('Workout fetch completed', { count: freshWorkouts.length })
       return freshWorkouts

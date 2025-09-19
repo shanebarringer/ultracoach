@@ -14,13 +14,8 @@ import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
-import {
-  loadingStatesAtom,
-  uiStateAtom,
-  workoutStravaShowPanelAtom,
-  workoutsAtom,
-} from '@/lib/atoms/index'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
+import { uiStateAtom, workoutStravaShowPanelAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
@@ -50,9 +45,7 @@ interface Props {
 function WorkoutsPageClientInner({ user }: Props) {
   // Hydrate workouts at entry point - this will trigger Suspense if needed
   const hydratedWorkouts = useHydrateWorkouts()
-  useWorkouts() // Initialize workouts data
   const [uiState, setUiState] = useAtom(uiStateAtom)
-  const [loadingStates] = useAtom(loadingStatesAtom)
   const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
 
@@ -60,7 +53,6 @@ function WorkoutsPageClientInner({ user }: Props) {
     userType: user.userType,
     workoutCount: workouts.length,
     hydratedCount: hydratedWorkouts?.length || 0,
-    loading: loadingStates.workouts,
   })
 
   // Coach-specific state and data
@@ -103,7 +95,7 @@ function WorkoutsPageClientInner({ user }: Props) {
         }
 
         const response = await fetch(`/api/workouts?${params}`, {
-          credentials: 'include',
+          credentials: 'same-origin',
         })
 
         if (response.ok) {
@@ -267,7 +259,7 @@ function WorkoutsPageClientInner({ user }: Props) {
 
           {/* Enhanced Workout List with Advanced Filtering */}
           <EnhancedWorkoutsList
-            userRole={user?.role as 'runner' | 'coach'}
+            userRole={user?.userType as 'runner' | 'coach'}
             onLogWorkout={handleWorkoutPress}
             variant="default"
           />

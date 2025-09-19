@@ -296,19 +296,16 @@ describe('Workouts Atoms', () => {
           },
         })
 
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-              actual_distance: 10.5,
-              actual_duration: 65,
-              notes: 'Felt good!',
-            }),
-          }
-        )
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            actual_distance: 10.5,
+            actual_duration: 65,
+            notes: 'Felt good!',
+          }),
+        })
 
         expect(result.status).toBe('completed')
 
@@ -384,13 +381,10 @@ describe('Workouts Atoms', () => {
 
         const result = await store.set(skipWorkoutAtom, 'w1')
 
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/workouts/w1/complete',
-          {
-            method: 'DELETE',
-            credentials: 'same-origin',
-          }
-        )
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/complete', {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        })
 
         expect(result.status).toBe('skipped')
 

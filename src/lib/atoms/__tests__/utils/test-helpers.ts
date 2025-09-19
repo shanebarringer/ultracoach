@@ -226,7 +226,6 @@ export function setupCommonMocks() {
     }),
   }))
 
-
   // Mock date functions for consistent testing
   vi.useFakeTimers()
   vi.setSystemTime(new Date('2024-01-01'))
@@ -286,4 +285,74 @@ export function subscribeToAtom<T>(
   values.push(store.get(atom))
 
   return { values, unsubscribe }
+}
+
+/**
+ * Create mock authenticated session for Better Auth
+ */
+export function createMockAuthenticatedSession(overrides?: Partial<any>) {
+  return {
+    data: {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        userType: 'runner',
+        role: 'user',
+        ...overrides?.user,
+      },
+    },
+  }
+}
+
+/**
+ * Create mock unauthenticated session for Better Auth
+ */
+export function createMockUnauthenticatedSession() {
+  return {
+    data: null,
+  }
+}
+
+/**
+ * Create mock fetch response
+ */
+export function createMockFetchResponse(
+  data: any,
+  options: { ok?: boolean; status?: number; statusText?: string } = {}
+) {
+  const { ok = true, status = 200, statusText = 'OK' } = options
+
+  return {
+    ok,
+    status,
+    statusText,
+    json: async () => data,
+    text: async () => JSON.stringify(data),
+  }
+}
+
+/**
+ * Create mock fetch error response
+ */
+export function createMockFetchError(status: number, statusText: string, errorText?: string) {
+  return {
+    ok: false,
+    status,
+    statusText,
+    text: async () => errorText || statusText,
+  }
+}
+
+/**
+ * Setup Better Auth mocks with authenticated session
+ */
+export function setupAuthenticatedMocks(mockGetSession: any, userOverrides?: Partial<any>) {
+  mockGetSession.mockResolvedValue(createMockAuthenticatedSession({ user: userOverrides }))
+}
+
+/**
+ * Setup Better Auth mocks with unauthenticated session
+ */
+export function setupUnauthenticatedMocks(mockGetSession: any) {
+  mockGetSession.mockResolvedValue(createMockUnauthenticatedSession())
 }

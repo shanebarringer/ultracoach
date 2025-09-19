@@ -2,6 +2,12 @@ import { createStore } from 'jotai'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom } from '../atoms'
+import {
+  createMockFetchError,
+  createMockFetchResponse,
+  setupAuthenticatedMocks,
+  setupUnauthenticatedMocks,
+} from '../atoms/__tests__/utils/test-helpers'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
@@ -31,15 +37,8 @@ describe('Workout Completion Atoms', () => {
     store = createStore()
     vi.clearAllMocks()
 
-    // Mock authenticated session
-    mockGetSession.mockResolvedValue({
-      data: {
-        user: {
-          id: 'test-user-id',
-          email: 'test@example.com',
-        },
-      },
-    })
+    // Mock authenticated session using helper
+    setupAuthenticatedMocks(mockGetSession)
   })
 
   describe('completeWorkoutAtom', () => {
@@ -50,25 +49,19 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
+      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
 
       await store.set(completeWorkoutAtom, {
         workoutId: 'workout-123',
         data: { actual_distance: 5.2 },
       })
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/workouts/workout-123/complete',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ actual_distance: 5.2 }),
-        }
-      )
+      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ actual_distance: 5.2 }),
+      })
     })
 
     it('should handle network errors gracefully', async () => {
@@ -83,12 +76,7 @@ describe('Workout Completion Atoms', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        text: async () => 'Not Found',
-      })
+      mockFetch.mockResolvedValueOnce(createMockFetchError(404, 'Not Found'))
 
       await expect(
         store.set(completeWorkoutAtom, {
@@ -115,10 +103,7 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
+      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
 
       await store.set(logWorkoutDetailsAtom, {
         workoutId: 'workout-456',
@@ -173,33 +158,51 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
+      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
 
       await store.set(skipWorkoutAtom, 'workout-999')
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/workouts/workout-999/complete',
-        {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        }
-      )
+      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-999/complete', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      })
     })
 
     it('should handle skip workout errors', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-        text: async () => 'Forbidden',
-      })
+      mockFetch.mockResolvedValueOnce(createMockFetchError(403, 'Forbidden'))
 
       await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow(
         'Failed to skip workout'
       )
+    })
+  })
+
+  describe('Unauthenticated scenarios', () => {
+    beforeEach(() => {
+      // Mock unauthenticated session using helper
+      setupUnauthenticatedMocks(mockGetSession)
+    })
+
+    it('should handle unauthenticated complete workout request', async () => {
+      await expect(
+        store.set(completeWorkoutAtom, {
+          workoutId: 'workout-123',
+          data: {},
+        })
+      ).rejects.toThrow('Not authenticated')
+    })
+
+    it('should handle unauthenticated log workout details request', async () => {
+      await expect(
+        store.set(logWorkoutDetailsAtom, {
+          workoutId: 'workout-456',
+          data: { actual_distance: 5 },
+        })
+      ).rejects.toThrow('Not authenticated')
+    })
+
+    it('should handle unauthenticated skip workout request', async () => {
+      await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow('Not authenticated')
     })
   })
 
@@ -215,15 +218,12 @@ describe('Workout Completion Atoms', () => {
 
         await store.set(completeWorkoutAtom, { workoutId, data: {} })
 
-        expect(fetch).toHaveBeenCalledWith(
-          `/api/workouts/${workoutId}/complete`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({}),
-          }
-        )
+        expect(fetch).toHaveBeenCalledWith(`/api/workouts/${workoutId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({}),
+        })
       }
     })
 
@@ -238,15 +238,12 @@ describe('Workout Completion Atoms', () => {
         data: {},
       })
 
-      expect(fetch).toHaveBeenCalledWith(
-        '/api/workouts/workout-empty/complete',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({}),
-        }
-      )
+      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-empty/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({}),
+      })
     })
   })
 })

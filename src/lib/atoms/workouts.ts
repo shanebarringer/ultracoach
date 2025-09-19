@@ -22,19 +22,14 @@ function unwrapWorkout(json: unknown): Workout {
 export const workoutsAtom = atom<Workout[]>([])
 export const workoutsRefreshTriggerAtom = atom(0)
 
-// Cache to prevent re-fetching on every render
-let workoutsCache: { data: Workout[]; timestamp: number } | null = null
+// User-specific cache to prevent data leakage between accounts
+const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
 const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
-
-  // Check cache to prevent unnecessary re-fetches
-  if (workoutsCache && Date.now() - workoutsCache.timestamp < CACHE_DURATION) {
-    return workoutsCache.data
-  }
 
   // Only run on client side
   if (typeof window === 'undefined') {
@@ -55,6 +50,14 @@ export const asyncWorkoutsAtom = atom(async get => {
       return []
     }
 
+    const userId = session.data.user.id
+
+    // Check user-specific cache to prevent unnecessary re-fetches
+    const userCache = workoutsCache.get(userId)
+    if (userCache && Date.now() - userCache.timestamp < CACHE_DURATION) {
+      return userCache.data
+    }
+
     // Use relative URL to ensure same-origin request with cookies
     // Create an AbortController with timeout for the fetch
     const controller = new AbortController()
@@ -63,7 +66,7 @@ export const asyncWorkoutsAtom = atom(async get => {
     // Use relative URL fetch with credentials included
     const response = await fetch('/api/workouts', {
       headers: {
-        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       credentials: 'same-origin', // Use same-origin to ensure cookies are included
       signal: controller.signal,
@@ -79,22 +82,13 @@ export const asyncWorkoutsAtom = atom(async get => {
     const data = await response.json()
     const workouts = data.workouts || []
 
-    logger.info('Workouts fetched successfully', {
-      count: workouts.length,
-      userId: session.data.user.id,
-      sample: workouts.slice(0, 3).map((w: Workout) => ({
-        id: w.id,
-        date: w.date,
-        status: w.status,
-        planned_type: w.planned_type,
-      })),
-    })
+    logger.info('Workouts fetched successfully', { count: workouts.length })
 
-    // Cache the result to prevent re-fetching
-    workoutsCache = {
+    // Cache the result for this user to prevent re-fetching
+    workoutsCache.set(userId, {
       data: workouts as Workout[],
       timestamp: Date.now(),
-    }
+    })
 
     return workouts as Workout[]
   } catch (error) {
@@ -121,8 +115,8 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, (get, set) => {
-  // Clear cache to force a real refresh
-  workoutsCache = null
+  // Clear all user caches to force a real refresh
+  workoutsCache.clear()
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
   // Also trigger a re-fetch of async workouts by invalidating the cache
@@ -334,8 +328,15 @@ export const completeWorkoutAtom = atom(
         throw new Error(`Failed to complete workout: ${response.status} ${errorText}`)
       }
 
-      const json: unknown = await response.json()
-      const updatedWorkout: Workout = unwrapWorkout(json)
+      let updatedWorkout: Workout
+      if (response.status === 204) {
+        // Handle 204 No Content - find existing workout and mark as completed
+        updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
+        updatedWorkout = { ...updatedWorkout, status: 'completed', ...data }
+      } else {
+        const json: unknown = await response.json()
+        updatedWorkout = unwrapWorkout(json)
+      }
 
       logger.debug('Workout completion response received', {
         workoutId,
@@ -351,7 +352,7 @@ export const completeWorkoutAtom = atom(
       set(workoutsAtom, updatedWorkouts)
 
       // Clear cache and trigger refresh to ensure all components update
-      workoutsCache = null
+      workoutsCache.clear()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -418,8 +419,15 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error(`Failed to log workout details: ${response.status} ${errorText}`)
       }
 
-      const json: unknown = await response.json()
-      const updatedWorkout: Workout = unwrapWorkout(json)
+      let updatedWorkout: Workout
+      if (response.status === 204) {
+        // Handle 204 No Content - find existing workout and apply updates
+        updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
+        updatedWorkout = { ...updatedWorkout, ...data } as Workout
+      } else {
+        const json: unknown = await response.json()
+        updatedWorkout = unwrapWorkout(json)
+      }
 
       logger.debug('Workout details logged successfully', {
         workoutId,
@@ -434,7 +442,7 @@ export const logWorkoutDetailsAtom = atom(
       set(workoutsAtom, updatedWorkouts)
 
       // Clear cache and trigger refresh to ensure all components update
-      workoutsCache = null
+      workoutsCache.clear()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
@@ -481,8 +489,15 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       throw new Error(`Failed to skip workout: ${response.status} ${errorText}`)
     }
 
-    const json: unknown = await response.json()
-    const updatedWorkout: Workout = unwrapWorkout(json)
+    let updatedWorkout: Workout
+    if (response.status === 204) {
+      // Handle 204 No Content - find existing workout and mark as skipped
+      updatedWorkout = get(workoutsAtom).find(w => w.id === workoutId) as Workout
+      updatedWorkout = { ...updatedWorkout, status: 'skipped' }
+    } else {
+      const json: unknown = await response.json()
+      updatedWorkout = unwrapWorkout(json)
+    }
 
     logger.debug('Workout skipped successfully', {
       workoutId,
@@ -497,7 +512,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     set(workoutsAtom, updatedWorkouts)
 
     // Clear cache and trigger refresh to ensure all components update
-    workoutsCache = null
+    workoutsCache.clear()
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
