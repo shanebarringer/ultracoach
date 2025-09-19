@@ -154,7 +154,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           }
 
           // Extract race data from validated GPX
-          const name = gpx.metadata?.name || track?.name || file.name.replace('.gpx', '')
+          const name = gpx.metadata?.name || track?.name || file.name.replace(/\.gpx$/i, '')
 
           // Calculate total distance in miles
           const totalDistance = totalDistanceMeters ? totalDistanceMeters / 1609.34 : 0 // Convert meters to miles
@@ -239,11 +239,16 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       return k.toLowerCase().replace(/[\s_()]/g, '')
     }
 
-    const valueFrom = (row: Record<string, string>, candidates: string[]): string | undefined => {
-      const map = new Map(Object.keys(row).map(k => [normalizeKey(k), k]))
+    const buildHeaderMap = (headers: string[]) => new Map(headers.map(k => [normalizeKey(k), k]))
+
+    const valueFrom = (
+      row: Record<string, string>,
+      headerMap: Map<string, string>,
+      candidates: string[]
+    ): string | undefined => {
       for (const c of candidates) {
         const nk = normalizeKey(c)
-        const orig = map.get(nk)
+        const orig = headerMap.get(nk)
         if (orig && row[orig]) return row[orig]
       }
       return undefined
@@ -308,7 +313,11 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                 }
 
                 // Check for basic required headers with flexible column mapping
-                const headers = Object.keys(results.data[0] as Record<string, string>)
+                const headers =
+                  results.meta?.fields && results.meta.fields.length > 0
+                    ? (results.meta.fields as string[])
+                    : Object.keys(results.data[0] as Record<string, string>)
+                const headerMap = buildHeaderMap(headers)
                 const nameColumns = headers.filter(h =>
                   /^(name|race_?name|event_?name|title)$/i.test(h.toLowerCase())
                 )
@@ -335,7 +344,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       // Robust column mapping using normalized headers
                       const getName = () => {
                         return (
-                          valueFrom(row, [
+                          valueFrom(row, headerMap, [
                             'name',
                             'race_name',
                             'race name',
@@ -349,7 +358,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       }
 
                       const getDate = () => {
-                        return valueFrom(row, [
+                        return valueFrom(row, headerMap, [
                           'date',
                           'race_date',
                           'race date',
@@ -361,7 +370,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       }
 
                       const getLocation = () => {
-                        return valueFrom(row, [
+                        return valueFrom(row, headerMap, [
                           'location',
                           'place',
                           'city',
@@ -373,7 +382,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       }
 
                       const getDistance = () => {
-                        const distStr = valueFrom(row, [
+                        const distStr = valueFrom(row, headerMap, [
                           'distance',
                           'distance_miles',
                           'distance miles',
@@ -391,7 +400,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                       }
 
                       const getElevation = () => {
-                        const elevStr = valueFrom(row, [
+                        const elevStr = valueFrom(row, headerMap, [
                           'elevation',
                           'elevation_gain',
                           'elevation gain',
@@ -426,14 +435,22 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                         location: getLocation(),
                         distance_miles: getDistance(),
                         distance_type:
-                          valueFrom(row, ['distance_type', 'distancetype', 'type', 'category']) ||
-                          'Custom',
+                          valueFrom(row, headerMap, [
+                            'distance_type',
+                            'distancetype',
+                            'type',
+                            'category',
+                          ]) || 'Custom',
                         elevation_gain_feet: getElevation(),
                         terrain_type: (
-                          valueFrom(row, ['terrain_type', 'terraintype', 'terrain', 'surface']) ||
-                          'mixed'
+                          valueFrom(row, headerMap, [
+                            'terrain_type',
+                            'terraintype',
+                            'terrain',
+                            'surface',
+                          ]) || 'mixed'
                         ).toLowerCase(),
-                        website_url: valueFrom(row, [
+                        website_url: valueFrom(row, headerMap, [
                           'website_url',
                           'websiteurl',
                           'website',
@@ -441,8 +458,12 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                           'link',
                         ]),
                         notes:
-                          valueFrom(row, ['notes', 'description', 'comments', 'details']) ||
-                          `Imported from CSV file: ${file.name}, Row ${index + 1}`,
+                          valueFrom(row, headerMap, [
+                            'notes',
+                            'description',
+                            'comments',
+                            'details',
+                          ]) || `Imported from CSV file: ${file.name}, Row ${index + 1}`,
                         source: 'csv',
                       }
 
@@ -485,7 +506,10 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
                 resolve(races)
               } catch (error) {
-                logger.error('Error parsing CSV file:', error)
+                logger.error('Error parsing CSV file', {
+                  fileName: file.name,
+                  error: error instanceof Error ? error.message : String(error),
+                })
                 reject(
                   new Error(
                     `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -621,7 +645,6 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         logger.error('Error during file processing', {
           error: error instanceof Error ? error.message : String(error),
         })
-        logger.error('Error parsing files:', error)
         setImportProgress({ current: 0, total: 0, message: '' }) // Clear processing status on error
         setImportErrors([String(error)]) // Store error in atom
         toast.error(
@@ -655,6 +678,19 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
   const handleImport = useCallback(async () => {
     if (parsedRaces.length === 0) return
 
+    interface ErrorResponse {
+      error?: string
+      retryAfter?: number
+      details?: string
+      existingRaces?: Array<{
+        id: string
+        name: string
+        location: string
+        distance: string
+        date: string | null
+      }>
+    }
+
     setIsUploading(true)
     setUploadProgress(0)
 
@@ -663,14 +699,21 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       if (parsedRaces.length > 1) {
         const response = await retryWithBackoff(
           async () => {
-            return fetch('/api/races/bulk-import', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include',
-              body: JSON.stringify({ races: parsedRaces }),
-            })
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 20000)
+            try {
+              return await fetch('/api/races/bulk-import', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ races: parsedRaces }),
+                signal: controller.signal,
+              })
+            } finally {
+              clearTimeout(timeout)
+            }
           },
           2, // max 2 retries for bulk import
           2000, // 2 second base delay
@@ -683,7 +726,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         setUploadProgress(50) // Show progress during API call
 
         if (!response.ok) {
-          const errorData = await response.json()
+          let errorData: ErrorResponse = {}
+          try {
+            errorData = await response.json()
+          } catch {
+            const text = await response.text().catch(() => '')
+            errorData = { error: text || 'Unknown error' }
+          }
           // Handle rate limiting specially
           if (response.status === 429) {
             const retryAfter = Math.ceil((errorData.retryAfter || 900) / 60)
@@ -726,14 +775,21 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         const race = parsedRaces[0]
         const response = await retryWithBackoff(
           async () => {
-            return fetch('/api/races/import', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include',
-              body: JSON.stringify(race),
-            })
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 15000)
+            try {
+              return await fetch('/api/races/import', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(race),
+                signal: controller.signal,
+              })
+            } finally {
+              clearTimeout(timeout)
+            }
           },
           3, // max 3 retries for single import
           1000, // 1 second base delay
@@ -744,7 +800,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         )
 
         if (!response.ok) {
-          const errorData = await response.json()
+          let errorData: ErrorResponse = {}
+          try {
+            errorData = await response.json()
+          } catch {
+            const text = await response.text().catch(() => '')
+            errorData = { error: text || 'Unknown error' }
+          }
 
           // Handle specific error cases
           if (response.status === 409) {
@@ -836,8 +898,14 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                   <Card className="border-danger bg-danger/5">
                     <CardBody className="p-4">
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-danger flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">!</span>
+                        <div
+                          className="flex-shrink-0 w-5 h-5 rounded-full bg-danger flex items-center justify-center"
+                          role="img"
+                          aria-label="Import error"
+                        >
+                          <span className="text-white text-xs font-bold" aria-hidden="true">
+                            !
+                          </span>
                         </div>
                         <div className="flex-1">
                           <h4 className="text-danger font-semibold mb-2">Import Error</h4>

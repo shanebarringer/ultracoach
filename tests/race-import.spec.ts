@@ -118,7 +118,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Wait for loading to complete if we're on the races page
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch (error) {
@@ -138,7 +138,7 @@ test.describe('Race Import Flow', () => {
     await importButton.click()
 
     // Check if modal opened
-    await expect(page.locator('[role="dialog"], .modal')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 })
   })
 
   test('should handle GPX file upload', async ({ page }) => {
@@ -146,7 +146,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -205,7 +205,7 @@ test.describe('Race Import Flow', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // Wait for loading to complete using specific data-testid
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
       logger.info('[Test] Loading indicator cleared')
@@ -284,7 +284,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -320,7 +320,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -377,7 +377,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -426,11 +426,8 @@ test.describe('Race Import Flow', () => {
     await expect(uploadButton).toBeEnabled()
     await uploadButton.click({ timeout: 10000 })
 
-    // Should see success message using proper Playwright .or() combinator
-    const successMessage = page
-      .getByText('successfully imported')
-      .or(page.getByText('Import successful'))
-    await expect(successMessage.first()).toBeVisible({
+    // Should see success message using regex pattern
+    await expect(page.getByText(/(successfully imported|Import successful)/i)).toBeVisible({
       timeout: 10000,
     })
 
@@ -446,7 +443,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
       logger.info('[Test] Loading indicator cleared')
@@ -477,11 +474,10 @@ test.describe('Race Import Flow', () => {
     await uploadButton.click({ timeout: 10000 })
     logger.info('[Test] First import initiated')
 
-    // Wait for first import to complete using specific toast messages
-    const firstImportSuccess = page
-      .getByText('Import successful')
-      .or(page.getByText('races imported successfully'))
-    await expect(firstImportSuccess.first()).toBeVisible({ timeout: 15000 })
+    // Wait for first import to complete using regex pattern
+    await expect(page.getByText(/(Import successful|races imported successfully)/i)).toBeVisible({
+      timeout: 15000,
+    })
     logger.info('[Test] First import successful')
 
     // Close modal and try to import the same race again
@@ -544,7 +540,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
       logger.info('[Test] Loading indicator cleared')
@@ -620,10 +616,9 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] Bulk import initiated')
 
     // Should see bulk import success message
-    const bulkImportSuccess = page
-      .getByText('Bulk import completed')
-      .or(page.getByText('races imported successfully'))
-    await expect(bulkImportSuccess.first()).toBeVisible({ timeout: 20000 })
+    await expect(
+      page.getByText(/(Bulk import completed|races imported successfully)/i)
+    ).toBeVisible({ timeout: 20000 })
     logger.info('[Test] Bulk import success message detected')
   })
 
@@ -632,7 +627,7 @@ test.describe('Race Import Flow', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -676,10 +671,7 @@ test.describe('Race Import Flow', () => {
     await expect(page.locator('[role="progressbar"], .progress')).toBeVisible()
 
     // Wait for completion using proper Playwright .or() combinator
-    const completionSuccess = page
-      .getByText('successfully imported')
-      .or(page.getByText('Import successful'))
-    await expect(completionSuccess).toBeVisible({
+    await expect(page.getByText(/(successfully imported|Import successful)/i)).toBeVisible({
       timeout: 10000,
     })
   })
@@ -700,7 +692,7 @@ test.describe('Race Import Edge Cases', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -747,8 +739,7 @@ test.describe('Race Import Edge Cases', () => {
     await uploadButton.click()
 
     // Should show network error message using proper Playwright .or() combinator
-    const networkError = page.getByText('network error').or(page.getByText('check your connection'))
-    await expect(networkError).toBeVisible({
+    await expect(page.getByText(/(network error|check your connection)/i)).toBeVisible({
       timeout: 15000,
     })
   })
@@ -774,7 +765,7 @@ test.describe('Race Import Edge Cases', () => {
     await waitForHeroUIReady(page)
 
     // Wait for loading to complete
-    const loadingIndicator = page.locator('text=Loading race expeditions')
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch {
@@ -821,8 +812,7 @@ test.describe('Race Import Edge Cases', () => {
     await uploadButton.click()
 
     // Should show rate limit message using proper Playwright .or() combinator
-    const rateLimitError = page.getByText('Rate limit exceeded').or(page.getByText('try again'))
-    await expect(rateLimitError).toBeVisible({
+    await expect(page.getByText(/(Rate limit exceeded|try again)/i)).toBeVisible({
       timeout: 10000,
     })
   })
