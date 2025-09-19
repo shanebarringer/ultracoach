@@ -707,7 +707,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'same-origin',
                 body: JSON.stringify({ races: parsedRaces }),
                 signal: controller.signal,
               })
@@ -783,7 +783,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                credentials: 'include',
+                credentials: 'same-origin',
                 body: JSON.stringify(race),
                 signal: controller.signal,
               })

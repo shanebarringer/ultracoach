@@ -66,6 +66,7 @@ export function useWorkouts() {
       const response = await fetch('/api/workouts', {
         headers: { Accept: 'application/json' },
         credentials: 'same-origin',
+        cache: 'no-store',
       })
 
       if (!response.ok) {

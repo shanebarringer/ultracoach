@@ -178,7 +178,7 @@ export default function WorkoutLogModal({
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include',
+          credentials: 'same-origin',
           body: JSON.stringify({ ...payload, status: 'planned' }),
         })
 

@@ -501,7 +501,7 @@ export default function WeeklyPlannerCalendar({
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
       const plansResponse = await fetch(`${baseUrl}/api/training-plans?runnerId=${runner.id}`, {
-        credentials: 'include',
+        credentials: 'same-origin',
       })
       if (!plansResponse.ok) {
         throw new Error('Failed to find training plan')
@@ -536,7 +536,7 @@ export default function WeeklyPlannerCalendar({
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify({
           workouts: workoutsToCreate,
         }),

@@ -126,7 +126,7 @@ export default function CreateTrainingPlanModal({
                   process.env.API_BASE_URL ??
                   'http://localhost:3001')
             const response = await fetch(`${baseUrl}/api/races`, {
-              credentials: 'include',
+              credentials: 'same-origin',
               headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
@@ -148,7 +148,7 @@ export default function CreateTrainingPlanModal({
         if (planTemplates.length === 0) {
           try {
             const response = await fetch('/api/training-plans/templates', {
-              credentials: 'include', // Include cookies for authentication
+              credentials: 'same-origin', // Include cookies for authentication
               headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
@@ -201,7 +201,7 @@ export default function CreateTrainingPlanModal({
 
       const response = await fetch('/api/training-plans', {
         method: 'POST',
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'same-origin', // Include cookies for authentication
         headers: {
           'Content-Type': 'application/json',
         },

@@ -58,7 +58,7 @@ export async function waitForAtom<T>(
 /**
  * Mock fetch for API calls
  */
-export function mockFetch(responses: Map<string, { ok: boolean; json: () => Promise<unknown> }>) {
+export function mockFetch(responses: Map<string, MockFetchResponse>) {
   const fetchMock = vi.fn((url: string | Request | URL) => {
     const urlStr = typeof url === 'string' ? url : String(url)
     const response = responses.get(urlStr)
@@ -175,9 +175,27 @@ export function createMockWorkout(overrides?: Partial<MockWorkout>): MockWorkout
 }
 
 /**
+ * Mock training plan type
+ */
+interface MockTrainingPlan {
+  id: string
+  coach_id: string
+  runner_id: string
+  name: string
+  description: string
+  start_date: string
+  end_date: string
+  status: string
+  race_id: string
+  goal_type: string
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Create a mock training plan for testing
  */
-export function createMockTrainingPlan(overrides?: Partial<any>) {
+export function createMockTrainingPlan(overrides?: Partial<MockTrainingPlan>): MockTrainingPlan {
   return {
     id: 'plan-1',
     coach_id: 'coach-id',
@@ -196,9 +214,22 @@ export function createMockTrainingPlan(overrides?: Partial<any>) {
 }
 
 /**
+ * Mock message type
+ */
+interface MockMessage {
+  id: string
+  conversation_id: string
+  sender_id: string
+  recipient_id: string
+  content: string
+  created_at: string
+  read: boolean
+}
+
+/**
  * Create a mock message for testing
  */
-export function createMockMessage(overrides?: Partial<any>) {
+export function createMockMessage(overrides?: Partial<MockMessage>): MockMessage {
   return {
     id: 'message-1',
     conversation_id: 'conv-1',
@@ -212,9 +243,21 @@ export function createMockMessage(overrides?: Partial<any>) {
 }
 
 /**
+ * Mock conversation type
+ */
+interface MockConversation {
+  id: string
+  participant1_id: string
+  participant2_id: string
+  last_message_at: string
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Create a mock conversation for testing
  */
-export function createMockConversation(overrides?: Partial<any>) {
+export function createMockConversation(overrides?: Partial<MockConversation>): MockConversation {
   return {
     id: 'conv-1',
     participant1_id: 'user-1',
@@ -227,9 +270,21 @@ export function createMockConversation(overrides?: Partial<any>) {
 }
 
 /**
+ * Mock relationship type
+ */
+interface MockRelationship {
+  id: string
+  coach_id: string
+  runner_id: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Create a mock relationship for testing
  */
-export function createMockRelationship(overrides?: Partial<any>) {
+export function createMockRelationship(overrides?: Partial<MockRelationship>): MockRelationship {
   return {
     id: 'rel-1',
     coach_id: 'coach-id',
@@ -242,9 +297,25 @@ export function createMockRelationship(overrides?: Partial<any>) {
 }
 
 /**
+ * Mock race type
+ */
+interface MockRace {
+  id: string
+  name: string
+  date: string
+  distance: number
+  distance_unit: string
+  location: string
+  terrain: string
+  elevation_gain: number
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Create a mock race for testing
  */
-export function createMockRace(overrides?: Partial<any>) {
+export function createMockRace(overrides?: Partial<MockRace>): MockRace {
   return {
     id: 'race-1',
     name: 'Test Ultra Marathon',
@@ -310,8 +381,10 @@ export async function testAsyncAtomStates<T>(
       error = e
     })
 
-  // Wait for resolution
-  await vi.waitFor(() => resolved)
+  // Wait for resolution with lightweight polling
+  while (!resolved) {
+    await new Promise(r => setTimeout(r, 5))
+  }
 
   return { value, error }
 }

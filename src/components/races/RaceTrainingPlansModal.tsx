@@ -52,7 +52,7 @@ export default function RaceTrainingPlansModal({
     setLoading(true)
     try {
       const response = await fetch(`/api/races/${race.id}/training-plans`, {
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {

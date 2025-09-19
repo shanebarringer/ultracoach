@@ -114,9 +114,22 @@ export const workoutsWithSuspenseAtom = atom(get => {
 })
 
 // Refresh action atom
-export const refreshWorkoutsAtom = atom(null, (get, set) => {
-  // Clear all user caches to force a real refresh
-  workoutsCache.clear()
+export const refreshWorkoutsAtom = atom(null, async (get, set) => {
+  // Clear current user's cache only for targeted invalidation
+  try {
+    const { authClient } = await import('@/lib/better-auth-client')
+    const session = await authClient.getSession()
+    if (session?.data?.user?.id) {
+      workoutsCache.delete(session.data.user.id)
+    } else {
+      // Fallback to clearing all caches if no session
+      workoutsCache.clear()
+    }
+  } catch {
+    // If session check fails, clear all caches as fallback
+    workoutsCache.clear()
+  }
+
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
   // Also trigger a re-fetch of async workouts by invalidating the cache
@@ -355,8 +368,17 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Clear cache and trigger refresh to ensure all components update
-      workoutsCache.clear()
+      // Invalidate current user's cache only
+      try {
+        const session = await authClient.getSession()
+        if (session?.data?.user?.id) {
+          workoutsCache.delete(session.data.user.id)
+        } else {
+          workoutsCache.clear()
+        }
+      } catch {
+        workoutsCache.clear()
+      }
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -449,8 +471,17 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Clear cache and trigger refresh to ensure all components update
-      workoutsCache.clear()
+      // Invalidate current user's cache only
+      try {
+        const session = await authClient.getSession()
+        if (session?.data?.user?.id) {
+          workoutsCache.delete(session.data.user.id)
+        } else {
+          workoutsCache.clear()
+        }
+      } catch {
+        workoutsCache.clear()
+      }
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
