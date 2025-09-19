@@ -48,7 +48,6 @@ test.describe('Workout Management', () => {
       // Skip the test if no workouts are available
       const workoutCount = await page.locator('[data-testid="workout-card"]').count()
       if (workoutCount === 0) {
-        console.log('No workouts found, skipping filtering test')
         return
       }
 
@@ -140,7 +139,6 @@ test.describe('Workout Management', () => {
 
       // Skip test if no workouts exist
       if (count === 0) {
-        console.log('No workouts found, skipping edit test')
         return
       }
 
@@ -187,7 +185,6 @@ test.describe('Workout Management', () => {
 
       // Skip test if no workouts exist
       if (count === 0) {
-        console.log('No workouts found, skipping log completion test')
         return
       }
 

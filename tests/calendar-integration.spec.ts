@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test'
 
+import {
+  TEST_COACH_EMAIL,
+  TEST_COACH_PASSWORD,
+  TEST_RUNNER_EMAIL,
+  TEST_RUNNER_PASSWORD,
+} from './utils/test-helpers'
+
 // E2E test for calendar-database integration
 // Tests that seeded workout data displays correctly in the calendar component
 
@@ -19,8 +26,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display seeded workouts in calendar for test runner', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-    await page.fill('input[type="password"]', 'RunnerPass2025!')
+    await page.fill('input[type="email"]', TEST_RUNNER_EMAIL)
+    await page.fill('input[type="password"]', TEST_RUNNER_PASSWORD)
     await page.click('button[type="submit"]')
 
     // Wait for successful login and redirect
@@ -59,8 +66,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display seeded workouts in calendar for test coach', async ({ page }) => {
     // Login as test coach
-    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
-    await page.fill('input[type="password"]', 'UltraCoach2025!')
+    await page.fill('input[type="email"]', TEST_COACH_EMAIL)
+    await page.fill('input[type="password"]', TEST_COACH_PASSWORD)
     await page.click('button[type="submit"]')
 
     // Wait for successful login and redirect
@@ -95,8 +102,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should handle calendar date navigation with workout data', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-    await page.fill('input[type="password"]', 'RunnerPass2025!')
+    await page.fill('input[type="email"]', TEST_RUNNER_EMAIL)
+    await page.fill('input[type="password"]', TEST_RUNNER_PASSWORD)
     await page.click('button[type="submit"]')
 
     // Wait for redirect and navigate to calendar
@@ -132,8 +139,8 @@ test.describe.skip('Calendar Database Integration', () => {
 
   test('should display correct workout types from seeded data', async ({ page }) => {
     // Login as test runner
-    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-    await page.fill('input[type="password"]', 'RunnerPass2025!')
+    await page.fill('input[type="email"]', TEST_RUNNER_EMAIL)
+    await page.fill('input[type="password"]', TEST_RUNNER_PASSWORD)
     await page.click('button[type="submit"]')
 
     await expect(page).toHaveURL('/dashboard/runner')
@@ -154,7 +161,6 @@ test.describe.skip('Calendar Database Integration', () => {
       // If the workout is visible on the current calendar view
       if (await workoutElement.isVisible()) {
         await expect(workoutElement).toBeVisible()
-        console.log(`Found workout type: ${workoutType}`)
       }
     }
 

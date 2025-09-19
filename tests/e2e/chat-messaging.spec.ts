@@ -190,7 +190,6 @@ test.describe('Chat Messaging System', () => {
 
         if (!hasConversations || emptyStateVisible) {
           // Need to start a new conversation
-          console.log('No existing conversations, starting new one...')
 
           // Click the "Start New Conversation" button
           const startButton = page.getByRole('button', { name: /start new conversation/i })
@@ -223,7 +222,6 @@ test.describe('Chat Messaging System', () => {
             // Wait for conversation to be created
             await page.waitForTimeout(2000)
           } else {
-            console.log('Runner may not have a coach relationship, skipping test')
             return // Skip if no coach available
           }
         } else {

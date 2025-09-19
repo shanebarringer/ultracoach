@@ -9,7 +9,6 @@ test.describe.skip('Workout Completion Flow', () => {
     })
 
     if (!response.ok()) {
-      console.warn('Failed to reset workout data, some tests may fail')
     }
 
     // Navigate directly to the runner dashboard (authentication is handled by setup)

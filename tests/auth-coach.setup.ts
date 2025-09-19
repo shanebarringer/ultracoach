@@ -1,16 +1,25 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
+import { Logger } from 'tslog'
+
+import { TEST_COACH_EMAIL, TEST_COACH_PASSWORD } from './utils/test-helpers'
+
+// Conditional fs import (typed) to avoid Vercel build issues
+const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
+const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
+
+const logger = new Logger({ name: 'tests/auth-coach.setup' })
 
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
 setup('authenticate as coach', async ({ page, context }) => {
-  console.log('🔐 Starting coach authentication setup...')
+  logger.info('🔐 Starting coach authentication setup...')
 
-  const baseUrl = process.env.CI ? 'http://localhost:3001' : 'http://localhost:3001'
+  const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
 
   // Navigate to signin page
   await page.goto(`${baseUrl}/auth/signin`)
-  console.log('📍 Navigated to signin page')
+  logger.info('📍 Navigated to signin page')
 
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
@@ -18,8 +27,8 @@ setup('authenticate as coach', async ({ page, context }) => {
   // Use the API directly instead of form submission to avoid JavaScript issues
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
-      email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
-      password: process.env.TEST_COACH_PASSWORD || 'Test123!@#',
+      email: TEST_COACH_EMAIL,
+      password: TEST_COACH_PASSWORD,
     },
     headers: {
       'Content-Type': 'application/json',
@@ -27,12 +36,12 @@ setup('authenticate as coach', async ({ page, context }) => {
   })
 
   if (!response.ok()) {
-    console.error('Auth API response status:', response.status())
-    console.error('Auth API response:', await response.text())
+    const body = await response.text()
+    logger.error('Coach Auth API failed', { status: response.status(), body: body.slice(0, 500) })
     throw new Error(`Coach authentication API failed with status ${response.status()}`)
   }
 
-  console.log('✅ Coach authentication API successful')
+  logger.info('✅ Coach authentication API successful')
 
   // The API call should have set cookies, now navigate to dashboard
   await page.goto(`${baseUrl}/dashboard/coach`)
@@ -40,7 +49,7 @@ setup('authenticate as coach', async ({ page, context }) => {
 
   // Verify we're on the dashboard
   const currentUrl = page.url()
-  console.log('🔄 Current URL after auth:', currentUrl)
+  logger.info('🔄 Current URL after auth:', currentUrl)
 
   if (!currentUrl.includes('/dashboard')) {
     // If redirected to signin, try refreshing to pick up cookies
@@ -53,9 +62,20 @@ setup('authenticate as coach', async ({ page, context }) => {
     }
   }
 
-  console.log('✅ Successfully navigated to coach dashboard')
+  logger.info('✅ Successfully navigated to coach dashboard')
+
+  // Ensure the directory exists before saving authentication state
+  const authDir = path.dirname(authFile)
+  if (fs) {
+    fs.mkdirSync(authDir, { recursive: true })
+    logger.info(`📁 Created auth directory: ${authDir}`)
+  } else {
+    logger.warn(
+      'FS not available; skipping auth directory creation. Storage write may fail if parent dir is missing.'
+    )
+  }
 
   // Save the authentication state
   await context.storageState({ path: authFile })
-  console.log(`💾 Saved coach authentication state to ${authFile}`)
+  logger.info(`💾 Saved coach authentication state to ${authFile}`)
 })

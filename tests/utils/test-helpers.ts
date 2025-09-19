@@ -1,22 +1,30 @@
 import { type Page, expect } from '@playwright/test'
 
+// Centralized test credentials - use these instead of hard-coding
+export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
+export const TEST_COACH_PASSWORD = process.env.TEST_COACH_PASSWORD ?? 'UltraCoach2025!'
+export const TEST_RUNNER_EMAIL = process.env.TEST_RUNNER_EMAIL ?? 'alex.rivera@ultracoach.dev'
+export const TEST_RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD ?? 'RunnerPass2025!'
+export const TEST_RUNNER2_EMAIL = 'riley.parker@ultracoach.dev'
+export const TEST_RUNNER2_PASSWORD = process.env.TEST_RUNNER2_PASSWORD ?? 'RunnerPass2025!'
+
 // Test user credentials (from environment variables or defaults)
 export const TEST_USERS = {
   coach: {
-    email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
-    password: process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!',
+    email: TEST_COACH_EMAIL,
+    password: TEST_COACH_PASSWORD,
     role: 'coach',
     expectedDashboard: '/dashboard/coach',
   },
   runner: {
-    email: process.env.TEST_RUNNER_EMAIL || 'alex.rivera@ultracoach.dev',
-    password: process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!',
+    email: TEST_RUNNER_EMAIL,
+    password: TEST_RUNNER_PASSWORD,
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
   runner2: {
-    email: 'riley.parker@ultracoach.dev',
-    password: 'RunnerPass2025!',
+    email: TEST_RUNNER2_EMAIL,
+    password: TEST_RUNNER2_PASSWORD,
     role: 'runner',
     expectedDashboard: '/dashboard/runner',
   },
@@ -36,19 +44,25 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Wait for dashboard URL (removed networkidle - causes CI hangs)
   await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
 
+  // Wait for Suspense boundary to resolve by checking for dashboard content
+  const dashboardTestId =
+    userType === 'coach'
+      ? '[data-testid="coach-dashboard-content"]'
+      : '[data-testid="runner-dashboard-content"]'
+
+  // Wait for the dashboard content to be visible (indicates Suspense resolved)
+  await expect(page.locator(dashboardTestId)).toBeVisible({ timeout: 30000 })
+
   // Wait for any loading states to complete
   const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
   try {
-    await expect(loadingText).not.toBeVisible({ timeout: 10000 })
+    await expect(loadingText).not.toBeVisible({ timeout: 5000 })
   } catch {
     // Loading text may not appear, continue
   }
 
   // Verify we're on the correct dashboard
   await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
-
-  // Wait for content to be ready
-  await page.waitForLoadState('domcontentloaded')
 }
 
 /**

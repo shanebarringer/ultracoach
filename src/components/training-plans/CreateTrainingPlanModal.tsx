@@ -110,18 +110,37 @@ export default function CreateTrainingPlanModal({
 
   useEffect(() => {
     if (isOpen) {
+      let controller: AbortController | null = null
+
       const fetchInitialData = async () => {
+        controller = new AbortController()
+
         // Fetch races using atom refresh
         const racesArray = Array.isArray(races) ? races : []
         if (racesArray.length === 0) {
           try {
-            const response = await fetch('/api/races')
+            const baseUrl =
+              typeof window !== 'undefined'
+                ? ''
+                : (process.env.NEXT_PUBLIC_API_BASE_URL ??
+                  process.env.API_BASE_URL ??
+                  'http://localhost:3001')
+            const response = await fetch(`${baseUrl}/api/races`, {
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              signal: controller.signal,
+            })
             if (response.ok) {
               const data = await response.json()
               setRaces(data || [])
             }
           } catch (err) {
-            logger.error('Error fetching races:', err)
+            if (err instanceof Error && err.name !== 'AbortError') {
+              logger.error('Error fetching races:', err)
+            }
           }
         }
 
@@ -132,7 +151,9 @@ export default function CreateTrainingPlanModal({
               credentials: 'include', // Include cookies for authentication
               headers: {
                 'Content-Type': 'application/json',
+                Accept: 'application/json',
               },
+              signal: controller.signal,
             })
             if (response.ok) {
               const data = await response.json()
@@ -145,11 +166,19 @@ export default function CreateTrainingPlanModal({
               logger.error('API response:', errorText)
             }
           } catch (err) {
-            logger.error('Error fetching plan templates:', err)
+            if (err instanceof Error && err.name !== 'AbortError') {
+              logger.error('Error fetching plan templates:', err)
+            }
           }
         }
       }
+
       fetchInitialData()
+
+      // Cleanup function to abort in-flight requests
+      return () => {
+        controller?.abort()
+      }
     }
   }, [isOpen, races, setRaces, planTemplates.length, setPlanTemplates])
 
@@ -164,7 +193,11 @@ export default function CreateTrainingPlanModal({
         template_id: data.template_id || undefined,
       }
 
-      logger.info('Submitting training plan creation:', { payload })
+      logger.debug('Submitting training plan creation', {
+        hasTemplate: Boolean(payload.template_id),
+        planType: payload.plan_type,
+        raceAttached: Boolean(payload.race_id),
+      })
 
       const response = await fetch('/api/training-plans', {
         method: 'POST',

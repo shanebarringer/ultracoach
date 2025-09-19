@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+/* Temporarily disabled - @tailwindcss/forms may not be compatible with v4 */
+/* @plugin @tailwindcss/forms {
+  strategy: class;
+} */
 
 @config '../../tailwind.config.js';
 

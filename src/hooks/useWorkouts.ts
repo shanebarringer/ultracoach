@@ -4,7 +4,6 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 
 import { useCallback, useEffect } from 'react'
 
-import { useSession } from '@/hooks/useBetterSession'
 import {
   asyncWorkoutsAtom,
   completedWorkoutsAtom,
@@ -38,7 +37,6 @@ export function useHydrateWorkouts() {
 }
 
 export function useWorkouts() {
-  const { data: session } = useSession()
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
   const refresh = useSetAtom(refreshWorkoutsAtom)
   const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
@@ -47,15 +45,8 @@ export function useWorkouts() {
   // Note: Hydration is now handled at top-level components (DashboardRouter, page clients)
   // to avoid forcing Suspense on all consumers of this hook
 
-  // Trigger initial fetch when session is available
-  useEffect(() => {
-    if (session?.user?.id) {
-      logger.debug('Session available, triggering workout refresh', {
-        userId: session.user.id,
-      })
-      refresh()
-    }
-  }, [session?.user?.id, refresh])
+  // Don't trigger refresh here - it causes loops with Suspense
+  // The asyncWorkoutsAtom will fetch on mount automatically
 
   const fetchWorkouts = useCallback(async (): Promise<Workout[]> => {
     logger.debug('Fetching workouts (imperative)')
