@@ -236,9 +236,10 @@ export const sendMessageActionAtom = atom(
       const data = await response.json()
       const realMessage = data.message || data
 
-      // Ensure the real message has sender data
+      // Ensure the real message has sender data and sender_id for compatibility
       const messageWithSender = {
         ...realMessage,
+        sender_id: realMessage.sender_id || user.id, // Ensure sender_id is set
         sender: realMessage.sender || {
           id: user.id,
           email: user.email,
@@ -256,7 +257,7 @@ export const sendMessageActionAtom = atom(
       // Don't refetch - the optimistic update and replacement should be enough
       // The polling mechanism in useMessages will catch any missed updates
 
-      return realMessage
+      return messageWithSender
     } catch (error) {
       // Remove optimistic message on failure
       set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))
