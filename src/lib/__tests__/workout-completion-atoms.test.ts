@@ -7,12 +7,39 @@ import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom } from '../
 const mockFetch = vi.fn()
 global.fetch = mockFetch as unknown as typeof fetch
 
+// Mock Better Auth client
+const mockGetSession = vi.fn()
+vi.mock('@/lib/better-auth-client', () => ({
+  authClient: {
+    getSession: mockGetSession,
+  },
+}))
+
+// Mock logger
+vi.mock('@/lib/logger', () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  }),
+}))
+
 describe('Workout Completion Atoms', () => {
   let store: ReturnType<typeof createStore>
 
   beforeEach(() => {
     store = createStore()
     vi.clearAllMocks()
+
+    // Mock authenticated session
+    mockGetSession.mockResolvedValue({
+      data: {
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+        },
+      },
+    })
   })
 
   describe('completeWorkoutAtom', () => {
@@ -34,11 +61,11 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/workouts/workout-123/complete',
+        '/api/workouts/workout-123/complete',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          credentials: 'same-origin',
           body: JSON.stringify({ actual_distance: 5.2 }),
         }
       )
@@ -60,6 +87,7 @@ describe('Workout Completion Atoms', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        text: async () => 'Not Found',
       })
 
       await expect(
@@ -97,10 +125,10 @@ describe('Workout Completion Atoms', () => {
         data: workoutData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-456/log', {
+      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-456/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify(workoutData),
       })
     })
@@ -128,10 +156,10 @@ describe('Workout Completion Atoms', () => {
         data: comprehensiveData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/workouts/workout-789/log', {
+      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-789/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify(comprehensiveData),
       })
     })
@@ -153,10 +181,10 @@ describe('Workout Completion Atoms', () => {
       await store.set(skipWorkoutAtom, 'workout-999')
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/workouts/workout-999/complete',
+        '/api/workouts/workout-999/complete',
         {
           method: 'DELETE',
-          credentials: 'include',
+          credentials: 'same-origin',
         }
       )
     })
@@ -166,6 +194,7 @@ describe('Workout Completion Atoms', () => {
         ok: false,
         status: 403,
         statusText: 'Forbidden',
+        text: async () => 'Forbidden',
       })
 
       await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow(
@@ -187,11 +216,11 @@ describe('Workout Completion Atoms', () => {
         await store.set(completeWorkoutAtom, { workoutId, data: {} })
 
         expect(fetch).toHaveBeenCalledWith(
-          `http://localhost:3000/api/workouts/${workoutId}/complete`,
+          `/api/workouts/${workoutId}/complete`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            credentials: 'same-origin',
             body: JSON.stringify({}),
           }
         )
@@ -210,11 +239,11 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/workouts/workout-empty/complete',
+        '/api/workouts/workout-empty/complete',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          credentials: 'same-origin',
           body: JSON.stringify({}),
         }
       )

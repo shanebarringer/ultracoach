@@ -4,7 +4,7 @@ import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
-import { useCallback, useMemo, useState, Suspense } from 'react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 

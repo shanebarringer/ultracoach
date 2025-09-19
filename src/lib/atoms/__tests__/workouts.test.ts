@@ -34,25 +34,50 @@ import {
   createMockWorkout,
   createTestStore,
   getAtomValue,
-  mockFetch,
   setAtomValue,
-  setupCommonMocks,
 } from './utils/test-helpers'
+
+// Mock fetch globally
+const mockFetch = vi.fn()
+global.fetch = mockFetch as unknown as typeof fetch
+
+// Mock Better Auth client
+const mockGetSession = vi.fn()
+vi.mock('@/lib/better-auth-client', () => ({
+  authClient: {
+    getSession: mockGetSession,
+  },
+}))
+
+// Mock logger
+vi.mock('@/lib/logger', () => ({
+  createLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  }),
+}))
 
 describe('Workouts Atoms', () => {
   let store: ReturnType<typeof createStore>
-  let cleanup: () => void
-  let fetchMock: ReturnType<typeof mockFetch>
 
   beforeEach(() => {
-    const mocks = setupCommonMocks()
-    cleanup = mocks.cleanup
     store = createTestStore()
+    vi.clearAllMocks()
+
+    // Mock authenticated session
+    mockGetSession.mockResolvedValue({
+      data: {
+        user: {
+          id: 'test-user-id',
+          email: 'test@example.com',
+        },
+      },
+    })
   })
 
   afterEach(() => {
-    cleanup()
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('Core workout atoms', () => {
@@ -251,22 +276,16 @@ describe('Workouts Atoms', () => {
 
     describe('completeWorkoutAtom', () => {
       it('should mark workout as completed', async () => {
-        fetchMock = mockFetch(
-          new Map([
-            [
-              'http://localhost:3000/api/workouts/w1/complete',
-              {
-                ok: true,
-                json: () =>
-                  Promise.resolve({
-                    id: 'w1',
-                    status: 'completed',
-                    completed_at: new Date().toISOString(),
-                  }),
-              },
-            ],
-          ])
-        )
+        const mockResponse = {
+          id: 'w1',
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        }
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockResponse,
+        })
 
         const result = await store.set(completeWorkoutAtom, {
           workoutId: 'w1',
@@ -277,18 +296,18 @@ describe('Workouts Atoms', () => {
           },
         })
 
-        expect(fetchMock).toHaveBeenCalledWith(
-          'http://localhost:3000/api/workouts/w1/complete',
-          expect.objectContaining({
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/workouts/w1/complete',
+          {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
+            credentials: 'same-origin',
             body: JSON.stringify({
               actual_distance: 10.5,
               actual_duration: 65,
               notes: 'Felt good!',
             }),
-          })
+          }
         )
 
         expect(result.status).toBe('completed')
@@ -298,17 +317,12 @@ describe('Workouts Atoms', () => {
       })
 
       it('should handle completion errors', async () => {
-        fetchMock = mockFetch(
-          new Map([
-            [
-              '/api/workouts/w1/complete',
-              {
-                ok: false,
-                json: () => Promise.resolve({ error: 'Failed' }),
-              },
-            ],
-          ])
-        )
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          text: async () => 'Not Found',
+        })
 
         await expect(store.set(completeWorkoutAtom, { workoutId: 'w1' })).rejects.toThrow(
           'Failed to complete workout'
@@ -318,48 +332,36 @@ describe('Workouts Atoms', () => {
 
     describe('logWorkoutDetailsAtom', () => {
       it('should log workout details', async () => {
-        fetchMock = mockFetch(
-          new Map([
-            [
-              'http://localhost:3000/api/workouts/w1/log',
-              {
-                ok: true,
-                json: () =>
-                  Promise.resolve({
-                    id: 'w1',
-                    actual_distance: 12,
-                    actual_duration: 70,
-                    notes: 'Great workout!',
-                  }),
-              },
-            ],
-          ])
-        )
+        const workoutData = {
+          actual_distance: 12,
+          actual_duration: 70,
+          notes: 'Great workout!',
+          perceived_effort: 7,
+        }
+
+        const mockResponse = {
+          id: 'w1',
+          actual_distance: 12,
+          actual_duration: 70,
+          notes: 'Great workout!',
+        }
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockResponse,
+        })
 
         const result = await store.set(logWorkoutDetailsAtom, {
           workoutId: 'w1',
-          data: {
-            actual_distance: 12,
-            actual_duration: 70,
-            notes: 'Great workout!',
-            perceived_effort: 7,
-          },
+          data: workoutData,
         })
 
-        expect(fetchMock).toHaveBeenCalledWith(
-          'http://localhost:3000/api/workouts/w1/log',
-          expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              actual_distance: 12,
-              actual_duration: 70,
-              notes: 'Great workout!',
-              perceived_effort: 7,
-            }),
-          })
-        )
+        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(workoutData),
+        })
 
         expect(result.actual_distance).toBe(12)
 
@@ -370,30 +372,24 @@ describe('Workouts Atoms', () => {
 
     describe('skipWorkoutAtom', () => {
       it('should skip workout', async () => {
-        fetchMock = mockFetch(
-          new Map([
-            [
-              'http://localhost:3000/api/workouts/w1/complete',
-              {
-                ok: true,
-                json: () =>
-                  Promise.resolve({
-                    id: 'w1',
-                    status: 'skipped',
-                  }),
-              },
-            ],
-          ])
-        )
+        const mockResponse = {
+          id: 'w1',
+          status: 'skipped',
+        }
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockResponse,
+        })
 
         const result = await store.set(skipWorkoutAtom, 'w1')
 
-        expect(fetchMock).toHaveBeenCalledWith(
-          'http://localhost:3000/api/workouts/w1/complete',
-          expect.objectContaining({
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/workouts/w1/complete',
+          {
             method: 'DELETE',
-            credentials: 'include',
-          })
+            credentials: 'same-origin',
+          }
         )
 
         expect(result.status).toBe('skipped')

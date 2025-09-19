@@ -50,7 +50,7 @@ export const asyncWorkoutsAtom = atom(async get => {
 
     // Check if user is authenticated first
     const session = await authClient.getSession()
-    if (!session?.user) {
+    if (!session?.data?.user) {
       logger.debug('No authenticated session found, returning empty workouts')
       return []
     }
@@ -81,7 +81,7 @@ export const asyncWorkoutsAtom = atom(async get => {
 
     logger.info('Workouts fetched successfully', {
       count: workouts.length,
-      userId: session.user.id,
+      userId: session.data.user.id,
       sample: workouts.slice(0, 3).map((w: Workout) => ({
         id: w.id,
         date: w.date,
@@ -126,19 +126,21 @@ export const refreshWorkoutsAtom = atom(null, (get, set) => {
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
   // Also trigger a re-fetch of async workouts by invalidating the cache
-  const { createLogger } = require('@/lib/logger')
-  const logger = createLogger('RefreshWorkoutsAtom')
-  logger.debug('Cache cleared and refresh triggered')
+  import('@/lib/logger').then(({ createLogger }) => {
+    const logger = createLogger('RefreshWorkoutsAtom')
+    logger.debug('Cache cleared and refresh triggered')
+  })
 })
 
 // Hydration atom to sync async workouts with sync atom
 export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
-  const { createLogger } = require('@/lib/logger')
-  const logger = createLogger('HydrateWorkoutsAtom')
+  import('@/lib/logger').then(({ createLogger }) => {
+    const logger = createLogger('HydrateWorkoutsAtom')
 
-  logger.debug('Hydrating workouts atom', {
-    count: workouts?.length || 0,
-    hasData: Array.isArray(workouts),
+    logger.debug('Hydrating workouts atom', {
+      count: workouts?.length || 0,
+      hasData: Array.isArray(workouts),
+    })
   })
 
   set(workoutsAtom, workouts || [])
@@ -311,7 +313,7 @@ export const completeWorkoutAtom = atom(
     try {
       // Check authentication first
       const session = await authClient.getSession()
-      if (!session?.user) {
+      if (!session?.data?.user) {
         throw new Error('Not authenticated')
       }
 
@@ -395,7 +397,7 @@ export const logWorkoutDetailsAtom = atom(
     try {
       // Check authentication first
       const session = await authClient.getSession()
-      if (!session?.user) {
+      if (!session?.data?.user) {
         throw new Error('Not authenticated')
       }
 
@@ -460,7 +462,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
   try {
     // Check authentication first
     const session = await authClient.getSession()
-    if (!session?.user) {
+    if (!session?.data?.user) {
       throw new Error('Not authenticated')
     }
 

@@ -226,6 +226,7 @@ export function setupCommonMocks() {
     }),
   }))
 
+
   // Mock date functions for consistent testing
   vi.useFakeTimers()
   vi.setSystemTime(new Date('2024-01-01'))

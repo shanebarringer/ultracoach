@@ -56,7 +56,7 @@ export function useWorkouts() {
       if (typeof window !== 'undefined') {
         const { authClient } = await import('@/lib/better-auth-client')
         const session = await authClient.getSession()
-        if (!session?.user) {
+        if (!session?.data?.user) {
           logger.debug('No authenticated session found')
           return []
         }
