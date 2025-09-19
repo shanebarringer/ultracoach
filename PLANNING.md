@@ -15,7 +15,7 @@ Transform UltraCoach into a professional ultramarathon coaching platform that su
 - **Styling**: Tailwind CSS v3 with HeroUI theme integration + Custom alpine color palette
 - **State Management**: Jotai for atomic, granular state management
 - **Authentication**: Better Auth with Drizzle adapter, custom session management, and role-based access
-- **HTTP Client**: Currently fetch with manual credentials, planned migration to axios with interceptors
+- **HTTP Client**: Native fetch with `credentials: 'same-origin'` for all internal APIs, future migration to axios planned
 - **Real-time**: Supabase Realtime for live updates
 - **TypeScript**: Full TypeScript with strict mode for type safety
 
