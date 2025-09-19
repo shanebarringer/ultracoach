@@ -87,7 +87,6 @@ export async function selectHeroUIOption(
       )
     } catch (loadingTimeout) {
       // Loading timed out - this might mean no runners are available
-      console.log('Loading state timed out - checking if dropdown is still functional')
     }
   }
 
@@ -121,7 +120,6 @@ export async function selectHeroUIOption(
   if (!clicked) {
     // Log current DOM for debugging
     const options = await page.locator('[role="option"]').allTextContents()
-    console.error('Available options:', options)
     throw new Error(`Could not select option: ${optionText}`)
   }
 

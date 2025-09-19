@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test'
 
+import {
+  TEST_COACH_EMAIL,
+  TEST_COACH_PASSWORD,
+  TEST_RUNNER_EMAIL,
+  TEST_RUNNER_PASSWORD,
+} from './utils/test-helpers'
 import { assertAuthenticated, navigateAndWait, waitForAppReady } from './utils/test-helpers'
 
 test.describe('Authentication Flow', () => {
@@ -15,8 +21,8 @@ test.describe('Authentication Flow', () => {
     await navigateAndWait(page, '/auth/signin')
 
     // Fill in runner credentials
-    await page.fill('input[type="email"]', 'alex.rivera@ultracoach.dev')
-    await page.fill('input[type="password"]', 'RunnerPass2025!')
+    await page.fill('input[type="email"]', TEST_RUNNER_EMAIL)
+    await page.fill('input[type="password"]', TEST_RUNNER_PASSWORD)
 
     // Submit form
     await page.click('button[type="submit"]')
@@ -31,8 +37,8 @@ test.describe('Authentication Flow', () => {
     await navigateAndWait(page, '/auth/signin')
 
     // Fill in coach credentials
-    await page.fill('input[type="email"]', 'emma@ultracoach.dev')
-    await page.fill('input[type="password"]', 'UltraCoach2025!')
+    await page.fill('input[type="email"]', TEST_COACH_EMAIL)
+    await page.fill('input[type="password"]', TEST_COACH_PASSWORD)
 
     // Submit form
     await page.click('button[type="submit"]')
@@ -108,7 +114,6 @@ test.describe('Landing Page', () => {
     } else {
       // Log what's on the page to help debug
       const bodyText = await page.locator('body').innerText()
-      console.log('Page content:', bodyText.substring(0, 500))
       throw new Error('Could not find Sign In button/link')
     }
 

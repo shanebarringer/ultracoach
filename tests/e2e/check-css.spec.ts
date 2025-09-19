@@ -24,8 +24,6 @@ test.describe('CSS Loading Check', () => {
     })
 
     // Log the values for debugging
-    console.log('Font size:', fontSize)
-    console.log('Color:', color)
 
     // Check that styles are applied (not default browser styles)
     expect(fontSize).not.toBe('16px') // Default browser font size
@@ -38,8 +36,6 @@ test.describe('CSS Loading Check', () => {
     const buttonBg = await button.evaluate(el => {
       return window.getComputedStyle(el).backgroundColor
     })
-
-    console.log('Button background:', buttonBg)
 
     // Button should have some background color (not transparent)
     expect(buttonBg).not.toBe('rgba(0, 0, 0, 0)')

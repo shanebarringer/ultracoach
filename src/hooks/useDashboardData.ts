@@ -1,18 +1,15 @@
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import {
-  asyncWorkoutsAtom,
   completedWorkoutsAtom,
   loadingStatesAtom,
-  refreshWorkoutsAtom,
   relationshipsAtom,
   relationshipsLoadableAtom,
   trainingPlansAtom,
   upcomingWorkoutsAtom,
-  workoutsAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User } from '@/lib/supabase'
@@ -26,21 +23,12 @@ export function useDashboardData() {
   const { data: session } = useSession()
   // Use Jotai atoms for centralized state management
   const [trainingPlans, setTrainingPlans] = useAtom(trainingPlansAtom)
-  const [, setWorkouts] = useAtom(workoutsAtom)
 
-  // Trigger async workouts loading and sync to main atom
-  const asyncWorkouts = useAtomValue(asyncWorkoutsAtom)
-
-  // Update the main workouts atom when async workouts are fetched
-  useEffect(() => {
-    if (asyncWorkouts) {
-      setWorkouts(asyncWorkouts)
-    }
-  }, [asyncWorkouts, setWorkouts])
+  // Don't read asyncWorkoutsAtom here - it's already handled by WorkoutsHydrator in DashboardRouter
+  // Reading it here causes duplicate Suspense triggers
 
   const upcomingWorkouts = useAtomValue(upcomingWorkoutsAtom)
   const completedWorkouts = useAtomValue(completedWorkoutsAtom)
-  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [relationships, setRelationships] = useAtom(relationshipsAtom)
   const relationshipsLoadable = useAtomValue(relationshipsLoadableAtom)
@@ -61,8 +49,8 @@ export function useDashboardData() {
         setTrainingPlans(plansData.trainingPlans || [])
       }
 
-      // Workouts are now handled by asyncWorkoutsAtom - just trigger a refresh
-      refreshWorkouts()
+      // Workouts are now handled by asyncWorkoutsAtom in WorkoutsHydrator
+      // Don't trigger refresh here to avoid loops
 
       // Relationships are now handled by the relationshipsAtom automatically
     } catch (error) {
@@ -73,7 +61,7 @@ export function useDashboardData() {
         trainingPlans: false,
       }))
     }
-  }, [session?.user?.id, setTrainingPlans, refreshWorkouts, setLoadingStates])
+  }, [session?.user?.id, setTrainingPlans, setLoadingStates])
 
   useEffect(() => {
     if (session?.user?.id) {

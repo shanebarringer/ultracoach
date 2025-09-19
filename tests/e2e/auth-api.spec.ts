@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test'
 
+import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD } from '../utils/test-helpers'
+
 test.describe('Authentication API Tests', () => {
   test('should authenticate via API directly', async ({ request, context }) => {
     // Test direct API authentication to verify it works
     const response = await request.post('http://localhost:3001/api/auth/sign-in/email', {
       data: {
-        email: 'alex.rivera@ultracoach.dev',
-        password: 'RunnerPass2025!',
+        email: TEST_RUNNER_EMAIL,
+        password: TEST_RUNNER_PASSWORD,
       },
       headers: {
         'Content-Type': 'application/json',
@@ -18,7 +20,6 @@ test.describe('Authentication API Tests', () => {
 
     // Get response body
     const body = await response.json()
-    console.log('API Response:', JSON.stringify(body, null, 2))
 
     // Verify we got a session
     expect(body).toHaveProperty('user')
@@ -26,15 +27,14 @@ test.describe('Authentication API Tests', () => {
 
     // Save cookies to context
     const cookies = await response.headers()
-    console.log('Response headers:', cookies)
   })
 
   test('should access dashboard after API authentication', async ({ page, request }) => {
     // First authenticate via API
     const authResponse = await request.post('http://localhost:3001/api/auth/sign-in/email', {
       data: {
-        email: 'alex.rivera@ultracoach.dev',
-        password: 'RunnerPass2025!',
+        email: TEST_RUNNER_EMAIL,
+        password: TEST_RUNNER_PASSWORD,
       },
     })
 
@@ -45,7 +45,6 @@ test.describe('Authentication API Tests', () => {
 
     // Wait for either dashboard or redirect to signin
     const finalUrl = await page.evaluate(() => window.location.pathname)
-    console.log('Final URL after navigation:', finalUrl)
 
     // Check if we can access the dashboard
     if (finalUrl === '/dashboard/runner') {
@@ -53,7 +52,6 @@ test.describe('Authentication API Tests', () => {
       await expect(page.locator('text=/Welcome back/')).toBeVisible({ timeout: 5000 })
     } else {
       // We got redirected to signin
-      console.log('Got redirected to signin, cookies might not be set properly')
     }
   })
 })
