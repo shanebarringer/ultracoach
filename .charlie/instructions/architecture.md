@@ -75,16 +75,78 @@ export default function PageClient({ user }) {
 // Server-side session access
 const session = await getServerSession()
 
-// Client-side session access
-const { data: session } = useSession()
+// Client-side session access (Better Auth pattern)
+import { useBetterSession } from '@/hooks/useBetterSession'
+
+const { session, user, loading } = useBetterSession()
+
+// Handle loading and unauthenticated states
+if (loading) return <LoadingSkeleton />
+if (!session) return <SignInPrompt />
+
+// Alternative: Use compatibility hook for NextAuth-style API
+import { useSession } from '@/hooks/useBetterSession'
+
+const { data: session, status } = useSession()
+if (status === 'loading') return <LoadingSkeleton />
+if (status === 'unauthenticated') return <SignInPrompt />
 ```
 
-## API Patterns
+## API Patterns & Data Fetching
+
+### CRITICAL: Data Fetching Strategy
+
+**Server Components (Anti-Pattern Alert)**
+
+- **NEVER** fetch your own API routes from Server Components
+- This creates unnecessary HTTP overhead and complexity
+- Server Components should call database/services directly
+- Use Server Components only for authentication and initial data
+
+**Client Components (Correct Pattern)**
+
+```typescript
+// ✅ CORRECT - Client Component fetching from API
+'use client'
+const response = await fetch('/api/workouts', {
+  credentials: 'same-origin', // For internal APIs
+})
+```
+
+**Server Components (Correct Pattern)**
+
+```typescript
+// ✅ CORRECT - Server Component calling service directly
+import { db } from '@/lib/database'
+import { getServerSession } from '@/utils/auth-server'
+
+export default async function Page() {
+  const session = await getServerSession()
+  const workouts = await db.query.workouts.findMany({
+    where: eq(workouts.userId, session.user.id)
+  })
+  return <PageClient initialData={workouts} />
+}
+```
+
+### URL Strategy
+
+**Client-Side Code**
+
+- Use relative URLs (`/api/...`) for internal APIs
+- Always include `credentials: 'same-origin'`
+- Jotai atoms handle browser detection automatically
+
+**Server-Side Code**
+
+- Don't fetch from API routes - call services directly
+- If absolute URLs are needed (e.g., for external services), use environment variables
+- Better Auth handles base URLs intelligently with VERCEL_URL
 
 ### Fetch Configuration
 
 - Always use `credentials: 'same-origin'` for internal APIs
-- Use relative URLs (`/api/...`) over absolute URLs
+- Use relative URLs in Client Components
 - Implement consistent error handling
 - Use axios interceptors for authentication (future migration)
 

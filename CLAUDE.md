@@ -66,10 +66,40 @@ See `.context7-docs/nextjs/` for comprehensive guides:
 
 ## 🌐 API Client Best Practices (IMPORTANT)
 
+### 🚫 CRITICAL: Server Component Anti-Pattern
+
+**NEVER fetch your own API routes from Server Components - this is a major anti-pattern:**
+
+```typescript
+// ❌ WRONG - Don't do this in Server Components
+export default async function Page() {
+  const response = await fetch('/api/workouts') // Anti-pattern!
+  return <div>{response.data}</div>
+}
+
+// ✅ CORRECT - Call database/services directly
+export default async function Page() {
+  await headers() // Force dynamic rendering
+  const session = await getServerSession()
+  const workouts = await db.query.workouts.findMany({
+    where: eq(workouts.userId, session.user.id)
+  })
+  return <PageClient initialData={workouts} />
+}
+```
+
+**Why this matters:**
+
+- Fetching your own API routes creates unnecessary HTTP overhead
+- Server Components can access database/services directly
+- Cleaner separation of concerns: Server = auth + direct data, Client = API calls + state
+
+### ✅ Client Component Patterns
+
 **Always use `credentials: 'same-origin'` for internal API calls:**
 
 ```typescript
-// ✅ CORRECT - For all /api/... endpoints
+// ✅ CORRECT - For all /api/... endpoints in Client Components
 const response = await fetch('/api/workouts', {
   credentials: 'same-origin', // Default and recommended for same-domain
   headers: {
@@ -85,11 +115,13 @@ const response = await fetch('/api/workouts', {
 
 ### Key Principles:
 
+- **Server Components**: Call database/services directly, handle auth and redirects
+- **Client Components**: Use fetch with relative URLs for API calls
 - **same-origin**: Use for all UltraCoach internal APIs (`/api/...`)
 - **include**: Only for cross-origin requests (external APIs like Strava)
 - **omit**: For public APIs that don't require authentication
 - **Relative URLs**: Always prefer `/api/...` over absolute URLs for internal calls
-- **Consistency**: All fetch calls in the codebase follow the same pattern
+- **Jotai Atoms**: Handle browser detection automatically with `if (typeof window === 'undefined') return []`
 
 ## 🗄️ Database Connection (IMPORTANT)
 
