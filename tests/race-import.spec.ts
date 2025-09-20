@@ -581,7 +581,7 @@ test.describe('Race Import Flow', () => {
           summary: {
             successful: 3,
             duplicates: 0,
-            errors: 0
+            errors: 0,
           },
           races: [
             { id: '1', name: 'Western States 100', location: 'Auburn, CA', distance: '100' },
