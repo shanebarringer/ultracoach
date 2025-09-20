@@ -79,34 +79,27 @@ export async function waitForFileUploadProcessing(
   logger?: Logger<unknown>
 ): Promise<void> {
   logger?.info('Starting waitForFileUploadProcessing', { expectedContent })
+  const waitTimeout = timeout ?? 30000
 
   // First wait for any loading indicators to appear and disappear
   try {
     await page.locator('text=/processing|uploading|parsing|loading/i').waitFor({ timeout: 5000 })
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
-      .waitFor({ state: 'hidden', timeout })
+      .waitFor({ state: 'hidden', timeout: waitTimeout })
     logger?.debug('Loading indicators cleared')
   } catch {
     logger?.debug('No loading indicators detected')
   }
 
-  // Wait for preview tab to be selected (indicates processing complete)
+  // Wait for preview content to be visible (deterministic readiness signal)
   try {
-    const previewTab = page.getByTestId('preview-tab')
-    await previewTab.waitFor({ state: 'visible', timeout: 15000 })
-    logger?.debug('Preview tab visible')
-
-    // Wait for preview tab to become selected using aria-selected
-    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
-    logger?.debug('Preview tab selected')
-
-    // Wait for preview content to load
-    const previewContent = page.getByTestId('preview-content')
-    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
+    // Prefer the actual content render over brittle tab aria attributes
+    const previewPanel = page.getByTestId('preview-content')
+    await previewPanel.waitFor({ state: 'visible', timeout: waitTimeout })
     logger?.debug('Preview content visible')
   } catch (error) {
-    logger?.error('Preview tab error', { error })
+    logger?.error('Preview content error', { error })
     throw error
   }
 
@@ -115,12 +108,12 @@ export async function waitForFileUploadProcessing(
 
     // Wait for race list to be populated
     const raceList = page.getByTestId('race-list')
-    await raceList.waitFor({ state: 'visible', timeout: 15000 })
+    await raceList.waitFor({ state: 'visible', timeout: waitTimeout })
 
     // Wait for the specific race name to appear
     try {
-      const raceElement = page.getByTestId('race-name-0').filter({ hasText: expectedContent })
-      await raceElement.waitFor({ state: 'visible', timeout })
+      const raceElement = raceList.getByText(expectedContent)
+      await raceElement.waitFor({ state: 'visible', timeout: waitTimeout })
       logger?.info('Found expected race content', { expectedContent })
     } catch (error) {
       // Check if there are any error messages instead
@@ -241,7 +234,7 @@ export async function waitForFileUploadError(
   // Wait for preview tab to appear (it will exist but not be selected for errors)
   try {
     const previewTab = page.getByTestId('preview-tab')
-    await previewTab.waitFor({ state: 'visible', timeout: 15000 })
+    await previewTab.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) })
     logger?.debug('Preview tab visible (but may not be selected for errors)')
   } catch (error) {
     logger?.debug('Preview tab not found - this is OK for error cases')

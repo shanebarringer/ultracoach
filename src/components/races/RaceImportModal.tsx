@@ -275,249 +275,265 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
           // Step 2: Parse the text string with Papa.parse
           logger.debug('Starting Papa.parse on text string')
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            error: (error: Error) => {
-              logger.error('Papa.parse failed', { error: error.message })
-              reject(new Error(`CSV parsing engine failed: ${error.message}`))
-            },
-            complete: results => {
-              try {
-                logger.info('Papa.parse complete', {
-                  dataLength: results.data?.length,
-                  errorCount: results.errors?.length || 0,
-                  metaDelimiter: results.meta?.delimiter,
-                  hasData: !!results.data,
-                  fieldsFound: results.meta?.fields?.length || 0,
-                })
+          // ULT-6: Make parsing deterministic for tests without sacrificing
+          // correctness/performance in real usage.
+          // - fastMode only when there are NO quoted fields (per Papa docs)
+          // - use main-thread parsing for small files to avoid worker flakiness in headless
+          //   but allow worker for larger files to prevent UI jank.
+          const hasQuotedFields = /"/.test(csvText)
+          const enableFastMode = !hasQuotedFields
+          const enableWorker = file.size > 200 * 1024 // >200KB uses worker
 
-                // Check for Papa.parse errors first
-                if (results.errors && results.errors.length > 0) {
-                  logger.error('Papa.parse encountered errors', {
-                    errors: results.errors.map(err => ({ row: err.row, message: err.message })),
-                  })
-                  const errorMessages = results.errors
-                    .map(err => `Row ${err.row}: ${err.message}`)
-                    .join('; ')
-                  throw new Error(`CSV parsing failed: ${errorMessages}`)
-                }
+          const handleResults = (results: Papa.ParseResult<Record<string, string>>) => {
+            logger.info('Papa.parse complete', {
+              dataLength: results.data?.length,
+              errorCount: results.errors?.length || 0,
+              metaDelimiter: results.meta?.delimiter,
+              hasData: !!results.data,
+              fieldsFound: results.meta?.fields?.length || 0,
+            })
 
-                // Validate CSV structure
-                if (!results.data || results.data.length === 0) {
-                  throw new Error('CSV file is empty or contains no valid data rows')
-                }
+            // Check for Papa.parse errors first
+            if (results.errors && results.errors.length > 0) {
+              logger.error('Papa.parse encountered errors', {
+                errors: results.errors.map(err => ({ row: err.row, message: err.message })),
+              })
+              const errorMessages = results.errors
+                .map(err => `Row ${err.row}: ${err.message}`)
+                .join('; ')
+              throw new Error(`CSV parsing failed: ${errorMessages}`)
+            }
 
-                if (results.data.length > 1000) {
-                  throw new Error('CSV file contains too many rows (maximum 1000 races per file)')
-                }
+            // Validate CSV structure
+            if (!results.data || results.data.length === 0) {
+              throw new Error('CSV file is empty or contains no valid data rows')
+            }
 
-                // Check for basic required headers with flexible column mapping
-                const headers =
-                  results.meta?.fields && results.meta.fields.length > 0
-                    ? (results.meta.fields as string[])
-                    : Object.keys(results.data[0] as Record<string, string>)
-                const headerMap = buildHeaderMap(headers)
-                const nameColumns = headers.filter(h =>
-                  /^(name|race_?name|event_?name|title)$/i.test(h.toLowerCase())
-                )
+            if (results.data.length > 1000) {
+              throw new Error('CSV file contains too many rows (maximum 1000 races per file)')
+            }
 
-                if (nameColumns.length === 0) {
-                  throw new Error(
-                    'CSV file must contain a name column (name, race_name, event_name, or title)'
-                  )
-                }
+            // Check for basic required headers with flexible column mapping
+            const headers =
+              results.meta?.fields && results.meta.fields.length > 0
+                ? (results.meta.fields as string[])
+                : Object.keys(results.data[0] as Record<string, string>)
+            const headerMap = buildHeaderMap(headers)
+            const nameColumns = headers.filter(h =>
+              /^(name|race_?name|event_?name|title)$/i.test(h.toLowerCase())
+            )
+            if (nameColumns.length === 0) {
+              throw new Error(
+                'CSV file must contain a name column (name, race_name, event_name, or title)'
+              )
+            }
 
-                logger.info('CSV parsing', {
-                  fileName: file.name,
-                  rows: results.data.length,
-                  headers: headers,
-                  nameColumn: nameColumns[0],
-                })
+            logger.info('CSV parsing', {
+              fileName: file.name,
+              rows: results.data.length,
+              headers: headers,
+              nameColumn: nameColumns[0],
+            })
 
-                const races: ParsedRaceData[] = []
-                const errors: string[] = []
-
-                ;(results.data as Record<string, string>[]).forEach(
-                  (row: Record<string, string>, index: number) => {
-                    try {
-                      // Robust column mapping using normalized headers
-                      const getName = () => {
-                        return (
-                          valueFrom(row, headerMap, [
-                            'name',
-                            'race_name',
-                            'race name',
-                            'event_name',
-                            'event name',
-                            'title',
-                            'racename',
-                            'eventname',
-                          ]) || `Race ${index + 1}`
-                        )
-                      }
-
-                      const getDate = () => {
-                        return valueFrom(row, headerMap, [
-                          'date',
-                          'race_date',
-                          'race date',
-                          'event_date',
-                          'event date',
-                          'racedate',
-                          'eventdate',
-                        ])
-                      }
-
-                      const getLocation = () => {
-                        return valueFrom(row, headerMap, [
-                          'location',
-                          'place',
-                          'city',
-                          'venue',
-                          'where',
-                          'state',
-                          'country',
-                        ])
-                      }
-
-                      const getDistance = () => {
-                        const distStr = valueFrom(row, headerMap, [
-                          'distance',
-                          'distance_miles',
-                          'distance miles',
-                          'distance(miles)',
-                          'miles',
-                          'race_distance',
-                          'racedistance',
-                          'dist',
-                        ])
-                        if (distStr) {
-                          const parsed = parseFloat(distStr)
-                          return !isNaN(parsed) && parsed >= 0 ? parsed : 0
-                        }
-                        return 0
-                      }
-
-                      const getElevation = () => {
-                        const elevStr = valueFrom(row, headerMap, [
-                          'elevation',
-                          'elevation_gain',
-                          'elevation gain',
-                          'elevation gain(ft)',
-                          'elevationgain',
-                          'elevation_feet',
-                          'climb',
-                          'vert',
-                          'ascent',
-                        ])
-                        if (elevStr) {
-                          const parsed = parseInt(elevStr)
-                          return !isNaN(parsed) && parsed >= 0 ? parsed : 0
-                        }
-                        return 0
-                      }
-
-                      const name = getName()
-                      if (!name || name.trim().length === 0) {
-                        errors.push(`Row ${index + 1}: Missing race name`)
-                        return
-                      }
-
-                      if (name.length > 200) {
-                        errors.push(`Row ${index + 1}: Race name too long (maximum 200 characters)`)
-                        return
-                      }
-
-                      const race: ParsedRaceData = {
-                        name: name.trim(),
-                        date: getDate(),
-                        location: getLocation(),
-                        distance_miles: getDistance(),
-                        distance_type:
-                          valueFrom(row, headerMap, [
-                            'distance_type',
-                            'distancetype',
-                            'type',
-                            'category',
-                          ]) || 'Custom',
-                        elevation_gain_feet: getElevation(),
-                        terrain_type: (
-                          valueFrom(row, headerMap, [
-                            'terrain_type',
-                            'terraintype',
-                            'terrain',
-                            'surface',
-                          ]) || 'mixed'
-                        ).toLowerCase(),
-                        website_url: valueFrom(row, headerMap, [
-                          'website_url',
-                          'websiteurl',
-                          'website',
-                          'url',
-                          'link',
-                        ]),
-                        notes:
-                          valueFrom(row, headerMap, [
-                            'notes',
-                            'description',
-                            'comments',
-                            'details',
-                          ]) || `Imported from CSV file: ${file.name}, Row ${index + 1}`,
-                        source: 'csv',
-                      }
-
-                      // Validate terrain type
-                      const validTerrains = [
-                        'trail',
-                        'mountain',
-                        'road',
-                        'mixed',
-                        'desert',
-                        'forest',
-                      ]
-                      if (!race.terrain_type || !validTerrains.includes(race.terrain_type)) {
-                        race.terrain_type = 'mixed'
-                      }
-
-                      races.push(race)
-                    } catch (rowError) {
-                      errors.push(
-                        `Row ${index + 1}: ${rowError instanceof Error ? rowError.message : 'Unknown error'}`
-                      )
-                    }
+            const races: ParsedRaceData[] = []
+            const errors: string[] = []
+            ;(results.data as Record<string, string>[]).forEach(
+              (row: Record<string, string>, index: number) => {
+                try {
+                  // Robust column mapping using normalized headers
+                  const getName = () => {
+                    return (
+                      valueFrom(row, headerMap, [
+                        'name',
+                        'race_name',
+                        'race name',
+                        'event_name',
+                        'event name',
+                        'title',
+                        'racename',
+                        'eventname',
+                      ]) || `Race ${index + 1}`
+                    )
                   }
-                )
+                  const getDate = () =>
+                    valueFrom(row, headerMap, [
+                      'date',
+                      'race_date',
+                      'race date',
+                      'event_date',
+                      'event date',
+                      'racedate',
+                      'eventdate',
+                    ])
+                  const getLocation = () =>
+                    valueFrom(row, headerMap, [
+                      'location',
+                      'place',
+                      'city',
+                      'venue',
+                      'where',
+                      'state',
+                      'country',
+                    ])
+                  const getDistance = () => {
+                    const distStr = valueFrom(row, headerMap, [
+                      'distance',
+                      'distance_miles',
+                      'distance miles',
+                      'distance(miles)',
+                      'miles',
+                      'race_distance',
+                      'racedistance',
+                      'dist',
+                    ])
+                    if (distStr) {
+                      const parsed = parseFloat(distStr)
+                      return !isNaN(parsed) && parsed >= 0 ? parsed : 0
+                    }
+                    return 0
+                  }
+                  const getElevation = () => {
+                    const elevStr = valueFrom(row, headerMap, [
+                      'elevation',
+                      'elevation_gain',
+                      'elevation gain',
+                      'elevation gain(ft)',
+                      'elevationgain',
+                      'elevation_feet',
+                      'climb',
+                      'vert',
+                      'ascent',
+                    ])
+                    if (elevStr) {
+                      const parsed = parseInt(elevStr)
+                      return !isNaN(parsed) && parsed >= 0 ? parsed : 0
+                    }
+                    return 0
+                  }
 
-                if (races.length === 0) {
-                  throw new Error(
-                    `No valid races found in CSV file${errors.length > 0 ? '. Errors: ' + errors.slice(0, 3).join('; ') : ''}`
+                  const name = getName()
+                  if (!name || name.trim().length === 0) {
+                    errors.push(`Row ${index + 1}: Missing race name`)
+                    return
+                  }
+                  if (name.length > 200) {
+                    errors.push(`Row ${index + 1}: Race name too long (maximum 200 characters)`)
+                    return
+                  }
+
+                  const race: ParsedRaceData = {
+                    name: name.trim(),
+                    date: getDate(),
+                    location: getLocation(),
+                    distance_miles: getDistance(),
+                    distance_type:
+                      valueFrom(row, headerMap, [
+                        'distance_type',
+                        'distancetype',
+                        'type',
+                        'category',
+                      ]) || 'Custom',
+                    elevation_gain_feet: getElevation(),
+                    terrain_type: (
+                      valueFrom(row, headerMap, [
+                        'terrain_type',
+                        'terraintype',
+                        'terrain',
+                        'surface',
+                      ]) || 'mixed'
+                    ).toLowerCase(),
+                    website_url: valueFrom(row, headerMap, [
+                      'website_url',
+                      'websiteurl',
+                      'website',
+                      'url',
+                      'link',
+                    ]),
+                    notes:
+                      valueFrom(row, headerMap, ['notes', 'description', 'comments', 'details']) ||
+                      `Imported from CSV file: ${file.name}, Row ${index + 1}`,
+                    source: 'csv',
+                  }
+                  const validTerrains = ['trail', 'mountain', 'road', 'mixed', 'desert', 'forest']
+                  if (!race.terrain_type || !validTerrains.includes(race.terrain_type)) {
+                    race.terrain_type = 'mixed'
+                  }
+                  races.push(race)
+                } catch (rowError) {
+                  errors.push(
+                    `Row ${index + 1}: ${rowError instanceof Error ? rowError.message : 'Unknown error'}`
                   )
                 }
-
-                if (errors.length > 0) {
-                  logger.warn('CSV parsing encountered errors', {
-                    fileName: file.name,
-                    totalRows: results.data.length,
-                    successfulRaces: races.length,
-                    errors: errors.slice(0, 5), // Log first 5 errors
-                  })
-                }
-
-                resolve(races)
-              } catch (error) {
-                logger.error('Error parsing CSV file', {
-                  fileName: file.name,
-                  error: error instanceof Error ? error.message : String(error),
-                })
-                reject(
-                  new Error(
-                    `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
-                  )
-                )
               }
-            },
-          })
+            )
+
+            if (races.length === 0) {
+              throw new Error(
+                `No valid races found in CSV file${errors.length > 0 ? '. Errors: ' + errors.slice(0, 5).join('; ') : ''}`
+              )
+            }
+            if (errors.length > 0) {
+              logger.warn('CSV parsing encountered errors', {
+                fileName: file.name,
+                totalRows: results.data.length,
+                successfulRaces: races.length,
+                errors: errors.slice(0, 5),
+              })
+            }
+            return races
+          }
+
+          if (enableWorker) {
+            Papa.parse(csvText, {
+              header: true,
+              worker: true,
+              dynamicTyping: false,
+              fastMode: enableFastMode,
+              skipEmptyLines: true,
+              error: (error: Error) => {
+                logger.error('Papa.parse failed', { error: error.message })
+                reject(new Error(`CSV parsing engine failed: ${error.message}`))
+              },
+              complete: results => {
+                try {
+                  const races = handleResults(results as Papa.ParseResult<Record<string, string>>)
+                  resolve(races)
+                } catch (error) {
+                  logger.error('Error parsing CSV file', {
+                    fileName: file.name,
+                    error: error instanceof Error ? error.message : String(error),
+                  })
+                  reject(
+                    new Error(
+                      `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    )
+                  )
+                }
+              },
+            })
+          } else {
+            try {
+              const results = Papa.parse(csvText, {
+                header: true,
+                worker: false as const,
+                dynamicTyping: false,
+                fastMode: enableFastMode,
+                skipEmptyLines: true,
+              }) as Papa.ParseResult<Record<string, string>>
+              const races = handleResults(results)
+              resolve(races)
+            } catch (error) {
+              logger.error('Error parsing CSV file', {
+                fileName: file.name,
+                error: error instanceof Error ? error.message : String(error),
+              })
+              reject(
+                new Error(
+                  `Failed to parse CSV file: ${error instanceof Error ? error.message : 'Unknown error'}`
+                )
+              )
+            }
+          }
         } catch (fileReaderError) {
           logger.error('FileReader parsing failed', {
             error:
