@@ -74,7 +74,7 @@ export async function waitForFormSubmission(page: Page, timeout = 15000): Promis
  */
 export async function waitForFileUploadProcessing(
   page: Page,
-  expectedContent?: string,
+  expectedContent?: string | RegExp,
   timeout = 90000,
   logger?: Logger<unknown>
 ): Promise<void> {

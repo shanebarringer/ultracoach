@@ -376,7 +376,7 @@ ultracoach/
 │   └── scripts/             # Database management scripts
 ├── CLAUDE.md               # Claude Code session guide
 ├── PLANNING.md             # This file - project planning
-└── TASKS.md                # Milestone-based task tracking
+└── Linear Workspace        # https://linear.app/ultracoach (issue tracking)
 ```
 
 ## 🔧 Recent Authentication Fixes (2025-08-03)

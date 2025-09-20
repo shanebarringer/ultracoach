@@ -249,7 +249,13 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       for (const c of candidates) {
         const nk = normalizeKey(c)
         const orig = headerMap.get(nk)
-        if (orig && row[orig]) return row[orig]
+        if (orig) {
+          const raw = row[orig]
+          if (typeof raw === 'string') {
+            const v = raw.trim()
+            if (v !== '') return v
+          }
+        }
       }
       return undefined
     }
@@ -278,9 +284,10 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
           Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
-            error: (error: Error) => {
-              logger.error('Papa.parse failed', { error: error.message })
-              reject(new Error(`CSV parsing engine failed: ${error.message}`))
+            error: (error: unknown) => {
+              const msg = error instanceof Error ? error.message : String(error)
+              logger.error('Papa.parse failed', { error: msg })
+              reject(new Error(`CSV parsing engine failed: ${msg}`))
             },
             complete: results => {
               try {
@@ -343,18 +350,16 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                     try {
                       // Robust column mapping using normalized headers
                       const getName = () => {
-                        return (
-                          valueFrom(row, headerMap, [
-                            'name',
-                            'race_name',
-                            'race name',
-                            'event_name',
-                            'event name',
-                            'title',
-                            'racename',
-                            'eventname',
-                          ]) || `Race ${index + 1}`
-                        )
+                        return valueFrom(row, headerMap, [
+                          'name',
+                          'race_name',
+                          'race name',
+                          'event_name',
+                          'event name',
+                          'title',
+                          'racename',
+                          'eventname',
+                        ])
                       }
 
                       const getDate = () => {
@@ -412,7 +417,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                           'ascent',
                         ])
                         if (elevStr) {
-                          const parsed = parseInt(elevStr)
+                          const parsed = parseInt(elevStr, 10)
                           return !isNaN(parsed) && parsed >= 0 ? parsed : 0
                         }
                         return 0

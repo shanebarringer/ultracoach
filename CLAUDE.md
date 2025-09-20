@@ -7,12 +7,22 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 **At the start of EVERY new conversation:**
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
-2. **Check TASKS.md** to see current milestone, pending tasks, and priorities
+2. **Check Linear workspace** at https://linear.app/ultracoach to see current milestone, pending tasks, and priorities
 3. **Review this file** for project-specific guidance and context
-4. **Mark completed tasks** in TASKS.md immediately upon completion. After commits, move complete tasks to `COMPLETED_TASKS.md`
-5. **Add newly discovered tasks** to TASKS.md when found during development
+4. **Update task status in Linear** immediately when starting or completing work
+5. **Create new issues in Linear** when discovering additional tasks during development
 6. **Always use tslog library and utilities for logging (no console.log)**
 7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
+
+### 📋 Linear Workspace Organization
+
+**Projects**:
+
+- **Testing & Quality Assurance** - Current focus (Milestone 9)
+- **Production Hardening & Security** - Next phase (Milestone 10)
+- **Advanced Features & Integrations** - Future roadmap (Milestone 11)
+
+**Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
 ### MCP Instructions
 
