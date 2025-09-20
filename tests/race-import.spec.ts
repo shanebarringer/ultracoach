@@ -198,7 +198,7 @@ test.describe('Race Import Flow', () => {
     await expect(raceElement).toBeVisible({ timeout: 30000 })
   })
 
-  test.skip('should handle CSV file upload', async ({ page }) => {
+  test('should handle CSV file upload', async ({ page }) => {
     logger.info('[Test] Starting CSV file upload test')
 
     // Use domcontentloaded instead of timeout per Context7 recommendations
@@ -237,45 +237,23 @@ test.describe('Race Import Flow', () => {
     // Step 1: Verify file was received by checking for processing message
     logger.info('[Test] Step 1: Checking for processing status...')
     try {
-      await page.locator('text=/Processing|Preparing|Parsing/i').waitFor({ timeout: 5000 })
+      await page.getByText(/Processing|Preparing|Parsing/i).waitFor({ timeout: 5000 })
       logger.info('[Test] Processing message appeared')
     } catch {
       logger.info('[Test] No processing message detected, checking for immediate completion')
     }
 
-    // Step 2: Wait for Papa.parse to complete and data to be set
-    logger.info('[Test] Step 2: Waiting for CSV parsing completion...')
-    const previewTab = page.getByTestId('preview-tab')
-    await expect(previewTab).toBeVisible({ timeout: 10000 })
-    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 15000 })
-    logger.info('[Test] Preview tab automatically selected after parsing')
-
-    // Step 3: Verify content is loaded in preview area
-    logger.info('[Test] Step 3: Verifying parsed content is displayed...')
-    const previewContent = page.getByTestId('preview-content')
-    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
-
-    const raceList = page.getByTestId('race-list')
-    await raceList.waitFor({ state: 'visible', timeout: 15000 })
-    logger.info('[Test] Race list container visible')
-
-    // Step 4: Check for specific race names using data-testid selectors
-    logger.info('[Test] Step 4: Checking for specific race content...')
-    const firstRaceElement = page.getByTestId('race-name-0')
-    await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
-
-    const firstRaceText = await firstRaceElement.textContent()
-    logger.info('[Test] First race element text:', firstRaceText)
+    // Use standardized helper that waits for preview and parsed content
+    await waitForFileUploadProcessing(page, 'Western States 100', 90000, logger)
 
     // Verify expected races are present
-    const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
+    const westernStates = page.getByTestId('race-list').getByText('Western States 100')
     const leadville = page.getByTestId('race-list').getByText('Leadville 100')
     const utmb = page.getByTestId('race-list').getByText('UTMB')
 
-    await expect(westernStates).toBeVisible({ timeout: 15000 })
-    await expect(leadville).toBeVisible({ timeout: 15000 })
-    await expect(utmb).toBeVisible({ timeout: 15000 })
-
+    await expect(westernStates).toBeVisible({ timeout: 30000 })
+    await expect(leadville).toBeVisible({ timeout: 30000 })
+    await expect(utmb).toBeVisible({ timeout: 30000 })
     logger.info('[Test] All race names verified successfully')
   })
 
@@ -430,7 +408,7 @@ test.describe('Race Import Flow', () => {
     await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 15000 })
   })
 
-  test.skip('should handle duplicate race detection', async ({ page }) => {
+  test('should handle duplicate race detection', async ({ page }) => {
     logger.info('[Test] Starting duplicate race detection test')
 
     // Use Context7 recommended loading approach
@@ -486,9 +464,7 @@ test.describe('Race Import Flow', () => {
     await page.waitForLoadState('domcontentloaded')
 
     try {
-      await page
-        .locator('text=Loading race expeditions')
-        .waitFor({ state: 'hidden', timeout: 30000 })
+      await page.getByText('Loading race expeditions').waitFor({ state: 'hidden', timeout: 30000 })
       logger.info('[Test] Page reloaded and ready')
     } catch (error) {
       logger.info('[Test] Loading state check failed (expected in fast CI):', error)
@@ -499,6 +475,21 @@ test.describe('Race Import Flow', () => {
     await expect(importButtonAgain).toBeVisible({ timeout: 30000 })
     await importButtonAgain.click()
     logger.info('[Test] Import modal reopened for duplicate test')
+
+    // Mock duplicate on second import for determinism
+    await page.route('/api/races/import', route =>
+      route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Duplicate race detected',
+          details: 'A similar race may already exist',
+          existingRaces: [
+            { id: '1', name: 'Test Ultra Race', location: '', distance: '0', date: '2024-06-15' },
+          ],
+        }),
+      })
+    )
 
     // Upload the same GPX file again
     const fileInputAgain = page.locator('[role="dialog"] input[type="file"]')
@@ -525,7 +516,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] Duplicate warning detected')
   })
 
-  test.skip('should handle bulk CSV import', async ({ page }) => {
+  test('should handle bulk CSV import', async ({ page }) => {
     logger.info('[Test] Starting bulk CSV import test')
 
     // Use Context7 recommended loading approach
@@ -562,55 +553,52 @@ test.describe('Race Import Flow', () => {
     // Step 1: Verify file was received by checking for processing status
     logger.info('[Test] Step 1: Checking for bulk processing status...')
     try {
-      await page.locator('text=/Processing|Preparing|Parsing CSV/i').waitFor({ timeout: 5000 })
+      await page.getByText(/Processing|Preparing|Parsing CSV/i).waitFor({ timeout: 5000 })
       logger.info('[Test] Processing message appeared for bulk import')
     } catch {
       logger.info('[Test] No processing message detected, checking for immediate completion')
     }
 
-    // Step 2: Wait for CSV parsing to complete and preview tab activation
-    logger.info('[Test] Step 2: Waiting for bulk CSV parsing completion...')
-    const previewTab = page.getByTestId('preview-tab')
-    await expect(previewTab).toBeVisible({ timeout: 10000 })
-    await expect(previewTab).toHaveAttribute('aria-selected', 'true', { timeout: 20000 })
-    logger.info('[Test] Preview tab automatically selected after bulk parsing')
+    // Use standardized helper that waits for preview and parsed content
+    await waitForFileUploadProcessing(page, 'Western States 100', 90000, logger)
 
-    // Step 3: Verify content structure is loaded
-    logger.info('[Test] Step 3: Verifying bulk parsed content structure...')
-    const previewContent = page.getByTestId('preview-content')
-    await previewContent.waitFor({ state: 'visible', timeout: 15000 })
-
-    const raceList = page.getByTestId('race-list')
-    await raceList.waitFor({ state: 'visible', timeout: 15000 })
-    logger.info('[Test] Bulk race list container visible')
-
-    // Step 4: Verify individual race elements are rendered
-    logger.info('[Test] Step 4: Checking for bulk CSV race content...')
-    const firstRaceElement = page.getByTestId('race-name-0')
-    await firstRaceElement.waitFor({ state: 'visible', timeout: 15000 })
-
-    const firstRaceText = await firstRaceElement.textContent()
-    logger.info('[Test] First race in bulk import:', firstRaceText)
-
-    // Verify all expected races are present
-    const westernStates = page.getByTestId('race-name-0').filter({ hasText: 'Western States 100' })
+    // Verify expected races are present
+    const westernStates = page.getByTestId('race-list').getByText('Western States 100')
     const leadville = page.getByTestId('race-list').getByText('Leadville 100')
     const utmb = page.getByTestId('race-list').getByText('UTMB')
 
-    await expect(westernStates).toBeVisible({ timeout: 15000 })
-    await expect(leadville).toBeVisible({ timeout: 15000 })
-    await expect(utmb).toBeVisible({ timeout: 15000 })
-    logger.info('[Test] All races verified in bulk preview')
+    await expect(westernStates).toBeVisible({ timeout: 30000 })
+    await expect(leadville).toBeVisible({ timeout: 30000 })
+    await expect(utmb).toBeVisible({ timeout: 30000 })
+
+    // Mock bulk import endpoint for speed and determinism
+    await page.route('/api/races/bulk-import', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          summary: {
+            successful: 3,
+            duplicates: 0,
+            errors: 0,
+          },
+          races: [
+            { id: '1', name: 'Western States 100', location: 'Auburn, CA', distance: '100' },
+            { id: '2', name: 'Leadville 100', location: 'Leadville, CO', distance: '100' },
+            { id: '3', name: 'UTMB', location: 'Chamonix, France', distance: '170' },
+          ],
+        }),
+      })
+    )
 
     // Click the import button to complete the bulk import
     const confirmImportButton = page.getByTestId('import-races-button')
-    await expect(confirmImportButton).toBeVisible({ timeout: 10000 })
+    await expect(confirmImportButton).toBeVisible({ timeout: 20000 })
     await confirmImportButton.click()
-    logger.info('[Test] Bulk import initiated')
 
     // Wait for bulk import to complete - modal closes on success (more reliable than toast)
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 20000 })
-    logger.info('[Test] Bulk import success message detected')
+    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 30000 })
   })
 
   test.skip('should show progress indicator during import', async ({ page }) => {

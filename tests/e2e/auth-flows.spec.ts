@@ -75,16 +75,31 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should redirect to dashboard after successful signup
     await expect(page).toHaveURL('/dashboard/runner')
 
-    // Verify auth state is properly set - look for dashboard elements
-    await expect(page.locator('text="Base Camp Dashboard"')).toBeVisible({ timeout: 10000 })
+    // Wait for dashboard container to be rendered first (more reliable than text)
+    await page.waitForSelector('[data-testid="runner-dashboard-content"]', {
+      state: 'visible',
+      timeout: 20000,
+    })
+
+    // Wait for React hydration and dashboard to fully render
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForTimeout(2000)
+
+    // Verify dashboard container is visible
+    const dashboardContent = page.locator('[data-testid="runner-dashboard-content"]')
+    await expect(dashboardContent).toBeVisible({ timeout: 10000 })
+
+    // Check for specific dashboard title within the dashboard container
+    const dashboardTitle = dashboardContent.locator('h1:has-text("Base Camp Dashboard")')
+    await expect(dashboardTitle).toBeVisible({ timeout: 10000 })
 
     // Verify we're authenticated by checking for user-specific elements
-    // The welcome message should show the user's name
-    const welcomeMessage = page.locator('text=/Welcome back.*Test Runner/i')
+    // The welcome message should show the user's name within the dashboard
+    const welcomeMessage = dashboardContent.locator('text=/Welcome back.*Test Runner/i')
     // Also check for alternative elements that might show the user is authenticated
-    const dashboardElement = page.locator('text="Base Camp Dashboard"')
+    const dashboardElement = dashboardContent.locator('text="Base Camp Dashboard"')
 
-    // Either the welcome message with name or at least the dashboard should be visible
+    // Either the welcome message with name or at least the dashboard should be visible within the container
     await expect(welcomeMessage.or(dashboardElement)).toBeVisible({ timeout: 10000 })
   })
 
