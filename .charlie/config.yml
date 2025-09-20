@@ -12,6 +12,13 @@ ignorePatterns:
   - '**/test-results/**'
   - '**/.husky/**'
   - '**/node_modules/**'
+  - '**/.turbo/**'
+  - '**/.vercel/**'
+  - '**/storybook-static/**'
+  - '**/.cache/**'
+  - '**/cypress/**'
+  - '**/.playwright/**'
+  - '**/.pnpm-store/**'
 
 # Commands Charlie runs to verify and fix code
 checkCommands:
@@ -33,7 +40,7 @@ beta:
   automaticallyReviewPullRequests: true
 
   # Skip posting review if no significant findings
-  skipEmptyReviews: false
+  skipEmptyReviews: true
 
   # Filter out non-actionable review comments
   filterReviewComments: true

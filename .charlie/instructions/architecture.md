@@ -152,7 +152,7 @@ export default async function Page() {
 
 ### Route Structure
 
-```
+```text
 /api/
 ├── auth/           # Better Auth routes
 ├── workouts/       # Workout CRUD operations
@@ -165,7 +165,7 @@ export default async function Page() {
 
 ### File Organization
 
-```
+```text
 src/
 ├── app/                    # Next.js app router pages
 │   └── dashboard/

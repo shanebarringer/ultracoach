@@ -2,7 +2,7 @@
 
 ## Code Style & Formatting
 
-- **NO COMMENTS**: Never add code comments unless explicitly requested by the user
+- **Prefer self-documenting code**: Add brief comments only for non-obvious intent, invariants, and public APIs
 - **Prettier formatting**: Always run `pnpm format` before committing changes
 - **ESLint compliance**: Code must pass `pnpm lint` without warnings
 - **TypeScript strict mode**: All code must have proper type annotations
