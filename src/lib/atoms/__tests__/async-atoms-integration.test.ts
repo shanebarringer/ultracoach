@@ -78,7 +78,7 @@ describe('Async Atoms Integration', () => {
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
             }),
-            credentials: 'include',
+            credentials: 'same-origin',
           })
         )
       })
@@ -163,7 +163,7 @@ describe('Async Atoms Integration', () => {
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
             }),
-            credentials: 'include',
+            credentials: 'same-origin',
           })
         )
       })
@@ -213,7 +213,7 @@ describe('Async Atoms Integration', () => {
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
             }),
-            credentials: 'include',
+            credentials: 'same-origin',
           })
         )
       })

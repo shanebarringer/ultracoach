@@ -47,6 +47,7 @@ reviews:
         - Database query optimization with Drizzle ORM
         - Rate limiting considerations
         - Security best practices (no exposed secrets)
+        - Correct fetch credentials usage (same-origin for internal APIs)
 
     # Database and schema files
     - path: '**/schema.ts'
@@ -73,6 +74,16 @@ reviews:
         - No hardcoded secrets or sensitive data
         - Proper environment variable usage
         - Consistent formatting
+
+    # HTTP client patterns (fetch calls)
+    - path: '**/*.{ts,tsx}'
+      instructions: |
+        Review fetch calls for proper credentials usage:
+        - Use 'credentials: same-origin' for all internal /api/* endpoints
+        - Use 'credentials: include' ONLY for cross-origin requests that require cookies
+        - Use 'credentials: omit' for public APIs that don't need authentication
+        - Prefer relative URLs (/api/...) over absolute URLs for internal APIs
+        - Ensure consistent error handling and proper Content-Type headers
 
   # Tools configuration
   tools:

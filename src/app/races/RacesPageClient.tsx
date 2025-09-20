@@ -134,7 +134,7 @@ function RacesContent() {
       const countPromises = racesArray.map(async (race: Race) => {
         try {
           const response = await fetch(`/api/races/${race.id}/training-plans`, {
-            credentials: 'include',
+            credentials: 'same-origin',
           })
           if (response.ok) {
             const data = await response.json()
@@ -216,7 +216,7 @@ function RacesContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify({
           ...formData,
           distance_miles: parseFloat(formData.distance_miles),
@@ -244,7 +244,7 @@ function RacesContent() {
     try {
       const response = await fetch(`/api/races/${raceId}`, {
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (response.ok) {

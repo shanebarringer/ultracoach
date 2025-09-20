@@ -91,7 +91,7 @@ describe('Messaging Atoms', () => {
           content: 'Test message',
           recipientId: 'recipient-id',
         }),
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       // Verify message was added to store
@@ -197,7 +197,7 @@ describe('Messaging Atoms', () => {
           recipientId: 'recipient-id',
           workoutId: 'workout-123',
         }),
-        credentials: 'include',
+        credentials: 'same-origin',
       })
     })
 

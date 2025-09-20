@@ -62,6 +62,34 @@ See `.context7-docs/nextjs/` for comprehensive guides:
 - `static-vs-dynamic-rendering.md` - Core concepts and solutions
 - `authentication-route-patterns.md` - Authentication implementation patterns
 - `production-deployment-checklist.md` - Production verification checklist
+- `fetch-credentials-best-practices.md` - Fetch credentials and API client patterns
+
+## 🌐 API Client Best Practices (IMPORTANT)
+
+**Always use `credentials: 'same-origin'` for internal API calls:**
+
+```typescript
+// ✅ CORRECT - For all /api/... endpoints
+const response = await fetch('/api/workouts', {
+  credentials: 'same-origin', // Default and recommended for same-domain
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// ❌ WRONG - Never use 'include' for internal APIs
+const response = await fetch('/api/workouts', {
+  credentials: 'include', // Overkill and unnecessary for same-domain
+})
+```
+
+### Key Principles:
+
+- **same-origin**: Use for all UltraCoach internal APIs (`/api/...`)
+- **include**: Only for cross-origin requests (external APIs like Strava)
+- **omit**: For public APIs that don't require authentication
+- **Relative URLs**: Always prefer `/api/...` over absolute URLs for internal calls
+- **Consistency**: All fetch calls in the codebase follow the same pattern
 
 ## 🗄️ Database Connection (IMPORTANT)
 

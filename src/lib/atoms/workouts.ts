@@ -22,38 +22,53 @@ function unwrapWorkout(json: unknown): Workout {
 export const workoutsAtom = atom<Workout[]>([])
 export const workoutsRefreshTriggerAtom = atom(0)
 
-// Cache to prevent re-fetching on every render
-let workoutsCache: { data: Workout[]; timestamp: number } | null = null
-const CACHE_DURATION = 5000 // 5 seconds cache to prevent flicker
+// User-specific cache to prevent data leakage between accounts
+const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
+const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
 
-  // Check cache to prevent unnecessary re-fetches
-  if (workoutsCache && Date.now() - workoutsCache.timestamp < CACHE_DURATION) {
-    return workoutsCache.data
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    return []
   }
 
   const { createLogger } = await import('@/lib/logger')
+  const { authClient } = await import('@/lib/better-auth-client')
   const logger = createLogger('AsyncWorkoutsAtom')
 
   try {
     logger.debug('Fetching workouts...')
 
-    // Determine the base URL based on environment
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+    // Check if user is authenticated first
+    const session = await authClient.getSession()
+    if (!session?.data?.user) {
+      logger.debug('No authenticated session found, returning empty workouts')
+      return []
+    }
 
+    const userId = session.data.user.id
+
+    // Check user-specific cache to prevent unnecessary re-fetches
+    const userCache = workoutsCache.get(userId)
+    if (userCache && Date.now() - userCache.timestamp < CACHE_DURATION) {
+      return userCache.data
+    }
+
+    // Use relative URL to ensure same-origin request with cookies
     // Create an AbortController with timeout for the fetch
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    const response = await fetch(`${baseUrl}/api/workouts`, {
+    // Use relative URL fetch with credentials included
+    const response = await fetch('/api/workouts', {
       headers: {
-        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
-      credentials: 'include',
+      credentials: 'same-origin', // Use same-origin to ensure cookies are included
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId))
 
@@ -67,21 +82,13 @@ export const asyncWorkoutsAtom = atom(async get => {
     const data = await response.json()
     const workouts = data.workouts || []
 
-    logger.info('Workouts fetched successfully', {
-      count: workouts.length,
-      sample: workouts.slice(0, 3).map((w: Workout) => ({
-        id: w.id,
-        date: w.date,
-        status: w.status,
-        planned_type: w.planned_type,
-      })),
-    })
+    logger.info('Workouts fetched successfully', { count: workouts.length })
 
-    // Cache the result to prevent re-fetching
-    workoutsCache = {
+    // Cache the result for this user to prevent re-fetching
+    workoutsCache.set(userId, {
       data: workouts as Workout[],
       timestamp: Date.now(),
-    }
+    })
 
     return workouts as Workout[]
   } catch (error) {
@@ -107,15 +114,43 @@ export const workoutsWithSuspenseAtom = atom(get => {
 })
 
 // Refresh action atom
-export const refreshWorkoutsAtom = atom(null, (get, set) => {
-  // Clear cache to force a real refresh
-  workoutsCache = null
+export const refreshWorkoutsAtom = atom(null, async (get, set) => {
+  // Clear current user's cache only for targeted invalidation
+  try {
+    const { authClient } = await import('@/lib/better-auth-client')
+    const session = await authClient.getSession()
+    if (session?.data?.user?.id) {
+      workoutsCache.delete(session.data.user.id)
+    } else {
+      // Fallback to clearing all caches if no session
+      workoutsCache.clear()
+    }
+  } catch {
+    // If session check fails, clear all caches as fallback
+    workoutsCache.clear()
+  }
+
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+
+  // Also trigger a re-fetch of async workouts by invalidating the cache
+  import('@/lib/logger').then(({ createLogger }) => {
+    const logger = createLogger('RefreshWorkoutsAtom')
+    logger.debug('Cache cleared and refresh triggered')
+  })
 })
 
 // Hydration atom to sync async workouts with sync atom
 export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
-  set(workoutsAtom, workouts)
+  import('@/lib/logger').then(({ createLogger }) => {
+    const logger = createLogger('HydrateWorkoutsAtom')
+
+    logger.debug('Hydrating workouts atom', {
+      count: workouts?.length || 0,
+      hasData: Array.isArray(workouts),
+    })
+  })
+
+  set(workoutsAtom, workouts || [])
 })
 
 // Selected workout atoms
@@ -279,24 +314,52 @@ export const completeWorkoutAtom = atom(
   null,
   async (get, set, { workoutId, data }: { workoutId: string; data?: WorkoutCompletionData }) => {
     const { createLogger } = await import('@/lib/logger')
+    const { authClient } = await import('@/lib/better-auth-client')
     const logger = createLogger('CompleteWorkoutAtom')
 
     try {
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
+      // Check authentication first
+      const session = await authClient.getSession()
+      if (!session?.data?.user) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify(data || {}),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to complete workout')
+        const errorText = await response.text()
+        logger.error('Failed to complete workout', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        })
+        throw new Error(`Failed to complete workout: ${response.status} ${errorText}`)
       }
 
-      const json: unknown = await response.json()
-      const updatedWorkout: Workout = unwrapWorkout(json)
+      let updatedWorkout: Workout
+      if (response.status === 204) {
+        // Handle 204 No Content - find existing workout and mark as completed
+        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+        if (!existingWorkout) {
+          logger.error('Workout not found in local state after completion', { workoutId })
+          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+        }
+        updatedWorkout = { ...existingWorkout, status: 'completed', ...data }
+      } else {
+        const json: unknown = await response.json()
+        updatedWorkout = unwrapWorkout(json)
+      }
+
+      logger.debug('Workout completion response received', {
+        workoutId,
+        updatedStatus: updatedWorkout.status,
+        hasActualDistance: !!updatedWorkout.actual_distance,
+      })
 
       // Update the workouts atom with the new status
       const workouts = get(workoutsAtom)
@@ -305,7 +368,17 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh to ensure all components update
+      // Invalidate current user's cache only
+      try {
+        const session = await authClient.getSession()
+        if (session?.data?.user?.id) {
+          workoutsCache.delete(session.data.user.id)
+        } else {
+          workoutsCache.clear()
+        }
+      } catch {
+        workoutsCache.clear()
+      }
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -345,24 +418,51 @@ export const logWorkoutDetailsAtom = atom(
   null,
   async (get, set, { workoutId, data }: { workoutId: string; data: WorkoutDetails }) => {
     const { createLogger } = await import('@/lib/logger')
+    const { authClient } = await import('@/lib/better-auth-client')
     const logger = createLogger('LogWorkoutDetailsAtom')
 
     try {
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/log`, {
+      // Check authentication first
+      const session = await authClient.getSession()
+      if (!session?.data?.user) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`/api/workouts/${workoutId}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify(data),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to log workout details')
+        const errorText = await response.text()
+        logger.error('Failed to log workout details', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        })
+        throw new Error(`Failed to log workout details: ${response.status} ${errorText}`)
       }
 
-      const json: unknown = await response.json()
-      const updatedWorkout: Workout = unwrapWorkout(json)
+      let updatedWorkout: Workout
+      if (response.status === 204) {
+        // Handle 204 No Content - find existing workout and apply updates
+        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+        if (!existingWorkout) {
+          logger.error('Workout not found in local state during logging', { workoutId })
+          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+        }
+        updatedWorkout = { ...existingWorkout, ...data } as Workout
+      } else {
+        const json: unknown = await response.json()
+        updatedWorkout = unwrapWorkout(json)
+      }
+
+      logger.debug('Workout details logged successfully', {
+        workoutId,
+        updatedFields: Object.keys(data),
+      })
 
       // Update the workouts atom with the new details
       const workouts = get(workoutsAtom)
@@ -371,7 +471,17 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh to ensure all components update
+      // Invalidate current user's cache only
+      try {
+        const session = await authClient.getSession()
+        if (session?.data?.user?.id) {
+          workoutsCache.delete(session.data.user.id)
+        } else {
+          workoutsCache.clear()
+        }
+      } catch {
+        workoutsCache.clear()
+      }
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
@@ -393,21 +503,49 @@ export const logWorkoutDetailsAtom = atom(
  */
 export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) => {
   const { createLogger } = await import('@/lib/logger')
+  const { authClient } = await import('@/lib/better-auth-client')
   const logger = createLogger('SkipWorkoutAtom')
 
   try {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-    const response = await fetch(`${baseUrl}/api/workouts/${workoutId}/complete`, {
+    // Check authentication first
+    const session = await authClient.getSession()
+    if (!session?.data?.user) {
+      throw new Error('Not authenticated')
+    }
+
+    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
       method: 'DELETE',
-      credentials: 'include',
+      credentials: 'same-origin',
     })
 
     if (!response.ok) {
-      throw new Error('Failed to skip workout')
+      const errorText = await response.text()
+      logger.error('Failed to skip workout', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+      })
+      throw new Error(`Failed to skip workout: ${response.status} ${errorText}`)
     }
 
-    const json: unknown = await response.json()
-    const updatedWorkout: Workout = unwrapWorkout(json)
+    let updatedWorkout: Workout
+    if (response.status === 204) {
+      // Handle 204 No Content - find existing workout and mark as skipped
+      const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
+      if (!existingWorkout) {
+        logger.error('Workout not found in local state during skip', { workoutId })
+        throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      }
+      updatedWorkout = { ...existingWorkout, status: 'skipped' }
+    } else {
+      const json: unknown = await response.json()
+      updatedWorkout = unwrapWorkout(json)
+    }
+
+    logger.debug('Workout skipped successfully', {
+      workoutId,
+      newStatus: updatedWorkout.status,
+    })
 
     // Update the workouts atom with the new status
     const workouts = get(workoutsAtom)
@@ -416,7 +554,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Trigger refresh to ensure all components update
+    // Clear cache and trigger refresh to ensure all components update
+    workoutsCache.clear()
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })

@@ -39,7 +39,7 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      credentials: 'same-origin',
     })
     if (!response.ok) {
       logger.error(`Failed to fetch training plans: ${response.status} ${response.statusText}`)

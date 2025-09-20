@@ -4,7 +4,7 @@ import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
-import { useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -14,13 +14,8 @@ import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useDashboardData } from '@/hooks/useDashboardData'
-import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
-import {
-  loadingStatesAtom,
-  uiStateAtom,
-  workoutStravaShowPanelAtom,
-  workoutsAtom,
-} from '@/lib/atoms/index'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
+import { uiStateAtom, workoutStravaShowPanelAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { ServerSession } from '@/utils/auth-server'
@@ -47,13 +42,18 @@ interface Props {
  * Handles workout interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */
-export default function WorkoutsPageClient({ user }: Props) {
-  useHydrateWorkouts() // Hydrate workouts at entry point
-  useWorkouts() // Initialize workouts data
+function WorkoutsPageClientInner({ user }: Props) {
+  // Hydrate workouts at entry point - this will trigger Suspense if needed
+  const hydratedWorkouts = useHydrateWorkouts()
   const [uiState, setUiState] = useAtom(uiStateAtom)
-  const [loadingStates] = useAtom(loadingStatesAtom)
   const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
+
+  logger.debug('WorkoutsPageClient rendering', {
+    userType: user.userType,
+    workoutCount: workouts.length,
+    hydratedCount: hydratedWorkouts?.length || 0,
+  })
 
   // Coach-specific state and data
   const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
@@ -95,7 +95,7 @@ export default function WorkoutsPageClient({ user }: Props) {
         }
 
         const response = await fetch(`/api/workouts?${params}`, {
-          credentials: 'include',
+          credentials: 'same-origin',
         })
 
         if (response.ok) {
@@ -258,15 +258,11 @@ export default function WorkoutsPageClient({ user }: Props) {
           {/* Note: Filtering is now handled by the enhanced workouts list component */}
 
           {/* Enhanced Workout List with Advanced Filtering */}
-          {loadingStates.workouts ? (
-            <WorkoutsPageSkeleton />
-          ) : (
-            <EnhancedWorkoutsList
-              userRole={user?.role as 'runner' | 'coach'}
-              onLogWorkout={handleWorkoutPress}
-              variant="default"
-            />
-          )}
+          <EnhancedWorkoutsList
+            userRole={user?.userType as 'runner' | 'coach'}
+            onLogWorkout={handleWorkoutPress}
+            variant="default"
+          />
 
           {uiState.selectedWorkout && (
             <WorkoutLogModal
@@ -296,5 +292,13 @@ export default function WorkoutsPageClient({ user }: Props) {
         </div>
       </ModernErrorBoundary>
     </Layout>
+  )
+}
+
+export default function WorkoutsPageClient({ user }: Props) {
+  return (
+    <Suspense fallback={<WorkoutsPageSkeleton />}>
+      <WorkoutsPageClientInner user={user} />
+    </Suspense>
   )
 }

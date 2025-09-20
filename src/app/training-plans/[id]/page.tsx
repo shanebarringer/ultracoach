@@ -90,7 +90,7 @@ export default function TrainingPlanDetailPage() {
     try {
       // Fetch plan phases
       const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
-        credentials: 'include',
+        credentials: 'same-origin',
       })
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
@@ -106,7 +106,7 @@ export default function TrainingPlanDetailPage() {
       if (trainingPlan.previous_plan_id) {
         const prevPlanResponse = await fetch(
           `/api/training-plans/${trainingPlan.previous_plan_id}`,
-          { credentials: 'include' }
+          { credentials: 'same-origin' }
         )
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
@@ -121,7 +121,7 @@ export default function TrainingPlanDetailPage() {
 
       if (trainingPlan.next_plan_id) {
         const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
-          credentials: 'include',
+          credentials: 'same-origin',
         })
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
@@ -199,7 +199,7 @@ export default function TrainingPlanDetailPage() {
     try {
       const response = await fetch(`/api/training-plans/${planId}`, {
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'same-origin',
       })
       if (response.ok) {
         commonToasts.trainingPlanDeleted()

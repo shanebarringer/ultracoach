@@ -84,7 +84,7 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
         })
 
         const response = await fetch(`/api/workouts?${params}`, {
-          credentials: 'include',
+          credentials: 'same-origin',
         })
 
         if (!response.ok) {
