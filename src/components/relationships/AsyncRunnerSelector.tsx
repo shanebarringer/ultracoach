@@ -70,7 +70,7 @@ export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelect
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Ensure cookies are sent with the request
+        credentials: 'same-origin', // Ensure cookies are sent with the request
         body: JSON.stringify({
           target_user_id: runnerId,
           relationship_type: 'standard',

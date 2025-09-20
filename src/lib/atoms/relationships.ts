@@ -85,7 +85,7 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      credentials: 'same-origin',
     })
     if (!response.ok) {
       logger.error(`Failed to fetch connected runners: ${response.status} ${response.statusText}`)
@@ -110,7 +110,7 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
   try {
     const response = await fetch('/api/coaches/available', {
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      credentials: 'same-origin',
     })
     if (!response.ok) return []
     const data = await response.json()
@@ -130,7 +130,7 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
   try {
     const response = await fetch('/api/runners/available', {
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      credentials: 'same-origin',
     })
     if (!response.ok) return []
     const data = await response.json()

@@ -38,7 +38,7 @@ export default function StravaConnectionCard() {
   const fetchStatus = async () => {
     try {
       const response = await fetch('/api/strava/status', {
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (response.ok) {
@@ -81,7 +81,7 @@ export default function StravaConnectionCard() {
     try {
       const response = await fetch('/api/strava/disconnect', {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (response.ok) {

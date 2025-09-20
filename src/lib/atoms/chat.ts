@@ -30,7 +30,7 @@ export const asyncConversationsAtom = atom(async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      credentials: 'same-origin',
       cache: 'no-store', // Ensure fresh data for SSR
     })
 
@@ -226,28 +226,37 @@ export const sendMessageActionAtom = atom(
           recipientId: payload.recipientId,
           workoutId: payload.workoutId,
         }),
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
         throw new Error('Failed to send message')
       }
 
-      const data = await response.json()
-      const realMessage = data.message || data
+      let messageWithSender
+      if (response.status === 204) {
+        // Handle 204 No Content - fall back to optimistic message, now finalized
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { tempId, ...finalizedMessage } = optimisticMessage
+        messageWithSender = { ...finalizedMessage, optimistic: false }
+      } else {
+        const data = await response.json()
+        const realMessage = data.message || data
 
-      // Ensure the real message has sender data
-      const messageWithSender = {
-        ...realMessage,
-        sender: realMessage.sender || {
-          id: user.id,
-          email: user.email,
-          userType: (user.userType || 'runner') as 'runner' | 'coach',
-          full_name: user.name || user.email || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        optimistic: false,
+        // Ensure the real message has sender data and sender_id for compatibility
+        messageWithSender = {
+          ...realMessage,
+          sender_id: realMessage.sender_id || user.id, // Ensure sender_id is set
+          sender: realMessage.sender || {
+            id: user.id,
+            email: user.email,
+            userType: (user.userType || 'runner') as 'runner' | 'coach',
+            full_name: user.name || user.email || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          optimistic: false,
+        }
       }
 
       // Replace optimistic message with real message
@@ -256,7 +265,7 @@ export const sendMessageActionAtom = atom(
       // Don't refetch - the optimistic update and replacement should be enough
       // The polling mechanism in useMessages will catch any missed updates
 
-      return realMessage
+      return messageWithSender
     } catch (error) {
       // Remove optimistic message on failure
       set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))

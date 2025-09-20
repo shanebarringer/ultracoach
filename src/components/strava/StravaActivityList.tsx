@@ -58,7 +58,7 @@ export default function StravaActivityList() {
   const fetchActivities = async () => {
     try {
       const response = await fetch('/api/strava/activities', {
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (response.ok) {
@@ -89,7 +89,7 @@ export default function StravaActivityList() {
     try {
       const response = await fetch('/api/strava/sync', {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           activity_id: activity.id,

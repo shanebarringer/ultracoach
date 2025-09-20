@@ -386,4 +386,48 @@ describe('Chat Atoms', () => {
       expect(getAtomValue(store, currentConversationIdAtom)).toBeNull()
     })
   })
+
+  describe('204 No Content Response Handling', () => {
+    it('should handle 204 response and finalize optimistic message', async () => {
+      // Mock 204 No Content response
+      fetchMock = mockFetch(
+        new Map([
+          [
+            '/api/messages',
+            {
+              ok: true,
+              status: 204,
+              statusText: 'No Content',
+              json: async () => {
+                throw new Error('204 responses have no content')
+              },
+              text: async () => '',
+            },
+          ],
+        ])
+      )
+
+      const payload = {
+        recipientId: 'recipient-id',
+        content: 'Test 204 message',
+      }
+
+      // Clear existing messages
+      setAtomValue(store, messagesAtom, [])
+
+      // Send message
+      const result = await store.set(sendMessageActionAtom, payload)
+
+      // Check that the optimistic message was finalized (not server data)
+      const messages = getAtomValue(store, messagesAtom)
+      expect(messages).toHaveLength(1)
+      expect(messages[0].content).toBe('Test 204 message')
+      expect(messages[0].optimistic).toBe(false) // Should be finalized
+      expect(messages[0].tempId).toBeUndefined() // Should be removed from finalized message
+
+      // Check return value is the finalized optimistic message
+      expect(result.content).toBe('Test 204 message')
+      expect(result.optimistic).toBe(false)
+    })
+  })
 })

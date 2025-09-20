@@ -28,7 +28,7 @@ export const asyncRacesAtom = atom(
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
