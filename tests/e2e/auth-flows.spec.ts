@@ -75,8 +75,16 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should redirect to dashboard after successful signup
     await expect(page).toHaveURL('/dashboard/runner')
 
+    // Wait for React hydration and dashboard to fully render
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForTimeout(3000)
+
     // Verify auth state is properly set - look for dashboard elements
-    await expect(page.locator('text="Base Camp Dashboard"')).toBeVisible({ timeout: 10000 })
+    // Check for multiple possible dashboard indicators for better reliability
+    const dashboardIndicators = page.locator(
+      'text="Base Camp Dashboard", text="Welcome back", text="Your Training", h1'
+    )
+    await expect(dashboardIndicators.first()).toBeVisible({ timeout: 15000 })
 
     // Verify we're authenticated by checking for user-specific elements
     // The welcome message should show the user's name

@@ -578,7 +578,11 @@ test.describe('Race Import Flow', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          importedCount: 3,
+          summary: {
+            successful: 3,
+            duplicates: 0,
+            errors: 0
+          },
           races: [
             { id: '1', name: 'Western States 100', location: 'Auburn, CA', distance: '100' },
             { id: '2', name: 'Leadville 100', location: 'Leadville, CO', distance: '100' },
