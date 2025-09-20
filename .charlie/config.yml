@@ -1,0 +1,52 @@
+# Charlie Configuration for UltraCoach
+# This file configures Charlie's behavior for code reviews and automated fixes
+
+# Patterns to exclude from extended diffs and context gathering
+ignorePatterns:
+  - '**/*.lock'
+  - '**/dist/**'
+  - '**/generated/**'
+  - '**/.next/**'
+  - '**/coverage/**'
+  - '**/playwright-report/**'
+  - '**/test-results/**'
+  - '**/.husky/**'
+  - '**/node_modules/**'
+  - '**/.turbo/**'
+  - '**/.vercel/**'
+  - '**/storybook-static/**'
+  - '**/.cache/**'
+  - '**/cypress/**'
+  - '**/.playwright/**'
+  - '**/.pnpm-store/**'
+
+# Commands Charlie runs to verify and fix code
+checkCommands:
+  # Auto-format code after making changes
+  fix: pnpm format
+
+  # Run linters to check code quality
+  lint: pnpm lint
+
+  # Verify TypeScript types
+  types: pnpm typecheck
+
+  # Run unit tests (not E2E)
+  test: pnpm test:run
+
+# Feature toggles and experimental options
+beta:
+  # Automatically review PRs when opened or marked ready
+  automaticallyReviewPullRequests: true
+
+  # Skip posting review if no significant findings
+  skipEmptyReviews: true
+
+  # Filter out non-actionable review comments
+  filterReviewComments: true
+
+  # Allow Charlie to approve PRs when appropriate
+  canApprovePullRequests: false
+
+  # Enforce all check commands (lint and test)
+  forceAllCheckCommands: true
