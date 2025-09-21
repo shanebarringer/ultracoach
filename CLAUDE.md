@@ -553,6 +553,50 @@ const sessionData: any = { user: { role: 'coach' } }
 const userRole = (sessionData.user as any).role || 'runner'
 ```
 
+## 🎭 Playwright MCP Investigation Process (CRITICAL)
+
+**Use Playwright MCP to investigate test failures and UI issues - it reveals real problems vs perceived issues**
+
+### 🔍 Investigation Process (REQUIRED)
+
+**When tests fail or UI issues are reported, follow this process:**
+
+1. **Start Playwright MCP Investigation**
+   ```bash
+   # Use Playwright MCP tools to navigate and test the UI directly
+   # This reveals actual behavior vs test assumptions
+   ```
+
+2. **Key Discoveries from Our GPX Upload Investigation**
+   - **Perceived Issue**: "UI hanging on GPX upload"
+   - **Real Issue**: Test selector conflict (`getByText()` finding multiple elements)
+   - **Solution**: Use specific `data-testid` selectors instead of ambiguous text selectors
+
+### ✅ Success Pattern: GPX Upload Debug (2025-09-20)
+
+**Problem**: Test failure with GPX upload appearing to "hang"
+**Investigation**: Used Playwright MCP to test upload functionality directly
+**Finding**: NO hang - upload processed immediately with proper error handling
+**Root Cause**: Test selector `getByText('Test Ultra Race')` resolved to 2 elements (strict mode violation)
+**Fix**: Changed to specific `getByTestId('race-name-0')` selector
+
+### 🎯 Best Practices
+
+1. **Don't Assume Performance Issues** - Test failures often indicate selector or timing problems, not actual performance issues
+2. **Use Playwright MCP First** - Before debugging code, use MCP to verify actual UI behavior
+3. **Fix Root Causes** - Address test infrastructure issues (selectors, timing) rather than patching symptoms
+4. **Specific Selectors** - Always prefer `data-testid` over text-based selectors for stability
+
+### 📋 Investigation Checklist
+
+- [ ] Use Playwright MCP to reproduce the "issue" manually
+- [ ] Compare expected vs actual behavior in browser
+- [ ] Check for selector conflicts (strict mode violations)
+- [ ] Verify timing issues vs actual functionality problems
+- [ ] Update test selectors to be more specific and reliable
+
+**Key Learning**: Playwright MCP investigation is essential for distinguishing between real bugs and test infrastructure problems.
+
 ---
 
 _This file is updated at the end of each development session. Always check `PLANNING.md` and `TASKS.md` - make sure to move completed tasks to `COMPLETED_MILESTONES.md` at the start of new conversations for current context and priorities._

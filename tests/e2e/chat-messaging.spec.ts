@@ -166,7 +166,7 @@ test.describe('Chat Messaging System', () => {
     })
 
     test.describe('Runner Tests', () => {
-      test.use({ storageState: './playwright/.auth/user.json' })
+      test.use({ storageState: './playwright/.auth/runner.json' })
 
       test('should send and receive messages', async ({ page }) => {
         // Sign in as runner using helper
@@ -565,7 +565,7 @@ test.describe('Chat Messaging System', () => {
   })
 
   test.describe('Basic Navigation', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should navigate to chat page', async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
