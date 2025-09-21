@@ -1,82 +1,97 @@
 #!/usr/bin/env bash
-
-# CI Auth Setup Script (hardened)
-# Ensures Playwright authentication state files exist and are valid before running E2E.
-# Compatible with local dev and CI.
+# Validate Playwright authentication artifacts in CI with robust checks and bounded wait.
+# - Portable shebang
+# - Strict mode to catch unset vars and pipeline failures
+# - Configurable AUTH_DIR/PLAYWRIGHT_AUTH_DIR and AUTH_WAIT_SECONDS
+# - Bounded wait for files to appear (default 15s)
+# - jq dependency check
+# - JSON validation: .cookies must exist and be an array
+# - Backward-compatible: supports runner.json and user.json (alias)
 
 set -euo pipefail
 
-# Configurable paths and timings
-# Prefer AUTH_DIR if provided, else PLAYWRIGHT_AUTH_DIR, else default
-AUTH_DIR=${AUTH_DIR:-${PLAYWRIGHT_AUTH_DIR:-playwright/.auth}}
-AUTH_WAIT_SECONDS=${AUTH_WAIT_SECONDS:-15}
+# Config
+DEFAULT_AUTH_DIR="playwright/.auth"
+AUTH_DIR="${AUTH_DIR:-${PLAYWRIGHT_AUTH_DIR:-$DEFAULT_AUTH_DIR}}"
+AUTH_WAIT_SECONDS="${AUTH_WAIT_SECONDS:-15}"
 
-RUNNER_AUTH_FILE="$AUTH_DIR/user.json"
-COACH_AUTH_FILE="$AUTH_DIR/coach.json"
-
-echo "🔐 Setting up CI authentication files..."
-echo "   AUTH_DIR=$AUTH_DIR"
-echo "   AUTH_WAIT_SECONDS=$AUTH_WAIT_SECONDS"
-
-# Ensure auth directory exists
-if [[ ! -d "$AUTH_DIR" ]]; then
-  echo "📁 Creating auth directory: $AUTH_DIR"
-  mkdir -p "$AUTH_DIR"
+# Normalize wait to integer (fallback to 15 on invalid)
+if ! [[ "$AUTH_WAIT_SECONDS" =~ ^[0-9]+$ ]]; then
+  echo "[setup-ci-auth] WARN: AUTH_WAIT_SECONDS=\"$AUTH_WAIT_SECONDS\" is not an integer. Using 15s." >&2
+  AUTH_WAIT_SECONDS=15
 fi
 
-# Wait for auth files to be created by Playwright setup projects
-missing=("$RUNNER_AUTH_FILE" "$COACH_AUTH_FILE")
-deadline=$(( $(date +%s) + AUTH_WAIT_SECONDS ))
+COACH_FILE="$AUTH_DIR/coach.json"
+RUNNER_FILE_PRIMARY="$AUTH_DIR/runner.json"
+RUNNER_FILE_ALIAS="$AUTH_DIR/user.json" # legacy alias
+
+# Dependency check: jq must exist
+if ! command -v jq >/dev/null 2>&1; then
+  echo "[setup-ci-auth] ERROR: jq is required but not installed." >&2
+  echo "Install jq on CI (e.g., sudo apt-get update && sudo apt-get install -y jq) or add \"uses: mikefarah/yq\" with jq shim." >&2
+  exit 2
+fi
+
+# Wait loop for files to appear
+start_ts=$(date +%s)
+end_ts=$((start_ts + AUTH_WAIT_SECONDS))
+
+runner_path=""
 
 while :; do
-  still_missing=()
-  for f in "${missing[@]}"; do
-    [[ -f "$f" ]] || still_missing+=("$f")
-  done
+  missing=()
 
-  if [[ ${#still_missing[@]} -eq 0 ]]; then
+  [[ -f "$COACH_FILE" ]] || missing+=("$COACH_FILE (coach auth)")
+
+  if [[ -f "$RUNNER_FILE_PRIMARY" ]]; then
+    runner_path="$RUNNER_FILE_PRIMARY"
+  elif [[ -f "$RUNNER_FILE_ALIAS" ]]; then
+    runner_path="$RUNNER_FILE_ALIAS"
+  else
+    missing+=("$RUNNER_FILE_PRIMARY or $RUNNER_FILE_ALIAS (runner auth)")
+  fi
+
+  if [[ ${#missing[@]} -eq 0 ]]; then
     break
   fi
 
   now=$(date +%s)
-  if (( now >= deadline )); then
-    echo "❌ Timed out waiting for auth files after ${AUTH_WAIT_SECONDS}s"
-    echo "   Missing files:"
-    for f in "${still_missing[@]}"; do
-      echo "   - $f"
-    done
-    echo "   Hint: Ensure Playwright setup projects ('setup' and 'setup-coach') ran successfully and write storageState to $AUTH_DIR"
+  if (( now >= end_ts )); then
+    echo "[setup-ci-auth] ERROR: Authentication files not found after ${AUTH_WAIT_SECONDS}s wait:" >&2
+    for m in "${missing[@]}"; do echo "  - $m" >&2; done
+    echo "[setup-ci-auth] HINT: Ensure Playwright auth setup projects ran before dependent tests (projects: setup, setup-coach)." >&2
+    echo "[setup-ci-auth]       Auth dir in use: $AUTH_DIR (override with AUTH_DIR or PLAYWRIGHT_AUTH_DIR)." >&2
     exit 1
   fi
-
-  echo "⏳ Waiting for auth files to be ready... (${#still_missing[@]} missing)"
   sleep 1
 done
 
-echo "✅ Auth files found:"
-echo "   - $RUNNER_AUTH_FILE"
-echo "   - $COACH_AUTH_FILE"
+# Validate JSON structure: cookies array must exist
+validate_json() {
+  local file="$1"
+  local label="$2"
+  if ! jq -e 'has("cookies") and (.cookies | type == "array")' "$file" >/dev/null; then
+    echo "[setup-ci-auth] ERROR: $label auth file invalid at $file: .cookies missing or not an array" >&2
+    return 1
+  fi
+  return 0
+}
 
-# jq dependency check
-if ! command -v jq >/dev/null 2>&1; then
-  echo "❌ 'jq' is required for JSON validation but was not found on PATH."
-  echo "   Please install jq in your CI image or skip validation by pre-validating files."
+errors=0
+validate_json "$COACH_FILE" "coach" || errors=$((errors+1))
+validate_json "${runner_path}" "runner" || errors=$((errors+1))
+
+if (( errors > 0 )); then
+  echo "[setup-ci-auth] One or more auth files are invalid JSON for Playwright storageState." >&2
   exit 1
 fi
 
-echo "🔍 Validating auth file structure..."
+# Success summary
+echo "[setup-ci-auth] OK: Auth files valid in $AUTH_DIR"
+[[ "$runner_path" == "$RUNNER_FILE_ALIAS" ]] && echo "[setup-ci-auth] Note: Using legacy alias user.json (runner.json also supported)."
 
-validate_auth_file() {
-  local file=$1
-  # Validate that JSON has a 'cookies' key and that it is an array
-  if ! jq -e 'has("cookies") and (.cookies | type == "array")' "$file" >/dev/null; then
-    echo "❌ Invalid auth file: $file — must contain an array at .cookies"
-    return 1
-  fi
-}
-
-validate_auth_file "$RUNNER_AUTH_FILE"
-validate_auth_file "$COACH_AUTH_FILE"
-
-echo "✅ Auth files are valid JSON with .cookies array"
-echo "🎯 CI authentication setup complete!"
+exit 0
+BASH
+sed -i "/<<<<<<<\|=======\|>>>>>>>/d" tests/e2e/chat-messaging.spec.ts tests/e2e/training-plan-management.spec.ts && 
+sed -i "s#Already authenticated via storageState – navigate directly#Already authenticated via storageState: navigate directly#" tests/e2e/chat-messaging.spec.ts && 
+sed -i "/<<<<<<<\|=======\|>>>>>>>/d" scripts/setup-ci-auth.sh && chmod +x scripts/setup-ci-auth.sh

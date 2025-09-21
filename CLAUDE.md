@@ -16,13 +16,15 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 ### 📋 Linear Workspace Organization
 
-**Projects**:
+### Projects
 
 - **Testing & Quality Assurance** - Current focus (Milestone 9)
 - **Production Hardening & Security** - Next phase (Milestone 10)
 - **Advanced Features & Integrations** - Future roadmap (Milestone 11)
 
-**Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
+### Key Labels
+
+`testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
 ### MCP Instructions
 
@@ -44,7 +46,7 @@ await page.getByTestId('race-name-0').click()
 
 ### Required Architecture Pattern
 
-**ALL authenticated routes MUST use Server/Client Component hybrid pattern:**
+### ALL authenticated routes MUST use Server/Client Component hybrid pattern
 
 ```typescript
 // page.tsx (Server Component) - Forces dynamic rendering
@@ -92,7 +94,7 @@ See `.context7-docs/nextjs/` for comprehensive guides:
 
 ### 🚫 CRITICAL: Server Component Anti-Pattern
 
-**NEVER fetch your own API routes from Server Components - this is a major anti-pattern:**
+### NEVER fetch your own API routes from Server Components - this is a major anti-pattern
 
 ```typescript
 // ❌ WRONG - Don't do this in Server Components
@@ -112,7 +114,7 @@ export default async function Page() {
 }
 ```
 
-**Why this matters:**
+### Why this matters
 
 - Fetching your own API routes creates unnecessary HTTP overhead
 - Server Components can access database/services directly
@@ -120,7 +122,7 @@ export default async function Page() {
 
 ### ✅ Client Component Patterns
 
-**Always use `credentials: 'same-origin'` for internal API calls:**
+### Always use `credentials: 'same-origin'` for internal API calls
 
 ```typescript
 // ✅ CORRECT - For all /api/... endpoints in Client Components
@@ -149,7 +151,7 @@ const response = await fetch('/api/workouts', {
 
 ## 🗄️ Database Connection (IMPORTANT)
 
-**Always use the proper database scripts - NEVER try to connect directly as local user!**
+### Always use the proper database scripts - NEVER try to connect directly as local user!
 
 ### Correct Database Commands:
 
@@ -175,9 +177,11 @@ supabase db dump --linked      # Dump production data
 
 ### Production Database Password
 
-**CRITICAL**: Production database password is stored in `.env.production`:
+### CRITICAL
 
-**When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
+Production database password is stored in `.env.production`:
+
+### When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production
 
 ## Git Commit Strategy:
 
@@ -205,7 +209,9 @@ supabase db dump --linked      # Dump production data
 
 ### Database Schema Fields (EXTREMELY IMPORTANT)
 
-**CRITICAL**: Better Auth uses specific field naming that MUST be followed exactly:
+### CRITICAL
+
+Better Auth uses specific field naming that MUST be followed exactly:
 
 - **Better Auth Role**: `role` field should be `'user'` (Better Auth standard)
 - **Application Role**: Use `user_type` field for coach/runner differentiation
@@ -243,7 +249,9 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 
 ### Password Hashing (CRITICAL)
 
-**IMPORTANT**: Better Auth uses its own password hashing format that is incompatible with bcrypt!
+### IMPORTANT
+
+Better Auth uses its own password hashing format that is incompatible with bcrypt!
 
 - **NEVER** use bcrypt to hash passwords for Better Auth users
 - **NEVER** manually create account records with bcrypt-generated password hashes
@@ -263,9 +271,21 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 - `scripts/create-test-users-automated.ts` - Creates test users via browser automation
 - `scripts/test-better-auth-signin.ts` - Tests sign-in functionality
 
+### E2E selector example
+
+Use stable, explicit test-id selectors instead of broad text selectors that can violate strict mode and become flaky.
+
+```ts
+// Before (flaky: strict mode violation)
+await page.getByText('Test Ultra Race').click()
+
+// After (stable: explicit test id)
+await page.getByTestId('race-name-0').click()
+```
+
 ### Client-Side Navigation Best Practices (CRITICAL - Added 2025-09-04):
 
-**NEVER use `window.location.href` for navigation in Next.js client components!**
+### NEVER use `window.location.href` for navigation in Next.js client components!
 
 - **✅ CORRECT**: Use `router.push()` from `useRouter` hook
 - **❌ WRONG**: `window.location.href = '/dashboard'` (causes full page reload)
@@ -289,9 +309,13 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 
 ### Critical Fix (2025-08-17):
 
-**✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
+### ✅ RESOLVED
 
-**Always** use proper JSON formatting when testing APIs:
+Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
+
+### Always
+
+use proper JSON formatting when testing APIs:
 
 ```bash
 # ✅ CORRECT - Use JSON file to avoid escaping issues
@@ -303,13 +327,17 @@ curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com
 
 ### Additional Fixes (2025-08-17):
 
-**✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
+### ✅ TRAINING PLAN TEMPLATES
+
+Created missing `/api/training-plans/templates` endpoint
 
 - **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
 - **Solution**: Created proper API endpoint with authentication and database integration
 - **Result**: 19 public templates now load correctly in training plan creation modal
 
-**✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
+### ✅ TYPESCRIPT IMPROVEMENTS
+
+Proper type extensions for Better Auth custom fields
 
 - **Issue**: Better Auth additionalFields not included in TypeScript signatures
 - **Solution**: Extended interfaces instead of using `any` types
@@ -430,7 +458,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
   - **Real-time Communication**: Coach-runner chat with typing indicators, message synchronization, and optimized loading states
 - **Current Status**: Platform transitioned from active feature development to production hardening and testing infrastructure
 
-**Next Phase Focus:**
+### Next Phase Focus
 
 - CI/CD pipeline stabilization and comprehensive testing coverage
 - Production monitoring, error tracking, and security hardening
@@ -465,7 +493,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 
 ## 🎯 Jotai Atom Usage Patterns (IMPORTANT)
 
-**Proper usage of Jotai hooks for optimal performance and type safety:**
+### Proper usage of Jotai hooks for optimal performance and type safety
 
 ### Reading Atoms
 
@@ -498,7 +526,9 @@ const races = useAtomValue(racesAtom)     // These are the SAME atom
 const setRaces = useSetAtom(racesAtom)    // being accessed twice
 ```
 
-**Key Point**: `racesAtom` is ONE atom. The different hooks (`useAtom`, `useAtomValue`, `useSetAtom`) are just different ways to access it based on your needs.
+### Key Point
+
+`racesAtom` is ONE atom. The different hooks (`useAtom`, `useAtomValue`, `useSetAtom`) are just different ways to access it based on your needs.
 
 ### Common Patterns
 
@@ -537,7 +567,7 @@ const setRaces = useSetAtom(racesAtom)    // being accessed twice
 
 ## 🚨 TypeScript Code Quality Standards (CRITICAL)
 
-**NEVER use `any` type - this is strictly forbidden**
+### NEVER use `any` type - this is strictly forbidden
 
 Instead, always:
 

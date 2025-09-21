@@ -169,9 +169,7 @@ test.describe('Chat Messaging System', () => {
       test.use({ storageState: './playwright/.auth/user.json' })
 
       test('should send and receive messages', async ({ page }) => {
-        // Already authenticated via storageState – navigate directly
-        await page.goto('/dashboard/runner')
-        await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+        // Already authenticated via storageState: navigate directly
 
         // Navigate directly to chat page
         await page.goto('/chat')
@@ -513,51 +511,51 @@ test.describe('Chat Messaging System', () => {
   })
 
   test.describe('Message State Management', () => {
-    test('should update messagesAtom in real-time', async ({ context, page }) => {
-      // Setup two tabs for real-time testing
-      // Tab 1: Coach
-      await page.goto('/auth/signin')
-      await page.getByLabel(/email/i).fill(TEST_USERS.coach.email)
-      await page.getByLabel(/password/i).fill(TEST_USERS.coach.password)
-      await page.getByLabel(/password/i).press('Enter')
+    test('should update messagesAtom in real-time', async ({ browser }) => {
+      const coachContext = await browser.newContext({
+        storageState: './playwright/.auth/coach.json',
+      })
+      const runnerContext = await browser.newContext({
+        storageState: './playwright/.auth/user.json',
+      })
+      try {
+        const coachPage = await coachContext.newPage()
+        const runnerPage = await runnerContext.newPage()
 
-      // Tab 2: Runner
-      const page2 = await context.newPage()
-      await page2.goto('/auth/signin')
-      await page2.getByLabel(/email/i).fill(TEST_USERS.runner.email)
-      await page2.getByLabel(/password/i).fill(TEST_USERS.runner.password)
-      await page2.getByLabel(/password/i).press('Enter')
+        // Both navigate to messages
+        await coachPage.goto('/chat')
+        await coachPage.waitForURL('/chat', { timeout: 10000 })
+        await runnerPage.goto('/chat')
+        await runnerPage.waitForURL('/chat', { timeout: 10000 })
 
-      // Both navigate to messages
-      await page.goto('/chat')
-      await page.waitForURL('/chat', { timeout: 10000 })
-      await page2.goto('/chat')
-      await page2.waitForURL('/chat', { timeout: 10000 })
+        // Open same conversation
+        const conversation = coachPage.locator('[data-testid="conversation-item"]').first()
+        if (await conversation.isVisible()) {
+          await conversation.click()
+          await runnerPage.locator('[data-testid="conversation-item"]').first().click()
 
-      // Open same conversation
-      const conversation = page.locator('[data-testid="conversation-item"]').first()
-      if (await conversation.isVisible()) {
-        await conversation.click()
-        await page2.locator('[data-testid="conversation-item"]').first().click()
+          // Count initial messages in runner view
+          const initialCount = await runnerPage.locator('[data-testid="message-bubble"]').count()
 
-        // Count initial messages in runner view
-        const initialCount = await page2.locator('[data-testid="message-bubble"]').count()
+          // Coach sends message
+          const testMessage = `Real-time test ${Date.now()}`
+          await coachPage.getByPlaceholder(/type a message/i).fill(testMessage)
+          await coachPage.getByRole('button', { name: /send/i }).click()
 
-        // Coach sends message
-        const testMessage = `Real-time test ${Date.now()}`
-        await page.getByPlaceholder(/type a message/i).fill(testMessage)
-        await page.getByRole('button', { name: /send/i }).click()
+          // Runner should receive message in real-time
+          await expect(
+            runnerPage.locator('[data-testid="message-bubble"]').filter({ hasText: testMessage })
+          ).toBeVisible({ timeout: 5000 })
 
-        // Runner should receive message in real-time
-        await expect(
-          page2.locator('[data-testid="message-bubble"]').filter({ hasText: testMessage })
-        ).toBeVisible({ timeout: 5000 })
+          // Message count should increase
+          const newCount = await runnerPage.locator('[data-testid="message-bubble"]').count()
+          expect(newCount).toBe(initialCount + 1)
 
-        // Message count should increase
-        const newCount = await page2.locator('[data-testid="message-bubble"]').count()
-        expect(newCount).toBe(initialCount + 1)
-
-        // messagesAtom synchronized across tabs
+          // messagesAtom synchronized across tabs
+        }
+      } finally {
+        await coachContext.close()
+        await runnerContext.close()
       }
     })
   })
