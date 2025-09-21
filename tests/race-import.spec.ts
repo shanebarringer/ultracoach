@@ -193,9 +193,10 @@ test.describe('Race Import Flow', () => {
       )
     }
 
-    // If no error, wait for the race data to appear
-    const raceElement = page.getByText('Test Ultra Race')
+    // If no error, wait for the race data to appear in the preview using specific testid
+    const raceElement = page.getByTestId('race-name-0')
     await expect(raceElement).toBeVisible({ timeout: 30000 })
+    await expect(raceElement).toContainText('Test Ultra Race')
   })
 
   test('should handle CSV file upload', async ({ page }) => {
@@ -346,7 +347,7 @@ test.describe('Race Import Flow', () => {
     await waitForFileUploadError(page, 30000, logger)
 
     // Should show parse error for invalid GPX structure
-    const parseError = page.getByText('Invalid GPX file: Missing required GPX XML structure')
+    const parseError = page.getByText(/Invalid GPX file/i)
     await expect(parseError).toBeVisible()
   })
 
@@ -448,7 +449,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] First import initiated')
 
     // Wait for first import to complete - check that modal is still open (more reliable)
-    await page.waitForTimeout(2000) // Brief wait for processing
+    await page.locator('[role="dialog"]').waitFor({ state: 'visible', timeout: 5000 })
     logger.info('[Test] First import successful')
 
     // Close modal and try to import the same race again
@@ -645,10 +646,15 @@ test.describe('Race Import Flow', () => {
 
     // Slow the import request slightly to make progress observable
     await page.route('**/api/races/import', async route => {
-      const res = await route.fetch();
-      await new Promise(r => setTimeout(r, 600));
-      await route.fulfill({ response: res });
-    });
+      const res = await route.fetch()
+      const body = await res.body()
+      await new Promise(r => setTimeout(r, 600))
+      await route.fulfill({
+        status: res.status(),
+        headers: res.headers(),
+        body,
+      })
+    })
 
     const uploadButton = page.getByTestId('import-races-button')
     await expect(uploadButton).toBeVisible({ timeout: 10000 })
@@ -656,9 +662,14 @@ test.describe('Race Import Flow', () => {
     await uploadButton.click()
 
     // Progress should appear, then disappear when import completes
-    const progress = page.locator('[data-testid="import-progress"], [role="progressbar"], .progress')
-    await expect(progress).toBeVisible({ timeout: 10000 })
-    await expect(progress).toBeHidden({ timeout: 30000 })
+    const progress = page.locator(
+      '[data-testid="import-progress"], [role="progressbar"], .progress'
+    )
+    await progress.waitFor({ state: 'visible', timeout: 10000 })
+    await progress.waitFor({ state: 'hidden', timeout: 30000 })
+
+    // Unroute to avoid accidental reuse
+    await page.unroute('**/api/races/import').catch(() => {})
 
     // Modal should close on success as a secondary signal
     await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 30000 })

@@ -89,7 +89,6 @@ export default defineConfig({
     {
       name: 'chromium-race-import-coach',
       testMatch: /race-import\.spec\.ts/,
-      grep: /should show progress indicator|should only allow coaches to import/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state

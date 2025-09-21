@@ -1079,7 +1079,11 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
                           <span>Importing races...</span>
                           <span>{Math.round(uploadProgress)}%</span>
                         </div>
-                        <Progress value={uploadProgress} color="primary" data-testid="import-progress" />
+                        <Progress
+                          value={uploadProgress}
+                          color="primary"
+                          data-testid="import-progress"
+                        />
                       </div>
                     )}
                   </>

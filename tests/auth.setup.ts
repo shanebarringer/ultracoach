@@ -37,7 +37,10 @@ setup('authenticate', async ({ page, context }) => {
 
   if (!response.ok()) {
     const body = await response.text()
-    logger.error('Auth API failed', { status: response.status(), body: body.slice(0, 500) })
+    logger.error('Auth API failed', {
+      status: response.status(),
+      bodyPreview: body.slice(0, 300).replace(TEST_RUNNER_EMAIL, '<redacted-email>'),
+    })
     throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
