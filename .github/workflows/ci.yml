@@ -312,6 +312,27 @@ jobs:
           pnpm exec playwright install chromium
         timeout-minutes: 5
 
+      - name: Run Playwright auth setup (runner and coach)
+        run: |
+          # Run only the auth setup projects to generate storageState files
+          npx playwright test --project=setup --project=setup-coach --reporter=dot --max-failures=1
+        env:
+          CI: true
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: http://localhost:3001
+          NEXT_PUBLIC_BASE_URL: http://localhost:3001
+          TEST_COACH_EMAIL: emma@ultracoach.dev
+          TEST_COACH_PASSWORD: UltraCoach2025!
+          TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
+          TEST_RUNNER_PASSWORD: RunnerPass2025!
+
+      - name: Validate Playwright auth artifacts
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          ./scripts/setup-ci-auth.sh
+
       - name: Verify app is ready before tests
         run: |
           echo "🔍 Checking if app is ready for tests..."

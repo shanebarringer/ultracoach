@@ -88,6 +88,7 @@ fi
 
 # Success summary
 echo "[setup-ci-auth] OK: Auth files valid in $AUTH_DIR"
-[[ "$runner_path" == "$RUNNER_FILE_ALIAS" ]] && echo "[setup-ci-auth] Note: Using legacy alias user.json (runner.json also supported)."
+[[ "$runner_path" == "$RUNNER_FILE_ALIAS" ]] && echo "[setup-ci-auth] DEPRECATED: Detected legacy alias 'user.json' for runner auth.
+[setup-ci-auth]            Please switch to 'runner.json'. Alias support will be removed after the deprecation window."
 
 exit 0

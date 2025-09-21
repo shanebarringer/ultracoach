@@ -166,7 +166,7 @@ test.describe('Chat Messaging System', () => {
     })
 
     test.describe('Runner Tests', () => {
-      test.use({ storageState: './playwright/.auth/user.json' })
+      test.use({ storageState: './playwright/.auth/runner.json' })
 
       test('should send and receive messages', async ({ page }) => {
         // Already authenticated via storageState: navigate directly
@@ -516,7 +516,7 @@ test.describe('Chat Messaging System', () => {
         storageState: './playwright/.auth/coach.json',
       })
       const runnerContext = await browser.newContext({
-        storageState: './playwright/.auth/user.json',
+        storageState: './playwright/.auth/runner.json',
       })
       try {
         const coachPage = await coachContext.newPage()
@@ -561,7 +561,7 @@ test.describe('Chat Messaging System', () => {
   })
 
   test.describe('Basic Navigation', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should navigate to chat page', async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated

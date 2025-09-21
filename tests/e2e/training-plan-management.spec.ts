@@ -415,7 +415,7 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Runner Training Plan Experience', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
