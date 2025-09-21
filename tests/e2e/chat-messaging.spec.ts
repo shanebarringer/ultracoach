@@ -169,11 +169,9 @@ test.describe('Chat Messaging System', () => {
       test.use({ storageState: './playwright/.auth/user.json' })
 
       test('should send and receive messages', async ({ page }) => {
-        // Sign in as runner using helper
-        await signIn(page, TEST_USERS.runner.email, TEST_USERS.runner.password)
-
-        // Verify we're authenticated and on the dashboard
-        await expect(page).toHaveURL('/dashboard/runner')
+        // Already authenticated via storageState – navigate directly
+        await page.goto('/dashboard/runner')
+        await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
 
         // Navigate directly to chat page
         await page.goto('/chat')

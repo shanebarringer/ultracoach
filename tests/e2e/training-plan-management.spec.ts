@@ -543,7 +543,8 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Training Plan State Management', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    // Use coach auth for coach-only operations invoked in these tests
+    test.use({ storageState: './playwright/.auth/coach.json' })
 
     test.skip('should update selectedTrainingPlanAtom on selection', async ({ page }) => {
       // Navigate directly to training plans page - we're already authenticated
