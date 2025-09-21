@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 ## 🔄 Session Workflow (IMPORTANT)
 
-**At the start of EVERY new conversation:**
+### At the start of EVERY new conversation
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
 2. **Check Linear workspace** at https://linear.app/ultracoach to see current milestone, pending tasks, and priorities
@@ -25,6 +25,22 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 **Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
 ### MCP Instructions
+
+### Use Playwright MCP to investigate test failures and UI issues
+
+Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors.
+
+#### Concrete selector example
+
+```typescript
+// Before (flaky: strict mode violation)
+await page.getByText('Test Ultra Race').click()
+
+// After (stable: explicit test id)
+await page.getByTestId('race-name-0').click()
+```
+
+- When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 

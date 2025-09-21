@@ -415,7 +415,7 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Runner Training Plan Experience', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
+    test.use({ storageState: './playwright/.auth/user.json' })
 
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
@@ -543,7 +543,7 @@ test.describe('Training Plan Management', () => {
   })
 
   test.describe('Training Plan State Management', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
+    test.use({ storageState: './playwright/.auth/coach.json' })
 
     test.skip('should update selectedTrainingPlanAtom on selection', async ({ page }) => {
       // Navigate directly to training plans page - we're already authenticated
