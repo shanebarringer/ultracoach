@@ -91,7 +91,3 @@ echo "[setup-ci-auth] OK: Auth files valid in $AUTH_DIR"
 [[ "$runner_path" == "$RUNNER_FILE_ALIAS" ]] && echo "[setup-ci-auth] Note: Using legacy alias user.json (runner.json also supported)."
 
 exit 0
-BASH
-sed -i "/<<<<<<<\|=======\|>>>>>>>/d" tests/e2e/chat-messaging.spec.ts tests/e2e/training-plan-management.spec.ts && 
-sed -i "s#Already authenticated via storageState – navigate directly#Already authenticated via storageState: navigate directly#" tests/e2e/chat-messaging.spec.ts && 
-sed -i "/<<<<<<<\|=======\|>>>>>>>/d" scripts/setup-ci-auth.sh && chmod +x scripts/setup-ci-auth.sh
