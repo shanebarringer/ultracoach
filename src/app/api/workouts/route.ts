@@ -1,4 +1,5 @@
-import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { endOfDay, isValid, parseISO } from 'date-fns'
+import { SQL, and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
-    const conditions = []
+    const conditions: SQL[] = []
 
     if (sessionUser.userType === 'coach') {
       // Check runnerId authorization first
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
 
       // Coach can see workouts where:
       // 1. They own the training plan AND the runner is in their authorized relationships
-      // 2. OR the workout has no training plan (allow for standalone workouts)
+      // 2. OR standalone workouts for authorized runners only
       const coachAccessCondition = or(
         // Has training plan and coach owns it and runner is authorized
         and(
@@ -130,9 +131,16 @@ export async function GET(request: NextRequest) {
               ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
               : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
-        // OR workout has no training plan (workout.training_plan_id is null)
-        isNull(workouts.training_plan_id)
-      )
+        // OR standalone workouts for authorized runners only
+        and(
+          isNull(workouts.training_plan_id),
+          runnerId
+            ? eq(workouts.user_id, runnerId)
+            : authorizedUserIds.length > 0
+              ? or(...authorizedUserIds.map(id => eq(workouts.user_id, id)))
+              : eq(workouts.user_id, sessionUser.id) // fallback: none if no auth
+        ) as SQL
+      ) as SQL
 
       conditions.push(coachAccessCondition)
     } else {
@@ -147,49 +155,45 @@ export async function GET(request: NextRequest) {
           // Has training plan and runner is the user and coach is authorized
           and(
             eq(training_plans.runner_id, sessionUser.id),
-            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
+            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id))) as SQL
           ),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       } else {
         // No active relationships - allow runner to see workouts assigned to them in training plans
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       }
 
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering
+    // Apply date filtering with validation using date-fns
     if (startDate) {
-      conditions.push(gte(workouts.date, new Date(startDate)))
+      const sd = parseISO(startDate)
+      if (isValid(sd)) conditions.push(gte(workouts.date, sd))
     }
     if (endDate) {
-      conditions.push(lte(workouts.date, new Date(endDate)))
+      const ed = parseISO(endDate)
+      if (isValid(ed)) {
+        // Set to end of day to include all workouts on that date
+        const endOfDayDate = endOfDay(ed)
+        conditions.push(lte(workouts.date, endOfDayDate))
+      }
     }
 
     // Execute query with conditions
     const query =
       conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
 
-    const results = await query.orderBy(asc(workouts.date))
+    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
-    logger.debug('Raw query results:', {
-      count: results.length,
-      results: results.map(r => ({
-        id: r.id,
-        date: r.date,
-        planned_type: r.planned_type,
-        training_plan_id: r.training_plan_id,
-        coach_id: r.coach_id,
-        plan_runner_id: r.plan_runner_id,
-      })),
-    })
+    logger.debug('Raw query results:', { count: results.length })
 
     // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = results.map(
@@ -202,12 +206,6 @@ export async function GET(request: NextRequest) {
       sessionRole: sessionUser.userType,
       requestedRunnerId: runnerId,
       authorizedUserIds,
-      cleanedWorkouts: cleanedWorkouts.map(w => ({
-        id: w.id,
-        date: w.date,
-        planned_type: w.planned_type,
-        training_plan_id: w.training_plan_id,
-      })),
     })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {
