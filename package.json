@@ -11,7 +11,7 @@
     "dev:local": "concurrently \"supabase start\" \"next dev -p 3001\"",
     "dev:db": "supabase start",
     "build": "next build",
-    "build:charlie": "cp .env.charlie .env.local && next build && rm .env.local",
+    "build:charlie": "bash -c 'if [ -f .env.local ]; then mv .env.local .env.local.backup; fi; cp .env.charlie .env.local; next build; rm .env.local; if [ -f .env.local.backup ]; then mv .env.local.backup .env.local; fi'",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

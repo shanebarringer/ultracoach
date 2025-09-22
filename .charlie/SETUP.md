@@ -9,6 +9,7 @@ Charlie now includes `pnpm build:charlie` as a check command, allowing it to ver
 ## How It Works
 
 ### Build Command
+
 - **Command**: `pnpm build:charlie`
 - **What it does**:
   1. Copies `.env.charlie` to `.env.local` temporarily
@@ -17,11 +18,13 @@ Charlie now includes `pnpm build:charlie` as a check command, allowing it to ver
 - **Purpose**: Catches TypeScript errors, missing dependencies, and build-time issues
 
 ### Environment Variables
+
 - **File**: `.env.charlie` (tracked in version control)
 - **Contents**: Dummy values that allow Next.js to build successfully
 - **Safety**: All values are fake/dummy credentials, safe to commit publicly
 
 ### Configuration
+
 - **File**: `.charlie/config.yml`
 - **Check Commands**:
   - `fix: pnpm format` - Auto-format code
@@ -46,27 +49,30 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm test:run && pnpm build:charli
 
 The `.env.charlie` file contains minimal dummy values required for Next.js build:
 
-| Variable | Purpose | Value |
-|----------|---------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase endpoint | Dummy URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public key | Dummy key |
-| `BETTER_AUTH_SECRET` | Auth encryption secret | 64-char hex dummy |
-| `DATABASE_URL` | Database connection | Dummy PostgreSQL URL |
-| `NODE_ENV` | Environment mode | `production` |
+| Variable                        | Purpose                | Value                |
+| ------------------------------- | ---------------------- | -------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase endpoint      | Dummy URL            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public key    | Dummy key            |
+| `BETTER_AUTH_SECRET`            | Auth encryption secret | 64-char hex dummy    |
+| `DATABASE_URL`                  | Database connection    | Dummy PostgreSQL URL |
+| `NODE_ENV`                      | Environment mode       | `production`         |
 
 ## Troubleshooting
 
 ### Build Fails with "Missing Environment Variable"
+
 1. Check if the variable is defined in `.env.charlie`
 2. Add missing variables with dummy values
 3. Ensure the variable is referenced correctly in code
 
 ### Build Fails with TypeScript Errors
+
 1. Fix TypeScript errors in the codebase
 2. Run `pnpm typecheck` locally to verify
 3. The build command will catch these before merge
 
 ### Build Succeeds Locally but Fails for Charlie
+
 1. Ensure `.env.charlie` is committed to version control
 2. Check that `build:charlie` script exists in `package.json`
 3. Verify `.charlie/config.yml` includes the build command
@@ -81,11 +87,13 @@ The `.env.charlie` file contains minimal dummy values required for Next.js build
 ## Maintenance
 
 ### Adding New Environment Variables
+
 1. Add dummy values to `.env.charlie`
 2. Test locally with `pnpm build:charlie`
 3. Commit changes
 
 ### Updating Dummy Values
+
 - Keep dummy values clearly identifiable as fake
 - Ensure they meet format requirements (URL, length, etc.)
 - Test after changes to ensure build still works

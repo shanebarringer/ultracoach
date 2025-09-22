@@ -89,6 +89,10 @@ export const commonToasts = {
     toast.success('Training plan created!', 'Your new training plan is ready'),
   trainingPlanSaved: () =>
     toast.success('Training plan saved', 'Your changes have been saved successfully'),
+  trainingPlanArchived: () =>
+    toast.success('Training plan archived', 'The training plan has been archived'),
+  trainingPlanRestored: () =>
+    toast.success('Training plan restored', 'The training plan has been restored'),
   trainingPlanDeleted: () =>
     toast.success('Training plan deleted', 'The training plan has been removed'),
   trainingPlanError: (error?: string) =>

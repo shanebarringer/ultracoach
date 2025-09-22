@@ -121,6 +121,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     onPress={refreshTrainingPlans}
                     isIconOnly
                     aria-label="Refresh training plans"
+                    isDisabled={isLoading}
                     className="border-primary/20 hover:border-primary/40"
                   >
                     <RefreshCw className="h-4 w-4" />
