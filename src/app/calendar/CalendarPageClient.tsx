@@ -2,7 +2,7 @@
 
 import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 
 import { Suspense, memo, useCallback, useRef } from 'react'
 
@@ -77,11 +77,11 @@ interface Props {
 function CalendarContent({ user }: Props) {
   const router = useRouter()
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
-  const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
-  const [workoutStats] = useAtom(workoutStatsAtom)
+  const filteredWorkouts = useAtomValue(filteredWorkoutsAtom)
+  const workoutStats = useAtomValue(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
-  const [trainingPlans] = useAtom(refreshableTrainingPlansAtom) // Using async atom
-  const [connectedRunners] = useAtom(connectedRunnersDataAtom) // Data only
+  const trainingPlans = useAtomValue(refreshableTrainingPlansAtom) // Using async atom
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom) // Data only
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)

@@ -70,13 +70,18 @@ apiClient.interceptors.response.use(
         status,
         url: config?.url,
         method: config?.method?.toUpperCase(),
-        errorData: data,
+        message:
+          typeof data === 'string'
+            ? data.slice(0, 200)
+            : ((data as Record<string, unknown>)?.error ??
+              (data as Record<string, unknown>)?.message ??
+              'Unknown error'),
       })
 
       // Don't show toast for specific status codes that components handle
       if (status !== 401 && status !== 403) {
-        // Only show toast if not in a test environment
-        if (typeof window !== 'undefined' && !window.location.href.includes('test')) {
+        // Only show toast if error toasts are not disabled
+        if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS) {
           commonToasts.serverError()
         }
       }
@@ -88,7 +93,7 @@ apiClient.interceptors.response.use(
         message: error.message,
       })
 
-      if (typeof window !== 'undefined' && !window.location.href.includes('test')) {
+      if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS) {
         commonToasts.networkError()
       }
     } else {

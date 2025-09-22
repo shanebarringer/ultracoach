@@ -111,8 +111,7 @@ export default function CreateTrainingPlanModal({
   const fetchInitialData = useCallback(
     async (signal: AbortSignal) => {
       // Fetch races using Axios
-      const racesArray = Array.isArray(races) ? races : []
-      if (racesArray.length === 0) {
+      if (races.length === 0) {
         try {
           const response = await api.get<unknown[]>('/api/races', { signal })
           setRaces(Array.isArray(response.data) ? (response.data as typeof races) : [])
@@ -145,7 +144,7 @@ export default function CreateTrainingPlanModal({
         }
       }
     },
-    [races, setRaces, planTemplates.length, setPlanTemplates]
+    [races.length, setRaces, planTemplates.length, setPlanTemplates]
   )
 
   useEffect(() => {

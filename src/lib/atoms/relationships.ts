@@ -135,9 +135,6 @@ export const connectedRunnersDataAtom = atom(get => {
 
 export const connectedRunnersLoadingAtom = atom(get => {
   const loadable = get(connectedRunnersLoadableAtom)
-  if (loadable.state === 'hasData') {
-    return loadable.data.isLoading || !loadable.data.hasLoaded
-  }
   return loadable.state === 'loading'
 })
 
