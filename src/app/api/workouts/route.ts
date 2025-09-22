@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { and, desc, eq, gte, isNull, lte, or, SQL } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
-    const conditions = []
+    const conditions: SQL[] = []
 
     if (sessionUser.userType === 'coach') {
       // Check runnerId authorization first
@@ -119,27 +119,46 @@ export async function GET(request: NextRequest) {
 
       // Coach can see workouts where:
       // 1. They own the training plan AND the runner is in their authorized relationships
-      // 2. OR the workout has no training plan (allow for standalone workouts)
-      const coachAccessCondition = or(
-        // Has training plan and coach owns it and runner is authorized
-        and(
-          eq(training_plans.coach_id, sessionUser.id),
-          runnerId
-            ? eq(training_plans.runner_id, runnerId)
-            : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
-              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
-        ),
-        // OR workout has no training plan (workout.training_plan_id is null)
-        isNull(workouts.training_plan_id)
-      )
+      // 2. OR standalone workouts for authorized runners only
+      let coachAccessCondition: SQL
+
+      if (runnerId) {
+        // Specific runner requested
+        coachAccessCondition = or(
+          and(
+            eq(training_plans.coach_id, sessionUser.id),
+            eq(training_plans.runner_id, runnerId)
+          ),
+          and(
+            isNull(workouts.training_plan_id),
+            eq(workouts.user_id, runnerId)
+          )
+        ) as SQL
+      } else if (authorizedUserIds.length > 0) {
+        // Show workouts for all authorized runners
+        const runnerConditions = authorizedUserIds.map(id => eq(training_plans.runner_id, id))
+        const userConditions = authorizedUserIds.map(id => eq(workouts.user_id, id))
+        coachAccessCondition = or(
+          and(
+            eq(training_plans.coach_id, sessionUser.id),
+            or(...runnerConditions)
+          ),
+          and(
+            isNull(workouts.training_plan_id),
+            or(...userConditions)
+          )
+        ) as SQL
+      } else {
+        // No authorized runners - coach sees nothing
+        coachAccessCondition = eq(workouts.id, 'impossible-id') // Never matches
+      }
 
       conditions.push(coachAccessCondition)
     } else {
       // Runner can see workouts where:
       // 1. They are the runner in a training plan (from any coach - simplified for now)
       // 2. OR the workout has no training plan (standalone workouts)
-      let runnerAccessCondition
+      let runnerAccessCondition: SQL
 
       if (authorizedUserIds.length > 0) {
         // Has active relationships - use normal authorization
@@ -149,47 +168,44 @@ export async function GET(request: NextRequest) {
             eq(training_plans.runner_id, sessionUser.id),
             or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
           ),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       } else {
         // No active relationships - allow runner to see workouts assigned to them in training plans
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       }
 
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering
+    // Apply date filtering with validation
     if (startDate) {
-      conditions.push(gte(workouts.date, new Date(startDate)))
+      const sd = new Date(startDate)
+      if (!Number.isNaN(sd.getTime())) conditions.push(gte(workouts.date, sd))
     }
     if (endDate) {
-      conditions.push(lte(workouts.date, new Date(endDate)))
+      const ed = new Date(endDate)
+      if (!Number.isNaN(ed.getTime())) {
+        // Set to end of day to include all workouts on that date
+        const endOfDay = new Date(ed)
+        endOfDay.setHours(23, 59, 59, 999)
+        conditions.push(lte(workouts.date, endOfDay))
+      }
     }
 
     // Execute query with conditions
     const query =
       conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
 
-    const results = await query.orderBy(asc(workouts.date))
+    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
-    logger.debug('Raw query results:', {
-      count: results.length,
-      results: results.map(r => ({
-        id: r.id,
-        date: r.date,
-        planned_type: r.planned_type,
-        training_plan_id: r.training_plan_id,
-        coach_id: r.coach_id,
-        plan_runner_id: r.plan_runner_id,
-      })),
-    })
+    logger.debug('Raw query results:', { count: results.length })
 
     // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = results.map(
