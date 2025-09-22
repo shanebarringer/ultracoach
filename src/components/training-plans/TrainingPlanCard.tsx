@@ -191,23 +191,23 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 <EllipsisVerticalIcon className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
-            <DropdownMenu>
+            <DropdownMenu
+              onAction={key => {
+                if (key === 'archive') {
+                  handleArchiveToggle()
+                } else if (key === 'delete') {
+                  handleDeleteClick()
+                }
+                // Edit and duplicate actions can be handled later
+              }}
+              disabledKeys={isArchiving || isDeleting ? ['archive', 'delete'] : []}
+            >
               <DropdownItem key="edit">Edit Plan</DropdownItem>
               <DropdownItem key="duplicate">Duplicate</DropdownItem>
-              <DropdownItem
-                key="archive"
-                color="warning"
-                onClick={handleArchiveToggle}
-                isDisabled={isArchiving || isDeleting}
-              >
+              <DropdownItem key="archive" color="warning">
                 {isArchiving ? 'Updating...' : plan.archived ? 'Restore Plan' : 'Archive Plan'}
               </DropdownItem>
-              <DropdownItem
-                key="delete"
-                color="danger"
-                onClick={handleDeleteClick}
-                isDisabled={isDeleting}
-              >
+              <DropdownItem key="delete" color="danger">
                 {isDeleting ? 'Deleting...' : 'Delete Plan'}
               </DropdownItem>
             </DropdownMenu>

@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   title: string
   message: string
   confirmText?: string
@@ -25,9 +25,14 @@ export default function ConfirmModal({
   confirmColor = 'danger',
   isLoading = false,
 }: ConfirmModalProps) {
-  const handleConfirm = () => {
-    onConfirm()
-    onClose()
+  const handleConfirm = async () => {
+    try {
+      await onConfirm()
+      onClose()
+    } catch {
+      // Error handling is done by the calling component
+      // Don't close modal on error so user can retry
+    }
   }
 
   return (
