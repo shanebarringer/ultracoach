@@ -173,7 +173,12 @@ export const completedWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   return workouts
     .filter((w: Workout) => w.status === 'completed')
-    .sort((a, b) => compareDatesDesc(a.date, b.date))
+    .sort((a, b) => {
+      const primary = compareDatesDesc(a.date, b.date)
+      if (primary !== 0) return primary
+      // Stable tie-breaker by created_at (newest first)
+      return compareDatesDesc(a.created_at, b.created_at)
+    })
 })
 
 export const thisWeekWorkoutsAtom = atom(get => {

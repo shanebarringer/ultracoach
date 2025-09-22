@@ -1,5 +1,5 @@
 import { endOfDay, isValid, parseISO } from 'date-fns'
-import { SQL, and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -115,32 +115,38 @@ export async function GET(request: NextRequest) {
           requestedRunnerId: runnerId,
           authorizedRunnerIds: authorizedUserIds,
         })
-        return NextResponse.json({ workouts: [] })
+        return NextResponse.json({ error: 'Forbidden: unauthorized runnerId' }, { status: 403 })
       }
 
       // Coach can see workouts where:
       // 1. They own the training plan AND the runner is in their authorized relationships
       // 2. OR standalone workouts for authorized runners only
-      const coachAccessCondition = or(
-        // Has training plan and coach owns it and runner is authorized
-        and(
-          eq(training_plans.coach_id, sessionUser.id),
-          runnerId
-            ? eq(training_plans.runner_id, runnerId)
-            : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
-              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
-        ),
-        // OR standalone workouts for authorized runners only
-        and(
-          isNull(workouts.training_plan_id),
-          runnerId
-            ? eq(workouts.user_id, runnerId)
-            : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(workouts.user_id, id)))
-              : eq(workouts.user_id, sessionUser.id) // fallback: none if no auth
-        ) as SQL
-      ) as SQL
+      // Build coach-access branches explicitly to avoid accidental broadening
+      const coachBranches: SQL[] = []
+
+      if (runnerId) {
+        // runnerId authorization already verified above
+        coachBranches.push(
+          and(eq(training_plans.coach_id, sessionUser.id), eq(training_plans.runner_id, runnerId)) as SQL
+        )
+        coachBranches.push(
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, runnerId)) as SQL
+        )
+      } else if (authorizedUserIds.length > 0) {
+        coachBranches.push(
+          and(
+            eq(training_plans.coach_id, sessionUser.id),
+            inArray(training_plans.runner_id, authorizedUserIds)
+          ) as SQL
+        )
+        coachBranches.push(
+          and(isNull(workouts.training_plan_id), inArray(workouts.user_id, authorizedUserIds)) as SQL
+        )
+      }
+
+      // If no branches matched (no authorized runners), deny at the condition level
+      const coachAccessCondition =
+        coachBranches.length > 0 ? (or(...coachBranches) as SQL) : (sql`false` as SQL)
 
       conditions.push(coachAccessCondition)
     } else {
@@ -155,7 +161,7 @@ export async function GET(request: NextRequest) {
           // Has training plan and runner is the user and coach is authorized
           and(
             eq(training_plans.runner_id, sessionUser.id),
-            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id))) as SQL
+            inArray(training_plans.coach_id, authorizedUserIds) as SQL
           ),
           // OR standalone workouts owned by this runner
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))

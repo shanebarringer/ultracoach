@@ -1,6 +1,14 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
+import {
+  endOfWeek,
+  isSameDay,
+  isWithinInterval,
+  parse as parseFmt,
+  parseISO,
+  startOfWeek,
+} from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
@@ -73,22 +81,25 @@ const EnhancedWorkoutsList = memo(
       // Apply quick filter first
       if (quickFilter !== 'all') {
         const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
+        const weekStart = startOfWeek(today, { weekStartsOn: 0 })
+        const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
 
-        const startOfWeek = new Date(today)
-        startOfWeek.setDate(today.getDate() - today.getDay())
-        const endOfWeek = new Date(today)
-        endOfWeek.setDate(today.getDate() + (6 - today.getDay()))
+        const parseInput = (d?: string) => {
+          if (!d) return null
+          return d.includes('T') ? parseISO(d) : parseFmt(d, 'yyyy-MM-dd', new Date())
+        }
 
         switch (quickFilter) {
           case 'today':
-            filtered = filtered.filter(workout => workout.date?.startsWith(todayStr))
+            filtered = filtered.filter(workout => {
+              const d = parseInput(workout.date)
+              return d ? isSameDay(d, today) : false
+            })
             break
           case 'this-week':
             filtered = filtered.filter(workout => {
-              if (!workout.date) return false
-              const workoutDate = new Date(workout.date)
-              return workoutDate >= startOfWeek && workoutDate <= endOfWeek
+              const d = parseInput(workout.date)
+              return d ? isWithinInterval(d, { start: weekStart, end: weekEnd }) : false
             })
             break
           case 'completed':
@@ -122,11 +133,33 @@ const EnhancedWorkoutsList = memo(
 
       // Apply sorting
       const sorted = [...filtered].sort((a, b) => {
+        const cmpDesc = (da?: string, db?: string) => {
+          const aDate = da
+            ? da.includes('T')
+              ? parseISO(da)
+              : parseFmt(da, 'yyyy-MM-dd', new Date())
+            : new Date(0)
+          const bDate = db
+            ? db.includes('T')
+              ? parseISO(db)
+              : parseFmt(db, 'yyyy-MM-dd', new Date())
+            : new Date(0)
+          return bDate.getTime() - aDate.getTime()
+        }
+        const cmpAsc = (da?: string, db?: string) => -cmpDesc(da, db)
         switch (sortBy) {
-          case 'date-desc':
-            return new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
-          case 'date-asc':
-            return new Date(a.date || '').getTime() - new Date(b.date || '').getTime()
+          case 'date-desc': {
+            const primary = cmpDesc(a.date, b.date)
+            if (primary !== 0) return primary
+            // Stable tie-breaker by created_at (newest first)
+            return cmpDesc(a.created_at, b.created_at)
+          }
+          case 'date-asc': {
+            const primary = cmpAsc(a.date, b.date)
+            if (primary !== 0) return primary
+            // Tie-breaker by created_at (oldest first to match asc)
+            return cmpAsc(a.created_at, b.created_at)
+          }
           case 'type':
             return (a.planned_type || '').localeCompare(b.planned_type || '')
           case 'status':

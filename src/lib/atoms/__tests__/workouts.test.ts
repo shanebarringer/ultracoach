@@ -4,9 +4,11 @@
  *
  * Tests the workout-related atoms from the actual implementation
  */
+import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
 import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { completedWorkoutsAtom, thisWeeksWorkoutsAtom, todaysWorkoutsAtom } from '@/lib/atoms/index'
 import {
   completeWorkoutAtom,
   editingWorkoutIdAtom,
@@ -216,6 +218,73 @@ describe('Workouts Atoms', () => {
       expect(lookupMap.get('w1')?.name).toBe('Workout 1')
       expect(lookupMap.get('w2')?.name).toBe('Workout 2')
       expect(lookupMap.get('w3')?.name).toBe('Workout 3')
+    })
+
+    it('should sort completed workouts newest-first with created_at tie-breaker', () => {
+      const sameDate = format(new Date(), 'yyyy-MM-dd')
+      const w1 = createMockWorkout({
+        id: 'w1',
+        status: 'completed',
+        date: sameDate,
+        created_at: new Date('2025-01-01T10:00:00Z').toISOString(),
+      })
+      const w2 = createMockWorkout({
+        id: 'w2',
+        status: 'completed',
+        date: sameDate,
+        created_at: new Date('2025-01-01T12:00:00Z').toISOString(),
+      })
+      setAtomValue(store, workoutsAtom, [w1, w2])
+
+      const sorted = getAtomValue(store, completedWorkoutsAtom)
+      expect(sorted.map(w => w.id)).toEqual(['w2', 'w1'])
+    })
+
+    it('should filter todaysWorkoutsAtom using date-fns parsing', () => {
+      const today = new Date()
+      const todayYMD = format(today, 'yyyy-MM-dd')
+      const yesterday = format(addDays(today, -1), 'yyyy-MM-dd')
+      const tomorrow = format(addDays(today, 1), 'yyyy-MM-dd')
+
+      const workouts = [
+        createMockWorkout({ id: 't1', date: todayYMD }),
+        createMockWorkout({ id: 't2', date: `${todayYMD}T08:00:00Z` }),
+        createMockWorkout({ id: 'y1', date: yesterday }),
+        createMockWorkout({ id: 'tm1', date: `${tomorrow}T00:00:00Z` }),
+      ]
+
+      setAtomValue(store, workoutsAtom, workouts)
+      const todays = getAtomValue(store, todaysWorkoutsAtom)
+      const ids = todays.map(w => w.id)
+      expect(ids).toContain('t1')
+      expect(ids).toContain('t2')
+      expect(ids).not.toContain('y1')
+      expect(ids).not.toContain('tm1')
+    })
+
+    it('should filter thisWeeksWorkoutsAtom within week boundaries (Sun–Sat)', () => {
+      const today = new Date()
+      const start = startOfWeek(today, { weekStartsOn: 0 })
+      const end = endOfWeek(today, { weekStartsOn: 0 })
+
+      const before = format(addDays(start, -1), 'yyyy-MM-dd')
+      const onStart = format(start, 'yyyy-MM-dd')
+      const mid = format(addDays(start, 2), 'yyyy-MM-dd')
+      const onEnd = format(end, 'yyyy-MM-dd')
+      const after = format(addDays(end, 1), 'yyyy-MM-dd')
+
+      const workouts = [
+        createMockWorkout({ id: 'b', date: before }),
+        createMockWorkout({ id: 's', date: onStart }),
+        createMockWorkout({ id: 'm', date: mid }),
+        createMockWorkout({ id: 'e', date: onEnd }),
+        createMockWorkout({ id: 'a', date: after }),
+      ]
+
+      setAtomValue(store, workoutsAtom, workouts)
+      const week = getAtomValue(store, thisWeeksWorkoutsAtom)
+      const ids = week.map(w => w.id)
+      expect(ids).toEqual(['s', 'm', 'e'])
     })
   })
 

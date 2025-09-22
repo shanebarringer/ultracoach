@@ -1,4 +1,12 @@
 // Derived atoms - computed values from other atoms
+import {
+  endOfWeek,
+  isSameDay,
+  isWithinInterval,
+  parse as parseFmt,
+  parseISO,
+  startOfWeek,
+} from 'date-fns'
 import { atom } from 'jotai'
 
 import { userAtom } from '../auth'
@@ -86,24 +94,30 @@ export const activeConversationsAtom = atom(get => {
 // Today's workouts
 export const todaysWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date().toISOString().split('T')[0]
-
-  return workouts.filter(workout => workout.date?.startsWith(today))
+  const today = new Date()
+  const parseInput = (d?: string) =>
+    !d ? null : d.includes('T') ? parseISO(d) : parseFmt(d, 'yyyy-MM-dd', new Date())
+  return workouts.filter(workout => {
+    const d = parseInput(workout.date)
+    return d ? isSameDay(d, today) : false
+  })
 })
 
 // This week's workouts
 export const thisWeeksWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const today = new Date()
-  const startOfWeek = new Date(today)
-  startOfWeek.setDate(today.getDate() - today.getDay())
-  const endOfWeek = new Date(today)
-  endOfWeek.setDate(today.getDate() + (6 - today.getDay()))
+  const weekStart = startOfWeek(today, { weekStartsOn: 0 })
+  const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
+
+  const parseInput = (d?: string) => {
+    if (!d) return null
+    return d.includes('T') ? parseISO(d) : parseFmt(d, 'yyyy-MM-dd', new Date())
+  }
 
   return workouts.filter(workout => {
-    if (!workout.date) return false
-    const workoutDate = new Date(workout.date)
-    return workoutDate >= startOfWeek && workoutDate <= endOfWeek
+    const d = parseInput(workout.date)
+    return d ? isWithinInterval(d, { start: weekStart, end: weekEnd }) : false
   })
 })
 
