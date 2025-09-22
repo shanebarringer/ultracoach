@@ -7,6 +7,7 @@ set -Eeuo pipefail
 # - Always restores prior state and removes temporary files, even on failure
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCK_DIR="$ROOT_DIR/.charlie.build.lock"
 ENV_LOCAL="$ROOT_DIR/.env.local"
 BACKUP_FILE="$ROOT_DIR/.env.local.charlie.backup"
 ENV_CHARLIE="$ROOT_DIR/.env.charlie"
@@ -24,11 +25,18 @@ cleanup() {
   if [[ $CREATED_BACKUP -eq 1 && -f "$BACKUP_FILE" ]]; then
     mv -f "$BACKUP_FILE" "$ENV_LOCAL" || true
   fi
+  # Remove lock directory if it exists
+  [[ -d "$LOCK_DIR" ]] && rmdir "$LOCK_DIR" || true
 }
 
 trap cleanup EXIT INT TERM
 
 # Preconditions
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "Another build:charlie is running. Exiting." >&2
+  exit 1
+fi
+
 if [[ ! -f "$ENV_CHARLIE" ]]; then
   echo "Error: $ENV_CHARLIE not found. Aborting." >&2
   exit 1

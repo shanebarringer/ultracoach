@@ -46,6 +46,7 @@ Charlie now includes `pnpm build:charlie` as a check command, allowing it to ver
 To test the Charlie build process locally:
 
 ```bash
+pnpm install --frozen-lockfile
 # Test the build command directly
 pnpm build:charlie
 
