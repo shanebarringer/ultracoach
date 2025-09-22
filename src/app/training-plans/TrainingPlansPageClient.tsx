@@ -94,7 +94,9 @@ export default function TrainingPlansPageClient({ user }: Props) {
                 <div className="flex items-center gap-3">
                   <Mountain className="w-8 h-8 text-primary" />
                   <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-foreground">🏔️ Training Expeditions</h1>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                      🏔️ Training Expeditions
+                    </h1>
                     <p className="text-foreground/70 mt-1 text-base lg:text-lg">
                       {user.userType === 'coach'
                         ? 'Design summit quests for your athletes'
