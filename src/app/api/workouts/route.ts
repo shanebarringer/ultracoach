@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -127,11 +127,18 @@ export async function GET(request: NextRequest) {
           runnerId
             ? eq(training_plans.runner_id, runnerId)
             : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
+              ? inArray(training_plans.runner_id, authorizedUserIds)
               : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
-        // OR workout has no training plan (workout.training_plan_id is null)
-        isNull(workouts.training_plan_id)
+        // OR workout has no training plan (standalone). Restrict to authorized runners.
+        and(
+          isNull(workouts.training_plan_id),
+          runnerId
+            ? eq(workouts.user_id, runnerId)
+            : authorizedUserIds.length > 0
+              ? inArray(workouts.user_id, authorizedUserIds)
+              : eq(workouts.user_id, sessionUser.id)
+        )
       )
 
       conditions.push(coachAccessCondition)
@@ -147,18 +154,18 @@ export async function GET(request: NextRequest) {
           // Has training plan and runner is the user and coach is authorized
           and(
             eq(training_plans.runner_id, sessionUser.id),
-            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
+            inArray(training_plans.coach_id, authorizedUserIds)
           ),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
+          // OR workout has no training plan (standalone) owned by the runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         )
       } else {
         // No active relationships - allow runner to see workouts assigned to them in training plans
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
+          // OR workout has no training plan (standalone) owned by the runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         )
       }
 
@@ -177,7 +184,7 @@ export async function GET(request: NextRequest) {
     const query =
       conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
 
-    const results = await query.orderBy(asc(workouts.date))
+    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
     logger.debug('Raw query results:', {
       count: results.length,
