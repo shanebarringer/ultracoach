@@ -11,6 +11,7 @@
     "dev:local": "concurrently \"supabase start\" \"next dev -p 3001\"",
     "dev:db": "supabase start",
     "build": "next build",
+    "build:charlie": "bash scripts/build-charlie.sh",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
