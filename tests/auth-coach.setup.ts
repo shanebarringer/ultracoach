@@ -37,7 +37,10 @@ setup('authenticate as coach', async ({ page, context }) => {
 
   if (!response.ok()) {
     const body = await response.text()
-    logger.error('Coach Auth API failed', { status: response.status(), body: body.slice(0, 500) })
+    logger.error('Coach Auth API failed', {
+      status: response.status(),
+      bodyPreview: body.slice(0, 300).replace(TEST_COACH_EMAIL, '<redacted-email>'),
+    })
     throw new Error(`Coach authentication API failed with status ${response.status()}`)
   }
 

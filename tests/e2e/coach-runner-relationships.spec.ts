@@ -129,7 +129,7 @@ test.describe('Coach-Runner Relationship Management', () => {
   })
 
   test.describe('Runner Perspective', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated

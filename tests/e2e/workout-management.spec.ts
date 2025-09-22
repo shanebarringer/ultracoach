@@ -16,7 +16,7 @@ function waitForPageReady(page: Page): Promise<void> {
 
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - we're already authenticated
@@ -433,7 +433,7 @@ test.describe('Workout Management', () => {
   })
 
   test.describe('Workout State Management', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.skip('should update filteredWorkoutsAtom when filters change', async ({ page }) => {
       // Skip - date filter UI doesn't exist in current implementation

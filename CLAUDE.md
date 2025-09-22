@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 ## 🔄 Session Workflow (IMPORTANT)
 
-**At the start of EVERY new conversation:**
+### At the start of EVERY new conversation
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
 2. **Check Linear workspace** at https://linear.app/ultracoach to see current milestone, pending tasks, and priorities
@@ -25,6 +25,31 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 **Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
 ### MCP Instructions
+
+### Use Playwright MCP to investigate test failures and UI issues
+
+Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors.
+
+#### Concrete selector example
+
+```typescript
+// Before (flaky: strict mode violation)
+await page.getByText('Test Ultra Race').click()
+
+// After (stable: explicit test id)
+await page.getByTestId('race-name-0').click()
+
+### E2E authentication storageState filenames
+
+- Runner: use `./playwright/.auth/runner.json` (canonical)
+- Coach: use `./playwright/.auth/coach.json`
+
+Deprecated
+- `./playwright/.auth/user.json` was the legacy runner alias and is now deprecated. CI temporarily accepts it for a short deprecation window to keep older branches green, but all new/updated specs and Playwright projects should reference `runner.json`.
+
+```
+
+- When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 
@@ -552,6 +577,51 @@ Example of INCORRECT typing:
 const sessionData: any = { user: { role: 'coach' } }
 const userRole = (sessionData.user as any).role || 'runner'
 ```
+
+## 🎭 Playwright MCP Investigation Process (CRITICAL)
+
+**Use Playwright MCP to investigate test failures and UI issues - it reveals real problems vs perceived issues**
+
+### 🔍 Investigation Process (REQUIRED)
+
+**When tests fail or UI issues are reported, follow this process:**
+
+1. **Start Playwright MCP Investigation**
+
+   ```bash
+   # Use Playwright MCP tools to navigate and test the UI directly
+   # This reveals actual behavior vs test assumptions
+   ```
+
+2. **Key Discoveries from Our GPX Upload Investigation**
+   - **Perceived Issue**: "UI hanging on GPX upload"
+   - **Real Issue**: Test selector conflict (`getByText()` finding multiple elements)
+   - **Solution**: Use specific `data-testid` selectors instead of ambiguous text selectors
+
+### ✅ Success Pattern: GPX Upload Debug (2025-09-20)
+
+**Problem**: Test failure with GPX upload appearing to "hang"
+**Investigation**: Used Playwright MCP to test upload functionality directly
+**Finding**: NO hang - upload processed immediately with proper error handling
+**Root Cause**: Test selector `getByText('Test Ultra Race')` resolved to 2 elements (strict mode violation)
+**Fix**: Changed to specific `getByTestId('race-name-0')` selector
+
+### 🎯 Best Practices
+
+1. **Don't Assume Performance Issues** - Test failures often indicate selector or timing problems, not actual performance issues
+2. **Use Playwright MCP First** - Before debugging code, use MCP to verify actual UI behavior
+3. **Fix Root Causes** - Address test infrastructure issues (selectors, timing) rather than patching symptoms
+4. **Specific Selectors** - Always prefer `data-testid` over text-based selectors for stability
+
+### 📋 Investigation Checklist
+
+- [ ] Use Playwright MCP to reproduce the "issue" manually
+- [ ] Compare expected vs actual behavior in browser
+- [ ] Check for selector conflicts (strict mode violations)
+- [ ] Verify timing issues vs actual functionality problems
+- [ ] Update test selectors to be more specific and reliable
+
+**Key Learning**: Playwright MCP investigation is essential for distinguishing between real bugs and test infrastructure problems.
 
 ---
 

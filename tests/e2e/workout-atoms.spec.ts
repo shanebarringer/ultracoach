@@ -13,7 +13,7 @@ import { addDays, format } from 'date-fns'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should display upcoming workouts on runner dashboard', async ({ page }) => {
       // Navigate to runner dashboard
@@ -80,7 +80,7 @@ test.describe('Workout Atoms Functionality', () => {
   })
 
   test.describe('Weekly Planner Workout Persistence', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
       // First, go to calendar/weekly planner
@@ -141,7 +141,7 @@ test.describe('Workout Atoms Functionality', () => {
   })
 
   test.describe('Workout Completion Modal', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should successfully submit workout completion modal', async ({ page }) => {
       // Navigate to workouts page
@@ -271,7 +271,7 @@ test.describe('Workout Atoms Functionality', () => {
   })
 
   test.describe('Workout Atom State Synchronization', () => {
-    test.use({ storageState: './playwright/.auth/user.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should refresh workouts when navigating between pages', async ({ page }) => {
       // Start on workouts page

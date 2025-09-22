@@ -87,7 +87,7 @@ export default defineConfig({
 
     // Authenticated coach tests for race import
     {
-      name: 'chromium',
+      name: 'chromium-race-import-coach',
       testMatch: /race-import\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
@@ -95,6 +95,19 @@ export default defineConfig({
         storageState: './playwright/.auth/coach.json',
       },
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
+    },
+
+    // Runner tests for race import (verify no access)
+    {
+      name: 'chromium-race-import-runner',
+      testMatch: /race-import\.spec\.ts/,
+      grep: /should not allow runners to import/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Ensure runner auth setup completes first
     },
 
     // Authenticated runner dashboard tests
@@ -105,7 +118,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
-        storageState: './playwright/.auth/user.json',
+        storageState: './playwright/.auth/runner.json',
       },
       dependencies: ['setup'], // Wait for auth setup to complete
     },
@@ -156,7 +169,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state for runner tests
-        storageState: './playwright/.auth/user.json',
+        storageState: './playwright/.auth/runner.json',
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -182,7 +195,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
-        storageState: './playwright/.auth/user.json',
+        storageState: './playwright/.auth/runner.json',
       },
       dependencies: ['setup'], // Wait for auth setup to complete
     },
@@ -220,14 +233,15 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: process.env.CI
-    ? undefined
+    ? undefined // CI environment already has server running
     : {
-        command: 'echo "Development server already running on port 3001"',
+        command: 'pnpm dev',
         url: 'http://localhost:3001',
-        reuseExistingServer: true, // Always reuse existing server
-        timeout: 5000,
+        reuseExistingServer: true, // Use existing server if already running
+        timeout: 120000, // Give dev server 2 minutes to start
+        port: 3001,
         env: {
-          NODE_ENV: 'test',
+          NODE_ENV: 'development', // Use development mode for local testing
           // Load test environment variables from environment
           DATABASE_URL:
             process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
@@ -240,10 +254,6 @@ export default defineConfig({
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
           RESEND_API_KEY: process.env.RESEND_API_KEY || '',
           NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
-          ...(process.env.CI &&
-            {
-              // CI-specific environment variables will be set by GitHub Actions
-            }),
         },
       },
 })

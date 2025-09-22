@@ -10,7 +10,7 @@ const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
 const logger = new Logger({ name: 'tests/auth.setup' })
 
-const authFile = path.join(__dirname, '../playwright/.auth/user.json')
+const authFile = path.join(__dirname, '../playwright/.auth/runner.json')
 
 setup('authenticate', async ({ page, context }) => {
   logger.info('🔐 Starting runner authentication setup...')
@@ -37,7 +37,10 @@ setup('authenticate', async ({ page, context }) => {
 
   if (!response.ok()) {
     const body = await response.text()
-    logger.error('Auth API failed', { status: response.status(), body: body.slice(0, 500) })
+    logger.error('Auth API failed', {
+      status: response.status(),
+      bodyPreview: body.slice(0, 300).replace(TEST_RUNNER_EMAIL, '<redacted-email>'),
+    })
     throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
@@ -77,5 +80,5 @@ setup('authenticate', async ({ page, context }) => {
 
   // Save the authentication state
   await context.storageState({ path: authFile })
-  logger.info(`💾 Saved authentication state to ${authFile}`)
+  logger.info(`💾 Saved runner authentication state to ${authFile}`)
 })
