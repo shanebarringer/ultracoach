@@ -130,7 +130,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
   return (
     <Card
-      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 border-l-primary ${plan.archived ? 'opacity-60' : ''} min-h-[320px]`}
+      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 border-l-primary ${plan.archived ? 'opacity-60' : ''} h-full flex flex-col`}
       isPressable={false}
     >
       <CardHeader className="flex justify-between items-start pb-4">
@@ -141,7 +141,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           )}
 
           {/* Status and Phase Row */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center flex-wrap gap-2 mt-2">
             <Chip
               color={getStatusColor(plan.archived)}
               size="sm"
@@ -206,7 +206,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         )}
       </CardHeader>
 
-      <CardBody className="py-2">
+      <CardBody className="py-2 flex-1">
         <div className="space-y-4">
           {/* Prominent Race Information */}
           {plan.race ? (
@@ -300,20 +300,20 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         </div>
       </CardBody>
 
-      <CardFooter className="pt-4">
-        <div className="flex justify-between items-center w-full">
+      <CardFooter className="pt-4 mt-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-3">
           <Button
             as={Link}
             href={`/training-plans/${plan.id}`}
             color="primary"
             variant="flat"
             size="md"
-            className="font-medium"
+            className="font-medium w-full sm:w-auto"
             startContent={<CalendarIcon className="w-4 h-4" />}
           >
             View Training Plan
           </Button>
-          <div className="text-xs text-foreground/50">
+          <div className="text-xs text-foreground/50 text-center sm:text-right">
             {plan.weeks_remaining ? `${plan.weeks_remaining} weeks left` : 'Completed'}
           </div>
         </div>

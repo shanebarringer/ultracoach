@@ -90,12 +90,12 @@ export default function TrainingPlansPageClient({ user }: Props) {
           {/* Hero Section */}
           <Card className="mb-8 bg-content1 border-l-4 border-l-primary">
             <CardHeader>
-              <div className="flex items-center justify-between w-full">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4">
                 <div className="flex items-center gap-3">
                   <Mountain className="w-8 h-8 text-primary" />
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground">🏔️ Training Expeditions</h1>
-                    <p className="text-foreground/70 mt-1 text-lg">
+                    <h1 className="text-2xl lg:text-3xl font-bold text-foreground">🏔️ Training Expeditions</h1>
+                    <p className="text-foreground/70 mt-1 text-base lg:text-lg">
                       {user.userType === 'coach'
                         ? 'Design summit quests for your athletes'
                         : 'Your personalized path to peak performance'}
@@ -104,7 +104,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <Checkbox
                     isSelected={uiState.showArchived}
                     onValueChange={handleShowArchivedChange}
@@ -115,27 +115,30 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     Show archived
                   </Checkbox>
 
-                  <Button
-                    variant="bordered"
-                    size="sm"
-                    onPress={refreshTrainingPlans}
-                    isIconOnly
-                    aria-label="Refresh training plans"
-                    className="border-primary/20 hover:border-primary/40"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-
-                  {user.userType === 'coach' && (
+                  <div className="flex items-center gap-3">
                     <Button
-                      color="primary"
-                      onPress={handleCreatePlanClick}
-                      startContent={<Plus className="h-4 w-4" />}
-                      className="bg-primary font-medium"
+                      variant="bordered"
+                      size="sm"
+                      onPress={refreshTrainingPlans}
+                      isIconOnly
+                      aria-label="Refresh training plans"
+                      className="border-primary/20 hover:border-primary/40"
                     >
-                      Create Your First Expedition
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
-                  )}
+
+                    {user.userType === 'coach' && (
+                      <Button
+                        color="primary"
+                        onPress={handleCreatePlanClick}
+                        startContent={<Plus className="h-4 w-4" />}
+                        className="bg-primary font-medium"
+                      >
+                        <span className="hidden sm:inline">Create Your First Expedition</span>
+                        <span className="sm:hidden">Create Plan</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -200,7 +203,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
                   </CardBody>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                   {plans.map((plan: TrainingPlan) => (
                     <TrainingPlanCard
                       key={plan.id}
