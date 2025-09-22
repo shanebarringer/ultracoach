@@ -11,17 +11,25 @@ Charlie now includes `pnpm build:charlie` as a check command, allowing it to ver
 ### Build Command
 
 - **Command**: `pnpm build:charlie`
-- **What it does**:
-  1. Copies `.env.charlie` to `.env.local` temporarily
-  2. Runs `next build` to verify production build
-  3. Removes temporary `.env.local` file
-- **Purpose**: Catches TypeScript errors, missing dependencies, and build-time issues
+- **What it does (safe backup/restore)**:
+  1. If a `.env.local` exists, it is moved to a backup file `.env.local.charlie.backup`.
+  2. Copies `.env.charlie` to `.env.local` for the duration of the build.
+  3. Runs `pnpm exec next build` (resolves the local Next.js binary) to verify the production build.
+  4. Always removes the temporary `.env.local` and restores the original `.env.local` from the backup in a finally-style step (via shell `trap`), even if the build fails or is interrupted.
+- **Purpose**: Catches TypeScript errors, missing dependencies, and build-time issues without risking loss of a developer's local environment file.
+
+> Portability & Guarantees
+>
+> - Requires Bash (macOS/Linux/WSL). On Windows, run via Git Bash or WSL.
+> - The script traps EXIT/INT/TERM to guarantee cleanup and restoration.
+> - It fails fast if `.env.charlie` is missing and avoids overwriting an existing `.env.local.charlie.backup` by using a timestamped filename when needed.
 
 ### Environment Variables
 
 - **File**: `.env.charlie` (tracked in version control)
 - **Contents**: Dummy values that allow Next.js to build successfully
 - **Safety**: All values are fake/dummy credentials, safe to commit publicly
+- **Scope**: Build-time only. Do not use `.env.charlie` for local development or production; it exists solely so Charlie can run a production build in ephemeral environments.
 
 ### Configuration
 
