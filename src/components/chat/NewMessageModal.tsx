@@ -11,7 +11,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
+import { connectedRunnersDataAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 
@@ -32,7 +32,7 @@ interface NewMessageModalProps {
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [connectedRunners] = useAtom(connectedRunnersAtom)
+  const [connectedRunners] = useAtom(connectedRunnersDataAtom)
 
   // React Hook Form setup
   const { control, watch, reset } = useForm<SearchForm>({

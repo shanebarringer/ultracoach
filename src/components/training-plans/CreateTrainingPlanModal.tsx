@@ -16,11 +16,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { api } from '@/lib/api-client'
 import {
-  connectedRunnersAtom,
+  connectedRunnersDataAtom,
+  connectedRunnersLoadingAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
@@ -63,11 +65,9 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  // Use Jotai atom instead of local state
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
-
-  // Derive loading state from the atom's data
-  const loadingRunners = connectedRunners.length === 0
+  // Use separate atoms for data and loading state
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
+  const loadingRunners = useAtomValue(connectedRunnersLoadingAtom)
 
   // React Hook Form setup
   const {
@@ -108,79 +108,57 @@ export default function CreateTrainingPlanModal({
     }
   }
 
-  useEffect(() => {
-    if (isOpen) {
-      let controller: AbortController | null = null
-
-      const fetchInitialData = async () => {
-        controller = new AbortController()
-
-        // Fetch races using atom refresh
-        const racesArray = Array.isArray(races) ? races : []
-        if (racesArray.length === 0) {
-          try {
-            const baseUrl =
-              typeof window !== 'undefined'
-                ? ''
-                : (process.env.NEXT_PUBLIC_API_BASE_URL ??
-                  process.env.API_BASE_URL ??
-                  'http://localhost:3001')
-            const response = await fetch(`${baseUrl}/api/races`, {
-              credentials: 'same-origin',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
-              signal: controller.signal,
-            })
-            if (response.ok) {
-              const data = await response.json()
-              setRaces(data || [])
-            }
-          } catch (err) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-              logger.error('Error fetching races:', err)
-            }
-          }
-        }
-
-        // Fetch plan templates
-        if (planTemplates.length === 0) {
-          try {
-            const response = await fetch('/api/training-plans/templates', {
-              credentials: 'same-origin', // Include cookies for authentication
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
-              signal: controller.signal,
-            })
-            if (response.ok) {
-              const data = await response.json()
-              setPlanTemplates(data.templates)
-              logger.info(`Loaded ${data.templates.length} plan templates`)
-            } else {
-              logger.error('Failed to fetch plan templates:', response.status, response.statusText)
-              // Show more detailed error for debugging
-              const errorText = await response.text()
-              logger.error('API response:', errorText)
-            }
-          } catch (err) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-              logger.error('Error fetching plan templates:', err)
-            }
+  const fetchInitialData = useCallback(
+    async (signal: AbortSignal) => {
+      // Fetch races using Axios
+      const racesArray = Array.isArray(races) ? races : []
+      if (racesArray.length === 0) {
+        try {
+          const response = await api.get<unknown[]>('/api/races', { signal })
+          setRaces(Array.isArray(response.data) ? (response.data as typeof races) : [])
+        } catch (err: unknown) {
+          const error = err as Error
+          if (error.name !== 'AbortError' && (error as { code?: string }).code !== 'ERR_CANCELED') {
+            logger.error('Error fetching races:', { message: error.message })
           }
         }
       }
 
-      fetchInitialData()
+      // Fetch plan templates using Axios
+      if (planTemplates.length === 0) {
+        try {
+          const response = await api.get<{ templates: unknown[] }>(
+            '/api/training-plans/templates',
+            { signal }
+          )
+          const templatesData = response.data
+          setPlanTemplates((templatesData.templates || []) as typeof planTemplates)
+          logger.info(`Loaded ${(templatesData.templates || []).length} plan templates`)
+        } catch (err: unknown) {
+          const error = err as Error & { code?: string; response?: { status?: number } }
+          if (error.name !== 'AbortError' && error.code !== 'ERR_CANCELED') {
+            logger.error('Error fetching plan templates:', {
+              message: error.message,
+              status: error.response?.status,
+            })
+          }
+        }
+      }
+    },
+    [races, setRaces, planTemplates.length, setPlanTemplates]
+  )
+
+  useEffect(() => {
+    if (isOpen) {
+      const controller = new AbortController()
+      fetchInitialData(controller.signal)
 
       // Cleanup function to abort in-flight requests
       return () => {
-        controller?.abort()
+        controller.abort()
       }
     }
-  }, [isOpen, races, setRaces, planTemplates.length, setPlanTemplates])
+  }, [isOpen, fetchInitialData])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
@@ -199,48 +177,58 @@ export default function CreateTrainingPlanModal({
         raceAttached: Boolean(payload.race_id),
       })
 
-      const response = await fetch('/api/training-plans', {
-        method: 'POST',
-        credentials: 'same-origin', // Include cookies for authentication
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
+      const response = await api.post<{ id: string }>('/api/training-plans', payload)
 
-      if (response.ok) {
-        const responseData = await response.json()
-        logger.info('Training plan created successfully', responseData)
-        setFormState(prev => ({ ...prev, loading: false, error: '' }))
-        reset() // Reset form with react-hook-form
+      // Success case
+      const responseData = response.data
+      logger.info('Training plan created successfully', { planId: responseData?.id })
+      setFormState(prev => ({ ...prev, loading: false, error: '' }))
+      reset() // Reset form with react-hook-form
 
-        // Show success toast
-        commonToasts.trainingPlanCreated()
+      // Show success toast
+      commonToasts.trainingPlanCreated()
 
-        onSuccess()
-        onClose()
-      } else {
-        const errorData = await response.json()
-        logger.error('Failed to create training plan:', errorData)
-        setFormState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorData.error || 'Failed to create training plan',
-        }))
+      onSuccess()
+      onClose()
+    } catch (error: unknown) {
+      // Handle Axios error responses with robust JSON parsing
+      let errorMessage = 'An error occurred. Please try again.'
 
-        // Show error toast
-        commonToasts.trainingPlanError(errorData.error || 'Failed to create training plan')
+      const axiosError = error as {
+        response?: { status: number; headers: Record<string, string>; data: unknown }
+        message?: string
       }
-    } catch (error) {
-      logger.error('Error creating training plan:', error)
+
+      if (axiosError.response) {
+        // Server responded with error status
+        const response = axiosError.response
+        const ct = response.headers['content-type'] || ''
+
+        if (ct.includes('application/json') && response.data && typeof response.data === 'object') {
+          const data = response.data as { error?: string; message?: string }
+          errorMessage = data.error || data.message || errorMessage
+        } else if (typeof response.data === 'string') {
+          errorMessage = response.data
+        }
+
+        logger.error('Failed to create training plan:', {
+          status: response.status,
+          errorMessage,
+        })
+      } else {
+        logger.error('Error creating training plan:', {
+          message: axiosError.message || 'Unknown error',
+        })
+      }
+
       setFormState(prev => ({
         ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.',
+        error: errorMessage,
       }))
 
       // Show error toast
-      commonToasts.trainingPlanError('An error occurred. Please try again.')
+      commonToasts.trainingPlanError(errorMessage)
     }
   }
 
@@ -249,7 +237,7 @@ export default function CreateTrainingPlanModal({
       <ModalContent>
         <ModalHeader>Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="space-y-4">
+          <ModalBody className="space-y-4 max-h-[70svh] overflow-y-auto sm:max-h-[75svh]">
             {formState.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 {formState.error}
@@ -321,7 +309,8 @@ export default function CreateTrainingPlanModal({
               control={control}
               render={({ field, fieldState }) => (
                 <Select
-                  {...field}
+                  name={field.name}
+                  ref={field.ref}
                   label="Select Runner"
                   placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
                   isRequired

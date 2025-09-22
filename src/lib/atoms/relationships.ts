@@ -73,10 +73,18 @@ export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
  */
 export const runnersAtom = atom<User[]>([])
 
-// Connected runners atom for coaches
-export const connectedRunnersAtom = atomWithRefresh(async () => {
-  // Return empty array for SSR to ensure consistency
-  if (!isBrowser) return []
+// Connected runners atom state interface
+interface ConnectedRunnersState {
+  data: User[]
+  isLoading: boolean
+  hasLoaded: boolean
+  error: string | null
+}
+
+// Connected runners atom for coaches with loading state
+export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedRunnersState> => {
+  // Return initial state for SSR to ensure consistency
+  if (!isBrowser) return { data: [], isLoading: false, hasLoaded: false, error: null }
 
   const logger = createLogger('ConnectedRunnersAtom')
   try {
@@ -89,18 +97,62 @@ export const connectedRunnersAtom = atomWithRefresh(async () => {
     })
     if (!response.ok) {
       logger.error(`Failed to fetch connected runners: ${response.status} ${response.statusText}`)
-      return []
+      return {
+        data: [],
+        isLoading: false,
+        hasLoaded: true,
+        error: `Failed to fetch: ${response.status}`,
+      }
     }
     const data = await response.json()
 
     // Extract runners array from response object
     const runners = Array.isArray(data) ? data : data.runners || []
     logger.debug('Connected runners fetched', { count: runners.length })
-    return runners as User[]
+    return { data: runners as User[], isLoading: false, hasLoaded: true, error: null }
   } catch (error) {
     logger.error('Error fetching connected runners', error)
-    return []
+    return {
+      data: [],
+      isLoading: false,
+      hasLoaded: true,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
+})
+
+// Loadable version for proper async handling
+export const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+
+// Derived atoms for easier access
+export const connectedRunnersDataAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  if (loadable.state === 'hasData') {
+    return loadable.data.data
+  }
+  return []
+})
+
+export const connectedRunnersLoadingAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  if (loadable.state === 'hasData') {
+    return loadable.data.isLoading || !loadable.data.hasLoaded
+  }
+  return loadable.state === 'loading'
+})
+
+// Backward compatibility exports - these maintain the old interface
+// for files that haven't been updated yet
+export const connectedRunnersCompatAtom = atom(get => {
+  const data = get(connectedRunnersDataAtom)
+  // Add array methods for backward compatibility
+  const arrayWithMethods = data as User[] & {
+    length: number
+    map: <T>(fn: (item: User) => T) => T[]
+    filter: (fn: (item: User) => boolean) => User[]
+    find: (fn: (item: User) => boolean) => User | undefined
+  }
+  return arrayWithMethods
 })
 
 // Available coaches atom
