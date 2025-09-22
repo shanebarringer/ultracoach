@@ -83,9 +83,9 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
-  // Compute clamped progress percentage once for consistent display and Progress value
+  // Clamp progress percentage; treat null/undefined as "unset"
   const progressPct = (() => {
-    if (plan.progress === undefined) return undefined
+    if (plan.progress == null) return undefined
     const n = Number(plan.progress)
     const val = Number.isFinite(n) ? n : 0
     return Math.max(0, Math.min(100, val))
@@ -263,7 +263,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           )}
 
           {/* Progress Bar */}
-          {plan.progress !== undefined && (
+          {plan.progress != null && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>

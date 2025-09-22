@@ -35,7 +35,7 @@ export default function ConfirmModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading}>
+    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading} hideCloseButton={isLoading}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <h3 className="text-lg font-semibold">{title}</h3>
