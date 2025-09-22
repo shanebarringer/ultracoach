@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or, SQL } from 'drizzle-orm'
+import { SQL, and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -125,28 +125,16 @@ export async function GET(request: NextRequest) {
       if (runnerId) {
         // Specific runner requested
         coachAccessCondition = or(
-          and(
-            eq(training_plans.coach_id, sessionUser.id),
-            eq(training_plans.runner_id, runnerId)
-          ),
-          and(
-            isNull(workouts.training_plan_id),
-            eq(workouts.user_id, runnerId)
-          )
+          and(eq(training_plans.coach_id, sessionUser.id), eq(training_plans.runner_id, runnerId)),
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, runnerId))
         ) as SQL
       } else if (authorizedUserIds.length > 0) {
         // Show workouts for all authorized runners
         const runnerConditions = authorizedUserIds.map(id => eq(training_plans.runner_id, id))
         const userConditions = authorizedUserIds.map(id => eq(workouts.user_id, id))
         coachAccessCondition = or(
-          and(
-            eq(training_plans.coach_id, sessionUser.id),
-            or(...runnerConditions)
-          ),
-          and(
-            isNull(workouts.training_plan_id),
-            or(...userConditions)
-          )
+          and(eq(training_plans.coach_id, sessionUser.id), or(...runnerConditions)),
+          and(isNull(workouts.training_plan_id), or(...userConditions))
         ) as SQL
       } else {
         // No authorized runners - coach sees nothing
