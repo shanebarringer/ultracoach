@@ -245,7 +245,7 @@ export default function CreateTrainingPlanModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader>Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
