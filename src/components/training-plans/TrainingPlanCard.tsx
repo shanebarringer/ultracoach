@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Avatar,
   Button,
@@ -26,6 +28,7 @@ import { memo, useCallback, useState } from 'react'
 
 import Link from 'next/link'
 
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
 import { createLogger } from '@/lib/logger'
 import type { Race, TrainingPlan, User } from '@/lib/supabase'
@@ -77,6 +80,7 @@ interface TrainingPlanCardProps {
 function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardProps) {
   const [isArchiving, setIsArchiving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
   const handleArchiveToggle = useCallback(async () => {
@@ -92,9 +96,9 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
       // Show success toast
       if (plan.archived) {
-        commonToasts.trainingPlanSaved() // Plan was restored
+        commonToasts.trainingPlanRestored() // Plan was restored
       } else {
-        commonToasts.trainingPlanSaved() // Plan was archived
+        commonToasts.trainingPlanArchived() // Plan was archived
       }
     } catch (error) {
       logger.error('Error toggling archive status:', error)
@@ -104,13 +108,11 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
     }
   }, [plan.id, plan.archived, archiveTrainingPlan, onArchiveChange])
 
-  const handleDelete = useCallback(async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to delete this training plan? This action cannot be undone.'
-      )
-    )
-      return
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteConfirm(true)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
     setIsDeleting(true)
     try {
       logger.info('Deleting training plan:', { planId: plan.id, planTitle: plan.title })
@@ -130,7 +132,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
   return (
     <Card
-      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 border-l-primary ${plan.archived ? 'opacity-60' : ''} h-full flex flex-col`}
+      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} h-full flex flex-col`}
       isPressable={false}
     >
       <CardHeader className="flex justify-between items-start pb-4">
@@ -169,7 +171,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 className="capitalize"
                 startContent={<Target className="w-3 h-3" />}
               >
-                {plan.goal_type.replace('_', ' ')}
+                {plan.goal_type.replaceAll('_', ' ')}
               </Chip>
             )}
           </div>
@@ -178,7 +180,14 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         {userRole === 'coach' && (
           <Dropdown>
             <DropdownTrigger>
-              <Button isIconOnly size="sm" variant="light" className="hover:bg-default-100">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                className="hover:bg-default-100"
+                aria-label="Training plan actions"
+                aria-haspopup="menu"
+              >
                 <EllipsisVerticalIcon className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
@@ -196,7 +205,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
               <DropdownItem
                 key="delete"
                 color="danger"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 isDisabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete Plan'}
@@ -250,10 +259,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">{plan.progress}% Complete</span>
+                <span className="font-semibold">
+                  {Math.round(Math.max(0, Math.min(100, Number(plan.progress) || 0)))}% Complete
+                </span>
               </div>
               <Progress
-                value={plan.progress}
+                value={Math.max(0, Math.min(100, Number(plan.progress) || 0))}
                 color="primary"
                 className="h-2"
                 classNames={{
@@ -318,6 +329,18 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           </div>
         </div>
       </CardFooter>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Training Plan"
+        message="Are you sure you want to delete this training plan? This action cannot be undone."
+        confirmText="Delete Plan"
+        cancelText="Cancel"
+        confirmColor="danger"
+        isLoading={isDeleting}
+      />
     </Card>
   )
 }
