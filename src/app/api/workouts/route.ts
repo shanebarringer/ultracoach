@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     const query =
       conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
 
-    const results = await query.orderBy(asc(workouts.date))
+    const results = await query.orderBy(desc(workouts.date))
 
     logger.debug('Raw query results:', {
       count: results.length,
