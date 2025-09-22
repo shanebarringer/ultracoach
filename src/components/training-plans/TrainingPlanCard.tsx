@@ -83,6 +83,14 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
+  // Compute clamped progress percentage once for consistent display and Progress value
+  const progressPct = (() => {
+    if (plan.progress === undefined) return undefined
+    const n = Number(plan.progress)
+    const val = Number.isFinite(n) ? n : 0
+    return Math.max(0, Math.min(100, val))
+  })()
+
   const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
     try {
@@ -259,12 +267,10 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">
-                  {Math.round(Math.max(0, Math.min(100, Number(plan.progress) || 0)))}% Complete
-                </span>
+                <span className="font-semibold">{Math.round(progressPct ?? 0)}% Complete</span>
               </div>
               <Progress
-                value={Math.max(0, Math.min(100, Number(plan.progress) || 0))}
+                value={progressPct ?? 0}
                 color="primary"
                 className="h-2"
                 classNames={{
