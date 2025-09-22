@@ -69,9 +69,10 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(Array.isArray(runners)).toBe(true)
-        expect(runners).toHaveLength(2)
-        expect(runners[0].name).toBe('Runner 1')
+        expect(runners).toHaveProperty('data')
+        expect(Array.isArray(runners.data)).toBe(true)
+        expect(runners.data).toHaveLength(2)
+        expect(runners.data[0].name).toBe('Runner 1')
         expect(mockFetch).toHaveBeenCalledWith(
           '/api/runners',
           expect.objectContaining({
@@ -92,8 +93,9 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(Array.isArray(runners)).toBe(true)
-        expect(runners).toEqual([])
+        expect(runners).toHaveProperty('data')
+        expect(Array.isArray(runners.data)).toBe(true)
+        expect(runners.data).toEqual([])
       })
 
       it('should return empty array when API returns non-array', async () => {
@@ -104,8 +106,9 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(Array.isArray(runners)).toBe(true)
-        expect(runners).toEqual([])
+        expect(runners).toHaveProperty('data')
+        expect(Array.isArray(runners.data)).toBe(true)
+        expect(runners.data).toEqual([])
       })
 
       it('should refresh connected runners using atomWithRefresh', async () => {
@@ -129,14 +132,14 @@ describe('Async Atoms Integration', () => {
 
         // Initial fetch
         const runners1 = await store.get(connectedRunnersAtom)
-        expect(runners1).toHaveLength(1)
+        expect(runners1.data).toHaveLength(1)
 
         // Trigger refresh using atomWithRefresh pattern (call setter with no args)
         await store.set(connectedRunnersAtom)
 
         // Get updated data
         const runners2 = await store.get(connectedRunnersAtom)
-        expect(runners2).toHaveLength(2)
+        expect(runners2.data).toHaveLength(2)
         expect(mockFetch).toHaveBeenCalledTimes(2)
       })
     })
@@ -333,8 +336,9 @@ describe('Async Atoms Integration', () => {
 
       const runners = await store.get(connectedRunnersAtom)
 
-      expect(Array.isArray(runners)).toBe(true)
-      expect(runners).toEqual([])
+      expect(runners).toHaveProperty('data')
+      expect(Array.isArray(runners.data)).toBe(true)
+      expect(runners.data).toEqual([])
     })
 
     it('should handle JSON parsing errors', async () => {
@@ -385,7 +389,7 @@ describe('Async Atoms Integration', () => {
         store.get(refreshableTrainingPlansAtom),
       ])
 
-      expect(runners).toHaveLength(1)
+      expect(runners.data).toHaveLength(1)
       expect(coaches).toHaveLength(1)
       expect(plans).toHaveLength(1)
       expect(mockFetch).toHaveBeenCalledTimes(3)
