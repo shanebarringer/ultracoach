@@ -14,7 +14,7 @@ Charlie now includes `pnpm build:charlie` as a check command, allowing it to ver
 - **What it does (safe backup/restore)**:
   1. If a `.env.local` exists, it is moved to a backup file `.env.local.charlie.backup`.
   2. Copies `.env.charlie` to `.env.local` for the duration of the build.
-  3. Runs `next build` to verify the production build.
+  3. Runs `pnpm exec next build` (resolves the local Next.js binary) to verify the production build.
   4. Always removes the temporary `.env.local` and restores the original `.env.local` from the backup in a finally-style step (via shell `trap`), even if the build fails or is interrupted.
 - **Purpose**: Catches TypeScript errors, missing dependencies, and build-time issues without risking loss of a developer's local environment file.
 

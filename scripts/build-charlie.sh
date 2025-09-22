@@ -11,13 +11,18 @@ ENV_LOCAL="$ROOT_DIR/.env.local"
 BACKUP_FILE="$ROOT_DIR/.env.local.charlie.backup"
 ENV_CHARLIE="$ROOT_DIR/.env.charlie"
 
+# Per-run state flags to ensure cleanup only touches files created in this invocation
+CREATED_BACKUP=0
+CREATED_TEMP_ENV=0
+
 cleanup() {
-  # If we created a backup, restore it; otherwise just remove the temp env
-  if [[ -f "$BACKUP_FILE" ]]; then
-    [[ -f "$ENV_LOCAL" ]] && rm -f "$ENV_LOCAL"
-    mv -f "$BACKUP_FILE" "$ENV_LOCAL"
-  else
-    [[ -f "$ENV_LOCAL" ]] && rm -f "$ENV_LOCAL"
+  # Remove the temporary env only if this run created it
+  if [[ $CREATED_TEMP_ENV -eq 1 && -f "$ENV_LOCAL" ]]; then
+    rm -f "$ENV_LOCAL" || true
+  fi
+  # Restore from backup only if this run created the backup
+  if [[ $CREATED_BACKUP -eq 1 && -f "$BACKUP_FILE" ]]; then
+    mv -f "$BACKUP_FILE" "$ENV_LOCAL" || true
   fi
 }
 
@@ -36,11 +41,13 @@ if [[ -f "$ENV_LOCAL" ]]; then
     BACKUP_FILE="$ROOT_DIR/.env.local.charlie.backup.$ts"
   fi
   mv -f "$ENV_LOCAL" "$BACKUP_FILE"
+  CREATED_BACKUP=1
 fi
 
 # Use Charlie env for the build
 cp "$ENV_CHARLIE" "$ENV_LOCAL"
+CREATED_TEMP_ENV=1
 
-# Run the production build (inherits pnpm-provided PATH when invoked via `pnpm run`)
+# Run the production build using the local Next.js binary
 cd "$ROOT_DIR"
-next build
+pnpm exec next build
