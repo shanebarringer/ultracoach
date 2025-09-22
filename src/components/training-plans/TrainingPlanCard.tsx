@@ -83,6 +83,8 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
+  const clampedProgress = Math.max(0, Math.min(100, Number(plan.progress ?? 0)))
+
   const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
     try {
@@ -132,7 +134,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
   return (
     <Card
-      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} h-full flex flex-col`}
+      className={`hover:shadow-xl motion-safe:hover:-translate-y-2 motion-reduce:transition-none motion-reduce:transform-none transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} h-full flex flex-col`}
       isPressable={false}
     >
       <CardHeader className="flex justify-between items-start pb-4">
@@ -192,11 +194,13 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
               </Button>
             </DropdownTrigger>
             <DropdownMenu
-              onAction={key => {
+              onAction={(key: React.Key) => {
                 if (key === 'archive') {
                   handleArchiveToggle()
                 } else if (key === 'delete') {
                   handleDeleteClick()
+                } else {
+                  logger.warn('Unhandled dropdown action', { key })
                 }
                 // Edit and duplicate actions can be handled later
               }}
@@ -259,12 +263,10 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">
-                  {Math.round(Math.max(0, Math.min(100, Number(plan.progress) || 0)))}% Complete
-                </span>
+                <span className="font-semibold">{Math.round(clampedProgress)}% Complete</span>
               </div>
               <Progress
-                value={Math.max(0, Math.min(100, Number(plan.progress) || 0))}
+                value={clampedProgress}
                 color="primary"
                 className="h-2"
                 classNames={{
