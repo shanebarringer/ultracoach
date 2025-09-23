@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, isAxiosError } from 'axios'
 
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
@@ -25,6 +25,11 @@ export type ApiRequestConfig = AxiosRequestConfig & {
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
+    // Short-circuit intentional cancellations before any logging/toasts
+    if (axios.isCancel(error) || (isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+      return Promise.reject(error)
+    }
+
     // Basic sanitized logging
     const method = (error.config?.method || 'get').toUpperCase()
     const url = error.config?.url || 'unknown-url'
@@ -41,7 +46,8 @@ apiClient.interceptors.response.use(
     // Server responded with an error status
     if (error.response) {
       const status = error.response.status
-      if (!cfg.suppressGlobalErrorToast && status !== 401 && status !== 403) {
+      const isServerError = status >= 500 && status < 600
+      if (!cfg.suppressGlobalErrorToast && isServerError) {
         if (typeof window !== 'undefined' && !DISABLE_ERROR_TOASTS) {
           commonToasts.serverError()
         }
