@@ -1,4 +1,4 @@
-import { isValid, parseISO } from 'date-fns'
+import { endOfDay, isValid, parseISO } from 'date-fns'
 import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         logger.warn('Coach attempted to access unauthorized runner workouts', {
           coachId: sessionUser.id,
           requestedRunnerId: runnerId,
-          authorizedRunnerIds: authorizedUserIds,
+          authorizedRunnersCount: authorizedUserIds.length,
         })
         return NextResponse.json({ error: 'Forbidden: unauthorized runnerId' }, { status: 403 })
       }
@@ -196,8 +196,8 @@ export async function GET(request: NextRequest) {
     if (endDate) {
       const ed = parseISO(endDate)
       if (isValid(ed)) {
-        ed.setUTCHours(23, 59, 59, 999)
-        conditions.push(lte(workouts.date, ed))
+        const localEnd = endOfDay(ed)
+        conditions.push(lte(workouts.date, localEnd))
       }
     }
 
