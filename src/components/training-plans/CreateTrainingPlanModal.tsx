@@ -27,7 +27,7 @@ import {
   racesAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, User, Race } from '@/lib/supabase'
+import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
