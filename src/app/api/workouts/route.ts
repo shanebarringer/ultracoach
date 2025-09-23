@@ -1,4 +1,4 @@
-import { endOfDay, isValid, parseISO } from 'date-fns'
+import { isValid, parseISO } from 'date-fns'
 import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -314,11 +314,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse numeric values properly to preserve 0 values
-    const parsedPlannedDuration =
-      plannedDuration === undefined || plannedDuration === null || plannedDuration === ''
-        ? null
-        : Number.parseInt(String(plannedDuration), 10)
-
     const parsedIntensity =
       intensity === undefined || intensity === null || intensity === '' ? null : Number(intensity)
 
