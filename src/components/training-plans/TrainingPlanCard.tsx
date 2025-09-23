@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 import { memo, useCallback, useState } from 'react'
+import type { Key } from 'react'
 
 import Link from 'next/link'
 
@@ -81,7 +82,18 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const [isArchiving, setIsArchiving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
+  const { updateTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
+
+  // Remove unused variable
+  // const clampedProgress = Math.max(0, Math.min(100, Number(plan.progress ?? 0)))
+
+  // Clamp progress percentage; treat null/undefined as "unset"
+  const progressPct = (() => {
+    if (plan.progress == null) return undefined
+    const n = Number(plan.progress)
+    const val = Number.isFinite(n) ? n : 0
+    return Math.max(0, Math.min(100, val))
+  })()
 
   const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
@@ -90,7 +102,8 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         planId: plan.id,
         currentArchived: plan.archived,
       })
-      await archiveTrainingPlan(plan.id)
+      // toggle archived flag
+      await updateTrainingPlan(plan.id, { archived: !plan.archived })
       onArchiveChange?.()
       logger.info('Successfully toggled archive status')
 
@@ -106,7 +119,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
     } finally {
       setIsArchiving(false)
     }
-  }, [plan.id, plan.archived, archiveTrainingPlan, onArchiveChange])
+  }, [plan.id, plan.archived, updateTrainingPlan, onArchiveChange])
 
   const handleDeleteClick = useCallback(() => {
     setShowDeleteConfirm(true)
@@ -143,7 +156,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           )}
 
           {/* Status and Phase Row */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center flex-wrap gap-2 mt-2">
             <Chip
               color={getStatusColor(plan.archived)}
               size="sm"
@@ -171,7 +184,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 className="capitalize"
                 startContent={<Target className="w-3 h-3" />}
               >
-                {plan.goal_type.replaceAll('_', ' ')}
+                {plan.goal_type.split('_').join(' ')}
               </Chip>
             )}
           </div>
@@ -191,23 +204,25 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 <EllipsisVerticalIcon className="w-4 h-4" />
               </Button>
             </DropdownTrigger>
-            <DropdownMenu>
+            <DropdownMenu
+              onAction={(key: Key) => {
+                if (key === 'archive') {
+                  handleArchiveToggle()
+                } else if (key === 'delete') {
+                  handleDeleteClick()
+                } else {
+                  logger.warn('Unhandled dropdown action', { key })
+                }
+                // Edit and duplicate actions can be handled later
+              }}
+              disabledKeys={isArchiving || isDeleting ? ['archive', 'delete'] : []}
+            >
               <DropdownItem key="edit">Edit Plan</DropdownItem>
               <DropdownItem key="duplicate">Duplicate</DropdownItem>
-              <DropdownItem
-                key="archive"
-                color="warning"
-                onClick={handleArchiveToggle}
-                isDisabled={isArchiving || isDeleting}
-              >
+              <DropdownItem key="archive" color="warning">
                 {isArchiving ? 'Updating...' : plan.archived ? 'Restore Plan' : 'Archive Plan'}
               </DropdownItem>
-              <DropdownItem
-                key="delete"
-                color="danger"
-                onClick={handleDeleteClick}
-                isDisabled={isDeleting}
-              >
+              <DropdownItem key="delete" color="danger">
                 {isDeleting ? 'Deleting...' : 'Delete Plan'}
               </DropdownItem>
             </DropdownMenu>
@@ -215,7 +230,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         )}
       </CardHeader>
 
-      <CardBody className="py-2">
+      <CardBody className="py-2 flex-1">
         <div className="space-y-4">
           {/* Prominent Race Information */}
           {plan.race ? (
@@ -255,16 +270,14 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
           )}
 
           {/* Progress Bar */}
-          {plan.progress !== undefined && (
+          {plan.progress != null && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">
-                  {Math.round(Math.max(0, Math.min(100, Number(plan.progress) || 0)))}% Complete
-                </span>
+                <span className="font-semibold">{Math.round(progressPct ?? 0)}% Complete</span>
               </div>
               <Progress
-                value={Math.max(0, Math.min(100, Number(plan.progress) || 0))}
+                value={progressPct ?? 0}
                 color="primary"
                 className="h-2"
                 classNames={{
@@ -311,21 +324,25 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         </div>
       </CardBody>
 
-      <CardFooter className="pt-4">
-        <div className="flex justify-between items-center w-full">
+      <CardFooter className="pt-4 mt-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-3">
           <Button
             as={Link}
             href={`/training-plans/${plan.id}`}
             color="primary"
             variant="flat"
             size="md"
-            className="font-medium"
+            className="font-medium w-full sm:w-auto"
             startContent={<CalendarIcon className="w-4 h-4" />}
           >
             View Training Plan
           </Button>
-          <div className="text-xs text-foreground/50">
-            {plan.weeks_remaining ? `${plan.weeks_remaining} weeks left` : 'Completed'}
+          <div className="text-xs text-foreground/50 text-center sm:text-right">
+            {typeof plan.weeks_remaining === 'number'
+              ? plan.weeks_remaining === 0
+                ? 'Completed'
+                : `${plan.weeks_remaining} week${plan.weeks_remaining === 1 ? '' : 's'} left`
+              : 'Completed'}
           </div>
         </div>
       </CardFooter>
