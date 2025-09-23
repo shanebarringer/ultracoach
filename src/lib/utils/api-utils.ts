@@ -23,15 +23,14 @@
  * normalizeListResponse(null, 'items') // []
  */
 export function normalizeListResponse<T>(
-  data: T[] | { [k: string]: T[] } | null | undefined,
+  data: ReadonlyArray<T> | Record<string, unknown> | null | undefined,
   key: string
 ): T[] {
-  if (Array.isArray(data)) return data
-  if (data && typeof data === 'object' && key in data) {
-    const wrappedData = data as { [k: string]: T[] }
-    const extracted = wrappedData[key]
+  if (Array.isArray(data)) return data as T[]
+  if (data && typeof data === 'object' && Object.prototype.hasOwnProperty.call(data, key)) {
+    const extracted = (data as Record<string, unknown>)[key]
     if (Array.isArray(extracted)) {
-      return extracted
+      return extracted as T[]
     }
   }
   return []

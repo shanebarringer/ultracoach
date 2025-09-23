@@ -39,8 +39,8 @@ const createTrainingPlanSchema = z.object({
   title: z
     .string()
     .min(1, 'Plan title is required')
-    .max(100, 'Title must be less than 100 characters'),
-  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+    .max(100, 'Title must be at most 100 characters'),
+  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
   runnerId: z.string().min(1, 'Please select a runner'),
   race_id: z.string().nullable(),
   goal_type: z.enum(['completion', 'time', 'placement']).nullable(),
@@ -176,7 +176,7 @@ export default function CreateTrainingPlanModal({
       })
 
       const response = await api.post<{ id: string }>('/api/training-plans', payload, {
-        suppressGlobalErrorToast: true,
+        suppressGlobalToast: true,
       })
 
       logger.info('Training plan created successfully', response.data)

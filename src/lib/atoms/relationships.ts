@@ -146,36 +146,34 @@ export const connectedRunnersLoadingAtom = atom(get => {
 // Backward compatibility export - simplified alias
 export const connectedRunnersCompatAtom = connectedRunnersDataAtom
 
+// Helper factory for creating available users atoms (DRY pattern)
+function makeAvailableUsersAtom<T extends User>(
+  url: string,
+  key: string,
+  logger: ReturnType<typeof createLogger>
+) {
+  return atomWithRefresh(async () => {
+    if (!isBrowser) return []
+    try {
+      const response = await api.get<Record<string, T[]> | T[]>(url, { suppressGlobalToast: true })
+      return normalizeListResponse<T>(response.data, key)
+    } catch (error) {
+      logger.error(`Error fetching ${key}`, error)
+      return []
+    }
+  })
+}
+
 // Available coaches atom
-export const availableCoachesAtom = atomWithRefresh(async () => {
-  if (!isBrowser) return []
-  try {
-    const response = await api.get<{ coaches?: User[] } | User[]>('/api/coaches/available', {
-      suppressGlobalToast: true,
-    })
-    const data = response.data
-    // API returns { coaches: [...] }, extract the array
-    const coaches = normalizeListResponse(data, 'coaches')
-    return coaches as User[]
-  } catch (error) {
-    availableCoachesLogger.error('Error fetching available coaches', error)
-    return []
-  }
-})
+export const availableCoachesAtom = makeAvailableUsersAtom<User>(
+  '/api/coaches/available',
+  'coaches',
+  availableCoachesLogger
+)
 
 // Available runners atom
-export const availableRunnersAtom = atomWithRefresh(async () => {
-  if (!isBrowser) return []
-  try {
-    const response = await api.get<{ runners?: User[] } | User[]>('/api/runners/available', {
-      suppressGlobalToast: true,
-    })
-    const data = response.data
-    // API returns { runners: [...] }, extract the array
-    const runners = normalizeListResponse(data, 'runners')
-    return runners as User[]
-  } catch (error) {
-    availableRunnersLogger.error('Error fetching available runners', error)
-    return []
-  }
-})
+export const availableRunnersAtom = makeAvailableUsersAtom<User>(
+  '/api/runners/available',
+  'runners',
+  availableRunnersLogger
+)
