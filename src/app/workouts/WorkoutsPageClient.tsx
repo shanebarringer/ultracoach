@@ -4,7 +4,7 @@ import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
-import { Suspense, useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useMemo, useRef, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -60,6 +60,7 @@ function WorkoutsPageClientInner({ user }: Props) {
   const { runners } = useDashboardData() // Get runner data for coach view
 
   const isCoach = user.userType === 'coach'
+  const controllerRef = useRef<AbortController | null>(null)
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -86,6 +87,10 @@ function WorkoutsPageClientInner({ user }: Props) {
     async (runnerId: string | null) => {
       if (!isCoach) return
 
+      controllerRef.current?.abort()
+      controllerRef.current = new AbortController()
+      const { signal } = controllerRef.current
+
       logger.debug('Fetching workouts for runner', { runnerId })
 
       try {
@@ -94,8 +99,11 @@ function WorkoutsPageClientInner({ user }: Props) {
           params.append('runnerId', runnerId)
         }
 
-        const response = await fetch(`/api/workouts?${params}`, {
+        const qs = params.toString()
+        const url = qs ? `/api/workouts?${qs}` : '/api/workouts'
+        const response = await fetch(url, {
           credentials: 'same-origin',
+          signal,
         })
 
         if (response.ok) {

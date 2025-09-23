@@ -13,6 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import axios from 'axios'
 import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
@@ -197,14 +198,9 @@ export default function CreateTrainingPlanModal({
       // Handle Axios error responses with robust JSON parsing
       let errorMessage = 'An error occurred. Please try again.'
 
-      const axiosError = error as {
-        response?: { status: number; headers: Record<string, string>; data: unknown }
-        message?: string
-      }
-
-      if (axiosError.response) {
+      if (axios.isAxiosError(error) && error.response) {
         // Server responded with error status
-        const response = axiosError.response
+        const response = error.response
         const ct = response.headers['content-type'] || ''
 
         if (ct.includes('application/json') && response.data && typeof response.data === 'object') {
@@ -218,9 +214,9 @@ export default function CreateTrainingPlanModal({
           status: response.status,
           errorMessage,
         })
-      } else {
+      } else if (axios.isAxiosError(error)) {
         logger.error('Error creating training plan:', {
-          message: axiosError.message || 'Unknown error',
+          message: error.message || 'Unknown error',
         })
       }
 
@@ -240,7 +236,7 @@ export default function CreateTrainingPlanModal({
       <ModalContent>
         <ModalHeader>Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="space-y-4 max-h-[70svh] overflow-y-auto sm:max-h-[75svh]">
+          <ModalBody className="space-y-4 max-h-[70vh] sm:max-h-[75vh] max-h-[70svh] sm:max-h-[75svh] overflow-y-auto">
             {formState.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 {formState.error}

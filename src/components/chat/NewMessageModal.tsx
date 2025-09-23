@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { useRouter } from 'next/navigation'
@@ -44,8 +44,10 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
 
   const searchTerm = watch('searchTerm') || ''
 
-  // Directly derive available users from atoms - no useState needed
-  const availableUsers = session?.user?.role === 'coach' ? connectedRunners || [] : []
+  // Memoize available users to stabilize dependency for filteredUsers
+  const availableUsers = useMemo(() => {
+    return session?.user?.role === 'coach' ? connectedRunners || [] : []
+  }, [session?.user?.role, connectedRunners])
 
   useEffect(() => {
     if (isOpen) {
@@ -60,11 +62,15 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   }
 
   const q = (searchTerm || '').toLowerCase()
-  const filteredUsers = availableUsers.filter((user: User) => {
-    const name = (user.full_name || '').toLowerCase()
-    const email = (user.email || '').toLowerCase()
-    return name.includes(q) || email.includes(q)
-  })
+  const filteredUsers = useMemo(
+    () =>
+      availableUsers.filter((user: User) => {
+        const name = (user.full_name || '').toLowerCase()
+        const email = (user.email || '').toLowerCase()
+        return name.includes(q) || email.includes(q)
+      }),
+    [availableUsers, q]
+  )
 
   return (
     <Modal

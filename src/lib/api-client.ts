@@ -20,19 +20,42 @@ import { createLogger } from './logger'
 import { commonToasts } from './toast'
 
 // Extend AxiosRequestConfig to include our custom flags
-interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+export interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   suppressGlobalToast?: boolean
   withCredentials?: boolean
 }
 
 const logger = createLogger('ApiClient')
 
+// Create production-safe baseURL configuration
+function getBaseURL(): string {
+  // Client-side: always use empty string for relative URLs
+  if (typeof window !== 'undefined') {
+    return ''
+  }
+
+  // Server-side: environment-specific configuration
+  const serverApiUrl = process.env.SERVER_API_BASE_URL || process.env.API_BASE_URL
+  const nodeEnv = process.env.NODE_ENV
+
+  // Production safety: require explicit server environment configuration
+  if (nodeEnv !== 'development') {
+    if (!serverApiUrl) {
+      const error =
+        'Missing required SERVER_API_BASE_URL or API_BASE_URL environment variable for production server-side API calls'
+      logger.error(error)
+      throw new Error(error)
+    }
+    return serverApiUrl
+  }
+
+  // Development fallback to localhost
+  return serverApiUrl || 'http://localhost:3001'
+}
+
 // Create base Axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL:
-    typeof window !== 'undefined'
-      ? ''
-      : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+  baseURL: getBaseURL(),
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',
