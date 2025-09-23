@@ -1,5 +1,5 @@
-import { endOfDay, isValid, parseISO } from 'date-fns'
-import { SQL, and, desc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { isValid, parseISO } from 'date-fns'
+import { SQL, and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
             ? eq(training_plans.runner_id, runnerId)
             : authorizedUserIds.length > 0
               ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
-              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
+              : sql`false` // No runners authorized - use false predicate
         ),
         // OR standalone workouts for authorized runners only
         and(
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
             ? eq(workouts.user_id, runnerId)
             : authorizedUserIds.length > 0
               ? or(...authorizedUserIds.map(id => eq(workouts.user_id, id)))
-              : eq(workouts.user_id, sessionUser.id) // fallback: none if no auth
+              : sql`false` // No runners authorized - use false predicate
         ) as SQL
       ) as SQL
 
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       // Runner can see workouts where:
       // 1. They are the runner in a training plan (from any coach - simplified for now)
       // 2. OR the workout has no training plan (standalone workouts)
-      let runnerAccessCondition
+      let runnerAccessCondition: SQL
 
       if (authorizedUserIds.length > 0) {
         // Has active relationships - use normal authorization
@@ -173,17 +173,19 @@ export async function GET(request: NextRequest) {
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering with validation using date-fns
+    // Apply date filtering with validation using date-fns and UTC normalization
     if (startDate) {
       const sd = parseISO(startDate)
-      if (isValid(sd)) conditions.push(gte(workouts.date, sd))
+      if (isValid(sd)) {
+        sd.setUTCHours(0, 0, 0, 0)
+        conditions.push(gte(workouts.date, sd))
+      }
     }
     if (endDate) {
       const ed = parseISO(endDate)
       if (isValid(ed)) {
-        // Set to end of day to include all workouts on that date
-        const endOfDayDate = endOfDay(ed)
-        conditions.push(lte(workouts.date, endOfDayDate))
+        ed.setUTCHours(23, 59, 59, 999)
+        conditions.push(lte(workouts.date, ed))
       }
     }
 
@@ -193,12 +195,20 @@ export async function GET(request: NextRequest) {
 
     const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
-    logger.debug('Raw query results:', { count: results.length })
-
-    // Remove the extra fields we only needed for authorization
-    const cleanedWorkouts = results.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
-    )
+    // Remove the extra fields we only needed for authorization and handle PII
+    const cleanedWorkouts = results.map(row => {
+      const {
+        coach_id: _coach_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+        plan_runner_id: _plan_runner_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+        runner_email: _runner_email, // eslint-disable-line @typescript-eslint/no-unused-vars
+        ...rest
+      } = row
+      if (sessionUser.userType !== 'coach') {
+        const { runner_name: _drop, ...runnerView } = rest // eslint-disable-line @typescript-eslint/no-unused-vars
+        return runnerView
+      }
+      return rest
+    })
 
     logger.debug('Successfully fetched workouts', {
       count: cleanedWorkouts.length,
@@ -294,6 +304,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Parse numeric values properly to preserve 0 values
+    const parsedPlannedDuration =
+      plannedDuration === undefined || plannedDuration === null || plannedDuration === ''
+        ? null
+        : Number.parseInt(String(plannedDuration), 10)
+
+    const parsedIntensity =
+      intensity === undefined || intensity === null || intensity === '' ? null : Number(intensity)
+
+    const parsedElevationGain =
+      elevationGain === undefined || elevationGain === null || elevationGain === ''
+        ? null
+        : Number(elevationGain)
+
     // Create the workout
     const workoutDate = new Date(date)
     const workoutTitle = plannedType
@@ -308,15 +332,18 @@ export async function POST(request: NextRequest) {
         title: workoutTitle, // Required field
         date: workoutDate,
         planned_type: plannedType,
-        planned_distance: plannedDistance?.toString(),
-        planned_duration: plannedDuration ? parseInt(plannedDuration) : null,
+        planned_distance:
+          plannedDistance === undefined || plannedDistance === null
+            ? null
+            : String(plannedDistance),
+        planned_duration: parsedPlannedDuration,
         workout_notes: notes,
         status: 'planned',
         // Enhanced workout fields
-        category: category || null,
-        intensity: intensity || null,
-        terrain: terrain || null,
-        elevation_gain: elevationGain || null,
+        category: category ?? null,
+        intensity: parsedIntensity,
+        terrain: terrain ?? null,
+        elevation_gain: parsedElevationGain,
       })
       .returning()
 
