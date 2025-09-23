@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 
 import { memo, useCallback, useState } from 'react'
+import type { Key } from 'react'
 
 import Link from 'next/link'
 
@@ -81,9 +82,10 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
   const [isArchiving, setIsArchiving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const { archiveTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
+  const { updateTrainingPlan, deleteTrainingPlan } = useTrainingPlansActions()
 
-  const clampedProgress = Math.max(0, Math.min(100, Number(plan.progress ?? 0)))
+  // Remove unused variable
+  // const clampedProgress = Math.max(0, Math.min(100, Number(plan.progress ?? 0)))
 
   const handleArchiveToggle = useCallback(async () => {
     setIsArchiving(true)
@@ -92,7 +94,8 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         planId: plan.id,
         currentArchived: plan.archived,
       })
-      await archiveTrainingPlan(plan.id)
+      // toggle archived flag
+      await updateTrainingPlan(plan.id, { archived: !plan.archived })
       onArchiveChange?.()
       logger.info('Successfully toggled archive status')
 
@@ -108,7 +111,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
     } finally {
       setIsArchiving(false)
     }
-  }, [plan.id, plan.archived, archiveTrainingPlan, onArchiveChange])
+  }, [plan.id, plan.archived, updateTrainingPlan, onArchiveChange])
 
   const handleDeleteClick = useCallback(() => {
     setShowDeleteConfirm(true)
@@ -134,7 +137,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
   return (
     <Card
-      className={`hover:shadow-xl motion-safe:hover:-translate-y-2 motion-reduce:transition-none motion-reduce:transform-none transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} h-full flex flex-col`}
+      className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} min-h-[320px]`}
       isPressable={false}
     >
       <CardHeader className="flex justify-between items-start pb-4">
@@ -173,7 +176,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 className="capitalize"
                 startContent={<Target className="w-3 h-3" />}
               >
-                {plan.goal_type.replaceAll('_', ' ')}
+                {plan.goal_type.split('_').join(' ')}
               </Chip>
             )}
           </div>
@@ -194,7 +197,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
               </Button>
             </DropdownTrigger>
             <DropdownMenu
-              onAction={(key: React.Key) => {
+              onAction={(key: Key) => {
                 if (key === 'archive') {
                   handleArchiveToggle()
                 } else if (key === 'delete') {
@@ -263,10 +266,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">{Math.round(clampedProgress)}% Complete</span>
+                <span className="font-semibold">
+                  {Math.round(Math.max(0, Math.min(100, Number(plan.progress) || 0)))}% Complete
+                </span>
               </div>
               <Progress
-                value={clampedProgress}
+                value={Math.max(0, Math.min(100, Number(plan.progress) || 0))}
                 color="primary"
                 className="h-2"
                 classNames={{
@@ -327,7 +332,11 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             View Training Plan
           </Button>
           <div className="text-xs text-foreground/50 text-center sm:text-right">
-            {plan.weeks_remaining ? `${plan.weeks_remaining} weeks left` : 'Completed'}
+            {typeof plan.weeks_remaining === 'number'
+              ? plan.weeks_remaining === 0
+                ? 'Completed'
+                : `${plan.weeks_remaining} week${plan.weeks_remaining === 1 ? '' : 's'} left`
+              : 'Completed'}
           </div>
         </div>
       </CardFooter>

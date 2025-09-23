@@ -2,15 +2,12 @@
 
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/react'
 
-import { useId } from 'react'
-import type { ReactNode } from 'react'
-
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void | Promise<void>
+  onConfirm: () => void
   title: string
-  message: ReactNode
+  message: string
   confirmText?: string
   cancelText?: string
   confirmColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
@@ -28,42 +25,19 @@ export default function ConfirmModal({
   confirmColor = 'danger',
   isLoading = false,
 }: ConfirmModalProps) {
-  const titleId = useId()
-  const descId = useId()
-
-  const handleConfirm = async () => {
-    if (isLoading) return
-    try {
-      await onConfirm()
-      onClose()
-    } catch {
-      // Error handling is done by the calling component
-      // Don't close modal on error so user can retry
-    }
+  const handleConfirm = () => {
+    onConfirm()
+    onClose()
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      isDismissable={!isLoading}
-      aria-labelledby={titleId}
-      aria-describedby={descId}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
-          <h3 id={titleId} className="text-lg font-semibold">
-            {title}
-          </h3>
+          <h3 className="text-lg font-semibold">{title}</h3>
         </ModalHeader>
         <ModalBody>
-          {typeof message === 'string' ? (
-            <p id={descId} className="text-foreground/70">
-              {message}
-            </p>
-          ) : (
-            <div id={descId}>{message}</div>
-          )}
+          <p className="text-foreground/70">{message}</p>
         </ModalBody>
         <ModalFooter>
           <Button variant="flat" onPress={onClose} isDisabled={isLoading}>

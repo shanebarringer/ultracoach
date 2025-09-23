@@ -117,31 +117,29 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     Show archived
                   </Checkbox>
 
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="bordered"
-                      size="sm"
-                      onPress={refreshTrainingPlans}
-                      isIconOnly
-                      aria-label="Refresh training plans"
-                      isDisabled={isLoading}
-                      className="border-primary/20 hover:border-primary/40"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
+                  <Button
+                    variant="bordered"
+                    size="sm"
+                    onPress={refreshTrainingPlans}
+                    isIconOnly
+                    aria-label="Refresh training plans"
+                    isDisabled={isLoading}
+                    className="border-primary/20 hover:border-primary/40"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
 
-                    {user.userType === 'coach' && (
-                      <Button
-                        color="primary"
-                        onPress={handleCreatePlanClick}
-                        startContent={<Plus className="h-4 w-4" />}
-                        className="bg-primary font-medium"
-                      >
-                        <span className="hidden sm:inline">Create Your First Expedition</span>
-                        <span className="sm:hidden">Create Plan</span>
-                      </Button>
-                    )}
-                  </div>
+                  {user.userType === 'coach' && (
+                    <Button
+                      color="primary"
+                      onPress={handleCreatePlanClick}
+                      startContent={<Plus className="h-4 w-4" />}
+                      className="bg-primary font-medium"
+                    >
+                      <span className="hidden sm:inline">Create Your First Expedition</span>
+                      <span className="sm:hidden">Create Plan</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>

@@ -34,6 +34,9 @@ checkCommands:
   # Run unit tests (not E2E)
   test: pnpm test:run
 
+  # Verify production build integrity with minimal environment
+  build: pnpm build:charlie
+
 # Feature toggles and experimental options
 beta:
   # Automatically review PRs when opened or marked ready
