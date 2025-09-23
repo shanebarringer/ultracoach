@@ -145,10 +145,17 @@ const EnhancedWorkoutsList = memo(
               return (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
             case 'status':
               return (a.workout.status || 'planned').localeCompare(b.workout.status || 'planned')
-            case 'distance':
-              const aDistance = a.workout.actual_distance || a.workout.planned_distance || 0
-              const bDistance = b.workout.actual_distance || b.workout.planned_distance || 0
-              return bDistance - aDistance
+            case 'distance': {
+              const rawA = a.workout.actual_distance ?? a.workout.planned_distance ?? 0
+              const rawB = b.workout.actual_distance ?? b.workout.planned_distance ?? 0
+
+              const aNum =
+                typeof rawA === 'number' ? rawA : Number.isFinite(Number(rawA)) ? Number(rawA) : 0
+              const bNum =
+                typeof rawB === 'number' ? rawB : Number.isFinite(Number(rawB)) ? Number(rawB) : 0
+
+              return bNum - aNum
+            }
             default:
               return 0
           }

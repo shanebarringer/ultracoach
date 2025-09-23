@@ -1,4 +1,4 @@
-import { endOfDay, isValid, parseISO } from 'date-fns'
+import { endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
 import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -185,12 +185,12 @@ export async function GET(request: NextRequest) {
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering with validation using date-fns and UTC normalization
+    // Apply date filtering with validation using date-fns and local-day semantics
     if (startDate) {
       const sd = parseISO(startDate)
       if (isValid(sd)) {
-        sd.setUTCHours(0, 0, 0, 0)
-        conditions.push(gte(workouts.date, sd))
+        const localStart = startOfDay(sd)
+        conditions.push(gte(workouts.date, localStart))
       }
     }
     if (endDate) {
@@ -336,7 +336,11 @@ export async function POST(request: NextRequest) {
         title: workoutTitle, // Required field
         date: workoutDate,
         planned_type: plannedType,
-        planned_distance: plannedDistance?.toString(),
+        // Ensure explicit NULL semantics when no planned distance is provided
+        planned_distance:
+          plannedDistance === undefined || plannedDistance === null || plannedDistance === ''
+            ? null
+            : String(plannedDistance),
         planned_duration:
           plannedDuration != null && Number.isFinite(Number(plannedDuration))
             ? Number(plannedDuration)
