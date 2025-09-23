@@ -12,6 +12,7 @@ import {
   isAfter,
   isBefore,
   isSameDay,
+  isValid,
   isWithinInterval,
   parse as parseFmt,
   parseISO,
@@ -161,4 +162,24 @@ export const formatDateForDisplay = (
 ): string => {
   const d = parseInput(date)
   return format(d, formatStr)
+}
+
+/**
+ * Parses workout date strings with validation for UI components and atoms.
+ * This is the shared utility that prevents date parsing duplication and ensures
+ * all workout dates are validated before use to prevent NaN errors in sorting.
+ *
+ * @param dateStr - Date string to parse (can be undefined/null)
+ * @returns Parsed Date object or null if invalid/empty
+ */
+export const parseWorkoutDate = (dateStr?: string | null): Date | null => {
+  if (!dateStr) return null
+
+  // Detect format and parse appropriately
+  const parsed = dateStr.includes('T')
+    ? parseISO(dateStr)
+    : parseFmt(dateStr, 'yyyy-MM-dd', new Date())
+
+  // Return null if parsing resulted in invalid date
+  return isValid(parsed) ? parsed : null
 }

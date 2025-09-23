@@ -1,14 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
-import {
-  endOfWeek,
-  isSameDay,
-  isWithinInterval,
-  parse as parseFmt,
-  parseISO,
-  startOfWeek,
-} from 'date-fns'
+import { endOfWeek, isSameDay, isWithinInterval, startOfWeek } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
@@ -27,6 +20,7 @@ import {
   workoutViewModeAtom,
 } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
+import { parseWorkoutDate } from '@/lib/utils/date'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
 
@@ -84,21 +78,16 @@ const EnhancedWorkoutsList = memo(
         const weekStart = startOfWeek(today, { weekStartsOn: 0 })
         const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
 
-        const parseInput = (d?: string) => {
-          if (!d) return null
-          return d.includes('T') ? parseISO(d) : parseFmt(d, 'yyyy-MM-dd', new Date())
-        }
-
         switch (quickFilter) {
           case 'today':
             filtered = filtered.filter(workout => {
-              const d = parseInput(workout.date)
+              const d = parseWorkoutDate(workout.date)
               return d ? isSameDay(d, today) : false
             })
             break
           case 'this-week':
             filtered = filtered.filter(workout => {
-              const d = parseInput(workout.date)
+              const d = parseWorkoutDate(workout.date)
               return d ? isWithinInterval(d, { start: weekStart, end: weekEnd }) : false
             })
             break
@@ -134,16 +123,8 @@ const EnhancedWorkoutsList = memo(
       // Apply sorting
       const sorted = [...filtered].sort((a, b) => {
         const cmpDesc = (da?: string, db?: string) => {
-          const aDate = da
-            ? da.includes('T')
-              ? parseISO(da)
-              : parseFmt(da, 'yyyy-MM-dd', new Date())
-            : new Date(0)
-          const bDate = db
-            ? db.includes('T')
-              ? parseISO(db)
-              : parseFmt(db, 'yyyy-MM-dd', new Date())
-            : new Date(0)
+          const aDate = parseWorkoutDate(da) || new Date(0)
+          const bDate = parseWorkoutDate(db) || new Date(0)
           return bDate.getTime() - aDate.getTime()
         }
         const cmpAsc = (da?: string, db?: string) => -cmpDesc(da, db)

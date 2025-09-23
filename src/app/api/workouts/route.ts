@@ -127,7 +127,10 @@ export async function GET(request: NextRequest) {
       if (runnerId) {
         // runnerId authorization already verified above
         coachBranches.push(
-          and(eq(training_plans.coach_id, sessionUser.id), eq(training_plans.runner_id, runnerId)) as SQL
+          and(
+            eq(training_plans.coach_id, sessionUser.id),
+            eq(training_plans.runner_id, runnerId)
+          ) as SQL
         )
         coachBranches.push(
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, runnerId)) as SQL
@@ -140,7 +143,10 @@ export async function GET(request: NextRequest) {
           ) as SQL
         )
         coachBranches.push(
-          and(isNull(workouts.training_plan_id), inArray(workouts.user_id, authorizedUserIds)) as SQL
+          and(
+            isNull(workouts.training_plan_id),
+            inArray(workouts.user_id, authorizedUserIds)
+          ) as SQL
         )
       }
 
@@ -194,16 +200,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query with conditions
-    const query =
-      conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
+    const query = baseQuery.where(conditions.length ? and(...conditions) : sql`false`)
 
     const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
     logger.debug('Raw query results:', { count: results.length })
 
-    // Remove the extra fields we only needed for authorization
+    // Remove the extra fields we only needed for authorization and handle PII
     const cleanedWorkouts = results.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
+      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, runner_email, ...workout }) =>
+        sessionUser.userType === 'coach' ? { ...workout, runner_email } : workout
     )
 
     logger.debug('Successfully fetched workouts', {
@@ -315,7 +321,7 @@ export async function POST(request: NextRequest) {
         date: workoutDate,
         planned_type: plannedType,
         planned_distance: plannedDistance?.toString(),
-        planned_duration: plannedDuration ? parseInt(plannedDuration) : null,
+        planned_duration: plannedDuration ? parseInt(plannedDuration, 10) : null,
         workout_notes: notes,
         status: 'planned',
         // Enhanced workout fields
@@ -349,7 +355,9 @@ export async function POST(request: NextRequest) {
         const coachName = coach?.fullName || 'Your coach'
         // Note: notifications table structure may need to be checked
         // For now, skip notifications to avoid schema issues
-        logger.info('Workout created successfully', {
+        // TODO: Implement proper notification system
+        // For now, skip notifications to avoid schema issues
+        logger.debug('Workout created successfully', {
           workoutId: workout.id,
           runnerId: runner.id,
           coachName,

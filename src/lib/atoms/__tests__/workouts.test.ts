@@ -64,6 +64,10 @@ describe('Workouts Atoms', () => {
   let store: ReturnType<typeof createStore>
 
   beforeEach(() => {
+    // Set consistent time for date-dependent tests to prevent flakiness
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2025-01-15T12:00:00Z'))
+
     store = createTestStore()
     vi.clearAllMocks()
 
@@ -80,6 +84,7 @@ describe('Workouts Atoms', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+    vi.useRealTimers()
   })
 
   describe('Core workout atoms', () => {
