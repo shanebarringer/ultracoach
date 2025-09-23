@@ -13,7 +13,6 @@ import {
   Tabs,
 } from '@heroui/react'
 import { useAtom, useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 import {
   FlagIcon,
   MapPinIcon,
@@ -31,7 +30,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
-import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
+import { connectedRunnersLoadableAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
@@ -45,7 +44,7 @@ interface RunnerWithStats extends User {
 }
 
 // Create loadable atom for better UX
-const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+// Use the pre-defined loadable atom from relationships module
 
 interface RunnersPageClientProps {
   user: {
@@ -73,10 +72,10 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
 
   // Update URL when tab changes
   useEffect(() => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('tab', activeTab)
-    router.replace(url.pathname + url.search, { scroll: false })
-  }, [activeTab, router])
+    const params = new URLSearchParams(Array.from(searchParams.entries()))
+    params.set('tab', activeTab)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [activeTab, router, searchParams])
 
   const handleMessageRunner = (runnerId: string) => {
     router.push(`/chat/${runnerId}`)
@@ -202,7 +201,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     }
 
     // Ensure runners is always an array
-    const runnersData = connectedRunnersLoadable.data
+    const runnersData = connectedRunnersLoadable.data?.data || []
     const runners = Array.isArray(runnersData) ? runnersData : []
 
     if (runners.length === 0) {
@@ -297,7 +296,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
                 <span>Connected Runners</span>
                 {connectedRunnersLoadable.state === 'hasData' && (
                   <Chip size="sm" variant="flat">
-                    {connectedRunnersLoadable.data?.length || 0}
+                    {connectedRunnersLoadable.data?.data?.length || 0}
                   </Chip>
                 )}
               </div>

@@ -2,7 +2,6 @@
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
 import { useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 import {
   CalendarDaysIcon,
   ChevronLeftIcon,
@@ -18,11 +17,10 @@ import { useParams, useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
+import { connectedRunnersLoadableAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
-// Create loadable atom for better UX
-const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+// Use pre-defined loadable atom from relationships module
 
 export default function WeeklyPlannerRunnerPage() {
   const { data: session, status } = useSession()
@@ -40,7 +38,7 @@ export default function WeeklyPlannerRunnerPage() {
 
   // Handle loading and error states from Jotai loadable
   const loading = runnersLoadable.state === 'loading'
-  const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
+  const runners = runnersLoadable.state === 'hasData' ? runnersLoadable.data?.data || [] : []
   const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   // Derive selectedRunner directly from URL and session
@@ -140,7 +138,7 @@ export default function WeeklyPlannerRunnerPage() {
           <Card className="border-danger-200 bg-danger-50">
             <CardBody className="text-center py-12">
               <div className="text-danger-600 mb-4">Failed to load runners</div>
-              <Button color="primary" onClick={() => window.location.reload()}>
+              <Button color="primary" onClick={() => router.refresh()}>
                 Retry
               </Button>
             </CardBody>

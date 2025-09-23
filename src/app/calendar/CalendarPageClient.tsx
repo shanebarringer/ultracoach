@@ -2,7 +2,7 @@
 
 import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 
 import { Suspense, memo, useCallback, useRef } from 'react'
 
@@ -16,7 +16,7 @@ import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
-  connectedRunnersAtom,
+  connectedRunnersDataAtom,
   filteredWorkoutsAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
@@ -77,11 +77,11 @@ interface Props {
 function CalendarContent({ user }: Props) {
   const router = useRouter()
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
-  const [filteredWorkouts] = useAtom(filteredWorkoutsAtom)
-  const [workoutStats] = useAtom(workoutStatsAtom)
+  const filteredWorkouts = useAtomValue(filteredWorkoutsAtom)
+  const workoutStats = useAtomValue(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
-  const [trainingPlans] = useAtom(refreshableTrainingPlansAtom) // Using async atom
-  const [connectedRunners] = useAtom(connectedRunnersAtom) // Already async
+  const trainingPlans = useAtomValue(refreshableTrainingPlansAtom) // Using async atom
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom) // Data only
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
@@ -214,7 +214,7 @@ function CalendarContent({ user }: Props) {
                     }}
                   >
                     {[
-                      <SelectItem key="all">All Runners</SelectItem>,
+                      <SelectItem key="">All Runners</SelectItem>,
                       ...connectedRunners.map((runner: User) => (
                         <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
                       )),

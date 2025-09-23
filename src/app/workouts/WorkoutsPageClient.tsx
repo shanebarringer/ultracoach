@@ -4,7 +4,7 @@ import { Button, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import { Activity, Mountain, Plus, Users } from 'lucide-react'
 
-import { Suspense, useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -15,6 +15,7 @@ import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
+import { api } from '@/lib/api-client'
 import { uiStateAtom, workoutStravaShowPanelAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -56,10 +57,18 @@ function WorkoutsPageClientInner({ user }: Props) {
   })
 
   // Coach-specific state and data
-  const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
+  const [selectedRunnerId, setSelectedRunnerId] = useState<string | null>(null)
   const { runners } = useDashboardData() // Get runner data for coach view
 
   const isCoach = user.userType === 'coach'
+  const controllerRef = useRef<AbortController | null>(null)
+
+  // Cleanup any in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      controllerRef.current?.abort()
+    }
+  }, [])
 
   const handleLogWorkoutSuccess = useCallback(() => {
     setUiState(prev => ({ ...prev, selectedWorkout: null }))
@@ -83,23 +92,30 @@ function WorkoutsPageClientInner({ user }: Props) {
 
   // Fetch workouts for specific runner (coach only)
   const fetchRunnerWorkouts = useCallback(
-    async (runnerId: string) => {
+    async (runnerId: string | null) => {
       if (!isCoach) return
+
+      controllerRef.current?.abort()
+      controllerRef.current = new AbortController()
+      const { signal } = controllerRef.current
 
       logger.debug('Fetching workouts for runner', { runnerId })
 
       try {
         const params = new URLSearchParams()
-        if (runnerId !== 'all') {
+        if (runnerId) {
           params.append('runnerId', runnerId)
         }
 
-        const response = await fetch(`/api/workouts?${params}`, {
-          credentials: 'same-origin',
+        const qs = params.toString()
+        const url = qs ? `/api/workouts?${qs}` : '/api/workouts'
+        const response = await api.get<{ workouts: Workout[] }>(url, {
+          signal,
+          suppressGlobalToast: true,
         })
 
-        if (response.ok) {
-          const data = await response.json()
+        if (response.status >= 200 && response.status < 300) {
+          const data = response.data
           setWorkouts(data.workouts || [])
           logger.debug('Successfully fetched runner workouts', {
             runnerId,
@@ -112,7 +128,12 @@ function WorkoutsPageClientInner({ user }: Props) {
           })
         }
       } catch (error) {
-        logger.error('Error fetching runner workouts:', error)
+        if (
+          (error as { code?: string }).code !== 'ERR_CANCELED' &&
+          (error as { name?: string }).name !== 'AbortError'
+        ) {
+          logger.error('Error fetching runner workouts:', error)
+        }
       }
     },
     [isCoach, setWorkouts]
@@ -121,12 +142,12 @@ function WorkoutsPageClientInner({ user }: Props) {
   // Handle runner selection change
   const handleRunnerSelectionChange = useCallback(
     (keys: 'all' | Set<React.Key>) => {
-      const selectedKeys = keys === 'all' ? new Set(['all']) : keys
+      const selectedKeys = keys === 'all' ? new Set(['']) : keys
       const runnerId = Array.from(selectedKeys)[0] as string
-      setSelectedRunnerId(runnerId)
+      setSelectedRunnerId(runnerId || null)
 
       if (isCoach) {
-        fetchRunnerWorkouts(runnerId)
+        fetchRunnerWorkouts(runnerId || null)
       }
     },
     [isCoach, fetchRunnerWorkouts]
@@ -136,7 +157,7 @@ function WorkoutsPageClientInner({ user }: Props) {
   const currentRunnerContext = useMemo(() => {
     if (!isCoach) return null
 
-    if (selectedRunnerId === 'all') {
+    if (selectedRunnerId === null) {
       return {
         name: 'All Athletes',
         email: `${runners.length} connected runners`,
@@ -207,12 +228,12 @@ function WorkoutsPageClientInner({ user }: Props) {
                     <Select
                       label="Select Athlete"
                       placeholder="Choose a runner..."
-                      selectedKeys={[selectedRunnerId]}
+                      selectedKeys={selectedRunnerId ? [selectedRunnerId] : ['']}
                       onSelectionChange={handleRunnerSelectionChange}
                       startContent={<Users className="h-4 w-4 text-foreground-500" />}
                       items={[
                         {
-                          id: 'all',
+                          id: '',
                           name: 'All Athletes',
                           email: `${runners.length} connected runners`,
                         },

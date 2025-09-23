@@ -20,13 +20,18 @@ export const apiClient = axios.create({
 // Add a per-request suppression flag for global error toasts
 export type ApiRequestConfig = AxiosRequestConfig & {
   suppressGlobalErrorToast?: boolean
+  suppressGlobalToast?: boolean // Keep backward compatibility
 }
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
-    // Short-circuit intentional cancellations before any logging/toasts
-    if (axios.isCancel(error) || (isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+    // Check for aborted/canceled requests and handle silently - this is expected behavior
+    if (
+      axios.isCancel(error) ||
+      (isAxiosError(error) && error.code === 'ERR_CANCELED') ||
+      error.name === 'AbortError'
+    ) {
       return Promise.reject(error)
     }
 
@@ -47,14 +52,17 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       const isServerError = status >= 500 && status < 600
-      if (!cfg.suppressGlobalErrorToast && isServerError) {
+      // Support both suppressGlobalErrorToast (new) and suppressGlobalToast (legacy)
+      const suppressToast = cfg.suppressGlobalErrorToast || cfg.suppressGlobalToast
+      if (!suppressToast && isServerError) {
         if (typeof window !== 'undefined' && !DISABLE_ERROR_TOASTS) {
           commonToasts.serverError()
         }
       }
     } else {
       // Network or CORS error (no response)
-      if (!cfg.suppressGlobalErrorToast) {
+      const suppressToast = cfg.suppressGlobalErrorToast || cfg.suppressGlobalToast
+      if (!suppressToast) {
         if (typeof window !== 'undefined' && !DISABLE_ERROR_TOASTS) {
           commonToasts.networkError()
         }

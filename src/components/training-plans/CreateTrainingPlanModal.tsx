@@ -39,8 +39,8 @@ const createTrainingPlanSchema = z.object({
   title: z
     .string()
     .min(1, 'Plan title is required')
-    .max(100, 'Title must be less than 100 characters'),
-  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+    .max(100, 'Title must be at most 100 characters'),
+  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
   runnerId: z.string().min(1, 'Please select a runner'),
   race_id: z.string().nullable(),
   goal_type: z.enum(['completion', 'time', 'placement']).nullable(),
@@ -113,16 +113,15 @@ export default function CreateTrainingPlanModal({
   useEffect(() => {
     if (isOpen) {
       let controller: AbortController | null = null
-
       const fetchInitialData = async () => {
         controller = new AbortController()
-
         // Fetch races using API client when not already loaded
         const racesArray = Array.isArray(races) ? races : []
         if (racesArray.length === 0) {
           try {
             const response = await api.get<Race[]>('/api/races', {
               signal: controller.signal,
+              suppressGlobalToast: true,
             })
             setRaces(Array.isArray(response.data) ? response.data : [])
           } catch (err) {
@@ -137,7 +136,7 @@ export default function CreateTrainingPlanModal({
           try {
             const response = await api.get<{ templates: PlanTemplate[] }>(
               '/api/training-plans/templates',
-              { signal: controller.signal }
+              { signal: controller.signal, suppressGlobalToast: true }
             )
             const templatesData = response.data?.templates ?? []
             setPlanTemplates(templatesData)
@@ -151,12 +150,13 @@ export default function CreateTrainingPlanModal({
 
       fetchInitialData()
 
-      // Cleanup function to abort in-flight requests
       return () => {
-        controller?.abort()
+        if (controller) {
+          controller.abort()
+        }
       }
     }
-  }, [isOpen, races, setRaces, planTemplates.length, setPlanTemplates])
+  }, [isOpen, races, planTemplates, setRaces, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
@@ -176,7 +176,7 @@ export default function CreateTrainingPlanModal({
       })
 
       const response = await api.post<{ id: string }>('/api/training-plans', payload, {
-        suppressGlobalErrorToast: true,
+        suppressGlobalToast: true,
       })
 
       logger.info('Training plan created successfully', response.data)
@@ -215,11 +215,11 @@ export default function CreateTrainingPlanModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalContent>
         <ModalHeader>Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="space-y-4">
+          <ModalBody className="space-y-4 max-h-[70svh] sm:max-h-[75svh] overflow-y-auto">
             {formState.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 {formState.error}
@@ -236,7 +236,6 @@ export default function CreateTrainingPlanModal({
                   onSelectionChange={keys => {
                     const selectedTemplateId = Array.from(keys).join('')
                     field.onChange(selectedTemplateId || null)
-                    setValue('template_id', selectedTemplateId || null)
                     handleTemplateSelect(selectedTemplateId)
                   }}
                   placeholder="Choose a plan template..."
@@ -291,7 +290,6 @@ export default function CreateTrainingPlanModal({
               control={control}
               render={({ field, fieldState }) => (
                 <Select
-                  {...field}
                   label="Select Runner"
                   placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
                   isRequired

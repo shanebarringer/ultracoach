@@ -2,16 +2,16 @@
 
 import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
+import { availableCoachesAtom, connectedRunnersDataAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 
@@ -32,7 +32,8 @@ interface NewMessageModalProps {
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [connectedRunners] = useAtom(connectedRunnersAtom)
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
+  const availableCoaches = useAtomValue(availableCoachesAtom)
 
   // React Hook Form setup
   const { control, watch, reset } = useForm<SearchForm>({
@@ -44,8 +45,15 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
 
   const searchTerm = watch('searchTerm') || ''
 
-  // Directly derive available users from atoms - no useState needed
-  const availableUsers = session?.user?.role === 'coach' ? connectedRunners || [] : []
+  // Memoize available users to stabilize dependency for filteredUsers
+  const availableUsers = useMemo(() => {
+    if (session?.user?.userType === 'coach') {
+      return connectedRunners || []
+    } else {
+      // For runners, show available coaches
+      return availableCoaches || []
+    }
+  }, [session?.user?.userType, connectedRunners, availableCoaches])
 
   useEffect(() => {
     if (isOpen) {
@@ -54,22 +62,27 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   }, [isOpen, reset])
 
   const handleStartConversation = (userId: string) => {
-    logger.info('Starting conversation:', { userId, userRole: session?.user?.role })
+    logger.info('Starting conversation:', { userId, userRole: session?.user?.userType })
     onClose()
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = availableUsers.filter(
-    (user: User) =>
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const q = (searchTerm || '').toLowerCase()
+  const filteredUsers = useMemo(
+    () =>
+      availableUsers.filter((user: User) => {
+        const name = (user.full_name || '').toLowerCase()
+        const email = (user.email || '').toLowerCase()
+        return name.includes(q) || email.includes(q)
+      }),
+    [availableUsers, q]
   )
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="4xl"
+      size="2xl"
       scrollBehavior="inside"
       data-testid="new-message-modal"
     >
@@ -109,21 +122,21 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                 <h3 className="mt-2 text-sm font-medium text-gray-900">
                   {searchTerm
                     ? 'No users found'
-                    : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
+                    : `No ${session?.user?.userType === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
                 <p className="mt-2 text-sm text-default-500">
-                  {session?.user?.role === 'coach'
+                  {session?.user?.userType === 'coach'
                     ? 'Create training plans to connect with runners'
                     : 'Ask your coach to create a training plan for you'}
                 </p>
               </div>
             ) : (
-              <div className="">
+              <div className="max-h-[400px] overflow-y-auto">
                 {filteredUsers.map((user: User) => (
                   <Button
                     key={user.id}
                     variant="flat"
-                    className="w-full flex items-center p-3 rounded-lg text-left justify-start height-[400px] overflow-y-auto"
+                    className="w-full flex items-center p-3 rounded-lg text-left justify-start"
                     onClick={() => handleStartConversation(user.id)}
                     data-testid={`user-option-${user.id}`}
                     size="lg"

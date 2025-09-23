@@ -12,7 +12,9 @@ import { atomWithRefresh, atomWithStorage } from 'jotai/utils'
 import type { PlanTemplate } from '@/lib/supabase'
 import type { ExtendedTrainingPlan } from '@/types/training'
 
+import { api } from '../api-client'
 import { createLogger } from '../logger'
+import { normalizeListResponse } from '../utils/api-utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -35,21 +37,14 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
   const logger = createLogger('TrainingPlansAtom')
   try {
     logger.debug('Fetching training plans...')
-    const response = await fetch('/api/training-plans', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
+    const response = await api.get<
+      { trainingPlans?: ExtendedTrainingPlan[] } | ExtendedTrainingPlan[]
+    >('/api/training-plans', {
+      suppressGlobalToast: true,
     })
-    if (!response.ok) {
-      logger.error(`Failed to fetch training plans: ${response.status} ${response.statusText}`)
-      return []
-    }
-    const data = await response.json()
+    const data = response.data
     // API returns { trainingPlans: [...] } so extract the array
-    const plans = data.trainingPlans || data
-    // Ensure it's an array
-    const plansArray = Array.isArray(plans) ? plans : []
+    const plansArray = normalizeListResponse(data, 'trainingPlans')
     logger.debug('Training plans fetched', { count: plansArray.length })
     return plansArray as ExtendedTrainingPlan[]
   } catch (error) {

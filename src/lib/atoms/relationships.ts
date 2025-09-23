@@ -11,8 +11,10 @@ import { atomWithRefresh, loadable } from 'jotai/utils'
 
 import type { RelationshipData } from '@/types/relationships'
 
+import { api } from '../api-client'
 import { createLogger } from '../logger'
 import type { User } from '../supabase'
+import { normalizeListResponse } from '../utils/api-utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -22,8 +24,11 @@ export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
 
-// Module-scoped logger to avoid re-instantiating per atom read
+// Module-scoped loggers to avoid re-instantiating per atom read
 const relationshipsLogger = createLogger('RelationshipsAsyncAtom')
+const connectedRunnersLogger = createLogger('ConnectedRunnersAtom')
+const availableCoachesLogger = createLogger('AvailableCoachesAtom')
+const availableRunnersLogger = createLogger('AvailableRunnersAtom')
 
 // Async atom that fetches relationships
 export const relationshipsAsyncAtom = atom(async () => {
@@ -31,15 +36,14 @@ export const relationshipsAsyncAtom = atom(async () => {
   if (!isBrowser) return []
 
   try {
-    const response = await fetch('/api/coach-runners', {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-    })
-    if (response.ok) {
-      const data = await response.json()
-      return Array.isArray(data) ? data : data.relationships || []
-    }
-    return []
+    const response = await api.get<RelationshipData[] | { relationships: RelationshipData[] }>(
+      '/api/coach-runners',
+      {
+        suppressGlobalToast: true,
+      }
+    )
+    const data = response.data
+    return normalizeListResponse(data, 'relationships')
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     relationshipsLogger.error('Failed to fetch relationships', { message })
@@ -80,108 +84,96 @@ export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
  */
 export const runnersAtom = atom<User[]>([])
 
-// Connected runners atom for coaches
-export const connectedRunnersAtom = atomWithRefresh(async () => {
-  // Return empty array for SSR to ensure consistency
-  if (!isBrowser) return []
+// Connected runners atom state interface
+interface ConnectedRunnersState {
+  data: User[]
+  isLoading: boolean
+  hasLoaded: boolean
+  error: string | null
+}
 
-  const logger = createLogger('ConnectedRunnersAtom')
+// Connected runners atom for coaches with loading state
+export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedRunnersState> => {
+  // Return initial state for SSR to ensure consistency
+  if (!isBrowser) return { data: [], isLoading: false, hasLoaded: false, error: null }
+
   try {
-    logger.debug('Fetching connected runners...')
-    const response = await fetch('/api/runners', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
+    connectedRunnersLogger.debug('Fetching connected runners...')
+    const response = await api.get<{ runners?: User[] } | User[]>('/api/runners', {
+      suppressGlobalToast: true,
     })
-    if (!response.ok) {
-      logger.error(`Failed to fetch connected runners: ${response.status} ${response.statusText}`)
-      return []
-    }
-    const data = await response.json()
 
+    const data = response.data
     // Extract runners array from response object
-    const runners = Array.isArray(data) ? data : data.runners || []
-    logger.debug('Connected runners fetched', { count: runners.length })
-    return runners as User[]
+    const runners = normalizeListResponse(data, 'runners')
+    connectedRunnersLogger.debug('Connected runners fetched', { count: runners.length })
+    return { data: runners as User[], isLoading: false, hasLoaded: true, error: null }
   } catch (error) {
-    logger.error('Error fetching connected runners', error)
-    return []
+    connectedRunnersLogger.error('Error fetching connected runners', error)
+    return {
+      data: [],
+      isLoading: false,
+      hasLoaded: true,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
 })
 
-// Available coaches atom
-export const availableCoachesAtom = atomWithRefresh(async () => {
-  if (!isBrowser) return []
-  const logger = createLogger('AvailableCoachesAtom')
-  try {
-    const response = await fetch('/api/coaches/available', {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-    })
-    if (!response.ok) return []
-    const data = await response.json()
-    // API returns { coaches: [...] }, extract the array
-    const coaches = data.coaches || data
-    return Array.isArray(coaches) ? (coaches as User[]) : []
-  } catch (error) {
-    logger.error('Error fetching available coaches', error)
-    return []
-  }
-})
+// Loadable version for proper async handling
+export const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
-// Available runners atom
-export const availableRunnersAtom = atomWithRefresh(async () => {
-  if (!isBrowser) return []
-  const logger = createLogger('AvailableRunnersAtom')
-  try {
-    const response = await fetch('/api/runners/available', {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-    })
-    if (!response.ok) return []
-    const data = await response.json()
-    // API returns { runners: [...] }, extract the array
-    const runners = data.runners || data
-    return Array.isArray(runners) ? (runners as User[]) : []
-  } catch (error) {
-    logger.error('Error fetching available runners', error)
-    return []
-  }
-})
-
-// ---------------------------------------------------------------------------
-// Connected runners: derived data/loadable/loading helpers
-// ---------------------------------------------------------------------------
-
-const connectedRunnersInnerAtom = atom(async get => {
-  const runners = (await get(connectedRunnersAtom)) as User[]
-  return { runners: Array.isArray(runners) ? runners : [] }
-})
-
-// Public loadable wrapper used by derived read-only atoms
-export const connectedRunnersLoadableAtom = loadable(connectedRunnersInnerAtom)
-
-/**
- * Read-only data atom that always returns an array of runners. This guards
- * consumers from having to check the loadable state.
- */
+// Derived atoms for easier access
 export const connectedRunnersDataAtom = atom(get => {
   const loadable = get(connectedRunnersLoadableAtom)
-  if (loadable.state === 'hasData') return loadable.data.runners
-  return [] as User[]
+  if (loadable.state === 'hasData') {
+    return loadable.data.data
+  }
+  return []
 })
 
-/**
- * Read-only loading atom.
- *
- * Simplified logic: rely solely on the loadable wrapper state. We avoid
- * introducing inner flags like `hasLoaded`/`isLoading` since `loadable.state`
- * already captures the async lifecycle in a stable way for consumers.
- *
- * True only when `loadable.state === 'loading'`.
- */
 export const connectedRunnersLoadingAtom = atom(get => {
   const loadable = get(connectedRunnersLoadableAtom)
-  return loadable.state === 'loading'
+  // Show loading during actual loading OR during initial fetch when hasLoaded is false
+  if (loadable.state === 'loading') {
+    return true
+  }
+  if (loadable.state === 'hasData' && !loadable.data.hasLoaded) {
+    return true
+  }
+  return false
 })
+
+// Backward compatibility export - simplified alias
+export const connectedRunnersCompatAtom = connectedRunnersDataAtom
+
+// Helper factory for creating available users atoms (DRY pattern)
+function makeAvailableUsersAtom<T extends User>(
+  url: string,
+  key: string,
+  logger: ReturnType<typeof createLogger>
+) {
+  return atomWithRefresh(async () => {
+    if (!isBrowser) return []
+    try {
+      const response = await api.get<Record<string, T[]> | T[]>(url, { suppressGlobalToast: true })
+      return normalizeListResponse<T>(response.data, key)
+    } catch (error) {
+      logger.error(`Error fetching ${key}`, error)
+      return []
+    }
+  })
+}
+
+// Available coaches atom
+export const availableCoachesAtom = makeAvailableUsersAtom<User>(
+  '/api/coaches/available',
+  'coaches',
+  availableCoachesLogger
+)
+
+// Available runners atom
+export const availableRunnersAtom = makeAvailableUsersAtom<User>(
+  '/api/runners/available',
+  'runners',
+  availableRunnersLogger
+)
