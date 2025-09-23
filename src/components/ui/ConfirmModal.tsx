@@ -2,6 +2,10 @@
 
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/react'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ConfirmModal')
+
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
@@ -35,13 +39,13 @@ export default function ConfirmModal({
       if (onError) {
         onError(error instanceof Error ? error : new Error('Unknown error'))
       } else {
-        console.error('ConfirmModal onConfirm error:', error)
+        logger.error('ConfirmModal onConfirm error:', error)
       }
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading}>
+    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading} hideCloseButton={isLoading}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <h3 className="text-lg font-semibold">{title}</h3>

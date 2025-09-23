@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
             eq(training_plans.runner_id, sessionUser.id),
             inArray(training_plans.coach_id, authorizedUserIds) as SQL
           ),
-          // OR standalone workouts owned by this runner
+          // OR workout has no training plan (standalone) owned by the runner
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         ) as SQL
       } else {
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR standalone workouts owned by this runner
+          // OR workout has no training plan (standalone) owned by the runner
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         ) as SQL
       }

@@ -13,20 +13,23 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import axios, { isAxiosError } from 'axios'
 import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { api } from '@/lib/api-client'
 import {
-  connectedRunnersAtom,
+  connectedRunnersDataAtom,
+  connectedRunnersLoadingAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, User } from '@/lib/supabase'
+import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
@@ -63,11 +66,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  // Use Jotai atom instead of local state
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
-
-  // Derive loading state from the atom's data
-  const loadingRunners = connectedRunners.length === 0
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
+  const loadingRunners = useAtomValue(connectedRunnersLoadingAtom)
 
   // React Hook Form setup
   const {
@@ -95,6 +95,8 @@ export default function CreateTrainingPlanModal({
   // Watch all form values for conditional rendering
   const formData = watch()
 
+  // Race type is imported from '@/lib/supabase'
+
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
     if (selectedTemplate) {
@@ -115,60 +117,34 @@ export default function CreateTrainingPlanModal({
       const fetchInitialData = async () => {
         controller = new AbortController()
 
-        // Fetch races using atom refresh
+        // Fetch races using API client when not already loaded
         const racesArray = Array.isArray(races) ? races : []
         if (racesArray.length === 0) {
           try {
-            const baseUrl =
-              typeof window !== 'undefined'
-                ? ''
-                : (process.env.NEXT_PUBLIC_API_BASE_URL ??
-                  process.env.API_BASE_URL ??
-                  'http://localhost:3001')
-            const response = await fetch(`${baseUrl}/api/races`, {
-              credentials: 'same-origin',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
+            const response = await api.get<Race[]>('/api/races', {
               signal: controller.signal,
             })
-            if (response.ok) {
-              const data = await response.json()
-              setRaces(data || [])
-            }
+            setRaces(Array.isArray(response.data) ? response.data : [])
           } catch (err) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-              logger.error('Error fetching races:', err)
-            }
+            // Filter out Axios cancellations (AbortController -> ERR_CANCELED)
+            if (axios.isCancel(err) || (isAxiosError(err) && err.code === 'ERR_CANCELED')) return
+            logger.error('Error fetching races:', err)
           }
         }
 
         // Fetch plan templates
         if (planTemplates.length === 0) {
           try {
-            const response = await fetch('/api/training-plans/templates', {
-              credentials: 'same-origin', // Include cookies for authentication
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
-              signal: controller.signal,
-            })
-            if (response.ok) {
-              const data = await response.json()
-              setPlanTemplates(data.templates)
-              logger.info(`Loaded ${data.templates.length} plan templates`)
-            } else {
-              logger.error('Failed to fetch plan templates:', response.status, response.statusText)
-              // Show more detailed error for debugging
-              const errorText = await response.text()
-              logger.error('API response:', errorText)
-            }
+            const response = await api.get<{ templates: PlanTemplate[] }>(
+              '/api/training-plans/templates',
+              { signal: controller.signal }
+            )
+            const templatesData = response.data?.templates ?? []
+            setPlanTemplates(templatesData)
+            logger.info(`Loaded ${templatesData.length} plan templates`)
           } catch (err) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-              logger.error('Error fetching plan templates:', err)
-            }
+            if (axios.isCancel(err) || (isAxiosError(err) && err.code === 'ERR_CANCELED')) return
+            logger.error('Error fetching plan templates:', err)
           }
         }
       }
@@ -199,48 +175,42 @@ export default function CreateTrainingPlanModal({
         raceAttached: Boolean(payload.race_id),
       })
 
-      const response = await fetch('/api/training-plans', {
-        method: 'POST',
-        credentials: 'same-origin', // Include cookies for authentication
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const response = await api.post<{ id: string }>('/api/training-plans', payload, {
+        suppressGlobalErrorToast: true,
       })
 
-      if (response.ok) {
-        const responseData = await response.json()
-        logger.info('Training plan created successfully', responseData)
-        setFormState(prev => ({ ...prev, loading: false, error: '' }))
-        reset() // Reset form with react-hook-form
+      logger.info('Training plan created successfully', response.data)
+      setFormState(prev => ({ ...prev, loading: false, error: '' }))
+      reset() // Reset form with react-hook-form
 
-        // Show success toast
-        commonToasts.trainingPlanCreated()
+      // Show success toast
+      commonToasts.trainingPlanCreated()
 
-        onSuccess()
-        onClose()
-      } else {
-        const errorData = await response.json()
-        logger.error('Failed to create training plan:', errorData)
-        setFormState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorData.error || 'Failed to create training plan',
-        }))
-
-        // Show error toast
-        commonToasts.trainingPlanError(errorData.error || 'Failed to create training plan')
-      }
+      onSuccess()
+      onClose()
     } catch (error) {
+      // Skip logging/toasting on user-initiated cancellations
+      if (axios.isCancel(error) || (isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+        return
+      }
+
+      let message = 'Failed to create training plan'
+      if (isAxiosError(error)) {
+        const data = error.response?.data as { error?: string; message?: string } | undefined
+        message = data?.error || data?.message || error.message || message
+      } else if (error instanceof Error) {
+        message = error.message || message
+      }
+
       logger.error('Error creating training plan:', error)
       setFormState(prev => ({
         ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.',
+        error: message,
       }))
 
-      // Show error toast
-      commonToasts.trainingPlanError('An error occurred. Please try again.')
+      // Show error toast (suppressing global toast via request config)
+      commonToasts.trainingPlanError(message)
     }
   }
 
@@ -330,8 +300,8 @@ export default function CreateTrainingPlanModal({
                   isLoading={loadingRunners}
                   selectedKeys={field.value ? [field.value] : []}
                   onSelectionChange={keys => {
-                    const selectedKey = Array.from(keys)[0] as string
-                    field.onChange(selectedKey || '')
+                    const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
+                    field.onChange(selectedKey)
                   }}
                 >
                   {connectedRunners.map((runner: User) => (
