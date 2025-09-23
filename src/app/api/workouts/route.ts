@@ -36,8 +36,7 @@ export async function GET(request: NextRequest) {
         .from(coach_runners)
         .where(and(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.runner_id)
-      logger.debug('Coach authorized runner IDs', {
-        coachId: sessionUser.id,
+      logger.debug('Coach authorized runner relationships', {
         authorizedRunnersCount: authorizedUserIds.length,
       })
     } else {
@@ -46,8 +45,7 @@ export async function GET(request: NextRequest) {
         .from(coach_runners)
         .where(and(eq(coach_runners.runner_id, sessionUser.id), eq(coach_runners.status, 'active')))
       authorizedUserIds = relationships.map(rel => rel.coach_id)
-      logger.debug('Runner authorized coach IDs', {
-        runnerId: sessionUser.id,
+      logger.debug('Runner authorized coach relationships', {
         authorizedCoachesCount: authorizedUserIds.length,
       })
     }
@@ -55,17 +53,12 @@ export async function GET(request: NextRequest) {
     // Allow runners to see workouts even if they don't have active relationships yet
     // This handles the case where workouts exist but relationships might not be set up properly
     if (authorizedUserIds.length === 0 && sessionUser.userType === 'runner') {
-      logger.info(
-        'No active relationships found for runner, but allowing access to their own workouts',
-        {
-          userId: sessionUser.id,
-          role: sessionUser.userType,
-        }
-      )
+      logger.info('No active relationships found for runner; allowing access to own workouts', {
+        role: sessionUser.userType,
+      })
       // Don't return empty - continue to allow runner to see their workouts
     } else if (authorizedUserIds.length === 0 && sessionUser.userType === 'coach') {
       logger.info('No active relationships found for coach', {
-        userId: sessionUser.id,
         role: sessionUser.userType,
       })
       // Do not early-return; authorization below will deny via sql`false`
@@ -97,20 +90,22 @@ export async function GET(request: NextRequest) {
       plan_runner_id: training_plans.runner_id,
     }
 
-    const baseQuery = db
-      .select(
-        sessionUser.userType === 'coach'
-          ? {
+    const baseQuery =
+      sessionUser.userType === 'coach'
+        ? db
+            .select({
               ...baseFields,
               // Include runner name/email for coach view only
               runner_name: user.fullName,
               runner_email: user.email,
-            }
-          : baseFields
-      )
-      .from(workouts)
-      .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
-      .leftJoin(user, eq(workouts.user_id, user.id))
+            })
+            .from(workouts)
+            .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
+            .leftJoin(user, eq(workouts.user_id, user.id))
+        : db
+            .select(baseFields)
+            .from(workouts)
+            .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
 
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
@@ -120,8 +115,8 @@ export async function GET(request: NextRequest) {
       // Check runnerId authorization first
       if (runnerId && !authorizedUserIds.includes(runnerId)) {
         logger.warn('Coach attempted to access unauthorized runner workouts', {
-          coachId: sessionUser.id,
-          requestedRunnerId: runnerId,
+          requestedRunnerProvided: Boolean(runnerId),
+          isSessionUserRequester: runnerId ? sessionUser.id === runnerId : false,
           authorizedRunnersCount: authorizedUserIds.length,
         })
         return NextResponse.json({ error: 'Forbidden: unauthorized runnerId' }, { status: 403 })
@@ -306,9 +301,8 @@ export async function POST(request: NextRequest) {
 
     if (hasActiveRelationship.length === 0) {
       logger.warn('Coach attempted to create workout without active relationship', {
-        coachId: sessionUser.id,
-        runnerId: plan.runner_id,
-        trainingPlanId,
+        hasActiveRelationship: false,
+        trainingPlanProvided: Boolean(trainingPlanId),
       })
       return NextResponse.json(
         { error: 'No active relationship found with this runner' },
@@ -390,8 +384,7 @@ export async function POST(request: NextRequest) {
         // TODO: Implement proper notification system
         // For now, skip notifications to avoid schema issues
         logger.debug('Workout created successfully', {
-          workoutId: workout.id,
-          runnerId: runner.id,
+          hasRunner: Boolean(runner),
           coachName,
         })
       }

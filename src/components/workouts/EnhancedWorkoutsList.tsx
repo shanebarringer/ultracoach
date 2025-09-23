@@ -5,7 +5,7 @@ import { isSameDay, isWithinInterval } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 
 import { useSearchParams } from 'next/navigation'
 
@@ -69,7 +69,16 @@ const EnhancedWorkoutsList = memo(
     }, [searchParams, setStatusFilter, setQuickFilter])
 
     // Recompute on local day change to keep "today/this-week" accurate
-    const dayKey = toLocalYMD(new Date())
+    const [dayKey, setDayKey] = useState(() => toLocalYMD(new Date()))
+
+    useEffect(() => {
+      const now = new Date()
+      const nextMidnight = new Date(now)
+      nextMidnight.setHours(24, 0, 0, 0)
+      const ms = nextMidnight.getTime() - now.getTime()
+      const id = setTimeout(() => setDayKey(toLocalYMD(new Date())), ms)
+      return () => clearTimeout(id)
+    }, [])
     // Filter and sort workouts
     const processedWorkouts = useMemo(() => {
       let filtered = workouts
@@ -147,10 +156,20 @@ const EnhancedWorkoutsList = memo(
               // Final deterministic tie-breaker
               return (a.workout.id || '').localeCompare(b.workout.id || '')
             }
-            case 'type':
-              return (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
-            case 'status':
-              return (a.workout.status || 'planned').localeCompare(b.workout.status || 'planned')
+            case 'type': {
+              const r = (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
+            }
+            case 'status': {
+              const r = (a.workout.status || 'planned').localeCompare(b.workout.status || 'planned')
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
+            }
             case 'distance': {
               const rawA = a.workout.actual_distance ?? a.workout.planned_distance ?? 0
               const rawB = b.workout.actual_distance ?? b.workout.planned_distance ?? 0
@@ -160,7 +179,11 @@ const EnhancedWorkoutsList = memo(
               const bNum =
                 typeof rawB === 'number' ? rawB : Number.isFinite(Number(rawB)) ? Number(rawB) : 0
 
-              return bNum - aNum
+              const r = bNum - aNum
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (b.workout.id || '').localeCompare(a.workout.id || '')
             }
             default:
               return 0
@@ -169,6 +192,7 @@ const EnhancedWorkoutsList = memo(
         .map(({ workout }) => workout)
 
       return sorted
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
       workouts,
       searchTerm,
