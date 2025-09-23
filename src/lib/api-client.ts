@@ -120,11 +120,7 @@ apiClient.interceptors.response.use(
         // Check if global toasts are suppressed for this request
         const suppressToast = (config as ExtendedAxiosRequestConfig)?.suppressGlobalToast
         // Only show toast if error toasts are not disabled and not suppressed for this request
-        if (
-          typeof window !== 'undefined' &&
-          !isErrorToastsDisabled &&
-          !suppressToast
-        ) {
+        if (typeof window !== 'undefined' && !isErrorToastsDisabled && !suppressToast) {
           commonToasts.serverError()
         }
       }
@@ -137,11 +133,7 @@ apiClient.interceptors.response.use(
       })
 
       const suppressToast = (error.config as ExtendedAxiosRequestConfig)?.suppressGlobalToast
-      if (
-        typeof window !== 'undefined' &&
-        !isErrorToastsDisabled &&
-        !suppressToast
-      ) {
+      if (typeof window !== 'undefined' && !isErrorToastsDisabled && !suppressToast) {
         commonToasts.networkError()
       }
     } else {

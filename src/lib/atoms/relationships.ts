@@ -30,11 +30,16 @@ export const relationshipsAsyncAtom = atom(async () => {
 
   const logger = createLogger('RelationshipsAsyncAtom')
   try {
-    const response = await api.get<RelationshipData[] | { relationships: RelationshipData[] }>('/api/coach-runners', {
-      suppressGlobalToast: true,
-    })
+    const response = await api.get<RelationshipData[] | { relationships: RelationshipData[] }>(
+      '/api/coach-runners',
+      {
+        suppressGlobalToast: true,
+      }
+    )
     const data = response.data
-    return Array.isArray(data) ? data : (data as { relationships: RelationshipData[] }).relationships || []
+    return Array.isArray(data)
+      ? data
+      : (data as { relationships: RelationshipData[] }).relationships || []
   } catch (error) {
     logger.error('Failed to fetch relationships:', error)
     return []

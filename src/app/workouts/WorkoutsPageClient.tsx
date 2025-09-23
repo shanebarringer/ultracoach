@@ -128,7 +128,10 @@ function WorkoutsPageClientInner({ user }: Props) {
           })
         }
       } catch (error) {
-        if ((error as { code?: string }).code !== 'ERR_CANCELED' && (error as { name?: string }).name !== 'AbortError') {
+        if (
+          (error as { code?: string }).code !== 'ERR_CANCELED' &&
+          (error as { name?: string }).name !== 'AbortError'
+        ) {
           logger.error('Error fetching runner workouts:', error)
         }
       }
