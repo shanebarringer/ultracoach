@@ -27,15 +27,21 @@ export const relationshipsAsyncAtom = atom(async () => {
   // Return empty array for SSR to prevent URL errors
   if (!isBrowser) return []
 
+  const logger = createLogger('RelationshipsAsyncAtom')
+
   try {
-    const response = await fetch('/api/coach-runners')
+    const response = await fetch('/api/coach-runners', {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    })
     if (response.ok) {
       const data = await response.json()
       return Array.isArray(data) ? data : data.relationships || []
     }
     return []
   } catch (error) {
-    console.error('Failed to fetch relationships:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    logger.error('Failed to fetch relationships', { message })
     return []
   }
 })

@@ -19,6 +19,7 @@ import { z } from 'zod'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
   createTrainingPlanFormAtom,
@@ -26,7 +27,7 @@ import {
   racesAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, User } from '@/lib/supabase'
+import type { PlanTemplate, User, Race } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
@@ -95,6 +96,8 @@ export default function CreateTrainingPlanModal({
   // Watch all form values for conditional rendering
   const formData = watch()
 
+  // Race type is imported from '@/lib/supabase'
+
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
     if (selectedTemplate) {
@@ -115,28 +118,15 @@ export default function CreateTrainingPlanModal({
       const fetchInitialData = async () => {
         controller = new AbortController()
 
-        // Fetch races using atom refresh
+        // Fetch races using API client when not already loaded
         const racesArray = Array.isArray(races) ? races : []
         if (racesArray.length === 0) {
           try {
-            const baseUrl =
-              typeof window !== 'undefined'
-                ? ''
-                : (process.env.NEXT_PUBLIC_API_BASE_URL ??
-                  process.env.API_BASE_URL ??
-                  'http://localhost:3001')
-            const response = await fetch(`${baseUrl}/api/races`, {
-              credentials: 'same-origin',
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
+            const response = await api.get<Race[]>('/api/races', {
               signal: controller.signal,
+              withCredentials: true,
             })
-            if (response.ok) {
-              const data = await response.json()
-              setRaces(data || [])
-            }
+            setRaces(Array.isArray(response.data) ? response.data : [])
           } catch (err) {
             if (err instanceof Error && err.name !== 'AbortError') {
               logger.error('Error fetching races:', err)
@@ -147,24 +137,13 @@ export default function CreateTrainingPlanModal({
         // Fetch plan templates
         if (planTemplates.length === 0) {
           try {
-            const response = await fetch('/api/training-plans/templates', {
-              credentials: 'same-origin', // Include cookies for authentication
-              headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
-              signal: controller.signal,
-            })
-            if (response.ok) {
-              const data = await response.json()
-              setPlanTemplates(data.templates)
-              logger.info(`Loaded ${data.templates.length} plan templates`)
-            } else {
-              logger.error('Failed to fetch plan templates:', response.status, response.statusText)
-              // Show more detailed error for debugging
-              const errorText = await response.text()
-              logger.error('API response:', errorText)
-            }
+            const response = await api.get<{ templates: PlanTemplate[] }>(
+              '/api/training-plans/templates',
+              { signal: controller.signal, withCredentials: true }
+            )
+            const templatesData = response.data?.templates ?? []
+            setPlanTemplates(templatesData)
+            logger.info(`Loaded ${templatesData.length} plan templates`)
           } catch (err) {
             if (err instanceof Error && err.name !== 'AbortError') {
               logger.error('Error fetching plan templates:', err)
@@ -199,48 +178,35 @@ export default function CreateTrainingPlanModal({
         raceAttached: Boolean(payload.race_id),
       })
 
-      const response = await fetch('/api/training-plans', {
-        method: 'POST',
-        credentials: 'same-origin', // Include cookies for authentication
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const response = await api.post<{ id: string }>('/api/training-plans', payload, {
+        suppressGlobalErrorToast: true,
+        withCredentials: true,
       })
 
-      if (response.ok) {
-        const responseData = await response.json()
-        logger.info('Training plan created successfully', responseData)
-        setFormState(prev => ({ ...prev, loading: false, error: '' }))
-        reset() // Reset form with react-hook-form
+      logger.info('Training plan created successfully', response.data)
+      setFormState(prev => ({ ...prev, loading: false, error: '' }))
+      reset() // Reset form with react-hook-form
 
-        // Show success toast
-        commonToasts.trainingPlanCreated()
+      // Show success toast
+      commonToasts.trainingPlanCreated()
 
-        onSuccess()
-        onClose()
-      } else {
-        const errorData = await response.json()
-        logger.error('Failed to create training plan:', errorData)
-        setFormState(prev => ({
-          ...prev,
-          loading: false,
-          error: errorData.error || 'Failed to create training plan',
-        }))
-
-        // Show error toast
-        commonToasts.trainingPlanError(errorData.error || 'Failed to create training plan')
-      }
+      onSuccess()
+      onClose()
     } catch (error) {
+      const message =
+        // @ts-expect-error axios-like error shape
+        (error?.response?.data?.error as string | undefined) ||
+        (error instanceof Error ? error.message : undefined) ||
+        'Failed to create training plan'
       logger.error('Error creating training plan:', error)
       setFormState(prev => ({
         ...prev,
         loading: false,
-        error: 'An error occurred. Please try again.',
+        error: message,
       }))
 
-      // Show error toast
-      commonToasts.trainingPlanError('An error occurred. Please try again.')
+      // Show error toast (suppressing global toast via request config)
+      commonToasts.trainingPlanError(message)
     }
   }
 
