@@ -68,37 +68,46 @@ export async function GET(request: NextRequest) {
         userId: sessionUser.id,
         role: sessionUser.userType,
       })
-      return NextResponse.json({ workouts: [] })
+      // Do not early-return; authorization below will deny via sql`false`
     }
 
-    // Build the base query with optional training plan join and runner name
+    // Build the base query with conditional PII selection
+    // Only select runner_name and runner_email for coaches to reduce unnecessary PII exposure
+    const baseFields = {
+      id: workouts.id,
+      user_id: workouts.user_id, // Add user_id field for filtering
+      training_plan_id: workouts.training_plan_id,
+      date: workouts.date,
+      planned_type: workouts.planned_type,
+      planned_distance: workouts.planned_distance,
+      planned_duration: workouts.planned_duration,
+      actual_type: workouts.actual_type,
+      actual_distance: workouts.actual_distance,
+      actual_duration: workouts.actual_duration,
+      status: workouts.status,
+      workout_notes: workouts.workout_notes,
+      category: workouts.category,
+      intensity: workouts.intensity,
+      terrain: workouts.terrain,
+      elevation_gain: workouts.elevation_gain,
+      created_at: workouts.created_at,
+      updated_at: workouts.updated_at,
+      // Include training plan info for authorization (may be null)
+      coach_id: training_plans.coach_id,
+      plan_runner_id: training_plans.runner_id,
+    }
+
     const baseQuery = db
-      .select({
-        id: workouts.id,
-        user_id: workouts.user_id, // Add user_id field for filtering
-        training_plan_id: workouts.training_plan_id,
-        date: workouts.date,
-        planned_type: workouts.planned_type,
-        planned_distance: workouts.planned_distance,
-        planned_duration: workouts.planned_duration,
-        actual_type: workouts.actual_type,
-        actual_distance: workouts.actual_distance,
-        actual_duration: workouts.actual_duration,
-        status: workouts.status,
-        workout_notes: workouts.workout_notes,
-        category: workouts.category,
-        intensity: workouts.intensity,
-        terrain: workouts.terrain,
-        elevation_gain: workouts.elevation_gain,
-        created_at: workouts.created_at,
-        updated_at: workouts.updated_at,
-        // Include training plan info for authorization (may be null)
-        coach_id: training_plans.coach_id,
-        plan_runner_id: training_plans.runner_id,
-        // Include runner name for coach view
-        runner_name: user.fullName,
-        runner_email: user.email,
-      })
+      .select(
+        sessionUser.userType === 'coach'
+          ? {
+              ...baseFields,
+              // Include runner name/email for coach view only
+              runner_name: user.fullName,
+              runner_email: user.email,
+            }
+          : baseFields
+      )
       .from(workouts)
       .leftJoin(training_plans, eq(workouts.training_plan_id, training_plans.id))
       .leftJoin(user, eq(workouts.user_id, user.id))
@@ -208,23 +217,17 @@ export async function GET(request: NextRequest) {
 
     logger.debug('Raw query results:', { count: results.length })
 
-    // Remove the extra fields we only needed for authorization and handle PII
+    // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = results.map(
-      ({
-        coach_id: _coach_id,
-        plan_runner_id: _plan_runner_id,
-        runner_email,
-        runner_name,
-        ...workout
-      }) => (sessionUser.userType === 'coach' ? { ...workout, runner_name, runner_email } : workout)
+      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
     )
 
     logger.debug('Successfully fetched workouts', {
       count: cleanedWorkouts.length,
-      sessionUser: sessionUser.id,
       sessionRole: sessionUser.userType,
-      requestedRunnerId: runnerId,
       authorizedUsersCount: authorizedUserIds.length,
+      isSessionUserRequester: runnerId ? sessionUser.id === runnerId : false,
+      requestedRunnerProvided: Boolean(runnerId),
     })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {
@@ -315,12 +318,18 @@ export async function POST(request: NextRequest) {
 
     // Parse numeric values properly to preserve 0 values
     const parsedIntensity =
-      intensity === undefined || intensity === null || intensity === '' ? null : Number(intensity)
+      intensity === undefined || intensity === null || intensity === ''
+        ? null
+        : Number.isFinite(Number(intensity))
+          ? Number(intensity)
+          : null
 
     const parsedElevationGain =
       elevationGain === undefined || elevationGain === null || elevationGain === ''
         ? null
-        : Number(elevationGain)
+        : Number.isFinite(Number(elevationGain))
+          ? Number(elevationGain)
+          : null
 
     // Create the workout
     const workoutDate = new Date(date)

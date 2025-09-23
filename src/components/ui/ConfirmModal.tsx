@@ -36,14 +36,21 @@ export default function ConfirmModal({
       await onConfirm()
       onClose()
     } catch (error) {
+      const asError =
+        error instanceof Error ? error : Object.assign(new Error('Unknown error'), { cause: error })
       if (onError) {
-        onError(error instanceof Error ? error : new Error('Unknown error'))
+        onError(asError)
       } else {
         logger.error('ConfirmModal onConfirm error', {
-          error:
-            error instanceof Error
-              ? { message: error.message, stack: error.stack }
-              : { value: String(error) },
+          error: {
+            message: asError.message,
+            stack: asError.stack,
+            // include cause when present for debugging without dumping full objects
+            cause:
+              (asError as Error & { cause?: unknown }).cause !== undefined
+                ? String((asError as Error & { cause?: unknown }).cause)
+                : undefined,
+          },
         })
       }
     }

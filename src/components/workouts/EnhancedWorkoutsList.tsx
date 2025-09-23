@@ -20,7 +20,7 @@ import {
   workoutViewModeAtom,
 } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
-import { getWeekRange, parseWorkoutDate } from '@/lib/utils/date'
+import { getWeekRange, parseWorkoutDate, toLocalYMD } from '@/lib/utils/date'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
 
@@ -68,6 +68,8 @@ const EnhancedWorkoutsList = memo(
       }
     }, [searchParams, setStatusFilter, setQuickFilter])
 
+    // Recompute on local day change to keep "today/this-week" accurate
+    const dayKey = toLocalYMD(new Date())
     // Filter and sort workouts
     const processedWorkouts = useMemo(() => {
       let filtered = workouts
@@ -132,14 +134,18 @@ const EnhancedWorkoutsList = memo(
             case 'date-desc': {
               const primary = b.dateTime - a.dateTime
               if (primary !== 0) return primary
-              // Stable tie-breaker by created_at (newest first)
-              return b.createdTime - a.createdTime
+              const secondary = b.createdTime - a.createdTime
+              if (secondary !== 0) return secondary
+              // Final deterministic tie-breaker
+              return (b.workout.id || '').localeCompare(a.workout.id || '')
             }
             case 'date-asc': {
               const primary = a.dateTime - b.dateTime
               if (primary !== 0) return primary
-              // Tie-breaker by created_at (oldest first to match asc)
-              return a.createdTime - b.createdTime
+              const secondary = a.createdTime - b.createdTime
+              if (secondary !== 0) return secondary
+              // Final deterministic tie-breaker
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
             }
             case 'type':
               return (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
@@ -163,7 +169,16 @@ const EnhancedWorkoutsList = memo(
         .map(({ workout }) => workout)
 
       return sorted
-    }, [workouts, searchTerm, sortBy, typeFilter, statusFilter, quickFilter, showAdvancedFilters])
+    }, [
+      workouts,
+      searchTerm,
+      sortBy,
+      typeFilter,
+      statusFilter,
+      quickFilter,
+      showAdvancedFilters,
+      dayKey, // Required for "today"/"this-week" filters to update on day boundary
+    ])
 
     // Clear all filters
     const clearFilters = () => {

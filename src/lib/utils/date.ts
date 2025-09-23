@@ -188,7 +188,7 @@ export const parseWorkoutDate = (date?: string | Date | null): Date | null => {
  * @returns Object with start and end Date objects for the week
  */
 export const getWeekRange = (
-  weekStartsOn: 0 | 1 = 0,
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 = 0,
   referenceDate: Date = new Date()
 ): { start: Date; end: Date } => {
   const start = startOfWeek(referenceDate, { weekStartsOn })
