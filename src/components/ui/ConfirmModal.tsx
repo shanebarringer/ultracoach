@@ -39,7 +39,12 @@ export default function ConfirmModal({
       if (onError) {
         onError(error instanceof Error ? error : new Error('Unknown error'))
       } else {
-        logger.error('ConfirmModal onConfirm error:', error)
+        logger.error('ConfirmModal onConfirm error', {
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack }
+              : { value: String(error) },
+        })
       }
     }
   }
