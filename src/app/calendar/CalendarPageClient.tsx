@@ -214,7 +214,7 @@ function CalendarContent({ user }: Props) {
                     }}
                   >
                     {[
-                      <SelectItem key="all">All Runners</SelectItem>,
+                      <SelectItem key="">All Runners</SelectItem>,
                       ...connectedRunners.map((runner: User) => (
                         <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
                       )),

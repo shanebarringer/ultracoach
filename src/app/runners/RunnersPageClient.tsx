@@ -72,10 +72,10 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
 
   // Update URL when tab changes
   useEffect(() => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('tab', activeTab)
-    router.replace(url.pathname + url.search, { scroll: false })
-  }, [activeTab, router])
+    const params = new URLSearchParams(Array.from(searchParams.entries()))
+    params.set('tab', activeTab)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [activeTab, router, searchParams])
 
   const handleMessageRunner = (runnerId: string) => {
     router.push(`/chat/${runnerId}`)

@@ -138,7 +138,7 @@ export default function WeeklyPlannerRunnerPage() {
           <Card className="border-danger-200 bg-danger-50">
             <CardBody className="text-center py-12">
               <div className="text-danger-600 mb-4">Failed to load runners</div>
-              <Button color="primary" onClick={() => window.location.reload()}>
+              <Button color="primary" onClick={() => router.refresh()}>
                 Retry
               </Button>
             </CardBody>

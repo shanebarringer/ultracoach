@@ -56,7 +56,7 @@ function WorkoutsPageClientInner({ user }: Props) {
   })
 
   // Coach-specific state and data
-  const [selectedRunnerId, setSelectedRunnerId] = useState<string>('all')
+  const [selectedRunnerId, setSelectedRunnerId] = useState<string | null>(null)
   const { runners } = useDashboardData() // Get runner data for coach view
 
   const isCoach = user.userType === 'coach'
@@ -83,14 +83,14 @@ function WorkoutsPageClientInner({ user }: Props) {
 
   // Fetch workouts for specific runner (coach only)
   const fetchRunnerWorkouts = useCallback(
-    async (runnerId: string) => {
+    async (runnerId: string | null) => {
       if (!isCoach) return
 
       logger.debug('Fetching workouts for runner', { runnerId })
 
       try {
         const params = new URLSearchParams()
-        if (runnerId !== 'all') {
+        if (runnerId) {
           params.append('runnerId', runnerId)
         }
 
@@ -121,12 +121,12 @@ function WorkoutsPageClientInner({ user }: Props) {
   // Handle runner selection change
   const handleRunnerSelectionChange = useCallback(
     (keys: 'all' | Set<React.Key>) => {
-      const selectedKeys = keys === 'all' ? new Set(['all']) : keys
+      const selectedKeys = keys === 'all' ? new Set(['']) : keys
       const runnerId = Array.from(selectedKeys)[0] as string
-      setSelectedRunnerId(runnerId)
+      setSelectedRunnerId(runnerId || null)
 
       if (isCoach) {
-        fetchRunnerWorkouts(runnerId)
+        fetchRunnerWorkouts(runnerId || null)
       }
     },
     [isCoach, fetchRunnerWorkouts]
@@ -136,7 +136,7 @@ function WorkoutsPageClientInner({ user }: Props) {
   const currentRunnerContext = useMemo(() => {
     if (!isCoach) return null
 
-    if (selectedRunnerId === 'all') {
+    if (selectedRunnerId === null) {
       return {
         name: 'All Athletes',
         email: `${runners.length} connected runners`,
@@ -207,12 +207,12 @@ function WorkoutsPageClientInner({ user }: Props) {
                     <Select
                       label="Select Athlete"
                       placeholder="Choose a runner..."
-                      selectedKeys={[selectedRunnerId]}
+                      selectedKeys={selectedRunnerId ? [selectedRunnerId] : ['']}
                       onSelectionChange={handleRunnerSelectionChange}
                       startContent={<Users className="h-4 w-4 text-foreground-500" />}
                       items={[
                         {
-                          id: 'all',
+                          id: '',
                           name: 'All Athletes',
                           email: `${runners.length} connected runners`,
                         },

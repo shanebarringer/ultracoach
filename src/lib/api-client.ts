@@ -19,6 +19,12 @@ import axios, {
 import { createLogger } from './logger'
 import { commonToasts } from './toast'
 
+// Extend AxiosRequestConfig to include our custom flags
+interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
+  suppressGlobalToast?: boolean
+  withCredentials?: boolean
+}
+
 const logger = createLogger('ApiClient')
 
 // Create base Axios instance
@@ -28,7 +34,6 @@ const apiClient: AxiosInstance = axios.create({
       ? ''
       : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
   timeout: 10000, // 10 second timeout
-  withCredentials: true, // Include cookies for authentication
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -80,8 +85,14 @@ apiClient.interceptors.response.use(
 
       // Don't show toast for specific status codes that components handle
       if (status !== 401 && status !== 403) {
-        // Only show toast if error toasts are not disabled
-        if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS) {
+        // Check if global toasts are suppressed for this request
+        const suppressToast = (config as ExtendedAxiosRequestConfig)?.suppressGlobalToast
+        // Only show toast if error toasts are not disabled and not suppressed for this request
+        if (
+          typeof window !== 'undefined' &&
+          !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS &&
+          !suppressToast
+        ) {
           commonToasts.serverError()
         }
       }
@@ -93,7 +104,12 @@ apiClient.interceptors.response.use(
         message: error.message,
       })
 
-      if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS) {
+      const suppressToast = (error.config as ExtendedAxiosRequestConfig)?.suppressGlobalToast
+      if (
+        typeof window !== 'undefined' &&
+        !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS &&
+        !suppressToast
+      ) {
         commonToasts.networkError()
       }
     } else {
@@ -113,18 +129,19 @@ export default apiClient
 
 // Export convenience methods with proper typing
 export const api = {
-  get: <T = unknown>(url: string, config?: AxiosRequestConfig) => apiClient.get<T>(url, config),
+  get: <T = unknown>(url: string, config?: ExtendedAxiosRequestConfig) =>
+    apiClient.get<T>(url, config),
 
-  post: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  post: <T = unknown>(url: string, data?: unknown, config?: ExtendedAxiosRequestConfig) =>
     apiClient.post<T>(url, data, config),
 
-  put: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  put: <T = unknown>(url: string, data?: unknown, config?: ExtendedAxiosRequestConfig) =>
     apiClient.put<T>(url, data, config),
 
-  delete: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
+  delete: <T = unknown>(url: string, config?: ExtendedAxiosRequestConfig) =>
     apiClient.delete<T>(url, config),
 
-  patch: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  patch: <T = unknown>(url: string, data?: unknown, config?: ExtendedAxiosRequestConfig) =>
     apiClient.patch<T>(url, data, config),
 }
 

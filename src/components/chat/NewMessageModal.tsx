@@ -2,7 +2,7 @@
 
 import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
@@ -32,7 +32,7 @@ interface NewMessageModalProps {
 export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [connectedRunners] = useAtom(connectedRunnersDataAtom)
+  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
 
   // React Hook Form setup
   const { control, watch, reset } = useForm<SearchForm>({
@@ -59,11 +59,12 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     router.push(`/chat/${userId}`)
   }
 
-  const filteredUsers = availableUsers.filter(
-    (user: User) =>
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const q = (searchTerm || '').toLowerCase()
+  const filteredUsers = availableUsers.filter((user: User) => {
+    const name = (user.full_name || '').toLowerCase()
+    const email = (user.email || '').toLowerCase()
+    return name.includes(q) || email.includes(q)
+  })
 
   return (
     <Modal
@@ -123,7 +124,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                   <Button
                     key={user.id}
                     variant="flat"
-                    className="w-full flex items-center p-3 rounded-lg text-left justify-start height-[400px] overflow-y-auto"
+                    className="w-full flex items-center p-3 rounded-lg text-left justify-start h-[400px] overflow-y-auto"
                     onClick={() => handleStartConversation(user.id)}
                     data-testid={`user-option-${user.id}`}
                     size="lg"

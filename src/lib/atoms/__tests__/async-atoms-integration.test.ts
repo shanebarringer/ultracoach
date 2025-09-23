@@ -3,7 +3,6 @@
  *
  * Tests for async atoms with refresh patterns using proper Jotai testing utilities
  */
-import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -43,7 +42,7 @@ vi.mock('@/utils/auth-helpers', () => ({
 }))
 
 describe('Async Atoms Integration', () => {
-  let store: ReturnType<typeof createStore>
+  let store: ReturnType<typeof createTestStore>
 
   beforeEach(() => {
     store = createTestStore()

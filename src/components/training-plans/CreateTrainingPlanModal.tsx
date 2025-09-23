@@ -28,7 +28,7 @@ import {
   racesAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { PlanTemplate, User } from '@/lib/supabase'
+import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('CreateTrainingPlanModal')
@@ -113,8 +113,10 @@ export default function CreateTrainingPlanModal({
       // Fetch races using Axios
       if (races.length === 0) {
         try {
-          const response = await api.get<unknown[]>('/api/races', { signal })
-          setRaces(Array.isArray(response.data) ? (response.data as typeof races) : [])
+          const response = await api.get<Race[]>('/api/races', { signal })
+          if (Array.isArray(response.data)) {
+            setRaces(response.data)
+          }
         } catch (err: unknown) {
           const error = err as Error
           if (error.name !== 'AbortError' && (error as { code?: string }).code !== 'ERR_CANCELED') {
@@ -126,13 +128,13 @@ export default function CreateTrainingPlanModal({
       // Fetch plan templates using Axios
       if (planTemplates.length === 0) {
         try {
-          const response = await api.get<{ templates: unknown[] }>(
+          const response = await api.get<{ templates: PlanTemplate[] }>(
             '/api/training-plans/templates',
             { signal }
           )
           const templatesData = response.data
-          setPlanTemplates((templatesData.templates || []) as typeof planTemplates)
-          logger.info(`Loaded ${(templatesData.templates || []).length} plan templates`)
+          setPlanTemplates(templatesData.templates || [])
+          logger.info(`Loaded ${templatesData.templates?.length || 0} plan templates`)
         } catch (err: unknown) {
           const error = err as Error & { code?: string; response?: { status?: number } }
           if (error.name !== 'AbortError' && error.code !== 'ERR_CANCELED') {
@@ -176,7 +178,9 @@ export default function CreateTrainingPlanModal({
         raceAttached: Boolean(payload.race_id),
       })
 
-      const response = await api.post<{ id: string }>('/api/training-plans', payload)
+      const response = await api.post<{ id: string }>('/api/training-plans', payload, {
+        suppressGlobalToast: true,
+      })
 
       // Success case
       const responseData = response.data
@@ -253,7 +257,6 @@ export default function CreateTrainingPlanModal({
                   onSelectionChange={keys => {
                     const selectedTemplateId = Array.from(keys).join('')
                     field.onChange(selectedTemplateId || null)
-                    setValue('template_id', selectedTemplateId || null)
                     handleTemplateSelect(selectedTemplateId)
                   }}
                   placeholder="Choose a plan template..."
