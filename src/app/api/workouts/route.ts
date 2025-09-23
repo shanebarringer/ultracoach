@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       // Runner can see workouts where:
       // 1. They are the runner in a training plan (from any coach - simplified for now)
       // 2. OR the workout has no training plan (standalone workouts)
-      let runnerAccessCondition
+      let runnerAccessCondition: SQL
 
       if (authorizedUserIds.length > 0) {
         // Has active relationships - use normal authorization
@@ -185,17 +185,19 @@ export async function GET(request: NextRequest) {
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering with validation using date-fns
+    // Apply date filtering with validation using date-fns and UTC normalization
     if (startDate) {
       const sd = parseISO(startDate)
-      if (isValid(sd)) conditions.push(gte(workouts.date, sd))
+      if (isValid(sd)) {
+        sd.setUTCHours(0, 0, 0, 0)
+        conditions.push(gte(workouts.date, sd))
+      }
     }
     if (endDate) {
       const ed = parseISO(endDate)
       if (isValid(ed)) {
-        // Set to end of day to include all workouts on that date
-        const endOfDayDate = endOfDay(ed)
-        conditions.push(lte(workouts.date, endOfDayDate))
+        ed.setUTCHours(23, 59, 59, 999)
+        conditions.push(lte(workouts.date, ed))
       }
     }
 
@@ -311,6 +313,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Parse numeric values properly to preserve 0 values
+    const parsedPlannedDuration =
+      plannedDuration === undefined || plannedDuration === null || plannedDuration === ''
+        ? null
+        : Number.parseInt(String(plannedDuration), 10)
+
+    const parsedIntensity =
+      intensity === undefined || intensity === null || intensity === '' ? null : Number(intensity)
+
+    const parsedElevationGain =
+      elevationGain === undefined || elevationGain === null || elevationGain === ''
+        ? null
+        : Number(elevationGain)
+
     // Create the workout
     const workoutDate = new Date(date)
     const workoutTitle = plannedType
@@ -333,10 +349,10 @@ export async function POST(request: NextRequest) {
         workout_notes: notes,
         status: 'planned',
         // Enhanced workout fields
-        category: category || null,
-        intensity: intensity || null,
-        terrain: terrain || null,
-        elevation_gain: elevationGain || null,
+        category: category ?? null,
+        intensity: parsedIntensity,
+        terrain: terrain ?? null,
+        elevation_gain: parsedElevationGain,
       })
       .returning()
 
