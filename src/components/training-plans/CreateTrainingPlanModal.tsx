@@ -13,11 +13,11 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
+import axios, { isAxiosError } from 'axios'
 import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { api } from '@/lib/api-client'
@@ -66,7 +66,6 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  // Use separate atoms for data and loading state
   const connectedRunners = useAtomValue(connectedRunnersDataAtom)
   const loadingRunners = useAtomValue(connectedRunnersLoadingAtom)
 
@@ -96,6 +95,8 @@ export default function CreateTrainingPlanModal({
   // Watch all form values for conditional rendering
   const formData = watch()
 
+  // Race type is imported from '@/lib/supabase'
+
   const handleTemplateSelect = (templateId: string) => {
     const selectedTemplate = planTemplates.find(t => t.id === templateId)
     if (selectedTemplate) {
@@ -109,61 +110,53 @@ export default function CreateTrainingPlanModal({
     }
   }
 
-  const fetchInitialData = useCallback(
-    async (signal: AbortSignal) => {
-      // Fetch races using Axios
-      if (races.length === 0) {
-        try {
-          const response = await api.get<Race[]>('/api/races', {
-            signal,
-            suppressGlobalToast: true,
-          })
-          if (Array.isArray(response.data)) {
-            setRaces(response.data)
-          }
-        } catch (err: unknown) {
-          const error = err as Error
-          if (error.name !== 'AbortError' && (error as { code?: string }).code !== 'ERR_CANCELED') {
-            logger.error('Error fetching races:', { message: error.message })
-          }
-        }
-      }
-
-      // Fetch plan templates using Axios
-      if (planTemplates.length === 0) {
-        try {
-          const response = await api.get<{ templates: PlanTemplate[] }>(
-            '/api/training-plans/templates',
-            { signal, suppressGlobalToast: true }
-          )
-          const templatesData = response.data
-          setPlanTemplates(templatesData.templates || [])
-          logger.info(`Loaded ${templatesData.templates?.length || 0} plan templates`)
-        } catch (err: unknown) {
-          const error = err as Error & { code?: string; response?: { status?: number } }
-          if (error.name !== 'AbortError' && error.code !== 'ERR_CANCELED') {
-            logger.error('Error fetching plan templates:', {
-              message: error.message,
-              status: error.response?.status,
-            })
-          }
-        }
-      }
-    },
-    [races.length, setRaces, planTemplates.length, setPlanTemplates]
-  )
-
   useEffect(() => {
     if (isOpen) {
-      const controller = new AbortController()
-      fetchInitialData(controller.signal)
+      let controller: AbortController | null = null
+      const fetchInitialData = async () => {
+        controller = new AbortController()
+        // Fetch races using API client when not already loaded
+        const racesArray = Array.isArray(races) ? races : []
+        if (racesArray.length === 0) {
+          try {
+            const response = await api.get<Race[]>('/api/races', {
+              signal: controller.signal,
+              suppressGlobalToast: true,
+            })
+            setRaces(Array.isArray(response.data) ? response.data : [])
+          } catch (err) {
+            // Filter out Axios cancellations (AbortController -> ERR_CANCELED)
+            if (axios.isCancel(err) || (isAxiosError(err) && err.code === 'ERR_CANCELED')) return
+            logger.error('Error fetching races:', err)
+          }
+        }
 
-      // Cleanup function to abort in-flight requests
+        // Fetch plan templates
+        if (planTemplates.length === 0) {
+          try {
+            const response = await api.get<{ templates: PlanTemplate[] }>(
+              '/api/training-plans/templates',
+              { signal: controller.signal, suppressGlobalToast: true }
+            )
+            const templatesData = response.data?.templates ?? []
+            setPlanTemplates(templatesData)
+            logger.info(`Loaded ${templatesData.length} plan templates`)
+          } catch (err) {
+            if (axios.isCancel(err) || (isAxiosError(err) && err.code === 'ERR_CANCELED')) return
+            logger.error('Error fetching plan templates:', err)
+          }
+        }
+      }
+
+      fetchInitialData()
+
       return () => {
-        controller.abort()
+        if (controller) {
+          controller.abort()
+        }
       }
     }
-  }, [isOpen, fetchInitialData])
+  }, [isOpen, races, planTemplates, setRaces, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
@@ -183,12 +176,10 @@ export default function CreateTrainingPlanModal({
       })
 
       const response = await api.post<{ id: string }>('/api/training-plans', payload, {
-        suppressGlobalToast: true,
+        suppressGlobalErrorToast: true,
       })
 
-      // Success case
-      const responseData = response.data
-      logger.info('Training plan created successfully', { planId: responseData?.id })
+      logger.info('Training plan created successfully', response.data)
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form
 
@@ -197,40 +188,29 @@ export default function CreateTrainingPlanModal({
 
       onSuccess()
       onClose()
-    } catch (error: unknown) {
-      // Handle Axios error responses with robust JSON parsing
-      let errorMessage = 'An error occurred. Please try again.'
-
-      if (axios.isAxiosError(error) && error.response) {
-        // Server responded with error status
-        const response = error.response
-        const ct = response.headers['content-type'] || ''
-
-        if (ct.includes('application/json') && response.data && typeof response.data === 'object') {
-          const data = response.data as { error?: string; message?: string }
-          errorMessage = data.error || data.message || errorMessage
-        } else if (typeof response.data === 'string') {
-          errorMessage = response.data
-        }
-
-        logger.error('Failed to create training plan:', {
-          status: response.status,
-          errorMessage,
-        })
-      } else if (axios.isAxiosError(error)) {
-        logger.error('Error creating training plan:', {
-          message: error.message || 'Unknown error',
-        })
+    } catch (error) {
+      // Skip logging/toasting on user-initiated cancellations
+      if (axios.isCancel(error) || (isAxiosError(error) && error.code === 'ERR_CANCELED')) {
+        return
       }
 
+      let message = 'Failed to create training plan'
+      if (isAxiosError(error)) {
+        const data = error.response?.data as { error?: string; message?: string } | undefined
+        message = data?.error || data?.message || error.message || message
+      } else if (error instanceof Error) {
+        message = error.message || message
+      }
+
+      logger.error('Error creating training plan:', error)
       setFormState(prev => ({
         ...prev,
         loading: false,
-        error: errorMessage,
+        error: message,
       }))
 
-      // Show error toast
-      commonToasts.trainingPlanError(errorMessage)
+      // Show error toast (suppressing global toast via request config)
+      commonToasts.trainingPlanError(message)
     }
   }
 
@@ -318,8 +298,8 @@ export default function CreateTrainingPlanModal({
                   isLoading={loadingRunners}
                   selectedKeys={field.value ? [field.value] : []}
                   onSelectionChange={keys => {
-                    const selectedKey = Array.from(keys)[0] as string
-                    field.onChange(selectedKey || '')
+                    const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
+                    field.onChange(selectedKey)
                   }}
                 >
                   {connectedRunners.map((runner: User) => (

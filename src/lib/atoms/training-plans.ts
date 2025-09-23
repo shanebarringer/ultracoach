@@ -36,12 +36,11 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
   const logger = createLogger('TrainingPlansAtom')
   try {
     logger.debug('Fetching training plans...')
-    const response = await api.get<{ trainingPlans?: ExtendedTrainingPlan[] } | ExtendedTrainingPlan[]>(
-      '/api/training-plans',
-      {
-        suppressGlobalToast: true,
-      }
-    )
+    const response = await api.get<
+      { trainingPlans?: ExtendedTrainingPlan[] } | ExtendedTrainingPlan[]
+    >('/api/training-plans', {
+      suppressGlobalToast: true,
+    })
     const data = response.data
     // API returns { trainingPlans: [...] } so extract the array
     const plans = Array.isArray(data) ? data : data.trainingPlans || []

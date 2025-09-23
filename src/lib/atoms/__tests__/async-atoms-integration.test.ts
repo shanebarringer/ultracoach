@@ -169,9 +169,7 @@ describe('Async Atoms Integration', () => {
             data: [],
           })
           .mockResolvedValueOnce({
-            data: [
-              { id: '3', name: 'New Runner', email: 'new@test.com', userType: 'runner' },
-            ],
+            data: [{ id: '3', name: 'New Runner', email: 'new@test.com', userType: 'runner' }],
           })
 
         await store.get(availableRunnersAtom)

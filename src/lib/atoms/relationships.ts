@@ -23,12 +23,14 @@ export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
 
+// Module-scoped logger to avoid re-instantiating per atom read
+const relationshipsLogger = createLogger('RelationshipsAsyncAtom')
+
 // Async atom that fetches relationships
 export const relationshipsAsyncAtom = atom(async () => {
   // Return empty array for SSR to prevent URL errors
   if (!isBrowser) return []
 
-  const logger = createLogger('RelationshipsAsyncAtom')
   try {
     const response = await api.get<RelationshipData[] | { relationships: RelationshipData[] }>(
       '/api/coach-runners',
@@ -41,7 +43,8 @@ export const relationshipsAsyncAtom = atom(async () => {
       ? data
       : (data as { relationships: RelationshipData[] }).relationships || []
   } catch (error) {
-    logger.error('Failed to fetch relationships:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    relationshipsLogger.error('Failed to fetch relationships', { message })
     return []
   }
 })
