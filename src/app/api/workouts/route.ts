@@ -1,5 +1,5 @@
 import { isValid, parseISO } from 'date-fns'
-import { SQL, and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
+import { SQL, and, desc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -128,18 +128,21 @@ export async function GET(request: NextRequest) {
           runnerId
             ? eq(training_plans.runner_id, runnerId)
             : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
-              : sql`false` // No runners authorized - use false predicate
+              ? inArray(training_plans.runner_id, authorizedUserIds)
+              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
-        // OR standalone workouts for authorized runners only
+        // OR workout has no training plan (standalone).
+        // Honors runnerId only when runnerId ∈ authorizedUserIds; otherwise the endpoint
+        // returns 200 with an empty list (non-enumerating), preventing leakage of unauthorized
+        // standalone workouts.
         and(
           isNull(workouts.training_plan_id),
           runnerId
-            ? eq(workouts.user_id, runnerId)
+            ? and(eq(workouts.user_id, runnerId), inArray(workouts.user_id, authorizedUserIds))
             : authorizedUserIds.length > 0
-              ? or(...authorizedUserIds.map(id => eq(workouts.user_id, id)))
-              : sql`false` // No runners authorized - use false predicate
-        ) as SQL
+              ? inArray(workouts.user_id, authorizedUserIds)
+              : eq(workouts.user_id, sessionUser.id)
+        )
       ) as SQL
 
       conditions.push(coachAccessCondition)
@@ -155,9 +158,9 @@ export async function GET(request: NextRequest) {
           // Has training plan and runner is the user and coach is authorized
           and(
             eq(training_plans.runner_id, sessionUser.id),
-            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id))) as SQL
+            inArray(training_plans.coach_id, authorizedUserIds)
           ),
-          // OR standalone workouts owned by this runner
+          // OR workout has no training plan (standalone) owned by the runner
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         ) as SQL
       } else {
@@ -165,7 +168,7 @@ export async function GET(request: NextRequest) {
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR standalone workouts owned by this runner
+          // OR workout has no training plan (standalone) owned by the runner
           and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
         ) as SQL
       }
