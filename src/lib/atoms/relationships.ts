@@ -148,3 +148,62 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
     return []
   }
 })
+
+// ---------------------------------------------------------------------------
+// Connected runners: derived data/loadable/loading helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Loadable wrapper that exposes the async state of connected runners along with
+ * a minimal inner data shape. We intentionally keep the inner state simple: it
+ * includes `hasLoaded` to indicate that at least one successful resolution has
+ * occurred. We do not expose or rely on an `isLoading` flag here—`loadable.state`
+ * already captures the loading lifecycle.
+ */
+type ConnectedRunnersInner = {
+  runners: User[]
+  hasLoaded: boolean
+  // `isLoading` is deliberately omitted from consumers; if present, it should
+  // not be used for loading decisions. See `connectedRunnersLoadingAtom`.
+}
+
+// Provide inner data by awaiting the base async atom; once resolved, `hasLoaded`
+// is permanently true for this read.
+const connectedRunnersInnerAtom = atom(async get => {
+  const runners = (await get(connectedRunnersAtom)) as User[]
+  const data: ConnectedRunnersInner = {
+    runners: Array.isArray(runners) ? runners : [],
+    hasLoaded: true,
+  }
+  return data
+})
+
+// Public loadable wrapper used by derived read-only atoms
+export const connectedRunnersLoadableAtom = loadable(connectedRunnersInnerAtom)
+
+/**
+ * Read-only data atom that always returns an array of runners. This guards
+ * consumers from having to check the loadable state.
+ */
+export const connectedRunnersDataAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  if (loadable.state === 'hasData') return loadable.data.runners
+  return [] as User[]
+})
+
+/**
+ * Read-only loading atom.
+ *
+ * Simplified logic: rely solely on the loadable wrapper state and the
+ * inner `hasLoaded` flag. We explicitly avoid checking any inner
+ * `isLoading` property because it is guaranteed to be false after
+ * resolution; using `loadable.state` is sufficient and less confusing.
+ *
+ * True when:
+ *  - loadable.state === 'loading', or
+ *  - loadable.state === 'hasData' and inner `hasLoaded` is false
+ */
+export const connectedRunnersLoadingAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  return loadable.state === 'loading' || (loadable.state === 'hasData' && !loadable.data.hasLoaded)
+})
