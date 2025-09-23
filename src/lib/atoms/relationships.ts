@@ -22,20 +22,27 @@ export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
 
+// Module-scoped logger to avoid re-instantiating per atom read
+const relationshipsLogger = createLogger('RelationshipsAsyncAtom')
+
 // Async atom that fetches relationships
 export const relationshipsAsyncAtom = atom(async () => {
   // Return empty array for SSR to prevent URL errors
   if (!isBrowser) return []
 
   try {
-    const response = await fetch('/api/coach-runners')
+    const response = await fetch('/api/coach-runners', {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+    })
     if (response.ok) {
       const data = await response.json()
       return Array.isArray(data) ? data : data.relationships || []
     }
     return []
   } catch (error) {
-    console.error('Failed to fetch relationships:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    relationshipsLogger.error('Failed to fetch relationships', { message })
     return []
   }
 })
@@ -141,4 +148,40 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
     logger.error('Error fetching available runners', error)
     return []
   }
+})
+
+// ---------------------------------------------------------------------------
+// Connected runners: derived data/loadable/loading helpers
+// ---------------------------------------------------------------------------
+
+const connectedRunnersInnerAtom = atom(async get => {
+  const runners = (await get(connectedRunnersAtom)) as User[]
+  return { runners: Array.isArray(runners) ? runners : [] }
+})
+
+// Public loadable wrapper used by derived read-only atoms
+export const connectedRunnersLoadableAtom = loadable(connectedRunnersInnerAtom)
+
+/**
+ * Read-only data atom that always returns an array of runners. This guards
+ * consumers from having to check the loadable state.
+ */
+export const connectedRunnersDataAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  if (loadable.state === 'hasData') return loadable.data.runners
+  return [] as User[]
+})
+
+/**
+ * Read-only loading atom.
+ *
+ * Simplified logic: rely solely on the loadable wrapper state. We avoid
+ * introducing inner flags like `hasLoaded`/`isLoading` since `loadable.state`
+ * already captures the async lifecycle in a stable way for consumers.
+ *
+ * True only when `loadable.state === 'loading'`.
+ */
+export const connectedRunnersLoadingAtom = atom(get => {
+  const loadable = get(connectedRunnersLoadableAtom)
+  return loadable.state === 'loading'
 })
