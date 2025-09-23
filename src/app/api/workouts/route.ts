@@ -130,8 +130,10 @@ export async function GET(request: NextRequest) {
               ? inArray(training_plans.runner_id, authorizedUserIds)
               : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
-        // OR workout has no training plan (standalone). Honors runnerId only when
-        // runnerId ∈ authorizedUserIds to prevent leakage of unauthorized standalone workouts.
+        // OR workout has no training plan (standalone).
+        // Honors runnerId only when runnerId ∈ authorizedUserIds; otherwise the endpoint
+        // returns 200 with an empty list (non-enumerating), preventing leakage of unauthorized
+        // standalone workouts.
         and(
           isNull(workouts.training_plan_id),
           runnerId
