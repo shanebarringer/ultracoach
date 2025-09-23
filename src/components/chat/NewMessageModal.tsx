@@ -46,8 +46,8 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
 
   // Memoize available users to stabilize dependency for filteredUsers
   const availableUsers = useMemo(() => {
-    return session?.user?.role === 'coach' ? connectedRunners || [] : []
-  }, [session?.user?.role, connectedRunners])
+    return session?.user?.userType === 'coach' ? connectedRunners || [] : []
+  }, [session?.user?.userType, connectedRunners])
 
   useEffect(() => {
     if (isOpen) {
@@ -56,7 +56,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   }, [isOpen, reset])
 
   const handleStartConversation = (userId: string) => {
-    logger.info('Starting conversation:', { userId, userRole: session?.user?.role })
+    logger.info('Starting conversation:', { userId, userRole: session?.user?.userType })
     onClose()
     router.push(`/chat/${userId}`)
   }
@@ -76,7 +76,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="4xl"
+      size="2xl"
       scrollBehavior="inside"
       data-testid="new-message-modal"
     >
@@ -116,21 +116,21 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
                 <h3 className="mt-2 text-sm font-medium text-gray-900">
                   {searchTerm
                     ? 'No users found'
-                    : `No ${session?.user?.role === 'coach' ? 'runners' : 'coaches'} found`}
+                    : `No ${session?.user?.userType === 'coach' ? 'runners' : 'coaches'} found`}
                 </h3>
                 <p className="mt-2 text-sm text-default-500">
-                  {session?.user?.role === 'coach'
+                  {session?.user?.userType === 'coach'
                     ? 'Create training plans to connect with runners'
                     : 'Ask your coach to create a training plan for you'}
                 </p>
               </div>
             ) : (
-              <div className="">
+              <div className="max-h-[400px] overflow-y-auto">
                 {filteredUsers.map((user: User) => (
                   <Button
                     key={user.id}
                     variant="flat"
-                    className="w-full flex items-center p-3 rounded-lg text-left justify-start h-[400px] overflow-y-auto"
+                    className="w-full flex items-center p-3 rounded-lg text-left justify-start"
                     onClick={() => handleStartConversation(user.id)}
                     data-testid={`user-option-${user.id}`}
                     size="lg"

@@ -11,6 +11,7 @@ import { atomWithRefresh, loadable } from 'jotai/utils'
 
 import type { RelationshipData } from '@/types/relationships'
 
+import { api } from '../api-client'
 import { createLogger } from '../logger'
 import type { User } from '../supabase'
 
@@ -27,15 +28,15 @@ export const relationshipsAsyncAtom = atom(async () => {
   // Return empty array for SSR to prevent URL errors
   if (!isBrowser) return []
 
+  const logger = createLogger('RelationshipsAsyncAtom')
   try {
-    const response = await fetch('/api/coach-runners')
-    if (response.ok) {
-      const data = await response.json()
-      return Array.isArray(data) ? data : data.relationships || []
-    }
-    return []
+    const response = await api.get<RelationshipData[] | { relationships: RelationshipData[] }>('/api/coach-runners', {
+      suppressGlobalToast: true,
+    })
+    const data = response.data
+    return Array.isArray(data) ? data : (data as { relationships: RelationshipData[] }).relationships || []
   } catch (error) {
-    console.error('Failed to fetch relationships:', error)
+    logger.error('Failed to fetch relationships:', error)
     return []
   }
 })
@@ -89,23 +90,11 @@ export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedR
   const logger = createLogger('ConnectedRunnersAtom')
   try {
     logger.debug('Fetching connected runners...')
-    const response = await fetch('/api/runners', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
+    const response = await api.get<{ runners?: User[] } | User[]>('/api/runners', {
+      suppressGlobalToast: true,
     })
-    if (!response.ok) {
-      logger.error(`Failed to fetch connected runners: ${response.status} ${response.statusText}`)
-      return {
-        data: [],
-        isLoading: false,
-        hasLoaded: true,
-        error: `Failed to fetch: ${response.status}`,
-      }
-    }
-    const data = await response.json()
 
+    const data = response.data
     // Extract runners array from response object
     const runners = Array.isArray(data) ? data : data.runners || []
     logger.debug('Connected runners fetched', { count: runners.length })
@@ -135,36 +124,30 @@ export const connectedRunnersDataAtom = atom(get => {
 
 export const connectedRunnersLoadingAtom = atom(get => {
   const loadable = get(connectedRunnersLoadableAtom)
-  return loadable.state === 'loading'
+  // Show loading during actual loading OR during initial fetch when hasLoaded is false
+  if (loadable.state === 'loading') {
+    return true
+  }
+  if (loadable.state === 'hasData' && !loadable.data.hasLoaded) {
+    return true
+  }
+  return false
 })
 
-// Backward compatibility exports - these maintain the old interface
-// for files that haven't been updated yet
-export const connectedRunnersCompatAtom = atom(get => {
-  const data = get(connectedRunnersDataAtom)
-  // Add array methods for backward compatibility
-  const arrayWithMethods = data as User[] & {
-    length: number
-    map: <T>(fn: (item: User) => T) => T[]
-    filter: (fn: (item: User) => boolean) => User[]
-    find: (fn: (item: User) => boolean) => User | undefined
-  }
-  return arrayWithMethods
-})
+// Backward compatibility export - simplified alias
+export const connectedRunnersCompatAtom = connectedRunnersDataAtom
 
 // Available coaches atom
 export const availableCoachesAtom = atomWithRefresh(async () => {
   if (!isBrowser) return []
   const logger = createLogger('AvailableCoachesAtom')
   try {
-    const response = await fetch('/api/coaches/available', {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
+    const response = await api.get<{ coaches?: User[] } | User[]>('/api/coaches/available', {
+      suppressGlobalToast: true,
     })
-    if (!response.ok) return []
-    const data = await response.json()
+    const data = response.data
     // API returns { coaches: [...] }, extract the array
-    const coaches = data.coaches || data
+    const coaches = Array.isArray(data) ? data : data.coaches || []
     return Array.isArray(coaches) ? (coaches as User[]) : []
   } catch (error) {
     logger.error('Error fetching available coaches', error)
@@ -177,14 +160,12 @@ export const availableRunnersAtom = atomWithRefresh(async () => {
   if (!isBrowser) return []
   const logger = createLogger('AvailableRunnersAtom')
   try {
-    const response = await fetch('/api/runners/available', {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
+    const response = await api.get<{ runners?: User[] } | User[]>('/api/runners/available', {
+      suppressGlobalToast: true,
     })
-    if (!response.ok) return []
-    const data = await response.json()
+    const data = response.data
     // API returns { runners: [...] }, extract the array
-    const runners = data.runners || data
+    const runners = Array.isArray(data) ? data : data.runners || []
     return Array.isArray(runners) ? (runners as User[]) : []
   } catch (error) {
     logger.error('Error fetching available runners', error)

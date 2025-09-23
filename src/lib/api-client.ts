@@ -27,6 +27,9 @@ export interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
 
 const logger = createLogger('ApiClient')
 
+// Parse environment variable as boolean
+const isErrorToastsDisabled = process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS === 'true'
+
 // Create production-safe baseURL configuration
 function getBaseURL(): string {
   // Client-side: always use empty string for relative URLs
@@ -90,6 +93,12 @@ apiClient.interceptors.response.use(
     return response
   },
   (error: AxiosError) => {
+    // Check for aborted/canceled requests and handle silently
+    if (error.code === 'ERR_CANCELED' || error.name === 'AbortError') {
+      // Don't log or show toasts for canceled requests - this is expected behavior
+      return Promise.reject(error)
+    }
+
     // Handle different error types
     if (error.response) {
       // Server responded with error status
@@ -113,7 +122,7 @@ apiClient.interceptors.response.use(
         // Only show toast if error toasts are not disabled and not suppressed for this request
         if (
           typeof window !== 'undefined' &&
-          !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS &&
+          !isErrorToastsDisabled &&
           !suppressToast
         ) {
           commonToasts.serverError()
@@ -130,7 +139,7 @@ apiClient.interceptors.response.use(
       const suppressToast = (error.config as ExtendedAxiosRequestConfig)?.suppressGlobalToast
       if (
         typeof window !== 'undefined' &&
-        !process.env.NEXT_PUBLIC_DISABLE_ERROR_TOASTS &&
+        !isErrorToastsDisabled &&
         !suppressToast
       ) {
         commonToasts.networkError()

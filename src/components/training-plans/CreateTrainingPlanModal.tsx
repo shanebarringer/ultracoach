@@ -114,7 +114,10 @@ export default function CreateTrainingPlanModal({
       // Fetch races using Axios
       if (races.length === 0) {
         try {
-          const response = await api.get<Race[]>('/api/races', { signal })
+          const response = await api.get<Race[]>('/api/races', {
+            signal,
+            suppressGlobalToast: true,
+          })
           if (Array.isArray(response.data)) {
             setRaces(response.data)
           }
@@ -131,7 +134,7 @@ export default function CreateTrainingPlanModal({
         try {
           const response = await api.get<{ templates: PlanTemplate[] }>(
             '/api/training-plans/templates',
-            { signal }
+            { signal, suppressGlobalToast: true }
           )
           const templatesData = response.data
           setPlanTemplates(templatesData.templates || [])
@@ -307,8 +310,6 @@ export default function CreateTrainingPlanModal({
               control={control}
               render={({ field, fieldState }) => (
                 <Select
-                  name={field.name}
-                  ref={field.ref}
                   label="Select Runner"
                   placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
                   isRequired
