@@ -1,4 +1,5 @@
-import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm'
+import { isValid, parseISO } from 'date-fns'
+import { SQL, and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // Apply role-based and relationship-based filtering
     // Handle workouts with and without training plans
-    const conditions = []
+    const conditions: SQL[] = []
 
     if (sessionUser.userType === 'coach') {
       // Check runnerId authorization first
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
 
       // Coach can see workouts where:
       // 1. They own the training plan AND the runner is in their authorized relationships
-      // 2. OR the workout has no training plan (allow for standalone workouts)
+      // 2. OR standalone workouts for authorized runners only
       const coachAccessCondition = or(
         // Has training plan and coach owns it and runner is authorized
         and(
@@ -128,18 +129,25 @@ export async function GET(request: NextRequest) {
             ? eq(training_plans.runner_id, runnerId)
             : authorizedUserIds.length > 0
               ? or(...authorizedUserIds.map(id => eq(training_plans.runner_id, id)))
-              : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
+              : sql`false` // No runners authorized - use false predicate
         ),
-        // OR workout has no training plan (workout.training_plan_id is null)
-        isNull(workouts.training_plan_id)
-      )
+        // OR standalone workouts for authorized runners only
+        and(
+          isNull(workouts.training_plan_id),
+          runnerId
+            ? eq(workouts.user_id, runnerId)
+            : authorizedUserIds.length > 0
+              ? or(...authorizedUserIds.map(id => eq(workouts.user_id, id)))
+              : sql`false` // No runners authorized - use false predicate
+        ) as SQL
+      ) as SQL
 
       conditions.push(coachAccessCondition)
     } else {
       // Runner can see workouts where:
       // 1. They are the runner in a training plan (from any coach - simplified for now)
       // 2. OR the workout has no training plan (standalone workouts)
-      let runnerAccessCondition
+      let runnerAccessCondition: SQL
 
       if (authorizedUserIds.length > 0) {
         // Has active relationships - use normal authorization
@@ -147,54 +155,60 @@ export async function GET(request: NextRequest) {
           // Has training plan and runner is the user and coach is authorized
           and(
             eq(training_plans.runner_id, sessionUser.id),
-            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id)))
+            or(...authorizedUserIds.map(id => eq(training_plans.coach_id, id))) as SQL
           ),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       } else {
         // No active relationships - allow runner to see workouts assigned to them in training plans
         runnerAccessCondition = or(
           // Has training plan and runner is the user (any coach for now)
           eq(training_plans.runner_id, sessionUser.id),
-          // OR workout has no training plan
-          isNull(workouts.training_plan_id)
-        )
+          // OR standalone workouts owned by this runner
+          and(isNull(workouts.training_plan_id), eq(workouts.user_id, sessionUser.id))
+        ) as SQL
       }
 
       conditions.push(runnerAccessCondition)
     }
 
-    // Apply date filtering
+    // Apply date filtering with validation using date-fns and UTC normalization
     if (startDate) {
-      conditions.push(gte(workouts.date, new Date(startDate)))
+      const sd = parseISO(startDate)
+      if (isValid(sd)) {
+        sd.setUTCHours(0, 0, 0, 0)
+        conditions.push(gte(workouts.date, sd))
+      }
     }
     if (endDate) {
-      conditions.push(lte(workouts.date, new Date(endDate)))
+      const ed = parseISO(endDate)
+      if (isValid(ed)) {
+        ed.setUTCHours(23, 59, 59, 999)
+        conditions.push(lte(workouts.date, ed))
+      }
     }
 
     // Execute query with conditions
     const query =
       conditions.length > 1 ? baseQuery.where(and(...conditions)) : baseQuery.where(conditions[0])
 
-    const results = await query.orderBy(asc(workouts.date))
+    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
 
-    logger.debug('Raw query results:', {
-      count: results.length,
-      results: results.map(r => ({
-        id: r.id,
-        date: r.date,
-        planned_type: r.planned_type,
-        training_plan_id: r.training_plan_id,
-        coach_id: r.coach_id,
-        plan_runner_id: r.plan_runner_id,
-      })),
+    // Remove the extra fields we only needed for authorization and handle PII
+    const cleanedWorkouts = results.map(row => {
+      const {
+        coach_id: _coach_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+        plan_runner_id: _plan_runner_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+        runner_email: _runner_email, // eslint-disable-line @typescript-eslint/no-unused-vars
+        ...rest
+      } = row
+      if (sessionUser.userType !== 'coach') {
+        const { runner_name: _drop, ...runnerView } = rest // eslint-disable-line @typescript-eslint/no-unused-vars
+        return runnerView
+      }
+      return rest
     })
-
-    // Remove the extra fields we only needed for authorization
-    const cleanedWorkouts = results.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
-    )
 
     logger.debug('Successfully fetched workouts', {
       count: cleanedWorkouts.length,
@@ -202,12 +216,6 @@ export async function GET(request: NextRequest) {
       sessionRole: sessionUser.userType,
       requestedRunnerId: runnerId,
       authorizedUserIds,
-      cleanedWorkouts: cleanedWorkouts.map(w => ({
-        id: w.id,
-        date: w.date,
-        planned_type: w.planned_type,
-        training_plan_id: w.training_plan_id,
-      })),
     })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {
@@ -296,6 +304,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Parse numeric values properly to preserve 0 values
+    const parsedPlannedDuration =
+      plannedDuration === undefined || plannedDuration === null || plannedDuration === ''
+        ? null
+        : Number.parseInt(String(plannedDuration), 10)
+
+    const parsedIntensity =
+      intensity === undefined || intensity === null || intensity === '' ? null : Number(intensity)
+
+    const parsedElevationGain =
+      elevationGain === undefined || elevationGain === null || elevationGain === ''
+        ? null
+        : Number(elevationGain)
+
     // Create the workout
     const workoutDate = new Date(date)
     const workoutTitle = plannedType
@@ -310,15 +332,18 @@ export async function POST(request: NextRequest) {
         title: workoutTitle, // Required field
         date: workoutDate,
         planned_type: plannedType,
-        planned_distance: plannedDistance?.toString(),
-        planned_duration: plannedDuration ? parseInt(plannedDuration) : null,
+        planned_distance:
+          plannedDistance === undefined || plannedDistance === null
+            ? null
+            : String(plannedDistance),
+        planned_duration: parsedPlannedDuration,
         workout_notes: notes,
         status: 'planned',
         // Enhanced workout fields
-        category: category || null,
-        intensity: intensity || null,
-        terrain: terrain || null,
-        elevation_gain: elevationGain || null,
+        category: category ?? null,
+        intensity: parsedIntensity,
+        terrain: terrain ?? null,
+        elevation_gain: parsedElevationGain,
       })
       .returning()
 

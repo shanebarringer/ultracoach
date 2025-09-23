@@ -5,7 +5,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   title: string
   message: string
   confirmText?: string
@@ -25,13 +25,17 @@ export default function ConfirmModal({
   confirmColor = 'danger',
   isLoading = false,
 }: ConfirmModalProps) {
-  const handleConfirm = () => {
-    onConfirm()
-    onClose()
+  const handleConfirm = async () => {
+    try {
+      await onConfirm()
+      onClose()
+    } catch {
+      // keep modal open; parent will surface errors via toast
+    }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading}>
+    <Modal isOpen={isOpen} onClose={onClose} isDismissable={!isLoading} hideCloseButton={isLoading}>
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <h3 className="text-lg font-semibold">{title}</h3>
