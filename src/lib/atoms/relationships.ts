@@ -14,6 +14,7 @@ import type { RelationshipData } from '@/types/relationships'
 import { api } from '../api-client'
 import { createLogger } from '../logger'
 import type { User } from '../supabase'
+import { normalizeListResponse } from '../utils/api-utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -23,8 +24,11 @@ export const relationshipsAtom = atom<RelationshipData[]>([])
 export const relationshipsLoadingAtom = atom(false)
 export const relationshipsErrorAtom = atom<string | null>(null)
 
-// Module-scoped logger to avoid re-instantiating per atom read
+// Module-scoped loggers to avoid re-instantiating per atom read
 const relationshipsLogger = createLogger('RelationshipsAsyncAtom')
+const connectedRunnersLogger = createLogger('ConnectedRunnersAtom')
+const availableCoachesLogger = createLogger('AvailableCoachesAtom')
+const availableRunnersLogger = createLogger('AvailableRunnersAtom')
 
 // Async atom that fetches relationships
 export const relationshipsAsyncAtom = atom(async () => {
@@ -39,9 +43,7 @@ export const relationshipsAsyncAtom = atom(async () => {
       }
     )
     const data = response.data
-    return Array.isArray(data)
-      ? data
-      : (data as { relationships: RelationshipData[] }).relationships || []
+    return normalizeListResponse(data, 'relationships')
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     relationshipsLogger.error('Failed to fetch relationships', { message })
@@ -95,20 +97,19 @@ export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedR
   // Return initial state for SSR to ensure consistency
   if (!isBrowser) return { data: [], isLoading: false, hasLoaded: false, error: null }
 
-  const logger = createLogger('ConnectedRunnersAtom')
   try {
-    logger.debug('Fetching connected runners...')
+    connectedRunnersLogger.debug('Fetching connected runners...')
     const response = await api.get<{ runners?: User[] } | User[]>('/api/runners', {
       suppressGlobalToast: true,
     })
 
     const data = response.data
     // Extract runners array from response object
-    const runners = Array.isArray(data) ? data : data.runners || []
-    logger.debug('Connected runners fetched', { count: runners.length })
+    const runners = normalizeListResponse(data, 'runners')
+    connectedRunnersLogger.debug('Connected runners fetched', { count: runners.length })
     return { data: runners as User[], isLoading: false, hasLoaded: true, error: null }
   } catch (error) {
-    logger.error('Error fetching connected runners', error)
+    connectedRunnersLogger.error('Error fetching connected runners', error)
     return {
       data: [],
       isLoading: false,
@@ -148,17 +149,16 @@ export const connectedRunnersCompatAtom = connectedRunnersDataAtom
 // Available coaches atom
 export const availableCoachesAtom = atomWithRefresh(async () => {
   if (!isBrowser) return []
-  const logger = createLogger('AvailableCoachesAtom')
   try {
     const response = await api.get<{ coaches?: User[] } | User[]>('/api/coaches/available', {
       suppressGlobalToast: true,
     })
     const data = response.data
     // API returns { coaches: [...] }, extract the array
-    const coaches = Array.isArray(data) ? data : data.coaches || []
-    return Array.isArray(coaches) ? (coaches as User[]) : []
+    const coaches = normalizeListResponse(data, 'coaches')
+    return coaches as User[]
   } catch (error) {
-    logger.error('Error fetching available coaches', error)
+    availableCoachesLogger.error('Error fetching available coaches', error)
     return []
   }
 })
@@ -166,17 +166,16 @@ export const availableCoachesAtom = atomWithRefresh(async () => {
 // Available runners atom
 export const availableRunnersAtom = atomWithRefresh(async () => {
   if (!isBrowser) return []
-  const logger = createLogger('AvailableRunnersAtom')
   try {
     const response = await api.get<{ runners?: User[] } | User[]>('/api/runners/available', {
       suppressGlobalToast: true,
     })
     const data = response.data
     // API returns { runners: [...] }, extract the array
-    const runners = Array.isArray(data) ? data : data.runners || []
-    return Array.isArray(runners) ? (runners as User[]) : []
+    const runners = normalizeListResponse(data, 'runners')
+    return runners as User[]
   } catch (error) {
-    logger.error('Error fetching available runners', error)
+    availableRunnersLogger.error('Error fetching available runners', error)
     return []
   }
 })

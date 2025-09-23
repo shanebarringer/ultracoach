@@ -14,6 +14,7 @@ import type { ExtendedTrainingPlan } from '@/types/training'
 
 import { api } from '../api-client'
 import { createLogger } from '../logger'
+import { normalizeListResponse } from '../utils/api-utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -43,9 +44,7 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
     })
     const data = response.data
     // API returns { trainingPlans: [...] } so extract the array
-    const plans = Array.isArray(data) ? data : data.trainingPlans || []
-    // Ensure it's an array
-    const plansArray = Array.isArray(plans) ? plans : []
+    const plansArray = normalizeListResponse(data, 'trainingPlans')
     logger.debug('Training plans fetched', { count: plansArray.length })
     return plansArray as ExtendedTrainingPlan[]
   } catch (error) {

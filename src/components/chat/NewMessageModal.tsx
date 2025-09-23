@@ -11,7 +11,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersDataAtom } from '@/lib/atoms/index'
+import { availableCoachesAtom, connectedRunnersDataAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 
@@ -33,6 +33,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
   const { data: session } = useSession()
   const router = useRouter()
   const connectedRunners = useAtomValue(connectedRunnersDataAtom)
+  const availableCoaches = useAtomValue(availableCoachesAtom)
 
   // React Hook Form setup
   const { control, watch, reset } = useForm<SearchForm>({
@@ -46,8 +47,13 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
 
   // Memoize available users to stabilize dependency for filteredUsers
   const availableUsers = useMemo(() => {
-    return session?.user?.userType === 'coach' ? connectedRunners || [] : []
-  }, [session?.user?.userType, connectedRunners])
+    if (session?.user?.userType === 'coach') {
+      return connectedRunners || []
+    } else {
+      // For runners, show available coaches
+      return availableCoaches || []
+    }
+  }, [session?.user?.userType, connectedRunners, availableCoaches])
 
   useEffect(() => {
     if (isOpen) {
