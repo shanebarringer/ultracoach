@@ -130,11 +130,12 @@ export async function GET(request: NextRequest) {
               ? inArray(training_plans.runner_id, authorizedUserIds)
               : eq(training_plans.runner_id, training_plans.runner_id) // Always true if no specific runner filter
         ),
-        // OR workout has no training plan (standalone). Restrict to authorized runners.
+        // OR workout has no training plan (standalone). Honors runnerId only when
+        // runnerId ∈ authorizedUserIds to prevent leakage of unauthorized standalone workouts.
         and(
           isNull(workouts.training_plan_id),
           runnerId
-            ? eq(workouts.user_id, runnerId)
+            ? and(eq(workouts.user_id, runnerId), inArray(workouts.user_id, authorizedUserIds))
             : authorizedUserIds.length > 0
               ? inArray(workouts.user_id, authorizedUserIds)
               : eq(workouts.user_id, sessionUser.id)
