@@ -5,13 +5,14 @@ import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   title: string
   message: string
   confirmText?: string
   cancelText?: string
   confirmColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger'
   isLoading?: boolean
+  onError?: (error: Error) => void
 }
 
 export default function ConfirmModal({
@@ -24,10 +25,19 @@ export default function ConfirmModal({
   cancelText = 'Cancel',
   confirmColor = 'danger',
   isLoading = false,
+  onError,
 }: ConfirmModalProps) {
-  const handleConfirm = () => {
-    onConfirm()
-    onClose()
+  const handleConfirm = async () => {
+    try {
+      await onConfirm()
+      onClose()
+    } catch (error) {
+      if (onError) {
+        onError(error instanceof Error ? error : new Error('Unknown error'))
+      } else {
+        console.error('ConfirmModal onConfirm error:', error)
+      }
+    }
   }
 
   return (
