@@ -66,7 +66,7 @@ describe('Workouts Atoms', () => {
   beforeEach(() => {
     // Set consistent time for date-dependent tests to prevent flakiness
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2025-01-15T12:00:00Z'))
+    vi.setSystemTime(new Date('2025-01-15T12:00:00'))
 
     store = createTestStore()
     vi.clearAllMocks()
@@ -255,7 +255,7 @@ describe('Workouts Atoms', () => {
         createMockWorkout({ id: 't1', date: todayYMD }),
         createMockWorkout({ id: 't2', date: `${todayYMD}T08:00:00Z` }),
         createMockWorkout({ id: 'y1', date: yesterday }),
-        createMockWorkout({ id: 'tm1', date: `${tomorrow}T00:00:00Z` }),
+        createMockWorkout({ id: 'tm1', date: `${tomorrow}T12:00:00Z` }),
       ]
 
       setAtomValue(store, workoutsAtom, workouts)
