@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
-import { endOfWeek, isSameDay, isWithinInterval, startOfWeek } from 'date-fns'
+import { isSameDay, isWithinInterval } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
@@ -20,7 +20,7 @@ import {
   workoutViewModeAtom,
 } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
-import { parseWorkoutDate } from '@/lib/utils/date'
+import { getWeekRange, parseWorkoutDate } from '@/lib/utils/date'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
 
@@ -75,8 +75,7 @@ const EnhancedWorkoutsList = memo(
       // Apply quick filter first
       if (quickFilter !== 'all') {
         const today = new Date()
-        const weekStart = startOfWeek(today, { weekStartsOn: 0 })
-        const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
+        const { start: weekStart, end: weekEnd } = getWeekRange(0) // Sunday start
 
         switch (quickFilter) {
           case 'today':
@@ -120,39 +119,41 @@ const EnhancedWorkoutsList = memo(
         filtered = filtered.filter(workout => (workout.status || 'planned') === statusFilter)
       }
 
-      // Apply sorting
-      const sorted = [...filtered].sort((a, b) => {
-        const cmpDesc = (da?: string, db?: string) => {
-          const aDate = parseWorkoutDate(da) || new Date(0)
-          const bDate = parseWorkoutDate(db) || new Date(0)
-          return bDate.getTime() - aDate.getTime()
-        }
-        const cmpAsc = (da?: string, db?: string) => -cmpDesc(da, db)
-        switch (sortBy) {
-          case 'date-desc': {
-            const primary = cmpDesc(a.date, b.date)
-            if (primary !== 0) return primary
-            // Stable tie-breaker by created_at (newest first)
-            return cmpDesc(a.created_at, b.created_at)
+      // Apply sorting with pre-computed timestamps for performance
+      const withParsedDates = filtered.map(workout => ({
+        workout,
+        dateTime: (parseWorkoutDate(workout.date) || new Date(0)).getTime(),
+        createdTime: (parseWorkoutDate(workout.created_at) || new Date(0)).getTime(),
+      }))
+
+      const sorted = withParsedDates
+        .sort((a, b) => {
+          switch (sortBy) {
+            case 'date-desc': {
+              const primary = b.dateTime - a.dateTime
+              if (primary !== 0) return primary
+              // Stable tie-breaker by created_at (newest first)
+              return b.createdTime - a.createdTime
+            }
+            case 'date-asc': {
+              const primary = a.dateTime - b.dateTime
+              if (primary !== 0) return primary
+              // Tie-breaker by created_at (oldest first to match asc)
+              return a.createdTime - b.createdTime
+            }
+            case 'type':
+              return (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
+            case 'status':
+              return (a.workout.status || 'planned').localeCompare(b.workout.status || 'planned')
+            case 'distance':
+              const aDistance = a.workout.actual_distance || a.workout.planned_distance || 0
+              const bDistance = b.workout.actual_distance || b.workout.planned_distance || 0
+              return bDistance - aDistance
+            default:
+              return 0
           }
-          case 'date-asc': {
-            const primary = cmpAsc(a.date, b.date)
-            if (primary !== 0) return primary
-            // Tie-breaker by created_at (oldest first to match asc)
-            return cmpAsc(a.created_at, b.created_at)
-          }
-          case 'type':
-            return (a.planned_type || '').localeCompare(b.planned_type || '')
-          case 'status':
-            return (a.status || 'planned').localeCompare(b.status || 'planned')
-          case 'distance':
-            const aDistance = a.actual_distance || a.planned_distance || 0
-            const bDistance = b.actual_distance || b.planned_distance || 0
-            return bDistance - aDistance
-          default:
-            return 0
-        }
-      })
+        })
+        .map(({ workout }) => workout)
 
       return sorted
     }, [workouts, searchTerm, sortBy, typeFilter, statusFilter, quickFilter, showAdvancedFilters])

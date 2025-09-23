@@ -1,8 +1,8 @@
 // Derived atoms - computed values from other atoms
-import { endOfWeek, isSameDay, isWithinInterval, startOfWeek } from 'date-fns'
+import { isSameDay, isWithinInterval } from 'date-fns'
 import { atom } from 'jotai'
 
-import { parseWorkoutDate } from '@/lib/utils/date'
+import { getWeekRange, parseWorkoutDate } from '@/lib/utils/date'
 
 import { userAtom } from '../auth'
 import { conversationsAtom, unreadMessagesCountAtom } from '../chat'
@@ -99,9 +99,7 @@ export const todaysWorkoutsAtom = atom(get => {
 // This week's workouts
 export const thisWeeksWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
-  const today = new Date()
-  const weekStart = startOfWeek(today, { weekStartsOn: 0 })
-  const weekEnd = endOfWeek(today, { weekStartsOn: 0 })
+  const { start: weekStart, end: weekEnd } = getWeekRange(0) // Sunday start
 
   return workouts.filter(workout => {
     const d = parseWorkoutDate(workout.date)

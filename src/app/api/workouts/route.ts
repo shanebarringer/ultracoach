@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       authorizedUserIds = relationships.map(rel => rel.runner_id)
       logger.debug('Coach authorized runner IDs', {
         coachId: sessionUser.id,
-        authorizedRunnerIds: authorizedUserIds,
+        authorizedRunnersCount: authorizedUserIds.length,
       })
     } else {
       const relationships = await db
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       authorizedUserIds = relationships.map(rel => rel.coach_id)
       logger.debug('Runner authorized coach IDs', {
         runnerId: sessionUser.id,
-        authorizedCoachIds: authorizedUserIds,
+        authorizedCoachesCount: authorizedUserIds.length,
       })
     }
 
@@ -208,8 +208,13 @@ export async function GET(request: NextRequest) {
 
     // Remove the extra fields we only needed for authorization and handle PII
     const cleanedWorkouts = results.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, runner_email, ...workout }) =>
-        sessionUser.userType === 'coach' ? { ...workout, runner_email } : workout
+      ({
+        coach_id: _coach_id,
+        plan_runner_id: _plan_runner_id,
+        runner_email,
+        runner_name,
+        ...workout
+      }) => (sessionUser.userType === 'coach' ? { ...workout, runner_name, runner_email } : workout)
     )
 
     logger.debug('Successfully fetched workouts', {
@@ -217,7 +222,7 @@ export async function GET(request: NextRequest) {
       sessionUser: sessionUser.id,
       sessionRole: sessionUser.userType,
       requestedRunnerId: runnerId,
-      authorizedUserIds,
+      authorizedUsersCount: authorizedUserIds.length,
     })
     return NextResponse.json({ workouts: cleanedWorkouts })
   } catch (error) {
@@ -321,7 +326,10 @@ export async function POST(request: NextRequest) {
         date: workoutDate,
         planned_type: plannedType,
         planned_distance: plannedDistance?.toString(),
-        planned_duration: plannedDuration ? parseInt(plannedDuration, 10) : null,
+        planned_duration:
+          plannedDuration != null && Number.isFinite(Number(plannedDuration))
+            ? Number(plannedDuration)
+            : null,
         workout_notes: notes,
         status: 'planned',
         // Enhanced workout fields

@@ -4,7 +4,7 @@
  *
  * Tests the workout-related atoms from the actual implementation
  */
-import { addDays, endOfWeek, format, startOfWeek } from 'date-fns'
+import { addDays, format } from 'date-fns'
 import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -31,6 +31,7 @@ import {
   workoutsAtom,
   workoutsRefreshTriggerAtom,
 } from '@/lib/atoms/workouts'
+import { getWeekRange } from '@/lib/utils/date'
 
 import {
   createMockWorkout,
@@ -64,9 +65,10 @@ describe('Workouts Atoms', () => {
   let store: ReturnType<typeof createStore>
 
   beforeEach(() => {
-    // Set consistent time for date-dependent tests to prevent flakiness
+    // Set consistent time and timezone for date-dependent tests to prevent flakiness
+    process.env.TZ = 'UTC'
     vi.useFakeTimers()
-    vi.setSystemTime(new Date('2025-01-15T12:00:00'))
+    vi.setSystemTime(new Date('2025-01-15T12:00:00Z'))
 
     store = createTestStore()
     vi.clearAllMocks()
@@ -253,9 +255,9 @@ describe('Workouts Atoms', () => {
 
       const workouts = [
         createMockWorkout({ id: 't1', date: todayYMD }),
-        createMockWorkout({ id: 't2', date: `${todayYMD}T08:00:00Z` }),
+        createMockWorkout({ id: 't2', date: `${todayYMD}T08:00:00` }),
         createMockWorkout({ id: 'y1', date: yesterday }),
-        createMockWorkout({ id: 'tm1', date: `${tomorrow}T12:00:00Z` }),
+        createMockWorkout({ id: 'tm1', date: `${tomorrow}T12:00:00` }),
       ]
 
       setAtomValue(store, workoutsAtom, workouts)
@@ -269,8 +271,7 @@ describe('Workouts Atoms', () => {
 
     it('should filter thisWeeksWorkoutsAtom within week boundaries (Sun–Sat)', () => {
       const today = new Date()
-      const start = startOfWeek(today, { weekStartsOn: 0 })
-      const end = endOfWeek(today, { weekStartsOn: 0 })
+      const { start, end } = getWeekRange(0, today) // Sunday start
 
       const before = format(addDays(start, -1), 'yyyy-MM-dd')
       const onStart = format(start, 'yyyy-MM-dd')
