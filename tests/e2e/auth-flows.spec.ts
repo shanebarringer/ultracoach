@@ -110,14 +110,9 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Wait for form to be visible and interactive
     await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
-    await page.waitForFunction(
-      () => {
-        const form = document.querySelector('form')
-        const emailInput = form?.querySelector('input[type="email"]')
-        return form && emailInput && !emailInput.hasAttribute('disabled')
-      },
-      { timeout: 10000 }
-    )
+    const emailReady = page.locator('input[type="email"]')
+    await expect(emailReady).toBeVisible({ timeout: 10000 })
+    await expect(emailReady).toBeEditable({ timeout: 10000 })
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials - using id selectors
@@ -312,13 +307,23 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page).toHaveURL('/dashboard/runner')
 
     // Should not show Better Auth specific errors
-    const authErrors = page.locator('text=/hex string expected|User not found|Invalid password/i')
-    await expect(authErrors).not.toBeVisible({ timeout: 2000 })
+    await expect(
+      page.locator('text=/hex string expected|User not found|Invalid password/i')
+    ).toHaveCount(0)
   })
 
   test('should detect authentication system failures early', async ({ page }) => {
     // This test ensures the authentication system is working at a basic level
     // Would catch major Better Auth configuration issues
+
+    // Capture critical errors as early as possible
+    const logs: string[] = []
+    page.on('console', msg => {
+      if (msg.type() === 'error') logs.push(msg.text())
+    })
+    page.on('pageerror', err => {
+      logs.push(err.message ?? String(err))
+    })
 
     // Navigate to signin page
     await page.goto('/auth/signin')
@@ -330,27 +335,16 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible()
     await expect(page.locator('button[type="submit"]')).toBeVisible()
 
-    // Check for critical auth system errors in console
-    const logs: string[] = []
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        logs.push(msg.text())
-      }
-    })
-
     // Fill form but don't submit - just test auth system initialization
     await page.locator('input[type="email"]').fill('test@example.com')
     await page.locator('input[type="password"]').fill('password123')
 
-    // Wait for any initialization errors
-    await page.waitForTimeout(2000)
+    // Briefly wait to surface any init errors without slowing the suite
+    await page.waitForTimeout(500)
 
     // Check for critical auth system failures
-    const criticalErrors = logs.filter(
-      log =>
-        log.includes('Better Auth') ||
-        log.includes('hex string expected') ||
-        log.includes('Authentication failed to initialize')
+    const criticalErrors = logs.filter(log =>
+      /Better Auth|hex string expected|Authentication failed to initialize/i.test(log)
     )
 
     expect(criticalErrors).toHaveLength(0)

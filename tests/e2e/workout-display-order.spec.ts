@@ -45,20 +45,20 @@ test.describe('Workout Display Order', () => {
         })
         .catch(() => {})
 
-      const workoutCards = page.locator('[data-testid="workout-card"]')
+      const workoutCards = page.getByTestId('workout-card')
       const workoutCount = await workoutCards.count()
 
       if (workoutCount === 0) {
-        logger.info('No workouts found - cannot test sort order')
+        test.skip(true, 'No workouts found - cannot test sort order')
         return
       }
 
       // Collect workout dates and validate sort order
-      const workoutData: Array<{ date: Date; element: any; index: number }> = []
+      const workoutData: Array<{ date: Date; index: number }> = []
 
       for (let i = 0; i < Math.min(workoutCount, 15); i++) {
         const workoutCard = workoutCards.nth(i)
-        const dateElement = workoutCard.locator('[data-testid="workout-date"]')
+        const dateElement = workoutCard.getByTestId('workout-date')
 
         let workoutDate: Date | null = null
 
@@ -81,14 +81,13 @@ test.describe('Workout Display Order', () => {
         if (workoutDate && !isNaN(workoutDate.getTime())) {
           workoutData.push({
             date: workoutDate,
-            element: workoutCard,
             index: i,
           })
         }
       }
 
       if (workoutData.length < 2) {
-        logger.info('Insufficient workout data for sort order validation')
+        test.skip(true, 'Insufficient workout data for sort order validation')
         return
       }
 
@@ -282,9 +281,7 @@ test.describe('Workout Display Order', () => {
         .catch(() => {})
 
       // Look for calendar events
-      const calendarEvents = page.locator(
-        '[data-testid="calendar-workout"], .fc-event, .calendar-event'
-      )
+      const calendarEvents = page.getByTestId('calendar-workout')
       const eventCount = await calendarEvents.count()
 
       if (eventCount > 0) {

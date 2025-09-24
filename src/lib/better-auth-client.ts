@@ -1,10 +1,8 @@
 import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
-import type { auth } from '@/lib/better-auth'
-// Re-exported types from better-auth
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Session, User } from '@/lib/better-auth'
+// Avoid importing the server value at runtime; get its type only
+type Auth = typeof import('@/lib/better-auth').auth
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('better-auth-client')
@@ -20,14 +18,14 @@ function getAuthClient() {
     }
 
     // Use a same-origin absolute baseURL (Better Auth requires absolute URLs)
-    const baseURL =
-      typeof window !== 'undefined' ? `${window.location.origin}/api/auth` : '/api/auth'
+    const baseURL = new URL('/api/auth', window.location.href).toString()
     _authClient = createAuthClient({
       baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
-        customSessionClient<typeof auth>(), // Enable custom session inference
+        customSessionClient<Auth>(), // Enable custom session inference
       ],
       fetchOptions: {
+        credentials: 'same-origin',
         onError(context) {
           logger.error('Better Auth client error:', {
             error: context.error?.message || 'Unknown error',

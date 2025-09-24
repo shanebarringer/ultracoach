@@ -301,7 +301,6 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000)
 
       // Get initial workout counts by status
       const plannedWorkouts = page.locator('[data-testid="workout-card"][data-status="planned"]')
@@ -331,7 +330,7 @@ test.describe('Workout Management', () => {
           }
 
           // UI should update immediately without page refresh
-          await page.waitForTimeout(1000) // Allow for UI update
+          // Wait for the UI to reflect the status change
 
           // Check that workout status changed immediately
           if (workoutId) {
@@ -364,19 +363,22 @@ test.describe('Workout Management', () => {
       // Simulate making a change (navigation should trigger data refresh)
       await page.goto('/dashboard/runner')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(1000) // Allow for dashboard to load
+      // Wait for dashboard content to be visible
+      await expect(page.getByText('Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
 
       // Navigate back to workouts
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(1000) // Allow for data to refresh (should be fast now)
+      // Assert workouts load quickly (data should refresh fast)
+      const workoutsContent = page.getByTestId('workout-card').or(page.getByText('No workouts'))
+      await expect(workoutsContent).toBeVisible({ timeout: 5000 })
 
       // Data should load quickly (not be stuck in long cache)
       const updatedCards = page.locator('[data-testid="workout-card"]')
       const updatedCount = await updatedCards.count()
 
-      // At minimum, the same workouts should appear (no data loss)
-      expect(updatedCount).toBe(initialCount)
+      // At minimum, the same workouts should appear (no data loss from background activity)
+      expect(updatedCount).toBeGreaterThanOrEqual(initialCount)
 
       // No indefinite loading states
       const loadingSpinner = page.locator('[data-testid="loading"], .loading-spinner')

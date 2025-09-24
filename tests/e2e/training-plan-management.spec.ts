@@ -150,7 +150,10 @@ test.describe('Training Plan Management', () => {
             await runnerDropdown.click()
             await page.waitForTimeout(500)
 
-            const runnerOption = page.getByRole('option').first()
+            // Use a more stable selector for dropdown options
+            const runnerOption = page.locator('[data-testid="runner-option"]').first().or(
+              page.locator('[role="option"]').first()
+            )
             try {
               await expect(runnerOption).toBeVisible({ timeout: 1000 })
               await runnerOption.click()
