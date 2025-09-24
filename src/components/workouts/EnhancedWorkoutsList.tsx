@@ -1,10 +1,11 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
+import { isSameDay, isWithinInterval } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 
 import { useSearchParams } from 'next/navigation'
 
@@ -19,6 +20,7 @@ import {
   workoutViewModeAtom,
 } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
+import { getWeekRange, parseWorkoutDate, toLocalYMD } from '@/lib/utils/date'
 
 import EnhancedWorkoutCard from './EnhancedWorkoutCard'
 
@@ -66,6 +68,17 @@ const EnhancedWorkoutsList = memo(
       }
     }, [searchParams, setStatusFilter, setQuickFilter])
 
+    // Recompute on local day change to keep "today/this-week" accurate
+    const [dayKey, setDayKey] = useState(() => toLocalYMD(new Date()))
+
+    useEffect(() => {
+      const now = new Date()
+      const nextMidnight = new Date(now)
+      nextMidnight.setHours(24, 0, 0, 0)
+      const ms = nextMidnight.getTime() - now.getTime()
+      const id = setTimeout(() => setDayKey(toLocalYMD(new Date())), ms)
+      return () => clearTimeout(id)
+    }, [])
     // Filter and sort workouts
     const processedWorkouts = useMemo(() => {
       let filtered = workouts
@@ -73,22 +86,19 @@ const EnhancedWorkoutsList = memo(
       // Apply quick filter first
       if (quickFilter !== 'all') {
         const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
-
-        const startOfWeek = new Date(today)
-        startOfWeek.setDate(today.getDate() - today.getDay())
-        const endOfWeek = new Date(today)
-        endOfWeek.setDate(today.getDate() + (6 - today.getDay()))
+        const { start: weekStart, end: weekEnd } = getWeekRange(0) // Sunday start
 
         switch (quickFilter) {
           case 'today':
-            filtered = filtered.filter(workout => workout.date?.startsWith(todayStr))
+            filtered = filtered.filter(workout => {
+              const d = parseWorkoutDate(workout.date)
+              return d ? isSameDay(d, today) : false
+            })
             break
           case 'this-week':
             filtered = filtered.filter(workout => {
-              if (!workout.date) return false
-              const workoutDate = new Date(workout.date)
-              return workoutDate >= startOfWeek && workoutDate <= endOfWeek
+              const d = parseWorkoutDate(workout.date)
+              return d ? isWithinInterval(d, { start: weekStart, end: weekEnd }) : false
             })
             break
           case 'completed':
@@ -120,28 +130,79 @@ const EnhancedWorkoutsList = memo(
         filtered = filtered.filter(workout => (workout.status || 'planned') === statusFilter)
       }
 
-      // Apply sorting
-      const sorted = [...filtered].sort((a, b) => {
-        switch (sortBy) {
-          case 'date-desc':
-            return new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
-          case 'date-asc':
-            return new Date(a.date || '').getTime() - new Date(b.date || '').getTime()
-          case 'type':
-            return (a.planned_type || '').localeCompare(b.planned_type || '')
-          case 'status':
-            return (a.status || 'planned').localeCompare(b.status || 'planned')
-          case 'distance':
-            const aDistance = a.actual_distance || a.planned_distance || 0
-            const bDistance = b.actual_distance || b.planned_distance || 0
-            return bDistance - aDistance
-          default:
-            return 0
-        }
-      })
+      // Apply sorting with pre-computed timestamps for performance
+      const withParsedDates = filtered.map(workout => ({
+        workout,
+        dateTime: (parseWorkoutDate(workout.date) || new Date(0)).getTime(),
+        createdTime: (parseWorkoutDate(workout.created_at) || new Date(0)).getTime(),
+      }))
+
+      const sorted = withParsedDates
+        .sort((a, b) => {
+          switch (sortBy) {
+            case 'date-desc': {
+              const primary = b.dateTime - a.dateTime
+              if (primary !== 0) return primary
+              const secondary = b.createdTime - a.createdTime
+              if (secondary !== 0) return secondary
+              // Final deterministic tie-breaker
+              return (b.workout.id || '').localeCompare(a.workout.id || '')
+            }
+            case 'date-asc': {
+              const primary = a.dateTime - b.dateTime
+              if (primary !== 0) return primary
+              const secondary = a.createdTime - b.createdTime
+              if (secondary !== 0) return secondary
+              // Final deterministic tie-breaker
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
+            }
+            case 'type': {
+              const r = (a.workout.planned_type || '').localeCompare(b.workout.planned_type || '')
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
+            }
+            case 'status': {
+              const r = (a.workout.status || 'planned').localeCompare(b.workout.status || 'planned')
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (a.workout.id || '').localeCompare(b.workout.id || '')
+            }
+            case 'distance': {
+              const rawA = a.workout.actual_distance ?? a.workout.planned_distance ?? 0
+              const rawB = b.workout.actual_distance ?? b.workout.planned_distance ?? 0
+
+              const aNum =
+                typeof rawA === 'number' ? rawA : Number.isFinite(Number(rawA)) ? Number(rawA) : 0
+              const bNum =
+                typeof rawB === 'number' ? rawB : Number.isFinite(Number(rawB)) ? Number(rawB) : 0
+
+              const r = bNum - aNum
+              if (r !== 0) return r
+              const s = b.dateTime - a.dateTime || b.createdTime - a.createdTime
+              if (s !== 0) return s
+              return (b.workout.id || '').localeCompare(a.workout.id || '')
+            }
+            default:
+              return 0
+          }
+        })
+        .map(({ workout }) => workout)
 
       return sorted
-    }, [workouts, searchTerm, sortBy, typeFilter, statusFilter, quickFilter, showAdvancedFilters])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+      workouts,
+      searchTerm,
+      sortBy,
+      typeFilter,
+      statusFilter,
+      quickFilter,
+      showAdvancedFilters,
+      dayKey, // Required for "today"/"this-week" filters to update on day boundary
+    ])
 
     // Clear all filters
     const clearFilters = () => {

@@ -8,14 +8,17 @@ import {
   compareAsc,
   compareDesc,
   endOfDay,
+  endOfWeek,
   format,
   isAfter,
   isBefore,
   isSameDay,
+  isValid,
   isWithinInterval,
   parse as parseFmt,
   parseISO,
   startOfDay,
+  startOfWeek,
 } from 'date-fns'
 
 /**
@@ -26,7 +29,7 @@ import {
  * @param date - Date object or string to parse
  * @returns Parsed Date object in the correct timezone
  */
-const parseInput = (date: Date | string): Date => {
+export const parseInput = (date: Date | string): Date => {
   if (typeof date !== 'string') return date
   return date.includes('T') ? parseISO(date) : parseFmt(date, 'yyyy-MM-dd', new Date())
 }
@@ -161,4 +164,34 @@ export const formatDateForDisplay = (
 ): string => {
   const d = parseInput(date)
   return format(d, formatStr)
+}
+
+/**
+ * Parses workout date strings with validation for UI components and atoms.
+ * This is the shared utility that prevents date parsing duplication and ensures
+ * all workout dates are validated before use to prevent NaN errors in sorting.
+ *
+ * @param dateStr - Date string to parse (can be undefined/null)
+ * @returns Parsed Date object or null if invalid/empty
+ */
+export const parseWorkoutDate = (date?: string | Date | null): Date | null => {
+  if (!date) return null
+  const parsed = typeof date === 'string' ? parseInput(date) : date
+  return isValid(parsed) ? parsed : null
+}
+
+/**
+ * Get week boundaries (start and end) with configurable week start day.
+ * Centralizes week range logic to ensure consistency across the app.
+ * @param weekStartsOn - Day of week that starts the week (0 = Sunday, 1 = Monday)
+ * @param referenceDate - Date to get week range for (defaults to today)
+ * @returns Object with start and end Date objects for the week
+ */
+export const getWeekRange = (
+  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 = 0,
+  referenceDate: Date = new Date()
+): { start: Date; end: Date } => {
+  const start = startOfWeek(referenceDate, { weekStartsOn })
+  const end = endOfWeek(referenceDate, { weekStartsOn })
+  return { start, end }
 }
