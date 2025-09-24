@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       user_id: workouts.user_id, // Add user_id field for filtering
       training_plan_id: workouts.training_plan_id,
       date: workouts.date,
+      title: workouts.title,
       planned_type: workouts.planned_type,
       planned_distance: workouts.planned_distance,
       planned_duration: workouts.planned_duration,
