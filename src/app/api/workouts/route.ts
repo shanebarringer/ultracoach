@@ -1,4 +1,4 @@
-import { endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
+import { addDays, endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
 import { SQL, and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -214,17 +214,16 @@ export async function GET(request: NextRequest) {
 
     // Smart sorting: Today and yesterday first, then upcoming, then past
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const today = startOfDay(now)
+    const yesterday = startOfDay(addDays(now, -1))
 
     const sortedResults = results.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date) : new Date()
-      const dateB = b.date ? new Date(b.date) : new Date()
+      const dateA = a.date ? parseISO(a.date.toISOString()) : now
+      const dateB = b.date ? parseISO(b.date.toISOString()) : now
 
-      // Strip time for comparison
-      const dayA = new Date(dateA.getFullYear(), dateA.getMonth(), dateA.getDate())
-      const dayB = new Date(dateB.getFullYear(), dateB.getMonth(), dateB.getDate())
+      // Strip time for comparison using date-fns
+      const dayA = startOfDay(dateA)
+      const dayB = startOfDay(dateB)
 
       const isAToday = dayA.getTime() === today.getTime()
       const isBToday = dayB.getTime() === today.getTime()
