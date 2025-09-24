@@ -213,13 +213,18 @@ export async function GET(request: NextRequest) {
     const results = await query
 
     // Smart sorting: Today and yesterday first, then upcoming, then past
+    // TODO: Server-side timezone issue - "today/yesterday" is computed in server timezone
+    // Users in different timezones may see incorrect ordering around day boundaries
+    // Future enhancement: Accept client timezone as query param and use date-fns-tz
     const now = new Date()
     const today = startOfDay(now)
     const yesterday = startOfDay(addDays(now, -1))
 
-    const sortedResults = results.sort((a, b) => {
-      const dateA = a.date ? parseISO(a.date.toISOString()) : now
-      const dateB = b.date ? parseISO(b.date.toISOString()) : now
+    const sortedResults = results.slice().sort((a, b) => {
+      const dateA =
+        a.date instanceof Date ? a.date : a.date ? parseISO(String(a.date)) : new Date(0)
+      const dateB =
+        b.date instanceof Date ? b.date : b.date ? parseISO(String(b.date)) : new Date(0)
 
       // Strip time for comparison using date-fns
       const dayA = startOfDay(dateA)

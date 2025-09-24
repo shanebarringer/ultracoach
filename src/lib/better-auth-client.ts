@@ -19,9 +19,8 @@ function getAuthClient() {
       throw new Error('Auth client should not be created on server side')
     }
 
-    // For Vercel deployments, explicitly set baseURL to ensure consistency
-    // Use same-origin URL to maintain session cookies
-    const baseURL = typeof window !== 'undefined' ? `${window.location.origin}/api/auth` : undefined
+    // Use a same-origin relative baseURL to maintain session cookies
+    const baseURL = '/api/auth'
     _authClient = createAuthClient({
       baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
