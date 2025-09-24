@@ -11,10 +11,14 @@ import {
   waitForHeroUIReady,
   waitForLoadingComplete,
 } from '../utils/heroui-helpers'
+import { label } from '../utils/reporting'
 import { TEST_USERS } from '../utils/test-helpers'
 import { navigateToPage, signIn, waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Chat Messaging System', () => {
+  test.beforeEach(() => {
+    label(test.info(), 'messaging')
+  })
   test.describe('Coach-Runner Messaging', () => {
     test.describe('Coach Tests', () => {
       test.use({ storageState: './playwright/.auth/coach.json' })

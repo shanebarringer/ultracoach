@@ -23,7 +23,8 @@ export default defineConfig({
   /* Limited workers for CI balance of speed vs stability */
   workers: process.env.CI ? 2 : undefined, // CI: 2 workers for better performance, Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
+  // Reporters: keep concise output in CI but always generate an HTML report for debugging
+  reporter: process.env.CI ? [['dot'], ['html']] : [['list'], ['html']],
   /* Global timeout for each test */
   timeout: process.env.CI ? 180000 : 60000, // CI: 3min (increased from 2min), Local: 1min for compilation
   /* Global timeout for expect assertions */
@@ -35,8 +36,8 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3001',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Collect trace for any failed test to aid diagnosis */
+    trace: 'retain-on-failure',
 
     /* Record video for failed tests */
     video: 'retain-on-failure',

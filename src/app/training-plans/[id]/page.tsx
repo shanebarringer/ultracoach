@@ -355,7 +355,7 @@ export default function TrainingPlanDetailPage() {
                 Training Phases
               </h2>
             </CardHeader>
-            <CardBody>
+            <CardBody data-testid="phase-timeline">
               {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {extendedTrainingPlan.plan_phases
@@ -371,7 +371,13 @@ export default function TrainingPlanDetailPage() {
                             Duration: {phase.duration_weeks} weeks
                           </p>
                           {currentPhase?.id === phase.id && (
-                            <Chip size="sm" color="primary" variant="flat" className="mt-1">
+                            <Chip
+                              size="sm"
+                              color="primary"
+                              variant="flat"
+                              className="mt-1"
+                              data-testid="current-phase"
+                            >
                               Current Phase
                             </Chip>
                           )}
@@ -631,7 +637,7 @@ export default function TrainingPlanDetailPage() {
                         {phase.phase_name}
                       </h3>
                       {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4" data-testid="phase-workouts">
                           {workoutsByPhase[phase.id]?.map((workout: Workout) => (
                             <div
                               key={workout.id}
@@ -694,7 +700,10 @@ export default function TrainingPlanDetailPage() {
 
                                   {workout.coach_feedback && (
                                     <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
+                                      <span
+                                        className="text-gray-500 dark:text-gray-400 text-sm"
+                                        data-testid="feedback-badge"
+                                      >
                                         Coach Feedback:
                                       </span>
                                       <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">

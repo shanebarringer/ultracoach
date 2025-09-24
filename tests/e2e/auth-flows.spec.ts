@@ -6,12 +6,14 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { label } from '../utils/reporting'
 import {
   TEST_COACH_EMAIL,
   TEST_COACH_PASSWORD,
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
 } from '../utils/test-helpers'
+import { clickWhenReady } from '../utils/wait-helpers'
 
 test.describe('Authentication Flows with Jotai Atoms', () => {
   test.beforeEach(async ({ page }) => {
@@ -104,6 +106,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should complete sign in flow and update session atom', async ({ page }) => {
+    label(test.info(), 'auth')
     // Navigate directly to signin page
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
@@ -126,11 +129,9 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(emailInput).toHaveValue(TEST_RUNNER_EMAIL)
     await expect(passwordInput).toHaveValue(TEST_RUNNER_PASSWORD)
 
-    // Submit form using the button click (more reliable for React forms)
+    // Submit form using reliable click helper
     const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
-    await expect(submitButton).toBeVisible()
-    await expect(submitButton).toBeEnabled()
-    await submitButton.click()
+    await clickWhenReady(submitButton)
 
     // Wait for successful redirect to dashboard
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })

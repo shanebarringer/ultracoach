@@ -12,6 +12,8 @@ import {
   waitForHeroUIReady,
   waitForLoadingComplete,
 } from '../utils/heroui-helpers'
+import { label } from '../utils/reporting'
+import { clickWhenReady } from '../utils/wait-helpers'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -29,6 +31,7 @@ test.describe('Training Plan Management', () => {
     })
 
     test('should display training plans with filtering', async ({ page }) => {
+      label(test.info(), 'training-plans')
       // Wait for dashboard to fully load before navigation (Suspense-aware)
       await page.waitForLoadState('domcontentloaded')
 
@@ -47,8 +50,7 @@ test.describe('Training Plan Management', () => {
       try {
         // Navigate to training plans - click the button with emoji
         const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
-        await expect(managePlansButton).toBeVisible({ timeout: 10000 })
-        await managePlansButton.click()
+        await clickWhenReady(managePlansButton, 10000)
 
         // Wait for navigation with more flexible timeout
         await page.waitForURL('**/training-plans', {

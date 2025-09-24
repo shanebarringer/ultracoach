@@ -7,7 +7,9 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
+import { label } from '../utils/reporting'
 import { TEST_USERS } from '../utils/test-helpers'
+import { clickWhenReady } from '../utils/wait-helpers'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -121,6 +123,7 @@ test.describe('Workout Management', () => {
     })
 
     test('should edit an existing workout', async ({ page }) => {
+      label(test.info(), 'workouts')
       // Navigate directly to workouts page - we're already authenticated
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
@@ -144,7 +147,7 @@ test.describe('Workout Management', () => {
 
       // Click edit on first workout
       const workoutCard = workoutCards.first()
-      await workoutCard.getByRole('button', { name: /edit/i }).click()
+      await clickWhenReady(workoutCard.getByRole('button', { name: /edit/i }))
 
       // Modify workout details
       const updatedName = `Updated Run ${Date.now()}`

@@ -608,7 +608,7 @@ export default function WeeklyPlannerCalendar({
         </div>
       </CardHeader>
 
-      <CardBody className="p-6">
+      <CardBody className="p-6" data-testid="calendar-view">
         {/* Horizontal Scrolling Container for Mobile */}
         <div className="overflow-x-auto">
           <div className="grid grid-cols-7 gap-3 min-w-[700px] lg:min-w-0">

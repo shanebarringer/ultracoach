@@ -432,6 +432,10 @@ function RunnerDashboard() {
           color="secondary"
           testId="weekly-distance"
         />
+        {/* Back-compat alias for tests expecting 'weekly-volume' */}
+        <span data-testid="weekly-volume" className="hidden" aria-hidden="true">
+          {dashboardMetrics.weeklyDistance}
+        </span>
       </div>
 
       {/* Content Grid */}
@@ -622,6 +626,7 @@ function RunnerDashboard() {
                   <Card
                     key={workout.id}
                     className="border border-divider hover:shadow-md transition-shadow"
+                    data-testid="upcoming-workout-card"
                   >
                     <CardBody className="p-4">
                       <div className="space-y-3">

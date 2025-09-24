@@ -145,6 +145,8 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
   return (
     <Card
+      data-testid="training-plan-card"
+      data-status={plan.archived ? 'archived' : 'active'}
       className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} min-h-[320px]`}
       isPressable={false}
     >

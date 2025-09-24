@@ -4,6 +4,23 @@ import { Logger } from 'tslog'
 
 import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD } from './utils/test-helpers'
 
+async function waitForHealthyServer(baseUrl: string, page: import('@playwright/test').Page) {
+  const endpoints = ['/', '/api/health', '/api/health/database']
+  const start = Date.now()
+  for (let attempt = 1; attempt <= 10; attempt++) {
+    try {
+      // Use APIRequestContext to avoid page navigation side-effects
+      const results = await Promise.all(
+        endpoints.map(ep => page.request.get(baseUrl.replace(/\/$/, '') + ep))
+      )
+      const ok = results.every(r => r.ok())
+      if (ok) return { ok: true, ms: Date.now() - start }
+    } catch {}
+    await new Promise(r => setTimeout(r, 250))
+  }
+  return { ok: false, ms: Date.now() - start }
+}
+
 // Conditional fs import (typed) to avoid Vercel build issues
 const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
 const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
@@ -17,14 +34,25 @@ setup('authenticate', async ({ page, context }) => {
 
   const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
 
-  // Navigate to signin page
+  // Health check before auth to avoid slow failures
+  const hc = await waitForHealthyServer(baseUrl, page)
+  if (!hc.ok) {
+    logger.warn('⚠️ Health check did not pass within timeout; continuing anyway', {
+      durationMs: hc.ms,
+    })
+  } else {
+    logger.info('✅ Server health checks passed', { durationMs: hc.ms })
+  }
+
+  // Navigate to signin page (ensures same-origin cookies)
   await page.goto(`${baseUrl}/auth/signin`)
   logger.info('📍 Navigated to signin page')
 
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript issues
+  // Use the API directly instead of form submission to avoid JavaScript/hydration delays
+  const t0 = Date.now()
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
       email: TEST_RUNNER_EMAIL,
@@ -44,7 +72,8 @@ setup('authenticate', async ({ page, context }) => {
     throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
-  logger.info('✅ Authentication API successful')
+  const authMs = Date.now() - t0
+  logger.info('✅ Authentication API successful', { durationMs: authMs })
 
   // The API call should have set cookies, now navigate to dashboard
   await page.goto(`${baseUrl}/dashboard/runner`)
@@ -65,7 +94,8 @@ setup('authenticate', async ({ page, context }) => {
     }
   }
 
-  logger.info('✅ Successfully navigated to dashboard')
+  const totalMs = Date.now() - t0
+  logger.info('✅ Successfully navigated to dashboard', { totalAuthFlowMs: totalMs })
 
   // Ensure the directory exists before saving authentication state
   const authDir = path.dirname(authFile)

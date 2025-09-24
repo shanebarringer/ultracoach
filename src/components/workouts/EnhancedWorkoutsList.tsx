@@ -466,14 +466,15 @@ const EnhancedWorkoutsList = memo(
             className={viewMode === 'grid' ? `grid ${gridColumns} gap-6` : 'flex flex-col gap-4'}
           >
             {processedWorkouts.map(workout => (
-              <EnhancedWorkoutCard
-                key={workout.id}
-                workoutId={workout.id}
-                userRole={userRole}
-                onEdit={onEditWorkout}
-                onLog={onLogWorkout}
-                variant={viewMode === 'list' ? 'compact' : variant}
-              />
+              <div data-testid="workout-card" data-status={workout.status} key={workout.id}>
+                <EnhancedWorkoutCard
+                  workoutId={workout.id}
+                  userRole={userRole}
+                  onEdit={onEditWorkout}
+                  onLog={onLogWorkout}
+                  variant={viewMode === 'list' ? 'compact' : variant}
+                />
+              </div>
             ))}
           </div>
         )}

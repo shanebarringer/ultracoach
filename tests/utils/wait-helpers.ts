@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Page, expect } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -94,4 +94,35 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   }
 
   return clicked
+}
+
+/**
+ * Wait until a locator is attached, visible and enabled, then click.
+ * Provides clearer error messages than a bare click on flaky UIs.
+ */
+export async function clickWhenReady(locator: import('@playwright/test').Locator, timeout = 10000) {
+  const start = Date.now()
+  await locator.waitFor({ state: 'attached', timeout })
+  await locator.waitFor({ state: 'visible', timeout })
+  await expect(locator).toBeEnabled({ timeout })
+  try {
+    await locator.click({ timeout })
+  } catch (err) {
+    const ms = Date.now() - start
+    throw new Error(`clickWhenReady failed after ${ms}ms: ${String(err)}`)
+  }
+}
+
+export async function waitUntilVisible(
+  locator: import('@playwright/test').Locator,
+  timeout = 10000
+) {
+  await locator.waitFor({ state: 'visible', timeout })
+}
+
+export async function waitUntilHidden(
+  locator: import('@playwright/test').Locator,
+  timeout = 10000
+) {
+  await locator.waitFor({ state: 'hidden', timeout })
 }
