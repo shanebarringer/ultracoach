@@ -285,6 +285,69 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page.getByRole('button', { name: /Begin Your Expedition/i })).toBeVisible()
   })
 
+  test('should handle password hash compatibility issues', async ({ page }) => {
+    // This test validates that the Better Auth password hash fix is working
+    // Previously, users with bcrypt hashes couldn't log in due to incompatibility
+
+    // Navigate to signin
+    await page.goto('/auth/signin')
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForSelector('form', { state: 'visible' })
+
+    // Test with a user that should have compatible Better Auth password hash
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
+    await page.locator('input[type="password"]').press('Enter')
+
+    // Should successfully authenticate (not show "User not found" error)
+    await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
+    await expect(page).toHaveURL('/dashboard/runner')
+
+    // Should not show Better Auth specific errors
+    const authErrors = page.locator('text=/hex string expected|User not found|Invalid password/i')
+    await expect(authErrors).not.toBeVisible({ timeout: 2000 })
+  })
+
+  test('should detect authentication system failures early', async ({ page }) => {
+    // This test ensures the authentication system is working at a basic level
+    // Would catch major Better Auth configuration issues
+
+    // Navigate to signin page
+    await page.goto('/auth/signin')
+    await page.waitForLoadState('domcontentloaded')
+
+    // Form should be rendered (indicates Better Auth endpoints are working)
+    await expect(page.locator('form')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('input[type="email"]')).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toBeVisible()
+    await expect(page.locator('button[type="submit"]')).toBeVisible()
+
+    // Check for critical auth system errors in console
+    const logs: string[] = []
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        logs.push(msg.text())
+      }
+    })
+
+    // Fill form but don't submit - just test auth system initialization
+    await page.locator('input[type="email"]').fill('test@example.com')
+    await page.locator('input[type="password"]').fill('password123')
+
+    // Wait for any initialization errors
+    await page.waitForTimeout(2000)
+
+    // Check for critical auth system failures
+    const criticalErrors = logs.filter(
+      log =>
+        log.includes('Better Auth') ||
+        log.includes('hex string expected') ||
+        log.includes('Authentication failed to initialize')
+    )
+
+    expect(criticalErrors).toHaveLength(0)
+  })
+
   test('should redirect to originally requested page after auth', async ({ page }) => {
     // Try to access protected route while unauthenticated
     await page.goto('/workouts')

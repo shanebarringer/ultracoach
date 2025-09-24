@@ -239,7 +239,6 @@ export default defineConfig({
         url: 'http://localhost:3001',
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
-        port: 3001,
         env: {
           NODE_ENV: 'development', // Use development mode for local testing
           // Load test environment variables from environment

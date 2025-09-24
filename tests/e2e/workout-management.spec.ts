@@ -295,6 +295,125 @@ test.describe('Workout Management', () => {
         }
       }
     })
+
+    test('should update UI immediately after workout status change', async ({ page }) => {
+      // Navigate to workouts page
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(2000)
+
+      // Get initial workout counts by status
+      const plannedWorkouts = page.locator('[data-testid="workout-card"][data-status="planned"]')
+      const completedWorkouts = page.locator(
+        '[data-testid="workout-card"][data-status="completed"]'
+      )
+
+      const initialPlannedCount = await plannedWorkouts.count()
+      const initialCompletedCount = await completedWorkouts.count()
+
+      if (initialPlannedCount > 0) {
+        const workoutToComplete = plannedWorkouts.first()
+        const workoutId = await workoutToComplete.getAttribute('data-workout-id')
+
+        // Mark workout as complete
+        const markCompleteButton = workoutToComplete.locator('button:has-text(/mark complete/i)')
+        if (await markCompleteButton.isVisible()) {
+          await markCompleteButton.click()
+
+          // Handle any confirmation modal
+          const confirmButton = page.locator('button:has-text(/confirm|yes|complete/i)')
+          if (await confirmButton.isVisible({ timeout: 2000 })) {
+            await confirmButton.click()
+          }
+
+          // UI should update immediately without page refresh
+          await page.waitForTimeout(1000) // Allow for UI update
+
+          // Check that workout status changed immediately
+          if (workoutId) {
+            const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+            await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
+              timeout: 5000,
+            })
+          }
+
+          // Counts should update immediately
+          const newPlannedCount = await plannedWorkouts.count()
+          const newCompletedCount = await completedWorkouts.count()
+
+          expect(newPlannedCount).toBeLessThan(initialPlannedCount)
+          expect(newCompletedCount).toBeGreaterThan(initialCompletedCount)
+        }
+      }
+    })
+
+    test('should show workout changes without requiring page refresh', async ({ page }) => {
+      // This test validates the cache duration fix (reduced from 1000ms to 500ms)
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Get initial workout data
+      const workoutCards = page.locator('[data-testid="workout-card"]')
+      const initialCount = await workoutCards.count()
+
+      // Simulate making a change (navigation should trigger data refresh)
+      await page.goto('/dashboard/runner')
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(1000) // Allow for dashboard to load
+
+      // Navigate back to workouts
+      await page.goto('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(1000) // Allow for data to refresh (should be fast now)
+
+      // Data should load quickly (not be stuck in long cache)
+      const updatedCards = page.locator('[data-testid="workout-card"]')
+      const updatedCount = await updatedCards.count()
+
+      // At minimum, the same workouts should appear (no data loss)
+      expect(updatedCount).toBe(initialCount)
+
+      // No indefinite loading states
+      const loadingSpinner = page.locator('[data-testid="loading"], .loading-spinner')
+      await expect(loadingSpinner).not.toBeVisible({ timeout: 3000 })
+    })
+
+    test('should display workouts immediately on first page load', async ({ page }) => {
+      // Test that workouts appear quickly on initial page load (not delayed by caching)
+      const startTime = Date.now()
+
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for either workouts to appear OR empty state to show
+      await Promise.race([
+        page.waitForSelector('[data-testid="workout-card"]', { state: 'visible', timeout: 8000 }),
+        page.waitForSelector('text=/no workouts found/i', { state: 'visible', timeout: 8000 }),
+      ]).catch(() => {
+        // If neither appears quickly, check what's on the page
+      })
+
+      const loadTime = Date.now() - startTime
+
+      // Page should load content quickly (under 8 seconds)
+      expect(loadTime).toBeLessThan(8000)
+
+      // Should not have indefinite loading states
+      const workoutCards = page.locator('[data-testid="workout-card"]')
+      const emptyState = page.locator('text=/no workouts found/i')
+      const loadingState = page.locator('[data-testid="loading"], .loading-spinner')
+
+      // One of these should be visible (workouts, empty state, but not loading)
+      const hasWorkouts = (await workoutCards.count()) > 0
+      const hasEmptyState = await emptyState.isVisible()
+      const hasLoading = await loadingState.isVisible()
+
+      expect(hasWorkouts || hasEmptyState).toBe(true)
+      expect(hasLoading).toBe(false)
+    })
   })
 
   test.describe('Coach Workout Management', () => {
