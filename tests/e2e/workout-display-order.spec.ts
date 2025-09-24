@@ -92,51 +92,37 @@ test.describe('Workout Display Order', () => {
       }
 
       // Validate smart sort order: Today > Yesterday > Future > Past
-      let foundToday = false
-      let foundYesterday = false
-      let foundFuture = false
-
       const today = startOfDay(new Date())
       const yesterday = startOfDay(subDays(new Date(), 1))
 
-      for (let i = 0; i < workoutData.length; i++) {
-        const current = workoutData[i]
-        const currentDay = startOfDay(current.date)
+      // Define ranking function: Today=0, Yesterday=1, Future=2, Past=3
+      const rank = (d: Date) => {
+        const day = startOfDay(d).getTime()
+        if (day === today.getTime()) return 0 // Today
+        if (day === yesterday.getTime()) return 1 // Yesterday
+        if (day > today.getTime()) return 2 // Future
+        return 3 // Past
+      }
 
-        if (currentDay.getTime() === today.getTime()) {
-          foundToday = true
-          // Today's workouts should come first (before future/past)
-          for (let j = 0; j < i; j++) {
-            const previous = workoutData[j]
-            const prevDay = startOfDay(previous.date)
-
-            // Only today's workouts should come before today's workouts
-            expect(prevDay.getTime()).toBe(today.getTime())
-          }
-        } else if (currentDay.getTime() === yesterday.getTime()) {
-          foundYesterday = true
-          // Yesterday's workouts should come after today's but before others
-          for (let j = 0; j < i; j++) {
-            const previous = workoutData[j]
-            const prevDay = startOfDay(previous.date)
-
-            // Only today's or yesterday's workouts should come before yesterday's
-            const isTodayOrYesterday =
-              prevDay.getTime() === today.getTime() || prevDay.getTime() === yesterday.getTime()
-            expect(isTodayOrYesterday).toBe(true)
-          }
-        } else if (isAfter(currentDay, today)) {
-          foundFuture = true
-          // Future workouts should be after today/yesterday
-          if (foundToday || foundYesterday) {
-            // This is correct - future after today/yesterday
-          }
-        }
+      // Assert that ranks are non-decreasing (proper sort order)
+      for (let i = 1; i < workoutData.length; i++) {
+        const currentRank = rank(workoutData[i].date)
+        const previousRank = rank(workoutData[i - 1].date)
+        expect(currentRank).toBeGreaterThanOrEqual(previousRank)
       }
 
       // Log findings for debugging
+      const categories = workoutData.reduce(
+        (acc, { date }) => {
+          const r = rank(date)
+          acc[r] = (acc[r] || 0) + 1
+          return acc
+        },
+        {} as Record<number, number>
+      )
+
       logger.debug(
-        `Sort order validation - Today: ${foundToday}, Yesterday: ${foundYesterday}, Future: ${foundFuture}`
+        `Sort order validation - Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`
       )
       logger.debug(`Total workouts analyzed: ${workoutData.length}`)
     })

@@ -72,38 +72,34 @@ test.describe('Critical Fixes Validation', () => {
 
       // Validate sort order if we have dates
       if (workoutDates.length > 1) {
-        // Check that today's and yesterday's workouts come first
-        let todayFound = false
-        let yesterdayFound = false
-        let futureFoundBeforeToday = false
-        let pastFoundBeforeYesterday = false
-
-        for (const date of workoutDates) {
-          if (isToday(date)) {
-            todayFound = true
-            // Today's workout should not have future workouts before it
-            expect(futureFoundBeforeToday).toBe(false)
-          } else if (isYesterday(date)) {
-            yesterdayFound = true
-            // Yesterday's workout should not have past workouts before it (except today)
-            if (!todayFound) {
-              expect(pastFoundBeforeYesterday).toBe(false)
-            }
-          } else if (date > new Date()) {
-            // Future workout
-            if (!todayFound && !yesterdayFound) {
-              futureFoundBeforeToday = true
-            }
-          } else {
-            // Past workout (older than yesterday)
-            if (!todayFound && !yesterdayFound) {
-              pastFoundBeforeYesterday = true
-            }
-          }
+        // Apply smart sort order ranking: Today=0, Yesterday=1, Future=2, Past=3
+        const today = new Date()
+        const rank = (d: Date) => {
+          if (isToday(d)) return 0 // Today
+          if (isYesterday(d)) return 1 // Yesterday
+          if (d > today) return 2 // Future
+          return 3 // Past
         }
 
+        // Assert that ranks are non-decreasing (proper sort order)
+        for (let i = 1; i < workoutDates.length; i++) {
+          const currentRank = rank(workoutDates[i])
+          const previousRank = rank(workoutDates[i - 1])
+          expect(currentRank).toBeGreaterThanOrEqual(previousRank)
+        }
+
+        // Log findings for debugging
+        const categories = workoutDates.reduce(
+          (acc, date) => {
+            const r = rank(date)
+            acc[r] = (acc[r] || 0) + 1
+            return acc
+          },
+          {} as Record<number, number>
+        )
+
         console.log(
-          `Sort order test completed - Today: ${todayFound}, Yesterday: ${yesterdayFound}`
+          `Sort order test completed - Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`
         )
       }
     })
@@ -237,6 +233,7 @@ test.describe('Critical Fixes Validation', () => {
 
       // Click user menu/avatar
       const userMenu = page.locator('[data-testid="user-menu"], button:has(img)')
+      await expect(userMenu).toBeVisible({ timeout: 15000 })
       await userMenu.click()
 
       // Click sign out

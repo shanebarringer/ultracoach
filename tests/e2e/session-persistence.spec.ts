@@ -239,7 +239,7 @@ test.describe('Session Persistence', () => {
       // Fill and submit signin form
       await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
       await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
-      await page.locator('button[type="submit"], button:has-text(/sign in/i)').click()
+      await page.getByRole('button', { name: /sign in|Begin Your Expedition/i }).click()
 
       // Should redirect to dashboard
       await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
@@ -263,11 +263,13 @@ test.describe('Session Persistence', () => {
 
       // Sign out
       const userMenu = page.locator('[data-testid="user-menu"], button:has(img)')
+      await expect(userMenu).toBeVisible({ timeout: 15000 })
       await userMenu.click()
 
       const signOutButton = page.locator(
         'button:has-text(/sign out/i), [role="menuitem"]:has-text(/sign out/i)'
       )
+      await expect(signOutButton).toBeVisible({ timeout: 10000 })
       await signOutButton.click()
 
       // Should redirect to home

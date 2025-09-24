@@ -216,6 +216,8 @@ test.describe('Chat Messaging System', () => {
 
           // Type initial message
           const messageInput = page.getByPlaceholder(/type.*message/i)
+          await expect(messageInput).toBeVisible({ timeout: 10000 })
+          await expect(messageInput).toBeEnabled({ timeout: 5000 })
           await messageInput.fill('Hello coach!')
 
           // Send the message to create conversation
