@@ -314,10 +314,7 @@ test.describe('Workout Display Order', () => {
         )
 
         // Either empty state message or calendar grid should be visible
-        await Promise.race([
-          expect(emptyState).toBeVisible({ timeout: 5000 }),
-          expect(calendarGrid).toBeVisible({ timeout: 5000 }),
-        ])
+        await expect(emptyState.or(calendarGrid)).toBeVisible({ timeout: 5000 })
       }
     })
 
@@ -363,7 +360,8 @@ test.describe('Workout Display Order', () => {
         // Look for weekly planner view
         const weeklyPlanner = page.locator('[data-testid="weekly-planner"], .weekly-planner')
 
-        if (await weeklyPlanner.isVisible({ timeout: 5000 })) {
+        try {
+          await expect(weeklyPlanner).toBeVisible({ timeout: 5000 })
           // Check if workouts are distributed across days
           const dayContainers = page.locator('[data-testid="day-container"], .day-container')
           const dayCount = await dayContainers.count()
@@ -384,7 +382,7 @@ test.describe('Workout Display Order', () => {
               }
             }
           }
-        } else {
+        } catch {
           logger.info('Weekly planner not found - may not be implemented yet')
         }
       } else {
@@ -394,7 +392,7 @@ test.describe('Workout Display Order', () => {
   })
 
   test.describe('Sort Order Edge Cases', () => {
-    test.use({ storageState: './playground/.auth/runner.json' })
+    test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should handle workouts with same date correctly', async ({ page }) => {
       await page.goto('/workouts')

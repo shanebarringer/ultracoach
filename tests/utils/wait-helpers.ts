@@ -74,11 +74,10 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   let clicked = false
   for (const selector of selectors) {
     try {
-      if (await selector.isVisible({ timeout: 1000 })) {
-        await selector.click()
-        clicked = true
-        break
-      }
+      await expect(selector).toBeVisible({ timeout: 1000 })
+      await selector.click()
+      clicked = true
+      break
     } catch {
       // Try next selector
     }

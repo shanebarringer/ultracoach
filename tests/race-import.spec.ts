@@ -179,7 +179,13 @@ test.describe('Race Import Flow', () => {
     // Wait for parsing to complete - fail test if parse error occurs
     // Check for parse error and fail test to catch regressions
     const parseError = page.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i).first()
-    const hasParseError = await parseError.isVisible({ timeout: 5000 }).catch(() => false)
+    let hasParseError = false
+    try {
+      await expect(parseError).toBeVisible({ timeout: 5000 })
+      hasParseError = true
+    } catch {
+      // No parse error visible
+    }
 
     if (hasParseError) {
       // Get error details for debugging

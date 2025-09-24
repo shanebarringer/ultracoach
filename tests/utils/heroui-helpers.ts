@@ -30,8 +30,11 @@ export async function waitForHeroUIReady(page: Page) {
   for (const indicator of loadingIndicators) {
     try {
       const element = page.locator(indicator).first()
-      if (await element.isVisible({ timeout: 100 })) {
+      try {
+        await expect(element).toBeVisible({ timeout: 100 })
         await element.waitFor({ state: 'hidden', timeout: 10000 })
+      } catch {
+        // Element not visible, continue
       }
     } catch {
       // Element not found or already hidden, continue
@@ -149,9 +152,12 @@ export async function clickButtonWithRetry(
 
       let button
       for (const selector of buttonSelectors) {
-        if (await selector.isVisible({ timeout: 1000 }).catch(() => false)) {
+        try {
+          await expect(selector).toBeVisible({ timeout: 1000 })
           button = selector
           break
+        } catch {
+          // Try next selector
         }
       }
 
@@ -186,8 +192,11 @@ export async function waitForLoadingComplete(page: Page, timeout = 10000) {
   for (const text of loadingTexts) {
     try {
       const loader = page.getByText(text, { exact: false }).first()
-      if (await loader.isVisible({ timeout: 100 })) {
+      try {
+        await expect(loader).toBeVisible({ timeout: 100 })
         await loader.waitFor({ state: 'hidden', timeout })
+      } catch {
+        // Not visible, continue
       }
     } catch {
       // Not visible or already hidden

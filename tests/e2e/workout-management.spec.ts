@@ -323,8 +323,11 @@ test.describe('Workout Management', () => {
 
           // Handle any confirmation modal
           const confirmButton = page.locator('button:has-text(/confirm|yes|complete/i)')
-          if (await confirmButton.isVisible({ timeout: 2000 })) {
+          try {
+            await expect(confirmButton).toBeVisible({ timeout: 2000 })
             await confirmButton.click()
+          } catch {
+            // No confirmation modal appeared
           }
 
           // UI should update immediately without page refresh
@@ -389,12 +392,13 @@ test.describe('Workout Management', () => {
       await page.waitForLoadState('domcontentloaded')
 
       // Wait for either workouts to appear OR empty state to show
-      await Promise.race([
-        page.waitForSelector('[data-testid="workout-card"]', { state: 'visible', timeout: 8000 }),
-        page.waitForSelector('text=/no workouts found/i', { state: 'visible', timeout: 8000 }),
-      ]).catch(() => {
+      try {
+        await expect(
+          page.locator('[data-testid="workout-card"]').or(page.locator('text=/no workouts found/i'))
+        ).toBeVisible({ timeout: 8000 })
+      } catch {
         // If neither appears quickly, check what's on the page
-      })
+      }
 
       const loadTime = Date.now() - startTime
 

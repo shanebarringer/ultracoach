@@ -210,12 +210,11 @@ test.describe('Workout Atoms Functionality', () => {
           const statusUpdate = workoutToComplete.locator('[data-status="completed"]')
 
           // Either notification or status update should be visible
-          await Promise.race([
-            expect(successNotification).toBeVisible({ timeout: 5000 }),
-            expect(statusUpdate).toBeVisible({ timeout: 5000 }),
-          ]).catch(() => {
+          try {
+            await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
+          } catch {
             // At least the modal should have closed
-          })
+          }
         }
       } else {
       }
@@ -246,8 +245,11 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Handle any confirmation dialog
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          if (await confirmBtn.isVisible({ timeout: 2000 })) {
+          try {
+            await expect(confirmBtn).toBeVisible({ timeout: 2000 })
             await confirmBtn.click()
+          } catch {
+            // No confirmation dialog appeared, continue
           }
 
           // Go back to dashboard

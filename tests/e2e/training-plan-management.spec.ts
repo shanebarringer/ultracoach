@@ -151,9 +151,10 @@ test.describe('Training Plan Management', () => {
             await page.waitForTimeout(500)
 
             const runnerOption = page.getByRole('option').first()
-            if (await runnerOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+            try {
+              await expect(runnerOption).toBeVisible({ timeout: 1000 })
               await runnerOption.click()
-            } else {
+            } catch {
               // Close dropdown if no options
               await page.keyboard.press('Escape')
             }

@@ -193,8 +193,11 @@ test.describe('Session Persistence', () => {
         if (currentUrl === new URL(route, page.url()).href) {
           // If still on protected route, check if it shows signin form or redirect
           const signinForm = page.locator('form, input[type="email"]')
-          const isSigninVisible = await signinForm.isVisible({ timeout: 2000 })
-          expect(isSigninVisible).toBe(true)
+          try {
+            await expect(signinForm).toBeVisible({ timeout: 2000 })
+          } catch {
+            throw new Error(`Still on protected route ${route} without visible signin form`)
+          }
         }
       }
     })
@@ -212,7 +215,13 @@ test.describe('Session Persistence', () => {
 
       // Should either redirect to signin or show signin form
       const isOnSignin = page.url().includes('/auth/signin')
-      const hasSigninForm = await page.locator('input[type="email"]').isVisible({ timeout: 5000 })
+      let hasSigninForm = false
+      try {
+        await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 5000 })
+        hasSigninForm = true
+      } catch {
+        // No signin form visible
+      }
 
       expect(isOnSignin || hasSigninForm).toBe(true)
     })

@@ -284,10 +284,7 @@ test.describe('Critical Fixes Validation', () => {
 
       // Either workouts should be visible OR empty state should be visible
       // (but not loading state indefinitely)
-      await Promise.race([
-        expect(workoutCards.first()).toBeVisible({ timeout: 10000 }),
-        expect(emptyState).toBeVisible({ timeout: 10000 }),
-      ])
+      await expect(workoutCards.first().or(emptyState)).toBeVisible({ timeout: 10000 })
 
       // Verify no infinite loading states
       const loadingSpinner = page.locator('[data-testid="loading"], .loading, text=Loading')

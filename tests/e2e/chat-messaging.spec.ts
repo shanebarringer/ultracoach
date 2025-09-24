@@ -197,29 +197,33 @@ test.describe('Chat Messaging System', () => {
 
           // Check if we need to select a coach
           const selectCoach = page.getByRole('combobox', { name: /select.*coach/i })
-          if (await selectCoach.isVisible({ timeout: 2000 }).catch(() => false)) {
+          try {
+            await expect(selectCoach).toBeVisible({ timeout: 2000 })
             await selectCoach.click()
             await page.waitForTimeout(500)
 
             // Select first available coach
             const coachOption = page.getByRole('option').first()
-            if (await coachOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+            try {
+              await expect(coachOption).toBeVisible({ timeout: 2000 })
               await coachOption.click()
+            } catch {
+              // No coach options available
             }
-
-            // Type initial message
-            const messageInput = page.getByPlaceholder(/type.*message/i)
-            await messageInput.fill('Hello coach!')
-
-            // Send the message to create conversation
-            const sendButton = page.getByRole('button', { name: /send/i })
-            await sendButton.click()
-
-            // Wait for conversation to be created
-            await page.waitForTimeout(2000)
-          } else {
-            return // Skip if no coach available
+          } catch {
+            // No coach selection needed
           }
+
+          // Type initial message
+          const messageInput = page.getByPlaceholder(/type.*message/i)
+          await messageInput.fill('Hello coach!')
+
+          // Send the message to create conversation
+          const sendButton = page.getByRole('button', { name: /send/i })
+          await sendButton.click()
+
+          // Wait for conversation to be created
+          await page.waitForTimeout(2000)
         } else {
           // Open existing conversation
           await page.locator('[data-testid="conversation-item"]').first().click()

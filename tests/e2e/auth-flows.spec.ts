@@ -108,11 +108,16 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
 
-    // Wait for React to hydrate and form to be interactive
-    await page.waitForTimeout(2000)
-
-    // Wait for form to be visible
+    // Wait for form to be visible and interactive
     await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
+    await page.waitForFunction(
+      () => {
+        const form = document.querySelector('form')
+        const emailInput = form?.querySelector('input[type="email"]')
+        return form && emailInput && !emailInput.hasAttribute('disabled')
+      },
+      { timeout: 10000 }
+    )
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials - using id selectors
