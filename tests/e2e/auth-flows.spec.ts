@@ -132,7 +132,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(passwordInput).toHaveValue(TEST_RUNNER_PASSWORD)
 
     // Submit form using the button click (more reliable for React forms)
-    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
+    const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
+    await expect(submitButton).toBeVisible()
+    await expect(submitButton).toBeEnabled()
+    await submitButton.click()
 
     // Wait for successful redirect to dashboard
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })

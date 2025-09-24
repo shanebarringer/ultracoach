@@ -19,8 +19,9 @@ function getAuthClient() {
       throw new Error('Auth client should not be created on server side')
     }
 
-    // Use a same-origin relative baseURL to maintain session cookies
-    const baseURL = '/api/auth'
+    // Use a same-origin absolute baseURL (Better Auth requires absolute URLs)
+    const baseURL =
+      typeof window !== 'undefined' ? `${window.location.origin}/api/auth` : '/api/auth'
     _authClient = createAuthClient({
       baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
