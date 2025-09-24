@@ -19,10 +19,11 @@ function getAuthClient() {
       throw new Error('Auth client should not be created on server side')
     }
 
-    // For Vercel deployments, omit baseURL to use same-domain default
-    // Better Auth automatically uses window.location.origin + '/api/auth'
+    // For Vercel deployments, explicitly set baseURL to ensure consistency
+    // Use same-origin URL to maintain session cookies
+    const baseURL = typeof window !== 'undefined' ? `${window.location.origin}/api/auth` : undefined
     _authClient = createAuthClient({
-      // baseURL is omitted - Better Auth will use current domain + /api/auth
+      baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
         customSessionClient<typeof auth>(), // Enable custom session inference
       ],

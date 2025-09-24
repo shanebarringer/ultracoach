@@ -24,7 +24,7 @@ export const workoutsRefreshTriggerAtom = atom(0)
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+const CACHE_DURATION = 500 // Reduced cache to 500ms for faster updates
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
