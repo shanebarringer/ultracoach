@@ -1,9 +1,10 @@
 import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
+import { createLogger } from '@/lib/logger'
+
 // Avoid importing the server value at runtime; get its type only
 type Auth = typeof import('@/lib/better-auth').auth
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('better-auth-client')
 
@@ -18,7 +19,10 @@ function getAuthClient() {
     }
 
     // Use a same-origin absolute baseURL (Better Auth requires absolute URLs)
-    const baseURL = new URL('/api/auth', window.location.href).toString()
+    const baseURL = new URL(
+      '/api/auth',
+      window.location?.href || 'http://localhost:3001'
+    ).toString()
     _authClient = createAuthClient({
       baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
