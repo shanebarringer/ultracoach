@@ -156,7 +156,7 @@ test.describe('Training Plan Management', () => {
               .first()
               .or(page.locator('[role="option"]').first())
             try {
-              await expect(runnerOption).toBeVisible({ timeout: 1000 })
+              await runnerOption.waitFor({ state: 'visible', timeout: 1000 })
               await runnerOption.click()
             } catch {
               // Close dropdown if no options

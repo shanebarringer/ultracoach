@@ -19,10 +19,7 @@ function getAuthClient() {
     }
 
     // Use a same-origin absolute baseURL (Better Auth requires absolute URLs)
-    const baseURL = new URL(
-      '/api/auth',
-      window.location?.href || 'http://localhost:3001'
-    ).toString()
+    const baseURL = new URL('/api/auth', window.location.origin).toString()
     _authClient = createAuthClient({
       baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
