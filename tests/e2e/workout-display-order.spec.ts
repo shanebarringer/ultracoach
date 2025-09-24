@@ -22,8 +22,11 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns'
+import { Logger } from 'tslog'
 
 import { navigateToDashboard } from '../utils/test-helpers'
+
+const logger = new Logger({ name: 'workout-display-order-e2e' })
 
 test.describe('Workout Display Order', () => {
   test.describe('Workouts Page Sort Order', () => {
@@ -34,14 +37,19 @@ test.describe('Workout Display Order', () => {
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
 
-      // Allow time for async workouts to load
-      await page.waitForTimeout(3000)
+      // Wait for workouts to load
+      await page
+        .waitForSelector('[data-testid="workout-card"], [data-testid="workouts-page-skeleton"]', {
+          state: 'attached',
+          timeout: 10000,
+        })
+        .catch(() => {})
 
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const workoutCount = await workoutCards.count()
 
       if (workoutCount === 0) {
-        console.log('No workouts found - cannot test sort order')
+        logger.info('No workouts found - cannot test sort order')
         return
       }
 
@@ -80,7 +88,7 @@ test.describe('Workout Display Order', () => {
       }
 
       if (workoutData.length < 2) {
-        console.log('Insufficient workout data for sort order validation')
+        logger.info('Insufficient workout data for sort order validation')
         return
       }
 
@@ -128,17 +136,22 @@ test.describe('Workout Display Order', () => {
       }
 
       // Log findings for debugging
-      console.log(
+      logger.debug(
         `Sort order validation - Today: ${foundToday}, Yesterday: ${foundYesterday}, Future: ${foundFuture}`
       )
-      console.log(`Total workouts analyzed: ${workoutData.length}`)
+      logger.debug(`Total workouts analyzed: ${workoutData.length}`)
     })
 
     test('should not show old workouts before recent ones', async ({ page }) => {
       await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000)
+      await page
+        .waitForSelector('[data-testid="workout-card"], [data-testid="workouts-page-skeleton"]', {
+          state: 'attached',
+          timeout: 10000,
+        })
+        .catch(() => {})
 
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const count = await workoutCards.count()
@@ -257,7 +270,16 @@ test.describe('Workout Display Order', () => {
       await page.goto('/calendar')
       await expect(page).toHaveURL('/calendar')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000) // Allow calendar to initialize
+      // Wait for calendar to initialize
+      await page
+        .waitForSelector(
+          '[data-testid="calendar"], .fc-daygrid, [data-testid="calendar-skeleton"]',
+          {
+            state: 'attached',
+            timeout: 10000,
+          }
+        )
+        .catch(() => {})
 
       // Look for calendar events
       const calendarEvents = page.locator(
@@ -266,7 +288,7 @@ test.describe('Workout Display Order', () => {
       const eventCount = await calendarEvents.count()
 
       if (eventCount > 0) {
-        console.log(`Found ${eventCount} calendar events`)
+        logger.debug(`Found ${eventCount} calendar events`)
 
         // Verify first few events have reasonable dates
         for (let i = 0; i < Math.min(eventCount, 3); i++) {
@@ -278,12 +300,12 @@ test.describe('Workout Display Order', () => {
           // Try to get event date information if available
           const eventText = await event.textContent()
           if (eventText) {
-            console.log(`Calendar event ${i + 1}: ${eventText}`)
+            logger.debug(`Calendar event ${i + 1}: ${eventText}`)
           }
         }
       } else {
         // No calendar events - could be valid for new users
-        console.log('No calendar events found - checking for empty state')
+        logger.info('No calendar events found - checking for empty state')
 
         // Should either have events or show appropriate empty state
         const emptyState = page.locator('text=/no events|no workouts|empty calendar/i')
@@ -358,15 +380,15 @@ test.describe('Workout Display Order', () => {
               if (workoutCount > 0) {
                 // Verify workout items are visible
                 await expect(dayWorkouts.first()).toBeVisible()
-                console.log(`Day ${i + 1} has ${workoutCount} workouts`)
+                logger.debug(`Day ${i + 1} has ${workoutCount} workouts`)
               }
             }
           }
         } else {
-          console.log('Weekly planner not found - may not be implemented yet')
+          logger.info('Weekly planner not found - may not be implemented yet')
         }
       } else {
-        console.log('No training plans found for weekly planner test')
+        logger.info('No training plans found for weekly planner test')
       }
     })
   })
@@ -378,7 +400,12 @@ test.describe('Workout Display Order', () => {
       await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000)
+      await page
+        .waitForSelector('[data-testid="workout-card"], [data-testid="workouts-page-skeleton"]', {
+          state: 'attached',
+          timeout: 10000,
+        })
+        .catch(() => {})
 
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const count = await workoutCards.count()
@@ -413,7 +440,7 @@ test.describe('Workout Display Order', () => {
         // Check groups with multiple workouts
         for (const [dateKey, indices] of sameDateGroups) {
           if (indices.length > 1) {
-            console.log(`Found ${indices.length} workouts on ${dateKey}`)
+            logger.debug(`Found ${indices.length} workouts on ${dateKey}`)
             // Same-date workouts should be grouped together (indices should be consecutive or close)
             indices.sort((a, b) => a - b)
             for (let i = 1; i < indices.length; i++) {
@@ -429,7 +456,15 @@ test.describe('Workout Display Order', () => {
       await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000)
+      await page
+        .waitForSelector(
+          '[data-testid="workout-card"], [data-testid="workouts-page-skeleton"], [data-testid="empty-state"]',
+          {
+            state: 'attached',
+            timeout: 10000,
+          }
+        )
+        .catch(() => {})
 
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const count = await workoutCards.count()
