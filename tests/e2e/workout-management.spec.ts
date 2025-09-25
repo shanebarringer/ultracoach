@@ -211,7 +211,7 @@ test.describe('Workout Management', () => {
         await page.getByRole('radio', { name: /great/i }).click()
 
         // Submit completion
-        await page.getByRole('button', { name: /complete workout/i }).click()
+        await clickWhenReady(page.getByRole('button', { name: /complete workout/i }), 5000)
 
         // Should show success notification
         await expect(page.getByText(/workout completed/i)).toBeVisible()

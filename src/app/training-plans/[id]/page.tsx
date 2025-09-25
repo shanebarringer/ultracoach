@@ -1,7 +1,8 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { format as formatDateFns, parseISO } from 'date-fns'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -47,7 +48,7 @@ export default function TrainingPlanDetailPage() {
   // Use Jotai atoms for centralized state management
   const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+  const refreshTrainingPlans = useSetAtom(refreshableTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
@@ -216,13 +217,7 @@ export default function TrainingPlanDetailPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatDateFns(parseISO(dateString), 'MMM d, yyyy')
 
   const calculateCurrentPhase = useCallback(() => {
     if (
@@ -237,11 +232,13 @@ export default function TrainingPlanDetailPage() {
     const today = new Date()
     let totalWeeks = 0
 
-    for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
-      const phaseEndDate = new Date(startDate)
-      phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
+    for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
+      const phaseStartDate = new Date(startDate)
+      phaseStartDate.setDate(startDate.getDate() + totalWeeks * 7)
+      const phaseEndDate = new Date(phaseStartDate)
+      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1)
 
-      if (today >= startDate && today <= phaseEndDate) {
+      if (today >= phaseStartDate && today <= phaseEndDate) {
         return phase
       }
       totalWeeks += phase.duration_weeks
@@ -268,7 +265,7 @@ export default function TrainingPlanDetailPage() {
     const planStartDate = new Date(extendedTrainingPlan.start_date)
     let currentWeekOffset = 0
 
-    extendedTrainingPlan.plan_phases
+    ;[...extendedTrainingPlan.plan_phases]
       .sort((a, b) => a.order - b.order)
       .forEach(phase => {
         const phaseStartDate = new Date(planStartDate)
@@ -358,7 +355,7 @@ export default function TrainingPlanDetailPage() {
             <CardBody data-testid="phase-timeline">
               {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {extendedTrainingPlan.plan_phases
+                  {[...extendedTrainingPlan.plan_phases]
                     .sort((a, b) => a.order - b.order)
                     .map(phase => (
                       <Card
@@ -629,8 +626,8 @@ export default function TrainingPlanDetailPage() {
               </div>
             ) : (
               <div className="space-y-8">
-                {extendedTrainingPlan?.plan_phases
-                  ?.sort((a, b) => a.order - b.order)
+                {[...(extendedTrainingPlan?.plan_phases || [])]
+                  .sort((a, b) => a.order - b.order)
                   .map(phase => (
                     <div key={phase.id}>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

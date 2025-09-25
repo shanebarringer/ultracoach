@@ -64,7 +64,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Verify fields are filled
     await expect(nameInput).toHaveValue(testName)
     await expect(emailInput).toHaveValue(testEmail)
-    await expect(passwordInput).toHaveValue('TestPassword123!')
+    // Avoid asserting on raw password values in reports; verify input type instead
+    await expect(passwordInput).toHaveAttribute('type', 'password')
 
     // The form defaults to 'runner' role, so we can skip selecting it
 
@@ -127,7 +128,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Ensure values are filled
     await expect(emailInput).toHaveValue(TEST_RUNNER_EMAIL)
-    await expect(passwordInput).toHaveValue(TEST_RUNNER_PASSWORD)
+    // Avoid echoing sensitive values in test artifacts
+    await expect(passwordInput).toHaveAttribute('type', 'password')
 
     // Submit form using reliable click helper
     const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
