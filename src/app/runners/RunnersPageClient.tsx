@@ -70,8 +70,10 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
   // Update URL when tab changes
   useEffect(() => {
     const params = new URLSearchParams(Array.from(searchParams.entries()))
-    params.set('tab', activeTab)
-    router.replace(`?${params.toString()}`, { scroll: false })
+    if (params.get('tab') !== activeTab) {
+      params.set('tab', activeTab)
+      router.replace(`?${params.toString()}`, { scroll: false })
+    }
   }, [activeTab, router, searchParams])
 
   const handleMessageRunner = (runnerId: string) => {
@@ -206,7 +208,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
 
   function ConnectedRunnersCountChip() {
     const connected = useAtomValue(connectedRunnersAtom)
-    const count = Array.isArray(connected) ? connected.length : 0
+    const count = connected.length
     return (
       <Chip size="sm" variant="flat" data-testid="connected-runners-count">
         {count}
@@ -216,8 +218,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
 
   function ConnectedRunnersContent() {
     const connected = useAtomValue(connectedRunnersAtom)
-    const runners = (Array.isArray(connected) ? connected : []) as User[]
-    return renderConnectedRunners(runners)
+    return renderConnectedRunners(connected)
   }
 
   const renderAvailableRunners = () => (

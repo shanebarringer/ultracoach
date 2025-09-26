@@ -129,7 +129,7 @@ function NewMessageModalContent({ isOpen, onClose }: { isOpen: boolean; onClose:
                 key={user.id}
                 variant="flat"
                 className="w-full flex items-center p-3 rounded-lg text-left justify-start"
-                onClick={() => handleStartConversation(user.id)}
+                onPress={() => handleStartConversation(user.id)}
                 data-testid={`user-option-${user.id}`}
                 size="lg"
               >

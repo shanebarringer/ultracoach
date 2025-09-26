@@ -140,7 +140,7 @@ function RunnerWeeklyPage({
       return {
         id: sessionUser.id,
         email: sessionUser.email,
-        full_name: sessionUser.name,
+        full_name: sessionUser.name?.trim() || sessionUser.email,
         userType: 'runner' as const,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -191,7 +191,7 @@ function RunnerWeeklyPage({
               <Button
                 variant="flat"
                 size="sm"
-                onClick={() => router.push('/weekly-planner')}
+                onPress={() => router.push('/weekly-planner')}
                 className="text-secondary hover:bg-secondary/20 self-start lg:self-auto"
               >
                 Change Runner
@@ -248,7 +248,7 @@ function RunnerWeeklyPage({
                   isIconOnly
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigateWeek('prev')}
+                  onPress={() => navigateWeek('prev')}
                   className="text-foreground/70 hover:text-foreground"
                 >
                   <ChevronLeftIcon className="w-4 h-4" />
@@ -256,7 +256,7 @@ function RunnerWeeklyPage({
                 <Button
                   variant="flat"
                   size="sm"
-                  onClick={goToCurrentWeek}
+                  onPress={goToCurrentWeek}
                   className="text-warning px-2 lg:px-3 text-xs lg:text-sm"
                 >
                   Today
@@ -265,7 +265,7 @@ function RunnerWeeklyPage({
                   isIconOnly
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigateWeek('next')}
+                  onPress={() => navigateWeek('next')}
                   className="text-foreground/70 hover:text-foreground"
                 >
                   <ChevronRightIcon className="w-4 h-4" />
