@@ -214,6 +214,8 @@ export default function TrainingPlanDetailPage() {
         withCredentials: true,
       })
       commonToasts.trainingPlanDeleted()
+      // Refresh the training plans list after deletion
+      refreshTrainingPlans()
       router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })

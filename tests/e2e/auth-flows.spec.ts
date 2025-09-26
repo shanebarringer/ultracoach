@@ -162,7 +162,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await waitForFormReady(page, 10000)
     await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
     await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
-    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
+    await clickWhenReady(page.getByRole('button', { name: /Begin Your Expedition/i }))
 
     // Wait for dashboard redirect and content to load
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
@@ -182,8 +182,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(dashboardElement).toBeVisible({ timeout: 10000 })
 
     // Open user menu and sign out - using the avatar button
-    await page.getByRole('img', { name: 'Alex Rivera' }).click()
-    await page.getByRole('menuitem', { name: /sign out/i }).click()
+    await clickWhenReady(page.getByRole('img', { name: 'Alex Rivera' }))
+    await clickWhenReady(page.getByRole('menuitem', { name: /sign out/i }))
 
     // Should redirect to home page
     await expect(page).toHaveURL('/')

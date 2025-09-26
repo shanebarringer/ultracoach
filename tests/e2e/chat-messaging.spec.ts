@@ -64,7 +64,7 @@ test.describe('Chat Messaging System', () => {
 
           // Send a message with a workout link
           const messageWithLink = 'Check out this workout: /workouts/123'
-          await page.getByPlaceholder(/type a message/i).fill(messageWithLink)
+          await page.getByPlaceholder('Type your message...').fill(messageWithLink)
           await page.getByRole('button', { name: /send/i }).click()
 
           // Message should be sent
@@ -148,7 +148,7 @@ test.describe('Chat Messaging System', () => {
 
           // Send message
           const optimisticMessage = `Optimistic update test ${Date.now()}`
-          await page.getByPlaceholder(/type a message/i).fill(optimisticMessage)
+          await page.getByPlaceholder('Type your message...').fill(optimisticMessage)
           await page.getByRole('button', { name: /send/i }).click()
 
           // Message should appear immediately (optimistic)
@@ -218,8 +218,8 @@ test.describe('Chat Messaging System', () => {
             // No coach selection needed
           }
 
-          // Type initial message
-          const messageInput = page.getByPlaceholder(/type.*message/i)
+          // Type initial message - use exact placeholder text
+          const messageInput = page.getByPlaceholder('Type your message...')
           await expect(messageInput).toBeVisible({ timeout: 10000 })
           await expect(messageInput).toBeEnabled({ timeout: 5000 })
           await messageInput.fill('Hello coach!')
@@ -238,7 +238,7 @@ test.describe('Chat Messaging System', () => {
 
         // Now send a test message in the active conversation
         const messageText = `Test message ${Date.now()}`
-        const messageInput = page.getByPlaceholder(/type.*message/i)
+        const messageInput = page.getByPlaceholder('Type your message...')
 
         // Wait for input to be visible and enabled
         await expect(messageInput).toBeVisible({ timeout: 10000 })
@@ -375,7 +375,9 @@ test.describe('Chat Messaging System', () => {
           await secondConv.click()
 
           // Send a message
-          await page.getByPlaceholder(/type a message/i).fill('New message to bump conversation')
+          await page
+            .getByPlaceholder('Type your message...')
+            .fill('New message to bump conversation')
           await page.getByRole('button', { name: /send/i }).click()
 
           // Return to conversation list
@@ -418,7 +420,7 @@ test.describe('Chat Messaging System', () => {
           await page2.locator('[data-testid="conversation-item"]').first().click()
 
           // Coach starts typing
-          await page.getByPlaceholder(/type a message/i).fill('Typing...')
+          await page.getByPlaceholder('Type your message...').fill('Typing...')
 
           // Runner should see typing indicator
           await expect(page2.locator('[data-testid="typing-indicator"]')).toBeVisible({
@@ -429,7 +431,7 @@ test.describe('Chat Messaging System', () => {
           // isTypingAtom should be updated
 
           // Coach stops typing
-          await page.getByPlaceholder(/type a message/i).fill('')
+          await page.getByPlaceholder('Type your message...').fill('')
 
           // Typing indicator should disappear
           await expect(page2.locator('[data-testid="typing-indicator"]')).not.toBeVisible({
@@ -549,7 +551,7 @@ test.describe('Chat Messaging System', () => {
 
           // Coach sends message
           const testMessage = `Real-time test ${Date.now()}`
-          await coachPage.getByPlaceholder(/type a message/i).fill(testMessage)
+          await coachPage.getByPlaceholder('Type your message...').fill(testMessage)
           await coachPage.getByRole('button', { name: /send/i }).click()
 
           // Runner should receive message in real-time

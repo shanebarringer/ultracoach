@@ -231,10 +231,10 @@ test.describe('Critical Fixes Validation', () => {
       // Start authenticated
       await navigateToDashboard(page, 'runner')
 
-      // Click user menu/avatar
-      const userMenu = page.locator('[data-testid="user-menu"], button:has(img)')
-      await expect(userMenu).toBeVisible({ timeout: 15000 })
-      await userMenu.click()
+      // Click user menu/avatar - using the HeroUI Avatar component
+      const userAvatar = page.locator('.heroui-avatar').filter({ has: page.locator('span') })
+      await expect(userAvatar).toBeVisible({ timeout: 15000 })
+      await userAvatar.click()
 
       // Click sign out
       const signOutButton = page.locator(
@@ -283,9 +283,15 @@ test.describe('Critical Fixes Validation', () => {
       // (but not loading state indefinitely)
       await expect(workoutCards.first().or(emptyState)).toBeVisible({ timeout: 10000 })
 
-      // Verify no infinite loading states
-      const loadingSpinner = page.locator('[data-testid="loading"], .loading, text=Loading')
-      await expect(loadingSpinner).not.toBeVisible({ timeout: 5000 })
+      // Verify no infinite loading states - check each possible loading indicator separately
+      const loadingTestId = page.locator('[data-testid="loading"]')
+      const loadingClass = page.locator('.loading')
+      const loadingText = page.getByText('Loading')
+
+      // All loading indicators should not be visible
+      await expect(loadingTestId).not.toBeVisible({ timeout: 5000 })
+      await expect(loadingClass).not.toBeVisible({ timeout: 5000 })
+      await expect(loadingText).not.toBeVisible({ timeout: 5000 })
     })
   })
 
