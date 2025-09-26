@@ -2,7 +2,6 @@
 
 import { Button, Card, CardBody, CardHeader, Select, SelectItem, Spinner } from '@heroui/react'
 import { useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-react'
 
 import { memo, useEffect, useMemo, useState } from 'react'
@@ -16,8 +15,7 @@ import WeeklyMetrics from './WeeklyMetrics'
 
 const logger = createLogger('WeeklyWorkoutOverview')
 
-// Create loadable atom for better UX
-const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+// Suspense will handle loading; errors propagate to Error Boundary
 
 interface WeeklyWorkoutOverviewProps {
   coach: {
@@ -31,14 +29,10 @@ interface WeeklyWorkoutOverviewProps {
 }
 
 function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorkoutOverviewProps) {
-  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  const runners = useAtomValue(connectedRunnersAtom)
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set())
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Workout[]>([])
   const [workoutsLoading, setWorkoutsLoading] = useState(false)
-
-  // Handle loading and error states from Jotai loadable
-  const runnersLoading = runnersLoadable.state === 'loading'
-  const runnersError = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   // Format week range for display
   const formatWeekRange = (monday: Date) => {
@@ -111,10 +105,7 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
   }, [currentWeek])
 
   // Memoize runners data to prevent unnecessary re-renders
-  const runnersData = useMemo(() => {
-    const data = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
-    return Array.isArray(data) ? data : []
-  }, [runnersLoadable])
+  const runnersData = useMemo(() => (Array.isArray(runners) ? runners : []), [runners])
 
   // Filter athletes based on selection
   const filteredRunners = useMemo(() => {
@@ -149,19 +140,6 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
       selectedCount: keySet.size,
       totalAthletes: runnersData.length,
     })
-  }
-
-  if (runnersError) {
-    return (
-      <Card className="border-danger-200 bg-danger-50">
-        <CardBody className="text-center py-12">
-          <div className="text-danger-600 mb-4">Failed to load athletes</div>
-          <Button color="primary" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </CardBody>
-      </Card>
-    )
   }
 
   return (
@@ -225,7 +203,6 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
                 className="max-w-xs"
                 selectedKeys={selectedAthletes}
                 onSelectionChange={handleAthleteSelection}
-                isLoading={runnersLoading}
                 startContent={<UsersIcon className="w-4 h-4" />}
                 size="sm"
               >
@@ -260,14 +237,10 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
       ) : filteredRunners.length === 0 ? (
         <Card className="border-warning-200 bg-warning-50">
           <CardBody className="text-center py-12">
-            <div className="text-warning-600 mb-4">
-              {runnersLoading ? 'Loading athletes...' : 'No athletes found'}
-            </div>
-            {!runnersLoading && (
-              <p className="text-sm text-foreground/60">
-                Connect with athletes to start viewing their weekly progress.
-              </p>
-            )}
+            <div className="text-warning-600 mb-4">No athletes found</div>
+            <p className="text-sm text-foreground/60">
+              Connect with athletes to start viewing their weekly progress.
+            </p>
           </CardBody>
         </Card>
       ) : (

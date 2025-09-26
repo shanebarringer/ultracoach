@@ -35,8 +35,8 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3001',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Collect traces: keep on retry locally; retain on first failure in CI for faster debugging */
+    trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
 
     /* Record video for failed tests */
     video: 'retain-on-failure',
@@ -232,9 +232,9 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.CI
-    ? undefined // CI environment already has server running
-    : {
+  // Allow environment override to skip waiting for the dev server
+  webServer: (process.env.CI ? false : process.env.PLAYWRIGHT_SKIP_WEBSERVER_WAIT !== 'true')
+    ? {
         command: 'pnpm dev',
         url: 'http://localhost:3001',
         reuseExistingServer: true, // Use existing server if already running
@@ -255,5 +255,6 @@ export default defineConfig({
           RESEND_API_KEY: process.env.RESEND_API_KEY || '',
           NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
         },
-      },
+      }
+    : undefined,
 })

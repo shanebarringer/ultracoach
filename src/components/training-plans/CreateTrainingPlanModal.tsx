@@ -17,13 +17,12 @@ import axios, { isAxiosError } from 'axios'
 import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { api } from '@/lib/api-client'
 import {
-  connectedRunnersDataAtom,
-  connectedRunnersLoadingAtom,
+  connectedRunnersAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
@@ -66,8 +65,6 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
-  const loadingRunners = useAtomValue(connectedRunnersLoadingAtom)
 
   // React Hook Form setup
   const {
@@ -285,31 +282,25 @@ export default function CreateTrainingPlanModal({
               )}
             />
 
-            <Controller
-              name="runnerId"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Select
-                  label="Select Runner"
-                  placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
-                  isRequired
-                  isInvalid={!!fieldState.error}
-                  errorMessage={fieldState.error?.message}
-                  isLoading={loadingRunners}
-                  selectedKeys={field.value ? [field.value] : []}
-                  onSelectionChange={keys => {
-                    const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
-                    field.onChange(selectedKey)
-                  }}
-                >
-                  {connectedRunners.map((runner: User) => (
-                    <SelectItem key={runner.id}>
-                      {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
-                    </SelectItem>
-                  ))}
+            <Suspense
+              fallback={
+                <Select label="Select Runner" isDisabled placeholder="Loading connected runners…">
+                  <SelectItem key="loading">Loading…</SelectItem>
                 </Select>
-              )}
-            />
+              }
+            >
+              <Controller
+                name="runnerId"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <RunnerSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={fieldState.error?.message}
+                  />
+                )}
+              />
+            </Suspense>
 
             <Select
               label="Plan Type"
@@ -461,5 +452,37 @@ export default function CreateTrainingPlanModal({
         </form>
       </ModalContent>
     </Modal>
+  )
+}
+
+function RunnerSelect({
+  value,
+  onChange,
+  error,
+}: {
+  value?: string
+  onChange: (id: string) => void
+  error?: string
+}) {
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
+  return (
+    <Select
+      label="Select Runner"
+      placeholder={'Choose a runner'}
+      isRequired
+      isInvalid={!!error}
+      errorMessage={error}
+      selectedKeys={value ? [value] : []}
+      onSelectionChange={keys => {
+        const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
+        onChange(selectedKey)
+      }}
+    >
+      {connectedRunners.map((runner: User) => (
+        <SelectItem key={runner.id}>
+          {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
+        </SelectItem>
+      ))}
+    </Select>
   )
 }

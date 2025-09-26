@@ -16,7 +16,7 @@ import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
-  connectedRunnersDataAtom,
+  connectedRunnersAtom,
   filteredWorkoutsAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
@@ -81,7 +81,7 @@ function CalendarContent({ user }: Props) {
   const workoutStats = useAtomValue(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const trainingPlans = useAtomValue(refreshableTrainingPlansAtom) // Using async atom
-  const connectedRunners = useAtomValue(connectedRunnersDataAtom) // Data only
+  const connectedRunners = useAtomValue(connectedRunnersAtom) // Data only
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
