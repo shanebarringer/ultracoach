@@ -1,7 +1,15 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { format as formatDateFns, parseISO } from 'date-fns'
+import {
+  addDays,
+  addWeeks,
+  endOfDay,
+  format as formatDateFns,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
@@ -217,7 +225,22 @@ export default function TrainingPlanDetailPage() {
     }
   }
 
-  const formatDate = (dateString: string) => formatDateFns(parseISO(dateString), 'MMM d, yyyy')
+  const formatDate = (dateString: string) => {
+    // Validate input
+    if (!dateString || typeof dateString !== 'string') {
+      return '—'
+    }
+
+    try {
+      const parsedDate = parseISO(dateString)
+      if (!isValid(parsedDate)) {
+        return '—'
+      }
+      return formatDateFns(parsedDate, 'MMM d, yyyy')
+    } catch {
+      return '—'
+    }
+  }
 
   const calculateCurrentPhase = useCallback(() => {
     if (
@@ -228,15 +251,13 @@ export default function TrainingPlanDetailPage() {
       return null
     }
 
-    const startDate = new Date(extendedTrainingPlan.start_date)
-    const today = new Date()
+    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
+    const today = startOfDay(new Date())
     let totalWeeks = 0
 
     for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
-      const phaseStartDate = new Date(startDate)
-      phaseStartDate.setDate(startDate.getDate() + totalWeeks * 7)
-      const phaseEndDate = new Date(phaseStartDate)
-      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1)
+      const phaseStartDate = addWeeks(planStartDate, totalWeeks)
+      const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
 
       if (today >= phaseStartDate && today <= phaseEndDate) {
         return phase
@@ -262,16 +283,14 @@ export default function TrainingPlanDetailPage() {
 
     const grouped: Record<string, Workout[]> = {}
     const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = new Date(extendedTrainingPlan.start_date)
+    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
     let currentWeekOffset = 0
 
     ;[...extendedTrainingPlan.plan_phases]
       .sort((a, b) => a.order - b.order)
       .forEach(phase => {
-        const phaseStartDate = new Date(planStartDate)
-        phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
-        const phaseEndDate = new Date(phaseStartDate)
-        phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 to keep it within the week
+        const phaseStartDate = addWeeks(planStartDate, currentWeekOffset)
+        const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
 
         phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
         grouped[phase.id] = []

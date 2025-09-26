@@ -158,7 +158,7 @@ test.describe('Workout Management', () => {
       await page.getByLabel(/intensity/i).fill('8')
 
       // Save changes
-      await page.getByRole('button', { name: /save changes/i }).click()
+      await clickWhenReady(page.getByRole('button', { name: /save changes/i }))
 
       // Should show success notification
       await expect(page.getByText(/workout updated/i)).toBeVisible()
@@ -217,7 +217,7 @@ test.describe('Workout Management', () => {
         await expect(page.getByText(/workout completed/i)).toBeVisible()
 
         // Workout status should update to completed
-        await expect(plannedWorkout.locator('[data-status="completed"]')).toBeVisible()
+        await expect(plannedWorkout).toHaveAttribute('data-status', 'completed')
 
         // completedWorkoutsAtom should be updated
         const completedCount = page.locator('[data-testid="completed-workout-count"]')
@@ -300,6 +300,7 @@ test.describe('Workout Management', () => {
     })
 
     test('should update UI immediately after workout status change', async ({ page }) => {
+      label(test.info(), 'workouts')
       // Navigate to workouts page
       await page.goto('/workouts')
       await expect(page).toHaveURL('/workouts')
@@ -319,10 +320,9 @@ test.describe('Workout Management', () => {
         const workoutId = await workoutToComplete.getAttribute('data-workout-id')
 
         // Mark workout as complete
-        const markCompleteButton = workoutToComplete.locator('button:has-text(/mark complete/i)')
+        const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
         try {
-          await markCompleteButton.waitFor({ state: 'visible', timeout: 5000 })
-          await markCompleteButton.click()
+          await clickWhenReady(markCompleteButton, 5000)
 
           // Handle any confirmation modal
           const confirmButton = page.locator('button:has-text(/confirm|yes|complete/i)')
@@ -377,7 +377,9 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
       // Assert workouts load quickly (data should refresh fast)
-      const workoutsContent = page.getByTestId('workout-card').or(page.getByText('No workouts'))
+      const workoutsContent = page
+        .getByTestId('workout-card')
+        .or(page.getByTestId('empty-workouts'))
       await expect(workoutsContent).toBeVisible({ timeout: 5000 })
 
       // Data should load quickly (not be stuck in long cache)
@@ -388,11 +390,12 @@ test.describe('Workout Management', () => {
       expect(updatedCount).toBeGreaterThanOrEqual(initialCount)
 
       // No indefinite loading states
-      const loadingSpinner = page.locator('[data-testid="loading"], .loading-spinner')
+      const loadingSpinner = page.getByTestId('loading')
       await expect(loadingSpinner).not.toBeVisible({ timeout: 3000 })
     })
 
     test('should display workouts immediately on first page load', async ({ page }) => {
+      label(test.info(), 'workouts')
       // Test that workouts appear quickly on initial page load (not delayed by caching)
       const startTime = Date.now()
 
@@ -403,7 +406,7 @@ test.describe('Workout Management', () => {
       // Wait for either workouts to appear OR empty state to show
       try {
         await expect(
-          page.locator('[data-testid="workout-card"]').or(page.locator('text=/no workouts found/i'))
+          page.getByTestId('workout-card').or(page.getByTestId('empty-workouts'))
         ).toBeVisible({ timeout: 8000 })
       } catch {
         // If neither appears quickly, check what's on the page
@@ -415,9 +418,9 @@ test.describe('Workout Management', () => {
       expect.soft(loadTime).toBeLessThan(8000)
 
       // Should not have indefinite loading states
-      const workoutCards = page.locator('[data-testid="workout-card"]')
-      const emptyState = page.locator('text=/no workouts found/i')
-      const loadingState = page.locator('[data-testid="loading"], .loading-spinner')
+      const workoutCards = page.getByTestId('workout-card')
+      const emptyState = page.getByTestId('empty-workouts')
+      const loadingState = page.getByTestId('loading')
 
       // One of these should be visible (workouts, empty state, but not loading)
       const hasWorkouts = (await workoutCards.count()) > 0

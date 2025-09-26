@@ -71,9 +71,7 @@ jobs:
         image: postgres:15
         # Use authenticated pulls from Docker Hub to avoid anonymous rate-limit/unauthorized errors
         # Requires repo secrets: DOCKERHUB_USERNAME and DOCKERHUB_TOKEN
-        credentials:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # Note: If credentials are not set, Docker Hub anonymous pulls will be used (subject to rate limits)
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres

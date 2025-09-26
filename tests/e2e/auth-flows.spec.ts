@@ -13,7 +13,7 @@ import {
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
 } from '../utils/test-helpers'
-import { clickWhenReady } from '../utils/wait-helpers'
+import { clickWhenReady, waitForFormReady } from '../utils/wait-helpers'
 
 test.describe('Authentication Flows with Jotai Atoms', () => {
   test.beforeEach(async ({ page }) => {
@@ -113,10 +113,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // Wait for form to be visible and interactive
-    await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
-    const emailReady = page.locator('input[type="email"]')
-    await expect(emailReady).toBeVisible({ timeout: 10000 })
-    await expect(emailReady).toBeEditable({ timeout: 10000 })
+    await waitForFormReady(page, 10000)
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials - using id selectors
@@ -292,6 +289,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should handle password hash compatibility issues', async ({ page }) => {
+    label(test.info(), 'auth')
     // This test validates that the Better Auth password hash fix is working
     // Previously, users with bcrypt hashes couldn't log in due to incompatibility
 
@@ -333,10 +331,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.waitForLoadState('domcontentloaded')
 
     // Form should be rendered (indicates Better Auth endpoints are working)
-    await expect(page.locator('form')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('input[type="email"]')).toBeVisible()
-    await expect(page.locator('input[type="password"]')).toBeVisible()
-    await expect(page.locator('button[type="submit"]')).toBeVisible()
+    await waitForFormReady(page, 10000)
 
     // Fill form but don't submit - just test auth system initialization
     await page.locator('input[type="email"]').fill('test@example.com')

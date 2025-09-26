@@ -7,10 +7,17 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 ### At the start of EVERY new conversation
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
-2. **Check Linear workspace** at https://linear.app/ultracoach to see current milestone, pending tasks, and priorities
+2. **Check Linear workspace** using Linear MCP to see current milestone, pending tasks, and priorities
+   - Use `mcp__linear-server__list_issues` with team="Ultracoach" and state filters
+   - Read issue details with `mcp__linear-server__get_issue` for context
+   - Update issue status with `mcp__linear-server__update_issue` when completing work
 3. **Review this file** for project-specific guidance and context
 4. **Update task status in Linear** immediately when starting or completing work
+   - Move issues to "In Progress" when starting
+   - Move to "In Review" when creating PR
+   - Move to "Done" when PR is merged
 5. **Create new issues in Linear** when discovering additional tasks during development
+   - Use `mcp__linear-server__create_issue` with appropriate labels and project
 6. **Always use tslog library and utilities for logging (no console.log)**
 7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
@@ -25,6 +32,16 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 **Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
 ### MCP Instructions
+
+### GitHub MCP Fallback
+
+When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) as fallback:
+
+- `gh pr view` - View current PR
+- `gh pr create` - Create new PR
+- `gh pr list` - List PRs
+- `gh issue view` - View issue details
+- `gh issue create` - Create new issue
 
 ### Use Playwright MCP to investigate test failures and UI issues
 

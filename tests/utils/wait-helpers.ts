@@ -126,3 +126,19 @@ export async function waitUntilHidden(
 ) {
   await locator.waitFor({ state: 'hidden', timeout })
 }
+
+/**
+ * Wait for a form to be ready with all essential elements visible and editable
+ * Useful for auth forms where we need email, password, and submit button
+ */
+export async function waitForFormReady(page: Page, timeout = 10000) {
+  const form = page.locator('form')
+  await expect(form).toBeVisible({ timeout })
+
+  const email = page.locator('input[type="email"]')
+  await expect(email).toBeVisible({ timeout })
+  await expect(email).toBeEditable({ timeout })
+
+  const submit = page.locator('button[type="submit"]')
+  await expect(submit).toBeVisible({ timeout })
+}
