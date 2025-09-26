@@ -306,19 +306,28 @@ test.describe('Workout Display Order', () => {
       await expect(page).toHaveURL('/calendar')
       await page.waitForLoadState('domcontentloaded')
 
-      // Look for "Today" button or similar navigation
-      const todayButton = page.locator(
-        'button:has-text("Today"), .fc-today-button, [data-testid="today-button"]'
+      // Wait for any calendar element to be visible first
+      const calendarElements = page.locator(
+        '[data-testid="monthly-calendar"], [data-testid="calendar-view"], .fc, .calendar-container'
       )
+      await expect(calendarElements.first()).toBeVisible({ timeout: 10000 })
 
-      if (await todayButton.isVisible()) {
+      // Look for "Today" button or similar navigation
+      const todayButton = page
+        .getByRole('button', { name: 'Today' })
+        .or(page.locator('.fc-today-button'))
+        .or(page.locator('[data-testid="today-button"]'))
+
+      // Only test the button if it exists
+      const buttonVisible = await todayButton.isVisible().catch(() => false)
+      if (buttonVisible) {
         await todayButton.click()
-
-        // Should navigate to current date
-        // Calendar should still be visible and functional
-        const calendarContainer = page.locator('.fc, .calendar-container, [data-testid="calendar"]')
-        await expect(calendarContainer).toBeVisible({ timeout: 5000 })
+        // Give the calendar time to update
+        await page.waitForTimeout(500)
       }
+
+      // Verify calendar is still visible after interaction
+      await expect(calendarElements.first()).toBeVisible({ timeout: 5000 })
     })
   })
 

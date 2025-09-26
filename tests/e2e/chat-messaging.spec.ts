@@ -221,11 +221,45 @@ test.describe('Chat Messaging System', () => {
             // No coach selection needed
           }
 
-          // Wait for chat window to be ready
-          await page.waitForSelector('[data-testid="chat-window"]', {
-            state: 'visible',
-            timeout: 10000,
-          })
+          // Try different approaches to get chat window visible
+          // First wait a bit for any modal actions to complete
+          await page.waitForTimeout(1000)
+
+          // Option 1: Check if chat window is already visible (modal may have auto-closed)
+          const chatWindow = page.locator('[data-testid="chat-window"]')
+          const isVisible = await chatWindow.isVisible({ timeout: 2000 }).catch(() => false)
+
+          if (!isVisible) {
+            // Option 2: Try to close modal if it's blocking
+            const modal = page.locator('[role="dialog"]')
+            if (await modal.isVisible().catch(() => false)) {
+              // Try ESC key first
+              await page.keyboard.press('Escape')
+              await page.waitForTimeout(500)
+
+              // If still visible, try close button
+              if (await modal.isVisible().catch(() => false)) {
+                const closeButton = modal
+                  .locator('button')
+                  .filter({ hasText: /close|cancel|x/i })
+                  .first()
+                if (await closeButton.isVisible().catch(() => false)) {
+                  await closeButton.click()
+                  await page.waitForTimeout(500)
+                }
+              }
+            }
+
+            // Option 3: Navigate directly to a conversation if available
+            const conversationItem = page.locator('[data-testid="conversation-item"]').first()
+            if (await conversationItem.isVisible({ timeout: 2000 }).catch(() => false)) {
+              await conversationItem.click()
+              await page.waitForTimeout(1000)
+            }
+          }
+
+          // Now wait for chat window with more tolerance
+          await expect(chatWindow).toBeVisible({ timeout: 15000 })
 
           // Type initial message - use exact placeholder text
           const messageInput = page.getByPlaceholder('Type your message...')

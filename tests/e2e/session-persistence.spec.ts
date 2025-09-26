@@ -261,14 +261,37 @@ test.describe('Session Persistence', () => {
       // Start authenticated
       await navigateToDashboard(page, 'runner')
 
-      // Sign out - click user avatar (HeroUI Avatar component)
-      const userAvatar = page.locator('.heroui-avatar').first()
-      await expect(userAvatar).toBeVisible({ timeout: 15000 })
-      await userAvatar.click()
+      // Sign out - click user avatar (HeroUI Avatar component) or user menu
+      const userMenuSelectors = [
+        '.heroui-avatar',
+        '[data-testid="user-menu"]',
+        'button[aria-label*="user"]',
+        'button[aria-label*="menu"]',
+        'img[alt*="avatar"]',
+      ]
 
-      const signOutButton = page.locator(
-        'button:has-text(/sign out/i), [role="menuitem"]:has-text(/sign out/i)'
-      )
+      let clicked = false
+      for (const selector of userMenuSelectors) {
+        try {
+          const element = page.locator(selector).first()
+          if (await element.isVisible({ timeout: 2000 })) {
+            await element.click({ timeout: 5000 })
+            clicked = true
+            break
+          }
+        } catch {
+          continue
+        }
+      }
+
+      if (!clicked) {
+        throw new Error('Could not find user menu/avatar to click')
+      }
+
+      // Use proper Playwright text locator for sign out
+      const signOutButton = page
+        .getByRole('button', { name: /sign out/i })
+        .or(page.getByRole('menuitem', { name: /sign out/i }))
       await expect(signOutButton).toBeVisible({ timeout: 10000 })
       await signOutButton.click()
 

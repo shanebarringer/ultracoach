@@ -278,17 +278,19 @@ test.describe('Critical Fixes Validation', () => {
         throw new Error('Could not find user menu/avatar to click')
       }
 
-      // Click sign out
-      const signOutButton = page.locator(
-        'button:has-text(/sign out/i), [role="menuitem"]:has-text(/sign out/i)'
-      )
+      // Click sign out - use proper Playwright text locator
+      const signOutButton = page
+        .getByRole('button', { name: /sign out/i })
+        .or(page.getByRole('menuitem', { name: /sign out/i }))
       await signOutButton.click()
 
       // Should redirect to home
       await expect(page).toHaveURL('/')
 
       // Should show signin options
-      const signInLink = page.locator('a:has-text(/sign in/i), button:has-text(/sign in/i)')
+      const signInLink = page
+        .getByRole('link', { name: /sign in/i })
+        .or(page.getByRole('button', { name: /sign in/i }))
       await expect(signInLink.first()).toBeVisible({ timeout: 10000 })
 
       // Protected routes should redirect to signin
