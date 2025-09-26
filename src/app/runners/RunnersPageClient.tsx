@@ -60,7 +60,6 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
   const searchParams = useSearchParams()
 
   const [activeTab, setActiveTab] = useAtom(runnersPageTabAtom)
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
 
   // Set initial tab from URL params
   useEffect(() => {
@@ -176,7 +175,18 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     </Card>
   )
 
-  const renderConnectedRunners = () => {
+  function ConnectedRunnersCountChip() {
+    const connectedRunners = useAtomValue(connectedRunnersAtom)
+    const count = Array.isArray(connectedRunners) ? (connectedRunners as User[]).length : 0
+    return (
+      <Chip size="sm" variant="flat">
+        {count}
+      </Chip>
+    )
+  }
+
+  function ConnectedRunnersContent({ onDiscover }: { onDiscover: () => void }) {
+    const connectedRunners = useAtomValue(connectedRunnersAtom)
     const runners = Array.isArray(connectedRunners) ? (connectedRunners as User[]) : []
 
     if (runners.length === 0) {
@@ -196,7 +206,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
                 color="primary"
                 variant="flat"
                 startContent={<UserPlusIcon size={16} />}
-                onPress={() => setActiveTab('discover')}
+                onPress={onDiscover}
               >
                 Find Runners
               </Button>
@@ -276,21 +286,25 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
                     </Chip>
                   }
                 >
-                  <Chip size="sm" variant="flat">
-                    {Array.isArray(connectedRunners) ? connectedRunners.length : 0}
-                  </Chip>
+                  <ConnectedRunnersCountChip />
                 </Suspense>
               </div>
             }
           >
             <Suspense
               fallback={
-                <div className="flex justify-center py-12">
-                  <Spinner size="lg" />
+                <div className="grid gap-4 py-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardBody>
+                        <div className="h-24 rounded-md bg-default-200 animate-pulse" />
+                      </CardBody>
+                    </Card>
+                  ))}
                 </div>
               }
             >
-              {renderConnectedRunners()}
+              <ConnectedRunnersContent onDiscover={() => setActiveTab('discover')} />
             </Suspense>
           </Tab>
 
