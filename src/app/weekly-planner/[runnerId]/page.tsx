@@ -44,13 +44,13 @@ export default function WeeklyPlannerRunnerPage() {
     }
 
     // Allow both coaches and runners
-    if (session.user.role !== 'coach' && session.user.role !== 'runner') {
+    if (session.user.userType !== 'coach' && session.user.userType !== 'runner') {
       router.push('/dashboard')
       return
     }
 
     // If runner, ensure they can only view their own training
-    if (session.user.role === 'runner' && session.user.id !== runnerId) {
+    if (session.user.userType === 'runner' && session.user.id !== runnerId) {
       router.push(`/weekly-planner/${session.user.id}`)
       return
     }
@@ -68,7 +68,7 @@ export default function WeeklyPlannerRunnerPage() {
     )
   }
 
-  if (!session || (session.user.role !== 'coach' && session.user.role !== 'runner')) {
+  if (!session || (session.user.userType !== 'coach' && session.user.userType !== 'runner')) {
     return null
   }
 
@@ -158,7 +158,7 @@ function RunnerWeeklyPage({
         <Card className="border-warning-200 bg-warning-50">
           <CardBody className="text-center py-12">
             <div className="text-warning-600 mb-4">Runner not found</div>
-            <Button color="primary" onClick={() => router.push('/weekly-planner')}>
+            <Button color="primary" onPress={() => router.push('/weekly-planner')}>
               Back to Weekly Planner
             </Button>
           </CardBody>
@@ -178,16 +178,16 @@ function RunnerWeeklyPage({
               <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary" />
               <div>
                 <h1 className="text-lg lg:text-2xl font-bold text-foreground">
-                  🏔️ {sessionUser?.role === 'runner' ? 'My Training' : 'Weekly Planner'}
+                  🏔️ {sessionUser?.userType === 'runner' ? 'My Training' : 'Weekly Planner'}
                 </h1>
                 <p className="text-foreground/70 text-xs lg:text-sm">
-                  {sessionUser?.role === 'runner'
+                  {sessionUser?.userType === 'runner'
                     ? 'Your weekly overview'
                     : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
                 </p>
               </div>
             </div>
-            {sessionUser?.role === 'coach' && (
+            {sessionUser?.userType === 'coach' && (
               <Button
                 variant="flat"
                 size="sm"
@@ -281,7 +281,7 @@ function RunnerWeeklyPage({
         <WeeklyPlannerCalendar
           runner={selectedRunner}
           weekStart={currentWeek}
-          readOnly={sessionUser?.role === 'runner'}
+          readOnly={sessionUser?.userType === 'runner'}
           onWeekUpdate={() => {
             // Week updated successfully - data will be automatically refreshed
           }}

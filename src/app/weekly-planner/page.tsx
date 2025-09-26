@@ -37,13 +37,13 @@ export default function WeeklyPlannerPage() {
       return
     }
 
-    if (session.user.role === 'runner') {
+    if (session.user.userType === 'runner') {
       // Runners see their own weekly training view
       router.push(`/weekly-planner/${session.user.id}`)
       return
     }
 
-    if (session.user.role !== 'coach') {
+    if (session.user.userType !== 'coach') {
       router.push('/dashboard')
       return
     }
@@ -59,7 +59,7 @@ export default function WeeklyPlannerPage() {
     )
   }
 
-  if (!session || session.user.role !== 'coach') {
+  if (!session || session.user.userType !== 'coach') {
     return null
   }
 
@@ -121,7 +121,7 @@ function RunnersPanel() {
               size="sm"
               variant={viewMode === 'grid' ? 'solid' : 'flat'}
               color="secondary"
-              onClick={() => setViewMode('grid')}
+              onPress={() => setViewMode('grid')}
             >
               Grid View
             </Button>
@@ -129,7 +129,7 @@ function RunnersPanel() {
               size="sm"
               variant={viewMode === 'dropdown' ? 'solid' : 'flat'}
               color="secondary"
-              onClick={() => setViewMode('dropdown')}
+              onPress={() => setViewMode('dropdown')}
             >
               Quick Select
             </Button>
