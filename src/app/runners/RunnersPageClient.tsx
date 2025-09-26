@@ -8,6 +8,7 @@ import {
   CardHeader,
   Chip,
   Divider,
+  Skeleton,
   Spinner,
   Tab,
   Tabs,
@@ -42,9 +43,6 @@ interface RunnerWithStats extends User {
   }
   connected_at?: string | null
 }
-
-// Create loadable atom for better UX
-// Use the pre-defined loadable atom from relationships module
 
 interface RunnersPageClientProps {
   user: {
@@ -175,20 +173,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     </Card>
   )
 
-  function ConnectedRunnersCountChip() {
-    const connectedRunners = useAtomValue(connectedRunnersAtom)
-    const count = Array.isArray(connectedRunners) ? (connectedRunners as User[]).length : 0
-    return (
-      <Chip size="sm" variant="flat">
-        {count}
-      </Chip>
-    )
-  }
-
-  function ConnectedRunnersContent({ onDiscover }: { onDiscover: () => void }) {
-    const connectedRunners = useAtomValue(connectedRunnersAtom)
-    const runners = Array.isArray(connectedRunners) ? (connectedRunners as User[]) : []
-
+  const renderConnectedRunners = (runners: User[]) => {
     if (runners.length === 0) {
       return (
         <Card>
@@ -206,7 +191,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
                 color="primary"
                 variant="flat"
                 startContent={<UserPlusIcon size={16} />}
-                onPress={onDiscover}
+                onPress={() => setActiveTab('discover')}
               >
                 Find Runners
               </Button>
@@ -217,6 +202,22 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     }
 
     return <div className="grid gap-4">{runners.map(renderRunnerCard)}</div>
+  }
+
+  function ConnectedRunnersCountChip() {
+    const connected = useAtomValue(connectedRunnersAtom)
+    const count = Array.isArray(connected) ? connected.length : 0
+    return (
+      <Chip size="sm" variant="flat" data-testid="connected-runners-count">
+        {count}
+      </Chip>
+    )
+  }
+
+  function ConnectedRunnersContent() {
+    const connected = useAtomValue(connectedRunnersAtom)
+    const runners = (Array.isArray(connected) ? connected : []) as User[]
+    return renderConnectedRunners(runners)
   }
 
   const renderAvailableRunners = () => (
@@ -293,18 +294,30 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
           >
             <Suspense
               fallback={
-                <div className="grid gap-4 py-4">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i}>
-                      <CardBody>
-                        <div className="h-24 rounded-md bg-default-200 animate-pulse" />
+                <div className="space-y-4" data-testid="connected-runners-skeleton">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} className="border border-divider">
+                      <CardBody className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="w-12 h-12 rounded-full" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-5 w-40 rounded" />
+                              <Skeleton className="h-4 w-28 rounded" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-24 rounded" />
+                            <Skeleton className="h-8 w-28 rounded" />
+                          </div>
+                        </div>
                       </CardBody>
                     </Card>
                   ))}
                 </div>
               }
             >
-              <ConnectedRunnersContent onDiscover={() => setActiveTab('discover')} />
+              <ConnectedRunnersContent />
             </Suspense>
           </Tab>
 

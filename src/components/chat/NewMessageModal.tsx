@@ -174,34 +174,25 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
       data-testid="new-message-modal"
     >
       <ModalContent>
+        {/* Keep header outside Suspense to prevent layout shift */}
         <ModalHeader className="border-b border-divider">New Message</ModalHeader>
         <Suspense
           fallback={
-            <ModalBody>
+            <ModalBody data-testid="new-message-modal-skeleton">
               <div className="space-y-4 py-6">
+                {/* search field skeleton */}
                 <div className="h-10 rounded-md bg-default-200 animate-pulse" />
+                {/* list rows */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-default-200 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 rounded bg-default-200 animate-pulse w-1/3" />
-                      <div className="h-3 rounded bg-default-200 animate-pulse w-1/4" />
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-default-200 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 rounded bg-default-200 animate-pulse w-1/3" />
+                        <div className="h-3 rounded bg-default-200 animate-pulse w-1/4" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-default-200 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 rounded bg-default-200 animate-pulse w-1/2" />
-                      <div className="h-3 rounded bg-default-200 animate-pulse w-1/3" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-default-200 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 rounded bg-default-200 animate-pulse w-2/5" />
-                      <div className="h-3 rounded bg-default-200 animate-pulse w-1/3" />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </ModalBody>
