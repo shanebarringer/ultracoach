@@ -216,8 +216,10 @@ test.describe('Workout Management', () => {
         // Should show success notification
         await expect(page.getByText(/workout completed/i)).toBeVisible()
 
-        // Workout status should update to completed
-        await expect(plannedWorkout).toHaveAttribute('data-status', 'completed')
+        // Workout status should update to completed - check for visual indicator
+        await expect(
+          plannedWorkout.locator('[data-testid="workout-status-completed"]')
+        ).toBeVisible()
 
         // completedWorkoutsAtom should be updated
         const completedCount = page.locator('[data-testid="completed-workout-count"]')

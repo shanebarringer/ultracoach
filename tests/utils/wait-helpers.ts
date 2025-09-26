@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test'
+import { Locator, Page, expect } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -68,8 +68,12 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
     page.getByRole('link', { name: linkText }),
     page.getByRole('button', { name: linkText }),
     page.getByText(linkText),
-    page.locator(`a:has-text("${linkText}")`),
   ]
+
+  // Only add the CSS selector if linkText is a string (not a RegExp)
+  if (typeof linkText === 'string') {
+    selectors.push(page.locator(`a:has-text("${linkText}")`))
+  }
 
   let clicked = false
   for (const selector of selectors) {
@@ -138,6 +142,10 @@ export async function waitForFormReady(page: Page, timeout = 10000) {
   const email = page.locator('input[type="email"]')
   await expect(email).toBeVisible({ timeout })
   await expect(email).toBeEditable({ timeout })
+
+  const password = page.locator('input[type="password"]')
+  await expect(password).toBeVisible({ timeout })
+  await expect(password).toBeEditable({ timeout })
 
   const submit = page.locator('button[type="submit"]')
   await expect(submit).toBeVisible({ timeout })

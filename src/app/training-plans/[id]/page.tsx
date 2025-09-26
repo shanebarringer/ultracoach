@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { isAxiosError } from 'axios'
 import {
   addDays,
   addWeeks,
@@ -10,7 +11,7 @@ import {
   parseISO,
   startOfDay,
 } from 'date-fns'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -31,6 +32,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
@@ -54,9 +56,8 @@ export default function TrainingPlanDetailPage() {
   const planId = params.id as string
 
   // Use Jotai atoms for centralized state management
-  const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
+  const [allTrainingPlans, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const refreshTrainingPlans = useSetAtom(refreshableTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
@@ -98,48 +99,51 @@ export default function TrainingPlanDetailPage() {
 
     try {
       // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
-        credentials: 'same-origin',
-      })
-      if (phasesResponse.ok) {
-        const phasesData = await phasesResponse.json()
+      try {
+        const { data: phasesData } = await api.get<{ plan_phases?: PlanPhase[] }>(
+          `/api/training-plans/${planId}/phases`,
+          {
+            withCredentials: true,
+          }
+        )
         setExtendedPlanData(prev => ({
           ...prev,
           plan_phases: phasesData.plan_phases || [],
         }))
-      } else {
-        logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+      } catch (error) {
+        logger.error('Failed to fetch plan phases', { error })
       }
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.previous_plan_id}`,
-          { credentials: 'same-origin' }
-        )
-        if (prevPlanResponse.ok) {
-          const prevPlanData = await prevPlanResponse.json()
+        try {
+          const { data: prevPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
+            `/api/training-plans/${trainingPlan.previous_plan_id}`,
+            { withCredentials: true }
+          )
           setExtendedPlanData(prev => ({
             ...prev,
             previous_plan: prevPlanData.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
+        } catch (error) {
+          logger.error('Failed to fetch previous plan', { error })
         }
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
-          credentials: 'same-origin',
-        })
-        if (nextPlanResponse.ok) {
-          const nextPlanData = await nextPlanResponse.json()
+        try {
+          const { data: nextPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
+            `/api/training-plans/${trainingPlan.next_plan_id}`,
+            {
+              withCredentials: true,
+            }
+          )
           setExtendedPlanData(prev => ({
             ...prev,
             next_plan: nextPlanData.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
+        } catch (error) {
+          logger.error('Failed to fetch next plan', { error })
         }
       }
     } catch (error) {
@@ -206,20 +210,18 @@ export default function TrainingPlanDetailPage() {
       return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/training-plans/${planId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
+      await api.delete(`/api/training-plans/${planId}`, {
+        withCredentials: true,
       })
-      if (response.ok) {
-        commonToasts.trainingPlanDeleted()
-        router.push('/training-plans')
-      } else {
-        const errorData = await response.json()
-        commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
-      }
+      commonToasts.trainingPlanDeleted()
+      router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })
-      commonToasts.trainingPlanError('Failed to delete training plan')
+      if (isAxiosError(error) && error.response?.data?.error) {
+        commonToasts.trainingPlanError(error.response.data.error)
+      } else {
+        commonToasts.trainingPlanError('Failed to delete training plan')
+      }
     } finally {
       setIsDeleting(false)
     }
@@ -300,7 +302,7 @@ export default function TrainingPlanDetailPage() {
     const ungrouped: Workout[] = []
 
     workouts.forEach((workout: Workout) => {
-      const workoutDate = new Date(workout.date)
+      const workoutDate = startOfDay(parseISO(workout.date))
       let foundPhase = false
       for (const phaseId in phaseDates) {
         const { start, end } = phaseDates[phaseId]
@@ -317,7 +319,9 @@ export default function TrainingPlanDetailPage() {
 
     // Sort workouts within each group by date
     for (const phaseId in grouped) {
-      grouped[phaseId].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      grouped[phaseId].sort(
+        (a, b) => startOfDay(parseISO(a.date)).getTime() - startOfDay(parseISO(b.date)).getTime()
+      )
     }
 
     return { grouped, ungrouped }

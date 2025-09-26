@@ -159,8 +159,9 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test('should handle sign out and clear auth atoms', async ({ page }) => {
     // First sign in
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
-    await page.getByLabel(/password/i).fill(TEST_RUNNER_PASSWORD)
+    await waitForFormReady(page, 10000)
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
     await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
 
     // Wait for dashboard redirect and content to load
