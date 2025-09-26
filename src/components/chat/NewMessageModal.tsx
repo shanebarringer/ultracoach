@@ -29,7 +29,7 @@ interface NewMessageModalProps {
   onClose: () => void
 }
 
-function NewMessageModalContent({ onClose }: { onClose: () => void }) {
+function NewMessageModalContent({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { data: session } = useSession()
   const router = useRouter()
   const connectedRunners = useAtomValue(connectedRunnersAtom)
@@ -56,9 +56,11 @@ function NewMessageModalContent({ onClose }: { onClose: () => void }) {
   }, [session?.user?.userType, connectedRunners, availableCoaches])
 
   useEffect(() => {
-    // Clear the search term on open (component mount)
-    reset({ searchTerm: '' })
-  }, [reset])
+    // Clear the search term whenever the modal is opened
+    if (isOpen) {
+      reset({ searchTerm: '' })
+    }
+  }, [isOpen, reset])
 
   const handleStartConversation = (userId: string) => {
     logger.info('Starting conversation:', { userId, userRole: session?.user?.userType })
@@ -182,7 +184,7 @@ export default function NewMessageModal({ isOpen, onClose }: NewMessageModalProp
             </ModalBody>
           }
         >
-          <NewMessageModalContent onClose={onClose} />
+          <NewMessageModalContent isOpen={isOpen} onClose={onClose} />
         </Suspense>
       </ModalContent>
     </Modal>
