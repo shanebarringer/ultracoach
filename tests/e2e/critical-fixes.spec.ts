@@ -204,7 +204,7 @@ test.describe('Critical Fixes Validation', () => {
     // Testing that the Better Auth integration works properly
 
     test('should successfully authenticate with existing test users', async ({ page }) => {
-      // Clear any existing session
+      // Clear any existing session - no storage state for this test
       await page.context().clearCookies()
 
       // Navigate to signin page
@@ -227,12 +227,14 @@ test.describe('Critical Fixes Validation', () => {
       await expect(dashboardContent).toBeVisible({ timeout: 10000 })
     })
 
+    test.use({ storageState: './playwright/.auth/runner.json' })
+
     test('should handle sign out properly', async ({ page }) => {
-      // Start authenticated
+      // Start authenticated via storage state
       await navigateToDashboard(page, 'runner')
 
       // Click user menu/avatar - using the HeroUI Avatar component
-      const userAvatar = page.locator('.heroui-avatar').filter({ has: page.locator('span') })
+      const userAvatar = page.locator('.heroui-avatar').first()
       await expect(userAvatar).toBeVisible({ timeout: 15000 })
       await userAvatar.click()
 

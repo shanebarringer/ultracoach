@@ -180,6 +180,9 @@ test.describe('Chat Messaging System', () => {
         await waitForHeroUIReady(page)
         await waitForLoadingComplete(page)
 
+        // Verify we're on the chat page and not redirected
+        await expect(page).toHaveURL('/chat', { timeout: 10000 })
+
         // Check if there are any existing conversations or if we need to start one
         const hasConversations =
           (await page.locator('[data-testid="conversation-item"]').count()) > 0
@@ -217,6 +220,12 @@ test.describe('Chat Messaging System', () => {
           } catch {
             // No coach selection needed
           }
+
+          // Wait for chat window to be ready
+          await page.waitForSelector('[data-testid="chat-window"]', {
+            state: 'visible',
+            timeout: 10000,
+          })
 
           // Type initial message - use exact placeholder text
           const messageInput = page.getByPlaceholder('Type your message...')

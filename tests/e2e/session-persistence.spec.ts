@@ -261,10 +261,10 @@ test.describe('Session Persistence', () => {
       // Start authenticated
       await navigateToDashboard(page, 'runner')
 
-      // Sign out
-      const userMenu = page.locator('[data-testid="user-menu"], button:has(img)')
-      await expect(userMenu).toBeVisible({ timeout: 15000 })
-      await userMenu.click()
+      // Sign out - click user avatar (HeroUI Avatar component)
+      const userAvatar = page.locator('.heroui-avatar').first()
+      await expect(userAvatar).toBeVisible({ timeout: 15000 })
+      await userAvatar.click()
 
       const signOutButton = page.locator(
         'button:has-text(/sign out/i), [role="menuitem"]:has-text(/sign out/i)'
