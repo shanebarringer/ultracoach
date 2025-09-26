@@ -75,7 +75,10 @@ const EnhancedWorkoutStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom 
   const statusConfig = getStatusConfig(status)
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      data-testid={status === 'completed' ? 'workout-status-completed' : undefined}
+    >
       <statusConfig.icon className={`h-5 w-5 ${statusConfig.iconColor}`} strokeWidth={2} />
       <Badge color={statusConfig.badgeColor} variant="flat" size="sm" className="font-medium">
         {statusConfig.label}
@@ -114,6 +117,14 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
     <div className="flex items-center gap-2">
       <Calendar className="h-4 w-4 text-foreground-400" />
       <div className="flex flex-col">
+        {/* Machine-readable date for E2E tests (screen-reader only) */}
+        <span
+          data-testid="workout-date"
+          data-date-iso={(workout.date || '').toString()}
+          className="sr-only"
+        >
+          {(workout.date || '').toString()}
+        </span>
         <span className={`text-sm font-medium ${getDateColor()}`}>{getDateLabel()}</span>
         <span className="text-xs text-foreground-400">
           {workoutDate.toLocaleDateString('en-US', {

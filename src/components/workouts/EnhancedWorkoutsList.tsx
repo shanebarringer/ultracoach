@@ -469,7 +469,7 @@ const EnhancedWorkoutsList = memo(
 
         {/* Workouts Grid/List */}
         {processedWorkouts.length === 0 ? (
-          <Card className="py-12">
+          <Card className="py-12" data-testid="empty-workouts">
             <CardBody className="text-center">
               <Search className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">

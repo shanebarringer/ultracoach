@@ -63,8 +63,8 @@ export async function selectHeroUIOption(
   // HeroUI Select renders as a button with the label
   const selectTrigger = page
     .getByRole('button', { name: selectLabel })
-    .or(page.getByLabel(selectLabel.toString()))
-    .or(page.locator(`button:has-text("${selectLabel}")`))
+    .or(page.getByLabel(selectLabel))
+    .or(page.locator('button').filter({ hasText: selectLabel }))
 
   await selectTrigger.waitFor({ state: 'visible', timeout })
 
@@ -103,9 +103,9 @@ export async function selectHeroUIOption(
   // Try multiple selector strategies
   const optionSelectors = [
     page.getByRole('option', { name: optionText }),
-    page.locator(`[role="option"]:has-text("${optionText}")`),
-    page.locator(`[data-key]:has-text("${optionText}")`),
-    page.locator(`[data-value]:has-text("${optionText}")`),
+    page.locator('[role="option"]').filter({ hasText: optionText }),
+    page.locator('[data-key]').filter({ hasText: optionText }),
+    page.locator('[data-value]').filter({ hasText: optionText }),
     page.getByText(optionText, { exact: false }),
   ]
 
@@ -121,9 +121,7 @@ export async function selectHeroUIOption(
   }
 
   if (!clicked) {
-    // Log current DOM for debugging
-    const options = await page.locator('[role="option"]').allTextContents()
-    throw new Error(`Could not select option: ${optionText}`)
+    throw new Error(`Could not select option: ${optionText.toString()}`)
   }
 
   // Wait for dropdown to close
