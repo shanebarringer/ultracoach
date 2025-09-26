@@ -18,12 +18,12 @@ import { useAtom, useAtomValue } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
+import { Suspense } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { api } from '@/lib/api-client'
 import {
-  connectedRunnersDataAtom,
-  connectedRunnersLoadingAtom,
+  connectedRunnersAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
@@ -66,8 +66,7 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const connectedRunners = useAtomValue(connectedRunnersDataAtom)
-  const loadingRunners = useAtomValue(connectedRunnersLoadingAtom)
+  // connectedRunnersAtom will be read inside a Suspense-wrapped child to avoid suspending the whole modal
 
   // React Hook Form setup
   const {
@@ -289,25 +288,11 @@ export default function CreateTrainingPlanModal({
               name="runnerId"
               control={control}
               render={({ field, fieldState }) => (
-                <Select
-                  label="Select Runner"
-                  placeholder={loadingRunners ? 'Loading connected runners...' : 'Choose a runner'}
-                  isRequired
-                  isInvalid={!!fieldState.error}
+                <RunnerSelectSuspense
+                  selectedKey={field.value}
+                  onChange={val => field.onChange(val)}
                   errorMessage={fieldState.error?.message}
-                  isLoading={loadingRunners}
-                  selectedKeys={field.value ? [field.value] : []}
-                  onSelectionChange={keys => {
-                    const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
-                    field.onChange(selectedKey)
-                  }}
-                >
-                  {connectedRunners.map((runner: User) => (
-                    <SelectItem key={runner.id}>
-                      {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
-                    </SelectItem>
-                  ))}
-                </Select>
+                />
               )}
             />
 
@@ -461,5 +446,74 @@ export default function CreateTrainingPlanModal({
         </form>
       </ModalContent>
     </Modal>
+  )
+}
+
+// Suspense-friendly runner select
+function RunnerSelectSuspense({
+  selectedKey,
+  onChange,
+  errorMessage,
+}: {
+  selectedKey: string
+  onChange: (val: string) => void
+  errorMessage?: string
+}) {
+  return (
+    <Suspense
+      fallback={
+        <Select
+          label="Select Runner"
+          placeholder="Loading connected runners..."
+          isRequired
+          isInvalid={!!errorMessage}
+          errorMessage={errorMessage}
+          isLoading
+          selectedKeys={selectedKey ? [selectedKey] : []}
+        >
+          <SelectItem key="loading" isDisabled>
+            Loading…
+          </SelectItem>
+        </Select>
+      }
+    >
+      <RunnerSelectInner
+        selectedKey={selectedKey}
+        onChange={onChange}
+        errorMessage={errorMessage}
+      />
+    </Suspense>
+  )
+}
+
+function RunnerSelectInner({
+  selectedKey,
+  onChange,
+  errorMessage,
+}: {
+  selectedKey: string
+  onChange: (val: string) => void
+  errorMessage?: string
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  return (
+    <Select
+      label="Select Runner"
+      placeholder="Choose a runner"
+      isRequired
+      isInvalid={!!errorMessage}
+      errorMessage={errorMessage}
+      selectedKeys={selectedKey ? [selectedKey] : []}
+      onSelectionChange={keys => {
+        const val = (Array.from(keys)[0] as string | undefined) ?? ''
+        onChange(val)
+      }}
+    >
+      {runners.map((runner: User) => (
+        <SelectItem key={runner.id}>
+          {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
+        </SelectItem>
+      ))}
+    </Select>
   )
 }

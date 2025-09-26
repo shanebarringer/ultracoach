@@ -84,18 +84,12 @@ export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
  */
 export const runnersAtom = atom<User[]>([])
 
-// Connected runners atom state interface
-interface ConnectedRunnersState {
-  data: User[]
-  isLoading: boolean
-  hasLoaded: boolean
-  error: string | null
-}
-
-// Connected runners atom for coaches with loading state
-export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedRunnersState> => {
-  // Return initial state for SSR to ensure consistency
-  if (!isBrowser) return { data: [], isLoading: false, hasLoaded: false, error: null }
+// Connected runners atom (Suspense-friendly)
+// Returns an array of users (runners) and suspends while loading.
+// Errors resolve to an empty array to avoid infinite Suspense loops in client routes.
+export const connectedRunnersAtom = atomWithRefresh(async (): Promise<User[]> => {
+  // Return empty array for SSR where window is undefined
+  if (!isBrowser) return []
 
   try {
     connectedRunnersLogger.debug('Fetching connected runners...')
@@ -104,47 +98,14 @@ export const connectedRunnersAtom = atomWithRefresh(async (): Promise<ConnectedR
     })
 
     const data = response.data
-    // Extract runners array from response object
-    const runners = normalizeListResponse(data, 'runners')
+    const runners = normalizeListResponse<User>(data, 'runners')
     connectedRunnersLogger.debug('Connected runners fetched', { count: runners.length })
-    return { data: runners as User[], isLoading: false, hasLoaded: true, error: null }
+    return runners
   } catch (error) {
     connectedRunnersLogger.error('Error fetching connected runners', error)
-    return {
-      data: [],
-      isLoading: false,
-      hasLoaded: true,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
+    return []
   }
 })
-
-// Loadable version for proper async handling
-export const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
-
-// Derived atoms for easier access
-export const connectedRunnersDataAtom = atom(get => {
-  const loadable = get(connectedRunnersLoadableAtom)
-  if (loadable.state === 'hasData') {
-    return loadable.data.data
-  }
-  return []
-})
-
-export const connectedRunnersLoadingAtom = atom(get => {
-  const loadable = get(connectedRunnersLoadableAtom)
-  // Show loading during actual loading OR during initial fetch when hasLoaded is false
-  if (loadable.state === 'loading') {
-    return true
-  }
-  if (loadable.state === 'hasData' && !loadable.data.hasLoaded) {
-    return true
-  }
-  return false
-})
-
-// Backward compatibility export - simplified alias
-export const connectedRunnersCompatAtom = connectedRunnersDataAtom
 
 // Helper factory for creating available users atoms (DRY pattern)
 function makeAvailableUsersAtom<T extends User>(

@@ -30,7 +30,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
-import { connectedRunnersLoadableAtom, runnersPageTabAtom } from '@/lib/atoms/index'
+import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
@@ -43,8 +43,7 @@ interface RunnerWithStats extends User {
   connected_at?: string | null
 }
 
-// Create loadable atom for better UX
-// Use the pre-defined loadable atom from relationships module
+// Connected runners are read via Suspense-enabled children
 
 interface RunnersPageClientProps {
   user: {
@@ -60,7 +59,6 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
   const searchParams = useSearchParams()
 
   const [activeTab, setActiveTab] = useAtom(runnersPageTabAtom)
-  const connectedRunnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
 
   // Set initial tab from URL params
   useEffect(() => {
@@ -176,63 +174,17 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     </Card>
   )
 
-  const renderConnectedRunners = () => {
-    if (connectedRunnersLoadable.state === 'loading') {
-      return (
+  const renderConnectedRunners = () => (
+    <Suspense
+      fallback={
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
-      )
-    }
-
-    if (connectedRunnersLoadable.state === 'hasError') {
-      return (
-        <Card className="border border-danger-200 bg-danger-50">
-          <CardBody>
-            <div className="text-center py-8">
-              <p className="text-danger-700">Failed to load connected runners</p>
-              <p className="text-sm text-danger-600 mt-1">
-                {(connectedRunnersLoadable.error as Error)?.message || 'Unknown error'}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      )
-    }
-
-    // Ensure runners is always an array
-    const runnersData = connectedRunnersLoadable.data?.data || []
-    const runners = Array.isArray(runnersData) ? runnersData : []
-
-    if (runners.length === 0) {
-      return (
-        <Card>
-          <CardBody>
-            <div className="text-center py-12">
-              <div className="text-foreground-300 mb-4">
-                <UsersIcon className="w-16 h-16 mx-auto" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Connected Runners</h3>
-              <p className="text-foreground-500 max-w-md mx-auto mb-6">
-                You haven&apos;t connected with any runners yet. Use the &quot;Discover&quot; tab to
-                find and connect with runners.
-              </p>
-              <Button
-                color="primary"
-                variant="flat"
-                startContent={<UserPlusIcon size={16} />}
-                onPress={() => setActiveTab('discover')}
-              >
-                Find Runners
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
-      )
-    }
-
-    return <div className="grid gap-4">{runners.map(renderRunnerCard)}</div>
-  }
+      }
+    >
+      <ConnectedRunnersList onEmpty={() => setActiveTab('discover')} render={renderRunnerCard} />
+    </Suspense>
+  )
 
   const renderAvailableRunners = () => (
     <Card>
@@ -294,11 +246,9 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
               <div className="flex items-center gap-2">
                 <UsersIcon size={16} />
                 <span>Connected Runners</span>
-                {connectedRunnersLoadable.state === 'hasData' && (
-                  <Chip size="sm" variant="flat">
-                    {connectedRunnersLoadable.data?.data?.length || 0}
-                  </Chip>
-                )}
+                <Suspense fallback={null}>
+                  <ConnectedRunnersCountChip />
+                </Suspense>
               </div>
             }
           >
@@ -319,5 +269,57 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
         </Tabs>
       </div>
     </Layout>
+  )
+}
+
+function ConnectedRunnersCountChip() {
+  const runners = useAtomValue(connectedRunnersAtom)
+  return (
+    <Chip size="sm" variant="flat">
+      {runners.length}
+    </Chip>
+  )
+}
+
+function ConnectedRunnersList({
+  onEmpty,
+  render,
+}: {
+  onEmpty: () => void
+  render: (u: User) => React.ReactNode
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  if ((runners || []).length === 0) {
+    return (
+      <Card>
+        <CardBody>
+          <div className="text-center py-12">
+            <div className="text-foreground-300 mb-4">
+              <UsersIcon className="w-16 h-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">No Connected Runners</h3>
+            <p className="text-foreground-500 max-w-md mx-auto mb-6">
+              You haven&apos;t connected with any runners yet. Use the &quot;Discover&quot; tab to
+              find and connect with runners.
+            </p>
+            <Button
+              color="primary"
+              variant="flat"
+              startContent={<UserPlusIcon size={16} />}
+              onPress={onEmpty}
+            >
+              Find Runners
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+    )
+  }
+  return (
+    <div className="grid gap-4">
+      {runners.map(r => (
+        <div key={r.id}>{render(r)}</div>
+      ))}
+    </div>
   )
 }

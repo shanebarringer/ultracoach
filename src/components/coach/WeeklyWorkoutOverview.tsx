@@ -2,10 +2,10 @@
 
 import { Button, Card, CardBody, CardHeader, Select, SelectItem, Spinner } from '@heroui/react'
 import { useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-react'
 
 import { memo, useEffect, useMemo, useState } from 'react'
+import { Fragment, Suspense } from 'react'
 
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
@@ -15,9 +15,6 @@ import AthleteWeeklySection from './AthleteWeeklySection'
 import WeeklyMetrics from './WeeklyMetrics'
 
 const logger = createLogger('WeeklyWorkoutOverview')
-
-// Create loadable atom for better UX
-const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
 
 interface WeeklyWorkoutOverviewProps {
   coach: {
@@ -31,14 +28,10 @@ interface WeeklyWorkoutOverviewProps {
 }
 
 function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorkoutOverviewProps) {
-  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  // Runners will be read inside Suspense-wrapped child components
   const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set())
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Workout[]>([])
   const [workoutsLoading, setWorkoutsLoading] = useState(false)
-
-  // Handle loading and error states from Jotai loadable
-  const runnersLoading = runnersLoadable.state === 'loading'
-  const runnersError = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
 
   // Format week range for display
   const formatWeekRange = (monday: Date) => {
@@ -110,19 +103,6 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
     fetchWeeklyWorkouts()
   }, [currentWeek])
 
-  // Memoize runners data to prevent unnecessary re-renders
-  const runnersData = useMemo(() => {
-    const data = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
-    return Array.isArray(data) ? data : []
-  }, [runnersLoadable])
-
-  // Filter athletes based on selection
-  const filteredRunners = useMemo(() => {
-    if (selectedAthletes.size === 0) {
-      return runnersData
-    }
-    return runnersData.filter((runner: User) => selectedAthletes.has(runner.id))
-  }, [runnersData, selectedAthletes])
 
   // Filter workouts for the filtered athletes
   const filteredWorkouts = useMemo(() => {
@@ -147,21 +127,7 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
 
     logger.debug('Athlete selection changed', {
       selectedCount: keySet.size,
-      totalAthletes: runnersData.length,
     })
-  }
-
-  if (runnersError) {
-    return (
-      <Card className="border-danger-200 bg-danger-50">
-        <CardBody className="text-center py-12">
-          <div className="text-danger-600 mb-4">Failed to load athletes</div>
-          <Button color="primary" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </CardBody>
-      </Card>
-    )
   }
 
   return (
@@ -218,34 +184,42 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
           <div className="flex items-center justify-between w-full gap-4">
             {/* Athlete Filter */}
             <div className="flex items-center gap-3">
-              <Select
-                placeholder="All Athletes"
-                variant="bordered"
-                selectionMode="multiple"
-                className="max-w-xs"
-                selectedKeys={selectedAthletes}
-                onSelectionChange={handleAthleteSelection}
-                isLoading={runnersLoading}
-                startContent={<UsersIcon className="w-4 h-4" />}
-                size="sm"
+              <Suspense
+                fallback={
+                  <Fragment>
+                    <Select
+                      placeholder="All Athletes"
+                      variant="bordered"
+                      selectionMode="multiple"
+                      className="max-w-xs"
+                      selectedKeys={selectedAthletes}
+                      isLoading
+                      startContent={<UsersIcon className="w-4 h-4" />}
+                      size="sm"
+                    >
+                      <SelectItem key="loading" isDisabled>
+                        Loading…
+                      </SelectItem>
+                    </Select>
+                    <span className="text-xs text-foreground/60">Loading…</span>
+                  </Fragment>
+                }
               >
-                {runnersData.map((runner: User) => (
-                  <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
-                ))}
-              </Select>
-              <span className="text-xs text-foreground/60">
-                {selectedAthletes.size === 0
-                  ? `${runnersData.length} total`
-                  : `${selectedAthletes.size}/${runnersData.length} selected`}
-              </span>
+                <RunnerMultiSelect
+                  selectedAthletes={selectedAthletes}
+                  onSelectionChange={handleAthleteSelection}
+                />
+              </Suspense>
             </div>
 
             {/* Compact Metrics */}
-            <WeeklyMetrics
-              workouts={filteredWorkouts}
-              athletes={filteredRunners}
-              loading={workoutsLoading}
-            />
+            <Suspense fallback={<div className="text-xs text-foreground/60">Loading…</div>}>
+              <RunnerMetrics
+                selectedAthletes={selectedAthletes}
+                workouts={filteredWorkouts}
+                loading={workoutsLoading}
+              />
+            </Suspense>
           </div>
         </CardHeader>
       </Card>
@@ -257,42 +231,127 @@ function WeeklyWorkoutOverview({ coach, currentWeek, onWeekChange }: WeeklyWorko
             <Spinner size="lg" color="primary" label="Loading weekly workout data..." />
           </CardBody>
         </Card>
-      ) : filteredRunners.length === 0 ? (
-        <Card className="border-warning-200 bg-warning-50">
-          <CardBody className="text-center py-12">
-            <div className="text-warning-600 mb-4">
-              {runnersLoading ? 'Loading athletes...' : 'No athletes found'}
-            </div>
-            {!runnersLoading && (
-              <p className="text-sm text-foreground/60">
-                Connect with athletes to start viewing their weekly progress.
-              </p>
-            )}
-          </CardBody>
-        </Card>
       ) : (
-        <div className="space-y-6">
-          {filteredRunners.map((athlete: User) => {
-            // Filter workouts for this specific athlete
-            const athleteWorkouts = filteredWorkouts.filter(workout => {
-              const workoutUserId = (workout as Workout & { user_id?: string }).user_id
-              return workoutUserId === athlete.id
-            })
-
-            return (
-              <AthleteWeeklySection
-                key={athlete.id}
-                athlete={athlete}
-                workouts={athleteWorkouts}
-                weekStart={currentWeek}
-                coach={coach}
-              />
-            )
-          })}
-        </div>
+        <Suspense
+          fallback={
+            <Card>
+              <CardBody className="text-center py-12">Loading athletes…</CardBody>
+            </Card>
+          }
+        >
+          <RunnerWeeklySections
+            selectedAthletes={selectedAthletes}
+            weeklyWorkouts={weeklyWorkouts}
+            currentWeek={currentWeek}
+            coach={coach}
+          />
+        </Suspense>
       )}
     </div>
   )
 }
 
 export default memo(WeeklyWorkoutOverview)
+
+function RunnerMultiSelect({
+  selectedAthletes,
+  onSelectionChange,
+}: {
+  selectedAthletes: Set<string>
+  onSelectionChange: (keys: 'all' | Set<React.Key>) => void
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  return (
+    <>
+      <Select
+        placeholder="All Athletes"
+        variant="bordered"
+        selectionMode="multiple"
+        className="max-w-xs"
+        selectedKeys={selectedAthletes}
+        onSelectionChange={onSelectionChange}
+        startContent={<UsersIcon className="w-4 h-4" />}
+        size="sm"
+      >
+        {runners.map((runner: User) => (
+          <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
+        ))}
+      </Select>
+      <span className="text-xs text-foreground/60">
+        {selectedAthletes.size === 0
+          ? `${runners.length} total`
+          : `${selectedAthletes.size}/${runners.length} selected`}
+      </span>
+    </>
+  )
+}
+
+function RunnerWeeklySections({
+  selectedAthletes,
+  weeklyWorkouts,
+  currentWeek,
+  coach,
+}: {
+  selectedAthletes: Set<string>
+  weeklyWorkouts: Workout[]
+  currentWeek: Date
+  coach: { id: string; email: string; name: string | null; role: 'coach' | 'runner' }
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  const visibleRunners = useMemo(() => {
+    if (selectedAthletes.size === 0) return runners
+    return runners.filter(r => selectedAthletes.has(r.id))
+  }, [runners, selectedAthletes])
+
+  if (visibleRunners.length === 0) {
+    return (
+      <Card className="border-warning-200 bg-warning-50">
+        <CardBody className="text-center py-12">
+          <div className="text-warning-600 mb-4">No athletes found</div>
+          <p className="text-sm text-foreground/60">
+            Connect with athletes to start viewing their weekly progress.
+          </p>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {visibleRunners.map((athlete: User) => {
+        const athleteWorkouts = weeklyWorkouts.filter(workout => {
+          const workoutUserId = (workout as Workout & { user_id?: string }).user_id
+          return workoutUserId === athlete.id
+        })
+
+        return (
+          <AthleteWeeklySection
+            key={athlete.id}
+            athlete={athlete}
+            workouts={athleteWorkouts}
+            weekStart={currentWeek}
+            coach={coach}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function RunnerMetrics({
+  selectedAthletes,
+  workouts,
+  loading,
+}: {
+  selectedAthletes: Set<string>
+  workouts: Workout[]
+  loading: boolean
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  const athletes = useMemo(() => {
+    if (selectedAthletes.size === 0) return runners
+    return runners.filter(r => selectedAthletes.has(r.id))
+  }, [runners, selectedAthletes])
+
+  return <WeeklyMetrics workouts={workouts} athletes={athletes} loading={loading} />
+}

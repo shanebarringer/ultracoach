@@ -13,10 +13,10 @@ import {
 } from '@heroui/react'
 // Removed classNames import since we're using dynamic routes
 import { useAtom, useAtomValue } from 'jotai'
-import { loadable } from 'jotai/utils'
 import { CalendarDaysIcon, FlagIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
+import { Suspense } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -25,21 +25,15 @@ import { useSession } from '@/hooks/useBetterSession'
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
-// Create loadable atom for better UX
-const connectedRunnersLoadableAtom = loadable(connectedRunnersAtom)
+// Runners will be read inside Suspense-enabled child components
 
 export default function WeeklyPlannerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const runnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
-  const [, refreshConnectedRunners] = useAtom(connectedRunnersAtom)
+  useAtom(connectedRunnersAtom)
   const [viewMode, setViewMode] = useState<'grid' | 'dropdown'>('grid')
 
-  // Handle loading and error states from Jotai loadable
-  const loading = runnersLoadable.state === 'loading'
-  const runnersData = runnersLoadable.state === 'hasData' ? runnersLoadable.data : []
-  const runners = Array.isArray(runnersData) ? runnersData : []
-  const error = runnersLoadable.state === 'hasError' ? runnersLoadable.error : null
+  // Runners data will be consumed in a Suspense child
 
   const handleRunnerSelection = (keys: 'all' | Set<React.Key>) => {
     if (keys !== 'all' && keys.size > 0) {
@@ -82,24 +76,6 @@ export default function WeeklyPlannerPage() {
     return null
   }
 
-  // Handle error state
-  if (error) {
-    return (
-      <Layout>
-        <div className="max-w-[1600px] mx-auto px-8 py-8">
-          <Card className="border-danger-200 bg-danger-50">
-            <CardBody className="text-center py-12">
-              <div className="text-danger-600 mb-4">Failed to load runners</div>
-              <Button color="primary" onClick={() => refreshConnectedRunners()}>
-                Retry
-              </Button>
-            </CardBody>
-          </Card>
-        </div>
-      </Layout>
-    )
-  }
-
   return (
     <Layout>
       <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8">
@@ -118,12 +94,11 @@ export default function WeeklyPlannerPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 self-start lg:self-auto">
-                <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" />
-                <span className="text-xs lg:text-sm font-medium text-foreground/70">
-                  {runners.length} Partner{runners.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+              <Suspense
+                fallback={<div className="text-xs lg:text-sm text-foreground/60">Loading…</div>}
+              >
+                <RunnersCountBadge />
+              </Suspense>
             </div>
 
             {/* View Mode Toggle and Quick Selection */}
@@ -147,50 +122,30 @@ export default function WeeklyPlannerPage() {
                 </Button>
               </div>
 
-              {viewMode === 'dropdown' && runners.length > 0 && (
-                <Select
-                  placeholder="Choose your training partner..."
-                  className="max-w-sm"
-                  variant="bordered"
-                  size="sm"
-                  onSelectionChange={handleRunnerSelection}
-                  startContent={<UsersIcon className="w-4 h-4" />}
+              {viewMode === 'dropdown' && (
+                <Suspense
+                  fallback={
+                    <Select
+                      placeholder="Loading runners..."
+                      className="max-w-sm"
+                      variant="bordered"
+                      size="sm"
+                      isLoading
+                      startContent={<UsersIcon className="w-4 h-4" />}
+                    >
+                      <SelectItem key="loading" isDisabled>
+                        Loading…
+                      </SelectItem>
+                    </Select>
+                  }
                 >
-                  {runners.map((runner: User) => (
-                    <SelectItem key={runner.id} textValue={runner.full_name || runner.email}>
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          name={runner.full_name || 'User'}
-                          size="sm"
-                          className="bg-primary text-white"
-                        />
-                        <div>
-                          <div className="font-medium">{runner.full_name || 'User'}</div>
-                          <div className="text-xs text-foreground/60">{runner.email}</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </Select>
+                  <RunnersQuickSelect onSelectionChange={handleRunnerSelection} />
+                </Suspense>
               )}
             </div>
           </CardHeader>
           <CardBody>
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <Spinner size="lg" color="secondary" label="Loading your expedition team..." />
-              </div>
-            ) : runners.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <UsersIcon className="w-8 h-8 text-secondary/50" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">No Training Partners</h3>
-                <p className="text-foreground/70">
-                  Create training plans to connect with runners and start expedition planning.
-                </p>
-              </div>
-            ) : viewMode === 'dropdown' ? (
+            {viewMode === 'dropdown' ? (
               <div className="text-center py-8 lg:py-12">
                 <div className="w-12 lg:w-16 h-12 lg:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <UsersIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary/50" />
@@ -203,58 +158,123 @@ export default function WeeklyPlannerPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-                {runners.map((runner: User) => (
-                  <Card
-                    key={runner.id}
-                    isPressable
-                    onPress={() => router.push(`/weekly-planner/${runner.id}`)}
-                    className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
-                  >
-                    <CardBody className="p-3 lg:p-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          name={runner.full_name || 'User'}
-                          size="sm"
-                          className="bg-primary text-white"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm lg:text-base truncate">
-                            {runner.full_name || 'User'}
-                          </h3>
-                          <p className="text-xs lg:text-sm text-foreground/70 truncate">
-                            {runner.email}
-                          </p>
-                          <div className="flex items-center gap-1 lg:gap-2 mt-2">
-                            <Chip
-                              size="sm"
-                              variant="flat"
-                              color="success"
-                              startContent={<TrendingUpIcon className="w-3 h-3" />}
-                              className="text-xs"
-                            >
-                              Active
-                            </Chip>
-                            <Chip
-                              size="sm"
-                              variant="flat"
-                              color="secondary"
-                              startContent={<FlagIcon className="w-3 h-3" />}
-                              className="text-xs"
-                            >
-                              Training
-                            </Chip>
-                          </div>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
-              </div>
+              <Suspense fallback={<div className="py-8 text-center">Loading runners…</div>}>
+                <RunnersGrid />
+              </Suspense>
             )}
           </CardBody>
         </Card>
       </div>
     </Layout>
+  )
+}
+
+function RunnersCountBadge() {
+  const runners = useAtomValue(connectedRunnersAtom)
+  return (
+    <div className="flex items-center gap-2 self-start lg:self-auto">
+      <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" />
+      <span className="text-xs lg:text-sm font-medium text-foreground/70">
+        {runners.length} Partner{runners.length !== 1 ? 's' : ''}
+      </span>
+    </div>
+  )
+}
+
+function RunnersQuickSelect({
+  onSelectionChange,
+}: {
+  onSelectionChange: (keys: 'all' | Set<React.Key>) => void
+}) {
+  const runners = useAtomValue(connectedRunnersAtom)
+  // If no runners, render nothing (caller shows other UI)
+  if (runners.length === 0) return null
+  return (
+    <Select
+      placeholder="Choose your training partner..."
+      className="max-w-sm"
+      variant="bordered"
+      size="sm"
+      onSelectionChange={onSelectionChange}
+      startContent={<UsersIcon className="w-4 h-4" />}
+    >
+      {runners.map((runner: User) => (
+        <SelectItem key={runner.id} textValue={runner.full_name || runner.email}>
+          <div className="flex items-center gap-3">
+            <Avatar name={runner.full_name || 'User'} size="sm" className="bg-primary text-white" />
+            <div>
+              <div className="font-medium">{runner.full_name || 'User'}</div>
+              <div className="text-xs text-foreground/60">{runner.email}</div>
+            </div>
+          </div>
+        </SelectItem>
+      ))}
+    </Select>
+  )
+}
+
+function RunnersGrid() {
+  const runners = useAtomValue(connectedRunnersAtom)
+  const router = useRouter()
+  if (runners.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <UsersIcon className="w-8 h-8 text-secondary/50" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Training Partners</h3>
+        <p className="text-foreground/70">
+          Create training plans to connect with runners and start expedition planning.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      {runners.map((runner: User) => (
+        <Card
+          key={runner.id}
+          isPressable
+          onPress={() => router.push(`/weekly-planner/${runner.id}`)}
+          className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
+        >
+          <CardBody className="p-3 lg:p-4">
+            <div className="flex items-center gap-3">
+              <Avatar
+                name={runner.full_name || 'User'}
+                size="sm"
+                className="bg-primary text-white"
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground text-sm lg:text-base truncate">
+                  {runner.full_name || 'User'}
+                </h3>
+                <p className="text-xs lg:text-sm text-foreground/70 truncate">{runner.email}</p>
+                <div className="flex items-center gap-1 lg:gap-2 mt-2">
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color="success"
+                    startContent={<TrendingUpIcon className="w-3 h-3" />}
+                    className="text-xs"
+                  >
+                    Active
+                  </Chip>
+                  <Chip
+                    size="sm"
+                    variant="flat"
+                    color="secondary"
+                    startContent={<FlagIcon className="w-3 h-3" />}
+                    className="text-xs"
+                  >
+                    Training
+                  </Chip>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
   )
 }

@@ -4,6 +4,10 @@ import { randomBytes } from 'crypto'
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
+const startLocalWebServer = process.env.CI
+  ? false
+  : process.env.PLAYWRIGHT_SKIP_WEBSERVER_WAIT !== 'true'
+
 export default defineConfig({
   testDir: './tests',
   /* Exclude manual and debug test files from CI runs */
@@ -36,7 +40,7 @@ export default defineConfig({
     baseURL: 'http://localhost:3001',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry',
 
     /* Record video for failed tests */
     video: 'retain-on-failure',
@@ -232,9 +236,8 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: process.env.CI
-    ? undefined // CI environment already has server running
-    : {
+  webServer: startLocalWebServer
+    ? {
         command: 'pnpm dev',
         url: 'http://localhost:3001',
         reuseExistingServer: true, // Use existing server if already running
@@ -255,5 +258,6 @@ export default defineConfig({
           RESEND_API_KEY: process.env.RESEND_API_KEY || '',
           NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
         },
-      },
+      }
+    : undefined,
 })
