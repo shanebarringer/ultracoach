@@ -75,10 +75,10 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(runners).toHaveProperty('data')
-        expect(Array.isArray(runners.data)).toBe(true)
-        expect(runners.data).toHaveLength(2)
-        expect(runners.data[0].name).toBe('Runner 1')
+        expect(Array.isArray(runners)).toBe(true)
+        expect(runners).toHaveLength(2)
+        const firstRunner = Array.isArray(runners) ? (runners[0] as { name?: string }) : undefined
+        expect(firstRunner?.name).toBe('Runner 1')
         expect(mocks.mockApiGet).toHaveBeenCalledWith(
           '/api/runners',
           expect.objectContaining({
@@ -92,9 +92,8 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(runners).toHaveProperty('data')
-        expect(Array.isArray(runners.data)).toBe(true)
-        expect(runners.data).toEqual([])
+        expect(Array.isArray(runners)).toBe(true)
+        expect(runners).toEqual([])
       })
 
       it('should return empty array when API returns non-array', async () => {
@@ -104,9 +103,8 @@ describe('Async Atoms Integration', () => {
 
         const runners = await store.get(connectedRunnersAtom)
 
-        expect(runners).toHaveProperty('data')
-        expect(Array.isArray(runners.data)).toBe(true)
-        expect(runners.data).toEqual([])
+        expect(Array.isArray(runners)).toBe(true)
+        expect(runners).toEqual([])
       })
 
       it('should refresh connected runners using atomWithRefresh', async () => {
@@ -128,14 +126,14 @@ describe('Async Atoms Integration', () => {
 
         // Initial fetch
         const runners1 = await store.get(connectedRunnersAtom)
-        expect(runners1.data).toHaveLength(1)
+        expect(runners1).toHaveLength(1)
 
         // Trigger refresh using atomWithRefresh pattern (call setter with no args)
         await store.set(connectedRunnersAtom)
 
         // Get updated data
         const runners2 = await store.get(connectedRunnersAtom)
-        expect(runners2.data).toHaveLength(2)
+        expect(runners2).toHaveLength(2)
         expect(mocks.mockApiGet).toHaveBeenCalledTimes(2)
       })
     })
@@ -310,9 +308,8 @@ describe('Async Atoms Integration', () => {
 
       const runners = await store.get(connectedRunnersAtom)
 
-      expect(runners).toHaveProperty('data')
-      expect(Array.isArray(runners.data)).toBe(true)
-      expect(runners.data).toEqual([])
+      expect(Array.isArray(runners)).toBe(true)
+      expect(runners).toEqual([])
     })
 
     it('should handle API errors', async () => {
@@ -355,7 +352,7 @@ describe('Async Atoms Integration', () => {
         store.get(refreshableTrainingPlansAtom),
       ])
 
-      expect(runners.data).toHaveLength(1)
+      expect(Array.isArray(runners) ? runners.length : 0).toBe(1)
       expect(coaches).toHaveLength(1)
       expect(plans).toHaveLength(1)
       expect(mocks.mockApiGet).toHaveBeenCalledTimes(3)

@@ -30,7 +30,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
-import { connectedRunnersLoadableAtom, runnersPageTabAtom } from '@/lib/atoms/index'
+import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
@@ -60,7 +60,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
   const searchParams = useSearchParams()
 
   const [activeTab, setActiveTab] = useAtom(runnersPageTabAtom)
-  const connectedRunnersLoadable = useAtomValue(connectedRunnersLoadableAtom)
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
 
   // Set initial tab from URL params
   useEffect(() => {
@@ -177,32 +177,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
   )
 
   const renderConnectedRunners = () => {
-    if (connectedRunnersLoadable.state === 'loading') {
-      return (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
-        </div>
-      )
-    }
-
-    if (connectedRunnersLoadable.state === 'hasError') {
-      return (
-        <Card className="border border-danger-200 bg-danger-50">
-          <CardBody>
-            <div className="text-center py-8">
-              <p className="text-danger-700">Failed to load connected runners</p>
-              <p className="text-sm text-danger-600 mt-1">
-                {(connectedRunnersLoadable.error as Error)?.message || 'Unknown error'}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      )
-    }
-
-    // Ensure runners is always an array
-    const runnersData = connectedRunnersLoadable.data?.data || []
-    const runners = Array.isArray(runnersData) ? runnersData : []
+    const runners = Array.isArray(connectedRunners) ? (connectedRunners as User[]) : []
 
     if (runners.length === 0) {
       return (
@@ -294,15 +269,29 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
               <div className="flex items-center gap-2">
                 <UsersIcon size={16} />
                 <span>Connected Runners</span>
-                {connectedRunnersLoadable.state === 'hasData' && (
+                <Suspense
+                  fallback={
+                    <Chip size="sm" variant="flat">
+                      0
+                    </Chip>
+                  }
+                >
                   <Chip size="sm" variant="flat">
-                    {connectedRunnersLoadable.data?.data?.length || 0}
+                    {Array.isArray(connectedRunners) ? connectedRunners.length : 0}
                   </Chip>
-                )}
+                </Suspense>
               </div>
             }
           >
-            {renderConnectedRunners()}
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-12">
+                  <Spinner size="lg" />
+                </div>
+              }
+            >
+              {renderConnectedRunners()}
+            </Suspense>
           </Tab>
 
           <Tab
