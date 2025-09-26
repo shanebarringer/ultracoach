@@ -176,28 +176,11 @@ test.describe('Race Import Flow', () => {
     // Wait for file processing to complete using Suspense-aware helper
     await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000, logger)
 
-    // Wait for parsing to complete - fail test if parse error occurs
-    // Check for parse error and fail test to catch regressions
+    // Wait for parsing to complete - directly assert no parse errors
     const parseError = page.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i).first()
-    let hasParseError = false
-    try {
-      await expect(parseError).toBeVisible({ timeout: 5000 })
-      hasParseError = true
-    } catch {
-      // No parse error visible
-    }
+    await expect(parseError).not.toBeVisible({ timeout: 5000 })
 
-    if (hasParseError) {
-      // Get error details for debugging
-      const errorDetails = await parseError.textContent().catch(() => 'Unknown parse error')
-
-      logger.error('GPX parsing failed:', { errorDetails })
-
-      // Fail the test with detailed error message
-      throw new Error(
-        `GPX parsing failed: ${errorDetails}. This indicates a regression in GPX parser that needs fixing.`
-      )
-    }
+    // If parse error is visible, the test will fail with clear error message
 
     // If no error, wait for the race data to appear in the preview using specific testid
     const raceElement = page.getByTestId('race-name-0')

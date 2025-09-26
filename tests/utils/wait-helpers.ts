@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test'
+import { Locator, Page, expect } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -78,8 +78,7 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   let clicked = false
   for (const selector of selectors) {
     try {
-      await expect(selector).toBeVisible({ timeout: 1000 })
-      await selector.click()
+      await clickWhenReady(selector, 1000)
       clicked = true
       break
     } catch {
@@ -104,7 +103,7 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
  * Wait until a locator is attached, visible and enabled, then click.
  * Provides clearer error messages than a bare click on flaky UIs.
  */
-export async function clickWhenReady(locator: import('@playwright/test').Locator, timeout = 10000) {
+export async function clickWhenReady(locator: Locator, timeout = 10000) {
   const start = Date.now()
   await locator.waitFor({ state: 'attached', timeout })
   await locator.waitFor({ state: 'visible', timeout })
@@ -117,17 +116,11 @@ export async function clickWhenReady(locator: import('@playwright/test').Locator
   }
 }
 
-export async function waitUntilVisible(
-  locator: import('@playwright/test').Locator,
-  timeout = 10000
-) {
+export async function waitUntilVisible(locator: Locator, timeout = 10000) {
   await locator.waitFor({ state: 'visible', timeout })
 }
 
-export async function waitUntilHidden(
-  locator: import('@playwright/test').Locator,
-  timeout = 10000
-) {
+export async function waitUntilHidden(locator: Locator, timeout = 10000) {
   await locator.waitFor({ state: 'hidden', timeout })
 }
 
@@ -143,14 +136,10 @@ export async function waitForFormReady(page: Page, timeout = 10000) {
   await expect(email).toBeVisible({ timeout })
   await expect(email).toBeEditable({ timeout })
 
-  const password = page.locator('input[type="password"]')
+  // Single password field check (no duplication)
+  const password = page.locator('input[type="password"]').first()
   await expect(password).toBeVisible({ timeout })
   await expect(password).toBeEditable({ timeout })
-
-  // Check for either password or confirm password field
-  const passwordOrConfirm = page.locator('input[type="password"]').first()
-  await expect(passwordOrConfirm).toBeVisible({ timeout })
-  await expect(passwordOrConfirm).toBeEditable({ timeout })
 
   const submit = page.locator('button[type="submit"]')
   await expect(submit).toBeVisible({ timeout })

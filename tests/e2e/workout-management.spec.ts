@@ -207,6 +207,10 @@ test.describe('Workout Management', () => {
         await page.getByLabel(/max heart rate/i).fill('165')
         await page.getByLabel(/notes/i).fill('Felt strong throughout the run')
 
+        // Capture workout ID before changing state
+        const workoutId = await plannedWorkout.getAttribute('data-workout-id')
+        if (!workoutId) throw new Error('Workout card missing data-workout-id')
+
         // Rate the workout
         await page.getByRole('radio', { name: /great/i }).click()
 
@@ -216,10 +220,10 @@ test.describe('Workout Management', () => {
         // Should show success notification
         await expect(page.getByText(/workout completed/i)).toBeVisible()
 
-        // Workout status should update to completed - check for visual indicator
-        await expect(
-          plannedWorkout.locator('[data-testid="workout-status-completed"]')
-        ).toBeVisible()
+        // Use status-agnostic locator after the mutation
+        const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+        await expect(updatedWorkout).toHaveAttribute('data-status', 'completed')
+        await expect(updatedWorkout.getByTestId('workout-status-completed')).toBeVisible()
 
         // completedWorkoutsAtom should be updated
         const completedCount = page.locator('[data-testid="completed-workout-count"]')
@@ -326,11 +330,9 @@ test.describe('Workout Management', () => {
         try {
           await clickWhenReady(markCompleteButton, 5000)
 
-          // Handle any confirmation modal
-          const confirmButton = page.locator('button:has-text(/confirm|yes|complete/i)')
+          // Handle any confirmation modal using role-based selector
           try {
-            await expect(confirmButton).toBeVisible({ timeout: 2000 })
-            await confirmButton.click()
+            await clickWhenReady(page.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
           } catch {
             // No confirmation modal appeared
           }
@@ -346,12 +348,9 @@ test.describe('Workout Management', () => {
             })
           }
 
-          // Counts should update immediately
-          const newPlannedCount = await plannedWorkouts.count()
-          const newCompletedCount = await completedWorkouts.count()
-
-          expect(newPlannedCount).toBeLessThan(initialPlannedCount)
-          expect(newCompletedCount).toBeGreaterThan(initialCompletedCount)
+          // Counts should update immediately - use toHaveCount for auto-waiting
+          await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
+          await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
         } catch {
           // Button didn't appear; skip
           return
@@ -372,8 +371,8 @@ test.describe('Workout Management', () => {
       // Simulate making a change (navigation should trigger data refresh)
       await page.goto('/dashboard/runner')
       await page.waitForLoadState('domcontentloaded')
-      // Wait for dashboard content to be visible
-      await expect(page.getByText('Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
+      // Wait for dashboard content to be visible using test-id
+      await expect(page.getByTestId('runner-dashboard-content')).toBeVisible({ timeout: 10000 })
 
       // Navigate back to workouts
       await page.goto('/workouts')
