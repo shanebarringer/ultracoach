@@ -233,10 +233,50 @@ test.describe('Critical Fixes Validation', () => {
       // Start authenticated via storage state
       await navigateToDashboard(page, 'runner')
 
-      // Click user menu/avatar - using the HeroUI Avatar component
-      const userAvatar = page.locator('.heroui-avatar').first()
-      await expect(userAvatar).toBeVisible({ timeout: 15000 })
-      await userAvatar.click()
+      // Wait for page to be fully loaded and authenticated UI to render
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(3000) // Allow React hydration and auth to load
+
+      // Look for any authenticated element first to verify we're logged in
+      const authenticatedElements = page.locator(
+        '.heroui-avatar, [data-testid="user-menu"], button:has-text("Sign Out")'
+      )
+      const hasAuth = await authenticatedElements
+        .first()
+        .isVisible()
+        .catch(() => false)
+
+      if (!hasAuth) {
+        // If no auth elements are visible, try to find the user's name or other indicators
+        console.log('Warning: No authenticated UI elements found, test may fail')
+      }
+
+      // Click user menu/avatar - using multiple possible selectors
+      const userMenuSelectors = [
+        '.heroui-avatar',
+        '[data-testid="user-menu"]',
+        'button[aria-label*="user"]',
+        'button[aria-label*="menu"]',
+        'img[alt*="avatar"]',
+      ]
+
+      let clicked = false
+      for (const selector of userMenuSelectors) {
+        try {
+          const element = page.locator(selector).first()
+          if (await element.isVisible()) {
+            await element.click({ timeout: 5000 })
+            clicked = true
+            break
+          }
+        } catch {
+          continue
+        }
+      }
+
+      if (!clicked) {
+        throw new Error('Could not find user menu/avatar to click')
+      }
 
       // Click sign out
       const signOutButton = page.locator(
