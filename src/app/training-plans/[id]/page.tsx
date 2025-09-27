@@ -205,8 +205,9 @@ export default function TrainingPlanDetailPage() {
     try {
       await api.delete(`/api/training-plans/${planId}`)
       commonToasts.trainingPlanDeleted()
-      // Refresh the training plans list after deletion
+      // Refresh both training plans and workouts cache after deletion
       refreshTrainingPlans()
+      await refreshWorkouts()
       router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })

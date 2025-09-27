@@ -324,6 +324,7 @@ test.describe('Workout Management', () => {
       if (initialPlannedCount > 0) {
         const workoutToComplete = plannedWorkouts.first()
         const workoutId = await workoutToComplete.getAttribute('data-workout-id')
+        if (!workoutId) throw new Error('Workout card missing data-workout-id')
 
         // Mark workout as complete
         const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
@@ -338,7 +339,8 @@ test.describe('Workout Management', () => {
 
         // Handle any confirmation modal using role-based selector
         try {
-          await clickWhenReady(page.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
+          const modal = page.locator('[role="dialog"], [data-testid="modal"]').last()
+          await clickWhenReady(modal.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
         } catch {
           // No confirmation modal appeared
         }

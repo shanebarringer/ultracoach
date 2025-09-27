@@ -38,7 +38,7 @@ test.describe('Session Persistence', () => {
 
         // Should stay on dashboard
         await expect(page).toHaveURL('/dashboard/runner')
-        await expect(page).not.toHaveURL('/auth/signin')
+        await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Dashboard should load properly
         const dashboard = page.locator('[data-testid="runner-dashboard-content"]')
@@ -60,8 +60,9 @@ test.describe('Session Persistence', () => {
       await expect(page).not.toHaveURL('/auth/signin')
 
       // Page should function normally
-      const pageTitle = page.locator('h1').filter({ hasText: /workouts|training/i })
-      await expect(pageTitle.first()).toBeVisible({ timeout: 10000 })
+      await expect(
+        page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
+      ).toBeVisible({ timeout: 10000 })
     })
 
     test('should maintain session on calendar page refresh', async ({ page }) => {
@@ -102,7 +103,7 @@ test.describe('Session Persistence', () => {
 
         // Should be on the correct route
         await expect(page).toHaveURL(route)
-        await expect(page).not.toHaveURL('/auth/signin')
+        await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Wait for page to fully load
         await page.waitForTimeout(1000)
@@ -128,7 +129,7 @@ test.describe('Session Persistence', () => {
           await page.waitForLoadState('domcontentloaded')
 
           // Should never be redirected to signin
-          await expect(page).not.toHaveURL('/auth/signin')
+          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
           await expect(page).toHaveURL(route)
 
           // Brief pause to simulate realistic navigation
@@ -240,8 +241,8 @@ test.describe('Session Persistence', () => {
       await expect(page).toHaveURL('/auth/signin')
 
       // Fill and submit signin form
-      await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
-      await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
+      await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
+      await page.getByLabel(/password|passcode/i).fill(TEST_RUNNER_PASSWORD)
       await page.getByRole('button', { name: /sign in|Begin Your Expedition/i }).click()
 
       // Should redirect to dashboard
@@ -327,7 +328,7 @@ test.describe('Session Persistence', () => {
         async () => {
           await page.reload()
           await page.waitForLoadState('domcontentloaded')
-          await expect(page).not.toHaveURL('/auth/signin')
+          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
         },
         async () => {
           await page.goto('/workouts')
@@ -337,7 +338,7 @@ test.describe('Session Persistence', () => {
         async () => {
           await page.goBack()
           await page.waitForLoadState('domcontentloaded')
-          await expect(page).not.toHaveURL('/auth/signin')
+          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
         },
         async () => {
           await page.goto('/training-plans')
