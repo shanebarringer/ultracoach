@@ -145,7 +145,7 @@ setup('authenticate', async ({ page, context }) => {
 
   // Verify authentication actually works by creating a brand-new context with the storage state
   const verifyContext = await context.browser().newContext({
-    storageState: runnerStoragePath,
+    storageState: authFile,
   })
   const verifyPage = await verifyContext.newPage()
   await verifyPage.goto(`${baseUrl}/dashboard/runner`)
