@@ -12,7 +12,11 @@
 import { expect, test } from '@playwright/test'
 import { addDays, format, isToday, isYesterday, parseISO, subDays } from 'date-fns'
 
+import { createLogger } from '@/lib/logger'
+
 import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
+
+const logger = createLogger('CriticalFixesE2E')
 
 test.describe('Critical Fixes Validation', () => {
   test.describe('Workout Sort Order Fix (ULT-45)', () => {
@@ -35,7 +39,7 @@ test.describe('Critical Fixes Validation', () => {
 
       if (workoutCount === 0) {
         // No workouts to test sort order - this is valid for new users
-        console.log('No workouts found - skipping sort order test')
+        logger.info('No workouts found - skipping sort order test')
         return
       }
 
@@ -98,7 +102,7 @@ test.describe('Critical Fixes Validation', () => {
           {} as Record<number, number>
         )
 
-        console.log(
+        logger.info(
           `Sort order test completed - Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`
         )
       }
@@ -248,7 +252,7 @@ test.describe('Critical Fixes Validation', () => {
 
       if (!hasAuth) {
         // If no auth elements are visible, try to find the user's name or other indicators
-        console.log('Warning: No authenticated UI elements found, test may fail')
+        logger.warn('Warning: No authenticated UI elements found, test may fail')
       }
 
       // Click user menu/avatar - using multiple possible selectors
@@ -308,7 +312,7 @@ test.describe('Critical Fixes Validation', () => {
       // This would test that when a coach creates a workout, it appears immediately in the UI
       // without requiring a page refresh
 
-      console.log('Workout creation test skipped - requires implementation of workout creation UI')
+      logger.info('Workout creation test skipped - requires implementation of workout creation UI')
     })
 
     test('should display existing workouts immediately on page load', async ({ page }) => {

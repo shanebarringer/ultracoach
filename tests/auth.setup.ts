@@ -143,8 +143,11 @@ setup('authenticate', async ({ page, context }) => {
     }
   }
 
-  // Verify authentication actually works by opening a new page with the storage state
-  const verifyPage = await context.newPage()
+  // Verify authentication actually works by creating a brand-new context with the storage state
+  const verifyContext = await context.browser().newContext({
+    storageState: runnerStoragePath,
+  })
+  const verifyPage = await verifyContext.newPage()
   await verifyPage.goto(`${baseUrl}/dashboard/runner`)
   const verifyUrl = verifyPage.url()
   const isAuthenticated = !verifyUrl.includes('/auth/signin')
@@ -155,7 +158,10 @@ setup('authenticate', async ({ page, context }) => {
     logger.error('❌ Storage state was saved but authentication verification failed!')
     throw new Error('Authentication verification failed - storage state may not be working')
   }
+
+  // Clean up verification resources
   await verifyPage.close()
+  await verifyContext.close()
 
   logger.info('✅ Runner authentication setup complete and verified!')
 })

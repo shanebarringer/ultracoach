@@ -31,7 +31,7 @@ export async function waitForHeroUIReady(page: Page) {
     try {
       const element = page.locator(indicator).first()
       try {
-        await expect(element).toBeVisible({ timeout: 100 })
+        await expect(element).toBeVisible({ timeout: 500 })
         await element.waitFor({ state: 'hidden', timeout: 10000 })
       } catch {
         // Element not visible, continue
@@ -191,7 +191,7 @@ export async function waitForLoadingComplete(page: Page, timeout = 10000) {
     try {
       const loader = page.getByText(text, { exact: false }).first()
       try {
-        await expect(loader).toBeVisible({ timeout: 100 })
+        await expect(loader).toBeVisible({ timeout })
         await loader.waitFor({ state: 'hidden', timeout })
       } catch {
         // Not visible, continue

@@ -187,7 +187,7 @@ test.describe('Session Persistence', () => {
 
         // Should be redirected to signin or home (depending on middleware)
         const currentUrl = page.url()
-        const isRedirected = currentUrl.includes('/auth/signin') || currentUrl.includes('/')
+        const currentPathname = new URL(currentUrl).pathname
 
         // At minimum, should not be on the protected route without auth
         if (currentUrl === new URL(route, page.url()).href) {
@@ -198,6 +198,9 @@ test.describe('Session Persistence', () => {
           } catch {
             throw new Error(`Still on protected route ${route} without visible signin form`)
           }
+        } else {
+          // When redirected, explicitly assert the pathname is a valid redirect target
+          expect(currentPathname === '/auth/signin' || currentPathname === '/').toBe(true)
         }
       }
     })

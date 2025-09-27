@@ -312,11 +312,10 @@ test.describe('Workout Display Order', () => {
       )
       await expect(calendarElements.first()).toBeVisible({ timeout: 10000 })
 
-      // Look for "Today" button or similar navigation
-      const todayButton = page
-        .getByRole('button', { name: 'Today' })
-        .or(page.locator('.fc-today-button'))
-        .or(page.locator('[data-testid="today-button"]'))
+      // Look for "Today" button or similar navigation using comma-separated selector
+      const todayButton = page.locator(
+        'button:has-text("Today"), .fc-today-button, [data-testid="today-button"]'
+      )
 
       // Only test the button if it exists
       const buttonVisible = await todayButton.isVisible().catch(() => false)

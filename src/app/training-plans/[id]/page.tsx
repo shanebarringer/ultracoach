@@ -101,10 +101,7 @@ export default function TrainingPlanDetailPage() {
       // Fetch plan phases
       try {
         const { data: phasesData } = await api.get<{ plan_phases?: PlanPhase[] }>(
-          `/api/training-plans/${planId}/phases`,
-          {
-            withCredentials: true,
-          }
+          `/api/training-plans/${planId}/phases`
         )
         setExtendedPlanData(prev => ({
           ...prev,
@@ -118,8 +115,7 @@ export default function TrainingPlanDetailPage() {
       if (trainingPlan.previous_plan_id) {
         try {
           const { data: prevPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
-            `/api/training-plans/${trainingPlan.previous_plan_id}`,
-            { withCredentials: true }
+            `/api/training-plans/${trainingPlan.previous_plan_id}`
           )
           setExtendedPlanData(prev => ({
             ...prev,
@@ -133,10 +129,7 @@ export default function TrainingPlanDetailPage() {
       if (trainingPlan.next_plan_id) {
         try {
           const { data: nextPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
-            `/api/training-plans/${trainingPlan.next_plan_id}`,
-            {
-              withCredentials: true,
-            }
+            `/api/training-plans/${trainingPlan.next_plan_id}`
           )
           setExtendedPlanData(prev => ({
             ...prev,
@@ -210,9 +203,7 @@ export default function TrainingPlanDetailPage() {
       return
     setIsDeleting(true)
     try {
-      await api.delete(`/api/training-plans/${planId}`, {
-        withCredentials: true,
-      })
+      await api.delete(`/api/training-plans/${planId}`)
       commonToasts.trainingPlanDeleted()
       // Refresh the training plans list after deletion
       refreshTrainingPlans()

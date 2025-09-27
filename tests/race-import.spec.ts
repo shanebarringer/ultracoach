@@ -394,25 +394,27 @@ test.describe('Race Import Flow', () => {
     await expect(uploadButton).toBeEnabled()
     await uploadButton.click({ timeout: 10000 })
 
-    // Wait for import to complete - look for success indication
-    // The modal might show a success message before closing
+    // Wait for import to complete - either the modal closes or a success toast appears
     const successMessage = page
       .getByText(/successfully imported/i)
       .or(page.getByText(/import.*complete/i))
       .or(page.getByText(/race.*added/i))
+    const modal = page.locator('[role="dialog"], .modal')
 
-    // Try to wait for success message first
-    const hasSuccess = await successMessage.isVisible({ timeout: 5000 }).catch(() => false)
+    const successSignal = await Promise.race([
+      successMessage.waitFor({ state: 'visible', timeout: 10000 }).then(() => 'message'),
+      modal.waitFor({ state: 'hidden', timeout: 10000 }).then(() => 'closed'),
+    ]).catch(() => null)
 
-    if (hasSuccess) {
-      // If there's a success message, wait a bit for it to be read
+    if (!successSignal) {
+      throw new Error('Race import never indicated success (no toast and modal stayed open)')
+    }
+
+    if (successSignal === 'message') {
       await page.waitForTimeout(1000)
     }
 
-    // Now check if modal closes or if we need to close it manually
-    const modal = page.locator('[role="dialog"], .modal')
     const isModalVisible = await modal.isVisible().catch(() => false)
-
     if (isModalVisible) {
       // Try to close modal with close button or ESC
       const closeButton = modal

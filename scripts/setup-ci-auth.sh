@@ -97,13 +97,13 @@ jq '.cookies[0] | {name, domain, path, httpOnly, secure}' "$runner_path" 2>/dev/
 
 # Check for specific auth cookies
 echo "[setup-ci-auth] Checking for Better Auth session cookies:"
-if jq -e '.cookies[] | select(.name | contains("better-auth"))' "$COACH_FILE" >/dev/null 2>&1; then
+if jq -e '[.cookies[] | select(.name | contains("better-auth"))] | length > 0' "$COACH_FILE" >/dev/null 2>&1; then
   echo "  - ✅ Coach has Better Auth cookie"
 else
   echo "  - ⚠️ Coach missing Better Auth cookie"
 fi
 
-if jq -e '.cookies[] | select(.name | contains("better-auth"))' "$runner_path" >/dev/null 2>&1; then
+if jq -e '[.cookies[] | select(.name | contains("better-auth"))] | length > 0' "$runner_path" >/dev/null 2>&1; then
   echo "  - ✅ Runner has Better Auth cookie"
 else
   echo "  - ⚠️ Runner missing Better Auth cookie"

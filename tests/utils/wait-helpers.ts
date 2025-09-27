@@ -78,7 +78,7 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   let clicked = false
   for (const selector of selectors) {
     try {
-      await clickWhenReady(selector, 1000)
+      await clickWhenReady(selector)
       clicked = true
       break
     } catch {

@@ -327,34 +327,36 @@ test.describe('Workout Management', () => {
 
         // Mark workout as complete
         const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
+
+        // Try to click the mark complete button
         try {
           await clickWhenReady(markCompleteButton, 5000)
-
-          // Handle any confirmation modal using role-based selector
-          try {
-            await clickWhenReady(page.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
-          } catch {
-            // No confirmation modal appeared
-          }
-
-          // UI should update immediately without page refresh
-          // Wait for the UI to reflect the status change
-
-          // Check that workout status changed immediately
-          if (workoutId) {
-            const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
-            await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
-              timeout: 5000,
-            })
-          }
-
-          // Counts should update immediately - use toHaveCount for auto-waiting
-          await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
-          await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
         } catch {
           // Button didn't appear; skip
           return
         }
+
+        // Handle any confirmation modal using role-based selector
+        try {
+          await clickWhenReady(page.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
+        } catch {
+          // No confirmation modal appeared
+        }
+
+        // UI should update immediately without page refresh
+        // Wait for the UI to reflect the status change
+
+        // Check that workout status changed immediately
+        if (workoutId) {
+          const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+          await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
+            timeout: 5000,
+          })
+        }
+
+        // Counts should update immediately - use toHaveCount for auto-waiting
+        await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
+        await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
       }
     })
 
