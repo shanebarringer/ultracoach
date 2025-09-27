@@ -3,7 +3,7 @@
 import { Card, CardHeader } from '@heroui/react'
 import { Mountain } from 'lucide-react'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 import WeeklyWorkoutOverview from '@/components/coach/WeeklyWorkoutOverview'
 import Layout from '@/components/layout/Layout'
@@ -54,12 +54,20 @@ export default function WeeklyOverviewPageClient({ user }: WeeklyOverviewPageCli
           </CardHeader>
         </Card>
 
-        {/* Main Weekly Overview Component */}
-        <WeeklyWorkoutOverview
-          coach={user}
-          currentWeek={currentWeek}
-          onWeekChange={setCurrentWeek}
-        />
+        {/* Main Weekly Overview Component (suspends while athletes load) */}
+        <Suspense
+          fallback={
+            <Card className="mt-4">
+              <CardHeader>Loading weekly overview…</CardHeader>
+            </Card>
+          }
+        >
+          <WeeklyWorkoutOverview
+            coach={user}
+            currentWeek={currentWeek}
+            onWeekChange={setCurrentWeek}
+          />
+        </Suspense>
       </div>
     </Layout>
   )
