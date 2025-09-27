@@ -24,7 +24,7 @@ export const workoutsRefreshTriggerAtom = atom(0)
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+const CACHE_DURATION = 500 // Reduced cache to 500ms for faster updates
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
@@ -559,8 +559,18 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Clear cache and trigger refresh to ensure all components update
-    workoutsCache.clear()
+    // Invalidate current user's cache only (align with other actions)
+    try {
+      const { authClient } = await import('@/lib/better-auth-client')
+      const session = await authClient.getSession()
+      if (session?.data?.user?.id) {
+        workoutsCache.delete(session.data.user.id)
+      } else {
+        workoutsCache.clear()
+      }
+    } catch {
+      workoutsCache.clear()
+    }
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })

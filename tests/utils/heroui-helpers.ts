@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Page, expect } from '@playwright/test'
 
 /**
  * HeroUI-specific test helpers for Playwright
@@ -30,8 +30,11 @@ export async function waitForHeroUIReady(page: Page) {
   for (const indicator of loadingIndicators) {
     try {
       const element = page.locator(indicator).first()
-      if (await element.isVisible({ timeout: 100 })) {
+      try {
+        await expect(element).toBeVisible({ timeout: 500 })
         await element.waitFor({ state: 'hidden', timeout: 10000 })
+      } catch {
+        // Element not visible, continue
       }
     } catch {
       // Element not found or already hidden, continue
@@ -60,8 +63,8 @@ export async function selectHeroUIOption(
   // HeroUI Select renders as a button with the label
   const selectTrigger = page
     .getByRole('button', { name: selectLabel })
-    .or(page.getByLabel(selectLabel.toString()))
-    .or(page.locator(`button:has-text("${selectLabel}")`))
+    .or(page.getByLabel(selectLabel))
+    .or(page.locator('button').filter({ hasText: selectLabel }))
 
   await selectTrigger.waitFor({ state: 'visible', timeout })
 
@@ -100,9 +103,9 @@ export async function selectHeroUIOption(
   // Try multiple selector strategies
   const optionSelectors = [
     page.getByRole('option', { name: optionText }),
-    page.locator(`[role="option"]:has-text("${optionText}")`),
-    page.locator(`[data-key]:has-text("${optionText}")`),
-    page.locator(`[data-value]:has-text("${optionText}")`),
+    page.locator('[role="option"]').filter({ hasText: optionText }),
+    page.locator('[data-key]').filter({ hasText: optionText }),
+    page.locator('[data-value]').filter({ hasText: optionText }),
     page.getByText(optionText, { exact: false }),
   ]
 
@@ -118,9 +121,7 @@ export async function selectHeroUIOption(
   }
 
   if (!clicked) {
-    // Log current DOM for debugging
-    const options = await page.locator('[role="option"]').allTextContents()
-    throw new Error(`Could not select option: ${optionText}`)
+    throw new Error(`Could not select option: ${optionText.toString()}`)
   }
 
   // Wait for dropdown to close
@@ -149,9 +150,12 @@ export async function clickButtonWithRetry(
 
       let button
       for (const selector of buttonSelectors) {
-        if (await selector.isVisible({ timeout: 1000 }).catch(() => false)) {
+        try {
+          await expect(selector).toBeVisible({ timeout: 1000 })
           button = selector
           break
+        } catch {
+          // Try next selector
         }
       }
 
@@ -186,8 +190,11 @@ export async function waitForLoadingComplete(page: Page, timeout = 10000) {
   for (const text of loadingTexts) {
     try {
       const loader = page.getByText(text, { exact: false }).first()
-      if (await loader.isVisible({ timeout: 100 })) {
+      try {
+        await expect(loader).toBeVisible({ timeout })
         await loader.waitFor({ state: 'hidden', timeout })
+      } catch {
+        // Not visible, continue
       }
     } catch {
       // Not visible or already hidden

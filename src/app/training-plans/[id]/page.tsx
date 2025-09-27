@@ -1,6 +1,16 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { isAxiosError } from 'axios'
+import {
+  addDays,
+  addWeeks,
+  endOfDay,
+  format as formatDateFns,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
@@ -22,6 +32,7 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
@@ -45,9 +56,8 @@ export default function TrainingPlanDetailPage() {
   const planId = params.id as string
 
   // Use Jotai atoms for centralized state management
-  const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
+  const [allTrainingPlans, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
@@ -89,48 +99,44 @@ export default function TrainingPlanDetailPage() {
 
     try {
       // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
-        credentials: 'same-origin',
-      })
-      if (phasesResponse.ok) {
-        const phasesData = await phasesResponse.json()
+      try {
+        const { data: phasesData } = await api.get<{ plan_phases?: PlanPhase[] }>(
+          `/api/training-plans/${planId}/phases`
+        )
         setExtendedPlanData(prev => ({
           ...prev,
           plan_phases: phasesData.plan_phases || [],
         }))
-      } else {
-        logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+      } catch (error) {
+        logger.error('Failed to fetch plan phases', { error })
       }
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.previous_plan_id}`,
-          { credentials: 'same-origin' }
-        )
-        if (prevPlanResponse.ok) {
-          const prevPlanData = await prevPlanResponse.json()
+        try {
+          const { data: prevPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
+            `/api/training-plans/${trainingPlan.previous_plan_id}`
+          )
           setExtendedPlanData(prev => ({
             ...prev,
             previous_plan: prevPlanData.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
+        } catch (error) {
+          logger.error('Failed to fetch previous plan', { error })
         }
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
-          credentials: 'same-origin',
-        })
-        if (nextPlanResponse.ok) {
-          const nextPlanData = await nextPlanResponse.json()
+        try {
+          const { data: nextPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
+            `/api/training-plans/${trainingPlan.next_plan_id}`
+          )
           setExtendedPlanData(prev => ({
             ...prev,
             next_plan: nextPlanData.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
+        } catch (error) {
+          logger.error('Failed to fetch next plan', { error })
         }
       }
     } catch (error) {
@@ -197,31 +203,39 @@ export default function TrainingPlanDetailPage() {
       return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/training-plans/${planId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      })
-      if (response.ok) {
-        commonToasts.trainingPlanDeleted()
-        router.push('/training-plans')
-      } else {
-        const errorData = await response.json()
-        commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
-      }
+      await api.delete(`/api/training-plans/${planId}`)
+      commonToasts.trainingPlanDeleted()
+      // Refresh both training plans and workouts cache after deletion
+      refreshTrainingPlans()
+      await refreshWorkouts()
+      router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })
-      commonToasts.trainingPlanError('Failed to delete training plan')
+      if (isAxiosError(error) && error.response?.data?.error) {
+        commonToasts.trainingPlanError(error.response.data.error)
+      } else {
+        commonToasts.trainingPlanError('Failed to delete training plan')
+      }
     } finally {
       setIsDeleting(false)
     }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    // Validate input
+    if (!dateString || typeof dateString !== 'string') {
+      return '—'
+    }
+
+    try {
+      const parsedDate = parseISO(dateString)
+      if (!isValid(parsedDate)) {
+        return '—'
+      }
+      return formatDateFns(parsedDate, 'MMM d, yyyy')
+    } catch {
+      return '—'
+    }
   }
 
   const calculateCurrentPhase = useCallback(() => {
@@ -233,15 +247,15 @@ export default function TrainingPlanDetailPage() {
       return null
     }
 
-    const startDate = new Date(extendedTrainingPlan.start_date)
-    const today = new Date()
+    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
+    const today = startOfDay(new Date())
     let totalWeeks = 0
 
-    for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
-      const phaseEndDate = new Date(startDate)
-      phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
+    for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
+      const phaseStartDate = addWeeks(planStartDate, totalWeeks)
+      const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
 
-      if (today >= startDate && today <= phaseEndDate) {
+      if (today >= phaseStartDate && today <= phaseEndDate) {
         return phase
       }
       totalWeeks += phase.duration_weeks
@@ -265,16 +279,14 @@ export default function TrainingPlanDetailPage() {
 
     const grouped: Record<string, Workout[]> = {}
     const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = new Date(extendedTrainingPlan.start_date)
+    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
     let currentWeekOffset = 0
 
-    extendedTrainingPlan.plan_phases
+    ;[...extendedTrainingPlan.plan_phases]
       .sort((a, b) => a.order - b.order)
       .forEach(phase => {
-        const phaseStartDate = new Date(planStartDate)
-        phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
-        const phaseEndDate = new Date(phaseStartDate)
-        phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 to keep it within the week
+        const phaseStartDate = addWeeks(planStartDate, currentWeekOffset)
+        const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
 
         phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
         grouped[phase.id] = []
@@ -284,7 +296,7 @@ export default function TrainingPlanDetailPage() {
     const ungrouped: Workout[] = []
 
     workouts.forEach((workout: Workout) => {
-      const workoutDate = new Date(workout.date)
+      const workoutDate = startOfDay(parseISO(workout.date))
       let foundPhase = false
       for (const phaseId in phaseDates) {
         const { start, end } = phaseDates[phaseId]
@@ -301,7 +313,9 @@ export default function TrainingPlanDetailPage() {
 
     // Sort workouts within each group by date
     for (const phaseId in grouped) {
-      grouped[phaseId].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      grouped[phaseId].sort(
+        (a, b) => startOfDay(parseISO(a.date)).getTime() - startOfDay(parseISO(b.date)).getTime()
+      )
     }
 
     return { grouped, ungrouped }
@@ -355,10 +369,10 @@ export default function TrainingPlanDetailPage() {
                 Training Phases
               </h2>
             </CardHeader>
-            <CardBody>
+            <CardBody data-testid="phase-timeline">
               {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {extendedTrainingPlan.plan_phases
+                  {[...extendedTrainingPlan.plan_phases]
                     .sort((a, b) => a.order - b.order)
                     .map(phase => (
                       <Card
@@ -371,7 +385,13 @@ export default function TrainingPlanDetailPage() {
                             Duration: {phase.duration_weeks} weeks
                           </p>
                           {currentPhase?.id === phase.id && (
-                            <Chip size="sm" color="primary" variant="flat" className="mt-1">
+                            <Chip
+                              size="sm"
+                              color="primary"
+                              variant="flat"
+                              className="mt-1"
+                              data-testid="current-phase"
+                            >
                               Current Phase
                             </Chip>
                           )}
@@ -623,15 +643,15 @@ export default function TrainingPlanDetailPage() {
               </div>
             ) : (
               <div className="space-y-8">
-                {extendedTrainingPlan?.plan_phases
-                  ?.sort((a, b) => a.order - b.order)
+                {[...(extendedTrainingPlan?.plan_phases || [])]
+                  .sort((a, b) => a.order - b.order)
                   .map(phase => (
                     <div key={phase.id}>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         {phase.phase_name}
                       </h3>
                       {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-4" data-testid="phase-workouts">
                           {workoutsByPhase[phase.id]?.map((workout: Workout) => (
                             <div
                               key={workout.id}
@@ -694,7 +714,10 @@ export default function TrainingPlanDetailPage() {
 
                                   {workout.coach_feedback && (
                                     <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
+                                      <span
+                                        className="text-gray-500 dark:text-gray-400 text-sm"
+                                        data-testid="feedback-badge"
+                                      >
                                         Coach Feedback:
                                       </span>
                                       <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">

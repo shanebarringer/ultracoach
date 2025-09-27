@@ -207,7 +207,7 @@ export default function WorkoutLogModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" data-testid="workout-detail-modal">
       <ModalContent>
         <ModalHeader>Log Workout</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>

@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Locator, Page, expect } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -68,17 +68,19 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
     page.getByRole('link', { name: linkText }),
     page.getByRole('button', { name: linkText }),
     page.getByText(linkText),
-    page.locator(`a:has-text("${linkText}")`),
   ]
+
+  // Only add the CSS selector if linkText is a string (not a RegExp)
+  if (typeof linkText === 'string') {
+    selectors.push(page.locator('a', { hasText: linkText }))
+  }
 
   let clicked = false
   for (const selector of selectors) {
     try {
-      if (await selector.isVisible({ timeout: 1000 })) {
-        await selector.click()
-        clicked = true
-        break
-      }
+      await clickWhenReady(selector)
+      clicked = true
+      break
     } catch {
       // Try next selector
     }
@@ -95,4 +97,50 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   }
 
   return clicked
+}
+
+/**
+ * Wait until a locator is attached, visible and enabled, then click.
+ * Provides clearer error messages than a bare click on flaky UIs.
+ */
+export async function clickWhenReady(locator: Locator, timeout = 10000) {
+  const start = Date.now()
+  await locator.waitFor({ state: 'attached', timeout })
+  await locator.waitFor({ state: 'visible', timeout })
+  await expect(locator).toBeEnabled({ timeout })
+  try {
+    await locator.click({ timeout })
+  } catch (err) {
+    const ms = Date.now() - start
+    throw new Error(`clickWhenReady failed after ${ms}ms: ${String(err)}`)
+  }
+}
+
+export async function waitUntilVisible(locator: Locator, timeout = 10000) {
+  await locator.waitFor({ state: 'visible', timeout })
+}
+
+export async function waitUntilHidden(locator: Locator, timeout = 10000) {
+  await locator.waitFor({ state: 'hidden', timeout })
+}
+
+/**
+ * Wait for a form to be ready with all essential elements visible and editable
+ * Useful for auth forms where we need email, password, and submit button
+ */
+export async function waitForFormReady(page: Page, timeout = 10000) {
+  const form = page.locator('form')
+  await expect(form).toBeVisible({ timeout })
+
+  const email = page.locator('input[type="email"]')
+  await expect(email).toBeVisible({ timeout })
+  await expect(email).toBeEditable({ timeout })
+
+  // Single password field check (no duplication)
+  const password = page.locator('input[type="password"]').first()
+  await expect(password).toBeVisible({ timeout })
+  await expect(password).toBeEditable({ timeout })
+
+  const submit = page.locator('button[type="submit"]')
+  await expect(submit).toBeVisible({ timeout })
 }

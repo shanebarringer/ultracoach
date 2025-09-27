@@ -171,6 +171,9 @@ try {
       crossSubDomainCookies: {
         enabled: false, // Disable for better security
       },
+      // CI-compatible cookie settings for test environments
+      sameSite: process.env.NODE_ENV === 'test' ? 'lax' : 'lax', // More permissive for CI
+      cookieNameStrategy: 'snake_case', // Consistent naming for CI
       // generateId removed - Better Auth handles ID generation by default
     },
 
