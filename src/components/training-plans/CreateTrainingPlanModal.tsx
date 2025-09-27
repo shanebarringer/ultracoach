@@ -465,24 +465,33 @@ function RunnerSelectField({
   fieldState: { error?: { message?: string } }
 }) {
   const connectedRunners = useAtomValue(connectedRunnersAtom)
+  const hasRunners = connectedRunners.length > 0
+
   return (
     <Select
       label="Select Runner"
-      placeholder="Choose a runner"
+      placeholder={hasRunners ? 'Choose a runner' : 'No connected runners available'}
       isRequired
       isInvalid={!!fieldState.error}
       errorMessage={fieldState.error?.message}
+      isDisabled={!hasRunners}
       selectedKeys={field.value ? [field.value] : []}
       onSelectionChange={keys => {
         const selectedKey = (Array.from(keys)[0] as string | undefined) ?? ''
         field.onChange(selectedKey)
       }}
     >
-      {connectedRunners.map((runner: User) => (
-        <SelectItem key={runner.id}>
-          {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
+      {hasRunners ? (
+        connectedRunners.map((runner: User) => (
+          <SelectItem key={runner.id}>
+            {runner.full_name ? `${runner.full_name} (${runner.email})` : runner.email}
+          </SelectItem>
+        ))
+      ) : (
+        <SelectItem key="no-runners" isDisabled>
+          Connect a runner to enable plan creation
         </SelectItem>
-      ))}
+      )}
     </Select>
   )
 }

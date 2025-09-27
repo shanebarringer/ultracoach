@@ -2,6 +2,7 @@
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
 import { useAtomValue } from 'jotai'
+// useAtom available for refresh functionality if needed: import { useAtom, useAtomValue } from 'jotai'
 import {
   CalendarDaysIcon,
   ChevronLeftIcon,
@@ -134,8 +135,10 @@ function RunnerWeeklyPage({
   }
 
   // Derive selectedRunner directly from URL and session
+  const isRunnerSelf = sessionUser?.userType === 'runner' && sessionUser.id === runnerId
+
   const selectedRunner = (() => {
-    if (sessionUser?.userType === 'runner' && sessionUser.id === runnerId) {
+    if (isRunnerSelf) {
       // Runner viewing their own training - use session data
       return {
         id: sessionUser.id,
