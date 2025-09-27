@@ -51,13 +51,23 @@ test.describe('Session Persistence', () => {
       await expect(page).toHaveURL('/workouts')
       await page.waitForLoadState('domcontentloaded')
 
+      // Extra verification: ensure we're not on signin page initially (CI issue)
+      const initialUrl = page.url()
+      if (initialUrl.includes('/auth/signin')) {
+        throw new Error(`Authentication failed in CI - initial redirect to signin: ${initialUrl}`)
+      }
+
       // Refresh page
       await page.reload()
       await page.waitForLoadState('domcontentloaded')
 
+      // Allow extra time for auth to resolve after refresh in CI
+      await page.waitForTimeout(1000)
+
       // Should stay on workouts page
+      const finalUrl = page.url()
       await expect(page).toHaveURL('/workouts')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
       // Page should function normally
       await expect(

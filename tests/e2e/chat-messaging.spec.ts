@@ -180,8 +180,14 @@ test.describe('Chat Messaging System', () => {
         await waitForHeroUIReady(page)
         await waitForLoadingComplete(page)
 
-        // Verify we're on the chat page and not redirected
+        // Verify we're on the chat page and not redirected to signin (critical for CI)
         await expect(page).toHaveURL('/chat', { timeout: 10000 })
+
+        // Extra verification: ensure we're not on signin page (common CI issue)
+        const currentUrl = page.url()
+        if (currentUrl.includes('/auth/signin')) {
+          throw new Error(`Authentication failed in CI - redirected to signin: ${currentUrl}`)
+        }
 
         // Check if there are any existing conversations or if we need to start one
         const hasConversations =
@@ -258,8 +264,19 @@ test.describe('Chat Messaging System', () => {
             }
           }
 
-          // Now wait for chat window with more tolerance
-          await expect(chatWindow).toBeVisible({ timeout: 15000 })
+          // Now wait for chat window with more tolerance and better error reporting
+          try {
+            await expect(chatWindow).toBeVisible({ timeout: 15000 })
+          } catch (error) {
+            // Enhanced debugging for CI failures
+            const currentUrl = page.url()
+            const pageTitle = await page.title().catch(() => 'Unknown')
+            const pageContent = await page.content().catch(() => 'Could not get content')
+
+            throw new Error(
+              `Chat window not visible after conversation setup. URL: ${currentUrl}, Title: ${pageTitle}, Error: ${error.message}`
+            )
+          }
 
           // Type initial message - use exact placeholder text
           const messageInput = page.getByPlaceholder('Type your message...')
@@ -307,6 +324,12 @@ test.describe('Chat Messaging System', () => {
         // Navigate directly to the runner dashboard - we're already authenticated
         await page.goto('/dashboard/runner')
         await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+
+        // Extra verification: ensure we're not on signin page (common CI issue)
+        const currentUrl = page.url()
+        if (currentUrl.includes('/auth/signin')) {
+          throw new Error(`Authentication failed in CI - redirected to signin: ${currentUrl}`)
+        }
 
         // Check for unread message indicator
         const unreadBadge = page.locator('[data-testid="unread-badge"]')
