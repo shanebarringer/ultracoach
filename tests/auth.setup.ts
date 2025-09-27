@@ -31,8 +31,12 @@ const authFile = path.join(__dirname, '../playwright/.auth/runner.json')
 
 setup('authenticate', async ({ page, context }) => {
   logger.info('🔐 Starting runner authentication setup...')
+  logger.info(`📁 Auth file path: ${authFile}`)
 
-  const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
+  // Use consistent base URL across all environments
+  const baseUrl =
+    process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
+  logger.info(`🌐 Using base URL: ${baseUrl}`)
 
   // Health check before auth to avoid slow failures
   const hc = await waitForHealthyServer(baseUrl, page)
@@ -60,6 +64,8 @@ setup('authenticate', async ({ page, context }) => {
     },
     headers: {
       'Content-Type': 'application/json',
+      Origin: baseUrl, // Add origin header for proper cookie setting
+      Referer: `${baseUrl}/auth/signin`, // Add referer for cookie domain
     },
   })
 
@@ -74,6 +80,13 @@ setup('authenticate', async ({ page, context }) => {
 
   const authMs = Date.now() - t0
   logger.info('✅ Authentication API successful', { durationMs: authMs })
+
+  // Check if cookies were set
+  const cookies = await context.cookies()
+  logger.info(`🍪 Cookies after auth: ${cookies.length} cookies set`)
+  if (cookies.length > 0) {
+    logger.info(`🍪 First cookie: ${cookies[0].name} for domain ${cookies[0].domain}`)
+  }
 
   // The API call should have set cookies, now navigate to dashboard
   await page.goto(`${baseUrl}/dashboard/runner`)
@@ -111,4 +124,38 @@ setup('authenticate', async ({ page, context }) => {
   // Save the authentication state
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved runner authentication state to ${authFile}`)
+
+  // Verify the storage state file was created and contains cookies
+  if (fs) {
+    try {
+      const storageStateContent = fs.readFileSync(authFile, 'utf-8')
+      const storageState = JSON.parse(storageStateContent)
+      logger.info(`✅ Storage state file created with ${storageState.cookies?.length || 0} cookies`)
+
+      if (storageState.cookies?.length > 0) {
+        const firstCookie = storageState.cookies[0]
+        logger.info(`🍪 Storage state cookie: ${firstCookie.name} for ${firstCookie.domain}`)
+      } else {
+        logger.warn('⚠️ Storage state has no cookies!')
+      }
+    } catch (error) {
+      logger.error('❌ Failed to verify storage state file', error)
+    }
+  }
+
+  // Verify authentication actually works by opening a new page with the storage state
+  const verifyPage = await context.newPage()
+  await verifyPage.goto(`${baseUrl}/dashboard/runner`)
+  const verifyUrl = verifyPage.url()
+  const isAuthenticated = !verifyUrl.includes('/auth/signin')
+  logger.info(`🔐 Authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
+  logger.info(`📍 Verification URL: ${verifyUrl}`)
+
+  if (!isAuthenticated) {
+    logger.error('❌ Storage state was saved but authentication verification failed!')
+    throw new Error('Authentication verification failed - storage state may not be working')
+  }
+  await verifyPage.close()
+
+  logger.info('✅ Runner authentication setup complete and verified!')
 })

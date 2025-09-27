@@ -86,6 +86,29 @@ if (( errors > 0 )); then
   exit 1
 fi
 
+# Debug cookie information
+echo "[setup-ci-auth] Coach auth cookies details:"
+echo "  - Total cookies: $(jq '.cookies | length' "$COACH_FILE")"
+jq '.cookies[0] | {name, domain, path, httpOnly, secure}' "$COACH_FILE" 2>/dev/null || echo "  - No cookies found"
+
+echo "[setup-ci-auth] Runner auth cookies details:"
+echo "  - Total cookies: $(jq '.cookies | length' "$runner_path")"
+jq '.cookies[0] | {name, domain, path, httpOnly, secure}' "$runner_path" 2>/dev/null || echo "  - No cookies found"
+
+# Check for specific auth cookies
+echo "[setup-ci-auth] Checking for Better Auth session cookies:"
+if jq -e '.cookies[] | select(.name | contains("better-auth"))' "$COACH_FILE" >/dev/null 2>&1; then
+  echo "  - ✅ Coach has Better Auth cookie"
+else
+  echo "  - ⚠️ Coach missing Better Auth cookie"
+fi
+
+if jq -e '.cookies[] | select(.name | contains("better-auth"))' "$runner_path" >/dev/null 2>&1; then
+  echo "  - ✅ Runner has Better Auth cookie"
+else
+  echo "  - ⚠️ Runner missing Better Auth cookie"
+fi
+
 # Success summary
 echo "[setup-ci-auth] OK: Auth files valid in $AUTH_DIR"
 [[ "$runner_path" == "$RUNNER_FILE_ALIAS" ]] && echo "[setup-ci-auth] DEPRECATED: Detected legacy alias 'user.json' for runner auth.

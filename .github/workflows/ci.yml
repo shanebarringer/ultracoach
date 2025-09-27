@@ -317,8 +317,27 @@ jobs:
 
       - name: Run Playwright auth setup (runner and coach)
         run: |
+          echo "🔐 Running Playwright auth setup..."
           # Run only the auth setup projects to generate storageState files
           npx playwright test --project=setup --project=setup-coach --reporter=dot --max-failures=1
+
+          # Verify files were created and show details
+          echo "📁 Auth files created:"
+          ls -la playwright/.auth/ || echo "Auth directory not found"
+
+          if [ -f "playwright/.auth/runner.json" ]; then
+            echo "✅ Runner auth file size: $(wc -c < playwright/.auth/runner.json) bytes"
+            echo "Runner auth cookies: $(jq '.cookies | length' playwright/.auth/runner.json 2>/dev/null || echo 0)"
+          else
+            echo "❌ Runner auth file not found!"
+          fi
+
+          if [ -f "playwright/.auth/coach.json" ]; then
+            echo "✅ Coach auth file size: $(wc -c < playwright/.auth/coach.json) bytes"
+            echo "Coach auth cookies: $(jq '.cookies | length' playwright/.auth/coach.json 2>/dev/null || echo 0)"
+          else
+            echo "❌ Coach auth file not found!"
+          fi
         env:
           CI: true
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
@@ -326,6 +345,7 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
           NEXT_PUBLIC_BASE_URL: http://localhost:3001
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3001
           TEST_COACH_EMAIL: emma@ultracoach.dev
           TEST_COACH_PASSWORD: UltraCoach2025!
           TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
@@ -333,8 +353,26 @@ jobs:
 
       - name: Validate Playwright auth artifacts
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
+          echo "🔍 Validating Playwright auth artifacts..."
+          sudo apt-get update && sudo apt-get install -y jq >/dev/null 2>&1
+
+          # First verify files still exist
+          echo "📁 Checking auth files before validation:"
+          ls -la playwright/.auth/ 2>/dev/null || echo "Auth directory not found"
+
+          # Run validation script
           ./scripts/setup-ci-auth.sh
+
+          # Extra verification: Show cookie details
+          if [ -f "playwright/.auth/runner.json" ]; then
+            echo "🍪 Runner first cookie:"
+            jq '.cookies[0] | {name, domain, path}' playwright/.auth/runner.json 2>/dev/null || echo "No cookies"
+          fi
+
+          if [ -f "playwright/.auth/coach.json" ]; then
+            echo "🍪 Coach first cookie:"
+            jq '.cookies[0] | {name, domain, path}' playwright/.auth/coach.json 2>/dev/null || echo "No cookies"
+          fi
 
       - name: Verify app is ready before tests
         run: |
@@ -407,6 +445,7 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
           NEXT_PUBLIC_BASE_URL: http://localhost:3001
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3001
           TEST_COACH_EMAIL: emma@ultracoach.dev
           TEST_COACH_PASSWORD: UltraCoach2025!
           TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev
