@@ -246,7 +246,7 @@ test.describe('Chat Messaging System', () => {
                 // Modal still visible, try close button
                 const closeButton = modal
                   .locator('button')
-                  .filter({ hasText: /close|cancel|x/i })
+                  .filter({ hasText: /\b(close|cancel)\b|^x$/i })
                   .first()
                 if (await closeButton.isVisible().catch(() => false)) {
                   await closeButton.click()

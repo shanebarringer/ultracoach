@@ -91,9 +91,21 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   }
 
   if (clicked) {
-    // Wait for navigation to complete
+    // Wait for navigation to complete by checking URL change or ready state
     await page.waitForLoadState('domcontentloaded')
-    await page.waitForTimeout(process.env.CI ? 3000 : 2000) // Proper React hydration wait per Context7 docs (3000ms in CI)
+
+    // Wait for page to be interactive with content ready
+    await page.waitForFunction(
+      () => {
+        // Check if React has hydrated and essential elements are present
+        const body = document.body
+        const hasInteractiveElements =
+          document.querySelectorAll('button, a[href], input').length > 0
+        const hasMinimalContent = body && body.textContent && body.textContent.trim().length > 0
+        return hasInteractiveElements && hasMinimalContent
+      },
+      { timeout: process.env.CI ? 10000 : 5000 }
+    )
   }
 
   return clicked

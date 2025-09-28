@@ -96,8 +96,15 @@ export async function selectHeroUIOption(
   // Click to open dropdown
   await selectTrigger.click()
 
-  // Wait for dropdown animation
-  await page.waitForTimeout(500)
+  // Wait for dropdown to open by checking for visible options
+  await page
+    .waitForSelector('[role="option"], [data-key], [data-value]', {
+      state: 'visible',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // If no options appear, the dropdown might be empty or still loading
+    })
 
   // Look for option in portal (HeroUI renders dropdowns at body level)
   // Try multiple selector strategies
@@ -124,8 +131,15 @@ export async function selectHeroUIOption(
     throw new Error(`Could not select option: ${optionText.toString()}`)
   }
 
-  // Wait for dropdown to close
-  await page.waitForTimeout(300)
+  // Wait for dropdown to close by checking that options are no longer visible
+  await page
+    .waitForSelector('[role="option"], [data-key], [data-value]', {
+      state: 'hidden',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // Options might already be hidden or dropdown closed
+    })
 }
 
 /**
@@ -144,7 +158,7 @@ export async function clickButtonWithRetry(
       // Try multiple selector strategies
       const buttonSelectors = [
         page.getByRole('button', { name: buttonText }),
-        page.locator(`button:has-text("${buttonText}")`),
+        page.locator('button').filter({ hasText: buttonText }),
         page.getByText(buttonText).locator('..').filter({ hasText: buttonText }),
       ]
 
@@ -222,8 +236,15 @@ export async function selectHeroUIDropdownOption(
   await trigger.waitFor({ state: 'visible' })
   await trigger.click()
 
-  // Wait for menu animation
-  await page.waitForTimeout(300)
+  // Wait for menu to open by checking for visible menu items
+  await page
+    .waitForSelector('[role="menuitem"]', {
+      state: 'visible',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // Menu might be empty or still loading
+    })
 
   // Click option in dropdown menu
   const option = page
@@ -291,8 +312,15 @@ export async function closeModal(page: Page) {
   for (const strategy of closeStrategies) {
     try {
       await strategy()
-      // Wait for modal to close
-      await page.waitForTimeout(300)
+      // Wait for modal to close by checking if dialog is no longer visible
+      await page
+        .waitForSelector('[role="dialog"]', {
+          state: 'hidden',
+          timeout: 2000,
+        })
+        .catch(() => {
+          // Modal might already be closed
+        })
       if (!(await isModalOpen(page))) {
         return
       }

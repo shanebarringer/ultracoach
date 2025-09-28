@@ -176,11 +176,12 @@ test.describe('Race Import Flow', () => {
     // Wait for file processing to complete using Suspense-aware helper
     await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000, logger)
 
-    // Wait for parsing to complete - directly assert no parse errors
-    const parseError = page.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i).first()
-    await expect(parseError).not.toBeVisible({ timeout: 5000 })
-
-    // If parse error is visible, the test will fail with clear error message
+    // Wait for parsing to complete - scope error detection to the dialog
+    const modal = page.locator('[role="dialog"]')
+    const parseError = modal
+      .locator('.error-message, [data-testid="parse-error"]')
+      .or(modal.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i))
+    await expect(parseError).toHaveCount(0)
 
     // If no error, wait for the race data to appear in the preview using specific testid
     const raceElement = page.getByTestId('race-name-0')
@@ -411,7 +412,8 @@ test.describe('Race Import Flow', () => {
     }
 
     if (successSignal === 'message') {
-      await page.waitForTimeout(1000)
+      // Wait for toast to hide instead of fixed sleep
+      await expect(page.locator('.toast')).toBeHidden({ timeout: 5000 })
     }
 
     const isModalVisible = await modal.isVisible().catch(() => false)

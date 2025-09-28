@@ -316,45 +316,46 @@ test.describe('Workout Management', () => {
       const initialPlannedCount = await plannedWorkouts.count()
       const initialCompletedCount = await completedWorkouts.count()
 
-      if (initialPlannedCount > 0) {
-        const workoutToComplete = plannedWorkouts.first()
-        const workoutId = await workoutToComplete.getAttribute('data-workout-id')
-        if (!workoutId) throw new Error('Workout card missing data-workout-id')
-
-        // Mark workout as complete
-        const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
-
-        // Try to click the mark complete button
-        try {
-          await clickWhenReady(markCompleteButton, 5000)
-        } catch {
-          // Button didn't appear; skip
-          return
-        }
-
-        // Handle any confirmation modal using role-based selector
-        try {
-          const modal = page.locator('[role="dialog"], [data-testid="modal"]').last()
-          await clickWhenReady(modal.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
-        } catch {
-          // No confirmation modal appeared
-        }
-
-        // UI should update immediately without page refresh
-        // Wait for the UI to reflect the status change
-
-        // Check that workout status changed immediately
-        if (workoutId) {
-          const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
-          await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
-            timeout: 5000,
-          })
-        }
-
-        // Counts should update immediately - use toHaveCount for auto-waiting
-        await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
-        await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
+      if (initialPlannedCount === 0) {
+        test.skip(true, 'No planned workouts available to mark complete')
       }
+
+      const workoutToComplete = plannedWorkouts.first()
+      const workoutId = await workoutToComplete.getAttribute('data-workout-id')
+      if (!workoutId) throw new Error('Workout card missing data-workout-id')
+
+      // Mark workout as complete
+      const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
+
+      // Click the mark complete button
+      try {
+        await clickWhenReady(markCompleteButton, 5000)
+      } catch {
+        throw new Error('Mark Complete button did not become actionable within 5s')
+      }
+
+      // Handle any confirmation modal using role-based selector
+      try {
+        const modal = page.locator('[role="dialog"], [data-testid="modal"]').last()
+        await clickWhenReady(modal.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
+      } catch {
+        // No confirmation modal appeared
+      }
+
+      // UI should update immediately without page refresh
+      // Wait for the UI to reflect the status change
+
+      // Check that workout status changed immediately
+      if (workoutId) {
+        const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+        await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
+          timeout: 5000,
+        })
+      }
+
+      // Counts should update immediately - use toHaveCount for auto-waiting
+      await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
+      await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
     })
 
     test('should show workout changes without requiring page refresh', async ({ page }) => {
@@ -389,9 +390,12 @@ test.describe('Workout Management', () => {
       // At minimum, the same workouts should appear (no data loss from background activity)
       expect(updatedCount).toBeGreaterThanOrEqual(initialCount)
 
-      // No indefinite loading states
+      // No indefinite loading states - check that loader is hidden or absent
       const loadingSpinner = page.getByTestId('loading')
-      await expect(loadingSpinner).not.toBeVisible({ timeout: 3000 })
+      const spinnerCount = await loadingSpinner.count()
+      if (spinnerCount > 0) {
+        await expect(loadingSpinner).toBeHidden()
+      }
     })
 
     test('should display workouts immediately on first page load', async ({ page }) => {
@@ -408,8 +412,12 @@ test.describe('Workout Management', () => {
         await expect(
           page.getByTestId('workout-card').or(page.getByTestId('empty-workouts'))
         ).toBeVisible({ timeout: 8000 })
-      } catch {
-        // If neither appears quickly, check what's on the page
+      } catch (error) {
+        // Provide diagnostic info if content doesn't appear
+        const pageContent = await page.textContent('main, body')
+        throw new Error(
+          `Expected workout cards or empty state but found: ${pageContent?.slice(0, 200)}...`
+        )
       }
 
       const loadTime = Date.now() - startTime
