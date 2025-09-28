@@ -17,6 +17,43 @@ export const apiClient = axios.create({
   timeout: 10000, // 10 seconds
 })
 
+// Helper to determine if a request is targeting our own Next.js API routes
+// Only runs on the client (window available). On the server it returns false.
+function isSameOriginApiRequest(url?: string, baseURL?: string): boolean {
+  if (!url || typeof window === 'undefined') return false
+  try {
+    const origin = window.location.origin
+
+    // Support absolute and relative baseURL values
+    let abs: URL
+    if (baseURL) {
+      const absBase = /^https?:\/\//i.test(baseURL)
+        ? baseURL
+        : `${origin}${baseURL.startsWith('/') ? '' : '/'}${baseURL}`
+      abs = new URL(url, absBase)
+    } else {
+      abs = new URL(url, origin)
+    }
+
+    const sameOrigin = abs.origin === origin
+    const path = abs.pathname
+    const isApiPath = path === '/api' || path.startsWith('/api/')
+    return sameOrigin && isApiPath
+  } catch {
+    // Malformed URL or unsupported environment
+    return false
+  }
+}
+
+// Request interceptor: automatically send cookies for same-origin /api/* calls
+apiClient.interceptors.request.use(config => {
+  // Respect explicit per-request settings; otherwise, set for same-origin API calls
+  if (config.withCredentials == null && isSameOriginApiRequest(config.url, config.baseURL)) {
+    config.withCredentials = true
+  }
+  return config
+})
+
 // Add a per-request suppression flag for global error toasts
 export type ApiRequestConfig = AxiosRequestConfig & {
   suppressGlobalErrorToast?: boolean
