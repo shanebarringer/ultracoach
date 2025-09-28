@@ -11,11 +11,6 @@ import { label } from '../utils/reporting'
 import { TEST_USERS } from '../utils/test-helpers'
 import { clickWhenReady } from '../utils/wait-helpers'
 
-// Helper function to wait for page to be ready
-function waitForPageReady(page: Page): Promise<void> {
-  return page.waitForLoadState('domcontentloaded')
-}
-
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })

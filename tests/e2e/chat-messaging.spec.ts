@@ -193,7 +193,7 @@ test.describe('Chat Messaging System', () => {
         const hasConversations =
           (await page.locator('[data-testid="conversation-item"]').count()) > 0
         const emptyStateVisible = await page
-          .getByText(/no expedition communications yet/i)
+          .getByTestId('messages-empty-state')
           .isVisible()
           .catch(() => false)
 
@@ -205,15 +205,14 @@ test.describe('Chat Messaging System', () => {
           await expect(startButton).toBeVisible({ timeout: 5000 })
           await startButton.click()
 
-          // Wait for modal to open
-          await page.waitForTimeout(1000)
+          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
 
           // Check if we need to select a coach
           const selectCoach = page.getByRole('combobox', { name: /select.*coach/i })
           try {
             await expect(selectCoach).toBeVisible({ timeout: 2000 })
             await selectCoach.click()
-            await page.waitForTimeout(500)
+            await expect(page.getByRole('option')).toBeVisible({ timeout: 2000 })
 
             // Select first available coach
             const coachOption = page.getByRole('option').first()
@@ -228,8 +227,7 @@ test.describe('Chat Messaging System', () => {
           }
 
           // Try different approaches to get chat window visible
-          // First wait a bit for any modal actions to complete
-          await page.waitForTimeout(1000)
+          await expect(page.locator('[role="dialog"]')).toBeHidden({ timeout: 5000 })
 
           // Option 1: Check if chat window is already visible (modal may have auto-closed)
           const chatWindow = page.locator('[data-testid="chat-window"]')
@@ -241,17 +239,18 @@ test.describe('Chat Messaging System', () => {
             if (await modal.isVisible().catch(() => false)) {
               // Try ESC key first
               await page.keyboard.press('Escape')
-              await page.waitForTimeout(500)
 
-              // If still visible, try close button
-              if (await modal.isVisible().catch(() => false)) {
+              try {
+                await expect(modal).toBeHidden({ timeout: 2000 })
+              } catch {
+                // Modal still visible, try close button
                 const closeButton = modal
                   .locator('button')
                   .filter({ hasText: /close|cancel|x/i })
                   .first()
                 if (await closeButton.isVisible().catch(() => false)) {
                   await closeButton.click()
-                  await page.waitForTimeout(500)
+                  await expect(modal).toBeHidden({ timeout: 2000 })
                 }
               }
             }
@@ -260,7 +259,7 @@ test.describe('Chat Messaging System', () => {
             const conversationItem = page.locator('[data-testid="conversation-item"]').first()
             if (await conversationItem.isVisible({ timeout: 2000 }).catch(() => false)) {
               await conversationItem.click()
-              await page.waitForTimeout(1000)
+              await expect(chatWindow).toBeVisible({ timeout: 5000 })
             }
           }
 
@@ -289,11 +288,13 @@ test.describe('Chat Messaging System', () => {
           await sendButton.click()
 
           // Wait for conversation to be created
-          await page.waitForTimeout(2000)
+          await expect(page.locator('[data-testid="conversation-item"]')).toBeVisible({
+            timeout: 5000,
+          })
         } else {
           // Open existing conversation
           await page.locator('[data-testid="conversation-item"]').first().click()
-          await page.waitForTimeout(1000)
+          await expect(page.locator('[data-testid="chat-window"]')).toBeVisible({ timeout: 5000 })
         }
 
         // Now send a test message in the active conversation

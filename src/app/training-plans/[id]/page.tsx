@@ -22,7 +22,7 @@ import {
   UserIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -82,6 +82,8 @@ export default function TrainingPlanDetailPage() {
     next_plan?: TrainingPlan
   }>({})
 
+  const didInitialWorkoutRefresh = useRef(false)
+
   // Derive loading state
   const loading = allTrainingPlans.length === 0 || (planId && !trainingPlan)
 
@@ -98,46 +100,39 @@ export default function TrainingPlanDetailPage() {
     if (!session?.user?.id || !planId || !trainingPlan) return
 
     try {
-      // Fetch plan phases
-      try {
-        const { data: phasesData } = await api.get<{ plan_phases?: PlanPhase[] }>(
-          `/api/training-plans/${planId}/phases`
-        )
+      const [phasesRes, prevRes, nextRes] = await Promise.allSettled([
+        api.get<{ plan_phases?: PlanPhase[] }>(`/api/training-plans/${planId}/phases`),
+        trainingPlan.previous_plan_id
+          ? api.get<{ trainingPlan: TrainingPlan }>(
+              `/api/training-plans/${trainingPlan.previous_plan_id}`
+            )
+          : Promise.resolve(null),
+        trainingPlan.next_plan_id
+          ? api.get<{ trainingPlan: TrainingPlan }>(
+              `/api/training-plans/${trainingPlan.next_plan_id}`
+            )
+          : Promise.resolve(null),
+      ])
+
+      if (phasesRes !== null && phasesRes.status === 'fulfilled') {
         setExtendedPlanData(prev => ({
           ...prev,
-          plan_phases: phasesData.plan_phases || [],
+          plan_phases: phasesRes.value.data.plan_phases || [],
         }))
-      } catch (error) {
-        logger.error('Failed to fetch plan phases', { error })
+      } else if (phasesRes && phasesRes.status === 'rejected') {
+        logger.error('Failed to fetch plan phases', { error: phasesRes.reason })
       }
 
-      // Fetch previous and next plans if they exist
-      if (trainingPlan.previous_plan_id) {
-        try {
-          const { data: prevPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
-            `/api/training-plans/${trainingPlan.previous_plan_id}`
-          )
-          setExtendedPlanData(prev => ({
-            ...prev,
-            previous_plan: prevPlanData.trainingPlan,
-          }))
-        } catch (error) {
-          logger.error('Failed to fetch previous plan', { error })
-        }
+      if (prevRes && prevRes !== null && prevRes.status === 'fulfilled' && prevRes.value !== null) {
+        setExtendedPlanData(prev => ({ ...prev, previous_plan: prevRes.value!.data.trainingPlan }))
+      } else if (prevRes && prevRes.status === 'rejected') {
+        logger.error('Failed to fetch previous plan', { error: prevRes.reason })
       }
 
-      if (trainingPlan.next_plan_id) {
-        try {
-          const { data: nextPlanData } = await api.get<{ trainingPlan: TrainingPlan }>(
-            `/api/training-plans/${trainingPlan.next_plan_id}`
-          )
-          setExtendedPlanData(prev => ({
-            ...prev,
-            next_plan: nextPlanData.trainingPlan,
-          }))
-        } catch (error) {
-          logger.error('Failed to fetch next plan', { error })
-        }
+      if (nextRes && nextRes !== null && nextRes.status === 'fulfilled' && nextRes.value !== null) {
+        setExtendedPlanData(prev => ({ ...prev, next_plan: nextRes.value!.data.trainingPlan }))
+      } else if (nextRes && nextRes.status === 'rejected') {
+        logger.error('Failed to fetch next plan', { error: nextRes.reason })
       }
     } catch (error) {
       logger.error('Error fetching extended plan data', { error })
@@ -153,7 +148,10 @@ export default function TrainingPlanDetailPage() {
     }
 
     // Trigger workout refresh when component mounts
-    refreshWorkouts()
+    if (!didInitialWorkoutRefresh.current) {
+      refreshWorkouts()
+      didInitialWorkoutRefresh.current = true
+    }
 
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
@@ -205,9 +203,11 @@ export default function TrainingPlanDetailPage() {
     try {
       await api.delete(`/api/training-plans/${planId}`)
       commonToasts.trainingPlanDeleted()
-      // Refresh both training plans and workouts cache after deletion
-      refreshTrainingPlans()
-      await refreshWorkouts()
+      // Refresh both caches, then navigate
+      await Promise.all([
+        Promise.resolve(refreshTrainingPlans()),
+        Promise.resolve(refreshWorkouts()),
+      ])
       router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })
@@ -321,7 +321,10 @@ export default function TrainingPlanDetailPage() {
     return { grouped, ungrouped }
   }, [extendedTrainingPlan, workouts])
 
-  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = groupWorkoutsByPhase()
+  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = useMemo(
+    () => groupWorkoutsByPhase(),
+    [groupWorkoutsByPhase]
+  )
 
   const getWorkoutStatusColor = (status: string) => {
     switch (status) {

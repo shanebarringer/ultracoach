@@ -81,8 +81,10 @@ setup('authenticate', async ({ page, context }) => {
   const authMs = Date.now() - t0
   logger.info('✅ Authentication API successful', { durationMs: authMs })
 
-  // Small wait to ensure cookies are properly set in context
-  await page.waitForTimeout(500)
+  // Wait until at least one cookie is set in the authenticated context
+  await expect
+    .poll(async () => (await context.cookies()).length, { timeout: 3000 })
+    .toBeGreaterThan(0)
 
   // Check if cookies were set
   const cookies = await context.cookies()

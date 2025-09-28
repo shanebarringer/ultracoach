@@ -24,13 +24,6 @@ test.describe('Session Persistence', () => {
       // Navigate to dashboard
       await navigateToDashboard(page, 'runner')
 
-      // Get user info before refresh
-      const userElement = page.locator('[data-testid="user-name"], .user-name')
-      let userName = ''
-      if (await userElement.isVisible()) {
-        userName = (await userElement.textContent()) || ''
-      }
-
       // Refresh multiple times
       for (let i = 0; i < 3; i++) {
         await page.reload()
@@ -89,8 +82,8 @@ test.describe('Session Persistence', () => {
       await expect(page).not.toHaveURL('/auth/signin')
 
       // Calendar should load
-      const calendarTitle = page.locator('h1').filter({ hasText: /calendar/i })
-      await expect(calendarTitle.first()).toBeVisible({ timeout: 10000 })
+      const calendarHeading = page.getByRole('heading', { name: /calendar/i })
+      await expect(calendarHeading).toBeVisible({ timeout: 10000 })
     })
   })
 
@@ -201,7 +194,7 @@ test.describe('Session Persistence', () => {
         const currentPathname = new URL(currentUrl).pathname
 
         // At minimum, should not be on the protected route without auth
-        if (currentUrl === new URL(route, page.url()).href) {
+        if (currentPathname === route) {
           // If still on protected route, check if it shows signin form or redirect
           const signinForm = page.locator('form, input[type="email"]')
           try {
@@ -211,7 +204,7 @@ test.describe('Session Persistence', () => {
           }
         } else {
           // When redirected, explicitly assert the pathname is a valid redirect target
-          expect(currentPathname === '/auth/signin' || currentPathname === '/').toBe(true)
+          expect(['/auth/signin', '/'].includes(currentPathname)).toBe(true)
         }
       }
     })
@@ -288,11 +281,10 @@ test.describe('Session Persistence', () => {
       for (const selector of userMenuSelectors) {
         try {
           const element = page.locator(selector).first()
-          if (await element.isVisible({ timeout: 2000 })) {
-            await element.click({ timeout: 5000 })
-            clicked = true
-            break
-          }
+          await expect(element).toBeVisible({ timeout: 2000 })
+          await element.click({ timeout: 5000 })
+          clicked = true
+          break
         } catch {
           continue
         }
@@ -319,8 +311,7 @@ test.describe('Session Persistence', () => {
       await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(2000) // Allow for redirects
 
-      const finalUrl = page.url()
-      expect(finalUrl).not.toBe(new URL('/dashboard/runner', page.url()).href)
+      await expect(page).not.toHaveURL('/dashboard/runner')
     })
   })
 
