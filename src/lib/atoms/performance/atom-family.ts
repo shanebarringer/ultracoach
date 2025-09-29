@@ -9,6 +9,7 @@
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
+import { withDebugLabel } from '@/lib/atoms/utils'
 import type { TrainingPlan, Workout } from '@/lib/supabase'
 
 import { trainingPlansAtom } from '../training-plans'
@@ -38,8 +39,7 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       set(workoutAtomFamily(workoutId), newWorkout)
     }
   )
-  a.debugLabel = `family/workout/${workoutId}`
-  return a
+  return withDebugLabel(a, `family/workout/${workoutId}`)
 })
 
 /**
@@ -65,8 +65,7 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       set(trainingPlanAtomFamily(planId), newPlan)
     }
   )
-  a.debugLabel = `family/trainingPlan/${planId}`
-  return a
+  return withDebugLabel(a, `family/trainingPlan/${planId}`)
 })
 
 /**
@@ -79,9 +78,7 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
  * ```
  */
 export const conversationMessageCountFamily = atomFamily((_conversationId: string) => {
-  const a = atom(0)
-  a.debugLabel = `family/conversationMessageCount/${_conversationId}`
-  return a
+  return withDebugLabel(atom(0), `family/conversationMessageCount/${_conversationId}`)
 })
 
 /**
@@ -95,11 +92,8 @@ export const conversationMessageCountFamily = atomFamily((_conversationId: strin
  * ```
  */
 export const formFieldAtomFamily = atomFamily(
-  ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) => {
-    const a = atom('')
-    a.debugLabel = `family/formField/${_formId}/${_fieldName}`
-    return a
-  }
+  ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) =>
+    withDebugLabel(atom(''), `family/formField/${_formId}/${_fieldName}`)
 )
 
 /**
@@ -112,11 +106,9 @@ export const formFieldAtomFamily = atomFamily(
  * // Clean up: loadingStateFamily.remove('fetch-user-data')
  * ```
  */
-export const loadingStateFamily = atomFamily((_operationId: string) => {
-  const a = atom(false)
-  a.debugLabel = `family/loadingState/${_operationId}`
-  return a
-})
+export const loadingStateFamily = atomFamily((_operationId: string) =>
+  withDebugLabel(atom(false), `family/loadingState/${_operationId}`)
+)
 
 /**
  * Error state family for async operations
@@ -128,11 +120,9 @@ export const loadingStateFamily = atomFamily((_operationId: string) => {
  * // Clean up: errorStateFamily.remove('fetch-user-data')
  * ```
  */
-export const errorStateFamily = atomFamily((_operationId: string) => {
-  const a = atom<string | null>(null)
-  a.debugLabel = `family/errorState/${_operationId}`
-  return a
-})
+export const errorStateFamily = atomFamily((_operationId: string) =>
+  withDebugLabel(atom<string | null>(null), `family/errorState/${_operationId}`)
+)
 
 // Note: Removed messagesByConversationLoadableFamily
 // Messages are now filtered from the global messagesAtom using derived atoms

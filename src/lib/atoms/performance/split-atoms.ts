@@ -2,50 +2,48 @@
 import { atom } from 'jotai'
 import { splitAtom } from 'jotai/utils'
 
+import { withDebugLabel } from '@/lib/atoms/utils'
 import type { ConversationWithUser, Notification, Workout } from '@/lib/supabase'
 
 // Base atoms that will be split
-const workoutsBaseAtom = atom<Workout[]>([])
-const conversationsBaseAtom = atom<ConversationWithUser[]>([])
-const notificationsBaseAtom = atom<Notification[]>([])
+const workoutsBaseAtom = withDebugLabel(atom<Workout[]>([]), 'split/workoutsBase')
+const conversationsBaseAtom = withDebugLabel(
+  atom<ConversationWithUser[]>([]),
+  'split/conversationsBase'
+)
+const notificationsBaseAtom = withDebugLabel(atom<Notification[]>([]), 'split/notificationsBase')
 
 // Split atoms for efficient list operations
-export const workoutsSplitAtom = splitAtom(workoutsBaseAtom)
-export const conversationsSplitAtom = splitAtom(conversationsBaseAtom)
-export const notificationsSplitAtom = splitAtom(notificationsBaseAtom)
-
-// Helper atoms for managing split atoms
-export const addWorkoutAtom = atom(null, (_get, set, workout: Workout) => {
-  set(workoutsBaseAtom, prev => [...prev, workout])
-})
-
-export const removeWorkoutAtom = atom(null, (_get, set, workoutId: string) => {
-  set(workoutsBaseAtom, prev => prev.filter(w => w.id !== workoutId))
-})
-
-export const updateWorkoutAtom = atom(
-  null,
-  (_get, set, { id, updates }: { id: string; updates: Partial<Workout> }) => {
-    set(workoutsBaseAtom, prev => prev.map(w => (w.id === id ? { ...w, ...updates } : w)))
-  }
+export const workoutsSplitAtom = withDebugLabel(splitAtom(workoutsBaseAtom), 'split/workoutsSplit')
+export const conversationsSplitAtom = withDebugLabel(
+  splitAtom(conversationsBaseAtom),
+  'split/conversationsSplit'
+)
+export const notificationsSplitAtom = withDebugLabel(
+  splitAtom(notificationsBaseAtom),
+  'split/notificationsSplit'
 )
 
-// Jotai Devtools debug labels
-// Base atoms (module-local)
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-workoutsBaseAtom.debugLabel = 'split/workoutsBase'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-conversationsBaseAtom.debugLabel = 'split/conversationsBase'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-notificationsBaseAtom.debugLabel = 'split/notificationsBase'
+// Helper atoms for managing split atoms
+export const addWorkoutAtom = withDebugLabel(
+  atom(null, (_get, set, workout: Workout) => {
+    set(workoutsBaseAtom, prev => [...prev, workout])
+  }),
+  'split/addWorkoutAction'
+)
 
-// Exported split and helper atoms
-workoutsSplitAtom.debugLabel = 'split/workoutsSplit'
-conversationsSplitAtom.debugLabel = 'split/conversationsSplit'
-notificationsSplitAtom.debugLabel = 'split/notificationsSplit'
-addWorkoutAtom.debugLabel = 'split/addWorkoutAction'
-removeWorkoutAtom.debugLabel = 'split/removeWorkoutAction'
-updateWorkoutAtom.debugLabel = 'split/updateWorkoutAction'
+export const removeWorkoutAtom = withDebugLabel(
+  atom(null, (_get, set, workoutId: string) => {
+    set(workoutsBaseAtom, prev => prev.filter(w => w.id !== workoutId))
+  }),
+  'split/removeWorkoutAction'
+)
+
+export const updateWorkoutAtom = withDebugLabel(
+  atom(null, (_get, set, { id, updates }: { id: string; updates: Partial<Workout> }) => {
+    set(workoutsBaseAtom, prev => prev.map(w => (w.id === id ? { ...w, ...updates } : w)))
+  }),
+  'split/updateWorkoutAction'
+)
+
+// Jotai Devtools debug labels are applied via withDebugLabel at instantiation
