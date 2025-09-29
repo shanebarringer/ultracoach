@@ -6,6 +6,7 @@ import type { OptimisticMessage, Workout } from '@/lib/supabase'
 import type { Conversation } from '@/types/chat'
 
 import { sessionAtom } from './auth'
+import { withDebugLabel } from './utils'
 
 // Message input interface
 interface MessageInput {
@@ -216,6 +217,8 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -227,7 +230,8 @@ export const sendMessageActionAtom = atom(
           workoutId: payload.workoutId,
         }),
         credentials: 'same-origin',
-      })
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout))
 
       if (!response.ok) {
         throw new Error('Failed to send message')
@@ -273,3 +277,26 @@ export const sendMessageActionAtom = atom(
     }
   }
 )
+
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(conversationsAtom, 'chat/conversations')
+withDebugLabel(messagesAtom, 'chat/messages')
+withDebugLabel(conversationsLoadingAtom, 'chat/conversationsLoading')
+withDebugLabel(messagesLoadingAtom, 'chat/messagesLoading')
+withDebugLabel(asyncConversationsAtom, 'chat/asyncConversations')
+withDebugLabel(selectedConversationAtom, 'chat/selectedConversation')
+withDebugLabel(selectedConversationIdAtom, 'chat/selectedConversationId')
+withDebugLabel(typingIndicatorAtom, 'chat/typingIndicator')
+withDebugLabel(unreadMessagesCountAtom, 'chat/unreadMessagesCount')
+withDebugLabel(isTypingAtom, 'chat/isTyping')
+withDebugLabel(chatSoundEnabledAtom, 'chat/soundEnabled')
+withDebugLabel(chatNotificationsEnabledAtom, 'chat/notificationsEnabled')
+withDebugLabel(currentConversationIdAtom, 'chat/currentConversationId')
+withDebugLabel(messageInputAtom, 'chat/messageInput')
+withDebugLabel(chatUiStateAtom, 'chat/uiState')
+withDebugLabel(messageInputStateAtom, 'chat/messageInputState')
+withDebugLabel(newMessageModalAtom, 'chat/newMessageModal')
+withDebugLabel(typingStatusAtom, 'chat/typingStatus')
+withDebugLabel(offlineMessageQueueAtom, 'chat/offlineQueue')
+withDebugLabel(selectedRecipientAtom, 'chat/selectedRecipient')
+withDebugLabel(sendMessageActionAtom, 'chat/sendMessageAction')
