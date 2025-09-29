@@ -377,17 +377,8 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only
-      try {
-        const session = await authClient.getSession()
-        if (session?.data?.user?.id) {
-          workoutsCache.delete(session.data.user.id)
-        } else {
-          workoutsCache.clear()
-        }
-      } catch {
-        workoutsCache.clear()
-      }
+      // Invalidate current user's cache only (DRY helper)
+      await invalidateUserWorkoutsCache()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -480,17 +471,8 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only
-      try {
-        const session = await authClient.getSession()
-        if (session?.data?.user?.id) {
-          workoutsCache.delete(session.data.user.id)
-        } else {
-          workoutsCache.clear()
-        }
-      } catch {
-        workoutsCache.clear()
-      }
+      // Invalidate current user's cache only (DRY helper)
+      await invalidateUserWorkoutsCache()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
