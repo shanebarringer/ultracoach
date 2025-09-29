@@ -94,6 +94,7 @@ describe('Messaging Atoms', () => {
             recipientId: 'recipient-id',
           }),
           credentials: 'same-origin',
+          signal: expect.any(AbortSignal),
         })
       )
 
@@ -203,6 +204,7 @@ describe('Messaging Atoms', () => {
             workoutId: 'workout-123',
           }),
           credentials: 'same-origin',
+          signal: expect.any(AbortSignal),
         })
       )
     })
