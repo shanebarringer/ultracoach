@@ -84,18 +84,15 @@ describe('Messaging Atoms', () => {
       })
 
       // Verify fetch was called correctly
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/messages',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Test message',
-            recipientId: 'recipient-id',
-          }),
-          credentials: 'same-origin',
-        })
-      )
+      expect(mockFetch).toHaveBeenCalledWith('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: 'Test message',
+          recipientId: 'recipient-id',
+        }),
+        credentials: 'same-origin',
+      })
 
       // Verify message was added to store
       const messages = store.get(messagesAtom)
@@ -192,19 +189,16 @@ describe('Messaging Atoms', () => {
         workoutId: 'workout-123',
       })
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/messages',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Test message',
-            recipientId: 'recipient-id',
-            workoutId: 'workout-123',
-          }),
-          credentials: 'same-origin',
-        })
-      )
+      expect(mockFetch).toHaveBeenCalledWith('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: 'Test message',
+          recipientId: 'recipient-id',
+          workoutId: 'workout-123',
+        }),
+        credentials: 'same-origin',
+      })
     })
 
     it('should handle network errors', async () => {

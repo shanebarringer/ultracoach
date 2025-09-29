@@ -6,12 +6,14 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { label } from '../utils/reporting'
 import {
   TEST_COACH_EMAIL,
   TEST_COACH_PASSWORD,
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
 } from '../utils/test-helpers'
+import { clickWhenReady, waitForFormReady } from '../utils/wait-helpers'
 
 test.describe('Authentication Flows with Jotai Atoms', () => {
   test.beforeEach(async ({ page }) => {
@@ -62,7 +64,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Verify fields are filled
     await expect(nameInput).toHaveValue(testName)
     await expect(emailInput).toHaveValue(testEmail)
-    await expect(passwordInput).toHaveValue('TestPassword123!')
+    // Avoid asserting on raw password values in reports; verify input type instead
+    await expect(passwordInput).toHaveAttribute('type', 'password')
 
     // The form defaults to 'runner' role, so we can skip selecting it
 
@@ -104,15 +107,13 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   })
 
   test('should complete sign in flow and update session atom', async ({ page }) => {
+    label(test.info(), 'auth')
     // Navigate directly to signin page
     await page.goto('/auth/signin')
     await page.waitForLoadState('domcontentloaded')
 
-    // Wait for React to hydrate and form to be interactive
-    await page.waitForTimeout(2000)
-
-    // Wait for form to be visible
-    await page.waitForSelector('form', { state: 'visible', timeout: 10000 })
+    // Wait for form to be visible and interactive
+    await waitForFormReady(page, 10000)
     await expect(page).toHaveURL('/auth/signin')
 
     // Use existing test credentials - using id selectors
@@ -124,10 +125,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Ensure values are filled
     await expect(emailInput).toHaveValue(TEST_RUNNER_EMAIL)
-    await expect(passwordInput).toHaveValue(TEST_RUNNER_PASSWORD)
+    // Avoid echoing sensitive values in test artifacts
+    await expect(passwordInput).toHaveAttribute('type', 'password')
 
-    // Submit form using the button click (more reliable for React forms)
-    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
+    // Submit form using reliable click helper
+    const submitButton = page.getByRole('button', { name: /Begin Your Expedition/i })
+    await clickWhenReady(submitButton)
 
     // Wait for successful redirect to dashboard
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
@@ -156,9 +159,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
   test('should handle sign out and clear auth atoms', async ({ page }) => {
     // First sign in
     await page.goto('/auth/signin')
-    await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
-    await page.getByLabel(/password/i).fill(TEST_RUNNER_PASSWORD)
-    await page.getByRole('button', { name: /Begin Your Expedition/i }).click()
+    await waitForFormReady(page, 10000)
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
+    await clickWhenReady(page.getByRole('button', { name: /Begin Your Expedition/i }))
 
     // Wait for dashboard redirect and content to load
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
@@ -178,8 +182,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(dashboardElement).toBeVisible({ timeout: 10000 })
 
     // Open user menu and sign out - using the avatar button
-    await page.getByRole('img', { name: 'Alex Rivera' }).click()
-    await page.getByRole('menuitem', { name: /sign out/i }).click()
+    await clickWhenReady(page.getByRole('img', { name: 'Alex Rivera' }))
+    await clickWhenReady(page.getByRole('menuitem', { name: /sign out/i }))
 
     // Should redirect to home page
     await expect(page).toHaveURL('/')
@@ -283,6 +287,66 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Form should still be visible and usable
     await expect(page.getByRole('button', { name: /Begin Your Expedition/i })).toBeVisible()
+  })
+
+  test('should handle password hash compatibility issues', async ({ page }) => {
+    label(test.info(), 'auth')
+    // This test validates that the Better Auth password hash fix is working
+    // Previously, users with bcrypt hashes couldn't log in due to incompatibility
+
+    // Navigate to signin
+    await page.goto('/auth/signin')
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForSelector('form', { state: 'visible' })
+
+    // Test with a user that should have compatible Better Auth password hash
+    await page.locator('input[type="email"]').fill(TEST_RUNNER_EMAIL)
+    await page.locator('input[type="password"]').fill(TEST_RUNNER_PASSWORD)
+    await page.locator('input[type="password"]').press('Enter')
+
+    // Should successfully authenticate (not show "User not found" error)
+    await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
+    await expect(page).toHaveURL('/dashboard/runner')
+
+    // Should not show Better Auth specific errors
+    await expect(
+      page.locator('text=/hex string expected|User not found|Invalid password/i')
+    ).toHaveCount(0)
+  })
+
+  test('should detect authentication system failures early', async ({ page }) => {
+    // This test ensures the authentication system is working at a basic level
+    // Would catch major Better Auth configuration issues
+
+    // Capture critical errors as early as possible
+    const logs: string[] = []
+    page.on('console', msg => {
+      if (msg.type() === 'error') logs.push(msg.text())
+    })
+    page.on('pageerror', err => {
+      logs.push(err.message ?? String(err))
+    })
+
+    // Navigate to signin page
+    await page.goto('/auth/signin')
+    await page.waitForLoadState('domcontentloaded')
+
+    // Form should be rendered (indicates Better Auth endpoints are working)
+    await waitForFormReady(page, 10000)
+
+    // Fill form but don't submit - just test auth system initialization
+    await page.locator('input[type="email"]').fill('test@example.com')
+    await page.locator('input[type="password"]').fill('password123')
+
+    // Briefly wait to surface any init errors without slowing the suite
+    await page.waitForTimeout(500)
+
+    // Check for critical auth system failures
+    const criticalErrors = logs.filter(log =>
+      /Better Auth|hex string expected|Authentication failed to initialize/i.test(log)
+    )
+
+    expect(criticalErrors).toHaveLength(0)
   })
 
   test('should redirect to originally requested page after auth', async ({ page }) => {
