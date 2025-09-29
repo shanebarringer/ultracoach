@@ -23,20 +23,23 @@ export default defineConfig({
   /* Limited workers for CI balance of speed vs stability */
   workers: process.env.CI ? 2 : undefined, // CI: 2 workers for better performance, Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
+  // Reporters: keep concise output in CI but always generate an HTML report for debugging
+  reporter: process.env.CI ? [['dot'], ['html']] : [['list'], ['html']],
   /* Global timeout for each test */
-  timeout: process.env.CI ? 180000 : 60000, // CI: 3min (increased from 2min), Local: 1min for compilation
+  timeout: process.env.CI ? 45000 : 30000, // CI: 45s (reduced from 3min), Local: 30s
   /* Global timeout for expect assertions */
   expect: {
-    timeout: process.env.CI ? 90000 : 30000, // CI: 1.5min (increased from 1min), Local: 30s for loading
+    timeout: process.env.CI ? 30000 : 15000, // CI: 30s (reduced from 90s), Local: 15s
   },
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3001',
+    baseURL:
+      process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Collect trace for any failed test to aid diagnosis */
+    trace: 'retain-on-failure',
 
     /* Record video for failed tests */
     video: 'retain-on-failure',
@@ -45,15 +48,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
 
     /* Set longer action timeout for CI compilation delays */
-    actionTimeout: process.env.CI ? 45000 : 15000, // CI: 45s (increased from 30s), Local: 15s
+    actionTimeout: process.env.CI ? 30000 : 15000, // CI: 30s (reduced from 45s), Local: 15s
 
     /* Set longer navigation timeout for CI compilation delays */
-    navigationTimeout: process.env.CI ? 90000 : 30000, // CI: 90s (increased from 60s), Local: 30s
+    navigationTimeout: process.env.CI ? 45000 : 30000, // CI: 45s (reduced from 90s), Local: 30s
 
     /* Ensure session persistence in CI environment */
     storageState: undefined, // Will be overridden by projects that need auth
     acceptDownloads: true,
     ignoreHTTPSErrors: false,
+
+    /* Extra headers to ensure proper auth behavior */
+    extraHTTPHeaders: {
+      // Ensure consistent user agent for cookie handling
+      'User-Agent': 'Mozilla/5.0 (compatible; PlaywrightTest/1.0)',
+    },
   },
 
   /* Setup projects - run authentication before other tests */
@@ -239,7 +248,6 @@ export default defineConfig({
         url: 'http://localhost:3001',
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
-        port: 3001,
         env: {
           NODE_ENV: 'development', // Use development mode for local testing
           // Load test environment variables from environment
