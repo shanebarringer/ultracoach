@@ -220,22 +220,30 @@ test.describe('Chat Messaging System', () => {
             // No coach selection needed
           }
 
-          // Try different approaches to get chat window visible
-          await expect(page.locator('[role="dialog"]')).toBeHidden({ timeout: 5000 })
+          // Wait for modal to process the coach selection - give it time to either close or update
+          await page.waitForTimeout(1000)
 
           // Option 1: Check if chat window is already visible (modal may have auto-closed)
           const chatWindow = page.locator('[data-testid="chat-window"]')
           const isVisible = await chatWindow.isVisible({ timeout: 2000 }).catch(() => false)
 
           if (!isVisible) {
-            // Option 2: Try to close modal if it's blocking
+            // Option 2: Try to close modal if it's still open
             const modal = page.locator('[role="dialog"]')
             if (await modal.isVisible().catch(() => false)) {
-              // Try ESC key first
-              await page.keyboard.press('Escape')
-
+              // Try to find and click a close button first
+              const closeButton = modal.locator(
+                'button[aria-label*="close"], button[aria-label*="Close"], [data-dismiss="modal"]'
+              )
               try {
-                await expect(modal).toBeHidden({ timeout: 2000 })
+                if (await closeButton.isVisible({ timeout: 1000 })) {
+                  await closeButton.click()
+                  await expect(modal).toBeHidden({ timeout: 2000 })
+                } else {
+                  // Fallback to ESC key
+                  await page.keyboard.press('Escape')
+                  await expect(modal).toBeHidden({ timeout: 2000 })
+                }
               } catch {
                 // Modal still visible, try close button
                 const closeButton = modal

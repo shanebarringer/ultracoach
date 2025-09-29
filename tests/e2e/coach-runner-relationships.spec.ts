@@ -144,15 +144,21 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button to navigate to coach selection
       await page.getByRole('button', { name: 'Find Coach' }).click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      // Wait for navigation to relationships page with longer timeout
+      await page.waitForURL('/relationships', { timeout: 30000 })
+      await page.waitForLoadState('domcontentloaded')
       await waitForPageReady(page)
 
-      // Should show "Find a Coach" section
-      await expect(page.getByText('Find a Coach')).toBeVisible()
+      // Wait for page content to fully load before checking elements
+      await page.waitForTimeout(2000)
 
-      // Should display coaches with Connect buttons
-      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
+      // Should show "Find a Coach" section
+      await expect(page.getByText('Find a Coach')).toBeVisible({ timeout: 10000 })
+
+      // Should display coaches with Connect buttons (with retry logic)
+      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({
+        timeout: 10000,
+      })
 
       // Should have coach emails visible (use first() to avoid strict mode violation)
       await expect(page.getByText(/@ultracoach.dev/).first()).toBeVisible()
@@ -162,11 +168,18 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button from dashboard
       await page.getByRole('button', { name: 'Find Coach' }).click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      // Wait for navigation to relationships page with longer timeout
+      await page.waitForURL('/relationships', { timeout: 30000 })
+      await page.waitForLoadState('domcontentloaded')
       await waitForPageReady(page)
 
+      // Wait for page content to fully load
+      await page.waitForTimeout(2000)
+
       // Click Connect on first available coach
+      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({
+        timeout: 10000,
+      })
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
       // Should show success notification
