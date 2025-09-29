@@ -40,7 +40,7 @@ test.describe('Session Persistence', () => {
       }
     })
 
-    test.skip('should maintain session on workouts page refresh', async ({ page }) => {
+    test('should maintain session on workouts page refresh', async ({ page }) => {
       // TODO: This test is correctly failing because there's a real bug with session persistence
       // After page refresh, asyncWorkoutsAtom checks authClient.getSession() and if it fails/is slow,
       // it returns empty workouts, causing the workouts to disappear on refresh.

@@ -43,10 +43,19 @@ export const asyncWorkoutsAtom = atom(async get => {
   try {
     logger.debug('Fetching workouts...')
 
-    // Check if user is authenticated first
-    const session = await authClient.getSession()
+    // Check if user is authenticated first - with retry for session persistence
+    let session = await authClient.getSession()
+
+    // If no session on first try, wait briefly and retry once
+    // This handles the case where session is still being restored on page refresh
     if (!session?.data?.user) {
-      logger.debug('No authenticated session found, returning empty workouts')
+      logger.debug('No session found on first attempt, retrying after delay...')
+      await new Promise(resolve => setTimeout(resolve, 100))
+      session = await authClient.getSession()
+    }
+
+    if (!session?.data?.user) {
+      logger.debug('No authenticated session found after retry, returning empty workouts')
       return []
     }
 
