@@ -36,12 +36,14 @@ export const filteredWorkoutsAtom = atom(get => {
 })
 
 // Unread notifications count
+filteredWorkoutsAtom.debugLabel = 'filteredWorkoutsAtom'
 export const unreadNotificationsAtom = atom(get => {
   const notifications = get(notificationsAtom)
   return notifications.filter(n => !n.read)
 })
 
 // Active training plans
+unreadNotificationsAtom.debugLabel = 'unreadNotificationsAtom'
 export const activeTrainingPlansAtom = atom(get => {
   const plans = get(trainingPlansAtom)
   const today = new Date()
@@ -56,12 +58,14 @@ export const activeTrainingPlansAtom = atom(get => {
 })
 
 // Total unread messages across all conversations
+activeTrainingPlansAtom.debugLabel = 'activeTrainingPlansAtom'
 export const totalUnreadMessagesAtom = atom(get => {
   const unreadCounts = get(unreadMessagesCountAtom)
   return Object.values(unreadCounts).reduce((sum, count) => sum + count, 0)
 })
 
 // Type guard for user object
+totalUnreadMessagesAtom.debugLabel = 'totalUnreadMessagesAtom'
 function isUserWithId(user: unknown): user is { id: string } {
   return (
     typeof user === 'object' &&
@@ -87,6 +91,7 @@ export const activeConversationsAtom = atom(get => {
 })
 
 // Today's workouts
+activeConversationsAtom.debugLabel = 'activeConversationsAtom'
 export const todaysWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const today = new Date()
@@ -97,6 +102,7 @@ export const todaysWorkoutsAtom = atom(get => {
 })
 
 // This week's workouts
+todaysWorkoutsAtom.debugLabel = 'todaysWorkoutsAtom'
 export const thisWeeksWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const { start: weekStart, end: weekEnd } = getWeekRange(0) // Sunday start
@@ -108,6 +114,7 @@ export const thisWeeksWorkoutsAtom = atom(get => {
 })
 
 // Workout completion rate
+thisWeeksWorkoutsAtom.debugLabel = 'thisWeeksWorkoutsAtom'
 export const workoutCompletionRateAtom = atom(get => {
   const workouts = get(workoutsAtom)
   const completed = workouts.filter(w => w.status === 'completed').length
@@ -117,6 +124,7 @@ export const workoutCompletionRateAtom = atom(get => {
 })
 
 // Workout statistics atom
+workoutCompletionRateAtom.debugLabel = 'workoutCompletionRateAtom'
 export const workoutStatsAtom = atom(get => {
   const workouts = get(filteredWorkoutsAtom) || []
   return {
@@ -136,9 +144,11 @@ export const workoutStatsAtom = atom(get => {
 })
 
 // Filtered training plans atom
+workoutStatsAtom.debugLabel = 'workoutStatsAtom'
 export const filteredTrainingPlansAtom = atom(get => {
   const plans = get(trainingPlansAtom)
   // Apply filters here as needed
   // For now, just return all plans
   return plans
 })
+filteredTrainingPlansAtom.debugLabel = 'filteredTrainingPlansAtom'

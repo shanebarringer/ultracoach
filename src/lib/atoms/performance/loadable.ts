@@ -23,14 +23,22 @@ const fetchWorkoutsAtom = atom(async () => {
 })
 
 // Loadable wrappers for async atoms
+fetchWorkoutsAtom.debugLabel = 'fetchWorkoutsAtom'
+fetchUserDataAtom.debugLabel = 'fetchUserDataAtom'
 export const loadableUserDataAtom = loadable(fetchUserDataAtom)
+loadableUserDataAtom.debugLabel = 'loadableUserDataAtom'
 export const loadableWorkoutsAtom = loadable(fetchWorkoutsAtom)
+loadableWorkoutsAtom.debugLabel = 'loadableWorkoutsAtom'
 
 // Loadable atoms that work with Suspense
 export const workoutsLoadableAtom = loadable(asyncWorkoutsAtom)
+workoutsLoadableAtom.debugLabel = 'workoutsLoadableAtom'
 export const notificationsLoadableAtom = loadable(asyncNotificationsAtom)
+notificationsLoadableAtom.debugLabel = 'notificationsLoadableAtom'
 export const conversationsLoadableAtom = loadable(asyncConversationsAtom)
+conversationsLoadableAtom.debugLabel = 'conversationsLoadableAtom'
 export const trainingPlansLoadableAtom = loadable(refreshableTrainingPlansAtom)
+trainingPlansLoadableAtom.debugLabel = 'trainingPlansLoadableAtom'
 
 // Helper to check loading state
 export const isLoadingAtom = atom(get => {
@@ -41,6 +49,7 @@ export const isLoadingAtom = atom(get => {
 })
 
 // Helper to get all errors
+isLoadingAtom.debugLabel = 'isLoadingAtom'
 export const errorsAtom = atom(get => {
   const errors: string[] = []
   const userData = get(loadableUserDataAtom)
@@ -55,3 +64,4 @@ export const errorsAtom = atom(get => {
 
   return errors
 })
+errorsAtom.debugLabel = 'errorsAtom'

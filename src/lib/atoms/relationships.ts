@@ -21,8 +21,11 @@ const isBrowser = typeof window !== 'undefined'
 
 // Core relationship atoms
 export const relationshipsAtom = atom<RelationshipData[]>([])
+relationshipsAtom.debugLabel = 'relationshipsAtom'
 export const relationshipsLoadingAtom = atom(false)
+relationshipsLoadingAtom.debugLabel = 'relationshipsLoadingAtom'
 export const relationshipsErrorAtom = atom<string | null>(null)
+relationshipsErrorAtom.debugLabel = 'relationshipsErrorAtom'
 
 // Module-scoped loggers to avoid re-instantiating per atom read
 const relationshipsLogger = createLogger('RelationshipsAsyncAtom')
@@ -50,17 +53,23 @@ export const relationshipsAsyncAtom = atom(async () => {
     return []
   }
 })
+relationshipsAsyncAtom.debugLabel = 'relationshipsAsyncAtom'
 
 // Loadable version for suspense support
 export const relationshipsLoadableAtom = loadable(relationshipsAsyncAtom)
+relationshipsLoadableAtom.debugLabel = 'relationshipsLoadableAtom'
 
 // Selected relationship atoms
 export const selectedRelationshipAtom = atom<RelationshipData | null>(null)
+selectedRelationshipAtom.debugLabel = 'selectedRelationshipAtom'
 export const selectedRelationshipIdAtom = atom<string | null>(null)
+selectedRelationshipIdAtom.debugLabel = 'selectedRelationshipIdAtom'
 
 // Relationship filtering
 export const relationshipStatusFilterAtom = atom<'all' | 'active' | 'pending' | 'inactive'>('all')
+relationshipStatusFilterAtom.debugLabel = 'relationshipStatusFilterAtom'
 export const relationshipSearchTermAtom = atom('')
+relationshipSearchTermAtom.debugLabel = 'relationshipSearchTermAtom'
 
 // Relationship form atoms
 export const inviteRunnerFormAtom = atom({
@@ -68,21 +77,26 @@ export const inviteRunnerFormAtom = atom({
   name: '',
   message: '',
 })
+inviteRunnerFormAtom.debugLabel = 'inviteRunnerFormAtom'
 
 export const connectCoachFormAtom = atom({
   coachId: '',
   message: '',
 })
+connectCoachFormAtom.debugLabel = 'connectCoachFormAtom'
 
 // Search and connection state
 export const runnerSearchTermAtom = atom<string>('')
+runnerSearchTermAtom.debugLabel = 'runnerSearchTermAtom'
 export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
+connectingRunnerIdsAtom.debugLabel = 'connectingRunnerIdsAtom'
 
 /**
  * Runners list atom - stores all available runners
  * Migrated from barrel file for better organization
  */
 export const runnersAtom = atom<User[]>([])
+runnersAtom.debugLabel = 'runnersAtom'
 
 // Connected runners atom (Suspense-friendly async atom)
 // - Returns a plain User[] when resolved
@@ -107,6 +121,7 @@ export const connectedRunnersAtom = atomWithRefresh(async (): Promise<User[]> =>
     return []
   }
 })
+connectedRunnersAtom.debugLabel = 'connectedRunnersAtom'
 
 // Helper factory for creating available users atoms (DRY pattern)
 function makeAvailableUsersAtom<T extends User>(
@@ -132,6 +147,7 @@ export const availableCoachesAtom = makeAvailableUsersAtom<User>(
   'coaches',
   availableCoachesLogger
 )
+availableCoachesAtom.debugLabel = 'availableCoachesAtom'
 
 // Available runners atom
 export const availableRunnersAtom = makeAvailableUsersAtom<User>(
@@ -139,3 +155,4 @@ export const availableRunnersAtom = makeAvailableUsersAtom<User>(
   'runners',
   availableRunnersLogger
 )
+availableRunnersAtom.debugLabel = 'availableRunnersAtom'

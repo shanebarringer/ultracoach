@@ -17,9 +17,13 @@ interface MessageInput {
 
 // Core chat atoms
 export const conversationsAtom = atom<Conversation[]>([])
+conversationsAtom.debugLabel = 'conversationsAtom'
 export const messagesAtom = atom<OptimisticMessage[]>([])
+messagesAtom.debugLabel = 'messagesAtom'
 export const conversationsLoadingAtom = atom(false)
+conversationsLoadingAtom.debugLabel = 'conversationsLoadingAtom'
 export const messagesLoadingAtom = atom(false)
+messagesLoadingAtom.debugLabel = 'messagesLoadingAtom'
 
 // Async chat atoms with suspense support
 export const asyncConversationsAtom = atom(async () => {
@@ -51,22 +55,31 @@ export const asyncConversationsAtom = atom(async () => {
     throw error instanceof Error ? error : new Error('Failed to fetch conversations')
   }
 })
+asyncConversationsAtom.debugLabel = 'asyncConversationsAtom'
 
 // Selected conversation atoms
 export const selectedConversationAtom = atom<Conversation | null>(null)
+selectedConversationAtom.debugLabel = 'selectedConversationAtom'
 export const selectedConversationIdAtom = atom<string | null>(null)
+selectedConversationIdAtom.debugLabel = 'selectedConversationIdAtom'
 
 // Chat UI state atoms
 export const typingIndicatorAtom = atom<Record<string, boolean>>({})
+typingIndicatorAtom.debugLabel = 'typingIndicatorAtom'
 export const unreadMessagesCountAtom = atom<Record<string, number>>({})
+unreadMessagesCountAtom.debugLabel = 'unreadMessagesCountAtom'
 export const isTypingAtom = atom(false)
+isTypingAtom.debugLabel = 'isTypingAtom'
 
 // Chat preferences
 export const chatSoundEnabledAtom = atomWithStorage('chatSoundEnabled', true)
+chatSoundEnabledAtom.debugLabel = 'chatSoundEnabledAtom'
 export const chatNotificationsEnabledAtom = atomWithStorage('chatNotificationsEnabled', true)
+chatNotificationsEnabledAtom.debugLabel = 'chatNotificationsEnabledAtom'
 
 // Current conversation atom
 export const currentConversationIdAtom = atom<string | null>(null)
+currentConversationIdAtom.debugLabel = 'currentConversationIdAtom'
 
 // Message input atom with proper structure
 export const messageInputAtom = atom<MessageInput>({
@@ -77,6 +90,7 @@ export const messageInputAtom = atom<MessageInput>({
 })
 
 // Chat UI state
+messageInputAtom.debugLabel = 'messageInputAtom'
 export const chatUiStateAtom = atom({
   isTyping: false,
   typingUsers: [] as string[],
@@ -97,6 +111,7 @@ export const chatUiStateAtom = atom({
 })
 
 // Message input state
+chatUiStateAtom.debugLabel = 'chatUiStateAtom'
 export const messageInputStateAtom = atom({
   text: '',
   attachments: [] as string[],
@@ -105,6 +120,7 @@ export const messageInputStateAtom = atom({
 })
 
 // New message modal state
+messageInputStateAtom.debugLabel = 'messageInputStateAtom'
 export const newMessageModalAtom = atom({
   isOpen: false,
   recipientId: null as string | null,
@@ -112,6 +128,7 @@ export const newMessageModalAtom = atom({
 })
 
 // Typing status atoms
+newMessageModalAtom.debugLabel = 'newMessageModalAtom'
 export const typingStatusAtom = atom<
   Record<
     string,
@@ -124,6 +141,7 @@ export const typingStatusAtom = atom<
 >({})
 
 // Offline message type
+typingStatusAtom.debugLabel = 'typingStatusAtom'
 export interface OfflineMessage {
   id: string
   recipientId: string
@@ -136,6 +154,7 @@ export interface OfflineMessage {
 
 // Offline message queue
 export const offlineMessageQueueAtom = atomWithStorage<OfflineMessage[]>('offline-messages', [])
+offlineMessageQueueAtom.debugLabel = 'offlineMessageQueueAtom'
 
 // Derived atom to sync recipient selection with chat UI state
 export const selectedRecipientAtom = atom(
@@ -148,6 +167,7 @@ export const selectedRecipientAtom = atom(
 )
 
 // Note: Removed conversationMessagesAtomsFamily and fetchConversationMessagesFamily
+selectedRecipientAtom.debugLabel = 'selectedRecipientAtom'
 // We now use derived atoms to filter messages from the global messagesAtom
 // This follows Jotai best practices: derive state, don't duplicate it
 
@@ -273,3 +293,4 @@ export const sendMessageActionAtom = atom(
     }
   }
 )
+sendMessageActionAtom.debugLabel = 'sendMessageActionAtom'
