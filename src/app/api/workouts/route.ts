@@ -224,7 +224,8 @@ export async function GET(request: NextRequest) {
 
     // Smart sorting: Today and yesterday first, then upcoming, then past
     // NOTE: Boundaries are computed in the server's local timezone.
-    // Future enhancement: accept a `tz` query param and use date-fns-tz to compute buckets for the client timezone.
+    // Future enhancement: accept a `tz` query param and use date-fns timezone helpers
+    // (e.g., date-fns-tz or TZDate depending on version) to compute buckets for the client timezone.
     const now = new Date()
     const today = startOfDay(now)
     const yesterday = startOfDay(addDays(now, -1))
@@ -243,11 +244,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Normalize once to avoid repeated work and keep comparator pure
+    // Guard against invalid dates so date-fns comparators never see `Invalid Date`
     const normalized = results.map(r => {
       const parsedDate = toDate(r.date)
-      const day = startOfDay(parsedDate)
-      const created = toDate(r.created_at)
-      return { ...r, _day: day, _created: created, _dateValid: isValid(parsedDate) }
+      const dateValid = isValid(parsedDate)
+      const day = dateValid ? startOfDay(parsedDate) : new Date(0)
+
+      const createdRaw = toDate(r.created_at)
+      const created = isValid(createdRaw) ? createdRaw : new Date(0)
+
+      return { ...r, _day: day, _created: created, _dateValid: dateValid }
     })
 
     const invalidIds = normalized.filter(r => !r._dateValid).map(r => r.id)
@@ -272,7 +278,13 @@ export async function GET(request: NextRequest) {
       }
 
       // Same calendar day across any group: tie-break by creation time (newest first)
-      return compareDesc(a._created, b._created)
+      const createdCmp = compareDesc(a._created, b._created)
+      if (createdCmp !== 0) return createdCmp
+
+      // Final deterministic tie-break by id to avoid relying on engine sort stability
+      const idA = String(a.id)
+      const idB = String(b.id)
+      return idA.localeCompare(idB)
     })
 
     logger.debug('Sorted workouts for response', { count: sortedResults.length })
