@@ -17,28 +17,36 @@ import type { Session, User } from '@/lib/better-auth-client'
  * Current session atom - holds the active Better Auth session
  */
 export const sessionAtom = atom<Session | null>(null)
+sessionAtom.debugLabel = 'sessionAtom'
 
 /**
  * Current user atom - holds the authenticated user data
  */
 export const userAtom = atom<User | null>(null)
+userAtom.debugLabel = 'userAtom'
 
 /**
  * Auth loading state - tracks authentication initialization
  * Set to false initially to show UI immediately for unauthenticated users
  */
 export const authLoadingAtom = atom(false)
+authLoadingAtom.debugLabel = 'authLoadingAtom'
 
 // Auth state atoms
 export const authErrorAtom = atom<string | null>(null)
+authErrorAtom.debugLabel = 'authErrorAtom'
 export const authSuccessAtom = atom<string | null>(null)
+authSuccessAtom.debugLabel = 'authSuccessAtom'
 
 // Persisted auth preferences
 export const rememberMeAtom = atomWithStorage('rememberMe', false)
+rememberMeAtom.debugLabel = 'rememberMeAtom'
 export const lastLoginEmailAtom = atomWithStorage<string | null>('lastLoginEmail', null)
+lastLoginEmailAtom.debugLabel = 'lastLoginEmailAtom'
 
 // Derived auth atoms
 export const isAuthenticatedAtom = atom(get => get(sessionAtom) !== null)
+isAuthenticatedAtom.debugLabel = 'isAuthenticatedAtom'
 
 export const userRoleAtom = atom(get => {
   const session = get(sessionAtom)
@@ -48,16 +56,19 @@ export const userRoleAtom = atom(get => {
   const user = session.user as User
   return user.userType || 'runner'
 })
+userRoleAtom.debugLabel = 'userRoleAtom'
 
 export const isCoachAtom = atom(get => {
   const role = get(userRoleAtom)
   return role === 'coach'
 })
+isCoachAtom.debugLabel = 'isCoachAtom'
 
 export const isRunnerAtom = atom(get => {
   const role = get(userRoleAtom)
   return role === 'runner'
 })
+isRunnerAtom.debugLabel = 'isRunnerAtom'
 
 /**
  * Composite auth state atom - combines all auth-related state
@@ -69,17 +80,4 @@ export const authStateAtom = atom({
   loading: false, // Set to false initially to show UI immediately
   error: null as string | null,
 })
-
-// Jotai Devtools debug labels
-sessionAtom.debugLabel = 'auth/session'
-userAtom.debugLabel = 'auth/user'
-authLoadingAtom.debugLabel = 'auth/loading'
-authErrorAtom.debugLabel = 'auth/error'
-authSuccessAtom.debugLabel = 'auth/success'
-rememberMeAtom.debugLabel = 'auth/rememberMe'
-lastLoginEmailAtom.debugLabel = 'auth/lastLoginEmail'
-isAuthenticatedAtom.debugLabel = 'auth/isAuthenticated'
-userRoleAtom.debugLabel = 'auth/userRole'
-isCoachAtom.debugLabel = 'auth/isCoach'
-isRunnerAtom.debugLabel = 'auth/isRunner'
-authStateAtom.debugLabel = 'auth/state'
+authStateAtom.debugLabel = 'authStateAtom'

@@ -3,8 +3,11 @@ import { atom } from 'jotai'
 
 // Generic form state
 export const formErrorsAtom = atom<Record<string, string>>({})
+formErrorsAtom.debugLabel = 'formErrorsAtom'
 export const formSubmittingAtom = atom(false)
+formSubmittingAtom.debugLabel = 'formSubmittingAtom'
 export const formSuccessAtom = atom(false)
+formSuccessAtom.debugLabel = 'formSuccessAtom'
 
 // Specific form atoms
 export const signInFormAtom = atom({
@@ -13,6 +16,8 @@ export const signInFormAtom = atom({
   rememberMe: false,
   loading: false,
 })
+
+signInFormAtom.debugLabel = 'signInFormAtom'
 
 export const signUpFormAtom = atom({
   email: '',
@@ -23,6 +28,8 @@ export const signUpFormAtom = atom({
   loading: false,
 })
 
+signUpFormAtom.debugLabel = 'signUpFormAtom'
+
 export const profileFormAtom = atom({
   name: '',
   email: '',
@@ -31,12 +38,16 @@ export const profileFormAtom = atom({
   preferences: {},
 })
 
+profileFormAtom.debugLabel = 'profileFormAtom'
+
 // Form validation state
 export const formValidationAtom = atom({
   isValid: false,
   errors: [] as string[],
   touched: {} as Record<string, boolean>,
 })
+
+formValidationAtom.debugLabel = 'formValidationAtom'
 
 // Create training plan form
 export const createTrainingPlanFormAtom = atom({
@@ -51,6 +62,8 @@ export const createTrainingPlanFormAtom = atom({
   error: null as string | null,
   loading: false,
 })
+
+createTrainingPlanFormAtom.debugLabel = 'createTrainingPlanFormAtom'
 
 // Workout log form
 export const workoutLogFormAtom = atom({
@@ -73,19 +86,12 @@ export const workoutLogFormAtom = atom({
   loading: false,
 })
 
+workoutLogFormAtom.debugLabel = 'workoutLogFormAtom'
+
 // Auth success/redirect states
 export const authSuccessMessageAtom = atom<string | null>(null)
+authSuccessMessageAtom.debugLabel = 'authSuccessMessageAtom'
 export const authRedirectingAtom = atom(false)
+authRedirectingAtom.debugLabel = 'authRedirectingAtom'
 
-// Jotai Devtools debug labels
-formErrorsAtom.debugLabel = 'forms/errors'
-formSubmittingAtom.debugLabel = 'forms/submitting'
-formSuccessAtom.debugLabel = 'forms/success'
-signInFormAtom.debugLabel = 'forms/signIn'
-signUpFormAtom.debugLabel = 'forms/signUp'
-profileFormAtom.debugLabel = 'forms/profile'
-formValidationAtom.debugLabel = 'forms/validation'
-createTrainingPlanFormAtom.debugLabel = 'forms/createTrainingPlan'
-workoutLogFormAtom.debugLabel = 'forms/workoutLog'
-authSuccessMessageAtom.debugLabel = 'forms/authSuccessMessage'
-authRedirectingAtom.debugLabel = 'forms/authRedirecting'
+// (Debug labels are assigned inline with the atom declarations above)

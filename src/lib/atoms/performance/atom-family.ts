@@ -39,7 +39,7 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       set(workoutAtomFamily(workoutId), newWorkout)
     }
   )
-  return withDebugLabel(a, `family/workout/${workoutId}`)
+  return withDebugLabel(a, `workoutAtomFamily(${workoutId})`)
 })
 
 /**
@@ -65,7 +65,7 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       set(trainingPlanAtomFamily(planId), newPlan)
     }
   )
-  return withDebugLabel(a, `family/trainingPlan/${planId}`)
+  return withDebugLabel(a, `trainingPlanAtomFamily(${planId})`)
 })
 
 /**
@@ -77,8 +77,8 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
  * // Clean up: conversationMessageCountFamily.remove('conv-789')
  * ```
  */
-export const conversationMessageCountFamily = atomFamily((_conversationId: string) => {
-  return withDebugLabel(atom(0), `family/conversationMessageCount/${_conversationId}`)
+export const conversationMessageCountFamily = atomFamily((conversationId: string) => {
+  return withDebugLabel(atom(0), `conversationMessageCount(${conversationId})`)
 })
 
 /**
@@ -92,8 +92,8 @@ export const conversationMessageCountFamily = atomFamily((_conversationId: strin
  * ```
  */
 export const formFieldAtomFamily = atomFamily(
-  ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) =>
-    withDebugLabel(atom(''), `family/formField/${_formId}/${_fieldName}`)
+  ({ formId, fieldName }: { formId: string; fieldName: string }) =>
+    withDebugLabel(atom(''), `formField(${formId}.${fieldName})`)
 )
 
 /**
@@ -106,8 +106,8 @@ export const formFieldAtomFamily = atomFamily(
  * // Clean up: loadingStateFamily.remove('fetch-user-data')
  * ```
  */
-export const loadingStateFamily = atomFamily((_operationId: string) =>
-  withDebugLabel(atom(false), `family/loadingState/${_operationId}`)
+export const loadingStateFamily = atomFamily((operationId: string) =>
+  withDebugLabel(atom(false), `loadingState(${operationId})`)
 )
 
 /**
@@ -120,8 +120,8 @@ export const loadingStateFamily = atomFamily((_operationId: string) =>
  * // Clean up: errorStateFamily.remove('fetch-user-data')
  * ```
  */
-export const errorStateFamily = atomFamily((_operationId: string) =>
-  withDebugLabel(atom<string | null>(null), `family/errorState/${_operationId}`)
+export const errorStateFamily = atomFamily((operationId: string) =>
+  withDebugLabel(atom<string | null>(null), `errorState(${operationId})`)
 )
 
 // Note: Removed messagesByConversationLoadableFamily
@@ -135,19 +135,31 @@ export const errorStateFamily = atomFamily((_operationId: string) =>
 
 // Enhanced workout atom family with cleanup
 export const workoutAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_workoutId: string) => atom<Workout | null>(null),
+  (workoutId: string) => {
+    const a = atom<Workout | null>(null)
+    a.debugLabel = `workoutEnhanced(${workoutId})`
+    return a
+  },
   workoutId => `workout-${workoutId}`
 )
 
 // Enhanced training plan atom family with cleanup
 export const trainingPlanAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_planId: string) => atom<TrainingPlan | null>(null),
+  (planId: string) => {
+    const a = atom<TrainingPlan | null>(null)
+    a.debugLabel = `planEnhanced(${planId})`
+    return a
+  },
   planId => `plan-${planId}`
 )
 
 // Enhanced conversation count family with cleanup
 export const conversationMessageCountFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_conversationId: string) => atom(0),
+  (conversationId: string) => {
+    const a = atom(0)
+    a.debugLabel = `conv-count-enhanced(${conversationId})`
+    return a
+  },
   conversationId => `conv-count-${conversationId}`
 )
 
