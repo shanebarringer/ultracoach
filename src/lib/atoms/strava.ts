@@ -40,13 +40,19 @@ export const stravaActivitiesRefreshableAtom = atom(null, async (_get, set) => {
 
   // Fetch fresh activities from the API
   try {
-    const response = await fetch('/api/strava/activities')
-    if (response.ok) {
-      const data = await response.json()
-      set(stravaActivitiesAtom, data.activities || [])
+    const response = await fetch('/api/strava/activities', { credentials: 'same-origin' })
+    if (!response.ok) {
+      set(
+        stravaErrorAtom,
+        `Failed to refresh Strava activities: ${response.status} ${response.statusText}`
+      )
+      set(stravaActivitiesAtom, [])
+      return
     }
+    const data = await response.json()
+    set(stravaActivitiesAtom, data.activities || [])
   } catch (error) {
-    console.error('Failed to refresh Strava activities:', error)
+    set(stravaErrorAtom, (error as Error)?.message ?? 'Failed to refresh Strava activities')
     set(stravaActivitiesAtom, [])
   }
 })

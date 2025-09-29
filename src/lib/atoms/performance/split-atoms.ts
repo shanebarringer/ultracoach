@@ -4,6 +4,8 @@ import { splitAtom } from 'jotai/utils'
 
 import type { ConversationWithUser, Notification, Workout } from '@/lib/supabase'
 
+import { withDebugLabel } from '../utils'
+
 // Base atoms that will be split
 const workoutsBaseAtom = atom<Workout[]>([])
 const conversationsBaseAtom = atom<ConversationWithUser[]>([])
@@ -32,20 +34,14 @@ export const updateWorkoutAtom = atom(
 
 // Jotai Devtools debug labels
 // Base atoms (module-local)
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-workoutsBaseAtom.debugLabel = 'split/workoutsBase'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-conversationsBaseAtom.debugLabel = 'split/conversationsBase'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-notificationsBaseAtom.debugLabel = 'split/notificationsBase'
+withDebugLabel(workoutsBaseAtom, 'split/workoutsBase')
+withDebugLabel(conversationsBaseAtom, 'split/conversationsBase')
+withDebugLabel(notificationsBaseAtom, 'split/notificationsBase')
 
 // Exported split and helper atoms
-workoutsSplitAtom.debugLabel = 'split/workoutsSplit'
-conversationsSplitAtom.debugLabel = 'split/conversationsSplit'
-notificationsSplitAtom.debugLabel = 'split/notificationsSplit'
-addWorkoutAtom.debugLabel = 'split/addWorkoutAction'
-removeWorkoutAtom.debugLabel = 'split/removeWorkoutAction'
-updateWorkoutAtom.debugLabel = 'split/updateWorkoutAction'
+withDebugLabel(workoutsSplitAtom, 'split/workoutsSplit')
+withDebugLabel(conversationsSplitAtom, 'split/conversationsSplit')
+withDebugLabel(notificationsSplitAtom, 'split/notificationsSplit')
+withDebugLabel(addWorkoutAtom, 'split/addWorkoutAction')
+withDebugLabel(removeWorkoutAtom, 'split/removeWorkoutAction')
+withDebugLabel(updateWorkoutAtom, 'split/updateWorkoutAction')

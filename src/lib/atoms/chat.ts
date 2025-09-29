@@ -216,6 +216,8 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 10000)
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -227,7 +229,8 @@ export const sendMessageActionAtom = atom(
           workoutId: payload.workoutId,
         }),
         credentials: 'same-origin',
-      })
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout))
 
       if (!response.ok) {
         throw new Error('Failed to send message')
