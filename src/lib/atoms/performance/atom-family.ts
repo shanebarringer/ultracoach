@@ -25,8 +25,8 @@ import { createAtomFamilyWithCleanup } from './cleanup'
  * // Clean up when done: workoutAtomFamily.remove('workout-123')
  * ```
  */
-export const workoutAtomFamily = atomFamily((workoutId: string) =>
-  atom(
+export const workoutAtomFamily = atomFamily((workoutId: string) => {
+  const a = atom(
     get => {
       // First try to get from the main workouts atom
       const workouts = get(workoutsAtom)
@@ -38,7 +38,9 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
       set(workoutAtomFamily(workoutId), newWorkout)
     }
   )
-)
+  a.debugLabel = `workoutAtomFamily(${workoutId})`
+  return a
+})
 
 /**
  * Training plan atom family - creates individual atoms per plan ID
@@ -50,8 +52,8 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
  * // Clean up when done: trainingPlanAtomFamily.remove('plan-456')
  * ```
  */
-export const trainingPlanAtomFamily = atomFamily((planId: string) =>
-  atom(
+export const trainingPlanAtomFamily = atomFamily((planId: string) => {
+  const a = atom(
     get => {
       // First try to get from the main training plans atom
       const plans = get(trainingPlansAtom)
@@ -63,7 +65,9 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) =>
       set(trainingPlanAtomFamily(planId), newPlan)
     }
   )
-)
+  a.debugLabel = `trainingPlanAtomFamily(${planId})`
+  return a
+})
 
 /**
  * Conversation message count family - tracks unread messages per conversation
@@ -74,7 +78,11 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) =>
  * // Clean up: conversationMessageCountFamily.remove('conv-789')
  * ```
  */
-export const conversationMessageCountFamily = atomFamily((_conversationId: string) => atom(0))
+export const conversationMessageCountFamily = atomFamily((conversationId: string) => {
+  const a = atom(0)
+  a.debugLabel = `conversationMessageCount(${conversationId})`
+  return a
+})
 
 /**
  * Form field atom family for granular form updates
@@ -87,7 +95,11 @@ export const conversationMessageCountFamily = atomFamily((_conversationId: strin
  * ```
  */
 export const formFieldAtomFamily = atomFamily(
-  ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) => atom('')
+  ({ formId, fieldName }: { formId: string; fieldName: string }) => {
+    const a = atom('')
+    a.debugLabel = `formField(${formId}.${fieldName})`
+    return a
+  }
 )
 
 /**
@@ -100,7 +112,11 @@ export const formFieldAtomFamily = atomFamily(
  * // Clean up: loadingStateFamily.remove('fetch-user-data')
  * ```
  */
-export const loadingStateFamily = atomFamily((_operationId: string) => atom(false))
+export const loadingStateFamily = atomFamily((operationId: string) => {
+  const a = atom(false)
+  a.debugLabel = `loadingState(${operationId})`
+  return a
+})
 
 /**
  * Error state family for async operations
@@ -112,7 +128,11 @@ export const loadingStateFamily = atomFamily((_operationId: string) => atom(fals
  * // Clean up: errorStateFamily.remove('fetch-user-data')
  * ```
  */
-export const errorStateFamily = atomFamily((_operationId: string) => atom<string | null>(null))
+export const errorStateFamily = atomFamily((operationId: string) => {
+  const a = atom<string | null>(null)
+  a.debugLabel = `errorState(${operationId})`
+  return a
+})
 
 // Note: Removed messagesByConversationLoadableFamily
 // Messages are now filtered from the global messagesAtom using derived atoms
@@ -125,19 +145,31 @@ export const errorStateFamily = atomFamily((_operationId: string) => atom<string
 
 // Enhanced workout atom family with cleanup
 export const workoutAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_workoutId: string) => atom<Workout | null>(null),
+  (workoutId: string) => {
+    const a = atom<Workout | null>(null)
+    a.debugLabel = `workoutEnhanced(${workoutId})`
+    return a
+  },
   workoutId => `workout-${workoutId}`
 )
 
 // Enhanced training plan atom family with cleanup
 export const trainingPlanAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_planId: string) => atom<TrainingPlan | null>(null),
+  (planId: string) => {
+    const a = atom<TrainingPlan | null>(null)
+    a.debugLabel = `planEnhanced(${planId})`
+    return a
+  },
   planId => `plan-${planId}`
 )
 
 // Enhanced conversation count family with cleanup
 export const conversationMessageCountFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_conversationId: string) => atom(0),
+  (conversationId: string) => {
+    const a = atom(0)
+    a.debugLabel = `conv-count-enhanced(${conversationId})`
+    return a
+  },
   conversationId => `conv-count-${conversationId}`
 )
 

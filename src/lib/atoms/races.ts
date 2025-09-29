@@ -10,11 +10,15 @@ const logger = createLogger('RacesAtom')
 
 // Core race atoms
 export const racesAtom = atom<Race[]>([])
+racesAtom.debugLabel = 'racesAtom'
 export const racesLoadingAtom = atom(false)
+racesLoadingAtom.debugLabel = 'racesLoadingAtom'
 export const racesErrorAtom = atom<string | null>(null)
+racesErrorAtom.debugLabel = 'racesErrorAtom'
 
 // Async race fetching atom with refresh trigger
 export const racesRefreshTriggerAtom = atom(0)
+racesRefreshTriggerAtom.debugLabel = 'racesRefreshTriggerAtom'
 
 export const asyncRacesAtom = atom(
   async get => {
@@ -51,21 +55,29 @@ export const asyncRacesAtom = atom(
     set(racesErrorAtom, null) // Clear any existing errors when data is set
   }
 )
+asyncRacesAtom.debugLabel = 'asyncRacesAtom'
 
 // Refresh action atom
 export const refreshRacesAtom = atom(null, (get, set) => {
   set(racesRefreshTriggerAtom, get(racesRefreshTriggerAtom) + 1)
 })
+refreshRacesAtom.debugLabel = 'refreshRacesAtom'
 
 // Selected race atoms
 export const selectedRaceAtom = atom<Race | null>(null)
+selectedRaceAtom.debugLabel = 'selectedRaceAtom'
 export const selectedRaceIdAtom = atom<string | null>(null)
+selectedRaceIdAtom.debugLabel = 'selectedRaceIdAtom'
 
 // Race filtering atoms
 export const raceSearchTermAtom = atomWithStorage('raceSearchTerm', '')
+raceSearchTermAtom.debugLabel = 'raceSearchTermAtom'
 export const raceDistanceFilterAtom = atomWithStorage('raceDistanceFilter', 'all')
+raceDistanceFilterAtom.debugLabel = 'raceDistanceFilterAtom'
 export const raceTerrainFilterAtom = atomWithStorage('raceTerrainFilter', 'all')
+raceTerrainFilterAtom.debugLabel = 'raceTerrainFilterAtom'
 export const raceSortByAtom = atomWithStorage<'date' | 'distance' | 'name'>('raceSortBy', 'date')
+raceSortByAtom.debugLabel = 'raceSortByAtom'
 
 // Race import atoms
 export const raceImportProgressAtom = atom({
@@ -73,4 +85,6 @@ export const raceImportProgressAtom = atom({
   total: 0,
   message: '',
 })
+raceImportProgressAtom.debugLabel = 'raceImportProgressAtom'
 export const raceImportErrorsAtom = atom<string[]>([])
+raceImportErrorsAtom.debugLabel = 'raceImportErrorsAtom'

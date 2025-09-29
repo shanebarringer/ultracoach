@@ -20,7 +20,9 @@ function unwrapWorkout(json: unknown): Workout {
 
 // Core workout atoms with initial value from async fetch
 export const workoutsAtom = atom<Workout[]>([])
+workoutsAtom.debugLabel = 'workoutsAtom'
 export const workoutsRefreshTriggerAtom = atom(0)
+workoutsRefreshTriggerAtom.debugLabel = 'workoutsRefreshTriggerAtom'
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
@@ -104,6 +106,7 @@ export const asyncWorkoutsAtom = atom(async get => {
     return []
   }
 })
+asyncWorkoutsAtom.debugLabel = 'asyncWorkoutsAtom'
 
 // Combined atom that fetches and stores workouts
 export const workoutsWithSuspenseAtom = atom(get => {
@@ -114,6 +117,7 @@ export const workoutsWithSuspenseAtom = atom(get => {
 })
 
 // Refresh action atom
+workoutsWithSuspenseAtom.debugLabel = 'workoutsWithSuspenseAtom'
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
   // Clear current user's cache only for targeted invalidation
   try {
@@ -140,6 +144,7 @@ export const refreshWorkoutsAtom = atom(null, async (get, set) => {
 })
 
 // Hydration atom to sync async workouts with sync atom
+refreshWorkoutsAtom.debugLabel = 'refreshWorkoutsAtom'
 export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) => {
   import('@/lib/logger').then(({ createLogger }) => {
     const logger = createLogger('HydrateWorkoutsAtom')
@@ -154,8 +159,11 @@ export const hydrateWorkoutsAtom = atom(null, (get, set, workouts: Workout[]) =>
 })
 
 // Selected workout atoms
+hydrateWorkoutsAtom.debugLabel = 'hydrateWorkoutsAtom'
 export const selectedWorkoutAtom = atom<Workout | null>(null)
+selectedWorkoutAtom.debugLabel = 'selectedWorkoutAtom'
 export const selectedWorkoutIdAtom = atom<string | null>(null)
+selectedWorkoutIdAtom.debugLabel = 'selectedWorkoutIdAtom'
 
 // Derived atoms for filtered views
 export const upcomingWorkoutsAtom = atom(get => {
@@ -168,6 +176,7 @@ export const upcomingWorkoutsAtom = atom(get => {
     })
     .sort((a, b) => compareDatesAsc(a.date, b.date))
 })
+upcomingWorkoutsAtom.debugLabel = 'upcomingWorkoutsAtom'
 
 export const completedWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
@@ -180,6 +189,7 @@ export const completedWorkoutsAtom = atom(get => {
       return compareDatesDesc(a.created_at, b.created_at)
     })
 })
+completedWorkoutsAtom.debugLabel = 'completedWorkoutsAtom'
 
 export const thisWeekWorkoutsAtom = atom(get => {
   const workouts = get(workoutsAtom)
@@ -189,34 +199,49 @@ export const thisWeekWorkoutsAtom = atom(get => {
     return isWorkoutWithinDays(w.date, 7)
   })
 })
+thisWeekWorkoutsAtom.debugLabel = 'thisWeekWorkoutsAtom'
 
 // Workout filtering atoms
 export const workoutSearchTermAtom = atomWithStorage('workoutSearchTerm', '')
+workoutSearchTermAtom.debugLabel = 'workoutSearchTermAtom'
 export const workoutTypeFilterAtom = atomWithStorage('workoutTypeFilter', 'all')
+workoutTypeFilterAtom.debugLabel = 'workoutTypeFilterAtom'
 export const workoutStatusFilterAtom = atomWithStorage('workoutStatusFilter', 'all')
+workoutStatusFilterAtom.debugLabel = 'workoutStatusFilterAtom'
 export const workoutSortByAtom = atomWithStorage<
   'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'
 >('workoutSortBy', 'date-desc')
+workoutSortByAtom.debugLabel = 'workoutSortByAtom'
 export const workoutViewModeAtom = atomWithStorage<'grid' | 'list'>('workoutViewMode', 'grid')
+workoutViewModeAtom.debugLabel = 'workoutViewModeAtom'
 export const workoutQuickFilterAtom = atomWithStorage<
   'all' | 'today' | 'this-week' | 'completed' | 'planned'
 >('workoutQuickFilter', 'all')
+workoutQuickFilterAtom.debugLabel = 'workoutQuickFilterAtom'
 export const workoutShowAdvancedFiltersAtom = atomWithStorage('workoutShowAdvancedFilters', false)
+workoutShowAdvancedFiltersAtom.debugLabel = 'workoutShowAdvancedFiltersAtom'
 
 // Workout form atoms
 export const workoutFormDataAtom = atom<Partial<Workout>>({})
+workoutFormDataAtom.debugLabel = 'workoutFormDataAtom'
 export const isEditingWorkoutAtom = atom(false)
+isEditingWorkoutAtom.debugLabel = 'isEditingWorkoutAtom'
 export const editingWorkoutIdAtom = atom<string | null>(null)
+editingWorkoutIdAtom.debugLabel = 'editingWorkoutIdAtom'
 
 // Debouncing atoms
 export const messagesFetchTimestampAtom = atom<number>(0)
+messagesFetchTimestampAtom.debugLabel = 'messagesFetchTimestampAtom'
 export const workoutLinkSelectorSearchAtom = atom<string>('')
+workoutLinkSelectorSearchAtom.debugLabel = 'workoutLinkSelectorSearchAtom'
 
 // Typing status debouncing atoms
 export const typingTimeoutRefsAtom = atom<Record<string, ReturnType<typeof setTimeout> | null>>({})
+typingTimeoutRefsAtom.debugLabel = 'typingTimeoutRefsAtom'
 export const sendTypingTimeoutRefsAtom = atom<Record<string, ReturnType<typeof setTimeout> | null>>(
   {}
 )
+sendTypingTimeoutRefsAtom.debugLabel = 'sendTypingTimeoutRefsAtom'
 
 // Workout lookup map for quick access
 export const workoutLookupMapAtom = atom(get => {
@@ -225,8 +250,11 @@ export const workoutLookupMapAtom = atom(get => {
 })
 
 // Workout diff modal atoms
+workoutLookupMapAtom.debugLabel = 'workoutLookupMapAtom'
 export const selectedMatchAtom = atom<WorkoutMatch | null>(null)
+selectedMatchAtom.debugLabel = 'selectedMatchAtom'
 export const showWorkoutDiffModalAtom = atom(false)
+showWorkoutDiffModalAtom.debugLabel = 'showWorkoutDiffModalAtom'
 
 // Advanced workout actions atoms
 // Workout action interfaces
@@ -268,6 +296,8 @@ export const optimisticOperationAtom = atom({
   action: '',
   payload: null as OptimisticOperationPayload | null,
 })
+optimisticOperationAtom.debugLabel = 'optimisticOperationAtom'
+workoutActionsAtom.debugLabel = 'workoutActionsAtom'
 
 export const errorRecoveryAtom = atom({
   type: '',
@@ -279,6 +309,7 @@ export const persistedStateAtom = atom({
   lastSync: new Date().toISOString(),
   uiPreferences: {},
 })
+errorRecoveryAtom.debugLabel = 'errorRecoveryAtom'
 
 export const workoutAnalyticsAtom = atom({
   completionRate: 0,
@@ -297,6 +328,7 @@ export const workoutAnalyticsAtom = atom({
 })
 
 // Workout completion data interface
+workoutAnalyticsAtom.debugLabel = 'workoutAnalyticsAtom'
 interface WorkoutCompletionData {
   actual_distance?: number
   actual_duration?: number
@@ -396,6 +428,7 @@ export const completeWorkoutAtom = atom(
 )
 
 // Workout details interface for logging
+completeWorkoutAtom.debugLabel = 'completeWorkoutAtom'
 interface WorkoutDetails {
   actual_distance?: number | null
   actual_duration?: number | null
@@ -500,6 +533,7 @@ export const logWorkoutDetailsAtom = atom(
 
 /**
  * Write-only atom for marking a workout as skipped.
+logWorkoutDetailsAtom.debugLabel = 'logWorkoutDetailsAtom'
  * Updates the workout status to skipped and maintains training history.
  *
  * @param workoutId - The ID of the workout to skip
@@ -570,3 +604,4 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     throw error
   }
 })
+skipWorkoutAtom.debugLabel = 'skipWorkoutAtom'

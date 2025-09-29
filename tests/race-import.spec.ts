@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test'
-import { Logger } from 'tslog'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
+import { type TestLogger, getTestLogger } from './utils/test-logger'
 
-// Removed unused imports: TestUserType, navigateToDashboard
-
-const logger = new Logger({ name: 'tests/race-import.spec' })
+let logger: TestLogger
+test.beforeAll(async () => {
+  logger = await getTestLogger('tests/race-import.spec')
+})
 
 const TEST_GPX_CONTENT = `<?xml version="1.0"?>
 <gpx version="1.1" creator="TestCreator">

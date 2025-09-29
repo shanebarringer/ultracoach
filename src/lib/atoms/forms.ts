@@ -3,8 +3,11 @@ import { atom } from 'jotai'
 
 // Generic form state
 export const formErrorsAtom = atom<Record<string, string>>({})
+formErrorsAtom.debugLabel = 'formErrorsAtom'
 export const formSubmittingAtom = atom(false)
+formSubmittingAtom.debugLabel = 'formSubmittingAtom'
 export const formSuccessAtom = atom(false)
+formSuccessAtom.debugLabel = 'formSuccessAtom'
 
 // Specific form atoms
 export const signInFormAtom = atom({
@@ -22,6 +25,7 @@ export const signUpFormAtom = atom({
   userType: 'runner' as 'runner' | 'coach',
   loading: false,
 })
+signInFormAtom.debugLabel = 'signInFormAtom'
 
 export const profileFormAtom = atom({
   name: '',
@@ -30,6 +34,7 @@ export const profileFormAtom = atom({
   avatarUrl: '',
   preferences: {},
 })
+signUpFormAtom.debugLabel = 'signUpFormAtom'
 
 // Form validation state
 export const formValidationAtom = atom({
@@ -37,6 +42,7 @@ export const formValidationAtom = atom({
   errors: [] as string[],
   touched: {} as Record<string, boolean>,
 })
+profileFormAtom.debugLabel = 'profileFormAtom'
 
 // Create training plan form
 export const createTrainingPlanFormAtom = atom({
@@ -51,8 +57,10 @@ export const createTrainingPlanFormAtom = atom({
   error: null as string | null,
   loading: false,
 })
+formValidationAtom.debugLabel = 'formValidationAtom'
 
 // Workout log form
+createTrainingPlanFormAtom.debugLabel = 'createTrainingPlanFormAtom'
 export const workoutLogFormAtom = atom({
   workout_id: null as string | null,
   date: '',
@@ -74,5 +82,8 @@ export const workoutLogFormAtom = atom({
 })
 
 // Auth success/redirect states
+workoutLogFormAtom.debugLabel = 'workoutLogFormAtom'
 export const authSuccessMessageAtom = atom<string | null>(null)
+authSuccessMessageAtom.debugLabel = 'authSuccessMessageAtom'
 export const authRedirectingAtom = atom(false)
+authRedirectingAtom.debugLabel = 'authRedirectingAtom'

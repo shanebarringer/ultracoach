@@ -7,9 +7,13 @@ import type { StravaActivity, StravaAthlete, StravaConnection } from '@/types/st
 
 // Core Strava atoms
 export const stravaActivitiesAtom = atom<StravaActivity[]>([])
+stravaActivitiesAtom.debugLabel = 'stravaActivitiesAtom'
 export const stravaAthleteAtom = atom<StravaAthlete | null>(null)
+stravaAthleteAtom.debugLabel = 'stravaAthleteAtom'
 export const stravaLoadingAtom = atom(false)
+stravaLoadingAtom.debugLabel = 'stravaLoadingAtom'
 export const stravaErrorAtom = atom<string | null>(null)
+stravaErrorAtom.debugLabel = 'stravaErrorAtom'
 
 // Strava connection state
 export const stravaConnectionStatusAtom = atom<{
@@ -19,12 +23,17 @@ export const stravaConnectionStatusAtom = atom<{
   status: 'loading',
   connected: false,
 })
+stravaConnectionStatusAtom.debugLabel = 'stravaConnectionStatusAtom'
 export const stravaAccessTokenAtom = atom<string | null>(null)
+stravaAccessTokenAtom.debugLabel = 'stravaAccessTokenAtom'
 export const stravaRefreshTokenAtom = atom<string | null>(null)
+stravaRefreshTokenAtom.debugLabel = 'stravaRefreshTokenAtom'
 
 // Strava sync state
 export const stravaSyncInProgressAtom = atom(false)
+stravaSyncInProgressAtom.debugLabel = 'stravaSyncInProgressAtom'
 export const stravaLastSyncAtom = atomWithStorage<string | null>('stravaLastSync', null)
+stravaLastSyncAtom.debugLabel = 'stravaLastSyncAtom'
 export const stravaSyncProgressAtom = atom({
   current: 0,
   total: 0,
@@ -32,8 +41,11 @@ export const stravaSyncProgressAtom = atom({
 })
 
 // Strava UI state
+stravaSyncProgressAtom.debugLabel = 'stravaSyncProgressAtom'
 export const workoutStravaShowPanelAtom = atom(false)
+workoutStravaShowPanelAtom.debugLabel = 'workoutStravaShowPanelAtom'
 export const stravaSelectedActivitiesAtom = atom<string[]>([])
+stravaSelectedActivitiesAtom.debugLabel = 'stravaSelectedActivitiesAtom'
 export const stravaActivitiesRefreshableAtom = atom(null, async (_get, set) => {
   // Reset activities to trigger a refetch
   set(stravaActivitiesAtom, [])
@@ -52,9 +64,11 @@ export const stravaActivitiesRefreshableAtom = atom(null, async (_get, set) => {
 })
 
 // Strava connection status atom
+stravaActivitiesRefreshableAtom.debugLabel = 'stravaActivitiesRefreshableAtom'
 export const stravaStatusAtom = atom<
   'disconnected' | 'connecting' | 'connected' | 'expired' | 'error'
 >('disconnected')
+stravaStatusAtom.debugLabel = 'stravaStatusAtom'
 
 // Auto-reconnect state
 export const stravaAutoReconnectAtom = atom<{
@@ -68,6 +82,7 @@ export const stravaAutoReconnectAtom = atom<{
   maxAttempts: 3,
   lastAttempt: null,
 })
+stravaAutoReconnectAtom.debugLabel = 'stravaAutoReconnectAtom'
 
 // Sync progress interface
 interface SyncProgress {
@@ -86,7 +101,9 @@ interface SyncProgress {
 export const syncProgressAtom = atom<SyncProgress>({})
 
 // Strava connection atom
+syncProgressAtom.debugLabel = 'syncProgressAtom'
 export const stravaConnectionAtom = atom<StravaConnection | null>(null)
+stravaConnectionAtom.debugLabel = 'stravaConnectionAtom'
 
 // Sync stats atom (derived)
 export const syncStatsAtom = atom(get => {
@@ -109,6 +126,7 @@ export const syncStatsAtom = atom(get => {
 })
 
 // Combined Strava state atom for easy consumption (derived)
+syncStatsAtom.debugLabel = 'syncStatsAtom'
 export const stravaStateAtom = atom(get => {
   const connection = get(stravaConnectionAtom)
   const activities = get(stravaActivitiesAtom)
@@ -141,6 +159,7 @@ export const stravaStateAtom = atom(get => {
 })
 
 // Strava actions atom for dispatching actions
+stravaStateAtom.debugLabel = 'stravaStateAtom'
 export const stravaActionsAtom = atom(
   null,
   async (
@@ -174,12 +193,14 @@ export const stravaActionsAtom = atom(
 )
 
 // Trigger workout matching atom
+stravaActionsAtom.debugLabel = 'stravaActionsAtom'
 export const triggerWorkoutMatchingAtom = atom(null, async (_get, _set) => {
   // Trigger workout matching logic
   return Promise.resolve()
 })
 
 // Matching summary atom for workout comparison
+triggerWorkoutMatchingAtom.debugLabel = 'triggerWorkoutMatchingAtom'
 export const matchingSummaryAtom = atom<{
   matched: number
   unmatched: number
@@ -195,3 +216,4 @@ export const matchingSummaryAtom = atom<{
   unmatchedWorkouts: [],
   lastProcessed: null,
 })
+matchingSummaryAtom.debugLabel = 'matchingSummaryAtom'

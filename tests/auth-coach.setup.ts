@@ -1,18 +1,19 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
-import { Logger } from 'tslog'
 
 import { TEST_COACH_EMAIL, TEST_COACH_PASSWORD } from './utils/test-helpers'
+import { getTestLogger } from './utils/test-logger'
+
+// Logger is created inside the test to avoid module-eval ESM issues
 
 // Conditional fs import (typed) to avoid Vercel build issues
 const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
 const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
-const logger = new Logger({ name: 'tests/auth-coach.setup' })
-
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
 setup('authenticate as coach', async ({ page, context }) => {
+  const logger = await getTestLogger('tests/auth-coach.setup')
   logger.info('🔐 Starting coach authentication setup...')
 
   const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
