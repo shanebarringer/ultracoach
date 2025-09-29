@@ -109,6 +109,10 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3001
       NEXT_PUBLIC_BASE_URL: http://localhost:3001
 
+      # Playwright test configuration
+      PLAYWRIGHT_TEST_BASE_URL: http://localhost:3001
+      E2E_BASE_URL: http://localhost:3001
+
       # Email configuration (test mode)
       RESEND_API_KEY: test-key
       RESEND_FROM_EMAIL: test@ultracoach.dev
@@ -446,6 +450,7 @@ jobs:
           BETTER_AUTH_URL: http://localhost:3001
           NEXT_PUBLIC_BASE_URL: http://localhost:3001
           PLAYWRIGHT_TEST_BASE_URL: http://localhost:3001
+          E2E_BASE_URL: http://localhost:3001
           TEST_COACH_EMAIL: emma@ultracoach.dev
           TEST_COACH_PASSWORD: UltraCoach2025!
           TEST_RUNNER_EMAIL: alex.rivera@ultracoach.dev

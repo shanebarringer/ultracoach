@@ -14,7 +14,7 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
+import { navigateToDashboard } from '../utils/test-helpers'
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
@@ -40,32 +40,27 @@ test.describe('Session Persistence', () => {
     })
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
+      // Navigate to workouts page
       await page.goto('/workouts')
-      await expect(page).toHaveURL('/workouts')
-      await page.waitForLoadState('domcontentloaded')
 
-      // Extra verification: ensure we're not on signin page initially (CI issue)
-      const initialUrl = page.url()
-      if (initialUrl.includes('/auth/signin')) {
-        throw new Error(`Authentication failed in CI - initial redirect to signin: ${initialUrl}`)
-      }
+      // Wait for final URL (ensures no redirect to signin)
+      await page.waitForURL('/workouts')
+
+      // Wait for page content to prove authentication worked
+      await expect(
+        page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
+      ).toBeVisible()
 
       // Refresh page
       await page.reload()
-      await page.waitForLoadState('domcontentloaded')
 
-      // Allow extra time for auth to resolve after refresh in CI
-      await page.waitForTimeout(1000)
+      // Wait for final URL after refresh (critical test - should not redirect to signin)
+      await page.waitForURL('/workouts')
 
-      // Should stay on workouts page
-      const finalUrl = page.url()
-      await expect(page).toHaveURL('/workouts')
-      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-
-      // Page should function normally
+      // Verify page content is still accessible (proves session persisted)
       await expect(
         page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
-      ).toBeVisible({ timeout: 10000 })
+      ).toBeVisible()
     })
 
     test('should maintain session on calendar page refresh', async ({ page }) => {

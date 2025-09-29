@@ -4,26 +4,6 @@ import { Logger } from 'tslog'
 
 import { TEST_COACH_EMAIL, TEST_COACH_PASSWORD } from './utils/test-helpers'
 
-async function waitForHealthyServer(baseUrl: string, page: import('@playwright/test').Page) {
-  const endpoints = ['/', '/api/health', '/api/health/database']
-  const start = Date.now()
-  for (let attempt = 1; attempt <= 10; attempt++) {
-    try {
-      const results = await Promise.all(
-        endpoints.map(ep => page.request.get(baseUrl.replace(/\/$/, '') + ep))
-      )
-      const ok = results.every(r => r.ok())
-      if (ok) return { ok: true, ms: Date.now() - start }
-    } catch {}
-    await new Promise(r => setTimeout(r, 250))
-  }
-  return { ok: false, ms: Date.now() - start }
-}
-
-// Conditional fs import (typed) to avoid Vercel build issues
-const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
-const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
-
 const logger = new Logger({ name: 'tests/auth-coach.setup' })
 
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
@@ -37,25 +17,15 @@ setup('authenticate as coach', async ({ page, context }) => {
     process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
   logger.info(`🌐 Using base URL: ${baseUrl}`)
 
-  // Health check before auth to avoid slow failures
-  const hc = await waitForHealthyServer(baseUrl, page)
-  if (!hc.ok) {
-    logger.warn('⚠️ Health check did not pass within timeout; continuing anyway', {
-      durationMs: hc.ms,
-    })
-  } else {
-    logger.info('✅ Server health checks passed', { durationMs: hc.ms })
-  }
-
-  // Navigate to signin page
+  // Navigate to signin page first
   await page.goto(`${baseUrl}/auth/signin`)
   logger.info('📍 Navigated to signin page')
 
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript/hydration delays
-  const t0 = Date.now()
+  // Use API authentication for reliability (as recommended in Playwright docs)
+  logger.info('🔑 Attempting coach API authentication...')
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {
       email: TEST_COACH_EMAIL,
@@ -63,98 +33,91 @@ setup('authenticate as coach', async ({ page, context }) => {
     },
     headers: {
       'Content-Type': 'application/json',
-      Origin: baseUrl, // Add origin header for proper cookie setting
-      Referer: `${baseUrl}/auth/signin`, // Add referer for cookie domain
     },
   })
 
   if (!response.ok()) {
     const body = await response.text()
-    logger.error('Coach Auth API failed', {
+    logger.error('Coach auth API failed', {
       status: response.status(),
       bodyPreview: body.slice(0, 300).replace(TEST_COACH_EMAIL, '<redacted-email>'),
     })
     throw new Error(`Coach authentication API failed with status ${response.status()}`)
   }
 
-  const authMs = Date.now() - t0
-  logger.info('✅ Coach authentication API successful', { durationMs: authMs })
+  logger.info('✅ Coach authentication API successful')
 
-  // Check if cookies were set
-  const cookies = await context.cookies()
-  logger.info(`🍪 Cookies after auth: ${cookies.length} cookies set`)
-  if (cookies.length > 0) {
-    logger.info(`🍪 First cookie: ${cookies[0].name} for domain ${cookies[0].domain}`)
-  }
-
-  // The API call should have set cookies, now navigate to dashboard
+  // Navigate to coach dashboard and wait for all redirects to complete
   await page.goto(`${baseUrl}/dashboard/coach`)
-  await page.waitForLoadState('domcontentloaded')
 
-  // Verify we're on the dashboard
-  const currentUrl = page.url()
-  logger.info('🔄 Current URL after auth:', currentUrl)
+  // Wait for the final URL after any redirects (critical for proper auth)
+  await page.waitForURL(`${baseUrl}/dashboard/coach`)
+  logger.info('🔄 Redirects completed, on coach dashboard URL')
 
-  if (!currentUrl.includes('/dashboard')) {
-    // If redirected to signin, try refreshing to pick up cookies
-    await page.reload()
-    await page.waitForLoadState('domcontentloaded')
+  // Wait for specific element that proves we're authenticated (Playwright best practice)
+  await expect(page.getByTestId('coach-dashboard-content')).toBeVisible({ timeout: 30000 })
+  logger.info('✅ Coach dashboard content visible - authentication confirmed')
 
-    const finalUrl = page.url()
-    if (!finalUrl.includes('/dashboard')) {
-      throw new Error('Coach authentication failed - could not access dashboard after API auth')
-    }
+  // Capture session storage if the app uses it (Better Auth might store session tokens here)
+  const sessionStorage = await page.evaluate(() => JSON.stringify(sessionStorage))
+  if (sessionStorage && sessionStorage !== '{}') {
+    logger.info('📦 Session storage captured for restoration')
   }
 
-  const totalMs = Date.now() - t0
-  logger.info('✅ Successfully navigated to coach dashboard', { totalAuthFlowMs: totalMs })
-
-  // Ensure the directory exists before saving authentication state
-  const authDir = path.dirname(authFile)
-  if (fs) {
-    fs.mkdirSync(authDir, { recursive: true })
-    logger.info(`📁 Created auth directory: ${authDir}`)
-  } else {
-    logger.warn(
-      'FS not available; skipping auth directory creation. Storage write may fail if parent dir is missing.'
-    )
-  }
-
-  // Save the authentication state
+  // Save storage state (includes cookies and localStorage automatically)
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved coach authentication state to ${authFile}`)
 
   // Verify the storage state file was created and contains cookies
-  if (fs) {
-    try {
-      const storageStateContent = fs.readFileSync(authFile, 'utf-8')
-      const storageState = JSON.parse(storageStateContent)
-      logger.info(`✅ Storage state file created with ${storageState.cookies?.length || 0} cookies`)
+  try {
+    const fs = require('fs')
+    const storageStateContent = fs.readFileSync(authFile, 'utf-8')
+    const storageState = JSON.parse(storageStateContent)
+    logger.info(
+      `✅ Coach storage state file created with ${storageState.cookies?.length || 0} cookies`
+    )
 
-      if (storageState.cookies?.length > 0) {
-        const firstCookie = storageState.cookies[0]
-        logger.info(`🍪 Storage state cookie: ${firstCookie.name} for ${firstCookie.domain}`)
-      } else {
-        logger.warn('⚠️ Storage state has no cookies!')
-      }
-    } catch (error) {
-      logger.error('❌ Failed to verify storage state file', error)
+    if (storageState.cookies?.length > 0) {
+      const authCookies = storageState.cookies.filter(
+        cookie =>
+          cookie.name.includes('better-auth') ||
+          cookie.name.includes('session') ||
+          cookie.name.includes('auth')
+      )
+      logger.info(`🍪 Found ${authCookies.length} auth-related cookies for coach`)
+    } else {
+      logger.warn('⚠️ No cookies found in coach storage state!')
     }
+  } catch (error) {
+    logger.error('❌ Failed to verify coach storage state file', error)
   }
 
-  // Verify authentication actually works by opening a new page with the storage state
-  const verifyPage = await context.newPage()
+  // Final verification using a new context (Playwright best practice)
+  const verifyContext = await context.browser().newContext({
+    storageState: authFile,
+  })
+  const verifyPage = await verifyContext.newPage()
+
   await verifyPage.goto(`${baseUrl}/dashboard/coach`)
+
+  // Wait for final URL (ensuring no redirect to signin)
+  await verifyPage.waitForURL(`${baseUrl}/dashboard/coach`)
+
+  // Verify coach dashboard content is accessible
+  await expect(verifyPage.getByTestId('coach-dashboard-content')).toBeVisible({ timeout: 15000 })
+
   const verifyUrl = verifyPage.url()
   const isAuthenticated = !verifyUrl.includes('/auth/signin')
-  logger.info(`🔐 Authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
-  logger.info(`📍 Verification URL: ${verifyUrl}`)
+  logger.info(`🔐 Coach authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
 
   if (!isAuthenticated) {
-    logger.error('❌ Storage state was saved but authentication verification failed!')
-    throw new Error('Authentication verification failed - storage state may not be working')
+    logger.error('❌ Coach storage state verification failed!')
+    throw new Error('Coach authentication verification failed - storage state may not be working')
   }
+
+  // Clean up verification resources
   await verifyPage.close()
+  await verifyContext.close()
 
   logger.info('✅ Coach authentication setup complete and verified!')
 })
