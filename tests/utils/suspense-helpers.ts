@@ -5,7 +5,14 @@
  * These utilities follow Playwright best practices and Context7 recommendations.
  */
 import { Page, expect } from '@playwright/test'
-import { Logger } from 'tslog'
+
+// Simple logger wrapper to avoid tslog ES module issues in tests
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+}
 
 /**
  * Waits for dashboard content to be loaded and ready for interaction.
@@ -75,11 +82,10 @@ export async function waitForFormSubmission(page: Page, timeout = 15000): Promis
 export async function waitForFileUploadProcessing(
   page: Page,
   expectedContent?: string | RegExp,
-  timeout = 90000,
-  logger?: Logger<unknown>
+  timeout = 30000
 ): Promise<void> {
-  logger?.info('Starting waitForFileUploadProcessing', { expectedContent })
-  const waitTimeout = timeout ?? 30000
+  logger.info('waitForFileUploadProcessing:start', { expectedContent })
+  const waitTimeout = timeout
 
   // First wait for any loading indicators to appear and disappear
   try {
@@ -87,9 +93,9 @@ export async function waitForFileUploadProcessing(
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout: waitTimeout })
-    logger?.debug('Loading indicators cleared')
+    logger.info('waitForFileUploadProcessing:loadingCleared')
   } catch {
-    logger?.debug('No loading indicators detected')
+    logger.debug('waitForFileUploadProcessing:noLoadingIndicators')
   }
 
   // Wait for preview content to be visible (deterministic readiness signal)
@@ -97,14 +103,14 @@ export async function waitForFileUploadProcessing(
     // Prefer the actual content render over brittle tab aria attributes
     const previewPanel = page.getByTestId('preview-content')
     await previewPanel.waitFor({ state: 'visible', timeout: waitTimeout })
-    logger?.debug('Preview content visible')
+    logger.info('waitForFileUploadProcessing:previewContentVisible')
   } catch (error) {
-    logger?.error('Preview content error', { error })
+    logger.error('waitForFileUploadProcessing:previewContentError', { error })
     throw error
   }
 
   if (expectedContent) {
-    logger?.info('Waiting for specific content', { expectedContent })
+    logger.info('waitForFileUploadProcessing:waitingForContent', { expectedContent })
 
     // Wait for race list to be populated
     const raceList = page.getByTestId('race-list')
@@ -114,7 +120,7 @@ export async function waitForFileUploadProcessing(
     try {
       const raceElement = raceList.getByText(expectedContent)
       await raceElement.waitFor({ state: 'visible', timeout: waitTimeout })
-      logger?.info('Found expected race content', { expectedContent })
+      logger.info('waitForFileUploadProcessing:foundContent', { expectedContent })
     } catch (error) {
       // Check if there are any error messages instead
       const errorSelectors = [
@@ -128,7 +134,10 @@ export async function waitForFileUploadProcessing(
           const errorElement = page.locator(selector).first()
           if (await errorElement.isVisible()) {
             const errorText = await errorElement.textContent()
-            logger?.warn('Found error message instead', { errorText, expectedContent })
+            logger.warn('waitForFileUploadProcessing:foundErrorInstead', {
+              errorText,
+              expectedContent,
+            })
             throw new Error(`Expected "${expectedContent}" but found error: ${errorText}`)
           }
         } catch {
@@ -136,7 +145,7 @@ export async function waitForFileUploadProcessing(
         }
       }
 
-      logger?.warn('Content not found and no errors detected', { expectedContent })
+      logger.warn('waitForFileUploadProcessing:contentNotFound', { expectedContent })
       throw error
     }
   }
@@ -213,12 +222,8 @@ export async function verifyDashboardAccess(
  * Waits for file upload error conditions without expecting preview tab selection.
  * Used for invalid files that fail to parse or process.
  */
-export async function waitForFileUploadError(
-  page: Page,
-  timeout = 30000,
-  logger?: Logger<unknown>
-): Promise<void> {
-  logger?.info('Starting waitForFileUploadError - waiting for error conditions')
+export async function waitForFileUploadError(page: Page, timeout = 30000): Promise<void> {
+  logger.info('waitForFileUploadError:start')
 
   // First wait for any loading indicators to appear and disappear
   try {
@@ -226,24 +231,33 @@ export async function waitForFileUploadError(
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout: Math.min(15000, timeout) })
-    logger?.debug('Loading indicators cleared')
+    logger.info('waitForFileUploadError:loadingCleared')
   } catch {
-    logger?.debug('No loading indicators detected')
+    logger.debug('waitForFileUploadError:noLoadingIndicators')
   }
 
   // Wait for preview tab to appear (it will exist but not be selected for errors)
   try {
     const previewTab = page.getByTestId('preview-tab')
     await previewTab.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) })
-    logger?.debug('Preview tab visible (but may not be selected for errors)')
+    logger.info('waitForFileUploadError:previewTabVisible')
   } catch (error) {
-    logger?.debug('Preview tab not found - this is OK for error cases')
+    logger.debug('waitForFileUploadError:previewTabNotFoundOk')
   }
 
-  // For error cases, we just wait a bit for any error messages to appear
-  // Don't expect preview tab to be selected since parsing failed
-  await page.waitForTimeout(3000)
-  logger?.debug('Error processing wait completed')
+  // Wait deterministically for error indicators instead of fixed sleep
+  const errorText = page.locator('text=/error|failed|invalid/i').first()
+  const errorUi = page.locator('[data-testid*="error"], .text-danger').first()
+
+  try {
+    await Promise.race([
+      errorText.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) }),
+      errorUi.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) }),
+    ])
+    logger.info('waitForFileUploadError:errorsVisible')
+  } catch {
+    logger.debug('waitForFileUploadError:noErrorsDetected')
+  }
 }
 
 /**

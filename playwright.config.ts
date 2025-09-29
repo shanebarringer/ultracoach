@@ -23,7 +23,8 @@ export default defineConfig({
   /* Limited workers for CI balance of speed vs stability */
   workers: process.env.CI ? 2 : undefined, // CI: 2 workers for better performance, Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: process.env.CI ? [['dot'], ['html']] : 'html', // Dot reporter for concise CI output
+  // Reporters: keep concise output in CI but always generate an HTML report for debugging
+  reporter: process.env.CI ? [['dot'], ['html']] : [['list'], ['html']],
   /* Global timeout for each test */
   timeout: process.env.CI ? 180000 : 60000, // CI: 3min (increased from 2min), Local: 1min for compilation
   /* Global timeout for expect assertions */
@@ -33,10 +34,11 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3001',
+    baseURL:
+      process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Collect trace for any failed test to aid diagnosis */
+    trace: 'retain-on-failure',
 
     /* Record video for failed tests */
     video: 'retain-on-failure',
@@ -54,6 +56,12 @@ export default defineConfig({
     storageState: undefined, // Will be overridden by projects that need auth
     acceptDownloads: true,
     ignoreHTTPSErrors: false,
+
+    /* Extra headers to ensure proper auth behavior */
+    extraHTTPHeaders: {
+      // Ensure consistent user agent for cookie handling
+      'User-Agent': 'Mozilla/5.0 (compatible; PlaywrightTest/1.0)',
+    },
   },
 
   /* Setup projects - run authentication before other tests */
@@ -239,7 +247,6 @@ export default defineConfig({
         url: 'http://localhost:3001',
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
-        port: 3001,
         env: {
           NODE_ENV: 'development', // Use development mode for local testing
           // Load test environment variables from environment
