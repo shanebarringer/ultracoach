@@ -273,3 +273,26 @@ export const sendMessageActionAtom = atom(
     }
   }
 )
+
+// Jotai Devtools debug labels
+conversationsAtom.debugLabel = 'chat/conversations'
+messagesAtom.debugLabel = 'chat/messages'
+conversationsLoadingAtom.debugLabel = 'chat/conversationsLoading'
+messagesLoadingAtom.debugLabel = 'chat/messagesLoading'
+asyncConversationsAtom.debugLabel = 'chat/asyncConversations'
+selectedConversationAtom.debugLabel = 'chat/selectedConversation'
+selectedConversationIdAtom.debugLabel = 'chat/selectedConversationId'
+typingIndicatorAtom.debugLabel = 'chat/typingIndicator'
+unreadMessagesCountAtom.debugLabel = 'chat/unreadMessagesCount'
+isTypingAtom.debugLabel = 'chat/isTyping'
+chatSoundEnabledAtom.debugLabel = 'chat/soundEnabled'
+chatNotificationsEnabledAtom.debugLabel = 'chat/notificationsEnabled'
+currentConversationIdAtom.debugLabel = 'chat/currentConversationId'
+messageInputAtom.debugLabel = 'chat/messageInput'
+chatUiStateAtom.debugLabel = 'chat/uiState'
+messageInputStateAtom.debugLabel = 'chat/messageInputState'
+newMessageModalAtom.debugLabel = 'chat/newMessageModal'
+typingStatusAtom.debugLabel = 'chat/typingStatus'
+offlineMessageQueueAtom.debugLabel = 'chat/offlineQueue'
+selectedRecipientAtom.debugLabel = 'chat/selectedRecipient'
+sendMessageActionAtom.debugLabel = 'chat/sendMessageAction'

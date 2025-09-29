@@ -55,3 +55,20 @@ export const errorsAtom = atom(get => {
 
   return errors
 })
+
+// Jotai Devtools debug labels
+// Note: local atoms are labeled for clarity even if not exported
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+fetchUserDataAtom.debugLabel = 'perf/fetchUserData'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+fetchWorkoutsAtom.debugLabel = 'perf/fetchWorkouts'
+loadableUserDataAtom.debugLabel = 'perf/loadableUserData'
+loadableWorkoutsAtom.debugLabel = 'perf/loadableWorkouts'
+workoutsLoadableAtom.debugLabel = 'perf/workoutsLoadable'
+notificationsLoadableAtom.debugLabel = 'perf/notificationsLoadable'
+conversationsLoadableAtom.debugLabel = 'perf/conversationsLoadable'
+trainingPlansLoadableAtom.debugLabel = 'perf/trainingPlansLoadable'
+isLoadingAtom.debugLabel = 'perf/isLoading'
+errorsAtom.debugLabel = 'perf/errors'
