@@ -7,10 +7,17 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 ### At the start of EVERY new conversation
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
-2. **Check Linear workspace** at https://linear.app/ultracoach to see current milestone, pending tasks, and priorities
+2. **Check Linear workspace** using Linear MCP to see current milestone, pending tasks, and priorities
+   - Use `mcp__linear-server__list_issues` with team="Ultracoach" and state filters
+   - Read issue details with `mcp__linear-server__get_issue` for context
+   - Update issue status with `mcp__linear-server__update_issue` when completing work
 3. **Review this file** for project-specific guidance and context
 4. **Update task status in Linear** immediately when starting or completing work
+   - Move issues to "In Progress" when starting
+   - Move to "In Review" when creating PR
+   - Move to "Done" when PR is merged
 5. **Create new issues in Linear** when discovering additional tasks during development
+   - Use `mcp__linear-server__create_issue` with appropriate labels and project
 6. **Always use tslog library and utilities for logging (no console.log)**
 7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
@@ -26,6 +33,16 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 ### MCP Instructions
 
+### GitHub MCP Fallback
+
+When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) as fallback:
+
+- `gh pr view` - View current PR
+- `gh pr create` - Create new PR
+- `gh pr list` - List PRs
+- `gh issue view` - View issue details
+- `gh issue create` - Create new issue
+
 ### Use Playwright MCP to investigate test failures and UI issues
 
 Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors.
@@ -38,6 +55,7 @@ await page.getByText('Test Ultra Race').click()
 
 // After (stable: explicit test id)
 await page.getByTestId('race-name-0').click()
+```
 
 ### E2E authentication storageState filenames
 
@@ -45,11 +63,10 @@ await page.getByTestId('race-name-0').click()
 - Coach: use `./playwright/.auth/coach.json`
 
 Deprecated
+
 - `./playwright/.auth/user.json` was the legacy runner alias and is now deprecated. CI temporarily accepts it for a short deprecation window to keep older branches green, but all new/updated specs and Playwright projects should reference `runner.json`.
 
-```
-
-- When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
+````
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 
@@ -79,7 +96,7 @@ export default async function AuthenticatedPage() {
 export default function PageClient({ user }) {
   // Client-side state management and interactivity
 }
-```
+````
 
 ### Routes That MUST Be Dynamic
 
