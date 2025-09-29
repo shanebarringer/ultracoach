@@ -26,3 +26,12 @@ export const notificationPreferencesAtom = atom({
   weeklyReports: false,
   achievementAlerts: true,
 })
+
+// Jotai Devtools debug labels
+notificationsAtom.debugLabel = 'notifications/list'
+notificationsLoadingAtom.debugLabel = 'notifications/loading'
+notificationsErrorAtom.debugLabel = 'notifications/error'
+asyncNotificationsAtom.debugLabel = 'notifications/async'
+unreadNotificationsCountAtom.debugLabel = 'notifications/unreadCount'
+hasNewNotificationsAtom.debugLabel = 'notifications/hasNew'
+notificationPreferencesAtom.debugLabel = 'notifications/preferences'

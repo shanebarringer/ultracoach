@@ -139,3 +139,22 @@ export const availableRunnersAtom = makeAvailableUsersAtom<User>(
   'runners',
   availableRunnersLogger
 )
+
+// Jotai Devtools debug labels
+relationshipsAtom.debugLabel = 'relationships/list'
+relationshipsLoadingAtom.debugLabel = 'relationships/loading'
+relationshipsErrorAtom.debugLabel = 'relationships/error'
+relationshipsAsyncAtom.debugLabel = 'relationships/async'
+relationshipsLoadableAtom.debugLabel = 'relationships/loadable'
+selectedRelationshipAtom.debugLabel = 'relationships/selected'
+selectedRelationshipIdAtom.debugLabel = 'relationships/selectedId'
+relationshipStatusFilterAtom.debugLabel = 'relationships/statusFilter'
+relationshipSearchTermAtom.debugLabel = 'relationships/searchTerm'
+inviteRunnerFormAtom.debugLabel = 'relationships/inviteRunnerForm'
+connectCoachFormAtom.debugLabel = 'relationships/connectCoachForm'
+runnerSearchTermAtom.debugLabel = 'relationships/runnerSearchTerm'
+connectingRunnerIdsAtom.debugLabel = 'relationships/connectingRunnerIds'
+runnersAtom.debugLabel = 'relationships/runners'
+connectedRunnersAtom.debugLabel = 'relationships/connectedRunners'
+availableCoachesAtom.debugLabel = 'relationships/availableCoaches'
+availableRunnersAtom.debugLabel = 'relationships/availableRunners'

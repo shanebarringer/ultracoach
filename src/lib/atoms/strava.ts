@@ -195,3 +195,27 @@ export const matchingSummaryAtom = atom<{
   unmatchedWorkouts: [],
   lastProcessed: null,
 })
+
+// Jotai Devtools debug labels
+stravaActivitiesAtom.debugLabel = 'strava/activities'
+stravaAthleteAtom.debugLabel = 'strava/athlete'
+stravaLoadingAtom.debugLabel = 'strava/loading'
+stravaErrorAtom.debugLabel = 'strava/error'
+stravaConnectionStatusAtom.debugLabel = 'strava/connectionStatus'
+stravaAccessTokenAtom.debugLabel = 'strava/accessToken'
+stravaRefreshTokenAtom.debugLabel = 'strava/refreshToken'
+stravaSyncInProgressAtom.debugLabel = 'strava/syncInProgress'
+stravaLastSyncAtom.debugLabel = 'strava/lastSync'
+stravaSyncProgressAtom.debugLabel = 'strava/syncProgress'
+workoutStravaShowPanelAtom.debugLabel = 'strava/workoutShowPanel'
+stravaSelectedActivitiesAtom.debugLabel = 'strava/selectedActivities'
+stravaActivitiesRefreshableAtom.debugLabel = 'strava/activitiesRefreshable'
+stravaStatusAtom.debugLabel = 'strava/status'
+stravaAutoReconnectAtom.debugLabel = 'strava/autoReconnect'
+syncProgressAtom.debugLabel = 'strava/syncProgressV2'
+stravaConnectionAtom.debugLabel = 'strava/connection'
+syncStatsAtom.debugLabel = 'strava/syncStats'
+stravaStateAtom.debugLabel = 'strava/state'
+stravaActionsAtom.debugLabel = 'strava/actions'
+triggerWorkoutMatchingAtom.debugLabel = 'strava/triggerWorkoutMatching'
+matchingSummaryAtom.debugLabel = 'strava/matchingSummary'

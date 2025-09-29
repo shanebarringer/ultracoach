@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test'
 
+import { label } from './utils/reporting'
 import { navigateToDashboard } from './utils/test-helpers'
 
 test.describe('Runner Dashboard', () => {
   test('should display training plans and metrics', async ({ page }) => {
+    label(test.info(), 'selectors')
     // Skip this test if running with coach authentication
     test.skip(
       test.info().project.name === 'chromium-coach',
@@ -27,6 +29,7 @@ test.describe('Runner Dashboard', () => {
 
 test.describe('Coach Dashboard', () => {
   test('should display runners and coach metrics', async ({ page }) => {
+    label(test.info(), 'selectors')
     // Skip this test if running with runner authentication
     test.skip(
       test.info().project.name === 'chromium-runner',

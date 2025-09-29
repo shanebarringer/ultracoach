@@ -12,6 +12,8 @@ import {
   waitForHeroUIReady,
   waitForLoadingComplete,
 } from '../utils/heroui-helpers'
+import { label } from '../utils/reporting'
+import { clickWhenReady } from '../utils/wait-helpers'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -29,6 +31,7 @@ test.describe('Training Plan Management', () => {
     })
 
     test('should display training plans with filtering', async ({ page }) => {
+      label(test.info(), 'training-plans')
       // Wait for dashboard to fully load before navigation (Suspense-aware)
       await page.waitForLoadState('domcontentloaded')
 
@@ -47,8 +50,7 @@ test.describe('Training Plan Management', () => {
       try {
         // Navigate to training plans - click the button with emoji
         const managePlansButton = page.getByRole('button', { name: '⛰️ Manage Plans' })
-        await expect(managePlansButton).toBeVisible({ timeout: 10000 })
-        await managePlansButton.click()
+        await clickWhenReady(managePlansButton, 10000)
 
         // Wait for navigation with more flexible timeout
         await page.waitForURL('**/training-plans', {
@@ -150,10 +152,15 @@ test.describe('Training Plan Management', () => {
             await runnerDropdown.click()
             await page.waitForTimeout(500)
 
-            const runnerOption = page.getByRole('option').first()
-            if (await runnerOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+            // Use a more stable selector for dropdown options
+            const runnerOption = page
+              .locator('[data-testid="runner-option"]')
+              .first()
+              .or(page.locator('[role="option"]').first())
+            try {
+              await runnerOption.waitFor({ state: 'visible', timeout: 1000 })
               await runnerOption.click()
-            } else {
+            } catch {
               // Close dropdown if no options
               await page.keyboard.press('Escape')
             }

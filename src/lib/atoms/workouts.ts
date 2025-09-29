@@ -24,7 +24,7 @@ export const workoutsRefreshTriggerAtom = atom(0)
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+const CACHE_DURATION = 500 // Reduced cache to 500ms for faster updates
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
@@ -559,8 +559,18 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Clear cache and trigger refresh to ensure all components update
-    workoutsCache.clear()
+    // Invalidate current user's cache only (align with other actions)
+    try {
+      const { authClient } = await import('@/lib/better-auth-client')
+      const session = await authClient.getSession()
+      if (session?.data?.user?.id) {
+        workoutsCache.delete(session.data.user.id)
+      } else {
+        workoutsCache.clear()
+      }
+    } catch {
+      workoutsCache.clear()
+    }
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
@@ -570,3 +580,41 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     throw error
   }
 })
+
+// Jotai Devtools debug labels
+workoutsAtom.debugLabel = 'workouts/list'
+workoutsRefreshTriggerAtom.debugLabel = 'workouts/refreshTrigger'
+asyncWorkoutsAtom.debugLabel = 'workouts/async'
+workoutsWithSuspenseAtom.debugLabel = 'workouts/withSuspense'
+refreshWorkoutsAtom.debugLabel = 'workouts/refreshAction'
+hydrateWorkoutsAtom.debugLabel = 'workouts/hydrateAction'
+selectedWorkoutAtom.debugLabel = 'workouts/selected'
+selectedWorkoutIdAtom.debugLabel = 'workouts/selectedId'
+upcomingWorkoutsAtom.debugLabel = 'workouts/upcoming'
+completedWorkoutsAtom.debugLabel = 'workouts/completed'
+thisWeekWorkoutsAtom.debugLabel = 'workouts/thisWeek'
+workoutSearchTermAtom.debugLabel = 'workouts/searchTerm'
+workoutTypeFilterAtom.debugLabel = 'workouts/typeFilter'
+workoutStatusFilterAtom.debugLabel = 'workouts/statusFilter'
+workoutSortByAtom.debugLabel = 'workouts/sortBy'
+workoutViewModeAtom.debugLabel = 'workouts/viewMode'
+workoutQuickFilterAtom.debugLabel = 'workouts/quickFilter'
+workoutShowAdvancedFiltersAtom.debugLabel = 'workouts/showAdvancedFilters'
+workoutFormDataAtom.debugLabel = 'workouts/formData'
+isEditingWorkoutAtom.debugLabel = 'workouts/isEditing'
+editingWorkoutIdAtom.debugLabel = 'workouts/editingId'
+messagesFetchTimestampAtom.debugLabel = 'workouts/messagesFetchTimestamp'
+workoutLinkSelectorSearchAtom.debugLabel = 'workouts/linkSelectorSearch'
+typingTimeoutRefsAtom.debugLabel = 'workouts/typingTimeoutRefs'
+sendTypingTimeoutRefsAtom.debugLabel = 'workouts/sendTypingTimeoutRefs'
+workoutLookupMapAtom.debugLabel = 'workouts/lookupMap'
+selectedMatchAtom.debugLabel = 'workouts/selectedMatch'
+showWorkoutDiffModalAtom.debugLabel = 'workouts/showDiffModal'
+workoutActionsAtom.debugLabel = 'workouts/actions'
+optimisticOperationAtom.debugLabel = 'workouts/optimisticOperation'
+errorRecoveryAtom.debugLabel = 'workouts/errorRecovery'
+persistedStateAtom.debugLabel = 'workouts/persistedState'
+workoutAnalyticsAtom.debugLabel = 'workouts/analytics'
+completeWorkoutAtom.debugLabel = 'workouts/completeAction'
+logWorkoutDetailsAtom.debugLabel = 'workouts/logDetailsAction'
+skipWorkoutAtom.debugLabel = 'workouts/skipAction'

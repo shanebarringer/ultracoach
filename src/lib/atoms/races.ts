@@ -74,3 +74,19 @@ export const raceImportProgressAtom = atom({
   message: '',
 })
 export const raceImportErrorsAtom = atom<string[]>([])
+
+// Jotai Devtools debug labels
+racesAtom.debugLabel = 'races/list'
+racesLoadingAtom.debugLabel = 'races/loading'
+racesErrorAtom.debugLabel = 'races/error'
+racesRefreshTriggerAtom.debugLabel = 'races/refreshTrigger'
+asyncRacesAtom.debugLabel = 'races/async'
+refreshRacesAtom.debugLabel = 'races/refreshAction'
+selectedRaceAtom.debugLabel = 'races/selected'
+selectedRaceIdAtom.debugLabel = 'races/selectedId'
+raceSearchTermAtom.debugLabel = 'races/searchTerm'
+raceDistanceFilterAtom.debugLabel = 'races/distanceFilter'
+raceTerrainFilterAtom.debugLabel = 'races/terrainFilter'
+raceSortByAtom.debugLabel = 'races/sortBy'
+raceImportProgressAtom.debugLabel = 'races/importProgress'
+raceImportErrorsAtom.debugLabel = 'races/importErrors'

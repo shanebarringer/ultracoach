@@ -142,3 +142,15 @@ export const filteredTrainingPlansAtom = atom(get => {
   // For now, just return all plans
   return plans
 })
+
+// Jotai Devtools debug labels
+filteredWorkoutsAtom.debugLabel = 'derived/filteredWorkouts'
+unreadNotificationsAtom.debugLabel = 'derived/unreadNotifications'
+activeTrainingPlansAtom.debugLabel = 'derived/activeTrainingPlans'
+totalUnreadMessagesAtom.debugLabel = 'derived/totalUnreadMessages'
+activeConversationsAtom.debugLabel = 'derived/activeConversations'
+todaysWorkoutsAtom.debugLabel = 'derived/todaysWorkouts'
+thisWeeksWorkoutsAtom.debugLabel = 'derived/thisWeeksWorkouts'
+workoutCompletionRateAtom.debugLabel = 'derived/workoutCompletionRate'
+workoutStatsAtom.debugLabel = 'derived/workoutStats'
+filteredTrainingPlansAtom.debugLabel = 'derived/filteredTrainingPlans'

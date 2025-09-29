@@ -75,3 +75,19 @@ export const editingTrainingPlanIdAtom = atom<string | null>(null)
  * Migrated from barrel file for better organization
  */
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
+
+// Jotai Devtools debug labels
+trainingPlansAtom.debugLabel = 'trainingPlans/list'
+trainingPlansLoadingAtom.debugLabel = 'trainingPlans/loading'
+trainingPlansErrorAtom.debugLabel = 'trainingPlans/error'
+asyncTrainingPlansAtom.debugLabel = 'trainingPlans/async'
+refreshableTrainingPlansAtom.debugLabel = 'trainingPlans/refreshable'
+selectedTrainingPlanAtom.debugLabel = 'trainingPlans/selected'
+selectedTrainingPlanIdAtom.debugLabel = 'trainingPlans/selectedId'
+trainingPlanSearchTermAtom.debugLabel = 'trainingPlans/searchTerm'
+trainingPlanStatusFilterAtom.debugLabel = 'trainingPlans/statusFilter'
+trainingPlanSortByAtom.debugLabel = 'trainingPlans/sortBy'
+trainingPlanFormDataAtom.debugLabel = 'trainingPlans/formData'
+isEditingTrainingPlanAtom.debugLabel = 'trainingPlans/isEditing'
+editingTrainingPlanIdAtom.debugLabel = 'trainingPlans/editingId'
+planTemplatesAtom.debugLabel = 'trainingPlans/templates'

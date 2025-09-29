@@ -9,11 +9,16 @@
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
-import type { TrainingPlan, Workout } from '@/lib/supabase'
+import { withDebugLabel } from '@/lib/atoms/utils'
+import { createLogger } from '@/lib/logger'
+import type { Workout } from '@/lib/supabase'
+import type { ExtendedTrainingPlan } from '@/types/training'
 
 import { trainingPlansAtom } from '../training-plans'
 import { workoutsAtom } from '../workouts'
 import { createAtomFamilyWithCleanup } from './cleanup'
+
+const logger = createLogger('AtomFamily')
 
 /**
  * Workout atom family - creates individual atoms per workout ID
@@ -25,8 +30,8 @@ import { createAtomFamilyWithCleanup } from './cleanup'
  * // Clean up when done: workoutAtomFamily.remove('workout-123')
  * ```
  */
-export const workoutAtomFamily = atomFamily((workoutId: string) =>
-  atom(
+export const workoutAtomFamily = atomFamily((workoutId: string) => {
+  const a = atom(
     get => {
       // First try to get from the main workouts atom
       const workouts = get(workoutsAtom)
@@ -34,11 +39,31 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
       return workout || null
     },
     (_get, set, newWorkout: Workout | null) => {
-      // Allow direct setting if needed
-      set(workoutAtomFamily(workoutId), newWorkout)
+      // Write-through to the backing list to avoid self-recursion and duplicated state
+      set(workoutsAtom, prev => {
+        // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
+        if (newWorkout && newWorkout.id !== workoutId) {
+          if (process.env.NODE_ENV !== 'production') {
+            logger.warn?.(
+              `workoutAtomFamily(${workoutId}) received mismatched id: ${newWorkout.id}`
+            )
+          }
+          return prev
+        }
+        if (newWorkout === null) {
+          return prev.filter(w => w.id !== workoutId)
+        }
+        const idx = prev.findIndex(w => w.id === workoutId)
+        if (idx === -1) return [...prev, newWorkout]
+        if (prev[idx] === newWorkout) return prev
+        const next = prev.slice()
+        next[idx] = newWorkout
+        return next
+      })
     }
   )
-)
+  return withDebugLabel(a, `workoutAtomFamily(${workoutId})`)
+})
 
 /**
  * Training plan atom family - creates individual atoms per plan ID
@@ -50,20 +75,38 @@ export const workoutAtomFamily = atomFamily((workoutId: string) =>
  * // Clean up when done: trainingPlanAtomFamily.remove('plan-456')
  * ```
  */
-export const trainingPlanAtomFamily = atomFamily((planId: string) =>
-  atom(
+export const trainingPlanAtomFamily = atomFamily((planId: string) => {
+  const a = atom(
     get => {
       // First try to get from the main training plans atom
       const plans = get(trainingPlansAtom)
       const plan = plans.find(p => p.id === planId)
       return plan || null
     },
-    (_get, set, newPlan: TrainingPlan | null) => {
-      // Allow direct setting if needed
-      set(trainingPlanAtomFamily(planId), newPlan)
+    (_get, set, newPlan: ExtendedTrainingPlan | null) => {
+      // Write-through to the backing list to avoid self-recursion and duplicated state
+      set(trainingPlansAtom, prev => {
+        // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
+        if (newPlan && newPlan.id !== planId) {
+          if (process.env.NODE_ENV !== 'production') {
+            logger.warn?.(`trainingPlanAtomFamily(${planId}) received mismatched id: ${newPlan.id}`)
+          }
+          return prev
+        }
+        if (newPlan === null) {
+          return prev.filter(p => p.id !== planId)
+        }
+        const idx = prev.findIndex(p => p.id === planId)
+        if (idx === -1) return [...prev, newPlan]
+        if (prev[idx] === newPlan) return prev
+        const next = prev.slice()
+        next[idx] = newPlan
+        return next
+      })
     }
   )
-)
+  return withDebugLabel(a, `trainingPlanAtomFamily(${planId})`)
+})
 
 /**
  * Conversation message count family - tracks unread messages per conversation
@@ -74,7 +117,9 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) =>
  * // Clean up: conversationMessageCountFamily.remove('conv-789')
  * ```
  */
-export const conversationMessageCountFamily = atomFamily((_conversationId: string) => atom(0))
+export const conversationMessageCountFamily = atomFamily((conversationId: string) => {
+  return withDebugLabel(atom(0), `conversationMessageCount(${conversationId})`)
+})
 
 /**
  * Form field atom family for granular form updates
@@ -87,7 +132,8 @@ export const conversationMessageCountFamily = atomFamily((_conversationId: strin
  * ```
  */
 export const formFieldAtomFamily = atomFamily(
-  ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) => atom('')
+  ({ formId, fieldName }: { formId: string; fieldName: string }) =>
+    withDebugLabel(atom(''), `formField(${formId}.${fieldName})`)
 )
 
 /**
@@ -100,7 +146,9 @@ export const formFieldAtomFamily = atomFamily(
  * // Clean up: loadingStateFamily.remove('fetch-user-data')
  * ```
  */
-export const loadingStateFamily = atomFamily((_operationId: string) => atom(false))
+export const loadingStateFamily = atomFamily((operationId: string) =>
+  withDebugLabel(atom(false), `loadingState(${operationId})`)
+)
 
 /**
  * Error state family for async operations
@@ -112,7 +160,9 @@ export const loadingStateFamily = atomFamily((_operationId: string) => atom(fals
  * // Clean up: errorStateFamily.remove('fetch-user-data')
  * ```
  */
-export const errorStateFamily = atomFamily((_operationId: string) => atom<string | null>(null))
+export const errorStateFamily = atomFamily((operationId: string) =>
+  withDebugLabel(atom<string | null>(null), `errorState(${operationId})`)
+)
 
 // Note: Removed messagesByConversationLoadableFamily
 // Messages are now filtered from the global messagesAtom using derived atoms
@@ -125,19 +175,28 @@ export const errorStateFamily = atomFamily((_operationId: string) => atom<string
 
 // Enhanced workout atom family with cleanup
 export const workoutAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_workoutId: string) => atom<Workout | null>(null),
+  (workoutId: string) => {
+    const a = atom<Workout | null>(null)
+    return withDebugLabel(a, `workoutEnhanced(${workoutId})`)
+  },
   workoutId => `workout-${workoutId}`
 )
 
 // Enhanced training plan atom family with cleanup
 export const trainingPlanAtomFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_planId: string) => atom<TrainingPlan | null>(null),
+  (planId: string) => {
+    const a = atom<ExtendedTrainingPlan | null>(null)
+    return withDebugLabel(a, `planEnhanced(${planId})`)
+  },
   planId => `plan-${planId}`
 )
 
 // Enhanced conversation count family with cleanup
 export const conversationMessageCountFamilyEnhanced = createAtomFamilyWithCleanup(
-  (_conversationId: string) => atom(0),
+  (conversationId: string) => {
+    const a = atom(0)
+    return withDebugLabel(a, `conv-count-enhanced(${conversationId})`)
+  },
   conversationId => `conv-count-${conversationId}`
 )
 

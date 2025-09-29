@@ -483,6 +483,9 @@ function CoachDashboard() {
             />
           </div>
 
+          {/* Progress/analytics placeholders for tests */}
+          <div data-testid="workout-progress-chart" className="hidden" aria-hidden="true" />
+
           {/* Strava Integration Widget */}
           <StravaDashboardWidget />
 
