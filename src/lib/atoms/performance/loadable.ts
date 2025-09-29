@@ -5,6 +5,7 @@ import { loadable } from 'jotai/utils'
 import { asyncConversationsAtom } from '../chat'
 import { asyncNotificationsAtom } from '../notifications'
 import { refreshableTrainingPlansAtom } from '../training-plans'
+import { withDebugLabel } from '../utils'
 import { asyncWorkoutsAtom } from '../workouts'
 
 // Example async atoms
@@ -55,3 +56,16 @@ export const errorsAtom = atom(get => {
 
   return errors
 })
+
+// Jotai Devtools debug labels
+// Note: local atoms are labeled for clarity even if not exported
+withDebugLabel(fetchUserDataAtom, 'perf/fetchUserData')
+withDebugLabel(fetchWorkoutsAtom, 'perf/fetchWorkouts')
+withDebugLabel(loadableUserDataAtom, 'perf/loadableUserData')
+withDebugLabel(loadableWorkoutsAtom, 'perf/loadableWorkouts')
+withDebugLabel(workoutsLoadableAtom, 'perf/workoutsLoadable')
+withDebugLabel(notificationsLoadableAtom, 'perf/notificationsLoadable')
+withDebugLabel(conversationsLoadableAtom, 'perf/conversationsLoadable')
+withDebugLabel(trainingPlansLoadableAtom, 'perf/trainingPlansLoadable')
+withDebugLabel(isLoadingAtom, 'perf/isLoading')
+withDebugLabel(errorsAtom, 'perf/errors')
