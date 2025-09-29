@@ -4,6 +4,8 @@ import { splitAtom } from 'jotai/utils'
 
 import type { ConversationWithUser, Notification, Workout } from '@/lib/supabase'
 
+import { withDebugLabel } from '../utils'
+
 // Base atoms that will be split
 const workoutsBaseAtom = atom<Workout[]>([])
 const conversationsBaseAtom = atom<ConversationWithUser[]>([])
@@ -29,3 +31,17 @@ export const updateWorkoutAtom = atom(
     set(workoutsBaseAtom, prev => prev.map(w => (w.id === id ? { ...w, ...updates } : w)))
   }
 )
+
+// Jotai Devtools debug labels
+// Base atoms (module-local)
+withDebugLabel(workoutsBaseAtom, 'split/workoutsBase')
+withDebugLabel(conversationsBaseAtom, 'split/conversationsBase')
+withDebugLabel(notificationsBaseAtom, 'split/notificationsBase')
+
+// Exported split and helper atoms
+withDebugLabel(workoutsSplitAtom, 'split/workoutsSplit')
+withDebugLabel(conversationsSplitAtom, 'split/conversationsSplit')
+withDebugLabel(notificationsSplitAtom, 'split/notificationsSplit')
+withDebugLabel(addWorkoutAtom, 'split/addWorkoutAction')
+withDebugLabel(removeWorkoutAtom, 'split/removeWorkoutAction')
+withDebugLabel(updateWorkoutAtom, 'split/updateWorkoutAction')

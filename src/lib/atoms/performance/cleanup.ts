@@ -7,6 +7,8 @@
  */
 import type { Atom } from 'jotai'
 
+import { withDebugLabel } from '../utils'
+
 /**
  * WeakMap to store atom instances for automatic garbage collection
  * when references are no longer needed
@@ -123,7 +125,9 @@ export function createAtomFamilyWithCleanup<Params extends readonly unknown[], T
   return {
     getAtom: (...params: Params): Atom<T> => {
       const key = getKey(...params)
-      return getOrCreateAtom(key, () => atomFactory(...params), familyCacheKey)
+      const a = getOrCreateAtom(key, () => atomFactory(...params), familyCacheKey)
+      // Attach debug label for DevTools visibility (dev-only)
+      return withDebugLabel(a, key)
     },
     removeAtom: (...params: Params): void => {
       const key = getKey(...params)

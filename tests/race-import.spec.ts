@@ -2,8 +2,12 @@ import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
+import { type TestLogger, getTestLogger } from './utils/test-logger'
 
-// Removed unused imports: TestUserType, navigateToDashboard
+let logger: TestLogger
+test.beforeAll(async () => {
+  logger = await getTestLogger('tests/race-import.spec')
+})
 
 const TEST_GPX_CONTENT = `<?xml version="1.0"?>
 <gpx version="1.1" creator="TestCreator">
@@ -171,7 +175,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for file processing to complete using Suspense-aware helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
     // Wait for parsing to complete - scope error detection to the dialog
     const modal = page.locator('[role="dialog"]')
@@ -232,7 +236,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 45000)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000, logger)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')
@@ -331,7 +335,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for error processing (invalid file won't show preview tab)
-    await waitForFileUploadError(page, 30000)
+    await waitForFileUploadError(page, 30000, logger)
 
     // Should show parse error for invalid GPX structure
     const parseError = page.getByText(/Invalid GPX file/i)
@@ -380,7 +384,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for parsing
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     // Switch to preview tab where the import button is located
     const previewTab = page.getByTestId('preview-tab')
@@ -583,7 +587,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 45000)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000, logger)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')
@@ -664,7 +668,7 @@ test.describe('Race Import Flow', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     // Slow the import request slightly to make progress observable
     await page.route('**/api/races/import', async route => {
@@ -754,7 +758,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
@@ -827,7 +831,7 @@ test.describe('Race Import Edge Cases', () => {
       buffer,
     })
 
-    await waitForFileUploadProcessing(page, undefined, 30000)
+    await waitForFileUploadProcessing(page, undefined, 30000, logger)
 
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click()
