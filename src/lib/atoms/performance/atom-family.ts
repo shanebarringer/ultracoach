@@ -10,7 +10,7 @@ import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
 import { withDebugLabel } from '@/lib/atoms/utils'
-import type { TrainingPlan, Workout } from '@/lib/supabase'
+import type { ExtendedTrainingPlan, TrainingPlan, Workout } from '@/lib/supabase'
 
 import { trainingPlansAtom } from '../training-plans'
 import { workoutsAtom } from '../workouts'
@@ -43,15 +43,19 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
         if (idx !== -1) set(workoutsAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
         return
       }
+      // Guard: ignore writes where the payload id doesn't match this family key
+      if (newWorkout.id !== workoutId) {
+        return
+      }
       if (idx === -1) {
         // Insert if not present
         set(workoutsAtom, [...list, newWorkout])
       } else {
-        // Update existing
+        // Update existing (preserve unchanged fields)
         const current = list[idx]
         if (current !== newWorkout) {
           const next = [...list]
-          next[idx] = newWorkout
+          next[idx] = { ...current, ...newWorkout }
           set(workoutsAtom, next)
         }
       }
@@ -78,7 +82,7 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       const plan = plans.find(p => p.id === planId)
       return plan || null
     },
-    (get, set, newPlan: TrainingPlan | null) => {
+    (get, set, newPlan: TrainingPlan | ExtendedTrainingPlan | null) => {
       // Write-through to the backing list to avoid recursive writes
       const list = get(trainingPlansAtom)
       const idx = list.findIndex(p => p.id === planId)
@@ -86,13 +90,17 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
         if (idx !== -1) set(trainingPlansAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
         return
       }
+      // Guard: ignore writes where the payload id doesn't match this family key
+      if (newPlan.id !== planId) {
+        return
+      }
       if (idx === -1) {
-        set(trainingPlansAtom, [...list, newPlan])
+        set(trainingPlansAtom, [...list, newPlan as ExtendedTrainingPlan])
       } else {
         const current = list[idx]
-        if (current !== newPlan) {
+        if (current !== (newPlan as ExtendedTrainingPlan)) {
           const next = [...list]
-          next[idx] = newPlan
+          next[idx] = { ...current, ...(newPlan as ExtendedTrainingPlan) }
           set(trainingPlansAtom, next)
         }
       }
