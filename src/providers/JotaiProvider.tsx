@@ -2,19 +2,23 @@
 
 import { Provider } from 'jotai'
 
+import type { ComponentType } from 'react'
+
 import dynamic from 'next/dynamic'
 
-// Load DevTools only on the client to avoid server bundle issues
-const DevTools = dynamic(() => import('jotai-devtools').then(m => m.DevTools), {
-  ssr: false,
-})
+// Gate the dynamic import itself so the devtools chunk is not included in production
+let DevTools: ComponentType | null = null
+if (process.env.NODE_ENV === 'development') {
+  DevTools = dynamic(() => import('jotai-devtools').then(m => m.DevTools), {
+    ssr: false,
+  }) as unknown as ComponentType
+}
 
 export function JotaiProvider({ children }: { children: React.ReactNode }) {
   return (
     <Provider>
       {children}
-      {/* DevTools only in development */}
-      {process.env.NODE_ENV === 'development' ? <DevTools /> : null}
+      {DevTools ? <DevTools /> : null}
     </Provider>
   )
 }

@@ -9,6 +9,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { withDebugLabel } from '@/lib/atoms/utils'
 import type { Session, User } from '@/lib/better-auth-client'
 
 // Core auth atoms
@@ -16,68 +17,74 @@ import type { Session, User } from '@/lib/better-auth-client'
 /**
  * Current session atom - holds the active Better Auth session
  */
-export const sessionAtom = atom<Session | null>(null)
-sessionAtom.debugLabel = 'sessionAtom'
+export const sessionAtom = withDebugLabel(atom<Session | null>(null), 'sessionAtom')
 
 /**
  * Current user atom - holds the authenticated user data
  */
-export const userAtom = atom<User | null>(null)
-userAtom.debugLabel = 'userAtom'
+export const userAtom = withDebugLabel(atom<User | null>(null), 'userAtom')
 
 /**
  * Auth loading state - tracks authentication initialization
  * Set to false initially to show UI immediately for unauthenticated users
  */
-export const authLoadingAtom = atom(false)
-authLoadingAtom.debugLabel = 'authLoadingAtom'
+export const authLoadingAtom = withDebugLabel(atom(false), 'authLoadingAtom')
 
 // Auth state atoms
-export const authErrorAtom = atom<string | null>(null)
-authErrorAtom.debugLabel = 'authErrorAtom'
-export const authSuccessAtom = atom<string | null>(null)
-authSuccessAtom.debugLabel = 'authSuccessAtom'
+export const authErrorAtom = withDebugLabel(atom<string | null>(null), 'authErrorAtom')
+export const authSuccessAtom = withDebugLabel(atom<string | null>(null), 'authSuccessAtom')
 
 // Persisted auth preferences
-export const rememberMeAtom = atomWithStorage('rememberMe', false)
-rememberMeAtom.debugLabel = 'rememberMeAtom'
-export const lastLoginEmailAtom = atomWithStorage<string | null>('lastLoginEmail', null)
-lastLoginEmailAtom.debugLabel = 'lastLoginEmailAtom'
+export const rememberMeAtom = withDebugLabel(atomWithStorage('rememberMe', false), 'rememberMeAtom')
+export const lastLoginEmailAtom = withDebugLabel(
+  atomWithStorage<string | null>('lastLoginEmail', null),
+  'lastLoginEmailAtom'
+)
 
 // Derived auth atoms
-export const isAuthenticatedAtom = atom(get => get(sessionAtom) !== null)
-isAuthenticatedAtom.debugLabel = 'isAuthenticatedAtom'
+export const isAuthenticatedAtom = withDebugLabel(
+  atom(get => get(sessionAtom) !== null),
+  'isAuthenticatedAtom'
+)
 
-export const userRoleAtom = atom(get => {
-  const session = get(sessionAtom)
-  if (!session?.user) return null
-  // Use userType field for coach/runner differentiation (as per CLAUDE.md)
-  // The session user might not have the extended fields, check if it exists
-  const user = session.user as User
-  return user.userType || 'runner'
-})
-userRoleAtom.debugLabel = 'userRoleAtom'
+export const userRoleAtom = withDebugLabel(
+  atom(get => {
+    const session = get(sessionAtom)
+    if (!session?.user) return null
+    // Use userType field for coach/runner differentiation (as per CLAUDE.md)
+    // The session user might not have the extended fields, check if it exists
+    const user = session.user as User
+    return user.userType || 'runner'
+  }),
+  'userRoleAtom'
+)
 
-export const isCoachAtom = atom(get => {
-  const role = get(userRoleAtom)
-  return role === 'coach'
-})
-isCoachAtom.debugLabel = 'isCoachAtom'
+export const isCoachAtom = withDebugLabel(
+  atom(get => {
+    const role = get(userRoleAtom)
+    return role === 'coach'
+  }),
+  'isCoachAtom'
+)
 
-export const isRunnerAtom = atom(get => {
-  const role = get(userRoleAtom)
-  return role === 'runner'
-})
-isRunnerAtom.debugLabel = 'isRunnerAtom'
+export const isRunnerAtom = withDebugLabel(
+  atom(get => {
+    const role = get(userRoleAtom)
+    return role === 'runner'
+  }),
+  'isRunnerAtom'
+)
 
 /**
  * Composite auth state atom - combines all auth-related state
  * Migrated from barrel file for better organization
  */
-export const authStateAtom = atom({
-  user: null as User | null,
-  session: null as Session | null,
-  loading: false, // Set to false initially to show UI immediately
-  error: null as string | null,
-})
-authStateAtom.debugLabel = 'authStateAtom'
+export const authStateAtom = withDebugLabel(
+  atom({
+    user: null as User | null,
+    session: null as Session | null,
+    loading: false, // Set to false initially to show UI immediately
+    error: null as string | null,
+  }),
+  'authStateAtom'
+)

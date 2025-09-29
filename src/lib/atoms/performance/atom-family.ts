@@ -34,9 +34,27 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       const workout = workouts.find(w => w.id === workoutId)
       return workout || null
     },
-    (_get, set, newWorkout: Workout | null) => {
-      // Allow direct setting if needed
-      set(workoutAtomFamily(workoutId), newWorkout)
+    (get, set, newWorkout: Workout | null) => {
+      // Write-through to the backing list to avoid recursive writes on the family atom
+      const list = get(workoutsAtom)
+      const idx = list.findIndex(w => w.id === workoutId)
+      if (newWorkout === null) {
+        // Remove the workout
+        if (idx !== -1) set(workoutsAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
+        return
+      }
+      if (idx === -1) {
+        // Insert if not present
+        set(workoutsAtom, [...list, newWorkout])
+      } else {
+        // Update existing
+        const current = list[idx]
+        if (current !== newWorkout) {
+          const next = [...list]
+          next[idx] = newWorkout
+          set(workoutsAtom, next)
+        }
+      }
     }
   )
   return withDebugLabel(a, `workoutAtomFamily(${workoutId})`)
@@ -60,9 +78,24 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       const plan = plans.find(p => p.id === planId)
       return plan || null
     },
-    (_get, set, newPlan: TrainingPlan | null) => {
-      // Allow direct setting if needed
-      set(trainingPlanAtomFamily(planId), newPlan)
+    (get, set, newPlan: TrainingPlan | null) => {
+      // Write-through to the backing list to avoid recursive writes
+      const list = get(trainingPlansAtom)
+      const idx = list.findIndex(p => p.id === planId)
+      if (newPlan === null) {
+        if (idx !== -1) set(trainingPlansAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
+        return
+      }
+      if (idx === -1) {
+        set(trainingPlansAtom, [...list, newPlan])
+      } else {
+        const current = list[idx]
+        if (current !== newPlan) {
+          const next = [...list]
+          next[idx] = newPlan
+          set(trainingPlansAtom, next)
+        }
+      }
     }
   )
   return withDebugLabel(a, `trainingPlanAtomFamily(${planId})`)
