@@ -25,6 +25,9 @@ try {
 }
 
 const nextConfig: NextConfig = {
+  // Required for jotai-devtools UI CSS to be transpiled correctly
+  transpilePackages: ['jotai-devtools'],
+
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
     if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorFactory) {
