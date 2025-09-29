@@ -22,11 +22,8 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns'
-import { Logger } from 'tslog'
 
 import { navigateToDashboard } from '../utils/test-helpers'
-
-const logger = new Logger({ name: 'workout-display-order-e2e' })
 
 test.describe('Workout Display Order', () => {
   test.describe('Workouts Page Sort Order', () => {
@@ -121,10 +118,10 @@ test.describe('Workout Display Order', () => {
         {} as Record<number, number>
       )
 
-      logger.debug(
+      console.log(
         `Sort order validation - Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`
       )
-      logger.debug(`Total workouts analyzed: ${workoutData.length}`)
+      console.log(`Total workouts analyzed: ${workoutData.length}`)
     })
 
     test('should not show old workouts before recent ones', async ({ page }) => {
@@ -271,7 +268,7 @@ test.describe('Workout Display Order', () => {
       const eventCount = await calendarEvents.count()
 
       if (eventCount > 0) {
-        logger.debug(`Found ${eventCount} calendar events`)
+        console.log(`Found ${eventCount} calendar events`)
 
         // Verify first few events have reasonable dates
         for (let i = 0; i < Math.min(eventCount, 3); i++) {
@@ -283,12 +280,12 @@ test.describe('Workout Display Order', () => {
           // Try to get event date information if available
           const eventText = await event.textContent()
           if (eventText) {
-            logger.debug(`Calendar event ${i + 1}: ${eventText}`)
+            console.log(`Calendar event ${i + 1}: ${eventText}`)
           }
         }
       } else {
         // No calendar events - could be valid for new users
-        logger.info('No calendar events found - checking for empty state')
+        console.log('No calendar events found - checking for empty state')
 
         // Should either have events or show appropriate empty state
         const emptyState = page.locator('text=/no events|no workouts|empty calendar/i')
@@ -369,15 +366,15 @@ test.describe('Workout Display Order', () => {
               if (workoutCount > 0) {
                 // Verify workout items are visible
                 await expect(dayWorkouts.first()).toBeVisible()
-                logger.debug(`Day ${i + 1} has ${workoutCount} workouts`)
+                console.log(`Day ${i + 1} has ${workoutCount} workouts`)
               }
             }
           }
         } catch {
-          logger.info('Weekly planner not found - may not be implemented yet')
+          console.log('Weekly planner not found - may not be implemented yet')
         }
       } else {
-        logger.info('No training plans found for weekly planner test')
+        console.log('No training plans found for weekly planner test')
       }
     })
   })
@@ -429,7 +426,7 @@ test.describe('Workout Display Order', () => {
         // Check groups with multiple workouts
         for (const [dateKey, indices] of sameDateGroups) {
           if (indices.length > 1) {
-            logger.debug(`Found ${indices.length} workouts on ${dateKey}`)
+            console.log(`Found ${indices.length} workouts on ${dateKey}`)
             // Same-date workouts should be grouped together (indices should be consecutive or close)
             indices.sort((a, b) => a - b)
             for (let i = 1; i < indices.length; i++) {
