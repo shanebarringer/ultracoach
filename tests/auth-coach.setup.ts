@@ -1,18 +1,20 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
-import { Logger } from 'tslog'
 
+import { waitForAuthenticationSuccess } from './utils/suspense-helpers'
 import { TEST_COACH_EMAIL, TEST_COACH_PASSWORD } from './utils/test-helpers'
+import { getTestLogger } from './utils/test-logger'
+
+// Logger is created inside the test to avoid module-eval ESM issues
 
 // Conditional fs import (typed) to avoid Vercel build issues
 const isNode = typeof process !== 'undefined' && Boolean(process.versions?.node)
 const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
-const logger = new Logger({ name: 'tests/auth-coach.setup' })
-
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
-setup('authenticate as coach', async ({ page, context }) => {
+setup('authenticate as coach @setup', async ({ page, context }) => {
+  const logger = await getTestLogger('tests/auth-coach.setup')
   logger.info('🔐 Starting coach authentication setup...')
 
   const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
@@ -37,33 +39,21 @@ setup('authenticate as coach', async ({ page, context }) => {
 
   if (!response.ok()) {
     const body = await response.text()
+    const preview = body
+      .slice(0, 300)
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
     logger.error('Coach Auth API failed', {
       status: response.status(),
-      bodyPreview: body.slice(0, 300).replace(TEST_COACH_EMAIL, '<redacted-email>'),
+      bodyPreview: preview,
     })
     throw new Error(`Coach authentication API failed with status ${response.status()}`)
   }
 
   logger.info('✅ Coach authentication API successful')
 
-  // The API call should have set cookies, now navigate to dashboard
+  // The API call should have set cookies, now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/coach`)
-  await page.waitForLoadState('domcontentloaded')
-
-  // Verify we're on the dashboard
-  const currentUrl = page.url()
-  logger.info('🔄 Current URL after auth:', currentUrl)
-
-  if (!currentUrl.includes('/dashboard')) {
-    // If redirected to signin, try refreshing to pick up cookies
-    await page.reload()
-    await page.waitForLoadState('domcontentloaded')
-
-    const finalUrl = page.url()
-    if (!finalUrl.includes('/dashboard')) {
-      throw new Error('Coach authentication failed - could not access dashboard after API auth')
-    }
-  }
+  await waitForAuthenticationSuccess(page, 'coach', 15000)
 
   logger.info('✅ Successfully navigated to coach dashboard')
 

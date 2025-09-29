@@ -11,6 +11,8 @@ import {
 } from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
+import { withDebugLabel } from './utils'
+
 // Helper function to unwrap API response shapes
 function unwrapWorkout(json: unknown): Workout {
   return typeof json === 'object' && json !== null && 'workout' in json
@@ -25,6 +27,22 @@ export const workoutsRefreshTriggerAtom = atom(0)
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
 const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+
+// DRY helper: invalidate current user's workouts cache (fallback: clear all)
+async function invalidateUserWorkoutsCache(): Promise<void> {
+  try {
+    const { authClient } = await import('@/lib/better-auth-client')
+    const session = await authClient.getSession()
+    const userId = session?.data?.user?.id
+    if (userId) {
+      workoutsCache.delete(userId)
+      return
+    }
+  } catch {
+    // ignore and clear all below
+  }
+  workoutsCache.clear()
+}
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
@@ -115,21 +133,7 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
-  // Clear current user's cache only for targeted invalidation
-  try {
-    const { authClient } = await import('@/lib/better-auth-client')
-    const session = await authClient.getSession()
-    if (session?.data?.user?.id) {
-      workoutsCache.delete(session.data.user.id)
-    } else {
-      // Fallback to clearing all caches if no session
-      workoutsCache.clear()
-    }
-  } catch {
-    // If session check fails, clear all caches as fallback
-    workoutsCache.clear()
-  }
-
+  await invalidateUserWorkoutsCache()
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
   // Also trigger a re-fetch of async workouts by invalidating the cache
@@ -373,17 +377,8 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only
-      try {
-        const session = await authClient.getSession()
-        if (session?.data?.user?.id) {
-          workoutsCache.delete(session.data.user.id)
-        } else {
-          workoutsCache.clear()
-        }
-      } catch {
-        workoutsCache.clear()
-      }
+      // Invalidate current user's cache only (DRY helper)
+      await invalidateUserWorkoutsCache()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -476,17 +471,8 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only
-      try {
-        const session = await authClient.getSession()
-        if (session?.data?.user?.id) {
-          workoutsCache.delete(session.data.user.id)
-        } else {
-          workoutsCache.clear()
-        }
-      } catch {
-        workoutsCache.clear()
-      }
+      // Invalidate current user's cache only (DRY helper)
+      await invalidateUserWorkoutsCache()
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
@@ -559,8 +545,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Clear cache and trigger refresh to ensure all components update
-    workoutsCache.clear()
+    // Invalidate current user's cache only; fallback to clearing all
+    await invalidateUserWorkoutsCache()
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
@@ -570,3 +556,41 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     throw error
   }
 })
+
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(workoutsAtom, 'workouts/list')
+withDebugLabel(workoutsRefreshTriggerAtom, 'workouts/refreshTrigger')
+withDebugLabel(asyncWorkoutsAtom, 'workouts/async')
+withDebugLabel(workoutsWithSuspenseAtom, 'workouts/withSuspense')
+withDebugLabel(refreshWorkoutsAtom, 'workouts/refreshAction')
+withDebugLabel(hydrateWorkoutsAtom, 'workouts/hydrateAction')
+withDebugLabel(selectedWorkoutAtom, 'workouts/selected')
+withDebugLabel(selectedWorkoutIdAtom, 'workouts/selectedId')
+withDebugLabel(upcomingWorkoutsAtom, 'workouts/upcoming')
+withDebugLabel(completedWorkoutsAtom, 'workouts/completed')
+withDebugLabel(thisWeekWorkoutsAtom, 'workouts/thisWeek')
+withDebugLabel(workoutSearchTermAtom, 'workouts/searchTerm')
+withDebugLabel(workoutTypeFilterAtom, 'workouts/typeFilter')
+withDebugLabel(workoutStatusFilterAtom, 'workouts/statusFilter')
+withDebugLabel(workoutSortByAtom, 'workouts/sortBy')
+withDebugLabel(workoutViewModeAtom, 'workouts/viewMode')
+withDebugLabel(workoutQuickFilterAtom, 'workouts/quickFilter')
+withDebugLabel(workoutShowAdvancedFiltersAtom, 'workouts/showAdvancedFilters')
+withDebugLabel(workoutFormDataAtom, 'workouts/formData')
+withDebugLabel(isEditingWorkoutAtom, 'workouts/isEditing')
+withDebugLabel(editingWorkoutIdAtom, 'workouts/editingId')
+withDebugLabel(messagesFetchTimestampAtom, 'workouts/messagesFetchTimestamp')
+withDebugLabel(workoutLinkSelectorSearchAtom, 'workouts/linkSelectorSearch')
+withDebugLabel(typingTimeoutRefsAtom, 'workouts/typingTimeoutRefs')
+withDebugLabel(sendTypingTimeoutRefsAtom, 'workouts/sendTypingTimeoutRefs')
+withDebugLabel(workoutLookupMapAtom, 'workouts/lookupMap')
+withDebugLabel(selectedMatchAtom, 'workouts/selectedMatch')
+withDebugLabel(showWorkoutDiffModalAtom, 'workouts/showDiffModal')
+withDebugLabel(workoutActionsAtom, 'workouts/actions')
+withDebugLabel(optimisticOperationAtom, 'workouts/optimisticOperation')
+withDebugLabel(errorRecoveryAtom, 'workouts/errorRecovery')
+withDebugLabel(persistedStateAtom, 'workouts/persistedState')
+withDebugLabel(workoutAnalyticsAtom, 'workouts/analytics')
+withDebugLabel(completeWorkoutAtom, 'workouts/completeAction')
+withDebugLabel(logWorkoutDetailsAtom, 'workouts/logDetailsAction')
+withDebugLabel(skipWorkoutAtom, 'workouts/skipAction')

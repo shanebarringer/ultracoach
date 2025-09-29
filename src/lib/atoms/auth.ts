@@ -69,3 +69,17 @@ export const authStateAtom = atom({
   loading: false, // Set to false initially to show UI immediately
   error: null as string | null,
 })
+
+// Jotai Devtools debug labels
+sessionAtom.debugLabel = 'auth/session'
+userAtom.debugLabel = 'auth/user'
+authLoadingAtom.debugLabel = 'auth/loading'
+authErrorAtom.debugLabel = 'auth/error'
+authSuccessAtom.debugLabel = 'auth/success'
+rememberMeAtom.debugLabel = 'auth/rememberMe'
+lastLoginEmailAtom.debugLabel = 'auth/lastLoginEmail'
+isAuthenticatedAtom.debugLabel = 'auth/isAuthenticated'
+userRoleAtom.debugLabel = 'auth/userRole'
+isCoachAtom.debugLabel = 'auth/isCoach'
+isRunnerAtom.debugLabel = 'auth/isRunner'
+authStateAtom.debugLabel = 'auth/state'
