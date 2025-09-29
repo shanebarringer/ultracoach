@@ -10,12 +10,15 @@ import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
 import { withDebugLabel } from '@/lib/atoms/utils'
-import type { Workout, TrainingPlan } from '@/lib/supabase'
+import { createLogger } from '@/lib/logger'
+import type { Workout } from '@/lib/supabase'
 import type { ExtendedTrainingPlan } from '@/types/training'
 
 import { trainingPlansAtom } from '../training-plans'
 import { workoutsAtom } from '../workouts'
 import { createAtomFamilyWithCleanup } from './cleanup'
+
+const logger = createLogger('AtomFamily')
 
 /**
  * Workout atom family - creates individual atoms per workout ID
@@ -40,6 +43,11 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       set(workoutsAtom, prev => {
         // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
         if (newWorkout && newWorkout.id !== workoutId) {
+          if (process.env.NODE_ENV !== 'production') {
+            logger.warn?.(
+              `workoutAtomFamily(${workoutId}) received mismatched id: ${newWorkout.id}`
+            )
+          }
           return prev
         }
         if (newWorkout === null) {
@@ -80,6 +88,9 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       set(trainingPlansAtom, prev => {
         // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
         if (newPlan && newPlan.id !== planId) {
+          if (process.env.NODE_ENV !== 'production') {
+            logger.warn?.(`trainingPlanAtomFamily(${planId}) received mismatched id: ${newPlan.id}`)
+          }
           return prev
         }
         if (newPlan === null) {
@@ -166,8 +177,7 @@ export const errorStateFamily = atomFamily((operationId: string) =>
 export const workoutAtomFamilyEnhanced = createAtomFamilyWithCleanup(
   (workoutId: string) => {
     const a = atom<Workout | null>(null)
-    a.debugLabel = `workoutEnhanced(${workoutId})`
-    return a
+    return withDebugLabel(a, `workoutEnhanced(${workoutId})`)
   },
   workoutId => `workout-${workoutId}`
 )
@@ -175,9 +185,8 @@ export const workoutAtomFamilyEnhanced = createAtomFamilyWithCleanup(
 // Enhanced training plan atom family with cleanup
 export const trainingPlanAtomFamilyEnhanced = createAtomFamilyWithCleanup(
   (planId: string) => {
-    const a = atom<TrainingPlan | null>(null)
-    a.debugLabel = `planEnhanced(${planId})`
-    return a
+    const a = atom<ExtendedTrainingPlan | null>(null)
+    return withDebugLabel(a, `planEnhanced(${planId})`)
   },
   planId => `plan-${planId}`
 )
@@ -186,8 +195,7 @@ export const trainingPlanAtomFamilyEnhanced = createAtomFamilyWithCleanup(
 export const conversationMessageCountFamilyEnhanced = createAtomFamilyWithCleanup(
   (conversationId: string) => {
     const a = atom(0)
-    a.debugLabel = `conv-count-enhanced(${conversationId})`
-    return a
+    return withDebugLabel(a, `conv-count-enhanced(${conversationId})`)
   },
   conversationId => `conv-count-${conversationId}`
 )
