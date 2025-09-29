@@ -6,6 +6,14 @@
  */
 import { Page, expect } from '@playwright/test'
 
+// Simple logger wrapper to avoid tslog ES module issues in tests
+const logger = {
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  debug: (msg: string, data?: any) => console.log(`[DEBUG] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+}
+
 /**
  * Waits for dashboard content to be loaded and ready for interaction.
  * This is Suspense-aware and handles both coach and runner dashboards.
@@ -74,10 +82,10 @@ export async function waitForFormSubmission(page: Page, timeout = 15000): Promis
 export async function waitForFileUploadProcessing(
   page: Page,
   expectedContent?: string | RegExp,
-  timeout = 90000
+  timeout = 30000
 ): Promise<void> {
-  console.log('Starting waitForFileUploadProcessing', { expectedContent })
-  const waitTimeout = timeout ?? 30000
+  logger.info('waitForFileUploadProcessing:start', { expectedContent })
+  const waitTimeout = timeout
 
   // First wait for any loading indicators to appear and disappear
   try {
@@ -85,9 +93,9 @@ export async function waitForFileUploadProcessing(
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout: waitTimeout })
-    console.log('Loading indicators cleared')
+    logger.info('waitForFileUploadProcessing:loadingCleared')
   } catch {
-    console.log('No loading indicators detected')
+    logger.debug('waitForFileUploadProcessing:noLoadingIndicators')
   }
 
   // Wait for preview content to be visible (deterministic readiness signal)
@@ -95,14 +103,14 @@ export async function waitForFileUploadProcessing(
     // Prefer the actual content render over brittle tab aria attributes
     const previewPanel = page.getByTestId('preview-content')
     await previewPanel.waitFor({ state: 'visible', timeout: waitTimeout })
-    console.log('Preview content visible')
+    logger.info('waitForFileUploadProcessing:previewContentVisible')
   } catch (error) {
-    console.error('Preview content error', { error })
+    logger.error('waitForFileUploadProcessing:previewContentError', { error })
     throw error
   }
 
   if (expectedContent) {
-    console.log('Waiting for specific content', { expectedContent })
+    logger.info('waitForFileUploadProcessing:waitingForContent', { expectedContent })
 
     // Wait for race list to be populated
     const raceList = page.getByTestId('race-list')
@@ -112,7 +120,7 @@ export async function waitForFileUploadProcessing(
     try {
       const raceElement = raceList.getByText(expectedContent)
       await raceElement.waitFor({ state: 'visible', timeout: waitTimeout })
-      console.log('Found expected race content', { expectedContent })
+      logger.info('waitForFileUploadProcessing:foundContent', { expectedContent })
     } catch (error) {
       // Check if there are any error messages instead
       const errorSelectors = [
@@ -126,7 +134,10 @@ export async function waitForFileUploadProcessing(
           const errorElement = page.locator(selector).first()
           if (await errorElement.isVisible()) {
             const errorText = await errorElement.textContent()
-            console.warn('Found error message instead', { errorText, expectedContent })
+            logger.warn('waitForFileUploadProcessing:foundErrorInstead', {
+              errorText,
+              expectedContent,
+            })
             throw new Error(`Expected "${expectedContent}" but found error: ${errorText}`)
           }
         } catch {
@@ -134,7 +145,7 @@ export async function waitForFileUploadProcessing(
         }
       }
 
-      console.warn('Content not found and no errors detected', { expectedContent })
+      logger.warn('waitForFileUploadProcessing:contentNotFound', { expectedContent })
       throw error
     }
   }
@@ -212,7 +223,7 @@ export async function verifyDashboardAccess(
  * Used for invalid files that fail to parse or process.
  */
 export async function waitForFileUploadError(page: Page, timeout = 30000): Promise<void> {
-  console.log('Starting waitForFileUploadError - waiting for error conditions')
+  logger.info('waitForFileUploadError:start')
 
   // First wait for any loading indicators to appear and disappear
   try {
@@ -220,24 +231,33 @@ export async function waitForFileUploadError(page: Page, timeout = 30000): Promi
     await page
       .locator('text=/processing|uploading|parsing|loading/i')
       .waitFor({ state: 'hidden', timeout: Math.min(15000, timeout) })
-    console.log('Loading indicators cleared')
+    logger.info('waitForFileUploadError:loadingCleared')
   } catch {
-    console.log('No loading indicators detected')
+    logger.debug('waitForFileUploadError:noLoadingIndicators')
   }
 
   // Wait for preview tab to appear (it will exist but not be selected for errors)
   try {
     const previewTab = page.getByTestId('preview-tab')
     await previewTab.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) })
-    console.log('Preview tab visible (but may not be selected for errors)')
+    logger.info('waitForFileUploadError:previewTabVisible')
   } catch (error) {
-    console.log('Preview tab not found - this is OK for error cases')
+    logger.debug('waitForFileUploadError:previewTabNotFoundOk')
   }
 
-  // For error cases, we just wait a bit for any error messages to appear
-  // Don't expect preview tab to be selected since parsing failed
-  await page.waitForTimeout(3000)
-  console.log('Error processing wait completed')
+  // Wait deterministically for error indicators instead of fixed sleep
+  const errorText = page.locator('text=/error|failed|invalid/i').first()
+  const errorUi = page.locator('[data-testid*="error"], .text-danger').first()
+
+  try {
+    await Promise.race([
+      errorText.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) }),
+      errorUi.waitFor({ state: 'visible', timeout: Math.min(15000, timeout) }),
+    ])
+    logger.info('waitForFileUploadError:errorsVisible')
+  } catch {
+    logger.debug('waitForFileUploadError:noErrorsDetected')
+  }
 }
 
 /**

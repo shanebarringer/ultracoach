@@ -14,7 +14,8 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { navigateToDashboard } from '../utils/test-helpers'
+import { waitForHeroUIReady, waitForLoadingComplete } from '../utils/heroui-helpers'
+import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
@@ -115,7 +116,8 @@ test.describe('Session Persistence', () => {
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Wait for page to fully load
-        await page.waitForTimeout(1000)
+        await waitForHeroUIReady(page)
+        await waitForLoadingComplete(page)
 
         // Verify authenticated state by checking for user elements
         const authIndicators = page.locator(

@@ -8,6 +8,8 @@ import { expect, test } from '@playwright/test'
 
 import {
   clickButtonWithRetry,
+  closeModal,
+  isModalOpen,
   waitForHeroUIReady,
   waitForLoadingComplete,
 } from '../utils/heroui-helpers'
@@ -220,48 +222,23 @@ test.describe('Chat Messaging System', () => {
             // No coach selection needed
           }
 
-          // Wait for modal to process the coach selection - give it time to either close or update
-          await page.waitForTimeout(1000)
-
-          // Option 1: Check if chat window is already visible (modal may have auto-closed)
+          // Wait for modal processing and use proper modal handling
           const chatWindow = page.locator('[data-testid="chat-window"]')
-          const isVisible = await chatWindow.isVisible({ timeout: 2000 }).catch(() => false)
+
+          // Check if chat window opened immediately (modal auto-closed)
+          const isVisible = await chatWindow.isVisible({ timeout: 3000 }).catch(() => false)
 
           if (!isVisible) {
-            // Option 2: Try to close modal if it's still open
-            const modal = page.locator('[role="dialog"]')
-            if (await modal.isVisible().catch(() => false)) {
-              // Try to find and click a close button first
-              const closeButton = modal.locator(
-                'button[aria-label*="close"], button[aria-label*="Close"], [data-dismiss="modal"]'
-              )
-              try {
-                if (await closeButton.isVisible({ timeout: 1000 })) {
-                  await closeButton.click()
-                  await expect(modal).toBeHidden({ timeout: 2000 })
-                } else {
-                  // Fallback to ESC key
-                  await page.keyboard.press('Escape')
-                  await expect(modal).toBeHidden({ timeout: 2000 })
-                }
-              } catch {
-                // Modal still visible, try close button
-                const closeButton = modal
-                  .locator('button')
-                  .filter({ hasText: /\b(close|cancel)\b|^x$/i })
-                  .first()
-                if (await closeButton.isVisible().catch(() => false)) {
-                  await closeButton.click()
-                  await expect(modal).toBeHidden({ timeout: 2000 })
-                }
-              }
+            // Use HeroUI modal helper to close modal properly
+            if (await isModalOpen(page)) {
+              await closeModal(page)
             }
 
             // Option 3: Navigate directly to a conversation if available
             const conversationItem = page.locator('[data-testid="conversation-item"]').first()
-            if (await conversationItem.isVisible({ timeout: 2000 }).catch(() => false)) {
+            if (await conversationItem.isVisible({ timeout: 3000 }).catch(() => false)) {
               await conversationItem.click()
-              await expect(chatWindow).toBeVisible({ timeout: 5000 })
+              await expect(chatWindow).toBeVisible({ timeout: 8000 })
             }
           }
 

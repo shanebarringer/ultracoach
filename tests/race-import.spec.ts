@@ -171,7 +171,7 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for file processing to complete using Suspense-aware helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000)
 
     // Wait for parsing to complete - scope error detection to the dialog
     const modal = page.locator('[role="dialog"]')
@@ -232,7 +232,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 90000)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')
@@ -583,7 +583,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 90000)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')

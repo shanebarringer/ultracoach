@@ -6,6 +6,7 @@
  */
 import { expect, test } from '@playwright/test'
 
+import { waitForHeroUIReady, waitForLoadingComplete } from '../utils/heroui-helpers'
 import { TEST_USERS } from '../utils/test-helpers'
 import { navigateToPage, signIn, waitForNavigation, waitForPageReady } from '../utils/wait-helpers'
 
@@ -149,8 +150,9 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.waitForLoadState('domcontentloaded')
       await waitForPageReady(page)
 
-      // Wait for page content to fully load before checking elements
-      await page.waitForTimeout(2000)
+      // Wait for HeroUI components to be ready and loading to complete
+      await waitForHeroUIReady(page)
+      await waitForLoadingComplete(page)
 
       // Should show "Find a Coach" section
       await expect(page.getByText('Find a Coach')).toBeVisible({ timeout: 10000 })
@@ -173,8 +175,9 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.waitForLoadState('domcontentloaded')
       await waitForPageReady(page)
 
-      // Wait for page content to fully load
-      await page.waitForTimeout(2000)
+      // Wait for HeroUI components to be ready and loading to complete
+      await waitForHeroUIReady(page)
+      await waitForLoadingComplete(page)
 
       // Click Connect on first available coach
       await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({
