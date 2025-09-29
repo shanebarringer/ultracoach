@@ -12,7 +12,7 @@ const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
 const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
-setup('authenticate as coach', async ({ page, context }) => {
+setup('authenticate as coach @setup', async ({ page, context }) => {
   const logger = await getTestLogger('tests/auth-coach.setup')
   logger.info('🔐 Starting coach authentication setup...')
 

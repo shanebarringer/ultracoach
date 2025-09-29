@@ -12,7 +12,7 @@ const fs: typeof import('node:fs') | null = isNode ? require('node:fs') : null
 
 const authFile = path.join(__dirname, '../playwright/.auth/runner.json')
 
-setup('authenticate', async ({ page, context }) => {
+setup('authenticate @setup', async ({ page, context }) => {
   const logger = await getTestLogger('tests/auth.setup')
   logger.info('🔐 Starting runner authentication setup...')
 
