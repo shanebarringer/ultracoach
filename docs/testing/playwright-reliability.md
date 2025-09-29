@@ -7,7 +7,7 @@ This guide documents the reliability standards applied across the E2E suite.
 - Prefer `data-testid` with optional semantic attributes like `data-status`.
 - Keep role-based selectors where they are unique and stable.
 - Avoid broad text queries.
-- See `docs/testing/selector-best-practices.md`.
+- See [Selector Best Practices](./selector-best-practices.md).
 
 ## 2) Wait Strategy
 
@@ -31,7 +31,19 @@ This guide documents the reliability standards applied across the E2E suite.
 
 - `trace: 'retain-on-failure'`, `screenshot: 'only-on-failure'`, `video: 'retain-on-failure'` in config.
 - Reporter generates HTML report locally and dot + HTML on CI.
-- Per-test annotations via `tests/utils/reporting.ts` add a `category` to failures.
+- Use Playwright's built-in annotations to tag failures with a category:
+
+```ts
+import { expect, test } from '@playwright/test'
+
+test('saves a plan', async ({ page }) => {
+  test.info().annotations.push({ type: 'category', description: 'selectors' })
+  // …test body…
+  await expect(page.getByTestId('save-button')).toBeVisible()
+})
+```
+
+For structured logging, prefer `tests/utils/test-logger.ts` (tslog-backed).
 
 ## Mapping to Success Criteria
 
