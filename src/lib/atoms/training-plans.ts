@@ -15,6 +15,7 @@ import type { ExtendedTrainingPlan } from '@/types/training'
 import { api } from '../api-client'
 import { createLogger } from '../logger'
 import { normalizeListResponse } from '../utils/api-utils'
+import { withDebugLabel } from './utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -76,18 +77,18 @@ export const editingTrainingPlanIdAtom = atom<string | null>(null)
  */
 export const planTemplatesAtom = atom<PlanTemplate[]>([])
 
-// Jotai Devtools debug labels
-trainingPlansAtom.debugLabel = 'trainingPlans/list'
-trainingPlansLoadingAtom.debugLabel = 'trainingPlans/loading'
-trainingPlansErrorAtom.debugLabel = 'trainingPlans/error'
-asyncTrainingPlansAtom.debugLabel = 'trainingPlans/async'
-refreshableTrainingPlansAtom.debugLabel = 'trainingPlans/refreshable'
-selectedTrainingPlanAtom.debugLabel = 'trainingPlans/selected'
-selectedTrainingPlanIdAtom.debugLabel = 'trainingPlans/selectedId'
-trainingPlanSearchTermAtom.debugLabel = 'trainingPlans/searchTerm'
-trainingPlanStatusFilterAtom.debugLabel = 'trainingPlans/statusFilter'
-trainingPlanSortByAtom.debugLabel = 'trainingPlans/sortBy'
-trainingPlanFormDataAtom.debugLabel = 'trainingPlans/formData'
-isEditingTrainingPlanAtom.debugLabel = 'trainingPlans/isEditing'
-editingTrainingPlanIdAtom.debugLabel = 'trainingPlans/editingId'
-planTemplatesAtom.debugLabel = 'trainingPlans/templates'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(trainingPlansAtom, 'trainingPlans/list')
+withDebugLabel(trainingPlansLoadingAtom, 'trainingPlans/loading')
+withDebugLabel(trainingPlansErrorAtom, 'trainingPlans/error')
+withDebugLabel(asyncTrainingPlansAtom, 'trainingPlans/async')
+withDebugLabel(refreshableTrainingPlansAtom, 'trainingPlans/refreshable')
+withDebugLabel(selectedTrainingPlanAtom, 'trainingPlans/selected')
+withDebugLabel(selectedTrainingPlanIdAtom, 'trainingPlans/selectedId')
+withDebugLabel(trainingPlanSearchTermAtom, 'trainingPlans/searchTerm')
+withDebugLabel(trainingPlanStatusFilterAtom, 'trainingPlans/statusFilter')
+withDebugLabel(trainingPlanSortByAtom, 'trainingPlans/sortBy')
+withDebugLabel(trainingPlanFormDataAtom, 'trainingPlans/formData')
+withDebugLabel(isEditingTrainingPlanAtom, 'trainingPlans/isEditing')
+withDebugLabel(editingTrainingPlanIdAtom, 'trainingPlans/editingId')
+withDebugLabel(planTemplatesAtom, 'trainingPlans/templates')

@@ -6,6 +6,7 @@ import type { OptimisticMessage, Workout } from '@/lib/supabase'
 import type { Conversation } from '@/types/chat'
 
 import { sessionAtom } from './auth'
+import { withDebugLabel } from './utils'
 
 // Message input interface
 interface MessageInput {
@@ -277,25 +278,25 @@ export const sendMessageActionAtom = atom(
   }
 )
 
-// Jotai Devtools debug labels
-conversationsAtom.debugLabel = 'chat/conversations'
-messagesAtom.debugLabel = 'chat/messages'
-conversationsLoadingAtom.debugLabel = 'chat/conversationsLoading'
-messagesLoadingAtom.debugLabel = 'chat/messagesLoading'
-asyncConversationsAtom.debugLabel = 'chat/asyncConversations'
-selectedConversationAtom.debugLabel = 'chat/selectedConversation'
-selectedConversationIdAtom.debugLabel = 'chat/selectedConversationId'
-typingIndicatorAtom.debugLabel = 'chat/typingIndicator'
-unreadMessagesCountAtom.debugLabel = 'chat/unreadMessagesCount'
-isTypingAtom.debugLabel = 'chat/isTyping'
-chatSoundEnabledAtom.debugLabel = 'chat/soundEnabled'
-chatNotificationsEnabledAtom.debugLabel = 'chat/notificationsEnabled'
-currentConversationIdAtom.debugLabel = 'chat/currentConversationId'
-messageInputAtom.debugLabel = 'chat/messageInput'
-chatUiStateAtom.debugLabel = 'chat/uiState'
-messageInputStateAtom.debugLabel = 'chat/messageInputState'
-newMessageModalAtom.debugLabel = 'chat/newMessageModal'
-typingStatusAtom.debugLabel = 'chat/typingStatus'
-offlineMessageQueueAtom.debugLabel = 'chat/offlineQueue'
-selectedRecipientAtom.debugLabel = 'chat/selectedRecipient'
-sendMessageActionAtom.debugLabel = 'chat/sendMessageAction'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(conversationsAtom, 'chat/conversations')
+withDebugLabel(messagesAtom, 'chat/messages')
+withDebugLabel(conversationsLoadingAtom, 'chat/conversationsLoading')
+withDebugLabel(messagesLoadingAtom, 'chat/messagesLoading')
+withDebugLabel(asyncConversationsAtom, 'chat/asyncConversations')
+withDebugLabel(selectedConversationAtom, 'chat/selectedConversation')
+withDebugLabel(selectedConversationIdAtom, 'chat/selectedConversationId')
+withDebugLabel(typingIndicatorAtom, 'chat/typingIndicator')
+withDebugLabel(unreadMessagesCountAtom, 'chat/unreadMessagesCount')
+withDebugLabel(isTypingAtom, 'chat/isTyping')
+withDebugLabel(chatSoundEnabledAtom, 'chat/soundEnabled')
+withDebugLabel(chatNotificationsEnabledAtom, 'chat/notificationsEnabled')
+withDebugLabel(currentConversationIdAtom, 'chat/currentConversationId')
+withDebugLabel(messageInputAtom, 'chat/messageInput')
+withDebugLabel(chatUiStateAtom, 'chat/uiState')
+withDebugLabel(messageInputStateAtom, 'chat/messageInputState')
+withDebugLabel(newMessageModalAtom, 'chat/newMessageModal')
+withDebugLabel(typingStatusAtom, 'chat/typingStatus')
+withDebugLabel(offlineMessageQueueAtom, 'chat/offlineQueue')
+withDebugLabel(selectedRecipientAtom, 'chat/selectedRecipient')
+withDebugLabel(sendMessageActionAtom, 'chat/sendMessageAction')

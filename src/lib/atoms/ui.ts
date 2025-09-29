@@ -12,6 +12,8 @@ import { atomWithStorage } from 'jotai/utils'
 import type { User as BetterAuthUser } from '@/lib/better-auth-client'
 import type { User, Workout } from '@/lib/supabase'
 
+import { withDebugLabel } from './utils'
+
 // Modal state atoms
 export const showCreateWorkoutModalAtom = atom(false)
 export const showCreateTrainingPlanModalAtom = atom(false)
@@ -120,22 +122,22 @@ export const uiStateAtom = atom({
   expandedNotes: {} as Record<string, boolean>,
 })
 
-// Jotai Devtools debug labels
-showCreateWorkoutModalAtom.debugLabel = 'ui/showCreateWorkoutModal'
-showCreateTrainingPlanModalAtom.debugLabel = 'ui/showCreateTrainingPlanModal'
-showWorkoutLogModalAtom.debugLabel = 'ui/showWorkoutLogModal'
-showNewMessageModalAtom.debugLabel = 'ui/showNewMessageModal'
-showEditProfileModalAtom.debugLabel = 'ui/showEditProfileModal'
-showRelationshipModalAtom.debugLabel = 'ui/showRelationshipModal'
-isDrawerOpenAtom.debugLabel = 'ui/isDrawerOpen'
-isSidebarCollapsedAtom.debugLabel = 'ui/isSidebarCollapsed'
-themeAtom.debugLabel = 'ui/theme'
-compactModeAtom.debugLabel = 'ui/compactMode'
-globalLoadingAtom.debugLabel = 'ui/globalLoading'
-globalLoadingMessageAtom.debugLabel = 'ui/globalLoadingMessage'
-loadingStatesAtom.debugLabel = 'ui/loadingStates'
-toastMessagesAtom.debugLabel = 'ui/toastMessages'
-calendarUiStateAtom.debugLabel = 'ui/calendarState'
-themeModeAtom.debugLabel = 'ui/themeMode'
-runnersPageTabAtom.debugLabel = 'ui/runnersPageTab'
-uiStateAtom.debugLabel = 'ui/state'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(showCreateWorkoutModalAtom, 'ui/showCreateWorkoutModal')
+withDebugLabel(showCreateTrainingPlanModalAtom, 'ui/showCreateTrainingPlanModal')
+withDebugLabel(showWorkoutLogModalAtom, 'ui/showWorkoutLogModal')
+withDebugLabel(showNewMessageModalAtom, 'ui/showNewMessageModal')
+withDebugLabel(showEditProfileModalAtom, 'ui/showEditProfileModal')
+withDebugLabel(showRelationshipModalAtom, 'ui/showRelationshipModal')
+withDebugLabel(isDrawerOpenAtom, 'ui/isDrawerOpen')
+withDebugLabel(isSidebarCollapsedAtom, 'ui/isSidebarCollapsed')
+withDebugLabel(themeAtom, 'ui/theme')
+withDebugLabel(compactModeAtom, 'ui/compactMode')
+withDebugLabel(globalLoadingAtom, 'ui/globalLoading')
+withDebugLabel(globalLoadingMessageAtom, 'ui/globalLoadingMessage')
+withDebugLabel(loadingStatesAtom, 'ui/loadingStates')
+withDebugLabel(toastMessagesAtom, 'ui/toastMessages')
+withDebugLabel(calendarUiStateAtom, 'ui/calendarState')
+withDebugLabel(themeModeAtom, 'ui/themeMode')
+withDebugLabel(runnersPageTabAtom, 'ui/runnersPageTab')
+withDebugLabel(uiStateAtom, 'ui/state')

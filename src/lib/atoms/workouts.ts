@@ -11,6 +11,8 @@ import {
 } from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
+import { withDebugLabel } from './utils'
+
 // Helper function to unwrap API response shapes
 function unwrapWorkout(json: unknown): Workout {
   return typeof json === 'object' && json !== null && 'workout' in json
@@ -25,6 +27,22 @@ export const workoutsRefreshTriggerAtom = atom(0)
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
 const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+
+// DRY helper: invalidate current user's workouts cache (fallback: clear all)
+async function invalidateUserWorkoutsCache(): Promise<void> {
+  try {
+    const { authClient } = await import('@/lib/better-auth-client')
+    const session = await authClient.getSession()
+    const userId = session?.data?.user?.id
+    if (userId) {
+      workoutsCache.delete(userId)
+      return
+    }
+  } catch {
+    // ignore and clear all below
+  }
+  workoutsCache.clear()
+}
 
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
@@ -115,21 +133,7 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
-  // Clear current user's cache only for targeted invalidation
-  try {
-    const { authClient } = await import('@/lib/better-auth-client')
-    const session = await authClient.getSession()
-    if (session?.data?.user?.id) {
-      workoutsCache.delete(session.data.user.id)
-    } else {
-      // Fallback to clearing all caches if no session
-      workoutsCache.clear()
-    }
-  } catch {
-    // If session check fails, clear all caches as fallback
-    workoutsCache.clear()
-  }
-
+  await invalidateUserWorkoutsCache()
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
   // Also trigger a re-fetch of async workouts by invalidating the cache
@@ -560,16 +564,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     set(workoutsAtom, updatedWorkouts)
 
     // Invalidate current user's cache only; fallback to clearing all
-    try {
-      const session = await authClient.getSession()
-      if (session?.data?.user?.id) {
-        workoutsCache.delete(session.data.user.id)
-      } else {
-        workoutsCache.clear()
-      }
-    } catch {
-      workoutsCache.clear()
-    }
+    await invalidateUserWorkoutsCache()
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
@@ -580,40 +575,40 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
   }
 })
 
-// Jotai Devtools debug labels
-workoutsAtom.debugLabel = 'workouts/list'
-workoutsRefreshTriggerAtom.debugLabel = 'workouts/refreshTrigger'
-asyncWorkoutsAtom.debugLabel = 'workouts/async'
-workoutsWithSuspenseAtom.debugLabel = 'workouts/withSuspense'
-refreshWorkoutsAtom.debugLabel = 'workouts/refreshAction'
-hydrateWorkoutsAtom.debugLabel = 'workouts/hydrateAction'
-selectedWorkoutAtom.debugLabel = 'workouts/selected'
-selectedWorkoutIdAtom.debugLabel = 'workouts/selectedId'
-upcomingWorkoutsAtom.debugLabel = 'workouts/upcoming'
-completedWorkoutsAtom.debugLabel = 'workouts/completed'
-thisWeekWorkoutsAtom.debugLabel = 'workouts/thisWeek'
-workoutSearchTermAtom.debugLabel = 'workouts/searchTerm'
-workoutTypeFilterAtom.debugLabel = 'workouts/typeFilter'
-workoutStatusFilterAtom.debugLabel = 'workouts/statusFilter'
-workoutSortByAtom.debugLabel = 'workouts/sortBy'
-workoutViewModeAtom.debugLabel = 'workouts/viewMode'
-workoutQuickFilterAtom.debugLabel = 'workouts/quickFilter'
-workoutShowAdvancedFiltersAtom.debugLabel = 'workouts/showAdvancedFilters'
-workoutFormDataAtom.debugLabel = 'workouts/formData'
-isEditingWorkoutAtom.debugLabel = 'workouts/isEditing'
-editingWorkoutIdAtom.debugLabel = 'workouts/editingId'
-messagesFetchTimestampAtom.debugLabel = 'workouts/messagesFetchTimestamp'
-workoutLinkSelectorSearchAtom.debugLabel = 'workouts/linkSelectorSearch'
-typingTimeoutRefsAtom.debugLabel = 'workouts/typingTimeoutRefs'
-sendTypingTimeoutRefsAtom.debugLabel = 'workouts/sendTypingTimeoutRefs'
-workoutLookupMapAtom.debugLabel = 'workouts/lookupMap'
-selectedMatchAtom.debugLabel = 'workouts/selectedMatch'
-showWorkoutDiffModalAtom.debugLabel = 'workouts/showDiffModal'
-workoutActionsAtom.debugLabel = 'workouts/actions'
-optimisticOperationAtom.debugLabel = 'workouts/optimisticOperation'
-errorRecoveryAtom.debugLabel = 'workouts/errorRecovery'
-persistedStateAtom.debugLabel = 'workouts/persistedState'
-workoutAnalyticsAtom.debugLabel = 'workouts/analytics'
-completeWorkoutAtom.debugLabel = 'workouts/completeAction'
-logWorkoutDetailsAtom.debugLabel = 'workouts/logDetailsAction'
-skipWorkoutAtom.debugLabel = 'workouts/skipAction'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(workoutsAtom, 'workouts/list')
+withDebugLabel(workoutsRefreshTriggerAtom, 'workouts/refreshTrigger')
+withDebugLabel(asyncWorkoutsAtom, 'workouts/async')
+withDebugLabel(workoutsWithSuspenseAtom, 'workouts/withSuspense')
+withDebugLabel(refreshWorkoutsAtom, 'workouts/refreshAction')
+withDebugLabel(hydrateWorkoutsAtom, 'workouts/hydrateAction')
+withDebugLabel(selectedWorkoutAtom, 'workouts/selected')
+withDebugLabel(selectedWorkoutIdAtom, 'workouts/selectedId')
+withDebugLabel(upcomingWorkoutsAtom, 'workouts/upcoming')
+withDebugLabel(completedWorkoutsAtom, 'workouts/completed')
+withDebugLabel(thisWeekWorkoutsAtom, 'workouts/thisWeek')
+withDebugLabel(workoutSearchTermAtom, 'workouts/searchTerm')
+withDebugLabel(workoutTypeFilterAtom, 'workouts/typeFilter')
+withDebugLabel(workoutStatusFilterAtom, 'workouts/statusFilter')
+withDebugLabel(workoutSortByAtom, 'workouts/sortBy')
+withDebugLabel(workoutViewModeAtom, 'workouts/viewMode')
+withDebugLabel(workoutQuickFilterAtom, 'workouts/quickFilter')
+withDebugLabel(workoutShowAdvancedFiltersAtom, 'workouts/showAdvancedFilters')
+withDebugLabel(workoutFormDataAtom, 'workouts/formData')
+withDebugLabel(isEditingWorkoutAtom, 'workouts/isEditing')
+withDebugLabel(editingWorkoutIdAtom, 'workouts/editingId')
+withDebugLabel(messagesFetchTimestampAtom, 'workouts/messagesFetchTimestamp')
+withDebugLabel(workoutLinkSelectorSearchAtom, 'workouts/linkSelectorSearch')
+withDebugLabel(typingTimeoutRefsAtom, 'workouts/typingTimeoutRefs')
+withDebugLabel(sendTypingTimeoutRefsAtom, 'workouts/sendTypingTimeoutRefs')
+withDebugLabel(workoutLookupMapAtom, 'workouts/lookupMap')
+withDebugLabel(selectedMatchAtom, 'workouts/selectedMatch')
+withDebugLabel(showWorkoutDiffModalAtom, 'workouts/showDiffModal')
+withDebugLabel(workoutActionsAtom, 'workouts/actions')
+withDebugLabel(optimisticOperationAtom, 'workouts/optimisticOperation')
+withDebugLabel(errorRecoveryAtom, 'workouts/errorRecovery')
+withDebugLabel(persistedStateAtom, 'workouts/persistedState')
+withDebugLabel(workoutAnalyticsAtom, 'workouts/analytics')
+withDebugLabel(completeWorkoutAtom, 'workouts/completeAction')
+withDebugLabel(logWorkoutDetailsAtom, 'workouts/logDetailsAction')
+withDebugLabel(skipWorkoutAtom, 'workouts/skipAction')

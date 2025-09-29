@@ -10,8 +10,9 @@ export async function getTestLogger(name?: string): Promise<TestLogger> {
   try {
     // Dynamic import allows loading ESM from CJS context safely
     const mod = await import('tslog')
-    const { Logger } = mod as unknown as { Logger: new (opts?: { name?: string }) => TestLogger }
-    return new Logger({ name })
+    type LoggerCtor = typeof import('tslog').Logger
+    const { Logger } = mod as unknown as { Logger: LoggerCtor }
+    return new Logger({ name }) as unknown as TestLogger
   } catch {
     const prefix = name ? `[${name}]` : ''
     return {

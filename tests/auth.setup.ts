@@ -1,6 +1,7 @@
 import { expect, test as setup } from '@playwright/test'
 import path from 'path'
 
+import { waitForAuthenticationSuccess } from './utils/suspense-helpers'
 import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD } from './utils/test-helpers'
 import { getTestLogger } from './utils/test-logger'
 
@@ -38,33 +39,21 @@ setup('authenticate @setup', async ({ page, context }) => {
 
   if (!response.ok()) {
     const body = await response.text()
+    const preview = body
+      .slice(0, 300)
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
     logger.error('Auth API failed', {
       status: response.status(),
-      bodyPreview: body.slice(0, 300).replace(TEST_RUNNER_EMAIL, '<redacted-email>'),
+      bodyPreview: preview,
     })
     throw new Error(`Authentication API failed with status ${response.status()}`)
   }
 
   logger.info('✅ Authentication API successful')
 
-  // The API call should have set cookies, now navigate to dashboard
+  // The API call should have set cookies, now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/runner`)
-  await page.waitForLoadState('domcontentloaded')
-
-  // Verify we're on the dashboard
-  const currentUrl = page.url()
-  logger.info('🔄 Current URL after auth:', currentUrl)
-
-  if (!currentUrl.includes('/dashboard')) {
-    // If redirected to signin, try refreshing to pick up cookies
-    await page.reload()
-    await page.waitForLoadState('domcontentloaded')
-
-    const finalUrl = page.url()
-    if (!finalUrl.includes('/dashboard')) {
-      throw new Error('Authentication failed - could not access dashboard after API auth')
-    }
-  }
+  await waitForAuthenticationSuccess(page, 'runner', 15000)
 
   logger.info('✅ Successfully navigated to dashboard')
 
