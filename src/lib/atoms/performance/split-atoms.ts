@@ -29,3 +29,23 @@ export const updateWorkoutAtom = atom(
     set(workoutsBaseAtom, prev => prev.map(w => (w.id === id ? { ...w, ...updates } : w)))
   }
 )
+
+// Jotai Devtools debug labels
+// Base atoms (module-local)
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+workoutsBaseAtom.debugLabel = 'split/workoutsBase'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+conversationsBaseAtom.debugLabel = 'split/conversationsBase'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+notificationsBaseAtom.debugLabel = 'split/notificationsBase'
+
+// Exported split and helper atoms
+workoutsSplitAtom.debugLabel = 'split/workoutsSplit'
+conversationsSplitAtom.debugLabel = 'split/conversationsSplit'
+notificationsSplitAtom.debugLabel = 'split/notificationsSplit'
+addWorkoutAtom.debugLabel = 'split/addWorkoutAction'
+removeWorkoutAtom.debugLabel = 'split/removeWorkoutAction'
+updateWorkoutAtom.debugLabel = 'split/updateWorkoutAction'

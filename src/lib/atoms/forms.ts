@@ -76,3 +76,16 @@ export const workoutLogFormAtom = atom({
 // Auth success/redirect states
 export const authSuccessMessageAtom = atom<string | null>(null)
 export const authRedirectingAtom = atom(false)
+
+// Jotai Devtools debug labels
+formErrorsAtom.debugLabel = 'forms/errors'
+formSubmittingAtom.debugLabel = 'forms/submitting'
+formSuccessAtom.debugLabel = 'forms/success'
+signInFormAtom.debugLabel = 'forms/signIn'
+signUpFormAtom.debugLabel = 'forms/signUp'
+profileFormAtom.debugLabel = 'forms/profile'
+formValidationAtom.debugLabel = 'forms/validation'
+createTrainingPlanFormAtom.debugLabel = 'forms/createTrainingPlan'
+workoutLogFormAtom.debugLabel = 'forms/workoutLog'
+authSuccessMessageAtom.debugLabel = 'forms/authSuccessMessage'
+authRedirectingAtom.debugLabel = 'forms/authRedirecting'

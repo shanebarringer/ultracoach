@@ -119,3 +119,23 @@ export const uiStateAtom = atom({
   workoutContext: null as string | null,
   expandedNotes: {} as Record<string, boolean>,
 })
+
+// Jotai Devtools debug labels
+showCreateWorkoutModalAtom.debugLabel = 'ui/showCreateWorkoutModal'
+showCreateTrainingPlanModalAtom.debugLabel = 'ui/showCreateTrainingPlanModal'
+showWorkoutLogModalAtom.debugLabel = 'ui/showWorkoutLogModal'
+showNewMessageModalAtom.debugLabel = 'ui/showNewMessageModal'
+showEditProfileModalAtom.debugLabel = 'ui/showEditProfileModal'
+showRelationshipModalAtom.debugLabel = 'ui/showRelationshipModal'
+isDrawerOpenAtom.debugLabel = 'ui/isDrawerOpen'
+isSidebarCollapsedAtom.debugLabel = 'ui/isSidebarCollapsed'
+themeAtom.debugLabel = 'ui/theme'
+compactModeAtom.debugLabel = 'ui/compactMode'
+globalLoadingAtom.debugLabel = 'ui/globalLoading'
+globalLoadingMessageAtom.debugLabel = 'ui/globalLoadingMessage'
+loadingStatesAtom.debugLabel = 'ui/loadingStates'
+toastMessagesAtom.debugLabel = 'ui/toastMessages'
+calendarUiStateAtom.debugLabel = 'ui/calendarState'
+themeModeAtom.debugLabel = 'ui/themeMode'
+runnersPageTabAtom.debugLabel = 'ui/runnersPageTab'
+uiStateAtom.debugLabel = 'ui/state'
