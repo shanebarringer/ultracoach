@@ -211,10 +211,7 @@ export async function verifyDashboardAccess(
  * Waits for file upload error conditions without expecting preview tab selection.
  * Used for invalid files that fail to parse or process.
  */
-export async function waitForFileUploadError(
-  page: Page,
-  timeout = 30000
-): Promise<void> {
+export async function waitForFileUploadError(page: Page, timeout = 30000): Promise<void> {
   console.log('Starting waitForFileUploadError - waiting for error conditions')
 
   // First wait for any loading indicators to appear and disappear
