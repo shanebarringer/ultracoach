@@ -1,5 +1,5 @@
-import { endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
-import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import { addDays, endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
+import { SQL, and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -209,12 +209,67 @@ export async function GET(request: NextRequest) {
     // Execute query with conditions
     const query = baseQuery.where(conditions.length ? and(...conditions) : sql`false`)
 
-    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
+    // Get raw results and sort them properly for UI display
+    const results = await query
 
-    logger.debug('Raw query results:', { count: results.length })
+    // Smart sorting: Today and yesterday first, then upcoming, then past
+    // TODO: Server-side timezone issue - "today/yesterday" is computed in server timezone
+    // Users in different timezones may see incorrect ordering around day boundaries
+    // Future enhancement: Accept client timezone as query param and use date-fns-tz
+    const now = new Date()
+    const today = startOfDay(now)
+    const yesterday = startOfDay(addDays(now, -1))
+
+    const sortedResults = results.slice().sort((a, b) => {
+      const dateA =
+        a.date instanceof Date ? a.date : a.date ? parseISO(String(a.date)) : new Date(0)
+      const dateB =
+        b.date instanceof Date ? b.date : b.date ? parseISO(String(b.date)) : new Date(0)
+
+      // Strip time for comparison using date-fns
+      const dayA = startOfDay(dateA)
+      const dayB = startOfDay(dateB)
+
+      const isAToday = dayA.getTime() === today.getTime()
+      const isBToday = dayB.getTime() === today.getTime()
+      const isAYesterday = dayA.getTime() === yesterday.getTime()
+      const isBYesterday = dayB.getTime() === yesterday.getTime()
+
+      // Priority: Today > Yesterday > Future (asc) > Past (desc)
+      if (isAToday && !isBToday) return -1
+      if (isBToday && !isAToday) return 1
+      if (isAYesterday && !isBYesterday && !isBToday) return -1
+      if (isBYesterday && !isAYesterday && !isAToday) return 1
+
+      // Both are today or yesterday - sort by creation time (newest first)
+      if ((isAToday && isBToday) || (isAYesterday && isBYesterday)) {
+        const createdA = a.created_at ? new Date(a.created_at).getTime() : 0
+        const createdB = b.created_at ? new Date(b.created_at).getTime() : 0
+        return createdB - createdA
+      }
+
+      // For future dates, sort ascending (closest first)
+      if (dayA > today && dayB > today) {
+        return dayA.getTime() - dayB.getTime()
+      }
+
+      // For past dates, sort descending (most recent first)
+      if (dayA < yesterday && dayB < yesterday) {
+        return dayB.getTime() - dayA.getTime()
+      }
+
+      // Mixed future/past: future comes before past
+      if (dayA >= today && dayB < yesterday) return -1
+      if (dayB >= today && dayA < yesterday) return 1
+
+      // Fallback to date comparison
+      return dayA.getTime() - dayB.getTime()
+    })
+
+    logger.debug('Raw query results:', { count: sortedResults.length })
 
     // Remove the extra fields we only needed for authorization
-    const cleanedWorkouts = results.map(
+    const cleanedWorkouts = sortedResults.map(
       ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
     )
 
