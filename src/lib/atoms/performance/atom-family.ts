@@ -10,7 +10,8 @@ import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
 import { withDebugLabel } from '@/lib/atoms/utils'
-import type { ExtendedTrainingPlan, TrainingPlan, Workout } from '@/lib/supabase'
+import type { Workout, TrainingPlan } from '@/lib/supabase'
+import type { ExtendedTrainingPlan } from '@/types/training'
 
 import { trainingPlansAtom } from '../training-plans'
 import { workoutsAtom } from '../workouts'
@@ -34,31 +35,23 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       const workout = workouts.find(w => w.id === workoutId)
       return workout || null
     },
-    (get, set, newWorkout: Workout | null) => {
-      // Write-through to the backing list to avoid recursive writes on the family atom
-      const list = get(workoutsAtom)
-      const idx = list.findIndex(w => w.id === workoutId)
-      if (newWorkout === null) {
-        // Remove the workout
-        if (idx !== -1) set(workoutsAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
-        return
-      }
-      // Guard: ignore writes where the payload id doesn't match this family key
-      if (newWorkout.id !== workoutId) {
-        return
-      }
-      if (idx === -1) {
-        // Insert if not present
-        set(workoutsAtom, [...list, newWorkout])
-      } else {
-        // Update existing (preserve unchanged fields)
-        const current = list[idx]
-        if (current !== newWorkout) {
-          const next = [...list]
-          next[idx] = { ...current, ...newWorkout }
-          set(workoutsAtom, next)
+    (_get, set, newWorkout: Workout | null) => {
+      // Write-through to the backing list to avoid self-recursion and duplicated state
+      set(workoutsAtom, prev => {
+        // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
+        if (newWorkout && newWorkout.id !== workoutId) {
+          return prev
         }
-      }
+        if (newWorkout === null) {
+          return prev.filter(w => w.id !== workoutId)
+        }
+        const idx = prev.findIndex(w => w.id === workoutId)
+        if (idx === -1) return [...prev, newWorkout]
+        if (prev[idx] === newWorkout) return prev
+        const next = prev.slice()
+        next[idx] = newWorkout
+        return next
+      })
     }
   )
   return withDebugLabel(a, `workoutAtomFamily(${workoutId})`)
@@ -82,28 +75,23 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       const plan = plans.find(p => p.id === planId)
       return plan || null
     },
-    (get, set, newPlan: TrainingPlan | ExtendedTrainingPlan | null) => {
-      // Write-through to the backing list to avoid recursive writes
-      const list = get(trainingPlansAtom)
-      const idx = list.findIndex(p => p.id === planId)
-      if (newPlan === null) {
-        if (idx !== -1) set(trainingPlansAtom, [...list.slice(0, idx), ...list.slice(idx + 1)])
-        return
-      }
-      // Guard: ignore writes where the payload id doesn't match this family key
-      if (newPlan.id !== planId) {
-        return
-      }
-      if (idx === -1) {
-        set(trainingPlansAtom, [...list, newPlan as ExtendedTrainingPlan])
-      } else {
-        const current = list[idx]
-        if (current !== (newPlan as ExtendedTrainingPlan)) {
-          const next = [...list]
-          next[idx] = { ...current, ...(newPlan as ExtendedTrainingPlan) }
-          set(trainingPlansAtom, next)
+    (_get, set, newPlan: ExtendedTrainingPlan | null) => {
+      // Write-through to the backing list to avoid self-recursion and duplicated state
+      set(trainingPlansAtom, prev => {
+        // Prevent cross-key writes (e.g., setting id A's family with an object for id B)
+        if (newPlan && newPlan.id !== planId) {
+          return prev
         }
-      }
+        if (newPlan === null) {
+          return prev.filter(p => p.id !== planId)
+        }
+        const idx = prev.findIndex(p => p.id === planId)
+        if (idx === -1) return [...prev, newPlan]
+        if (prev[idx] === newPlan) return prev
+        const next = prev.slice()
+        next[idx] = newPlan
+        return next
+      })
     }
   )
   return withDebugLabel(a, `trainingPlanAtomFamily(${planId})`)
