@@ -34,7 +34,8 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3001',
+    baseURL:
+      process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001',
 
     /* Collect trace for any failed test to aid diagnosis */
     trace: 'retain-on-failure',
@@ -55,6 +56,12 @@ export default defineConfig({
     storageState: undefined, // Will be overridden by projects that need auth
     acceptDownloads: true,
     ignoreHTTPSErrors: false,
+
+    /* Extra headers to ensure proper auth behavior */
+    extraHTTPHeaders: {
+      // Ensure consistent user agent for cookie handling
+      'User-Agent': 'Mozilla/5.0 (compatible; PlaywrightTest/1.0)',
+    },
   },
 
   /* Setup projects - run authentication before other tests */

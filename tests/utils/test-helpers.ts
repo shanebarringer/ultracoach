@@ -141,6 +141,24 @@ export async function assertAuthenticated(page: Page, userType: TestUserType) {
 }
 
 /**
+ * Simple auth verification - check if we can access session endpoint
+ */
+export async function verifyAuthState(page: Page): Promise<boolean> {
+  try {
+    const baseUrl =
+      process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
+    const response = await page.request.get(`${baseUrl}/api/auth/session`)
+    if (!response.ok()) {
+      return false
+    }
+    const sessionData = await response.json()
+    return !!sessionData.user && !!sessionData.user.email
+  } catch {
+    return false
+  }
+}
+
+/**
  * Fill form fields with proper waiting
  */
 export async function fillFormField(page: Page, selector: string, value: string) {

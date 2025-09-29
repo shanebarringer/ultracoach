@@ -173,21 +173,15 @@ test.describe('Chat Messaging System', () => {
       test.use({ storageState: './playwright/.auth/runner.json' })
 
       test('should send and receive messages', async ({ page }) => {
-        // Already authenticated via storageState: navigate directly
-
-        // Navigate directly to chat page
+        // Navigate directly to chat page (storage state provides authentication)
         await page.goto('/chat')
+
+        // Wait for final URL (ensures no redirect to signin)
+        await page.waitForURL('/chat')
+
+        // Wait for page to be ready
         await waitForHeroUIReady(page)
         await waitForLoadingComplete(page)
-
-        // Verify we're on the chat page and not redirected to signin (critical for CI)
-        await expect(page).toHaveURL('/chat', { timeout: 10000 })
-
-        // Extra verification: ensure we're not on signin page (common CI issue)
-        const currentUrl = page.url()
-        if (currentUrl.includes('/auth/signin')) {
-          throw new Error(`Authentication failed in CI - redirected to signin: ${currentUrl}`)
-        }
 
         // Check if there are any existing conversations or if we need to start one
         const hasConversations =
