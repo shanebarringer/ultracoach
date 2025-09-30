@@ -264,20 +264,38 @@ function TrainingPlanDetailPage() {
       return null
     }
 
-    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
-    const today = startOfDay(new Date())
-    let totalWeeks = 0
-
-    for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
-      const phaseStartDate = addWeeks(planStartDate, totalWeeks)
-      const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
-
-      if (today >= phaseStartDate && today <= phaseEndDate) {
-        return phase
+    // Validate start_date is a valid ISO string before parsing
+    try {
+      const parsedStartDate = parseISO(extendedTrainingPlan.start_date)
+      if (!isValid(parsedStartDate)) {
+        logger.warn('Invalid start_date in training plan', {
+          planId: extendedTrainingPlan.id,
+          startDate: extendedTrainingPlan.start_date,
+        })
+        return null
       }
-      totalWeeks += phase.duration_weeks
+
+      const planStartDate = startOfDay(parsedStartDate)
+      const today = startOfDay(new Date())
+      let totalWeeks = 0
+
+      for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
+        const phaseStartDate = addWeeks(planStartDate, totalWeeks)
+        const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
+
+        if (today >= phaseStartDate && today <= phaseEndDate) {
+          return phase
+        }
+        totalWeeks += phase.duration_weeks
+      }
+      return null
+    } catch (error) {
+      logger.error('Error calculating current phase', {
+        error,
+        planId: extendedTrainingPlan?.id,
+      })
+      return null
     }
-    return null
   }, [extendedTrainingPlan])
 
   const currentPhase = useMemo(() => calculateCurrentPhase(), [calculateCurrentPhase])
@@ -294,48 +312,91 @@ function TrainingPlanDetailPage() {
       return { grouped: {}, ungrouped: workouts }
     }
 
-    const grouped: Record<string, Workout[]> = {}
-    const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = startOfDay(parseISO(extendedTrainingPlan.start_date))
-    let currentWeekOffset = 0
+    // Validate start_date before parsing
+    try {
+      const parsedStartDate = parseISO(extendedTrainingPlan.start_date)
+      if (!isValid(parsedStartDate)) {
+        logger.warn('Invalid start_date in training plan for workout grouping', {
+          planId: extendedTrainingPlan.id,
+          startDate: extendedTrainingPlan.start_date,
+        })
+        return { grouped: {}, ungrouped: workouts }
+      }
 
-    ;[...extendedTrainingPlan.plan_phases]
-      .sort((a, b) => a.order - b.order)
-      .forEach(phase => {
-        const phaseStartDate = addWeeks(planStartDate, currentWeekOffset)
-        const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
+      const grouped: Record<string, Workout[]> = {}
+      const phaseDates: Record<string, { start: Date; end: Date }> = {}
+      const planStartDate = startOfDay(parsedStartDate)
+      let currentWeekOffset = 0
 
-        phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
-        grouped[phase.id] = []
-        currentWeekOffset += phase.duration_weeks
+      ;[...extendedTrainingPlan.plan_phases]
+        .sort((a, b) => a.order - b.order)
+        .forEach(phase => {
+          const phaseStartDate = addWeeks(planStartDate, currentWeekOffset)
+          const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
+
+          phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
+          grouped[phase.id] = []
+          currentWeekOffset += phase.duration_weeks
+        })
+
+      const ungrouped: Workout[] = []
+
+      workouts.forEach((workout: Workout) => {
+        // Validate workout date before parsing
+        try {
+          const parsedWorkoutDate = parseISO(workout.date)
+          if (!isValid(parsedWorkoutDate)) {
+            logger.warn('Invalid workout date encountered', {
+              workoutId: workout.id,
+              date: workout.date,
+            })
+            ungrouped.push(workout)
+            return
+          }
+
+          const workoutDate = startOfDay(parsedWorkoutDate)
+          let foundPhase = false
+          for (const phaseId in phaseDates) {
+            const { start, end } = phaseDates[phaseId]
+            if (workoutDate >= start && workoutDate <= end) {
+              grouped[phaseId].push(workout)
+              foundPhase = true
+              break
+            }
+          }
+          if (!foundPhase) {
+            ungrouped.push(workout)
+          }
+        } catch (error) {
+          logger.error('Error parsing workout date', {
+            error,
+            workoutId: workout.id,
+          })
+          ungrouped.push(workout)
+        }
       })
 
-    const ungrouped: Workout[] = []
-
-    workouts.forEach((workout: Workout) => {
-      const workoutDate = startOfDay(parseISO(workout.date))
-      let foundPhase = false
-      for (const phaseId in phaseDates) {
-        const { start, end } = phaseDates[phaseId]
-        if (workoutDate >= start && workoutDate <= end) {
-          grouped[phaseId].push(workout)
-          foundPhase = true
-          break
-        }
+      // Sort workouts within each group by date
+      for (const phaseId in grouped) {
+        grouped[phaseId].sort((a, b) => {
+          try {
+            const dateA = startOfDay(parseISO(a.date))
+            const dateB = startOfDay(parseISO(b.date))
+            return dateA.getTime() - dateB.getTime()
+          } catch {
+            return 0 // Keep original order if dates are invalid
+          }
+        })
       }
-      if (!foundPhase) {
-        ungrouped.push(workout)
-      }
-    })
 
-    // Sort workouts within each group by date
-    for (const phaseId in grouped) {
-      grouped[phaseId].sort(
-        (a, b) => startOfDay(parseISO(a.date)).getTime() - startOfDay(parseISO(b.date)).getTime()
-      )
+      return { grouped, ungrouped }
+    } catch (error) {
+      logger.error('Error grouping workouts by phase', {
+        error,
+        planId: extendedTrainingPlan?.id,
+      })
+      return { grouped: {}, ungrouped: workouts }
     }
-
-    return { grouped, ungrouped }
   }, [extendedTrainingPlan, workouts])
 
   const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = useMemo(

@@ -216,10 +216,7 @@ export async function clickButtonWithRetry(
  * This is a lighter-weight alternative to waitForHeroUIReady
  * for cases where you just need to wait for loading indicators
  */
-export async function waitForLoadingComplete(
-  page: Page,
-  options: { timeout?: number } = {}
-) {
+export async function waitForLoadingComplete(page: Page, options: { timeout?: number } = {}) {
   const { timeout = TIMEOUTS.medium } = options
 
   // Wait for specific loading texts

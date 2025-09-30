@@ -112,9 +112,12 @@ test.describe('Session Persistence', () => {
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Wait for React hydration without redundant waitForLoadState
-        await page.locator('#__next').waitFor({ timeout: 5000 }).catch(() => {
-          // App might not have hydration marker, continue
-        })
+        await page
+          .locator('#__next')
+          .waitFor({ timeout: 5000 })
+          .catch(() => {
+            // App might not have hydration marker, continue
+          })
 
         // Verify authenticated state by checking for user elements
         const authIndicators = page.locator('[data-testid="user-menu"]')
