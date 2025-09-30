@@ -94,7 +94,7 @@ export default async function AuthenticatedPage() {
 export default function PageClient({ user }) {
   // Client-side state management and interactivity
 }
-````
+```
 
 ### Routes That MUST Be Dynamic
 

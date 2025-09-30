@@ -16,7 +16,14 @@ export async function waitForHeroUIReady(page: Page) {
   await page.waitForLoadState('domcontentloaded')
 
   // Wait for React hydration (critical for Next.js + HeroUI)
-  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
+  // Use explicit hydration check instead of fixed timeout for more reliability
+  await page
+    .locator('[data-hydrated="true"], #__next')
+    .waitFor({ timeout: 5000 })
+    .catch(() => {
+      // Fallback: if no hydration marker, wait briefly for React to initialize
+      return page.waitForTimeout(process.env.CI ? 1000 : 500)
+    })
 
   // Wait for any loading indicators to disappear
   const loadingIndicators = [

@@ -73,7 +73,7 @@ export const asyncWorkoutsAtom = atom(async get => {
     }
 
     if (!session?.data?.user) {
-      logger.debug('No authenticated session found after retry, returning empty workouts')
+      logger.debug('No authenticated session found, returning empty workouts')
       return []
     }
 
