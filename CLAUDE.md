@@ -33,7 +33,7 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 
 ### MCP Instructions
 
-### GitHub MCP Fallback
+### GitHub MCP Fallback Commands
 
 When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) as fallback:
 
@@ -65,8 +65,6 @@ await page.getByTestId('race-name-0').click()
 Deprecated
 
 - `./playwright/.auth/user.json` was the legacy runner alias and is now deprecated. CI temporarily accepts it for a short deprecation window to keep older branches green, but all new/updated specs and Playwright projects should reference `runner.json`.
-
-````
 
 - When fetching data from Context7 MCP - add to the `.context7-docs` directory (gitignored). Create a new directory for the library if one does not exist. Before fetching from Context7 refer to `.context7-docs` to see if data and/or snippets have already been added
 

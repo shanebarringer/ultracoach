@@ -1,4 +1,14 @@
-import { addDays, endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
+import {
+  addDays,
+  compareAsc,
+  compareDesc,
+  endOfDay,
+  isAfter,
+  isSameDay,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns'
 import { SQL, and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -213,64 +223,82 @@ export async function GET(request: NextRequest) {
     const results = await query
 
     // Smart sorting: Today and yesterday first, then upcoming, then past
-    // TODO: Server-side timezone issue - "today/yesterday" is computed in server timezone
-    // Users in different timezones may see incorrect ordering around day boundaries
-    // Future enhancement: Accept client timezone as query param and use date-fns-tz
+    // NOTE: Boundaries are computed in the server's local timezone.
+    // Future enhancement: accept a `tz` query param and use date-fns timezone helpers
+    // (e.g., date-fns-tz or TZDate depending on version) to compute buckets for the client timezone.
     const now = new Date()
     const today = startOfDay(now)
     const yesterday = startOfDay(addDays(now, -1))
 
-    const sortedResults = results.slice().sort((a, b) => {
-      const dateA =
-        a.date instanceof Date ? a.date : a.date ? parseISO(String(a.date)) : new Date(0)
-      const dateB =
-        b.date instanceof Date ? b.date : b.date ? parseISO(String(b.date)) : new Date(0)
+    const getPriorityFromDay = (day: Date): number => {
+      if (isSameDay(day, today)) return 0 // today
+      if (isSameDay(day, yesterday)) return 1 // yesterday
+      if (isAfter(day, today)) return 2 // future
+      return 3 // past
+    }
 
-      // Strip time for comparison using date-fns
-      const dayA = startOfDay(dateA)
-      const dayB = startOfDay(dateB)
+    const toDate = (value: unknown): Date => {
+      if (value instanceof Date) return value
+      if (typeof value === 'string') return parseISO(value)
+      return new Date(NaN)
+    }
 
-      const isAToday = dayA.getTime() === today.getTime()
-      const isBToday = dayB.getTime() === today.getTime()
-      const isAYesterday = dayA.getTime() === yesterday.getTime()
-      const isBYesterday = dayB.getTime() === yesterday.getTime()
+    // Normalize once to avoid repeated work and keep comparator pure
+    // Guard against invalid dates so date-fns comparators never see `Invalid Date`
+    const normalized = results.map(r => {
+      const parsedDate = toDate(r.date)
+      const dateValid = isValid(parsedDate)
+      const day = dateValid ? startOfDay(parsedDate) : new Date(0)
 
-      // Priority: Today > Yesterday > Future (asc) > Past (desc)
-      if (isAToday && !isBToday) return -1
-      if (isBToday && !isAToday) return 1
-      if (isAYesterday && !isBYesterday && !isBToday) return -1
-      if (isBYesterday && !isAYesterday && !isAToday) return 1
+      const createdRaw = toDate(r.created_at)
+      const created = isValid(createdRaw) ? createdRaw : new Date(0)
 
-      // Both are today or yesterday - sort by creation time (newest first)
-      if ((isAToday && isBToday) || (isAYesterday && isBYesterday)) {
-        const createdA = a.created_at ? new Date(a.created_at).getTime() : 0
-        const createdB = b.created_at ? new Date(b.created_at).getTime() : 0
-        return createdB - createdA
-      }
-
-      // For future dates, sort ascending (closest first)
-      if (dayA > today && dayB > today) {
-        return dayA.getTime() - dayB.getTime()
-      }
-
-      // For past dates, sort descending (most recent first)
-      if (dayA < yesterday && dayB < yesterday) {
-        return dayB.getTime() - dayA.getTime()
-      }
-
-      // Mixed future/past: future comes before past
-      if (dayA >= today && dayB < yesterday) return -1
-      if (dayB >= today && dayA < yesterday) return 1
-
-      // Fallback to date comparison
-      return dayA.getTime() - dayB.getTime()
+      return { ...r, _day: day, _created: created, _dateValid: dateValid }
     })
 
-    logger.debug('Raw query results:', { count: sortedResults.length })
+    const invalidIds = normalized.filter(r => !r._dateValid).map(r => r.id)
+    if (invalidIds.length) {
+      logger.warn('Invalid workout date(s) encountered', { workoutIds: invalidIds })
+    }
+
+    const sortedResults = normalized.slice().sort((a, b) => {
+      const prA = getPriorityFromDay(a._day)
+      const prB = getPriorityFromDay(b._day)
+      if (prA !== prB) return prA - prB
+
+      // Within the same priority group, order by day:
+      // - future: ascending (closest first)
+      // - past: descending (most recent first)
+      if (prA === 2) {
+        const cmp = compareAsc(a._day, b._day)
+        if (cmp !== 0) return cmp
+      } else if (prA === 3) {
+        const cmp = compareDesc(a._day, b._day)
+        if (cmp !== 0) return cmp
+      }
+
+      // Same calendar day across any group: tie-break by creation time (newest first)
+      const createdCmp = compareDesc(a._created, b._created)
+      if (createdCmp !== 0) return createdCmp
+
+      // Final deterministic tie-break by id to avoid relying on engine sort stability
+      const idA = String(a.id)
+      const idB = String(b.id)
+      return idA.localeCompare(idB)
+    })
+
+    logger.debug('Sorted workouts for response', { count: sortedResults.length })
 
     // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = sortedResults.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
+      ({
+        coach_id: _coach_id,
+        plan_runner_id: _plan_runner_id,
+        _day: _d,
+        _created: _c,
+        _dateValid: _dv,
+        ...workout
+      }) => workout
     )
 
     logger.debug('Successfully fetched workouts', {
