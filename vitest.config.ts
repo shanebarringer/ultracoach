@@ -8,6 +8,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
+    // Configure jsdom environment to properly define DOM globals
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+      },
+    },
     // Exclude Playwright test files from vitest
     exclude: [
       '**/node_modules/**',

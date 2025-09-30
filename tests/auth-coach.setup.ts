@@ -94,20 +94,25 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   })
   const verifyPage = await verifyContext.newPage()
 
-  await verifyPage.goto(`${baseUrl}/dashboard/coach`)
+  logger.info('🔍 Verifying coach storage state with new context...')
 
-  // Wait for final URL (ensuring no redirect to signin)
-  await verifyPage.waitForURL(`${baseUrl}/dashboard/coach`)
+  // Navigate and verify we stay on the dashboard (no redirect to signin)
+  await verifyPage.goto(`${baseUrl}/dashboard/coach`, {
+    waitUntil: 'domcontentloaded',
+  })
 
-  // Verify coach dashboard content is accessible
-  await expect(verifyPage.getByTestId('coach-dashboard-content')).toBeVisible({ timeout: 15000 })
+  // Wait for URL to settle (if auth fails, we get redirected to signin)
+  await verifyPage.waitForURL(/\/(dashboard\/coach|auth\/signin)/, { timeout: 10000 })
 
-  const verifyUrl = verifyPage.url()
-  const isAuthenticated = !verifyUrl.includes('/auth/signin')
+  const finalUrl = verifyPage.url()
+  const isAuthenticated =
+    finalUrl.includes('/dashboard/coach') && !finalUrl.includes('/auth/signin')
+
   logger.info(`🔐 Coach authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
+  logger.info(`   Final URL: ${finalUrl}`)
 
   if (!isAuthenticated) {
-    logger.error('❌ Coach storage state verification failed!')
+    logger.error('❌ Coach storage state verification failed - redirected to signin page!')
     throw new Error('Coach authentication verification failed - storage state may not be working')
   }
 

@@ -66,9 +66,10 @@ export const asyncWorkoutsAtom = atom(async get => {
 
     // If no session on first try, wait briefly and retry once
     // This handles the case where session is still being restored on page refresh
+    // Increased delay to 250ms for better CI reliability
     if (!session?.data?.user) {
-      logger.debug('No session found on first attempt, retrying after delay...')
-      await new Promise(resolve => setTimeout(resolve, 100))
+      logger.debug('No session found on first attempt, retrying after 250ms delay...')
+      await new Promise(resolve => setTimeout(resolve, 250))
       session = await authClient.getSession()
     }
 
