@@ -52,11 +52,14 @@ test-users.txt
 # Playwright test results and artifacts
 test-results/
 playwright-report/
+playwright-comprehensive-report/
 playwright/.auth
 blob-report/
 debug-*.png
 successful-*.png
 playwright-results.txt
+*.bak
+*.bak2
 supabase/migrations_old/
 
 # mcp config

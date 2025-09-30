@@ -164,17 +164,26 @@ try {
     secret: betterAuthSecret,
     trustedOrigins,
 
-    // Production-optimized cookie configuration
+    // Production-optimized cookie configuration with explicit settings for reliability
     advanced: {
-      useSecureCookies: process.env.NODE_ENV === 'production', // Only secure cookies in production, not test
-      cookiePrefix: 'better-auth', // Consistent cookie prefix
+      // Secure cookies only in production (not in test/CI environments)
+      useSecureCookies: process.env.NODE_ENV === 'production',
+      cookiePrefix: 'better-auth', // Consistent cookie prefix across environments
+
+      // Explicit cookie attributes for maximum compatibility
+      defaultCookieAttributes: {
+        httpOnly: true, // Prevent XSS attacks
+        sameSite: 'lax', // Allow cross-tab navigation while maintaining CSRF protection
+        path: '/', // Cookie available on all paths
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      },
+
       crossSubDomainCookies: {
         enabled: false, // Disable for better security
       },
-      // CI-compatible cookie settings for test environments
-      sameSite: 'lax', // More permissive for CI/test while keeping production consistent
-      cookieNameStrategy: 'snake_case', // Consistent naming for CI
-      // generateId removed - Better Auth handles ID generation by default
+
+      // Consistent naming strategy for CI/test compatibility
+      cookieNameStrategy: 'snake_case',
     },
 
     emailAndPassword: {

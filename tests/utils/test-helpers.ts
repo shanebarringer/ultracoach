@@ -1,5 +1,13 @@
 import { type Page, expect } from '@playwright/test'
 
+// Timeout configuration - CI needs longer timeouts
+export const TEST_TIMEOUTS = {
+  short: process.env.CI ? 5000 : 3000,
+  medium: process.env.CI ? 10000 : 5000,
+  long: process.env.CI ? 30000 : 15000,
+  extraLong: process.env.CI ? 45000 : 30000,
+}
+
 // Centralized test credentials - use these instead of hard-coding
 export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
 export const TEST_COACH_PASSWORD = process.env.TEST_COACH_PASSWORD ?? 'UltraCoach2025!'
@@ -54,11 +62,18 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   await expect(page.locator(dashboardTestId)).toBeVisible({ timeout: 30000 })
 
   // Wait for any loading states to complete
-  const loadingText = page.locator('text=Loading your base camp..., text=Loading dashboard...')
-  try {
-    await expect(loadingText).not.toBeVisible({ timeout: 5000 })
-  } catch {
-    // Loading text may not appear, continue
+  const loadingIndicators = [
+    page.getByText('Loading your base camp...'),
+    page.getByText('Loading dashboard...'),
+    page.getByText('Loading...'),
+  ]
+
+  for (const indicator of loadingIndicators) {
+    try {
+      await expect(indicator).not.toBeVisible({ timeout: 5000 })
+    } catch {
+      // Loading text may not appear or already hidden, continue
+    }
   }
 
   // Verify we're on the correct dashboard
@@ -66,17 +81,45 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
 }
 
 /**
- * Logout helper function
+ * Logout helper function with improved selector reliability
  */
 export async function logout(page: Page) {
-  // Click on user avatar/menu
-  await page.click('[data-testid="user-menu"], .user-menu, button:has(img)')
+  // Try multiple user menu selectors
+  const userMenuSelectors = [
+    '[data-testid="user-menu"]',
+    '.user-menu',
+    'button:has(img[alt*="avatar"])',
+    'button[aria-label*="user"]',
+  ]
 
-  // Click logout
-  await page.click('text=Sign Out, button:has-text("Sign Out")')
+  let menuClicked = false
+  for (const selector of userMenuSelectors) {
+    try {
+      const menu = page.locator(selector).first()
+      await expect(menu).toBeVisible({ timeout: 2000 })
+      await menu.click()
+      menuClicked = true
+      break
+    } catch {
+      continue
+    }
+  }
+
+  if (!menuClicked) {
+    throw new Error('Could not find user menu to initiate logout')
+  }
+
+  // Click logout button with multiple selector strategies
+  const logoutButton = page
+    .getByRole('button', { name: /sign out/i })
+    .or(page.getByRole('menuitem', { name: /sign out/i }))
+    .or(page.getByText('Sign Out'))
+
+  await expect(logoutButton).toBeVisible({ timeout: 10000 })
+  await logoutButton.click()
 
   // Verify we're logged out
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL('/', { timeout: 10000 })
 }
 
 /**
@@ -142,19 +185,41 @@ export async function assertAuthenticated(page: Page, userType: TestUserType) {
 
 /**
  * Simple auth verification - check if we can access session endpoint
+ * Returns session data if authenticated, null if not
  */
-export async function verifyAuthState(page: Page): Promise<boolean> {
+export async function verifyAuthState(
+  page: Page
+): Promise<{ user?: { email: string; id: string; role?: string } } | null> {
   try {
     const baseUrl =
       process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
-    const response = await page.request.get(`${baseUrl}/api/auth/session`)
+    const response = await page.request.get(`${baseUrl}/api/auth/session`, {
+      timeout: TEST_TIMEOUTS.medium,
+    })
+
     if (!response.ok()) {
-      return false
+      // Log for debugging but don't throw - unauthenticated is a valid state
+      if (process.env.DEBUG_TESTS) {
+        console.log(`Auth verification failed: HTTP ${response.status()}`)
+      }
+      return null
     }
-    const sessionData = await response.json()
-    return !!sessionData.user && !!sessionData.user.email
-  } catch {
-    return false
+
+    const sessionData = await response.json().catch(() => null)
+
+    if (!sessionData || !sessionData.user || !sessionData.user.email) {
+      if (process.env.DEBUG_TESTS) {
+        console.log('Auth verification failed: Invalid session data', sessionData)
+      }
+      return null
+    }
+
+    return sessionData
+  } catch (error) {
+    if (process.env.DEBUG_TESTS) {
+      console.error('Auth verification error:', error)
+    }
+    return null
   }
 }
 
