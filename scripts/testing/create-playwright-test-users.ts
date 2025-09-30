@@ -10,7 +10,7 @@ import { resolve } from 'path'
 
 import { db } from '../../src/lib/db'
 import { createLogger } from '../../src/lib/logger'
-import { account, user } from '../../src/lib/schema'
+import { account, coach_runners, user } from '../../src/lib/schema'
 
 // Load environment variables - CI uses environment variables directly, not .env.local
 if (process.env.NODE_ENV !== 'test') {
@@ -166,7 +166,8 @@ async function createPlaywrightUsers() {
 
     // Process results and handle errors appropriately
     let successCount = 0
-    for (const [index, result] of results.entries()) {
+    for (let index = 0; index < results.length; index++) {
+      const result = results[index]
       const userData = PLAYWRIGHT_USERS[index]
 
       if (result.status === 'fulfilled' && result.value.success) {
@@ -249,6 +250,53 @@ async function createPlaywrightUsers() {
       })
     } else {
       logger.error('❌ Emma user not found in final verification!')
+    }
+
+    // Create coach-runner relationships for messaging tests
+    logger.info('🔗 Creating coach-runner relationships for messaging tests...')
+
+    // Find Emma (coach), Alex and Riley (runners)
+    const emmaCoach = finalUsers.find(u => u.email === 'emma@ultracoach.dev')
+    const alexRunner = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')
+    const rileyRunner = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')
+
+    if (!emmaCoach || !alexRunner || !rileyRunner) {
+      logger.error('❌ Cannot create relationships - missing required users')
+      if (process.env.CI) {
+        process.exit(1)
+      }
+    } else {
+      // Clean up any existing relationships first
+      await db.execute(
+        sql`DELETE FROM coach_runners WHERE coach_id = ${emmaCoach.id} OR runner_id = ${emmaCoach.id}`
+      )
+
+      // Create active relationships: Emma ↔ Alex, Emma ↔ Riley
+      const relationships = await db
+        .insert(coach_runners)
+        .values([
+          {
+            coach_id: emmaCoach.id,
+            runner_id: alexRunner.id,
+            status: 'active',
+            relationship_type: 'standard',
+            invited_by: 'coach',
+            notes: 'Test relationship for Playwright messaging tests',
+          },
+          {
+            coach_id: emmaCoach.id,
+            runner_id: rileyRunner.id,
+            status: 'active',
+            relationship_type: 'standard',
+            invited_by: 'coach',
+            notes: 'Test relationship for Playwright messaging tests',
+          },
+        ])
+        .returning({ id: coach_runners.id })
+
+      logger.info(`✅ Created ${relationships.length} coach-runner relationships`)
+      logger.info(`  - Emma ↔ Alex (active)`)
+      logger.info(`  - Emma ↔ Riley (active)`)
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')

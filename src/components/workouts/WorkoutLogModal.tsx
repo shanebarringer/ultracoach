@@ -13,8 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
-import { useSetAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
