@@ -1,5 +1,15 @@
-import { endOfDay, isValid, parseISO, startOfDay } from 'date-fns'
-import { SQL, and, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import {
+  addDays,
+  compareAsc,
+  compareDesc,
+  endOfDay,
+  isAfter,
+  isSameDay,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns'
+import { SQL, and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -209,13 +219,86 @@ export async function GET(request: NextRequest) {
     // Execute query with conditions
     const query = baseQuery.where(conditions.length ? and(...conditions) : sql`false`)
 
-    const results = await query.orderBy(desc(workouts.date), desc(workouts.created_at))
+    // Get raw results and sort them properly for UI display
+    const results = await query
 
-    logger.debug('Raw query results:', { count: results.length })
+    // Smart sorting: Today and yesterday first, then upcoming, then past
+    // NOTE: Boundaries are computed in the server's local timezone.
+    // Future enhancement: accept a `tz` query param and use date-fns timezone helpers
+    // (e.g., date-fns-tz or TZDate depending on version) to compute buckets for the client timezone.
+    const now = new Date()
+    const today = startOfDay(now)
+    const yesterday = startOfDay(addDays(now, -1))
+
+    const getPriorityFromDay = (day: Date): number => {
+      if (isSameDay(day, today)) return 0 // today
+      if (isSameDay(day, yesterday)) return 1 // yesterday
+      if (isAfter(day, today)) return 2 // future
+      return 3 // past
+    }
+
+    const toDate = (value: unknown): Date => {
+      if (value instanceof Date) return value
+      if (typeof value === 'string') return parseISO(value)
+      return new Date(NaN)
+    }
+
+    // Normalize once to avoid repeated work and keep comparator pure
+    // Guard against invalid dates so date-fns comparators never see `Invalid Date`
+    const normalized = results.map(r => {
+      const parsedDate = toDate(r.date)
+      const dateValid = isValid(parsedDate)
+      const day = dateValid ? startOfDay(parsedDate) : new Date(0)
+
+      const createdRaw = toDate(r.created_at)
+      const created = isValid(createdRaw) ? createdRaw : new Date(0)
+
+      return { ...r, _day: day, _created: created, _dateValid: dateValid }
+    })
+
+    const invalidIds = normalized.filter(r => !r._dateValid).map(r => r.id)
+    if (invalidIds.length) {
+      logger.warn('Invalid workout date(s) encountered', { workoutIds: invalidIds })
+    }
+
+    const sortedResults = normalized.slice().sort((a, b) => {
+      const prA = getPriorityFromDay(a._day)
+      const prB = getPriorityFromDay(b._day)
+      if (prA !== prB) return prA - prB
+
+      // Within the same priority group, order by day:
+      // - future: ascending (closest first)
+      // - past: descending (most recent first)
+      if (prA === 2) {
+        const cmp = compareAsc(a._day, b._day)
+        if (cmp !== 0) return cmp
+      } else if (prA === 3) {
+        const cmp = compareDesc(a._day, b._day)
+        if (cmp !== 0) return cmp
+      }
+
+      // Same calendar day across any group: tie-break by creation time (newest first)
+      const createdCmp = compareDesc(a._created, b._created)
+      if (createdCmp !== 0) return createdCmp
+
+      // Final deterministic tie-break by id to avoid relying on engine sort stability
+      const idA = String(a.id)
+      const idB = String(b.id)
+      return idA.localeCompare(idB)
+    })
+
+    logger.debug('Sorted workouts for response', { count: sortedResults.length })
 
     // Remove the extra fields we only needed for authorization
-    const cleanedWorkouts = results.map(
-      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
+    const cleanedWorkouts = sortedResults.map(
+      ({
+        coach_id: _coach_id,
+        plan_runner_id: _plan_runner_id,
+        _day: _d,
+        _created: _c,
+        _dateValid: _dv,
+        ...workout
+      }) => workout
     )
 
     logger.debug('Successfully fetched workouts', {
