@@ -155,12 +155,14 @@ test.describe('Workout Display Order', () => {
 
           // If second workout is today or yesterday, first should not be much older
           if (isToday(second) || isYesterday(second)) {
-            const daysDifference = Math.abs(
-              Math.ceil((first.getTime() - second.getTime()) / (1000 * 60 * 60 * 24))
+            // Calculate days difference ensuring first is not older than second
+            const daysDifference = Math.ceil(
+              (second.getTime() - first.getTime()) / (1000 * 60 * 60 * 24)
             )
 
             // First workout should not be more than a week older than a today/yesterday workout
-            expect(daysDifference).toBeLessThanOrEqual(7)
+            expect(daysDifference).toBeGreaterThanOrEqual(0) // first not older than second
+            expect(daysDifference).toBeLessThanOrEqual(7) // not more than a week older
           }
         }
       }
@@ -193,11 +195,11 @@ test.describe('Workout Display Order', () => {
               const workoutDateTime = new Date(dateText)
               const now = new Date()
 
-              // Upcoming workout should not be more than a week old
+              // Upcoming workout should be today or in the future
               const daysDiff = Math.ceil(
                 (workoutDateTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
               )
-              expect(daysDiff).toBeGreaterThanOrEqual(-7) // Not more than a week old
+              expect(daysDiff).toBeGreaterThanOrEqual(0) // Today or future only
               expect(daysDiff).toBeLessThanOrEqual(30) // Not more than a month in future
             }
           }

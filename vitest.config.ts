@@ -6,16 +6,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    // IMPORTANT: polyfills.ts must be loaded FIRST to ensure Node global
-    // is available before @testing-library/jest-dom imports in setup.ts
-    setupFiles: ['./src/test/polyfills.ts', './src/test/setup.ts'],
+    setupFiles: ['./src/test/setup.ts'],
     globals: true,
-    // Configure jsdom environment to properly define DOM globals
-    environmentOptions: {
-      jsdom: {
-        resources: 'usable',
-      },
-    },
     // Exclude Playwright test files from vitest
     exclude: [
       '**/node_modules/**',

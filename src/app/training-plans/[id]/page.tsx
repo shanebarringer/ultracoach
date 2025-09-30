@@ -33,7 +33,12 @@ import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { api } from '@/lib/api-client'
-import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
+import {
+  refreshWorkoutsAtom,
+  refreshableTrainingPlansAtom,
+  selectedWorkoutAtom,
+  workoutsAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -52,7 +57,7 @@ type TrainingPlanWithUsers = TrainingPlan & {
 // Jotai atoms for UI state management
 const showAddWorkoutAtom = atom(false)
 const showLogWorkoutAtom = atom(false)
-const selectedWorkoutAtom = atom<Workout | null>(null)
+// Note: selectedWorkoutAtom is imported from workouts.ts to avoid duplicate state
 const isDeletingAtom = atom(false)
 const extendedPlanDataAtom = atom<{
   plan_phases?: PlanPhase[]
