@@ -113,15 +113,19 @@ function TrainingPlanDetailPage() {
 
     try {
       const [phasesRes, prevRes, nextRes] = await Promise.allSettled([
-        api.get<{ plan_phases?: PlanPhase[] }>(`/api/training-plans/${planId}/phases`),
+        api.get<{ plan_phases?: PlanPhase[] }>(`/api/training-plans/${planId}/phases`, {
+          suppressGlobalToast: true,
+        }),
         trainingPlan.previous_plan_id
           ? api.get<{ trainingPlan: TrainingPlan }>(
-              `/api/training-plans/${trainingPlan.previous_plan_id}`
+              `/api/training-plans/${trainingPlan.previous_plan_id}`,
+              { suppressGlobalToast: true }
             )
           : Promise.resolve(null),
         trainingPlan.next_plan_id
           ? api.get<{ trainingPlan: TrainingPlan }>(
-              `/api/training-plans/${trainingPlan.next_plan_id}`
+              `/api/training-plans/${trainingPlan.next_plan_id}`,
+              { suppressGlobalToast: true }
             )
           : Promise.resolve(null),
       ])
@@ -220,7 +224,7 @@ function TrainingPlanDetailPage() {
       return
     setIsDeleting(true)
     try {
-      await api.delete(`/api/training-plans/${planId}`)
+      await api.delete(`/api/training-plans/${planId}`, { suppressGlobalToast: true })
       commonToasts.trainingPlanDeleted()
       // Refresh both caches, then navigate
       refreshTrainingPlans()
@@ -411,7 +415,7 @@ function TrainingPlanDetailPage() {
       : []
   }, [extendedTrainingPlan?.plan_phases])
 
-  const getWorkoutStatusColor = (status: string) => {
+  const getWorkoutStatusColor = (status: Workout['status']) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800'
@@ -815,6 +819,7 @@ function TrainingPlanDetailPage() {
                                 {session.user.userType === 'runner' &&
                                   workout.status === 'planned' && (
                                     <button
+                                      type="button"
                                       onClick={() => handleLogWorkout(workout)}
                                       className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
                                     >
@@ -824,6 +829,7 @@ function TrainingPlanDetailPage() {
                                 {session.user.userType === 'runner' &&
                                   workout.status === 'completed' && (
                                     <button
+                                      type="button"
                                       onClick={() => handleLogWorkout(workout)}
                                       className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                                     >
@@ -923,6 +929,7 @@ function TrainingPlanDetailPage() {
                               {session.user.userType === 'runner' &&
                                 workout.status === 'planned' && (
                                   <button
+                                    type="button"
                                     onClick={() => handleLogWorkout(workout)}
                                     className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
                                   >
@@ -932,6 +939,7 @@ function TrainingPlanDetailPage() {
                               {session.user.userType === 'runner' &&
                                 workout.status === 'completed' && (
                                   <button
+                                    type="button"
                                     onClick={() => handleLogWorkout(workout)}
                                     className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                                   >
@@ -972,4 +980,4 @@ function TrainingPlanDetailPage() {
   )
 }
 
-export default React.memo(TrainingPlanDetailPage)
+export default TrainingPlanDetailPage

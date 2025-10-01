@@ -27,11 +27,6 @@ test.describe('Coach-Runner Relationship Management', () => {
         timeout: 15000,
       })
 
-      // Click "Find Athletes to Coach" button to navigate to runner selection
-      const findAthletesButton = page.getByRole('button', { name: 'Find Athletes to Coach' })
-      await expect(findAthletesButton).toBeVisible({ timeout: 15000 })
-      await findAthletesButton.click()
-
       // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
