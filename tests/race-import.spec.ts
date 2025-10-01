@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
-import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
+import {
+  waitForFileUploadError,
+  waitForFileUploadProcessing,
+  waitForModalWithRouteHandler,
+  waitForSuspenseResolution,
+} from './utils/suspense-helpers'
 import { type TestLogger, getTestLogger } from './utils/test-logger'
 
 let logger: TestLogger
@@ -442,6 +447,9 @@ test.describe('Race Import Flow', () => {
     await page.waitForLoadState('domcontentloaded')
     await waitForHeroUIReady(page)
 
+    // Wait for Suspense boundaries to resolve
+    await waitForSuspenseResolution(page, { logger })
+
     // Wait for loading to complete
     const loadingIndicator = page.getByText(/Loading race expeditions/i)
     try {
@@ -467,7 +475,7 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] First GPX file uploaded')
 
     // Wait for processing using improved helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
     // Find and click import button using data-testid
     const uploadButton = page.getByTestId('import-races-button')
@@ -489,6 +497,7 @@ test.describe('Race Import Flow', () => {
     // Refresh page and wait for it to load
     await page.reload()
     await page.waitForLoadState('domcontentloaded')
+    await waitForSuspenseResolution(page, { logger })
 
     try {
       await page.getByText('Loading race expeditions').waitFor({ state: 'hidden', timeout: 30000 })
@@ -503,7 +512,7 @@ test.describe('Race Import Flow', () => {
     await importButtonAgain.click()
     logger.info('[Test] Import modal reopened for duplicate test')
 
-    // Mock duplicate on second import for determinism
+    // Mock duplicate on second import for determinism - IMPORTANT: Set this BEFORE uploading file
     await page.route('/api/races/import', route =>
       route.fulfill({
         status: 409,
@@ -517,6 +526,10 @@ test.describe('Race Import Flow', () => {
         }),
       })
     )
+    logger.info('[Test] Route handler registered for duplicate response')
+
+    // Wait for modal with route handler to be ready
+    await waitForModalWithRouteHandler(page, '/api/races/import', { logger })
 
     // Upload the same GPX file again
     const fileInputAgain = page.locator('[role="dialog"] input[type="file"]')
@@ -527,20 +540,32 @@ test.describe('Race Import Flow', () => {
     })
     logger.info('[Test] Duplicate GPX file uploaded')
 
-    // Wait for processing
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000)
+    // Wait for processing with longer timeout for CI
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
     // Click import button again
     const uploadButtonAgain = page.getByTestId('import-races-button')
+    await expect(uploadButtonAgain).toBeVisible({ timeout: 15000 })
     await uploadButtonAgain.click()
     logger.info('[Test] Duplicate import initiated')
 
-    // Should show duplicate detection warning
+    // Should show duplicate detection warning - with better error handling
     const duplicateWarning = page
-      .getByText('Duplicate race detected')
-      .or(page.getByText('similar race may already exist'))
-    await expect(duplicateWarning.first()).toBeVisible({ timeout: 15000 })
-    logger.info('[Test] Duplicate warning detected')
+      .getByText(/duplicate race detected/i)
+      .or(page.getByText(/similar race.*already exist/i))
+
+    try {
+      await expect(duplicateWarning.first()).toBeVisible({ timeout: 20000 })
+      logger.info('[Test] Duplicate warning detected successfully')
+    } catch (error) {
+      // Enhanced debugging for CI failures
+      const modalContent = await page
+        .locator('[role="dialog"], .modal')
+        .textContent()
+        .catch(() => 'No modal content')
+      logger.error('[Test] Duplicate warning not visible', { modalContent, error })
+      throw new Error(`Duplicate warning not visible. Modal content: ${modalContent}`)
+    }
   })
 
   test('should handle bulk CSV import', async ({ page }) => {

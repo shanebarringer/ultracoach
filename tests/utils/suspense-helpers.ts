@@ -274,3 +274,182 @@ export async function waitForRealTimeUpdate(
     { timeout }
   )
 }
+
+/**
+ * Waits for Suspense boundaries to resolve and content to be rendered.
+ * This helper specifically targets React Suspense loading states in CI environments.
+ *
+ * @param page - Playwright Page object
+ * @param options - Configuration options
+ * @param options.timeout - Maximum wait time (default: 20000ms for CI)
+ * @param options.selector - Optional specific selector to wait for
+ * @param options.logger - Optional test logger for debugging
+ */
+export async function waitForSuspenseResolution(
+  page: Page,
+  options: {
+    timeout?: number
+    selector?: string
+    logger?: TestLogger
+  } = {}
+): Promise<void> {
+  const { timeout = 20000, selector, logger } = options
+
+  logger?.info?.('Starting Suspense resolution wait', { selector, timeout })
+
+  // Step 1: Wait for any Suspense fallback UI to appear and disappear
+  try {
+    const loadingIndicators = page.locator(
+      'text=/loading|fetching|preparing|initializing/i, [data-loading="true"], [role="progressbar"]'
+    )
+    await loadingIndicators.first().waitFor({ timeout: 3000 })
+    logger?.debug?.('Suspense fallback detected')
+
+    await loadingIndicators.first().waitFor({ state: 'hidden', timeout })
+    logger?.debug?.('Suspense fallback resolved')
+  } catch {
+    logger?.debug?.('No Suspense fallback detected (content may have loaded immediately)')
+  }
+
+  // Step 2: If selector provided, wait for it specifically
+  if (selector) {
+    await page.waitForSelector(selector, { state: 'visible', timeout })
+    logger?.debug?.('Target selector visible', { selector })
+  }
+
+  // Step 3: Wait for Jotai atoms to hydrate (check for data-hydrated attribute or content)
+  await page.waitForFunction(
+    () => {
+      // Check if main content area has actual data (not just skeleton/loading state)
+      const mainContent = document.querySelector('main, [role="main"]')
+      if (!mainContent) return false
+
+      // Look for signs of hydration: actual text content, data attributes, or interactive elements
+      const hasContent = mainContent.textContent && mainContent.textContent.trim().length > 50
+      const hasInteractiveElements =
+        mainContent.querySelectorAll('button:not([disabled]), a[href]').length > 0
+
+      return hasContent || hasInteractiveElements
+    },
+    { timeout }
+  )
+
+  logger?.debug?.('Suspense resolution complete - content hydrated')
+}
+
+/**
+ * Waits for a modal/dialog with route handlers to be ready for interaction.
+ * This is specifically for modals that intercept API routes (e.g., race import duplicate detection).
+ *
+ * @param page - Playwright Page object
+ * @param routePattern - The API route pattern being intercepted (e.g., '/api/races/import')
+ * @param options - Configuration options
+ */
+export async function waitForModalWithRouteHandler(
+  page: Page,
+  routePattern: string,
+  options: {
+    timeout?: number
+    logger?: TestLogger
+  } = {}
+): Promise<void> {
+  const { timeout = 15000, logger } = options
+
+  logger?.info?.('Waiting for modal with route handler', { routePattern })
+
+  // Step 1: Ensure route handler is registered
+  await page.waitForTimeout(500) // Allow route.fulfill() to register
+
+  // Step 2: Wait for dialog to be visible
+  const dialog = page.locator('[role="dialog"], .modal')
+  await dialog.waitFor({ state: 'visible', timeout })
+  logger?.debug?.('Modal visible')
+
+  // Step 3: Wait for modal content to be interactive (not just skeleton)
+  await page.waitForFunction(
+    () => {
+      const modal = document.querySelector('[role="dialog"], .modal')
+      if (!modal) return false
+
+      // Check for actual content (not loading state)
+      const hasContent = modal.textContent && modal.textContent.trim().length > 20
+      const hasButtons = modal.querySelectorAll('button:not([disabled])').length > 0
+
+      return hasContent && hasButtons
+    },
+    { timeout }
+  )
+
+  logger?.debug?.('Modal with route handler ready for interaction')
+}
+
+/**
+ * Waits for an element with retry logic and better error messages.
+ * This is useful for elements that may take time to appear in CI due to Suspense/hydration delays.
+ *
+ * @param page - Playwright Page object
+ * @param selector - Element selector (testid, role, text, etc.)
+ * @param options - Configuration options
+ */
+export async function waitForElementWithRetry(
+  page: Page,
+  selector: string,
+  options: {
+    timeout?: number
+    retries?: number
+    retryDelay?: number
+    scrollIntoView?: boolean
+    logger?: TestLogger
+  } = {}
+): Promise<void> {
+  const {
+    timeout = 15000,
+    retries = 3,
+    retryDelay = 2000,
+    scrollIntoView = false,
+    logger,
+  } = options
+
+  logger?.info?.('Waiting for element with retry', { selector, retries })
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const element = page.locator(selector)
+
+      // If scrollIntoView requested, try to scroll first
+      if (scrollIntoView) {
+        try {
+          await element.scrollIntoViewIfNeeded({ timeout: 5000 })
+          logger?.debug?.('Scrolled element into view', { attempt })
+        } catch {
+          logger?.debug?.('Could not scroll (element may not exist yet)', { attempt })
+        }
+      }
+
+      await element.waitFor({ state: 'visible', timeout: timeout / retries })
+      logger?.debug?.('Element visible', { attempt })
+      return // Success!
+    } catch (error) {
+      if (attempt === retries) {
+        // Last attempt failed - throw detailed error
+        const currentUrl = page.url()
+        const pageTitle = await page.title().catch(() => 'Unknown')
+
+        logger?.error?.('Element not visible after all retries', {
+          selector,
+          retries,
+          currentUrl,
+          pageTitle,
+        })
+
+        throw new Error(
+          `Element "${selector}" not visible after ${retries} attempts. URL: ${currentUrl}, Title: ${pageTitle}`
+        )
+      }
+
+      // Wait before retry
+      logger?.warn?.('Element not visible, retrying...', { attempt, retries })
+      await page.waitForTimeout(retryDelay)
+    }
+  }
+}

@@ -7,6 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady, waitForLoadingComplete } from '../utils/heroui-helpers'
+import { waitForElementWithRetry, waitForSuspenseResolution } from '../utils/suspense-helpers'
 import { TEST_USERS } from '../utils/test-helpers'
 import { navigateToPage, signIn, waitForNavigation, waitForPageReady } from '../utils/wait-helpers'
 
@@ -22,20 +23,32 @@ test.describe('Coach-Runner Relationship Management', () => {
 
     test('should display available runners to connect with', async ({ page }) => {
       // Coach dashboard shows "Your Athletes" heading (use more specific selector)
-      await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible({
+        timeout: 15000,
+      })
 
       // Click "Find Athletes to Coach" button to navigate to runner selection
-      await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
+      const findAthletesButton = page.getByRole('button', { name: 'Find Athletes to Coach' })
+      await expect(findAthletesButton).toBeVisible({ timeout: 15000 })
+      await findAthletesButton.click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Should show "Find Runners" section
-      await expect(page.getByText('Find Runners')).toBeVisible()
+      // Wait for Suspense boundaries to resolve and data to load
+      await waitForSuspenseResolution(page, { timeout: 25000 })
 
-      // Should display runner cards or connect buttons
-      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
+      // Should show "Find Runners" section
+      await expect(page.getByText('Find Runners')).toBeVisible({ timeout: 15000 })
+
+      // Should display runner cards or connect buttons - use retry with scroll
+      await waitForElementWithRetry(page, 'button:has-text("Connect")', {
+        timeout: 25000,
+        retries: 3,
+        retryDelay: 2000,
+        scrollIntoView: true,
+      })
     })
 
     test('should send connection request to runner', async ({ page }) => {

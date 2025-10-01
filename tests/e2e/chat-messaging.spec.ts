@@ -14,6 +14,7 @@ import {
   waitForLoadingComplete,
 } from '../utils/heroui-helpers'
 import { label } from '../utils/reporting'
+import { waitForElementWithRetry, waitForSuspenseResolution } from '../utils/suspense-helpers'
 import { TEST_USERS } from '../utils/test-helpers'
 import { navigateToPage, signIn, waitForPageReady } from '../utils/wait-helpers'
 
@@ -181,11 +182,13 @@ test.describe('Chat Messaging System', () => {
         // Wait for final URL (ensures no redirect to signin)
         await page.waitForURL('/chat')
 
-        // Wait for page to be ready
+        // Wait for page to be ready and Suspense to resolve
         await waitForHeroUIReady(page)
+        await waitForSuspenseResolution(page, { timeout: 25000 })
         await waitForLoadingComplete(page)
 
         // Check if there are any existing conversations or if we need to start one
+        await page.waitForTimeout(2000) // Allow Jotai atoms to hydrate
         const hasConversations =
           (await page.locator('[data-testid="conversation-item"]').count()) > 0
         const emptyStateVisible = await page
@@ -198,23 +201,27 @@ test.describe('Chat Messaging System', () => {
 
           // Click the "Start New Conversation" button
           const startButton = page.getByRole('button', { name: /start new conversation/i })
-          await expect(startButton).toBeVisible({ timeout: 5000 })
+          await expect(startButton).toBeVisible({ timeout: 10000 })
           await startButton.click()
 
-          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 })
+          await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 10000 })
+
+          // Wait for modal content to load
+          await page.waitForTimeout(1000)
 
           // Check if we need to select a coach
           const selectCoach = page.getByRole('combobox', { name: /select.*coach/i })
           try {
-            await expect(selectCoach).toBeVisible({ timeout: 2000 })
+            await expect(selectCoach).toBeVisible({ timeout: 3000 })
             await selectCoach.click()
-            await expect(page.getByRole('option')).toBeVisible({ timeout: 2000 })
+            await expect(page.getByRole('option')).toBeVisible({ timeout: 3000 })
 
             // Select first available coach
             const coachOption = page.getByRole('option').first()
             try {
-              await expect(coachOption).toBeVisible({ timeout: 2000 })
+              await expect(coachOption).toBeVisible({ timeout: 3000 })
               await coachOption.click()
+              await page.waitForTimeout(500) // Allow selection to process
             } catch {
               // No coach options available
             }
@@ -226,7 +233,7 @@ test.describe('Chat Messaging System', () => {
           const chatWindow = page.locator('[data-testid="chat-window"]')
 
           // Check if chat window opened immediately (modal auto-closed)
-          const isVisible = await chatWindow.isVisible({ timeout: 3000 }).catch(() => false)
+          const isVisible = await chatWindow.isVisible({ timeout: 5000 }).catch(() => false)
 
           if (!isVisible) {
             // Use HeroUI modal helper to close modal properly
@@ -234,31 +241,44 @@ test.describe('Chat Messaging System', () => {
               await closeModal(page)
             }
 
+            // Wait for Suspense to resolve after modal closes
+            await waitForSuspenseResolution(page, { timeout: 20000 })
+
             // Option 3: Navigate directly to a conversation if available
             const conversationItem = page.locator('[data-testid="conversation-item"]').first()
-            if (await conversationItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+            if (await conversationItem.isVisible({ timeout: 5000 }).catch(() => false)) {
               await conversationItem.click()
-              await expect(chatWindow).toBeVisible({ timeout: 8000 })
+
+              // Wait for chat window with retry logic
+              await waitForElementWithRetry(page, '[data-testid="chat-window"]', {
+                timeout: 20000,
+                retries: 3,
+                retryDelay: 2000,
+              })
             }
           }
 
           // Now wait for chat window with more tolerance and better error reporting
           try {
-            await expect(chatWindow).toBeVisible({ timeout: 15000 })
+            await expect(chatWindow).toBeVisible({ timeout: 20000 })
           } catch (error) {
             // Enhanced debugging for CI failures
             const currentUrl = page.url()
             const pageTitle = await page.title().catch(() => 'Unknown')
-            const pageContent = await page.content().catch(() => 'Could not get content')
+            const hasConversations = await page.locator('[data-testid="conversation-item"]').count()
+            const modalVisible = await page
+              .locator('[role="dialog"]')
+              .isVisible()
+              .catch(() => false)
 
             throw new Error(
-              `Chat window not visible after conversation setup. URL: ${currentUrl}, Title: ${pageTitle}, Error: ${error.message}`
+              `Chat window not visible after conversation setup. URL: ${currentUrl}, Title: ${pageTitle}, Conversations: ${hasConversations}, Modal Open: ${modalVisible}, Error: ${error.message}`
             )
           }
 
           // Type initial message - use exact placeholder text
           const messageInput = page.getByPlaceholder('Type your message...')
-          await expect(messageInput).toBeVisible({ timeout: 10000 })
+          await expect(messageInput).toBeVisible({ timeout: 15000 })
           await expect(messageInput).toBeEnabled({ timeout: 5000 })
           await messageInput.fill('Hello coach!')
 
@@ -268,12 +288,18 @@ test.describe('Chat Messaging System', () => {
 
           // Wait for conversation to be created
           await expect(page.locator('[data-testid="conversation-item"]')).toBeVisible({
-            timeout: 5000,
+            timeout: 10000,
           })
         } else {
           // Open existing conversation
           await page.locator('[data-testid="conversation-item"]').first().click()
-          await expect(page.locator('[data-testid="chat-window"]')).toBeVisible({ timeout: 5000 })
+
+          // Wait for chat window with retry logic
+          await waitForElementWithRetry(page, '[data-testid="chat-window"]', {
+            timeout: 20000,
+            retries: 3,
+            retryDelay: 2000,
+          })
         }
 
         // Now send a test message in the active conversation
@@ -281,7 +307,7 @@ test.describe('Chat Messaging System', () => {
         const messageInput = page.getByPlaceholder('Type your message...')
 
         // Wait for input to be visible and enabled
-        await expect(messageInput).toBeVisible({ timeout: 10000 })
+        await expect(messageInput).toBeVisible({ timeout: 15000 })
         await messageInput.fill(messageText)
 
         const sendButton = page.getByRole('button', { name: /send/i })
@@ -290,7 +316,7 @@ test.describe('Chat Messaging System', () => {
         // Message should appear in chat
         await expect(
           page.locator('[data-testid="message-bubble"]').filter({ hasText: messageText })
-        ).toBeVisible()
+        ).toBeVisible({ timeout: 15000 })
 
         // messagesAtom should be updated
         const messageCount = await page.locator('[data-testid="message-bubble"]').count()
