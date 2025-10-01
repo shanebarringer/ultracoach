@@ -35,7 +35,7 @@ test.describe('Critical Fixes Validation', () => {
 
       if (workoutCount === 0) {
         // No workouts to test sort order - this is valid for new users
-        console.log('No workouts found - skipping sort order test')
+        test.skip(true, 'No workouts found to validate sort order')
         return
       }
 
@@ -98,9 +98,10 @@ test.describe('Critical Fixes Validation', () => {
           {} as Record<number, number>
         )
 
-        console.log(
-          `Sort order test completed - Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`
-        )
+        test.info().annotations.push({
+          type: 'sort-stats',
+          description: `Today: ${categories[0] || 0}, Yesterday: ${categories[1] || 0}, Future: ${categories[2] || 0}, Past: ${categories[3] || 0}`,
+        })
       }
     })
 
@@ -174,8 +175,11 @@ test.describe('Critical Fixes Validation', () => {
         await expect(page).not.toHaveURL('/auth/signin')
         await expect(page).toHaveURL(route)
 
-        // Wait for page content to load
-        await page.waitForTimeout(1000)
+        // Wait for main content to be visible
+        await page
+          .locator('main, [role="main"]')
+          .first()
+          .waitFor({ state: 'visible', timeout: 5000 })
       }
     })
 
@@ -235,7 +239,12 @@ test.describe('Critical Fixes Validation', () => {
 
       // Wait for page to be fully loaded and authenticated UI to render
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(3000) // Allow React hydration and auth to load
+      // Wait for authentication UI elements to be ready
+      await page
+        .locator('.heroui-avatar, [data-testid="user-menu"]')
+        .first()
+        .waitFor({ state: 'attached', timeout: 5000 })
+        .catch(() => {})
 
       // Look for any authenticated element first to verify we're logged in
       const authenticatedElements = page.locator(
@@ -307,8 +316,7 @@ test.describe('Critical Fixes Validation', () => {
       // Skip this test for now - requires workout creation functionality to be implemented
       // This would test that when a coach creates a workout, it appears immediately in the UI
       // without requiring a page refresh
-
-      console.log('Workout creation test skipped - requires implementation of workout creation UI')
+      test.skip(true, 'Workout creation test requires implementation of workout creation UI')
     })
 
     test('should display existing workouts immediately on page load', async ({ page }) => {

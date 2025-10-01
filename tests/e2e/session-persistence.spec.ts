@@ -313,9 +313,8 @@ test.describe('Session Persistence', () => {
       // Session should be cleared - protected routes should redirect
       await page.goto('/dashboard/runner')
 
-      // Should not stay on dashboard
+      // Should not stay on dashboard - wait for redirect
       await page.waitForLoadState('domcontentloaded')
-      // Wait for redirect away from dashboard
       await page.waitForFunction(() => !window.location.pathname.includes('/dashboard/runner'), {
         timeout: 5000,
       })

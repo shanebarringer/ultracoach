@@ -248,3 +248,37 @@ export async function submitForm(page: Page, submitSelector = 'button[type="subm
   // Wait for potential navigation or loading states
   await page.waitForLoadState('domcontentloaded')
 }
+
+/**
+ * Safely parse a date string with multiple fallback strategies.
+ * Returns null for unparseable dates instead of throwing errors.
+ *
+ * @param dateText - Date string in various formats (ISO, locale, etc.)
+ * @returns Parsed Date object or null if unparseable
+ */
+export function parseDateSafely(dateText: string): Date | null {
+  try {
+    // Import parseISO from date-fns for ISO date parsing
+    const { parseISO } = require('date-fns')
+
+    // Try multiple date parsing strategies
+    let date = parseISO(dateText)
+    if (isNaN(date.getTime())) {
+      date = new Date(dateText)
+    }
+
+    return isNaN(date.getTime()) ? null : date
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Test configuration constants for workout display validation
+ */
+export const WORKOUT_TEST_LIMITS = {
+  /** Maximum number of workouts to analyze in tests for performance */
+  MAX_WORKOUTS_TO_ANALYZE: 15,
+  /** Maximum gap allowed between same-date workouts (for different workout types) */
+  MAX_SAME_DATE_WORKOUT_GAP: 3,
+} as const

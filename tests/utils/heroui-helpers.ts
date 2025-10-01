@@ -47,6 +47,7 @@ export async function waitForHeroUIReady(page: Page, options: { timeout?: number
   for (const indicator of loadingIndicators) {
     try {
       const element = page.locator(indicator).first()
+      // Check visibility first to avoid waiting for elements that don't exist
       // Only wait for hiding if element is currently visible
       const isVisible = await element.isVisible().catch(() => false)
 

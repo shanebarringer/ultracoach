@@ -18,11 +18,11 @@ import {
   isBefore,
   isToday,
   isYesterday,
-  parseISO,
   startOfDay,
   subDays,
 } from 'date-fns'
 
+import { WORKOUT_TEST_LIMITS, parseDateSafely } from '../utils/test-helpers'
 import { navigateToDashboard } from '../utils/test-helpers'
 
 test.describe('Workout Display Order', () => {
@@ -53,33 +53,26 @@ test.describe('Workout Display Order', () => {
       // Collect workout dates and validate sort order
       const workoutData: Array<{ date: Date; index: number }> = []
 
-      for (let i = 0; i < Math.min(workoutCount, 15); i++) {
+      // Limit analysis to configured max for test performance
+      for (
+        let i = 0;
+        i < Math.min(workoutCount, WORKOUT_TEST_LIMITS.MAX_WORKOUTS_TO_ANALYZE);
+        i++
+      ) {
         const workoutCard = workoutCards.nth(i)
         const dateElement = workoutCard.getByTestId('workout-date')
-
-        let workoutDate: Date | null = null
 
         if (await dateElement.isVisible()) {
           const dateText = await dateElement.textContent()
           if (dateText) {
-            try {
-              // Try multiple date parsing strategies
-              workoutDate = parseISO(dateText)
-              if (isNaN(workoutDate.getTime())) {
-                workoutDate = new Date(dateText)
-              }
-            } catch (error) {
-              // Skip workouts with unparseable dates
-              continue
+            const workoutDate = parseDateSafely(dateText)
+            if (workoutDate) {
+              workoutData.push({
+                date: workoutDate,
+                index: i,
+              })
             }
           }
-        }
-
-        if (workoutDate && !isNaN(workoutDate.getTime())) {
-          workoutData.push({
-            date: workoutDate,
-            index: i,
-          })
         }
       }
 
@@ -430,10 +423,11 @@ test.describe('Workout Display Order', () => {
           if (indices.length > 1) {
             console.log(`Found ${indices.length} workouts on ${dateKey}`)
             // Same-date workouts should be grouped together (indices should be consecutive or close)
+            // Allow configured gap tolerance for different workout types interspersed
             indices.sort((a, b) => a - b)
             for (let i = 1; i < indices.length; i++) {
               const gap = indices[i] - indices[i - 1]
-              expect(gap).toBeLessThanOrEqual(3) // Allow small gaps for different workout types
+              expect(gap).toBeLessThanOrEqual(WORKOUT_TEST_LIMITS.MAX_SAME_DATE_WORKOUT_GAP)
             }
           }
         }

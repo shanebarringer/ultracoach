@@ -21,6 +21,110 @@ import { coach_runners, training_plans, user, workouts } from '@/lib/schema'
 
 const logger = createLogger('api-workouts')
 
+/**
+ * Helper function to compute workout display priority for smart sorting.
+ * Returns rank: 0=today, 1=yesterday, 2=future, 3=past
+ */
+function getWorkoutRank(workout: { date: unknown; created_at?: unknown | null }): {
+  rank: number
+  day: Date
+  created: Date
+  dateValid: boolean
+} {
+  // Parse date with fallbacks
+  const toDate = (value: unknown): Date => {
+    if (value instanceof Date) return value
+    if (typeof value === 'string') return parseISO(value)
+    return new Date(NaN)
+  }
+
+  const parsedDate = toDate(workout.date)
+  const dateValid = isValid(parsedDate)
+  const day = dateValid ? startOfDay(parsedDate) : new Date(0)
+
+  const createdRaw = toDate(workout.created_at)
+  const created = isValid(createdRaw) ? createdRaw : new Date(0)
+
+  // Compute priority rank based on date category
+  const now = new Date()
+  const today = startOfDay(now)
+  const yesterday = startOfDay(addDays(now, -1))
+
+  let rank: number
+  if (isSameDay(day, today)) {
+    rank = 0 // today
+  } else if (isSameDay(day, yesterday)) {
+    rank = 1 // yesterday
+  } else if (isAfter(day, today)) {
+    rank = 2 // future
+  } else {
+    rank = 3 // past
+  }
+
+  return { rank, day, created, dateValid }
+}
+
+/**
+ * Sort workouts for optimal UX display:
+ * - Priority: Today > Yesterday > Future (ascending) > Past (descending)
+ * - Within same priority: appropriate chronological order
+ * - Within same day: newest creation time first
+ * - Final tie-break: deterministic by ID
+ *
+ * NOTE: Boundaries computed in server's local timezone.
+ * Future enhancement: accept `tz` query param for client timezone.
+ */
+function sortWorkoutsForDisplay<
+  T extends { id: unknown; date: unknown; created_at?: unknown | null },
+>(results: T[], logger: ReturnType<typeof createLogger>): T[] {
+  // Create array of [workout, metadata] tuples to avoid mutating original objects
+  const withMetadata = results.map(r => {
+    const metadata = getWorkoutRank(r)
+    return { workout: r, metadata }
+  })
+
+  // Log invalid dates for debugging
+  const invalidIds = withMetadata
+    .filter(({ metadata }) => !metadata.dateValid)
+    .map(({ workout }) => workout.id)
+  if (invalidIds.length) {
+    logger.warn('Invalid workout date(s) encountered', { workoutIds: invalidIds })
+  }
+
+  // Sort by rank, then chronological order, then creation time
+  return withMetadata
+    .slice()
+    .sort((a, b) => {
+      const metaA = a.metadata
+      const metaB = b.metadata
+
+      // Primary sort: by rank (today=0, yesterday=1, future=2, past=3)
+      if (metaA.rank !== metaB.rank) return metaA.rank - metaB.rank
+
+      // Secondary sort: within same rank, order by day
+      // - Future (rank=2): ascending (closest first)
+      // - Past (rank=3): descending (most recent first)
+      // - Today/Yesterday (rank=0,1): by creation time (below)
+      if (metaA.rank === 2) {
+        const cmp = compareAsc(metaA.day, metaB.day)
+        if (cmp !== 0) return cmp
+      } else if (metaA.rank === 3) {
+        const cmp = compareDesc(metaA.day, metaB.day)
+        if (cmp !== 0) return cmp
+      }
+
+      // Tertiary sort: same calendar day across any rank - tie-break by creation time (newest first)
+      const createdCmp = compareDesc(metaA.created, metaB.created)
+      if (createdCmp !== 0) return createdCmp
+
+      // Final deterministic tie-break by ID to avoid relying on engine sort stability
+      const idA = String(a.workout.id)
+      const idB = String(b.workout.id)
+      return idA.localeCompare(idB)
+    })
+    .map(({ workout }) => workout)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
@@ -222,83 +326,14 @@ export async function GET(request: NextRequest) {
     // Get raw results and sort them properly for UI display
     const results = await query
 
-    // Smart sorting: Today and yesterday first, then upcoming, then past
-    // NOTE: Boundaries are computed in the server's local timezone.
-    // Future enhancement: accept a `tz` query param and use date-fns timezone helpers
-    // (e.g., date-fns-tz or TZDate depending on version) to compute buckets for the client timezone.
-    const now = new Date()
-    const today = startOfDay(now)
-    const yesterday = startOfDay(addDays(now, -1))
-
-    const getPriorityFromDay = (day: Date): number => {
-      if (isSameDay(day, today)) return 0 // today
-      if (isSameDay(day, yesterday)) return 1 // yesterday
-      if (isAfter(day, today)) return 2 // future
-      return 3 // past
-    }
-
-    const toDate = (value: unknown): Date => {
-      if (value instanceof Date) return value
-      if (typeof value === 'string') return parseISO(value)
-      return new Date(NaN)
-    }
-
-    // Normalize once to avoid repeated work and keep comparator pure
-    // Guard against invalid dates so date-fns comparators never see `Invalid Date`
-    const normalized = results.map(r => {
-      const parsedDate = toDate(r.date)
-      const dateValid = isValid(parsedDate)
-      const day = dateValid ? startOfDay(parsedDate) : new Date(0)
-
-      const createdRaw = toDate(r.created_at)
-      const created = isValid(createdRaw) ? createdRaw : new Date(0)
-
-      return { ...r, _day: day, _created: created, _dateValid: dateValid }
-    })
-
-    const invalidIds = normalized.filter(r => !r._dateValid).map(r => r.id)
-    if (invalidIds.length) {
-      logger.warn('Invalid workout date(s) encountered', { workoutIds: invalidIds })
-    }
-
-    const sortedResults = normalized.slice().sort((a, b) => {
-      const prA = getPriorityFromDay(a._day)
-      const prB = getPriorityFromDay(b._day)
-      if (prA !== prB) return prA - prB
-
-      // Within the same priority group, order by day:
-      // - future: ascending (closest first)
-      // - past: descending (most recent first)
-      if (prA === 2) {
-        const cmp = compareAsc(a._day, b._day)
-        if (cmp !== 0) return cmp
-      } else if (prA === 3) {
-        const cmp = compareDesc(a._day, b._day)
-        if (cmp !== 0) return cmp
-      }
-
-      // Same calendar day across any group: tie-break by creation time (newest first)
-      const createdCmp = compareDesc(a._created, b._created)
-      if (createdCmp !== 0) return createdCmp
-
-      // Final deterministic tie-break by id to avoid relying on engine sort stability
-      const idA = String(a.id)
-      const idB = String(b.id)
-      return idA.localeCompare(idB)
-    })
+    // Apply smart sorting for optimal UX
+    const sortedResults = sortWorkoutsForDisplay(results, logger)
 
     logger.debug('Sorted workouts for response', { count: sortedResults.length })
 
     // Remove the extra fields we only needed for authorization
     const cleanedWorkouts = sortedResults.map(
-      ({
-        coach_id: _coach_id,
-        plan_runner_id: _plan_runner_id,
-        _day: _d,
-        _created: _c,
-        _dateValid: _dv,
-        ...workout
-      }) => workout
+      ({ coach_id: _coach_id, plan_runner_id: _plan_runner_id, ...workout }) => workout
     )
 
     logger.debug('Successfully fetched workouts', {

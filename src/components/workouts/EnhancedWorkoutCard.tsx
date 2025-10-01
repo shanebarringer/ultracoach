@@ -117,18 +117,12 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
     <div className="flex items-center gap-2">
       <Calendar className="h-4 w-4 text-foreground-400" />
       <div className="flex flex-col">
-        {/* Machine-readable date for E2E tests (hidden from all users) */}
+        {/* Machine-readable date for E2E tests (hidden from all users and assistive tech) */}
         <span
           data-testid="workout-date"
           data-date-iso={(workout.date || '').toString()}
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            width: 1,
-            height: 1,
-            overflow: 'hidden',
-            clip: 'rect(0,0,0,0)',
-          }}
+          style={{ display: 'none' }}
         >
           {(workout.date || '').toString()}
         </span>

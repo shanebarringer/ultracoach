@@ -22,14 +22,8 @@ setup('authenticate @setup', async ({ page, context }) => {
     process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
   logger.info(`🌐 Using base URL: ${baseUrl}`)
 
-  // Navigate to signin page first
-  await page.goto(`${baseUrl}/auth/signin`)
-  logger.info('📍 Navigated to signin page')
-
-  // Wait for the page to be fully loaded
-  await page.waitForLoadState('domcontentloaded')
-
   // Use API authentication for reliability (as recommended in Playwright docs)
+  // No need to navigate to signin page first - API call sets cookies directly
   logger.info('🔑 Attempting API authentication...')
   const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
     data: {

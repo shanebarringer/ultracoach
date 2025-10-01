@@ -482,17 +482,9 @@ test.describe('Race Import Flow', () => {
     await uploadButton.click({ timeout: 10000 })
     logger.info('[Test] First import initiated')
 
-    // Wait for first import to complete - check that modal is still open (more reliable)
-    await page.locator('[role="dialog"]').waitFor({ state: 'visible', timeout: 5000 })
-    logger.info('[Test] First import successful')
-
-    // Close modal and try to import the same race again
-    const closeButton = page.locator('[aria-label="Close"], .modal-close, button:has-text("Close")')
-    try {
-      await closeButton.first().click({ timeout: 5000 })
-    } catch {
-      // Modal might have auto-closed
-    }
+    // Wait for first import to complete - modal closes on success (same as "should successfully import single race" test)
+    await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 10000 })
+    logger.info('[Test] First import successful, modal closed')
 
     // Refresh page and wait for it to load
     await page.reload()
