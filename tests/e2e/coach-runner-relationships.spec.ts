@@ -23,7 +23,7 @@ test.describe('Coach-Runner Relationship Management', () => {
 
     test('should display available runners to connect with', async ({ page }) => {
       // Coach dashboard shows "Your Athletes" heading (use more specific selector)
-      await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible({
+      await expect(page.getByTestId('your-athletes-heading')).toBeVisible({
         timeout: 15000,
       })
 
@@ -35,10 +35,10 @@ test.describe('Coach-Runner Relationship Management', () => {
       await waitForSuspenseResolution(page, { timeout: 25000 })
 
       // Should show "Find Runners" section
-      await expect(page.getByText('Find Runners')).toBeVisible({ timeout: 15000 })
+      await expect(page.getByTestId('find-runners-section')).toBeVisible({ timeout: 15000 })
 
       // Should display runner cards or connect buttons - use retry with scroll
-      await waitForElementWithRetry(page, 'button:has-text("Connect")', {
+      await waitForElementWithRetry(page, '[data-testid="runner-connect-button"]', {
         timeout: 25000,
         retries: 3,
         retryDelay: 2000,
@@ -153,9 +153,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button to navigate to coach selection
       await page.getByRole('button', { name: 'Find Coach' }).click()
 
-      // Wait for navigation to relationships page with longer timeout
-      await page.waitForURL('/relationships', { timeout: 30000 })
-      await page.waitForLoadState('domcontentloaded')
+      // Wait for navigation to relationships page
+      await page.waitForURL('/relationships')
       await waitForPageReady(page)
 
       // Wait for HeroUI components to be ready and loading to complete
@@ -163,10 +162,10 @@ test.describe('Coach-Runner Relationship Management', () => {
       await waitForLoadingComplete(page)
 
       // Should show "Find a Coach" section
-      await expect(page.getByText('Find a Coach')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByTestId('find-coach-section')).toBeVisible({ timeout: 10000 })
 
       // Should display coaches with Connect buttons (with retry logic)
-      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({
+      await expect(page.getByTestId('coach-connect-button').first()).toBeVisible({
         timeout: 10000,
       })
 
@@ -178,9 +177,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button from dashboard
       await page.getByRole('button', { name: 'Find Coach' }).click()
 
-      // Wait for navigation to relationships page with longer timeout
-      await page.waitForURL('/relationships', { timeout: 30000 })
-      await page.waitForLoadState('domcontentloaded')
+      // Wait for navigation to relationships page
+      await page.waitForURL('/relationships')
       await waitForPageReady(page)
 
       // Wait for HeroUI components to be ready and loading to complete
@@ -188,10 +186,10 @@ test.describe('Coach-Runner Relationship Management', () => {
       await waitForLoadingComplete(page)
 
       // Click Connect on first available coach
-      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible({
+      await expect(page.getByTestId('coach-connect-button').first()).toBeVisible({
         timeout: 10000,
       })
-      await page.getByRole('button', { name: 'Connect' }).first().click()
+      await page.getByTestId('coach-connect-button').first().click()
 
       // Should show success notification
       await expect(

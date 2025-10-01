@@ -149,7 +149,9 @@ export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelect
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <UserPlusIcon className="h-6 w-6 text-secondary" />
-            <h3 className="text-xl font-semibold">Find Runners</h3>
+            <h3 className="text-xl font-semibold" data-testid="find-runners-section">
+              Find Runners
+            </h3>
           </div>
 
           <Input
@@ -201,6 +203,7 @@ export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelect
                     onClick={() => handleConnectToRunner(runner.id)}
                     isLoading={connectingIds.has(runner.id)}
                     disabled={connectingIds.has(runner.id)}
+                    data-testid="runner-connect-button"
                   >
                     Connect
                   </Button>

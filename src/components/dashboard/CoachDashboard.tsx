@@ -261,7 +261,12 @@ function CoachDashboard() {
           <Card shadow="sm" data-testid="runners-section">
             <CardHeader className="flex justify-between items-center pb-4">
               <div>
-                <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
+                <h3
+                  className="text-xl font-semibold text-foreground"
+                  data-testid="your-athletes-heading"
+                >
+                  Your Athletes
+                </h3>
                 <p className="text-sm text-foreground-600">
                   {runners.length} runners on their summit journey
                 </p>
