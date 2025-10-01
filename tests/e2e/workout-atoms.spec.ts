@@ -83,9 +83,14 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // First, go to calendar/weekly planner
+      // First verify we're authenticated
+      const { navigateToDashboard } = await import('../utils/test-helpers')
+      await navigateToDashboard(page, 'runner')
+      await expect(page).toHaveURL('/dashboard/runner')
+
+      // Now go to calendar/weekly planner
       await page.goto('/calendar')
-      await expect(page).toHaveURL('/calendar')
+      await expect(page).toHaveURL('/calendar', { timeout: 30000 })
 
       // Wait for calendar to load
       await page.waitForSelector('h1:has-text("Training Calendar")', { timeout: 10000 })
@@ -108,9 +113,14 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // Navigate to training plans page first
+      // First verify we're authenticated
+      const { navigateToDashboard } = await import('../utils/test-helpers')
+      await navigateToDashboard(page, 'runner')
+      await expect(page).toHaveURL('/dashboard/runner')
+
+      // Navigate to training plans page
       await page.goto('/training-plans')
-      await expect(page).toHaveURL('/training-plans')
+      await expect(page).toHaveURL('/training-plans', { timeout: 30000 })
 
       // Look for a training plan with workouts
       const planCards = page.locator('[data-testid="training-plan-card"]')

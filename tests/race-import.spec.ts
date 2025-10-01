@@ -424,19 +424,23 @@ test.describe('Race Import Flow', () => {
 
     const isModalVisible = await modal.isVisible().catch(() => false)
     if (isModalVisible) {
-      // Try to close modal with close button or ESC
-      const closeButton = modal
-        .locator('button[aria-label*="close"], button[aria-label*="Close"]')
-        .first()
-      if (await closeButton.isVisible().catch(() => false)) {
-        await closeButton.click()
-      } else {
-        // Try ESC key
-        await page.keyboard.press('Escape')
-      }
+      // Use ESC key for more reliable modal closing (avoids DOM detachment issues)
+      await page.keyboard.press('Escape')
 
-      // Now wait for modal to close
+      // Wait for modal to close
       await expect(modal).not.toBeVisible({ timeout: 5000 })
+
+      // If ESC didn't work, try clicking the close button as fallback
+      const stillVisible = await modal.isVisible().catch(() => false)
+      if (stillVisible) {
+        const closeButton = modal
+          .locator('button[aria-label*="close"], button[aria-label*="Close"]')
+          .first()
+        if (await closeButton.isVisible().catch(() => false)) {
+          await closeButton.click({ force: true, timeout: 3000 })
+          await expect(modal).not.toBeVisible({ timeout: 5000 })
+        }
+      }
     }
   })
 

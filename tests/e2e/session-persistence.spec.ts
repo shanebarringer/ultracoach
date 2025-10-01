@@ -40,27 +40,31 @@ test.describe('Session Persistence', () => {
     })
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
+      // First verify we're authenticated by starting from dashboard
+      await navigateToDashboard(page, 'runner')
+      await expect(page).toHaveURL('/dashboard/runner')
+
       // Navigate to workouts page
       await page.goto('/workouts')
 
       // Wait for final URL (ensures no redirect to signin)
-      await page.waitForURL('/workouts')
+      await page.waitForURL('/workouts', { timeout: 30000 })
 
       // Wait for page content to prove authentication worked
       await expect(
         page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
-      ).toBeVisible()
+      ).toBeVisible({ timeout: 15000 })
 
       // Refresh page
       await page.reload()
 
       // Wait for final URL after refresh (critical test - should not redirect to signin)
-      await page.waitForURL('/workouts')
+      await page.waitForURL('/workouts', { timeout: 30000 })
 
       // Verify page content is still accessible (proves session persisted)
       await expect(
         page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
-      ).toBeVisible()
+      ).toBeVisible({ timeout: 15000 })
     })
 
     test.skip('should maintain session on calendar page refresh', async ({ page }) => {
@@ -94,8 +98,11 @@ test.describe('Session Persistence', () => {
       // (Next.js compilation can take 20-30s for some routes on first visit)
       test.setTimeout(90000)
 
+      // First verify we're authenticated
+      await navigateToDashboard(page, 'runner')
+      await expect(page).toHaveURL('/dashboard/runner')
+
       const routes = [
-        '/dashboard/runner',
         '/workouts',
         '/training-plans',
         '/calendar',
@@ -108,7 +115,7 @@ test.describe('Session Persistence', () => {
         await page.goto(route, { waitUntil: 'domcontentloaded' })
 
         // Should be on the correct route
-        await expect(page).toHaveURL(route)
+        await expect(page).toHaveURL(route, { timeout: 30000 })
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Wait for React hydration without redundant waitForLoadState
