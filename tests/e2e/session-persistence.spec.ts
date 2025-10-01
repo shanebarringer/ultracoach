@@ -315,7 +315,10 @@ test.describe('Session Persistence', () => {
 
       // Should not stay on dashboard
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForTimeout(2000) // Allow for redirects
+      // Wait for redirect away from dashboard
+      await page.waitForFunction(() => !window.location.pathname.includes('/dashboard/runner'), {
+        timeout: 5000,
+      })
 
       await expect(page).not.toHaveURL('/dashboard/runner')
     })

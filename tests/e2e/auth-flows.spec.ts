@@ -338,7 +338,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await page.locator('input[type="email"]').fill('test@example.com')
     await page.locator('input[type="password"]').fill('password123')
 
-    // Briefly wait to surface any init errors without slowing the suite
+    // Brief wait to allow any auth system init errors to surface
+    // (static wait acceptable here as we're testing for absence of errors)
     await page.waitForTimeout(500)
 
     // Check for critical auth system failures
