@@ -83,13 +83,8 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // First verify we're authenticated
-      const { navigateToDashboard } = await import('../utils/test-helpers')
-      await navigateToDashboard(page, 'runner')
-      await expect(page).toHaveURL('/dashboard/runner')
-
-      // Now go to calendar/weekly planner
-      await page.goto('/calendar')
+      // Navigate directly to calendar (auth loaded via storageState)
+      await page.goto('/calendar', { timeout: 45000 })
       await expect(page).toHaveURL('/calendar', { timeout: 30000 })
 
       // Wait for calendar to load
@@ -113,13 +108,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // First verify we're authenticated
-      const { navigateToDashboard } = await import('../utils/test-helpers')
-      await navigateToDashboard(page, 'runner')
-      await expect(page).toHaveURL('/dashboard/runner')
-
-      // Navigate to training plans page
-      await page.goto('/training-plans')
+      // Navigate directly to training plans page (auth loaded via storageState)
+      await page.goto('/training-plans', { timeout: 45000 })
       await expect(page).toHaveURL('/training-plans', { timeout: 30000 })
 
       // Look for a training plan with workouts

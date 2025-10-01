@@ -84,7 +84,7 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       // Should show some indication of relationship creation
       await expect(
-        relationshipsHeading.or(connectedMessage).or(pendingStatus).or(activeStatus)
+        relationshipsHeading.or(connectedMessage).or(pendingStatus).or(activeStatus).first()
       ).toBeVisible({ timeout: 15000 })
 
       // Check if connection requires approval (pending) or was auto-accepted (active/connected)

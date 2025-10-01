@@ -40,12 +40,8 @@ test.describe('Session Persistence', () => {
     })
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
-      // First verify we're authenticated by starting from dashboard
-      await navigateToDashboard(page, 'runner')
-      await expect(page).toHaveURL('/dashboard/runner')
-
-      // Navigate to workouts page
-      await page.goto('/workouts')
+      // Navigate directly to workouts page (auth loaded via storageState)
+      await page.goto('/workouts', { timeout: 45000 })
 
       // Wait for final URL (ensures no redirect to signin)
       await page.waitForURL('/workouts', { timeout: 30000 })
@@ -98,11 +94,8 @@ test.describe('Session Persistence', () => {
       // (Next.js compilation can take 20-30s for some routes on first visit)
       test.setTimeout(90000)
 
-      // First verify we're authenticated
-      await navigateToDashboard(page, 'runner')
-      await expect(page).toHaveURL('/dashboard/runner')
-
       const routes = [
+        '/dashboard/runner',
         '/workouts',
         '/training-plans',
         '/calendar',

@@ -241,9 +241,9 @@ export async function waitForFileUploadError(
     logger?.debug?.('Preview tab not found - this is OK for error cases')
   }
 
-  // For error cases, we just wait a bit for any error messages to appear
+  // For error cases, wait briefly for any error messages to appear
   // Don't expect preview tab to be selected since parsing failed
-  await page.waitForTimeout(3000)
+  await page.waitForTimeout(1000)
   logger?.debug?.('Error processing wait completed')
 }
 
