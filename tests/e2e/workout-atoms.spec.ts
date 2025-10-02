@@ -216,7 +216,7 @@ test.describe('Workout Atoms Functionality', () => {
             notificationVisible = true
           } catch {
             // Check if modal closed as fallback
-            const modalStillOpen = await logWorkoutModal.isVisible()
+            const modalStillOpen = await page.locator('[role="dialog"]').isVisible()
             expect(modalStillOpen).toBe(false)
           }
         }
