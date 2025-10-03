@@ -7,6 +7,13 @@
  * - Workout persistence on weekly planner
  * - Workout completion modal submission
  * - Derived atoms (upcoming, completed)
+ *
+ * NOTE: CI Environment Known Issue (2025-10-02)
+ * These tests are currently failing in CI due to session persistence issues.
+ * The storageState authentication is not being preserved correctly, causing
+ * authenticated pages to redirect to /auth/signin. This is not a test timeout
+ * issue but rather a Better Auth session cookie configuration issue in CI.
+ * Investigation needed: playwright/.auth/*.json cookie domain/path settings.
  */
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
@@ -84,8 +91,8 @@ test.describe('Workout Atoms Functionality', () => {
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
       // Navigate directly to calendar (auth loaded via storageState)
-      await page.goto('/calendar', { timeout: 45000 })
-      await expect(page).toHaveURL('/calendar', { timeout: 30000 })
+      await page.goto('/calendar', { timeout: 30000 })
+      await expect(page).toHaveURL('/calendar')
 
       // Wait for calendar to load
       await page.waitForSelector('h1:has-text("Training Calendar")', { timeout: 10000 })
@@ -109,8 +116,8 @@ test.describe('Workout Atoms Functionality', () => {
 
     test('should show workouts in weekly planner view', async ({ page }) => {
       // Navigate directly to training plans page (auth loaded via storageState)
-      await page.goto('/training-plans', { timeout: 45000 })
-      await expect(page).toHaveURL('/training-plans', { timeout: 30000 })
+      await page.goto('/training-plans', { timeout: 30000 })
+      await expect(page).toHaveURL('/training-plans')
 
       // Look for a training plan with workouts
       const planCards = page.locator('[data-testid="training-plan-card"]')
@@ -210,10 +217,8 @@ test.describe('Workout Atoms Functionality', () => {
           const statusUpdate = workoutToComplete.locator('[data-status="completed"]')
 
           // Either notification or status update should be visible
-          let notificationVisible = false
           try {
             await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
-            notificationVisible = true
           } catch {
             // Check if modal closed as fallback
             const modalStillOpen = await page.locator('[role="dialog"]').isVisible()
@@ -249,13 +254,6 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Handle any confirmation dialog
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          try {
-            await expect(confirmBtn).toBeVisible({ timeout: 2000 })
-          } catch {
-            // No confirmation dialog appeared, continue
-          }
-
-          // If confirmation button was found, click it (outside try/catch)
           if (await confirmBtn.isVisible()) {
             await confirmBtn.click()
           }
