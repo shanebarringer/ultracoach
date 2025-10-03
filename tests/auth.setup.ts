@@ -58,6 +58,10 @@ setup('authenticate @setup', async ({ page, context }) => {
   await waitForAuthenticationSuccess(page, 'runner', 15000)
 
   // Save storage state (includes cookies and localStorage automatically)
+  // Ensure parent directory exists before saving
+  if (fs) {
+    fs.mkdirSync(path.dirname(authFile), { recursive: true })
+  }
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved authentication state to ${authFile}`)
 

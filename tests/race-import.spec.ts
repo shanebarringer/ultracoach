@@ -343,7 +343,8 @@ test.describe('Race Import Flow', () => {
     await waitForFileUploadError(page, 30000, logger)
 
     // Should show parse error for invalid GPX structure
-    const parseError = page.getByText(/Invalid GPX file/i)
+    // Use .first() to handle multiple error messages (toast + inline error)
+    const parseError = page.getByText(/Invalid GPX file/i).first()
     await expect(parseError).toBeVisible()
   })
 

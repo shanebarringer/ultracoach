@@ -64,6 +64,10 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   await waitForAuthenticationSuccess(page, 'coach', 15000)
 
   // Save storage state (includes cookies and localStorage automatically)
+  // Ensure parent directory exists before saving
+  if (fs) {
+    fs.mkdirSync(path.dirname(authFile), { recursive: true })
+  }
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved coach authentication state to ${authFile}`)
 
