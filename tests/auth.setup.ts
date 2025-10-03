@@ -89,36 +89,41 @@ setup('authenticate @setup', async ({ page, context }) => {
   }
 
   // Final verification using a new context (Playwright best practice)
-  const verifyContext = await context.browser().newContext({
+  const browser = context.browser()
+  if (!browser) {
+    throw new Error('Browser instance unavailable for verification')
+  }
+  const verifyContext = await browser.newContext({
     storageState: authFile,
   })
   const verifyPage = await verifyContext.newPage()
 
   logger.info('🔍 Verifying storage state with new context...')
 
-  // Navigate and verify we stay on the dashboard (no redirect to signin)
-  await verifyPage.goto(`${baseUrl}/dashboard/runner`, {
-    waitUntil: 'domcontentloaded',
-  })
+  try {
+    // Navigate and verify we stay on the dashboard (no redirect to signin)
+    await verifyPage.goto(`${baseUrl}/dashboard/runner`, {
+      waitUntil: 'domcontentloaded',
+    })
 
-  // Wait for URL to settle (if auth fails, we get redirected to signin)
-  await verifyPage.waitForURL(/\/(dashboard\/runner|auth\/signin)/, { timeout: 10000 })
+    // Wait for URL to settle (if auth fails, we get redirected to signin)
+    await verifyPage.waitForURL(/\/(dashboard\/runner|auth\/signin)/, { timeout: 10000 })
 
-  const finalUrl = verifyPage.url()
-  const isAuthenticated =
-    finalUrl.includes('/dashboard/runner') && !finalUrl.includes('/auth/signin')
+    const finalUrl = verifyPage.url()
+    const isAuthenticated =
+      finalUrl.includes('/dashboard/runner') && !finalUrl.includes('/auth/signin')
 
-  logger.info(`🔐 Authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
-  logger.info(`   Final URL: ${finalUrl}`)
+    logger.info(`🔐 Authentication verification: ${isAuthenticated ? 'SUCCESS' : 'FAILED'}`)
+    logger.info(`   Final URL: ${finalUrl}`)
 
-  if (!isAuthenticated) {
-    logger.error('❌ Storage state verification failed - redirected to signin page!')
-    throw new Error('Authentication verification failed - storage state may not be working')
+    if (!isAuthenticated) {
+      logger.error('❌ Storage state verification failed - redirected to signin page!')
+      throw new Error('Authentication verification failed - storage state may not be working')
+    }
+  } finally {
+    await verifyPage.close()
+    await verifyContext.close()
   }
-
-  // Clean up verification resources
-  await verifyPage.close()
-  await verifyContext.close()
 
   logger.info('✅ Runner authentication setup complete and verified!')
 })
