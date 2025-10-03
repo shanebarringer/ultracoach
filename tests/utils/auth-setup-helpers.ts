@@ -1,6 +1,7 @@
 import type { BrowserContext, Page } from '@playwright/test'
 import path from 'path'
 
+import { waitForAuthenticationSuccess } from './suspense-helpers'
 import { getTestLogger } from './test-logger'
 
 // Conditional fs import (typed) to avoid Vercel build issues
@@ -113,8 +114,7 @@ export async function setupAuthentication(
     waitUntil: 'domcontentloaded',
   })
 
-  // Import waitForAuthenticationSuccess dynamically to avoid circular dependencies
-  const { waitForAuthenticationSuccess } = await import('./suspense-helpers')
+  // Verify authentication was successful
   await waitForAuthenticationSuccess(page, role, 15000)
 
   // CRITICAL: Verify cookies are actually set before saving storage state
