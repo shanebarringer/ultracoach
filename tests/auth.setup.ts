@@ -24,30 +24,69 @@ setup('authenticate @setup', async ({ page, context }) => {
 
   // Use API authentication for reliability (as recommended in Playwright docs)
   // No need to navigate to signin page first - API call sets cookies directly
+  // CRITICAL: Retry mechanism for CI where Better Auth initialization may take longer
   logger.info('🔑 Attempting API authentication...')
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: {
-      email: TEST_RUNNER_EMAIL,
-      password: TEST_RUNNER_PASSWORD,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
 
-  if (!response.ok()) {
-    const body = await response.text()
-    const preview = body
-      .slice(0, 300)
-      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
-    logger.error('Auth API failed', {
-      status: response.status(),
-      bodyPreview: preview,
-    })
-    throw new Error(`Authentication API failed with status ${response.status()}`)
+  let response
+  let lastError
+  const maxRetries = 3
+  const timeouts = [30000, 45000, 60000] // Increasing timeouts: 30s, 45s, 60s
+  const delays = [5000, 10000, 15000] // Delays between retries: 5s, 10s, 15s
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        logger.info(
+          `⏳ Waiting ${delays[attempt - 1]}ms before retry ${attempt + 1}/${maxRetries}...`
+        )
+        await page.waitForTimeout(delays[attempt - 1])
+      }
+
+      logger.info(`🔐 Auth attempt ${attempt + 1}/${maxRetries} (timeout: ${timeouts[attempt]}ms)`)
+      response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
+        data: {
+          email: TEST_RUNNER_EMAIL,
+          password: TEST_RUNNER_PASSWORD,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: timeouts[attempt],
+      })
+
+      if (response.ok()) {
+        logger.info(`✅ Authentication API successful on attempt ${attempt + 1}`)
+        break
+      }
+
+      // Non-timeout failure (wrong credentials, etc.)
+      const body = await response.text()
+      const preview = body
+        .slice(0, 300)
+        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
+      lastError = new Error(`Authentication API failed with status ${response.status()}`)
+      logger.error(`Auth API failed on attempt ${attempt + 1}`, {
+        status: response.status(),
+        bodyPreview: preview,
+      })
+
+      // Don't retry on non-timeout errors (4xx, 5xx)
+      if (response.status() !== 0) {
+        throw lastError
+      }
+    } catch (error) {
+      lastError = error
+      logger.error(`Auth attempt ${attempt + 1} failed:`, error)
+
+      if (attempt === maxRetries - 1) {
+        throw new Error(`Authentication failed after ${maxRetries} attempts: ${lastError.message}`)
+      }
+    }
   }
 
-  logger.info('✅ Authentication API successful')
+  if (!response || !response.ok()) {
+    throw new Error(`Authentication API failed after all retries`)
+  }
 
   // CRITICAL FIX: Explicitly wait a moment for cookies to propagate
   // In CI environments, there can be timing issues between API auth and page context
