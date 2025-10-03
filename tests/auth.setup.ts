@@ -92,19 +92,9 @@ setup('authenticate @setup', async ({ page, context }) => {
   // In CI environments, there can be timing issues between API auth and page context
   await page.waitForTimeout(1000)
 
-  // Verify cookies were set before attempting dashboard navigation
-  const cookies = await context.cookies()
-  const authCookie = cookies.find(
-    c => c.name.includes('better-auth') || c.name.includes('session') || c.name.includes('auth')
-  )
-  if (!authCookie) {
-    logger.error('❌ No auth cookies found after API authentication!')
-    throw new Error('API authentication did not set cookies - check Better Auth configuration')
-  }
-  logger.info(`🍪 Auth cookie found: ${authCookie.name}`)
-
   // The API call should have set cookies, now navigate to dashboard and verify
   // Use domcontentloaded for faster load and increased timeout for CI
+  // The waitForAuthenticationSuccess helper will verify auth cookies are working correctly
   await page.goto(`${baseUrl}/dashboard/runner`, {
     timeout: 60000,
     waitUntil: 'domcontentloaded',
