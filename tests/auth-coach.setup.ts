@@ -22,14 +22,8 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
     process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
   logger.info(`🌐 Using base URL: ${baseUrl}`)
 
-  // Navigate to signin page first
-  await page.goto(`${baseUrl}/auth/signin`)
-  logger.info('📍 Navigated to signin page')
-
-  // Wait for the page to be fully loaded
-  await page.waitForLoadState('domcontentloaded')
-
   // Use API authentication for reliability (as recommended in Playwright docs)
+  // No need to navigate to signin page first - API call sets cookies directly
   // CRITICAL: Retry mechanism for CI where Better Auth initialization may take longer
   logger.info('🔑 Attempting coach API authentication...')
 
@@ -102,8 +96,23 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   // In CI environments, there can be timing issues between API auth and page context
   await page.waitForTimeout(1000)
 
+  // Verify cookies were set before attempting dashboard navigation
+  const cookies = await context.cookies()
+  const authCookie = cookies.find(
+    c => c.name.includes('better-auth') || c.name.includes('session') || c.name.includes('auth')
+  )
+  if (!authCookie) {
+    logger.error('❌ No auth cookies found after API authentication!')
+    throw new Error('API authentication did not set cookies - check Better Auth configuration')
+  }
+  logger.info(`🍪 Auth cookie found: ${authCookie.name}`)
+
   // The API call should have set cookies, now navigate to dashboard and verify
-  await page.goto(`${baseUrl}/dashboard/coach`)
+  // Use domcontentloaded for faster load and increased timeout for CI
+  await page.goto(`${baseUrl}/dashboard/coach`, {
+    timeout: 60000,
+    waitUntil: 'domcontentloaded',
+  })
   await waitForAuthenticationSuccess(page, 'coach', 15000)
 
   // Save storage state (includes cookies and localStorage automatically)
