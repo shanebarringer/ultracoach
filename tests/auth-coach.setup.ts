@@ -105,6 +105,21 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   })
   await waitForAuthenticationSuccess(page, 'coach', 15000)
 
+  // CRITICAL: Verify cookies are actually set before saving storage state
+  const cookies = await context.cookies()
+  logger.info(`🍪 Current context has ${cookies.length} total cookies`)
+
+  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+  if (!sessionCookie) {
+    logger.error('❌ CRITICAL: better-auth.session_token cookie not found!')
+    logger.error(`Available cookies: ${cookies.map(c => c.name).join(', ')}`)
+    throw new Error('Coach authentication failed - session cookie not set after successful login')
+  }
+
+  logger.info(`✅ Found valid session cookie: ${sessionCookie.name}`)
+  logger.info(`   Expires: ${new Date(sessionCookie.expires * 1000).toISOString()}`)
+  logger.info(`   Domain: ${sessionCookie.domain}, Path: ${sessionCookie.path}`)
+
   // Save storage state (includes cookies and localStorage automatically)
   // Ensure parent directory exists before saving
   if (fs) {
