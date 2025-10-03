@@ -146,12 +146,15 @@ setup('authenticate @setup', async ({ page, context }) => {
 
   try {
     // Navigate and verify we stay on the dashboard (no redirect to signin)
+    // Use increased timeout for CI environments where Next.js compilation can be slow
     await verifyPage.goto(`${baseUrl}/dashboard/runner`, {
+      timeout: 30000, // CI can be slow on first load
       waitUntil: 'domcontentloaded',
     })
 
     // Wait for URL to settle (if auth fails, we get redirected to signin)
-    await verifyPage.waitForURL(/\/(dashboard\/runner|auth\/signin)/, { timeout: 10000 })
+    // Increased timeout to handle CI environment delays
+    await verifyPage.waitForURL(/\/(dashboard\/runner|auth\/signin)/, { timeout: 30000 })
 
     const finalUrl = verifyPage.url()
     const isAuthenticated =
