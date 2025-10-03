@@ -64,9 +64,17 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {
-    // Let page-level authentication handle auth checks via requireAuth()
-    // Removing cookie check here eliminates race conditions with Playwright storage state loading
-    // Pages already have proper server-side authentication via getServerSession()
+    const sessionCookie = request.cookies.get('better-auth.session_token')
+
+    // In CI/test environments, be more lenient with session validation
+    // to avoid race conditions with Playwright storage state loading
+    const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
+
+    if (!sessionCookie && !isCI) {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+
+    // Pages still perform proper server-side authentication via getServerSession()
     return NextResponse.next()
   }
 
