@@ -187,8 +187,7 @@ export async function setupAuthentication(
 
     // Wait for URL to settle (if auth fails, we get redirected to signin)
     // Increased timeout to handle CI environment delays
-    const dashboardPattern = new RegExp(`\\/(${dashboardPath}|auth\\/signin)`.replace(/\//g, '\\/'))
-    await verifyPage.waitForURL(dashboardPattern, { timeout: 30000 })
+    await verifyPage.waitForURL(/\/(dashboard\/(runner|coach)|auth\/signin)/, { timeout: 30000 })
 
     const finalUrl = verifyPage.url()
     const isAuthenticated = finalUrl.includes(dashboardPath) && !finalUrl.includes('/auth/signin')
