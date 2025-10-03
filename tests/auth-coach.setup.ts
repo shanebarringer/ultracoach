@@ -55,6 +55,10 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
 
   logger.info('✅ Coach authentication API successful')
 
+  // CRITICAL FIX: Explicitly wait a moment for cookies to propagate
+  // In CI environments, there can be timing issues between API auth and page context
+  await page.waitForTimeout(1000)
+
   // The API call should have set cookies, now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/coach`)
   await waitForAuthenticationSuccess(page, 'coach', 15000)
