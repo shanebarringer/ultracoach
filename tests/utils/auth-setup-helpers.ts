@@ -103,9 +103,35 @@ export async function setupAuthentication(
     throw new Error(`${role} authentication API failed after all retries`)
   }
 
-  // CRITICAL FIX: Explicitly wait a moment for cookies to propagate
-  // In CI environments, there can be timing issues between API auth and page context
-  await page.waitForTimeout(1000)
+  // CRITICAL: Wait for cookies to fully propagate to context
+  // Verify session cookie exists before proceeding
+  logger.info(`🔍 Verifying session cookie is set for ${role}...`)
+  let sessionCookieFound = false
+  const maxCookieRetries = 5
+  const cookieCheckDelay = 1000
+
+  for (let retry = 0; retry < maxCookieRetries; retry++) {
+    await page.waitForTimeout(cookieCheckDelay)
+    const cookies = await context.cookies()
+    const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+
+    if (sessionCookie) {
+      sessionCookieFound = true
+      logger.info(`✅ Session cookie found on attempt ${retry + 1}`)
+      logger.info(`   Cookie expires: ${new Date(sessionCookie.expires * 1000).toISOString()}`)
+      break
+    }
+
+    logger.warn(
+      `⏳ Session cookie not found on attempt ${retry + 1}/${maxCookieRetries}, retrying...`
+    )
+  }
+
+  if (!sessionCookieFound) {
+    throw new Error(
+      `${role} authentication failed - session cookie not set after ${maxCookieRetries} attempts`
+    )
+  }
 
   // The API call should have set cookies, now navigate to dashboard and verify
   // Use domcontentloaded for faster load and increased timeout for CI
@@ -117,20 +143,19 @@ export async function setupAuthentication(
   // Verify authentication was successful
   await waitForAuthenticationSuccess(page, role, 15000)
 
-  // CRITICAL: Verify cookies are actually set before saving storage state
-  const cookies = await context.cookies()
-  logger.info(`🍪 Current context has ${cookies.length} total cookies`)
+  // Re-verify cookies are still set before saving storage state
+  const finalCookies = await context.cookies()
+  logger.info(`🍪 Final context has ${finalCookies.length} total cookies before saving`)
 
-  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-  if (!sessionCookie) {
-    logger.error('❌ CRITICAL: better-auth.session_token cookie not found!')
-    logger.error(`Available cookies: ${cookies.map(c => c.name).join(', ')}`)
-    throw new Error(`${role} authentication failed - session cookie not set after successful login`)
+  const finalSessionCookie = finalCookies.find(c => c.name === 'better-auth.session_token')
+  if (!finalSessionCookie) {
+    logger.error('❌ CRITICAL: Session cookie disappeared before storage state save!')
+    logger.error(`Available cookies: ${finalCookies.map(c => c.name).join(', ')}`)
+    throw new Error(`${role} authentication failed - session cookie lost after navigation`)
   }
 
-  logger.info(`✅ Found valid session cookie: ${sessionCookie.name}`)
-  logger.info(`   Expires: ${new Date(sessionCookie.expires * 1000).toISOString()}`)
-  logger.info(`   Domain: ${sessionCookie.domain}, Path: ${sessionCookie.path}`)
+  logger.info(`✅ Session cookie still valid: ${finalSessionCookie.name}`)
+  logger.info(`   Domain: ${finalSessionCookie.domain}, Path: ${finalSessionCookie.path}`)
 
   // Save storage state (includes cookies and localStorage automatically)
   // Ensure parent directory exists before saving

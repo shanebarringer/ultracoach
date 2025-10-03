@@ -66,15 +66,10 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('better-auth.session_token')
 
-    // In CI/test environments, be more lenient with session validation
-    // to avoid race conditions with Playwright storage state loading
-    const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
-
-    if (!sessionCookie && !isCI) {
+    if (!sessionCookie) {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
 
-    // Pages still perform proper server-side authentication via getServerSession()
     return NextResponse.next()
   }
 
