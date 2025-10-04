@@ -18,8 +18,6 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
-import { navigateWithAuth } from '../utils/test-helpers'
-
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
@@ -93,8 +91,7 @@ test.describe('Workout Atoms Functionality', () => {
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
       // Navigate directly to calendar (auth loaded via storageState)
-      // Use navigateWithAuth to prevent middleware race conditions
-      await navigateWithAuth(page, '/calendar', { timeout: 30000 })
+      await page.goto('/calendar', { timeout: 30000 })
       await expect(page).toHaveURL('/calendar')
 
       // Wait for calendar to load

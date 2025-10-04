@@ -14,13 +14,7 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { waitForHeroUIReady, waitForLoadingComplete } from '../utils/heroui-helpers'
-import {
-  TEST_RUNNER_EMAIL,
-  TEST_RUNNER_PASSWORD,
-  navigateToDashboard,
-  navigateWithAuth,
-} from '../utils/test-helpers'
+import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
@@ -46,8 +40,7 @@ test.describe('Session Persistence', () => {
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
       // Navigate directly to workouts page (auth loaded via storageState)
-      // Use navigateWithAuth to prevent middleware race conditions
-      await navigateWithAuth(page, '/workouts', { timeout: 45000 })
+      await page.goto('/workouts', { timeout: 45000 })
 
       // Wait for final URL (ensures no redirect to signin)
       await page.waitForURL('/workouts', { timeout: 30000 })
@@ -110,8 +103,8 @@ test.describe('Session Persistence', () => {
       ]
 
       for (const route of routes) {
-        // Use navigateWithAuth to prevent middleware race conditions
-        await navigateWithAuth(page, route, { waitUntil: 'domcontentloaded' })
+        // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
+        await page.goto(route, { waitUntil: 'domcontentloaded' })
 
         // Should be on the correct route
         await expect(page).toHaveURL(route, { timeout: 30000 })
