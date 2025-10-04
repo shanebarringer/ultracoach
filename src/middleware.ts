@@ -67,7 +67,8 @@ export async function middleware(request: NextRequest) {
     // Defense-in-depth: Check for session cookie before allowing access
     // Pages also have requireAuth() for server-side authentication
     const sessionCookie = request.cookies.get('better-auth.session_token')
-    if (!sessionCookie) {
+    // Check both existence AND value to handle race conditions with Playwright storageState
+    if (!sessionCookie || !sessionCookie.value || sessionCookie.value.trim() === '') {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
     return NextResponse.next()

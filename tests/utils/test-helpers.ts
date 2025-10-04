@@ -41,13 +41,37 @@ export const TEST_USERS = {
 export type TestUserType = keyof typeof TEST_USERS
 
 /**
+ * Navigate to a URL with authentication cookies properly loaded
+ *
+ * CRITICAL: When using storageState in Playwright tests, cookies are loaded asynchronously.
+ * This helper ensures cookies are available before navigation to prevent middleware
+ * race conditions that cause redirects to /auth/signin.
+ *
+ * @param page - Playwright page instance
+ * @param url - URL to navigate to
+ * @param options - Optional navigation options
+ */
+export async function navigateWithAuth(
+  page: Page,
+  url: string,
+  options?: Parameters<Page['goto']>[1]
+) {
+  // Force cookie loading from storageState context
+  await page.context().cookies()
+  // Small buffer for browser to process cookies (especially important in CI)
+  await page.waitForTimeout(process.env.CI ? 200 : 100)
+
+  return page.goto(url, options)
+}
+
+/**
  * Navigate directly to user's dashboard (assumes authentication is already set up)
  */
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // Navigate directly to dashboard (authentication handled by storage state)
-  await page.goto(user.expectedDashboard)
+  // Use navigateWithAuth to prevent race conditions
+  await navigateWithAuth(page, user.expectedDashboard)
 
   // Wait for dashboard URL (removed networkidle - causes CI hangs)
   await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
