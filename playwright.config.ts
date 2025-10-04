@@ -11,17 +11,19 @@ let resolvedPort: number
 try {
   const url = new URL(rawBaseURL)
   const hasExplicitPort = url.port !== ''
-  const defaultPort = url.protocol === 'https:' ? 443 : 80
-
-  // Use local convention 3001 when no port is provided for http
-  resolvedPort = hasExplicitPort ? Number(url.port) : url.protocol === 'https:' ? 443 : 3001
 
   // Normalize HTTPS to HTTP for local dev server (Next dev has no TLS)
   if (!process.env.CI && url.protocol === 'https:') {
     url.protocol = 'http:'
-    // If no explicit port was provided originally, prefer 3001 over 443 for local default
-    if (!hasExplicitPort) resolvedPort = 3001
   }
+
+  // Derive port after protocol normalization for clarity
+  const defaultPort = url.protocol === 'https:' ? 443 : 80
+  resolvedPort = hasExplicitPort
+    ? Number(url.port)
+    : url.protocol === 'http:'
+      ? 3001 // Local dev default
+      : defaultPort
 
   // Safety: in local mode, refuse non-local hosts unless explicitly allowed
   const localHosts = new Set(['localhost', '127.0.0.1', '::1'])

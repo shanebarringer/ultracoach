@@ -103,9 +103,11 @@ export async function setupAuthentication(
     throw new Error(`${role} authentication API failed after all retries`)
   }
 
-  // CRITICAL FIX: Explicitly wait a moment for cookies to propagate
+  // CRITICAL FIX: Explicitly wait for cookies to propagate
   // In CI environments, there can be timing issues between API auth and page context
-  await page.waitForTimeout(1000)
+  // CI needs longer delay (2s) for reliable session cookie propagation
+  const cookiePropagationDelay = process.env.CI ? 2000 : 1000
+  await page.waitForTimeout(cookiePropagationDelay)
 
   // The API call should have set cookies, now navigate to dashboard and verify
   // Use domcontentloaded for faster load and increased timeout for CI

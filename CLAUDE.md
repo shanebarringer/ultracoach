@@ -55,6 +55,7 @@ When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) 
 4. **Understand the git history** - If a branch has NEVER passed CI (0 successes), the problem is fundamental
 
 **Example**: PR #125 had 73 commits trying to fix middleware/auth timing, when the real issue was:
+
 - `playwright.config.ts` had inconsistent base URL configuration
 - `webServer.url`, `use.baseURL`, and auth setup used different URL derivation logic
 - PR #134 already had the proper fix: unified base URL resolution
