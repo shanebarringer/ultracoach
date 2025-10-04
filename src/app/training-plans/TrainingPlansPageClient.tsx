@@ -97,6 +97,9 @@ export default function TrainingPlansPageClient({ user }: Props) {
                     <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
                       🏔️ Training Expeditions
                     </h1>
+                    <p className="text-sm text-foreground/60 mt-1">
+                      Total plans: <span data-testid="plan-count">{plans.length}</span>
+                    </p>
                     <p className="text-foreground/70 mt-1 text-base lg:text-lg">
                       {user.userType === 'coach'
                         ? 'Design summit quests for your athletes'

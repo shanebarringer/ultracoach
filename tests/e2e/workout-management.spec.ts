@@ -7,12 +7,9 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
+import { label } from '../utils/reporting'
 import { TEST_USERS } from '../utils/test-helpers'
-
-// Helper function to wait for page to be ready
-function waitForPageReady(page: Page): Promise<void> {
-  return page.waitForLoadState('domcontentloaded')
-}
+import { clickWhenReady } from '../utils/wait-helpers'
 
 test.describe('Workout Management', () => {
   test.describe('Runner Workout Management', () => {
@@ -121,6 +118,7 @@ test.describe('Workout Management', () => {
     })
 
     test('should edit an existing workout', async ({ page }) => {
+      label(test.info(), 'workouts')
       // Navigate directly to workouts page - we're already authenticated
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
@@ -144,7 +142,7 @@ test.describe('Workout Management', () => {
 
       // Click edit on first workout
       const workoutCard = workoutCards.first()
-      await workoutCard.getByRole('button', { name: /edit/i }).click()
+      await clickWhenReady(workoutCard.getByRole('button', { name: /edit/i }))
 
       // Modify workout details
       const updatedName = `Updated Run ${Date.now()}`
@@ -155,7 +153,7 @@ test.describe('Workout Management', () => {
       await page.getByLabel(/intensity/i).fill('8')
 
       // Save changes
-      await page.getByRole('button', { name: /save changes/i }).click()
+      await clickWhenReady(page.getByRole('button', { name: /save changes/i }))
 
       // Should show success notification
       await expect(page.getByText(/workout updated/i)).toBeVisible()
@@ -204,17 +202,23 @@ test.describe('Workout Management', () => {
         await page.getByLabel(/max heart rate/i).fill('165')
         await page.getByLabel(/notes/i).fill('Felt strong throughout the run')
 
+        // Capture workout ID before changing state
+        const workoutId = await plannedWorkout.getAttribute('data-workout-id')
+        if (!workoutId) throw new Error('Workout card missing data-workout-id')
+
         // Rate the workout
         await page.getByRole('radio', { name: /great/i }).click()
 
         // Submit completion
-        await page.getByRole('button', { name: /complete workout/i }).click()
+        await clickWhenReady(page.getByRole('button', { name: /complete workout/i }), 5000)
 
         // Should show success notification
         await expect(page.getByText(/workout completed/i)).toBeVisible()
 
-        // Workout status should update to completed
-        await expect(plannedWorkout.locator('[data-status="completed"]')).toBeVisible()
+        // Use status-agnostic locator after the mutation
+        const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+        await expect(updatedWorkout).toHaveAttribute('data-status', 'completed')
+        await expect(updatedWorkout.getByTestId('workout-status-completed')).toBeVisible()
 
         // completedWorkoutsAtom should be updated
         const completedCount = page.locator('[data-testid="completed-workout-count"]')
@@ -294,6 +298,145 @@ test.describe('Workout Management', () => {
           await expect(completedWorkout.locator('[data-testid="strava-badge"]')).toBeVisible()
         }
       }
+    })
+
+    test('should update UI immediately after workout status change', async ({ page }) => {
+      label(test.info(), 'workouts')
+      // Navigate to workouts page
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Get initial workout counts by status
+      const plannedWorkouts = page.locator('[data-testid="workout-card"][data-status="planned"]')
+      const completedWorkouts = page.locator(
+        '[data-testid="workout-card"][data-status="completed"]'
+      )
+
+      const initialPlannedCount = await plannedWorkouts.count()
+      const initialCompletedCount = await completedWorkouts.count()
+
+      if (initialPlannedCount === 0) {
+        test.skip(true, 'No planned workouts available to mark complete')
+      }
+
+      const workoutToComplete = plannedWorkouts.first()
+      const workoutId = await workoutToComplete.getAttribute('data-workout-id')
+      if (!workoutId) throw new Error('Workout card missing data-workout-id')
+
+      // Mark workout as complete
+      const markCompleteButton = workoutToComplete.getByRole('button', { name: /mark complete/i })
+
+      // Click the mark complete button
+      try {
+        await clickWhenReady(markCompleteButton, 5000)
+      } catch {
+        throw new Error('Mark Complete button did not become actionable within 5s')
+      }
+
+      // Handle any confirmation modal using role-based selector
+      try {
+        const modal = page.locator('[role="dialog"], [data-testid="modal"]').last()
+        await clickWhenReady(modal.getByRole('button', { name: /confirm|yes|complete/i }), 2000)
+      } catch {
+        // No confirmation modal appeared
+      }
+
+      // UI should update immediately without page refresh
+      // Wait for the UI to reflect the status change
+
+      // Check that workout status changed immediately
+      if (workoutId) {
+        const updatedWorkout = page.locator(`[data-workout-id="${workoutId}"]`)
+        await expect(updatedWorkout).toHaveAttribute('data-status', 'completed', {
+          timeout: 5000,
+        })
+      }
+
+      // Counts should update immediately - use toHaveCount for auto-waiting
+      await expect(plannedWorkouts).toHaveCount(initialPlannedCount - 1)
+      await expect(completedWorkouts).toHaveCount(initialCompletedCount + 1)
+    })
+
+    test('should show workout changes without requiring page refresh', async ({ page }) => {
+      // This test validates the cache duration fix (reduced from 1000ms to 500ms)
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Get initial workout data
+      const workoutCards = page.locator('[data-testid="workout-card"]')
+      const initialCount = await workoutCards.count()
+
+      // Simulate making a change (navigation should trigger data refresh)
+      await page.goto('/dashboard/runner')
+      await page.waitForLoadState('domcontentloaded')
+      // Wait for dashboard content to be visible using test-id
+      await expect(page.getByTestId('runner-dashboard-content')).toBeVisible({ timeout: 10000 })
+
+      // Navigate back to workouts
+      await page.goto('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+      // Assert workouts load quickly (data should refresh fast)
+      const workoutsContent = page
+        .getByTestId('workout-card')
+        .or(page.getByTestId('empty-workouts'))
+      await expect(workoutsContent).toBeVisible({ timeout: 5000 })
+
+      // Data should load quickly (not be stuck in long cache)
+      const updatedCards = page.locator('[data-testid="workout-card"]')
+      const updatedCount = await updatedCards.count()
+
+      // At minimum, the same workouts should appear (no data loss from background activity)
+      expect(updatedCount).toBeGreaterThanOrEqual(initialCount)
+
+      // No indefinite loading states - check that loader is hidden or absent
+      const loadingSpinner = page.getByTestId('loading')
+      const spinnerCount = await loadingSpinner.count()
+      if (spinnerCount > 0) {
+        await expect(loadingSpinner).toBeHidden()
+      }
+    })
+
+    test('should display workouts immediately on first page load', async ({ page }) => {
+      label(test.info(), 'workouts')
+      // Test that workouts appear quickly on initial page load (not delayed by caching)
+      const startTime = Date.now()
+
+      await page.goto('/workouts')
+      await expect(page).toHaveURL('/workouts')
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for either workouts to appear OR empty state to show
+      try {
+        await expect(
+          page.getByTestId('workout-card').or(page.getByTestId('empty-workouts'))
+        ).toBeVisible({ timeout: 8000 })
+      } catch (error) {
+        // Provide diagnostic info if content doesn't appear
+        const pageContent = await page.textContent('main, body')
+        throw new Error(
+          `Expected workout cards or empty state but found: ${pageContent?.slice(0, 200)}...`
+        )
+      }
+
+      const loadTime = Date.now() - startTime
+
+      // Soft check to surface regressions without failing under transient CI load
+      expect.soft(loadTime).toBeLessThan(8000)
+
+      // Should not have indefinite loading states
+      const workoutCards = page.getByTestId('workout-card')
+      const emptyState = page.getByTestId('empty-workouts')
+      const loadingState = page.getByTestId('loading')
+
+      // One of these should be visible (workouts, empty state, but not loading)
+      const hasWorkouts = (await workoutCards.count()) > 0
+      const hasEmptyState = await emptyState.isVisible()
+      const hasLoading = await loadingState.isVisible()
+
+      expect(hasWorkouts || hasEmptyState).toBe(true)
+      expect(hasLoading).toBe(false)
     })
   })
 

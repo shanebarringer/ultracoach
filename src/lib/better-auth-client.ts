@@ -1,11 +1,10 @@
 import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
-import type { auth } from '@/lib/better-auth'
-// Re-exported types from better-auth
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Session, User } from '@/lib/better-auth'
 import { createLogger } from '@/lib/logger'
+
+// Avoid importing the server value at runtime; get its type only
+type Auth = typeof import('@/lib/better-auth').auth
 
 const logger = createLogger('better-auth-client')
 
@@ -19,14 +18,15 @@ function getAuthClient() {
       throw new Error('Auth client should not be created on server side')
     }
 
-    // For Vercel deployments, omit baseURL to use same-domain default
-    // Better Auth automatically uses window.location.origin + '/api/auth'
+    // Use a same-origin absolute baseURL (Better Auth requires absolute URLs)
+    const baseURL = new URL('/api/auth', window.location.origin).toString()
     _authClient = createAuthClient({
-      // baseURL is omitted - Better Auth will use current domain + /api/auth
+      baseURL, // Explicitly set to ensure proper cookie handling
       plugins: [
-        customSessionClient<typeof auth>(), // Enable custom session inference
+        customSessionClient<Auth>(), // Enable custom session inference
       ],
       fetchOptions: {
+        credentials: 'same-origin',
         onError(context) {
           logger.error('Better Auth client error:', {
             error: context.error?.message || 'Unknown error',

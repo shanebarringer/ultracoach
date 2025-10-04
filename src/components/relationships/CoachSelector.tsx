@@ -125,7 +125,9 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <UserPlusIcon className="h-6 w-6 text-primary" />
-            <h3 className="text-xl font-semibold">Find a Coach</h3>
+            <h3 className="text-xl font-semibold" data-testid="find-coach-section">
+              Find a Coach
+            </h3>
           </div>
 
           <Input
@@ -181,6 +183,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
                     onClick={() => handleConnectToCoach(coach.id)}
                     isLoading={connectingIds.has(coach.id)}
                     disabled={connectingIds.has(coach.id)}
+                    data-testid="coach-connect-button"
                   >
                     Connect
                   </Button>

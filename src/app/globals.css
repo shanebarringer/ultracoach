@@ -4,6 +4,9 @@
   strategy: class;
 } */
 
+/* Jotai DevTools styles */
+@import 'jotai-devtools/styles.css';
+
 @config '../../tailwind.config.js';
 
 /*

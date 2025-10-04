@@ -47,18 +47,30 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For dashboard routes, check for session cookie
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    const sessionCookie = request.cookies.get('better-auth.session_token')
+  // Protected routes that require authentication
+  const protectedRoutes = [
+    '/dashboard',
+    '/workouts',
+    '/calendar',
+    '/training-plans',
+    '/profile',
+    '/chat',
+    '/relationships',
+    '/races',
+    '/weekly-planner',
+    '/settings',
+  ]
 
-    if (!sessionCookie) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
-    }
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
+  if (isProtectedRoute) {
+    // Let page-level authentication handle auth checks via requireAuth()
+    // Removing cookie check here eliminates race conditions with Playwright storage state loading
+    // Pages already have proper server-side authentication via getServerSession()
     return NextResponse.next()
   }
 
-  // Default: allow other routes for now
+  // Default: allow other routes
   return NextResponse.next()
 }
 

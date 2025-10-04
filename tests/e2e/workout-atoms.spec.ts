@@ -7,6 +7,13 @@
  * - Workout persistence on weekly planner
  * - Workout completion modal submission
  * - Derived atoms (upcoming, completed)
+ *
+ * NOTE: CI Environment Known Issue (2025-10-02)
+ * These tests are currently failing in CI due to session persistence issues.
+ * The storageState authentication is not being preserved correctly, causing
+ * authenticated pages to redirect to /auth/signin. This is not a test timeout
+ * issue but rather a Better Auth session cookie configuration issue in CI.
+ * Investigation needed: playwright/.auth/*.json cookie domain/path settings.
  */
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
@@ -83,8 +90,8 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // First, go to calendar/weekly planner
-      await page.goto('/calendar')
+      // Navigate directly to calendar (auth loaded via storageState)
+      await page.goto('/calendar', { timeout: 30000 })
       await expect(page).toHaveURL('/calendar')
 
       // Wait for calendar to load
@@ -108,8 +115,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // Navigate to training plans page first
-      await page.goto('/training-plans')
+      // Navigate directly to training plans page (auth loaded via storageState)
+      await page.goto('/training-plans', { timeout: 30000 })
       await expect(page).toHaveURL('/training-plans')
 
       // Look for a training plan with workouts
@@ -210,12 +217,13 @@ test.describe('Workout Atoms Functionality', () => {
           const statusUpdate = workoutToComplete.locator('[data-status="completed"]')
 
           // Either notification or status update should be visible
-          await Promise.race([
-            expect(successNotification).toBeVisible({ timeout: 5000 }),
-            expect(statusUpdate).toBeVisible({ timeout: 5000 }),
-          ]).catch(() => {
-            // At least the modal should have closed
-          })
+          try {
+            await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
+          } catch {
+            // Check if modal closed as fallback
+            const modalStillOpen = await page.locator('[role="dialog"]').isVisible()
+            expect(modalStillOpen).toBe(false)
+          }
         }
       } else {
       }
@@ -246,7 +254,7 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Handle any confirmation dialog
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          if (await confirmBtn.isVisible({ timeout: 2000 })) {
+          if (await confirmBtn.isVisible()) {
             await confirmBtn.click()
           }
 

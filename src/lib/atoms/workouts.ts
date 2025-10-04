@@ -26,7 +26,7 @@ export const workoutsRefreshTriggerAtom = atom(0)
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+const CACHE_DURATION = 500 // Reduced cache to 500ms for faster updates
 
 // DRY helper: invalidate current user's workouts cache (fallback: clear all)
 async function invalidateUserWorkoutsCache(): Promise<void> {
@@ -61,8 +61,18 @@ export const asyncWorkoutsAtom = atom(async get => {
   try {
     logger.debug('Fetching workouts...')
 
-    // Check if user is authenticated first
-    const session = await authClient.getSession()
+    // Check if user is authenticated first - with retry for session persistence
+    let session = await authClient.getSession()
+
+    // If no session on first try, wait briefly and retry once
+    // This handles the case where session is still being restored on page refresh
+    // Increased delay to 250ms for better CI reliability
+    if (!session?.data?.user) {
+      logger.debug('No session found on first attempt, retrying after 250ms delay...')
+      await new Promise(resolve => setTimeout(resolve, 250))
+      session = await authClient.getSession()
+    }
+
     if (!session?.data?.user) {
       logger.debug('No authenticated session found, returning empty workouts')
       return []

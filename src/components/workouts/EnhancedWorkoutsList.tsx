@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
-import { isSameDay, isWithinInterval } from 'date-fns'
+import { isSameDay, isToday, isWithinInterval, isYesterday } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
@@ -130,17 +130,39 @@ const EnhancedWorkoutsList = memo(
         filtered = filtered.filter(workout => (workout.status || 'planned') === statusFilter)
       }
 
-      // Apply sorting with pre-computed timestamps for performance
-      const withParsedDates = filtered.map(workout => ({
-        workout,
-        dateTime: (parseWorkoutDate(workout.date) || new Date(0)).getTime(),
-        createdTime: (parseWorkoutDate(workout.created_at) || new Date(0)).getTime(),
-      }))
+      // Apply sorting with pre-computed timestamps and smart ranking for performance
+      const withParsedDates = filtered.map(workout => {
+        const parsedDate = parseWorkoutDate(workout.date) || new Date(0)
+        const dateTime = parsedDate.getTime()
+        const createdTime = (parseWorkoutDate(workout.created_at) || new Date(0)).getTime()
+
+        // Smart ranking: Today=0, Yesterday=1, Future=2, Past=3
+        let smartRank = 3 // Default to past
+        if (isToday(parsedDate)) {
+          smartRank = 0
+        } else if (isYesterday(parsedDate)) {
+          smartRank = 1
+        } else if (parsedDate > new Date()) {
+          smartRank = 2
+        }
+
+        return {
+          workout,
+          dateTime,
+          createdTime,
+          smartRank,
+        }
+      })
 
       const sorted = withParsedDates
         .sort((a, b) => {
           switch (sortBy) {
             case 'date-desc': {
+              // First sort by smart rank (today/yesterday first)
+              const rankDiff = a.smartRank - b.smartRank
+              if (rankDiff !== 0) return rankDiff
+
+              // Within same rank, sort by date descending
               const primary = b.dateTime - a.dateTime
               if (primary !== 0) return primary
               const secondary = b.createdTime - a.createdTime
@@ -447,7 +469,7 @@ const EnhancedWorkoutsList = memo(
 
         {/* Workouts Grid/List */}
         {processedWorkouts.length === 0 ? (
-          <Card className="py-12">
+          <Card className="py-12" data-testid="empty-workouts">
             <CardBody className="text-center">
               <Search className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -466,14 +488,15 @@ const EnhancedWorkoutsList = memo(
             className={viewMode === 'grid' ? `grid ${gridColumns} gap-6` : 'flex flex-col gap-4'}
           >
             {processedWorkouts.map(workout => (
-              <EnhancedWorkoutCard
-                key={workout.id}
-                workoutId={workout.id}
-                userRole={userRole}
-                onEdit={onEditWorkout}
-                onLog={onLogWorkout}
-                variant={viewMode === 'list' ? 'compact' : variant}
-              />
+              <div data-testid="workout-card" data-status={workout.status} key={workout.id}>
+                <EnhancedWorkoutCard
+                  workoutId={workout.id}
+                  userRole={userRole}
+                  onEdit={onEditWorkout}
+                  onLog={onLogWorkout}
+                  variant={viewMode === 'list' ? 'compact' : variant}
+                />
+              </div>
             ))}
           </div>
         )}

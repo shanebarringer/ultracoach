@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Page, expect } from '@playwright/test'
 
 /**
  * HeroUI-specific test helpers for Playwright
@@ -7,16 +7,33 @@ import { Page } from '@playwright/test'
  * requiring special handling in tests.
  */
 
+// Timeout configuration - CI needs longer timeouts
+const TIMEOUTS = {
+  short: process.env.CI ? 5000 : 2000,
+  medium: process.env.CI ? 10000 : 5000,
+  long: process.env.CI ? 20000 : 10000,
+}
+
 /**
  * Wait for HeroUI components to be fully ready
  * Handles React hydration, loading states, and animations
  */
-export async function waitForHeroUIReady(page: Page) {
-  // Wait for DOM
-  await page.waitForLoadState('domcontentloaded')
+export async function waitForHeroUIReady(page: Page, options: { timeout?: number } = {}) {
+  const { timeout = TIMEOUTS.long } = options
 
   // Wait for React hydration (critical for Next.js + HeroUI)
-  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
+  // Note: Caller should handle page.goto with appropriate waitUntil option
+  // This function focuses on React/HeroUI-specific readiness
+  await page
+    .locator('[data-hydrated="true"], #__next')
+    .waitFor({ timeout: TIMEOUTS.medium })
+    .catch(() => {
+      // Fallback: if no hydration marker, wait briefly for React to initialize
+      if (process.env.DEBUG_TESTS) {
+        console.log('No hydration marker found, using fallback timeout')
+      }
+      return page.waitForTimeout(process.env.CI ? 1000 : 500)
+    })
 
   // Wait for any loading indicators to disappear
   const loadingIndicators = [
@@ -30,11 +47,22 @@ export async function waitForHeroUIReady(page: Page) {
   for (const indicator of loadingIndicators) {
     try {
       const element = page.locator(indicator).first()
-      if (await element.isVisible({ timeout: 100 })) {
-        await element.waitFor({ state: 'hidden', timeout: 10000 })
+      // Check visibility first to avoid waiting for elements that don't exist
+      // Only wait for hiding if element is currently visible
+      const isVisible = await element.isVisible().catch(() => false)
+
+      if (isVisible) {
+        await element.waitFor({ state: 'hidden', timeout }).catch(() => {
+          if (process.env.DEBUG_TESTS) {
+            console.log(`Loading indicator still visible after timeout: ${indicator}`)
+          }
+        })
       }
-    } catch {
+    } catch (error) {
       // Element not found or already hidden, continue
+      if (process.env.DEBUG_TESTS) {
+        console.log(`Error checking loading indicator ${indicator}:`, error)
+      }
     }
   }
 }
@@ -60,8 +88,8 @@ export async function selectHeroUIOption(
   // HeroUI Select renders as a button with the label
   const selectTrigger = page
     .getByRole('button', { name: selectLabel })
-    .or(page.getByLabel(selectLabel.toString()))
-    .or(page.locator(`button:has-text("${selectLabel}")`))
+    .or(page.getByLabel(selectLabel))
+    .or(page.locator('button').filter({ hasText: selectLabel }))
 
   await selectTrigger.waitFor({ state: 'visible', timeout })
 
@@ -93,16 +121,23 @@ export async function selectHeroUIOption(
   // Click to open dropdown
   await selectTrigger.click()
 
-  // Wait for dropdown animation
-  await page.waitForTimeout(500)
+  // Wait for dropdown to open by checking for visible options
+  await page
+    .waitForSelector('[role="option"], [data-key], [data-value]', {
+      state: 'visible',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // If no options appear, the dropdown might be empty or still loading
+    })
 
   // Look for option in portal (HeroUI renders dropdowns at body level)
   // Try multiple selector strategies
   const optionSelectors = [
     page.getByRole('option', { name: optionText }),
-    page.locator(`[role="option"]:has-text("${optionText}")`),
-    page.locator(`[data-key]:has-text("${optionText}")`),
-    page.locator(`[data-value]:has-text("${optionText}")`),
+    page.locator('[role="option"]').filter({ hasText: optionText }),
+    page.locator('[data-key]').filter({ hasText: optionText }),
+    page.locator('[data-value]').filter({ hasText: optionText }),
     page.getByText(optionText, { exact: false }),
   ]
 
@@ -118,13 +153,18 @@ export async function selectHeroUIOption(
   }
 
   if (!clicked) {
-    // Log current DOM for debugging
-    const options = await page.locator('[role="option"]').allTextContents()
-    throw new Error(`Could not select option: ${optionText}`)
+    throw new Error(`Could not select option: ${optionText.toString()}`)
   }
 
-  // Wait for dropdown to close
-  await page.waitForTimeout(300)
+  // Wait for dropdown to close by checking that options are no longer visible
+  await page
+    .waitForSelector('[role="option"], [data-key], [data-value]', {
+      state: 'hidden',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // Options might already be hidden or dropdown closed
+    })
 }
 
 /**
@@ -143,15 +183,18 @@ export async function clickButtonWithRetry(
       // Try multiple selector strategies
       const buttonSelectors = [
         page.getByRole('button', { name: buttonText }),
-        page.locator(`button:has-text("${buttonText}")`),
+        page.locator('button').filter({ hasText: buttonText }),
         page.getByText(buttonText).locator('..').filter({ hasText: buttonText }),
       ]
 
       let button
       for (const selector of buttonSelectors) {
-        if (await selector.isVisible({ timeout: 1000 }).catch(() => false)) {
+        try {
+          await expect(selector).toBeVisible({ timeout: 1000 })
           button = selector
           break
+        } catch {
+          // Try next selector
         }
       }
 
@@ -172,8 +215,12 @@ export async function clickButtonWithRetry(
 
 /**
  * Wait for all loading states to complete
+ * This is a lighter-weight alternative to waitForHeroUIReady
+ * for cases where you just need to wait for loading indicators
  */
-export async function waitForLoadingComplete(page: Page, timeout = 10000) {
+export async function waitForLoadingComplete(page: Page, options: { timeout?: number } = {}) {
+  const { timeout = TIMEOUTS.medium } = options
+
   // Wait for specific loading texts
   const loadingTexts = [
     'Loading...',
@@ -186,17 +233,37 @@ export async function waitForLoadingComplete(page: Page, timeout = 10000) {
   for (const text of loadingTexts) {
     try {
       const loader = page.getByText(text, { exact: false }).first()
-      if (await loader.isVisible({ timeout: 100 })) {
-        await loader.waitFor({ state: 'hidden', timeout })
+      const isVisible = await loader.isVisible().catch(() => false)
+
+      if (isVisible) {
+        await loader.waitFor({ state: 'hidden', timeout }).catch(() => {
+          if (process.env.DEBUG_TESTS) {
+            console.log(`Loading text still visible after timeout: ${text}`)
+          }
+        })
       }
-    } catch {
+    } catch (error) {
       // Not visible or already hidden
+      if (process.env.DEBUG_TESTS) {
+        console.log(`Error checking loading text ${text}:`, error)
+      }
     }
   }
 
   // Wait for aria-busy
   try {
-    await page.waitForSelector('[aria-busy="true"]', { state: 'hidden', timeout: 1000 })
+    const busyElements = page.locator('[aria-busy="true"]')
+    const hasBusy = (await busyElements.count()) > 0
+
+    if (hasBusy) {
+      await page
+        .waitForSelector('[aria-busy="true"]', { state: 'hidden', timeout: TIMEOUTS.short })
+        .catch(() => {
+          if (process.env.DEBUG_TESTS) {
+            console.log('aria-busy elements still present after timeout')
+          }
+        })
+    }
   } catch {
     // No busy elements or already not busy
   }
@@ -215,8 +282,15 @@ export async function selectHeroUIDropdownOption(
   await trigger.waitFor({ state: 'visible' })
   await trigger.click()
 
-  // Wait for menu animation
-  await page.waitForTimeout(300)
+  // Wait for menu to open by checking for visible menu items
+  await page
+    .waitForSelector('[role="menuitem"]', {
+      state: 'visible',
+      timeout: 2000,
+    })
+    .catch(() => {
+      // Menu might be empty or still loading
+    })
 
   // Click option in dropdown menu
   const option = page
@@ -284,8 +358,15 @@ export async function closeModal(page: Page) {
   for (const strategy of closeStrategies) {
     try {
       await strategy()
-      // Wait for modal to close
-      await page.waitForTimeout(300)
+      // Wait for modal to close by checking if dialog is no longer visible
+      await page
+        .waitForSelector('[role="dialog"]', {
+          state: 'hidden',
+          timeout: 2000,
+        })
+        .catch(() => {
+          // Modal might already be closed
+        })
       if (!(await isModalOpen(page))) {
         return
       }
