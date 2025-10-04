@@ -43,6 +43,40 @@ When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) 
 - `gh issue view` - View issue details
 - `gh issue create` - Create new issue
 
+## 🚨 Critical Playwright Testing Lessons (IMPORTANT)
+
+### Root Cause Analysis: Always Check Base Configuration First
+
+**LESSON LEARNED (2025-10-03)**: When Playwright tests fail persistently across ALL commits:
+
+1. **Don't chase symptoms** - If auth setup, middleware, or timing fixes don't work after 3-5 attempts, STOP
+2. **Check base configuration** - URL/port mismatches in `playwright.config.ts` cause race conditions
+3. **Look for existing solutions** - Check if there's already a PR fixing the real issue
+4. **Understand the git history** - If a branch has NEVER passed CI (0 successes), the problem is fundamental
+
+**Example**: PR #125 had 73 commits trying to fix middleware/auth timing, when the real issue was:
+- `playwright.config.ts` had inconsistent base URL configuration
+- `webServer.url`, `use.baseURL`, and auth setup used different URL derivation logic
+- PR #134 already had the proper fix: unified base URL resolution
+
+### Base URL Configuration Pattern (REQUIRED)
+
+**ALWAYS derive a single `resolvedBaseURL` for consistency:**
+
+```typescript
+// In playwright.config.ts
+const rawBaseURL =
+  process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
+
+let resolvedBaseURL: string = rawBaseURL
+let resolvedPort: number
+
+// Parse, normalize, and validate the URL
+// Then use resolvedBaseURL everywhere: use.baseURL, webServer.url, webServer.env
+```
+
+**See `playwright.config.ts` lines 1-57 for complete implementation**
+
 ### Use Playwright MCP to investigate test failures and UI issues
 
 Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors.
