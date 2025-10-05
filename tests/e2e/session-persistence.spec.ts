@@ -14,7 +14,12 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
+import {
+  TEST_RUNNER_EMAIL,
+  TEST_RUNNER_PASSWORD,
+  ensureAuthCookiesLoaded,
+  navigateToDashboard,
+} from '../utils/test-helpers'
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
@@ -40,9 +45,7 @@ test.describe('Session Persistence', () => {
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
       // Ensure cookies are loaded from storageState before navigation
-      // This prevents server-side auth from seeing missing cookies
-      await page.context().cookies()
-      await page.waitForTimeout(process.env.CI ? 300 : 150)
+      await ensureAuthCookiesLoaded(page)
 
       // Navigate directly to workouts page (auth loaded via storageState)
       await page.goto('/workouts', { timeout: 45000 })
@@ -68,10 +71,11 @@ test.describe('Session Persistence', () => {
     })
 
     test.skip('should maintain session on calendar page refresh', async ({ page }) => {
-      // TODO: This test is also affected by the same session persistence bug
-      // The calendar page may also lose data on refresh due to session check issues
-      // in async atoms. Should be re-enabled after fixing the session persistence bug.
+      // TODO: Re-enable after adding explicit cookie helper to calendar route tests
+      // The calendar route uses server-side requireAuth() and needs ensureAuthCookiesLoaded()
+      // before navigation to prevent race conditions with storageState cookie loading.
       //
+      await ensureAuthCookiesLoaded(page)
       await page.goto('/calendar')
       await expect(page).toHaveURL('/calendar')
       await page.waitForLoadState('domcontentloaded')
@@ -108,8 +112,7 @@ test.describe('Session Persistence', () => {
       ]
 
       // Ensure cookies are loaded from storageState before first navigation
-      await page.context().cookies()
-      await page.waitForTimeout(process.env.CI ? 300 : 150)
+      await ensureAuthCookiesLoaded(page)
 
       for (const route of routes) {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
@@ -119,13 +122,11 @@ test.describe('Session Persistence', () => {
         await expect(page).toHaveURL(route, { timeout: 30000 })
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
-        // Wait for React hydration without redundant waitForLoadState
-        await page
-          .locator('#__next')
-          .waitFor({ timeout: 5000 })
-          .catch(() => {
-            // App might not have hydration marker, continue
-          })
+        // Wait for React hydration (optional marker check)
+        const hasHydrationMarker = (await page.locator('#__next').count()) > 0
+        if (hasHydrationMarker) {
+          await page.locator('#__next').waitFor({ timeout: 5000 })
+        }
 
         // Verify authenticated state by checking for user elements
         const authIndicators = page.locator('[data-testid="user-menu"]')
@@ -282,31 +283,10 @@ test.describe('Session Persistence', () => {
       // Start authenticated
       await navigateToDashboard(page, 'runner')
 
-      // Sign out - click user avatar (HeroUI Avatar component) or user menu
-      const userMenuSelectors = [
-        '.heroui-avatar',
-        '[data-testid="user-menu"]',
-        'button[aria-label*="user"]',
-        'button[aria-label*="menu"]',
-        'img[alt*="avatar"]',
-      ]
-
-      let clicked = false
-      for (const selector of userMenuSelectors) {
-        try {
-          const element = page.locator(selector).first()
-          await expect(element).toBeVisible({ timeout: 2000 })
-          await element.click({ timeout: 5000 })
-          clicked = true
-          break
-        } catch {
-          continue
-        }
-      }
-
-      if (!clicked) {
-        throw new Error('Could not find user menu/avatar to click')
-      }
+      // Sign out - click user menu (prefer data-testid for stability)
+      const userMenu = page.getByTestId('user-menu')
+      await expect(userMenu).toBeVisible({ timeout: 5000 })
+      await userMenu.click()
 
       // Use proper Playwright text locator for sign out
       const signOutButton = page
@@ -321,13 +301,8 @@ test.describe('Session Persistence', () => {
       // Session should be cleared - protected routes should redirect
       await page.goto('/dashboard/runner')
 
-      // Should not stay on dashboard - wait for redirect
-      await page.waitForLoadState('domcontentloaded')
-      await page.waitForFunction(() => !window.location.pathname.includes('/dashboard/runner'), {
-        timeout: 5000,
-      })
-
-      await expect(page).not.toHaveURL('/dashboard/runner')
+      // Should redirect away from dashboard (use built-in URL assertion)
+      await expect(page).not.toHaveURL('/dashboard/runner', { timeout: 5000 })
     })
   })
 

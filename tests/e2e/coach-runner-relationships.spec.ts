@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady, waitForLoadingComplete } from '../utils/heroui-helpers'
 import { waitForSuspenseResolution } from '../utils/suspense-helpers'
-import { TEST_USERS } from '../utils/test-helpers'
+import { TEST_USERS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
 import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
@@ -55,6 +55,9 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send connection request to runner', async ({ page }) => {
+      // Ensure cookies are loaded from storageState before navigation
+      await ensureAuthCookiesLoaded(page)
+
       // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)

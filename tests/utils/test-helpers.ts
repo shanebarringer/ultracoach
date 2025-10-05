@@ -9,6 +9,52 @@ export const TEST_TIMEOUTS = {
   extraLong: process.env.CI ? 45000 : 30000,
 }
 
+/**
+ * Ensure authentication cookies are loaded from storageState context.
+ *
+ * CRITICAL: Playwright loads storageState cookies asynchronously, but Next.js Server Components
+ * need cookies immediately when calling requireAuth(). This helper synchronizes the timing
+ * by explicitly forcing cookie loading and verifying the Better Auth session cookie exists.
+ *
+ * This prevents race conditions where server-side auth checks happen before cookies are available,
+ * causing redirects to /auth/signin despite valid authentication state.
+ *
+ * @param page - Playwright page instance
+ * @throws Error if Better Auth session cookie is not found after retries
+ */
+export async function ensureAuthCookiesLoaded(page: Page): Promise<void> {
+  const maxRetries = 3
+  const retryDelay = process.env.CI ? 500 : 200
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Force cookie loading from context
+    const cookies = await page.context().cookies()
+
+    // Verify Better Auth session cookie exists
+    const sessionCookie = cookies.find(
+      cookie => cookie.name === 'better-auth.session_token' || cookie.name.includes('session')
+    )
+
+    if (sessionCookie) {
+      // Cookie found - add small buffer for browser processing
+      await page.waitForTimeout(process.env.CI ? 200 : 100)
+      return
+    }
+
+    // Cookie not found - wait and retry
+    if (attempt < maxRetries) {
+      await page.waitForTimeout(retryDelay)
+    }
+  }
+
+  // If we get here, cookies are not available
+  const allCookies = await page.context().cookies()
+  throw new Error(
+    `Better Auth session cookie not found after ${maxRetries} attempts. ` +
+      `Available cookies: ${allCookies.map(c => c.name).join(', ')}`
+  )
+}
+
 // Centralized test credentials - use these instead of hard-coding
 export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
 export const TEST_COACH_PASSWORD = process.env.TEST_COACH_PASSWORD ?? 'UltraCoach2025!'
@@ -42,52 +88,76 @@ export const TEST_USERS = {
 export type TestUserType = keyof typeof TEST_USERS
 
 /**
- * Navigate directly to user's dashboard (assumes authentication is already set up)
+ * Navigate directly to user's dashboard (assumes authentication is already set up via storageState)
+ *
+ * Enhanced with retry logic to handle race conditions between cookie loading and server-side auth.
  */
-export async function navigateToDashboard(page: Page, userType: TestUserType) {
+export async function navigateToDashboard(page: Page, userType: TestUserType): Promise<void> {
   const user = TEST_USERS[userType]
+  const maxRetries = 2
 
-  // CRITICAL: Force cookie loading from storageState context
-  // This ensures cookies are available for server-side auth checks
-  // Playwright loads storageState cookies asynchronously, but server components
-  // need cookies immediately when rendering. This synchronizes the timing.
-  await page.context().cookies()
-
-  // Small buffer for browser to process cookies (CI needs more time)
-  await page.waitForTimeout(process.env.CI ? 300 : 150)
-
-  // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
-  await page.goto(user.expectedDashboard)
-
-  // Wait for dashboard URL (removed networkidle - causes CI hangs)
-  await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
-
-  // Wait for Suspense boundary to resolve by checking for dashboard content
-  const dashboardTestId =
-    userType === 'coach'
-      ? '[data-testid="coach-dashboard-content"]'
-      : '[data-testid="runner-dashboard-content"]'
-
-  // Wait for the dashboard content to be visible (indicates Suspense resolved)
-  await expect(page.locator(dashboardTestId)).toBeVisible({ timeout: 30000 })
-
-  // Wait for any loading states to complete
-  const loadingIndicators = [
-    page.getByText('Loading your base camp...'),
-    page.getByText('Loading dashboard...'),
-    page.getByText('Loading...'),
-  ]
-
-  for (const indicator of loadingIndicators) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await expect(indicator).not.toBeVisible({ timeout: 5000 })
-    } catch {
-      // Loading text may not appear or already hidden, continue
+      // Ensure cookies are loaded from storageState
+      await ensureAuthCookiesLoaded(page)
+
+      // Navigate to dashboard
+      await page.goto(user.expectedDashboard, { timeout: 30000 })
+
+      // Wait for dashboard URL (should not redirect to signin)
+      await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
+
+      // Wait for Suspense boundary to resolve by checking for dashboard content
+      const dashboardTestId =
+        userType === 'coach'
+          ? '[data-testid="coach-dashboard-content"]'
+          : '[data-testid="runner-dashboard-content"]'
+
+      await expect(page.locator(dashboardTestId)).toBeVisible({ timeout: 30000 })
+
+      // Wait for any loading states to complete
+      const loadingIndicators = [
+        page.getByText('Loading your base camp...'),
+        page.getByText('Loading dashboard...'),
+        page.getByText('Loading...'),
+      ]
+
+      for (const indicator of loadingIndicators) {
+        try {
+          await expect(indicator).not.toBeVisible({ timeout: 5000 })
+        } catch {
+          // Loading text may not appear or already hidden, continue
+        }
+      }
+
+      // Verify we're on the correct dashboard
+      await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
+
+      // Success - exit retry loop
+      return
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+
+      // Check if we were redirected to signin (auth failure)
+      const currentUrl = page.url()
+      if (currentUrl.includes('/auth/signin')) {
+        if (attempt < maxRetries) {
+          // Retry - cookies may not have been fully synced
+          await page.waitForTimeout(1000)
+          continue
+        } else {
+          throw new Error(
+            `Authentication failed after ${maxRetries} attempts - redirected to signin. ` +
+              `This indicates cookies were not loaded from storageState correctly. ` +
+              `Original error: ${errorMessage}`
+          )
+        }
+      }
+
+      // Other error - don't retry
+      throw error
     }
   }
-
-  // Verify we're on the correct dashboard
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
 }
 
 /**
