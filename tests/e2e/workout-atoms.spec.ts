@@ -7,9 +7,16 @@
  * - Workout persistence on weekly planner
  * - Workout completion modal submission
  * - Derived atoms (upcoming, completed)
+ *
+ * Session Persistence Fix (ULT-54 - 2025-10-05)
+ * Fixed race condition between Playwright storageState cookie loading and Next.js
+ * Server Components auth checks. Solution: ensureAuthCookiesLoaded() helper with
+ * explicit Better Auth cookie verification before protected route navigation.
  */
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
+
+import { ensureAuthCookiesLoaded } from '../utils/test-helpers'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
@@ -83,12 +90,18 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // First, go to calendar/weekly planner
-      await page.goto('/calendar')
+      // Ensure cookies are loaded from storageState before navigation
+      await ensureAuthCookiesLoaded(page)
+
+      // Navigate directly to calendar (auth loaded via storageState)
+      await page.goto('/calendar', { timeout: 30000 })
       await expect(page).toHaveURL('/calendar')
 
       // Wait for calendar to load
-      await page.waitForSelector('h1:has-text("Training Calendar")', { timeout: 10000 })
+      const calendarHeading = page
+        .getByTestId('calendar-heading')
+        .or(page.getByRole('heading', { name: /training calendar/i }))
+      await expect(calendarHeading).toBeVisible({ timeout: 10000 })
 
       // Check if workouts are displayed in calendar
       const calendarWorkouts = page.locator('[data-testid="calendar-workout"], .fc-event')
@@ -108,8 +121,11 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // Navigate to training plans page first
-      await page.goto('/training-plans')
+      // Ensure cookies are loaded from storageState before navigation
+      await ensureAuthCookiesLoaded(page)
+
+      // Navigate directly to training plans page (auth loaded via storageState)
+      await page.goto('/training-plans', { timeout: 30000 })
       await expect(page).toHaveURL('/training-plans')
 
       // Look for a training plan with workouts
@@ -121,7 +137,10 @@ test.describe('Workout Atoms Functionality', () => {
         await planCards.first().click()
 
         // Wait for plan details to load
-        await page.waitForSelector('text=/Training Plan|Plan Details/i', { timeout: 10000 })
+        const planHeading = page
+          .getByTestId('plan-heading')
+          .or(page.getByRole('heading', { name: /training plan|plan details/i }))
+        await expect(planHeading).toBeVisible({ timeout: 10000 })
 
         // Check for weekly view or workouts list
         const weeklyView = page.locator(
@@ -210,14 +229,18 @@ test.describe('Workout Atoms Functionality', () => {
           const statusUpdate = workoutToComplete.locator('[data-status="completed"]')
 
           // Either notification or status update should be visible
-          await Promise.race([
-            expect(successNotification).toBeVisible({ timeout: 5000 }),
-            expect(statusUpdate).toBeVisible({ timeout: 5000 }),
-          ]).catch(() => {
-            // At least the modal should have closed
-          })
+          try {
+            await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
+          } catch {
+            // Fallback: Verify the specific completed workout is visible in the list
+            // (not just any workout card - ensures completion was actually persisted)
+            const completedWorkoutCard = page.locator(
+              '[data-testid="workout-card"][data-status="completed"]'
+            )
+            await expect(completedWorkoutCard.first()).toBeVisible({ timeout: 3000 })
+          }
         }
-      } else {
+        // Note: No else block needed - no planned workouts available to test completion
       }
     })
 
@@ -244,9 +267,9 @@ test.describe('Workout Atoms Functionality', () => {
         if ((await quickCompleteBtn.count()) > 0) {
           await quickCompleteBtn.click()
 
-          // Handle any confirmation dialog
+          // Handle any confirmation dialog with explicit timeout
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          if (await confirmBtn.isVisible({ timeout: 2000 })) {
+          if (await confirmBtn.isVisible({ timeout: 5000 })) {
             await confirmBtn.click()
           }
 

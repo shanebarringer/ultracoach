@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
-import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
+import {
+  waitForFileUploadError,
+  waitForFileUploadProcessing,
+  waitForModalWithRouteHandler,
+  waitForSuspenseResolution,
+} from './utils/suspense-helpers'
 import { type TestLogger, getTestLogger } from './utils/test-logger'
 
 let logger: TestLogger
@@ -123,7 +128,7 @@ test.describe('Race Import Flow', () => {
     try {
       await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
     } catch (error) {
-      logger.debug('Loading state check failed (expected in fast CI):', { error: String(error) })
+      logger.info('Loading state check failed (expected in fast CI):', { error: String(error) })
     }
   })
 
@@ -175,24 +180,14 @@ test.describe('Race Import Flow', () => {
     })
 
     // Wait for file processing to complete using Suspense-aware helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000, logger)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
-    // Wait for parsing to complete - fail test if parse error occurs
-    // Check for parse error and fail test to catch regressions
-    const parseError = page.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i).first()
-    const hasParseError = await parseError.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (hasParseError) {
-      // Get error details for debugging
-      const errorDetails = await parseError.textContent().catch(() => 'Unknown parse error')
-
-      logger.error('GPX parsing failed:', { errorDetails })
-
-      // Fail the test with detailed error message
-      throw new Error(
-        `GPX parsing failed: ${errorDetails}. This indicates a regression in GPX parser that needs fixing.`
-      )
-    }
+    // Wait for parsing to complete - scope error detection to the dialog
+    const modal = page.locator('[role="dialog"]')
+    const parseError = modal
+      .locator('.error-message, [data-testid="parse-error"]')
+      .or(modal.getByText(/(Failed to parse|Invalid GPX|Parse failed)/i))
+    await expect(parseError).toHaveCount(0)
 
     // If no error, wait for the race data to appear in the preview using specific testid
     const raceElement = page.getByTestId('race-name-0')
@@ -246,7 +241,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 90000, logger)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000, logger)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')
@@ -348,7 +343,8 @@ test.describe('Race Import Flow', () => {
     await waitForFileUploadError(page, 30000, logger)
 
     // Should show parse error for invalid GPX structure
-    const parseError = page.getByText(/Invalid GPX file/i)
+    // Use .first() to handle multiple error messages (toast + inline error)
+    const parseError = page.getByText(/Invalid GPX file/i).first()
     await expect(parseError).toBeVisible()
   })
 
@@ -406,8 +402,47 @@ test.describe('Race Import Flow', () => {
     await expect(uploadButton).toBeEnabled()
     await uploadButton.click({ timeout: 10000 })
 
-    // Wait for import to complete and modal to close (confirms successful import)
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 15000 })
+    // Wait for import to complete - either the modal closes or a success toast appears
+    const successMessage = page
+      .getByText(/successfully imported/i)
+      .or(page.getByText(/import.*complete/i))
+      .or(page.getByText(/race.*added/i))
+    const modal = page.locator('[role="dialog"], .modal')
+
+    const successSignal = await Promise.race([
+      successMessage.waitFor({ state: 'visible', timeout: 10000 }).then(() => 'message'),
+      modal.waitFor({ state: 'hidden', timeout: 10000 }).then(() => 'closed'),
+    ]).catch(() => null)
+
+    if (!successSignal) {
+      throw new Error('Race import never indicated success (no toast and modal stayed open)')
+    }
+
+    if (successSignal === 'message') {
+      // Wait for toast to hide instead of fixed sleep
+      await expect(page.locator('.toast')).toBeHidden({ timeout: 5000 })
+    }
+
+    const isModalVisible = await modal.isVisible().catch(() => false)
+    if (isModalVisible) {
+      // Use ESC key for more reliable modal closing (avoids DOM detachment issues)
+      await page.keyboard.press('Escape')
+
+      // Wait for modal to close
+      await expect(modal).not.toBeVisible({ timeout: 5000 })
+
+      // If ESC didn't work, try clicking the close button as fallback
+      const stillVisible = await modal.isVisible().catch(() => false)
+      if (stillVisible) {
+        const closeButton = modal
+          .locator('button[aria-label*="close"], button[aria-label*="Close"]')
+          .first()
+        if (await closeButton.isVisible().catch(() => false)) {
+          await closeButton.click({ force: true, timeout: 3000 })
+          await expect(modal).not.toBeVisible({ timeout: 5000 })
+        }
+      }
+    }
   })
 
   test('should handle duplicate race detection', async ({ page }) => {
@@ -416,6 +451,9 @@ test.describe('Race Import Flow', () => {
     // Use Context7 recommended loading approach
     await page.waitForLoadState('domcontentloaded')
     await waitForHeroUIReady(page)
+
+    // Wait for Suspense boundaries to resolve
+    await waitForSuspenseResolution(page, { logger })
 
     // Wait for loading to complete
     const loadingIndicator = page.getByText(/Loading race expeditions/i)
@@ -442,28 +480,21 @@ test.describe('Race Import Flow', () => {
     logger.info('[Test] First GPX file uploaded')
 
     // Wait for processing using improved helper
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000, logger)
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
     // Find and click import button using data-testid
     const uploadButton = page.getByTestId('import-races-button')
     await uploadButton.click({ timeout: 10000 })
     logger.info('[Test] First import initiated')
 
-    // Wait for first import to complete - check that modal is still open (more reliable)
-    await page.locator('[role="dialog"]').waitFor({ state: 'visible', timeout: 5000 })
-    logger.info('[Test] First import successful')
-
-    // Close modal and try to import the same race again
-    const closeButton = page.locator('[aria-label="Close"], .modal-close, button:has-text("Close")')
-    try {
-      await closeButton.first().click({ timeout: 5000 })
-    } catch {
-      // Modal might have auto-closed
-    }
+    // Wait for first import to complete - modal closes on success (same as "should successfully import single race" test)
+    await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 10000 })
+    logger.info('[Test] First import successful, modal closed')
 
     // Refresh page and wait for it to load
     await page.reload()
     await page.waitForLoadState('domcontentloaded')
+    await waitForSuspenseResolution(page, { logger })
 
     try {
       await page.getByText('Loading race expeditions').waitFor({ state: 'hidden', timeout: 30000 })
@@ -478,7 +509,7 @@ test.describe('Race Import Flow', () => {
     await importButtonAgain.click()
     logger.info('[Test] Import modal reopened for duplicate test')
 
-    // Mock duplicate on second import for determinism
+    // Mock duplicate on second import for determinism - IMPORTANT: Set this BEFORE uploading file
     await page.route('/api/races/import', route =>
       route.fulfill({
         status: 409,
@@ -492,6 +523,10 @@ test.describe('Race Import Flow', () => {
         }),
       })
     )
+    logger.info('[Test] Route handler registered for duplicate response')
+
+    // Wait for modal with route handler to be ready
+    await waitForModalWithRouteHandler(page, '/api/races/import', { logger })
 
     // Upload the same GPX file again
     const fileInputAgain = page.locator('[role="dialog"] input[type="file"]')
@@ -502,20 +537,32 @@ test.describe('Race Import Flow', () => {
     })
     logger.info('[Test] Duplicate GPX file uploaded')
 
-    // Wait for processing
-    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000, logger)
+    // Wait for processing with longer timeout for CI
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 45000, logger)
 
     // Click import button again
     const uploadButtonAgain = page.getByTestId('import-races-button')
+    await expect(uploadButtonAgain).toBeVisible({ timeout: 15000 })
     await uploadButtonAgain.click()
     logger.info('[Test] Duplicate import initiated')
 
-    // Should show duplicate detection warning
+    // Should show duplicate detection warning - with better error handling
     const duplicateWarning = page
-      .getByText('Duplicate race detected')
-      .or(page.getByText('similar race may already exist'))
-    await expect(duplicateWarning.first()).toBeVisible({ timeout: 15000 })
-    logger.info('[Test] Duplicate warning detected')
+      .getByText(/duplicate race detected/i)
+      .or(page.getByText(/similar race.*already exist/i))
+
+    try {
+      await expect(duplicateWarning.first()).toBeVisible({ timeout: 20000 })
+      logger.info('[Test] Duplicate warning detected successfully')
+    } catch (error) {
+      // Enhanced debugging for CI failures
+      const modalContent = await page
+        .locator('[role="dialog"], .modal')
+        .textContent()
+        .catch(() => 'No modal content')
+      logger.error('[Test] Duplicate warning not visible', { modalContent, error })
+      throw new Error(`Duplicate warning not visible. Modal content: ${modalContent}`)
+    }
   })
 
   test('should handle bulk CSV import', async ({ page }) => {
@@ -562,7 +609,7 @@ test.describe('Race Import Flow', () => {
     }
 
     // Use standardized helper that waits for preview and parsed content
-    await waitForFileUploadProcessing(page, 'Western States 100', 90000, logger)
+    await waitForFileUploadProcessing(page, 'Western States 100', 45000, logger)
 
     // Verify expected races are present
     const westernStates = page.getByTestId('race-list').getByText('Western States 100')

@@ -13,8 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
-import { useSetAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { z } from 'zod'
 
 import { useEffect } from 'react'
@@ -207,7 +206,7 @@ export default function WorkoutLogModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" data-testid="workout-detail-modal">
       <ModalContent>
         <ModalHeader>Log Workout</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>

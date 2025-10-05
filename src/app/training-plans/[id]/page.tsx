@@ -1,7 +1,17 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { isAxiosError } from 'axios'
+import {
+  addDays,
+  addWeeks,
+  endOfDay,
+  format as formatDateFns,
+  isValid,
+  parseISO,
+  startOfDay,
+} from 'date-fns'
+import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -12,7 +22,7 @@ import {
   UserIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -22,7 +32,13 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
+import { api } from '@/lib/api-client'
+import {
+  refreshWorkoutsAtom,
+  refreshableTrainingPlansAtom,
+  selectedWorkoutAtom,
+  workoutsAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -38,16 +54,27 @@ type TrainingPlanWithUsers = TrainingPlan & {
   next_plan?: TrainingPlan
 }
 
-export default function TrainingPlanDetailPage() {
+// Jotai atoms for UI state management
+const showAddWorkoutAtom = atom(false)
+const showLogWorkoutAtom = atom(false)
+// Note: selectedWorkoutAtom is imported from workouts.ts to avoid duplicate state
+const isDeletingAtom = atom(false)
+const extendedPlanDataAtom = atom<{
+  plan_phases?: PlanPhase[]
+  race?: Race
+  previous_plan?: TrainingPlan
+  next_plan?: TrainingPlan
+}>({})
+
+function TrainingPlanDetailPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
   const planId = params.id as string
 
   // Use Jotai atoms for centralized state management
-  const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
+  const [allTrainingPlans, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
@@ -60,17 +87,14 @@ export default function TrainingPlanDetailPage() {
     return allWorkouts.filter((workout: Workout) => workout.training_plan_id === planId)
   }, [allWorkouts, planId])
 
-  // Local UI state (keep these as useState since they're UI-specific)
-  const [showAddWorkout, setShowAddWorkout] = useState(false)
-  const [showLogWorkout, setShowLogWorkout] = useState(false)
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [extendedPlanData, setExtendedPlanData] = useState<{
-    plan_phases?: PlanPhase[]
-    race?: Race
-    previous_plan?: TrainingPlan
-    next_plan?: TrainingPlan
-  }>({})
+  // UI state managed with Jotai atoms for consistency
+  const [showAddWorkout, setShowAddWorkout] = useAtom(showAddWorkoutAtom)
+  const [showLogWorkout, setShowLogWorkout] = useAtom(showLogWorkoutAtom)
+  const [selectedWorkout, setSelectedWorkout] = useAtom(selectedWorkoutAtom)
+  const [isDeleting, setIsDeleting] = useAtom(isDeletingAtom)
+  const [extendedPlanData, setExtendedPlanData] = useAtom(extendedPlanDataAtom)
+
+  const didInitialWorkoutRefresh = useRef(false)
 
   // Derive loading state
   const loading = allTrainingPlans.length === 0 || (planId && !trainingPlan)
@@ -88,55 +112,55 @@ export default function TrainingPlanDetailPage() {
     if (!session?.user?.id || !planId || !trainingPlan) return
 
     try {
-      // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
-        credentials: 'same-origin',
-      })
-      if (phasesResponse.ok) {
-        const phasesData = await phasesResponse.json()
+      const [phasesRes, prevRes, nextRes] = await Promise.allSettled([
+        api.get<{ plan_phases?: PlanPhase[] }>(`/api/training-plans/${planId}/phases`, {
+          suppressGlobalToast: true,
+        }),
+        trainingPlan.previous_plan_id
+          ? api.get<{ trainingPlan: TrainingPlan }>(
+              `/api/training-plans/${trainingPlan.previous_plan_id}`,
+              { suppressGlobalToast: true }
+            )
+          : Promise.resolve(null),
+        trainingPlan.next_plan_id
+          ? api.get<{ trainingPlan: TrainingPlan }>(
+              `/api/training-plans/${trainingPlan.next_plan_id}`,
+              { suppressGlobalToast: true }
+            )
+          : Promise.resolve(null),
+      ])
+
+      // Improved type guards for Promise.allSettled results
+      if (phasesRes.status === 'fulfilled') {
         setExtendedPlanData(prev => ({
           ...prev,
-          plan_phases: phasesData.plan_phases || [],
+          plan_phases: phasesRes.value.data.plan_phases || [],
         }))
       } else {
-        logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+        logger.error('Failed to fetch plan phases', { error: phasesRes.reason })
       }
 
-      // Fetch previous and next plans if they exist
-      if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.previous_plan_id}`,
-          { credentials: 'same-origin' }
-        )
-        if (prevPlanResponse.ok) {
-          const prevPlanData = await prevPlanResponse.json()
-          setExtendedPlanData(prev => ({
-            ...prev,
-            previous_plan: prevPlanData.trainingPlan,
-          }))
-        } else {
-          logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
-        }
+      if (prevRes && prevRes.status === 'fulfilled' && prevRes.value !== null) {
+        setExtendedPlanData(prev => ({
+          ...prev,
+          previous_plan: prevRes.value!.data.trainingPlan,
+        }))
+      } else if (prevRes && prevRes.status === 'rejected') {
+        logger.error('Failed to fetch previous plan', { error: prevRes.reason })
       }
 
-      if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
-          credentials: 'same-origin',
-        })
-        if (nextPlanResponse.ok) {
-          const nextPlanData = await nextPlanResponse.json()
-          setExtendedPlanData(prev => ({
-            ...prev,
-            next_plan: nextPlanData.trainingPlan,
-          }))
-        } else {
-          logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
-        }
+      if (nextRes && nextRes.status === 'fulfilled' && nextRes.value !== null) {
+        setExtendedPlanData(prev => ({
+          ...prev,
+          next_plan: nextRes.value!.data.trainingPlan,
+        }))
+      } else if (nextRes && nextRes.status === 'rejected') {
+        logger.error('Failed to fetch next plan', { error: nextRes.reason })
       }
     } catch (error) {
       logger.error('Error fetching extended plan data', { error })
     }
-  }, [session?.user?.id, planId, trainingPlan])
+  }, [session?.user?.id, planId, trainingPlan, setExtendedPlanData])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -147,7 +171,10 @@ export default function TrainingPlanDetailPage() {
     }
 
     // Trigger workout refresh when component mounts
-    refreshWorkouts()
+    if (!didInitialWorkoutRefresh.current) {
+      refreshWorkouts()
+      didInitialWorkoutRefresh.current = true
+    }
 
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
@@ -197,31 +224,39 @@ export default function TrainingPlanDetailPage() {
       return
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/training-plans/${planId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      })
-      if (response.ok) {
-        commonToasts.trainingPlanDeleted()
-        router.push('/training-plans')
-      } else {
-        const errorData = await response.json()
-        commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
-      }
+      await api.delete(`/api/training-plans/${planId}`, { suppressGlobalToast: true })
+      commonToasts.trainingPlanDeleted()
+      // Refresh both caches, then navigate
+      refreshTrainingPlans()
+      refreshWorkouts()
+      router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error })
-      commonToasts.trainingPlanError('Failed to delete training plan')
+      if (isAxiosError(error) && error.response?.data?.error) {
+        commonToasts.trainingPlanError(error.response.data.error)
+      } else {
+        commonToasts.trainingPlanError('Failed to delete training plan')
+      }
     } finally {
       setIsDeleting(false)
     }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    // Validate input
+    if (!dateString || typeof dateString !== 'string') {
+      return '—'
+    }
+
+    try {
+      const parsedDate = parseISO(dateString)
+      if (!isValid(parsedDate)) {
+        return '—'
+      }
+      return formatDateFns(parsedDate, 'MMM d, yyyy')
+    } catch {
+      return '—'
+    }
   }
 
   const calculateCurrentPhase = useCallback(() => {
@@ -233,23 +268,41 @@ export default function TrainingPlanDetailPage() {
       return null
     }
 
-    const startDate = new Date(extendedTrainingPlan.start_date)
-    const today = new Date()
-    let totalWeeks = 0
-
-    for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
-      const phaseEndDate = new Date(startDate)
-      phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
-
-      if (today >= startDate && today <= phaseEndDate) {
-        return phase
+    // Validate start_date is a valid ISO string before parsing
+    try {
+      const parsedStartDate = parseISO(extendedTrainingPlan.start_date)
+      if (!isValid(parsedStartDate)) {
+        logger.warn('Invalid start_date in training plan', {
+          planId: extendedTrainingPlan.id,
+          startDate: extendedTrainingPlan.start_date,
+        })
+        return null
       }
-      totalWeeks += phase.duration_weeks
+
+      const planStartDate = startOfDay(parsedStartDate)
+      const today = startOfDay(new Date())
+      let totalWeeks = 0
+
+      for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
+        const phaseStartDate = addWeeks(planStartDate, totalWeeks)
+        const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
+
+        if (today >= phaseStartDate && today <= phaseEndDate) {
+          return phase
+        }
+        totalWeeks += phase.duration_weeks
+      }
+      return null
+    } catch (error) {
+      logger.error('Error calculating current phase', {
+        error,
+        planId: extendedTrainingPlan?.id,
+      })
+      return null
     }
-    return null
   }, [extendedTrainingPlan])
 
-  const currentPhase = calculateCurrentPhase()
+  const currentPhase = useMemo(() => calculateCurrentPhase(), [calculateCurrentPhase])
 
   const groupWorkoutsByPhase = useCallback((): {
     grouped: Record<string, Workout[]>
@@ -263,53 +316,106 @@ export default function TrainingPlanDetailPage() {
       return { grouped: {}, ungrouped: workouts }
     }
 
-    const grouped: Record<string, Workout[]> = {}
-    const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = new Date(extendedTrainingPlan.start_date)
-    let currentWeekOffset = 0
+    // Validate start_date before parsing
+    try {
+      const parsedStartDate = parseISO(extendedTrainingPlan.start_date)
+      if (!isValid(parsedStartDate)) {
+        logger.warn('Invalid start_date in training plan for workout grouping', {
+          planId: extendedTrainingPlan.id,
+          startDate: extendedTrainingPlan.start_date,
+        })
+        return { grouped: {}, ungrouped: workouts }
+      }
 
-    extendedTrainingPlan.plan_phases
-      .sort((a, b) => a.order - b.order)
-      .forEach(phase => {
-        const phaseStartDate = new Date(planStartDate)
-        phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
-        const phaseEndDate = new Date(phaseStartDate)
-        phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 to keep it within the week
+      const grouped: Record<string, Workout[]> = {}
+      const phaseDates: Record<string, { start: Date; end: Date }> = {}
+      const planStartDate = startOfDay(parsedStartDate)
+      let currentWeekOffset = 0
 
-        phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
-        grouped[phase.id] = []
-        currentWeekOffset += phase.duration_weeks
+      ;[...extendedTrainingPlan.plan_phases]
+        .sort((a, b) => a.order - b.order)
+        .forEach(phase => {
+          const phaseStartDate = addWeeks(planStartDate, currentWeekOffset)
+          const phaseEndDate = endOfDay(addDays(phaseStartDate, phase.duration_weeks * 7 - 1))
+
+          phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
+          grouped[phase.id] = []
+          currentWeekOffset += phase.duration_weeks
+        })
+
+      const ungrouped: Workout[] = []
+
+      workouts.forEach((workout: Workout) => {
+        // Validate workout date before parsing
+        try {
+          const parsedWorkoutDate = parseISO(workout.date)
+          if (!isValid(parsedWorkoutDate)) {
+            logger.warn('Invalid workout date encountered', {
+              workoutId: workout.id,
+              date: workout.date,
+            })
+            ungrouped.push(workout)
+            return
+          }
+
+          const workoutDate = startOfDay(parsedWorkoutDate)
+          let foundPhase = false
+          for (const phaseId in phaseDates) {
+            const { start, end } = phaseDates[phaseId]
+            if (workoutDate >= start && workoutDate <= end) {
+              grouped[phaseId].push(workout)
+              foundPhase = true
+              break
+            }
+          }
+          if (!foundPhase) {
+            ungrouped.push(workout)
+          }
+        } catch (error) {
+          logger.error('Error parsing workout date', {
+            error,
+            workoutId: workout.id,
+          })
+          ungrouped.push(workout)
+        }
       })
 
-    const ungrouped: Workout[] = []
-
-    workouts.forEach((workout: Workout) => {
-      const workoutDate = new Date(workout.date)
-      let foundPhase = false
-      for (const phaseId in phaseDates) {
-        const { start, end } = phaseDates[phaseId]
-        if (workoutDate >= start && workoutDate <= end) {
-          grouped[phaseId].push(workout)
-          foundPhase = true
-          break
-        }
+      // Sort workouts within each group by date
+      for (const phaseId in grouped) {
+        grouped[phaseId].sort((a, b) => {
+          try {
+            const dateA = startOfDay(parseISO(a.date))
+            const dateB = startOfDay(parseISO(b.date))
+            return dateA.getTime() - dateB.getTime()
+          } catch {
+            return 0 // Keep original order if dates are invalid
+          }
+        })
       }
-      if (!foundPhase) {
-        ungrouped.push(workout)
-      }
-    })
 
-    // Sort workouts within each group by date
-    for (const phaseId in grouped) {
-      grouped[phaseId].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      return { grouped, ungrouped }
+    } catch (error) {
+      logger.error('Error grouping workouts by phase', {
+        error,
+        planId: extendedTrainingPlan?.id,
+      })
+      return { grouped: {}, ungrouped: workouts }
     }
-
-    return { grouped, ungrouped }
   }, [extendedTrainingPlan, workouts])
 
-  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = groupWorkoutsByPhase()
+  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = useMemo(
+    () => groupWorkoutsByPhase(),
+    [groupWorkoutsByPhase]
+  )
 
-  const getWorkoutStatusColor = (status: string) => {
+  // Memoized sorted phases for better performance
+  const phasesSorted = useMemo(() => {
+    return extendedTrainingPlan?.plan_phases
+      ? [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)
+      : []
+  }, [extendedTrainingPlan?.plan_phases])
+
+  const getWorkoutStatusColor = (status: Workout['status']) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800'
@@ -355,29 +461,33 @@ export default function TrainingPlanDetailPage() {
                 Training Phases
               </h2>
             </CardHeader>
-            <CardBody>
-              {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
+            <CardBody data-testid="phase-timeline">
+              {phasesSorted.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {extendedTrainingPlan.plan_phases
-                    .sort((a, b) => a.order - b.order)
-                    .map(phase => (
-                      <Card
-                        key={phase.id}
-                        className={`border ${currentPhase?.id === phase.id ? 'border-primary bg-primary/5' : 'border-default-200'}`}
-                      >
-                        <CardBody className="p-4">
-                          <h3 className="font-semibold text-foreground mb-1">{phase.phase_name}</h3>
-                          <p className="text-sm text-foreground/70 mb-2">
-                            Duration: {phase.duration_weeks} weeks
-                          </p>
-                          {currentPhase?.id === phase.id && (
-                            <Chip size="sm" color="primary" variant="flat" className="mt-1">
-                              Current Phase
-                            </Chip>
-                          )}
-                        </CardBody>
-                      </Card>
-                    ))}
+                  {phasesSorted.map(phase => (
+                    <Card
+                      key={phase.id}
+                      className={`border ${currentPhase?.id === phase.id ? 'border-primary bg-primary/5' : 'border-default-200'}`}
+                    >
+                      <CardBody className="p-4">
+                        <h3 className="font-semibold text-foreground mb-1">{phase.phase_name}</h3>
+                        <p className="text-sm text-foreground/70 mb-2">
+                          Duration: {phase.duration_weeks} weeks
+                        </p>
+                        {currentPhase?.id === phase.id && (
+                          <Chip
+                            size="sm"
+                            color="primary"
+                            variant="flat"
+                            className="mt-1"
+                            data-testid="current-phase"
+                          >
+                            Current Phase
+                          </Chip>
+                        )}
+                      </CardBody>
+                    </Card>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -623,118 +733,121 @@ export default function TrainingPlanDetailPage() {
               </div>
             ) : (
               <div className="space-y-8">
-                {extendedTrainingPlan?.plan_phases
-                  ?.sort((a, b) => a.order - b.order)
-                  .map(phase => (
-                    <div key={phase.id}>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        {phase.phase_name}
-                      </h3>
-                      {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
-                        <div className="space-y-4">
-                          {workoutsByPhase[phase.id]?.map((workout: Workout) => (
-                            <div
-                              key={workout.id}
-                              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                            >
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-medium text-gray-900 dark:text-white">
-                                      {workout.planned_type}
-                                    </h3>
-                                    <span
-                                      className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}
-                                    >
-                                      {workout.status}
+                {phasesSorted.map(phase => (
+                  <div key={phase.id}>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      {phase.phase_name}
+                    </h3>
+                    {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
+                      <div className="space-y-4" data-testid="phase-workouts">
+                        {workoutsByPhase[phase.id]?.map((workout: Workout) => (
+                          <div
+                            key={workout.id}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-medium text-gray-900 dark:text-white">
+                                    {workout.planned_type}
+                                  </h3>
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}
+                                  >
+                                    {workout.status}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                  {formatDate(workout.date)}
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-gray-500 dark:text-gray-400">
+                                      Planned:
+                                    </span>
+                                    <span className="ml-2 text-gray-700 dark:text-gray-200">
+                                      {workout.planned_distance &&
+                                        `${workout.planned_distance} miles`}
+                                      {workout.planned_duration &&
+                                        ` • ${workout.planned_duration} min`}
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    {formatDate(workout.date)}
-                                  </p>
 
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                  {workout.status === 'completed' && (
                                     <div>
                                       <span className="text-gray-500 dark:text-gray-400">
-                                        Planned:
+                                        Actual:
                                       </span>
                                       <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                        {workout.planned_distance &&
-                                          `${workout.planned_distance} miles`}
-                                        {workout.planned_duration &&
-                                          ` • ${workout.planned_duration} min`}
+                                        {workout.actual_distance &&
+                                          `${workout.actual_distance} miles`}
+                                        {workout.actual_duration &&
+                                          ` • ${workout.actual_duration} min`}
                                       </span>
                                     </div>
+                                  )}
+                                </div>
 
-                                    {workout.status === 'completed' && (
-                                      <div>
-                                        <span className="text-gray-500 dark:text-gray-400">
-                                          Actual:
-                                        </span>
-                                        <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                          {workout.actual_distance &&
-                                            `${workout.actual_distance} miles`}
-                                          {workout.actual_duration &&
-                                            ` • ${workout.actual_duration} min`}
-                                        </span>
-                                      </div>
-                                    )}
+                                {workout.workout_notes && (
+                                  <div className="mt-2">
+                                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                                      Notes:
+                                    </span>
+                                    <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                                      {workout.workout_notes}
+                                    </p>
                                   </div>
+                                )}
 
-                                  {workout.workout_notes && (
-                                    <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                        Notes:
-                                      </span>
-                                      <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                        {workout.workout_notes}
-                                      </p>
-                                    </div>
+                                {workout.coach_feedback && (
+                                  <div className="mt-2">
+                                    <span
+                                      className="text-gray-500 dark:text-gray-400 text-sm"
+                                      data-testid="feedback-badge"
+                                    >
+                                      Coach Feedback:
+                                    </span>
+                                    <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                                      {workout.coach_feedback}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex gap-2 mt-4">
+                                {session.user.userType === 'runner' &&
+                                  workout.status === 'planned' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleLogWorkout(workout)}
+                                      className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
+                                    >
+                                      Log Workout
+                                    </button>
                                   )}
-
-                                  {workout.coach_feedback && (
-                                    <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                        Coach Feedback:
-                                      </span>
-                                      <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                        {workout.coach_feedback}
-                                      </p>
-                                    </div>
+                                {session.user.userType === 'runner' &&
+                                  workout.status === 'completed' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleLogWorkout(workout)}
+                                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
+                                    >
+                                      Edit Log
+                                    </button>
                                   )}
-                                </div>
-
-                                <div className="flex gap-2 mt-4">
-                                  {session.user.userType === 'runner' &&
-                                    workout.status === 'planned' && (
-                                      <button
-                                        onClick={() => handleLogWorkout(workout)}
-                                        className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
-                                      >
-                                        Log Workout
-                                      </button>
-                                    )}
-                                  {session.user.userType === 'runner' &&
-                                    workout.status === 'completed' && (
-                                      <button
-                                        onClick={() => handleLogWorkout(workout)}
-                                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                                      >
-                                        Edit Log
-                                      </button>
-                                    )}
-                                </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-gray-500 dark:text-gray-400 text-sm">
-                          No workouts planned for this phase.
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">
+                        No workouts planned for this phase.
+                      </div>
+                    )}
+                  </div>
+                ))}
 
                 {ungroupedWorkouts.length > 0 && (
                   <div>
@@ -816,6 +929,7 @@ export default function TrainingPlanDetailPage() {
                               {session.user.userType === 'runner' &&
                                 workout.status === 'planned' && (
                                   <button
+                                    type="button"
                                     onClick={() => handleLogWorkout(workout)}
                                     className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
                                   >
@@ -825,6 +939,7 @@ export default function TrainingPlanDetailPage() {
                               {session.user.userType === 'runner' &&
                                 workout.status === 'completed' && (
                                   <button
+                                    type="button"
                                     onClick={() => handleLogWorkout(workout)}
                                     className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                                   >
@@ -864,3 +979,5 @@ export default function TrainingPlanDetailPage() {
     </Layout>
   )
 }
+
+export default TrainingPlanDetailPage
