@@ -1,6 +1,63 @@
 import { defineConfig, devices } from '@playwright/test'
 import { randomBytes } from 'crypto'
 
+// Derive a single base URL for Playwright and the dev server to avoid drift
+const rawBaseURL =
+  process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001'
+
+let resolvedBaseURL: string = rawBaseURL
+let resolvedPort: number
+
+try {
+  const url = new URL(rawBaseURL)
+  const hasExplicitPort = url.port !== ''
+
+  // Use local convention 3001 when no port is provided for http
+  resolvedPort = hasExplicitPort ? Number(url.port) : url.protocol === 'https:' ? 443 : 3001
+
+  // Normalize HTTPS to HTTP for local dev server (Next dev has no TLS)
+  if (!process.env.CI && url.protocol === 'https:') {
+    url.protocol = 'http:'
+    // If no explicit port was provided originally, prefer 3001 over 443 for local default
+    if (!hasExplicitPort) resolvedPort = 3001
+  }
+
+  // Safety: in local mode, refuse non-local hosts unless explicitly allowed
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1'])
+  if (
+    !process.env.CI &&
+    !localHosts.has(url.hostname) &&
+    process.env.PLAYWRIGHT_ALLOW_NON_LOCAL !== 'true'
+  ) {
+    throw new Error(
+      `Refusing to run E2E against non-local host in local mode: ${url.hostname}. ` +
+        `Set PLAYWRIGHT_TEST_BASE_URL/E2E_BASE_URL to a localhost URL, or set ` +
+        `PLAYWRIGHT_ALLOW_NON_LOCAL=true to bypass.`
+    )
+  }
+
+  // Calculate defaultPort AFTER protocol normalization to avoid mismatch
+  const defaultPort = url.protocol === 'https:' ? 443 : 80
+
+  // Ensure baseURL points to origin and includes the actual port we will serve on
+  if (url.pathname !== '/' || url.search || url.hash) {
+    url.pathname = '/'
+    url.search = ''
+    url.hash = ''
+  }
+  if (!hasExplicitPort || resolvedPort !== defaultPort) {
+    url.port = String(resolvedPort)
+  }
+  // Normalize trailing slash
+  resolvedBaseURL = url.toString().replace(/\/$/, '')
+} catch (err) {
+  throw new Error(
+    `Invalid PLAYWRIGHT_TEST_BASE_URL/E2E_BASE_URL: "${rawBaseURL}". ` +
+      `Provide an absolute URL like "http://localhost:3001". ` +
+      `Underlying error: ${(err as Error).message}`
+  )
+}
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -34,8 +91,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL:
-      process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.E2E_BASE_URL || 'http://localhost:3001',
+    baseURL: resolvedBaseURL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     /* Collect trace for any failed test to aid diagnosis */
@@ -244,8 +300,10 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined // CI environment already has server running
     : {
-        command: 'pnpm dev',
-        url: 'http://localhost:3001',
+        // Launch Next.js dev server via the repository's script and override the port
+        // Preserve any future behavior added to the dev script while ensuring port alignment
+        command: `pnpm run dev -- -p ${resolvedPort}`,
+        url: resolvedBaseURL,
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
         env: {
@@ -254,14 +312,14 @@ export default defineConfig({
           DATABASE_URL:
             process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
           BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || randomBytes(32).toString('hex'),
-          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || 'http://localhost:3001',
-          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001',
-          PORT: process.env.PORT || '3001',
+          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || resolvedBaseURL,
+          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || resolvedBaseURL,
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL || resolvedBaseURL,
+          PORT: String(resolvedPort),
           NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
           NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
           SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
           RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',
         },
       },
 })
