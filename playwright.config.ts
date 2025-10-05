@@ -11,7 +11,6 @@ let resolvedPort: number
 try {
   const url = new URL(rawBaseURL)
   const hasExplicitPort = url.port !== ''
-  const defaultPort = url.protocol === 'https:' ? 443 : 80
 
   // Use local convention 3001 when no port is provided for http
   resolvedPort = hasExplicitPort ? Number(url.port) : url.protocol === 'https:' ? 443 : 3001
@@ -36,6 +35,9 @@ try {
         `PLAYWRIGHT_ALLOW_NON_LOCAL=true to bypass.`
     )
   }
+
+  // Calculate defaultPort AFTER protocol normalization to avoid mismatch
+  const defaultPort = url.protocol === 'https:' ? 443 : 80
 
   // Ensure baseURL points to origin and includes the actual port we will serve on
   if (url.pathname !== '/' || url.search || url.hash) {
