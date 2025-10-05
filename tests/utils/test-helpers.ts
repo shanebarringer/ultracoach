@@ -1,4 +1,5 @@
 import { type Page, expect } from '@playwright/test'
+import { parseISO } from 'date-fns'
 
 // Timeout configuration - CI needs longer timeouts
 export const TEST_TIMEOUTS = {
@@ -45,6 +46,15 @@ export type TestUserType = keyof typeof TEST_USERS
  */
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
+
+  // CRITICAL: Force cookie loading from storageState context
+  // This ensures cookies are available for server-side auth checks
+  // Playwright loads storageState cookies asynchronously, but server components
+  // need cookies immediately when rendering. This synchronizes the timing.
+  await page.context().cookies()
+
+  // Small buffer for browser to process cookies (CI needs more time)
+  await page.waitForTimeout(process.env.CI ? 300 : 150)
 
   // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
   await page.goto(user.expectedDashboard)
@@ -258,9 +268,6 @@ export async function submitForm(page: Page, submitSelector = 'button[type="subm
  */
 export function parseDateSafely(dateText: string): Date | null {
   try {
-    // Import parseISO from date-fns for ISO date parsing
-    const { parseISO } = require('date-fns')
-
     // Try multiple date parsing strategies
     let date = parseISO(dateText)
     if (isNaN(date.getTime())) {

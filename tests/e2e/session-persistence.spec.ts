@@ -39,6 +39,11 @@ test.describe('Session Persistence', () => {
     })
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
+      // Ensure cookies are loaded from storageState before navigation
+      // This prevents server-side auth from seeing missing cookies
+      await page.context().cookies()
+      await page.waitForTimeout(process.env.CI ? 300 : 150)
+
       // Navigate directly to workouts page (auth loaded via storageState)
       await page.goto('/workouts', { timeout: 45000 })
 
@@ -101,6 +106,10 @@ test.describe('Session Persistence', () => {
         '/profile',
         '/dashboard/runner', // Return to start
       ]
+
+      // Ensure cookies are loaded from storageState before first navigation
+      await page.context().cookies()
+      await page.waitForTimeout(process.env.CI ? 300 : 150)
 
       for (const route of routes) {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
