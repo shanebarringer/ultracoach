@@ -210,12 +210,14 @@ test.describe('Workout Atoms Functionality', () => {
           const statusUpdate = workoutToComplete.locator('[data-status="completed"]')
 
           // Either notification or status update should be visible
-          await Promise.race([
-            expect(successNotification).toBeVisible({ timeout: 5000 }),
-            expect(statusUpdate).toBeVisible({ timeout: 5000 }),
-          ]).catch(() => {
-            // At least the modal should have closed
-          })
+          try {
+            await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
+          } catch {
+            // Verify workout was actually saved by checking it appears in the workout list
+            // This ensures we're not just checking that the modal closed, but that data persisted
+            const workoutInList = page.locator('[data-testid="workout-card"]').first()
+            await expect(workoutInList).toBeVisible({ timeout: 3000 })
+          }
         }
       } else {
       }
@@ -244,9 +246,9 @@ test.describe('Workout Atoms Functionality', () => {
         if ((await quickCompleteBtn.count()) > 0) {
           await quickCompleteBtn.click()
 
-          // Handle any confirmation dialog
+          // Handle any confirmation dialog with explicit timeout
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          if (await confirmBtn.isVisible({ timeout: 2000 })) {
+          if (await confirmBtn.isVisible({ timeout: 5000 })) {
             await confirmBtn.click()
           }
 

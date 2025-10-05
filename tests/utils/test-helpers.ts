@@ -1,4 +1,5 @@
 import { type Page, expect } from '@playwright/test'
+import { parseISO } from 'date-fns'
 
 // Centralized test credentials - use these instead of hard-coding
 export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
@@ -38,7 +39,16 @@ export type TestUserType = keyof typeof TEST_USERS
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // Navigate directly to dashboard (authentication handled by storage state)
+  // CRITICAL: Force cookie loading from storageState context
+  // This ensures cookies are available for server-side auth checks
+  // Playwright loads storageState cookies asynchronously, but server components
+  // need cookies immediately when rendering. This synchronizes the timing.
+  await page.context().cookies()
+
+  // Small buffer for browser to process cookies (CI needs more time)
+  await page.waitForTimeout(process.env.CI ? 300 : 150)
+
+  // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
   await page.goto(user.expectedDashboard)
 
   // Wait for dashboard URL (removed networkidle - causes CI hangs)
@@ -165,3 +175,34 @@ export async function submitForm(page: Page, submitSelector = 'button[type="subm
   // Wait for potential navigation or loading states
   await page.waitForLoadState('domcontentloaded')
 }
+
+/**
+ * Safely parse a date string with multiple fallback strategies.
+ * Returns null for unparseable dates instead of throwing errors.
+ *
+ * @param dateText - Date string in various formats (ISO, locale, etc.)
+ * @returns Parsed Date object or null if unparseable
+ */
+export function parseDateSafely(dateText: string): Date | null {
+  try {
+    // Try multiple date parsing strategies
+    let date = parseISO(dateText)
+    if (isNaN(date.getTime())) {
+      date = new Date(dateText)
+    }
+
+    return isNaN(date.getTime()) ? null : date
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Test configuration constants for workout display validation
+ */
+export const WORKOUT_TEST_LIMITS = {
+  /** Maximum number of workouts to analyze in tests for performance */
+  MAX_WORKOUTS_TO_ANALYZE: 15,
+  /** Maximum gap allowed between same-date workouts (for different workout types) */
+  MAX_SAME_DATE_WORKOUT_GAP: 3,
+} as const
