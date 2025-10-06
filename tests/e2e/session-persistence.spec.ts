@@ -136,10 +136,8 @@ test.describe('Session Persistence', () => {
 
         // Verify authenticated state by checking for user elements
         const authIndicators = page.locator('[data-testid="user-menu"]')
-        const hasAuthIndicator = (await authIndicators.count()) > 0
-        if (hasAuthIndicator) {
-          await expect(authIndicators.first()).toBeVisible({ timeout: 5000 })
-        }
+        expect(await authIndicators.count()).toBeGreaterThan(0)
+        await expect(authIndicators.first()).toBeVisible({ timeout: 5000 })
       }
     })
 
