@@ -135,9 +135,26 @@ test.describe('Session Persistence', () => {
           })
 
         // Verify authenticated state by checking for user elements
+        // Wait for session to load (BetterAuthProvider async initialization)
+        // Increased timeout to 20s for slower CI environments
         const authIndicators = page.locator('[data-testid="user-menu"]')
-        expect(await authIndicators.count()).toBeGreaterThan(0)
-        await expect(authIndicators.first()).toBeVisible({ timeout: 5000 })
+        try {
+          await authIndicators.waitFor({ state: 'attached', timeout: 20000 })
+          await expect(authIndicators).toBeVisible({ timeout: 5000 })
+        } catch (error) {
+          // Fallback: If user menu didn't appear, verify we weren't redirected to signin
+          // This could indicate session loading issue or auth failure
+          const currentUrl = page.url()
+          if (currentUrl.includes('/auth/signin')) {
+            throw new Error(
+              `Session failed to load on route ${route} - redirected to signin (${currentUrl})`
+            )
+          }
+          // Re-throw original error if we're still on the protected route but menu didn't appear
+          throw new Error(
+            `User menu failed to appear on ${route} after 20s. Current URL: ${currentUrl}. Original error: ${error.message}`
+          )
+        }
       }
     })
 
@@ -155,7 +172,7 @@ test.describe('Session Persistence', () => {
 
           // Should never be redirected to signin
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-          await expect(page).toHaveURL(new RegExp(`${route.replace(/\//g, '\\/')}(?:\\?.*)?$`))
+          await expect(page).toHaveURL(new RegExp(`^${route}(?:\\?.*)?$`))
 
           // Brief pause to simulate realistic navigation
           await page.waitForTimeout(500)
