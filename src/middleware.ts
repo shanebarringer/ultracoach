@@ -61,9 +61,6 @@ export async function middleware(request: NextRequest) {
   // maintaining security through Server Component authentication.
   //
   // See: CLAUDE.md for complete Server/Client Component architecture requirements
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.next()
-  }
 
   // Default: allow other routes for now
   return NextResponse.next()

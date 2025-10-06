@@ -93,14 +93,9 @@ export type TestUserType = keyof typeof TEST_USERS
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // CRITICAL: Force cookie loading from storageState context
-  // This ensures cookies are available for server-side auth checks
-  // Playwright loads storageState cookies asynchronously, but server components
-  // need cookies immediately when rendering. This synchronizes the timing.
-  await page.context().cookies()
-
-  // Small buffer for browser to process cookies (CI needs more time)
-  await page.waitForTimeout(process.env.CI ? 300 : 150)
+  // CRITICAL: Ensure cookies are loaded from storageState before navigation
+  // This prevents race conditions with server-side auth checks
+  await ensureAuthCookiesLoaded(page)
 
   // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
   await page.goto(user.expectedDashboard)

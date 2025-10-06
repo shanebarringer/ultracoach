@@ -248,8 +248,11 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Handle any confirmation dialog with explicit timeout
           const confirmBtn = page.locator('button:has-text(/Confirm|Yes|Complete/i)')
-          if (await confirmBtn.isVisible({ timeout: 5000 })) {
+          try {
+            await expect(confirmBtn).toBeVisible({ timeout: 5000 })
             await confirmBtn.click()
+          } catch {
+            // No confirmation dialog appeared
           }
 
           // Go back to dashboard

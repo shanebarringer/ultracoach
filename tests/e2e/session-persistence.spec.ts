@@ -340,6 +340,9 @@ test.describe('Session Persistence', () => {
       // Increase timeout for multiple route navigation with Next.js compilation
       test.setTimeout(60000)
 
+      // Ensure cookies are loaded from storageState before first navigation
+      await ensureAuthCookiesLoaded(page)
+
       // Perform multiple operations that would typically test session stability
       const operations = [
         async () => {
