@@ -25,10 +25,44 @@ export const trainingPlansAtom = atom<ExtendedTrainingPlan[]>([])
 export const trainingPlansLoadingAtom = atom(false)
 export const trainingPlansErrorAtom = atom<string | null>(null)
 
+// Refresh trigger atom for training plans
+const trainingPlansRefreshTriggerAtom = atom(0)
+
 // Async training plans atom with suspense support
-export const asyncTrainingPlansAtom = atom(async () => {
-  // This would be populated with actual async data fetching
-  return [] as ExtendedTrainingPlan[]
+// This atom only re-fetches when the trigger atom changes
+export const asyncTrainingPlansAtom = atom(async get => {
+  // Subscribe to refresh trigger to refetch when needed
+  get(trainingPlansRefreshTriggerAtom)
+
+  // Only run on client side
+  if (!isBrowser) {
+    return []
+  }
+
+  const logger = createLogger('AsyncTrainingPlansAtom')
+
+  try {
+    logger.debug('Fetching training plans...')
+
+    const response = await api.get<
+      { trainingPlans?: ExtendedTrainingPlan[] } | ExtendedTrainingPlan[]
+    >('/api/training-plans', {
+      suppressGlobalToast: true,
+    })
+    const data = response.data
+    // API returns { trainingPlans: [...] } so extract the array
+    const plansArray = normalizeListResponse(data, 'trainingPlans')
+    logger.debug('Training plans fetched', { count: plansArray.length })
+    return plansArray as ExtendedTrainingPlan[]
+  } catch (error) {
+    logger.error('Error fetching training plans', error)
+    return []
+  }
+})
+
+// Write-only atom to trigger refresh
+export const refreshTrainingPlansAtom = atom(null, (_get, set) => {
+  set(trainingPlansRefreshTriggerAtom, prev => prev + 1)
 })
 
 // Refreshable training plans atom using atomWithRefresh

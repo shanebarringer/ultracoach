@@ -21,40 +21,56 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     if (typeof window === 'undefined') return
 
     // Get initial session
-    const getSession = async (isInitial = false) => {
+    const getSession = async () => {
       try {
-        // Only set loading for initial session check, not periodic refreshes
-        if (isInitial) setAuthLoading(true)
+        // CRITICAL: Always set loading to true at the start of session check
+        // This ensures loading state is properly reset on each page navigation
+        // (Jotai atoms persist across navigations in tests, so explicit reset needed)
+        setAuthLoading(true)
+
+        logger.info('BetterAuthProvider: Calling authClient.getSession()...')
         const { data: session, error } = await authClient.getSession()
+        logger.info('BetterAuthProvider: getSession() returned:', {
+          hasSession: !!session,
+          hasError: !!error,
+          email: session?.user?.email,
+        })
 
         if (error) {
           // Don't log error for normal "no session" cases
           if (error.status !== 404 && error.status !== 401) {
             logger.error('Better Auth session error:', error)
           }
+          logger.info('BetterAuthProvider: Setting session to null due to error')
           setSession(null)
           setUser(null)
         } else if (session) {
-          logger.info('Better Auth session restored:', session.user?.email)
+          logger.info('BetterAuthProvider: Setting session and user:', session.user?.email)
           setSession(session)
           setUser(session?.user ? (session.user as User) : null)
+          logger.info('BetterAuthProvider: Session atoms updated successfully')
         } else {
           // No session found, which is normal for unauthenticated users
+          logger.info('BetterAuthProvider: No session returned, setting to null')
           setSession(null)
           setUser(null)
         }
       } catch (error) {
         // Don't log network errors on homepage - it's normal not to have a session
-        logger.warn('Better Auth session check failed (this is normal if not logged in):', error)
+        logger.warn(
+          'BetterAuthProvider: Session check failed (this is normal if not logged in):',
+          error
+        )
         setSession(null)
         setUser(null)
       } finally {
+        logger.info('BetterAuthProvider: Setting authLoading to false')
         setAuthLoading(false)
       }
     }
 
-    // Get initial session - pass isInitial flag
-    getSession(true)
+    // Get initial session
+    getSession()
 
     // Set up periodic session refresh to prevent staleness
     // This helps fix the issue where users need manual refresh after login

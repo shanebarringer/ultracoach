@@ -119,6 +119,9 @@ test.describe('Session Persistence', () => {
       await ensureAuthCookiesLoaded(page)
 
       for (const route of routes) {
+        // DEBUG: Log which route we're testing
+        console.log(`[DEBUG] Testing route: ${route}`)
+
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
         await page.goto(route, { waitUntil: 'domcontentloaded' })
 
@@ -126,33 +129,34 @@ test.describe('Session Persistence', () => {
         await expect(page).toHaveURL(route, { timeout: 30000 })
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
-        // Wait for React hydration without redundant waitForLoadState
-        await page
-          .locator('#__next')
-          .waitFor({ timeout: 5000 })
-          .catch(() => {
-            // App might not have hydration marker, continue
+        // Simplified approach: Just wait for the user menu to appear
+        // The BetterAuthProvider will load session automatically via useEffect
+        // We just need to give it enough time for: API call + atom updates + React render
+        const authIndicators = page.locator('[data-testid="user-menu"]')
+
+        try {
+          // Wait up to 30 seconds for user menu to appear
+          // This accounts for: network latency + BetterAuthProvider init + React render cycles
+          await expect(authIndicators).toBeVisible({ timeout: 30000 })
+        } catch (error) {
+          // If user menu didn't appear, capture diagnostics
+          const currentUrl = page.url()
+          const errorMessage = error instanceof Error ? error.message : String(error)
+
+          // Take screenshot for debugging
+          await page.screenshot({
+            path: `/tmp/session-debug-${route.replace(/\//g, '-')}-failed.png`,
           })
 
-        // Verify authenticated state by checking for user elements
-        // Wait for session to load (BetterAuthProvider async initialization)
-        // Increased timeout to 20s for slower CI environments
-        const authIndicators = page.locator('[data-testid="user-menu"]')
-        try {
-          await authIndicators.waitFor({ state: 'attached', timeout: 20000 })
-          await expect(authIndicators).toBeVisible({ timeout: 5000 })
-        } catch (error) {
-          // Fallback: If user menu didn't appear, verify we weren't redirected to signin
-          // This could indicate session loading issue or auth failure
-          const currentUrl = page.url()
           if (currentUrl.includes('/auth/signin')) {
             throw new Error(
-              `Session failed to load on route ${route} - redirected to signin (${currentUrl})`
+              `Session failed - redirected to signin on route ${route} (${currentUrl})`
             )
           }
-          // Re-throw original error if we're still on the protected route but menu didn't appear
+
+          // Re-throw with context
           throw new Error(
-            `User menu failed to appear on ${route} after 20s. Current URL: ${currentUrl}. Original error: ${error.message}`
+            `User menu not visible on ${route} after 30s. URL: ${currentUrl}. Error: ${errorMessage}`
           )
         }
       }
