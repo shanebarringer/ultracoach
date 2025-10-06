@@ -31,15 +31,17 @@ test.describe('Session Persistence', () => {
 
       // Refresh multiple times
       for (let i = 0; i < 3; i++) {
-        await page.reload()
+        await test.step(`Refresh ${i + 1}/3`, async () => {
+          await page.reload()
 
-        // Should stay on dashboard
-        await expect(page).toHaveURL('/dashboard/runner')
-        await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
+          // Should stay on dashboard
+          await expect(page).toHaveURL('/dashboard/runner')
+          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
-        // Dashboard should load properly
-        const dashboard = page.locator('[data-testid="runner-dashboard-content"]')
-        await expect(dashboard).toBeVisible({ timeout: 15000 })
+          // Dashboard should load properly
+          const dashboard = page.locator('[data-testid="runner-dashboard-content"]')
+          await expect(dashboard).toBeVisible({ timeout: 15000 })
+        })
       }
     })
 
@@ -51,11 +53,11 @@ test.describe('Session Persistence', () => {
       await page.goto('/workouts', { timeout: 45000 })
 
       // Wait for final URL (ensures no redirect to signin)
-      await page.waitForURL('/workouts', { timeout: 30000 })
+      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: 30000 })
 
       // Wait for page content to prove authentication worked
       await expect(
-        page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
+        page.getByTestId('page-title').or(page.getByRole('heading', { name: /Training Log/i }))
       ).toBeVisible({ timeout: 15000 })
 
       // Refresh page
@@ -65,11 +67,11 @@ test.describe('Session Persistence', () => {
       await ensureAuthCookiesLoaded(page)
 
       // Wait for final URL after refresh (critical test - should not redirect to signin)
-      await page.waitForURL('/workouts', { timeout: 30000 })
+      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: 30000 })
 
       // Verify page content is still accessible (proves session persisted)
       await expect(
-        page.getByTestId('workouts-title').or(page.getByTestId('page-title'))
+        page.getByTestId('page-title').or(page.getByRole('heading', { name: /Training Log/i }))
       ).toBeVisible({ timeout: 15000 })
     })
 
@@ -155,7 +157,7 @@ test.describe('Session Persistence', () => {
 
           // Should never be redirected to signin
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-          await expect(page).toHaveURL(route)
+          await expect(page).toHaveURL(new RegExp(`${route.replace(/\//g, '\\/')}(?:\\?.*)?$`))
 
           // Brief pause to simulate realistic navigation
           await page.waitForTimeout(500)
@@ -173,29 +175,29 @@ test.describe('Session Persistence', () => {
 
       // Navigate to several pages
       await page.goto('/workouts')
-      await expect(page).toHaveURL('/workouts')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
 
       await page.goto('/training-plans')
-      await expect(page).toHaveURL('/training-plans')
+      await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
 
       // Use browser back button
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
-      await expect(page).toHaveURL('/workouts')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
       // Use browser forward button
       await page.goForward()
       await page.waitForLoadState('domcontentloaded')
-      await expect(page).toHaveURL('/training-plans')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
       // Go back to dashboard
       await page.goBack()
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
-      await expect(page).toHaveURL('/dashboard/runner')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
     })
   })
 
@@ -276,14 +278,14 @@ test.describe('Session Persistence', () => {
 
       // Session should now persist across navigation
       await page.goto('/workouts')
-      await expect(page).toHaveURL('/workouts')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
       // Refresh should maintain session
       await page.reload()
       await page.waitForLoadState('domcontentloaded')
-      await expect(page).toHaveURL('/workouts')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
     })
 
     test('should clear session after signout', async ({ page }) => {
@@ -328,14 +330,10 @@ test.describe('Session Persistence', () => {
 
       // Session should be cleared - protected routes should redirect
       await page.goto('/dashboard/runner')
-
-      // Should not stay on dashboard - wait for redirect
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForFunction(() => !window.location.pathname.includes('/dashboard/runner'), {
-        timeout: 5000,
-      })
 
-      await expect(page).not.toHaveURL('/dashboard/runner')
+      // Should not stay on dashboard
+      await expect(page).not.toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
     })
   })
 
