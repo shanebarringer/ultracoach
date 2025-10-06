@@ -14,7 +14,12 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD, navigateToDashboard } from '../utils/test-helpers'
+import {
+  TEST_RUNNER_EMAIL,
+  TEST_RUNNER_PASSWORD,
+  ensureAuthCookiesLoaded,
+  navigateToDashboard,
+} from '../utils/test-helpers'
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
@@ -40,9 +45,7 @@ test.describe('Session Persistence', () => {
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
       // Ensure cookies are loaded from storageState before navigation
-      // This prevents server-side auth from seeing missing cookies
-      await page.context().cookies()
-      await page.waitForTimeout(process.env.CI ? 300 : 150)
+      await ensureAuthCookiesLoaded(page)
 
       // Navigate directly to workouts page (auth loaded via storageState)
       await page.goto('/workouts', { timeout: 45000 })
@@ -108,8 +111,7 @@ test.describe('Session Persistence', () => {
       ]
 
       // Ensure cookies are loaded from storageState before first navigation
-      await page.context().cookies()
-      await page.waitForTimeout(process.env.CI ? 300 : 150)
+      await ensureAuthCookiesLoaded(page)
 
       for (const route of routes) {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
