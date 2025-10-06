@@ -61,6 +61,9 @@ test.describe('Session Persistence', () => {
       // Refresh page
       await page.reload()
 
+      // Re-ensure cookies are loaded after page refresh
+      await ensureAuthCookiesLoaded(page)
+
       // Wait for final URL after refresh (critical test - should not redirect to signin)
       await page.waitForURL('/workouts', { timeout: 30000 })
 
@@ -140,6 +143,9 @@ test.describe('Session Persistence', () => {
 
     test('should handle rapid navigation without losing session', async ({ page }) => {
       const routes = ['/workouts', '/dashboard/runner', '/training-plans', '/workouts']
+
+      // Ensure cookies are loaded from storageState before rapid navigation
+      await ensureAuthCookiesLoaded(page)
 
       // Rapidly navigate between routes
       for (let iteration = 0; iteration < 2; iteration++) {

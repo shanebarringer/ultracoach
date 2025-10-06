@@ -213,10 +213,11 @@ test.describe('Workout Atoms Functionality', () => {
           try {
             await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
           } catch {
-            // Verify workout was actually saved by checking it appears in the workout list
-            // This ensures we're not just checking that the modal closed, but that data persisted
-            const workoutInList = page.locator('[data-testid="workout-card"]').first()
-            await expect(workoutInList).toBeVisible({ timeout: 3000 })
+            // Fallback: prove the targeted workout left the "planned" list
+            const remainingPlanned = await page
+              .locator('[data-testid="workout-card"][data-status="planned"]')
+              .count()
+            expect(remainingPlanned).toBeLessThan(plannedCount)
           }
         }
       } else {
