@@ -6,12 +6,17 @@ import { useEffect } from 'react'
 
 import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
-import type { User } from '@/lib/better-auth-client'
+import type { Session, User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('BetterAuthProvider')
 
-export function BetterAuthProvider({ children }: { children: React.ReactNode }) {
+interface BetterAuthProviderProps {
+  children: React.ReactNode
+  initialSession?: Session | null
+}
+
+export function BetterAuthProvider({ children, initialSession }: BetterAuthProviderProps) {
   const setSession = useSetAtom(sessionAtom)
   const setUser = useSetAtom(userAtom)
   const setAuthLoading = useSetAtom(authLoadingAtom)
@@ -19,6 +24,17 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
+
+    // If we have an initial session from server, set it immediately (SSR optimization)
+    if (initialSession) {
+      logger.info('BetterAuthProvider: Using initial session from server (SSR optimization)', {
+        userId: initialSession.user?.id,
+        hasSession: !!initialSession,
+      })
+      setSession(initialSession)
+      setUser(initialSession?.user ? (initialSession.user as User) : null)
+      setAuthLoading(false)
+    }
 
     // Unmount guard to prevent state updates after component cleanup
     let isActive = true
@@ -92,8 +108,9 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
-    // Initial session check - show loading state
-    getSession(true)
+    // Initial session check - only show loading if we don't have initialSession
+    // If we have initialSession, run silent background refresh instead
+    getSession(!initialSession)
 
     // Set up periodic session refresh to prevent staleness
     // Runs silently (no loading state) to avoid UI flicker every 30 seconds
@@ -139,7 +156,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [setSession, setUser, setAuthLoading])
+  }, [setSession, setUser, setAuthLoading, initialSession])
 
   return <>{children}</>
 }
