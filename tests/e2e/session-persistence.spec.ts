@@ -299,7 +299,7 @@ test.describe('Session Persistence', () => {
 
       // Navigate to signin
       await page.goto('/auth/signin')
-      await expect(page).toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/auth\/signin$/)
 
       // Fill and submit signin form
       await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
@@ -359,7 +359,7 @@ test.describe('Session Persistence', () => {
       await signOutButton.click()
 
       // Should redirect to home
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL(/\/$/)
 
       // Session should be cleared - protected routes should redirect
       await page.goto('/dashboard/runner')
@@ -384,7 +384,7 @@ test.describe('Session Persistence', () => {
       const operations = [
         async () => {
           await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL('/dashboard/runner')
+          await expect(page).toHaveURL(/\/dashboard\/runner$/)
         },
         async () => {
           await page.reload({ waitUntil: 'domcontentloaded' })
@@ -392,7 +392,7 @@ test.describe('Session Persistence', () => {
         },
         async () => {
           await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL('/workouts')
+          await expect(page).toHaveURL(/\/workouts$/)
         },
         async () => {
           await page.goBack({ waitUntil: 'domcontentloaded' })
@@ -400,7 +400,7 @@ test.describe('Session Persistence', () => {
         },
         async () => {
           await page.goto('/training-plans', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL('/training-plans')
+          await expect(page).toHaveURL(/\/training-plans$/)
         },
       ]
 
@@ -413,7 +413,7 @@ test.describe('Session Persistence', () => {
 
       // Final verification - still authenticated
       await page.goto('/dashboard/runner')
-      await expect(page).toHaveURL('/dashboard/runner')
+      await expect(page).toHaveURL(/\/dashboard\/runner$/)
       const dashboardContent = page.locator('[data-testid="runner-dashboard-content"]')
       await expect(dashboardContent).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
     })
