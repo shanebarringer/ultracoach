@@ -3,7 +3,7 @@
 import { useSetAtom } from 'jotai'
 import { useHydrateAtoms } from 'jotai/utils'
 
-import { useEffect } from 'react'
+import { type ReactNode, useEffect } from 'react'
 
 import { authLoadingAtom, sessionAtom, userAtom } from '@/lib/atoms/index'
 import { authClient } from '@/lib/better-auth-client'
@@ -13,7 +13,7 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('BetterAuthProvider')
 
 interface BetterAuthProviderProps {
-  children: React.ReactNode
+  children: ReactNode
   initialSession?: Session | null
 }
 
@@ -55,11 +55,8 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
             setUser(null)
           }
         } else if (session) {
-          // Log session loaded without PII (no email)
-          logger.info('Better Auth session refreshed', {
-            hasSession: true,
-            userId: session.user?.id,
-          })
+          // Log session loaded without PII (no email, no userId)
+          logger.info('Better Auth session refreshed', { hasSession: true })
           if (isActive) {
             setSession(session)
             setUser(session?.user ? (session.user as User) : null)
@@ -84,43 +81,42 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
       }
     }
 
+    // DRY helper: runs background refresh with guard to prevent overlapping calls
+    const runBackgroundRefresh = () => {
+      if (backgroundInFlight || !isActive) return
+      backgroundInFlight = true
+      void getSession().finally(() => {
+        backgroundInFlight = false
+      })
+    }
+
     // Only run background refresh if we had an initial session
     // (to catch any server/client session drift)
+    // Guard prevents race condition with near-immediate focus/visibility triggers
     if (initialSession) {
-      void getSession()
+      runBackgroundRefresh()
     }
 
     // Set up periodic session refresh to prevent staleness
     // Runs silently (no loading state) to avoid UI flicker every 30 seconds
-    // Guard prevents overlapping calls on slow networks
     const refreshInterval = setInterval(() => {
-      if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
-        backgroundInFlight = true
-        void getSession().finally(() => {
-          backgroundInFlight = false
-        })
+      if (document.visibilityState === 'visible') {
+        runBackgroundRefresh()
       }
     }, 30000)
 
     // Refresh when user returns to the page - silent to avoid UX flicker
-    // Use backgroundInFlight guard to prevent concurrent refreshes and race conditions
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
-        backgroundInFlight = true
-        logger.info('Page became visible, refreshing session')
-        void getSession().finally(() => {
-          backgroundInFlight = false
-        })
+      if (document.visibilityState === 'visible' && isActive) {
+        logger.debug('Page became visible, refreshing session')
+        runBackgroundRefresh()
       }
     }
 
     const handleFocus = () => {
-      if (!backgroundInFlight && isActive) {
-        backgroundInFlight = true
-        logger.info('Window gained focus, refreshing session')
-        void getSession().finally(() => {
-          backgroundInFlight = false
-        })
+      if (isActive) {
+        logger.debug('Window gained focus, refreshing session')
+        runBackgroundRefresh()
       }
     }
 
