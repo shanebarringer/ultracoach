@@ -16,8 +16,6 @@ import {
   trainingPlanSortByAtom,
   trainingPlanStatusFilterAtom,
   trainingPlansAtom,
-  trainingPlansErrorAtom,
-  trainingPlansLoadingAtom,
 } from '@/lib/atoms/training-plans'
 
 import {
@@ -61,20 +59,6 @@ describe('Training Plans Atoms', () => {
       expect(plans).toHaveLength(2)
       expect(plans[0].name).toBe('50K Training Plan')
       expect(plans[1].name).toBe('100M Training Plan')
-    })
-
-    it('should track loading state', () => {
-      expect(getAtomValue(store, trainingPlansLoadingAtom)).toBe(false)
-
-      setAtomValue(store, trainingPlansLoadingAtom, true)
-      expect(getAtomValue(store, trainingPlansLoadingAtom)).toBe(true)
-    })
-
-    it('should track error state', () => {
-      expect(getAtomValue(store, trainingPlansErrorAtom)).toBe(null)
-
-      setAtomValue(store, trainingPlansErrorAtom, 'Failed to fetch training plans')
-      expect(getAtomValue(store, trainingPlansErrorAtom)).toBe('Failed to fetch training plans')
     })
   })
 
@@ -199,9 +183,6 @@ describe('Training Plans Atoms', () => {
 
   describe('Complex scenarios', () => {
     it('should handle multiple state updates correctly', () => {
-      // Set loading state
-      setAtomValue(store, trainingPlansLoadingAtom, true)
-
       // Set some training plans
       const plans = [
         createMockTrainingPlan({ id: 'p1', status: 'active' }),
@@ -218,11 +199,7 @@ describe('Training Plans Atoms', () => {
       setAtomValue(store, selectedTrainingPlanAtom, plans[0])
       setAtomValue(store, selectedTrainingPlanIdAtom, 'p1')
 
-      // Set loading to false
-      setAtomValue(store, trainingPlansLoadingAtom, false)
-
       // Verify state
-      expect(getAtomValue(store, trainingPlansLoadingAtom)).toBe(false)
       expect(getAtomValue(store, trainingPlansAtom)).toHaveLength(3)
       expect(getAtomValue(store, trainingPlanStatusFilterAtom)).toBe('active')
       expect(getAtomValue(store, trainingPlanSearchTermAtom)).toBe('marathon')
