@@ -1,6 +1,7 @@
 'use client'
 
 import { useSetAtom } from 'jotai'
+import { useHydrateAtoms } from 'jotai/utils'
 
 import { useEffect } from 'react'
 
@@ -17,47 +18,30 @@ interface BetterAuthProviderProps {
 }
 
 export function BetterAuthProvider({ children, initialSession }: BetterAuthProviderProps) {
+  // Synchronously hydrate session atoms BEFORE any rendering
+  // This eliminates race condition where Header renders before useEffect completes
+  useHydrateAtoms([
+    [sessionAtom, initialSession || null],
+    [userAtom, initialSession?.user ? (initialSession.user as User) : null],
+    [authLoadingAtom, false],
+  ])
+
   const setSession = useSetAtom(sessionAtom)
   const setUser = useSetAtom(userAtom)
-  const setAuthLoading = useSetAtom(authLoadingAtom)
 
   useEffect(() => {
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
 
-    // If we have an initial session from server, set it immediately (SSR optimization)
-    if (initialSession) {
-      logger.info('BetterAuthProvider: Using initial session from server (SSR optimization)', {
-        userId: initialSession.user?.id,
-        hasSession: !!initialSession,
-      })
-      setSession(initialSession)
-      setUser(initialSession?.user ? (initialSession.user as User) : null)
-      setAuthLoading(false)
-    }
-
     // Unmount guard to prevent state updates after component cleanup
     let isActive = true
-
-    // Track in-flight session checks with loading state to prevent race conditions
-    let inFlightWithLoading = 0
 
     // Track background refresh to prevent overlapping calls
     let backgroundInFlight = false
 
-    // Get session with optional loading state control
-    // setLoading=true shows loading spinner (initial check)
-    // setLoading=false runs silently (periodic background refresh, focus/visibility events)
-    const getSession = async (setLoading = false) => {
-      // Track this check if it should show loading
-      if (setLoading && isActive) {
-        inFlightWithLoading++
-        if (inFlightWithLoading === 1) {
-          // Only set loading on the first in-flight check
-          setAuthLoading(true)
-          logger.info('BetterAuthProvider: Starting session check with loading state')
-        }
-      }
+    // Background session refresh (no loading state)
+    // Used for periodic refresh and visibility/focus events
+    const getSession = async () => {
       try {
         const { data: session, error } = await authClient.getSession()
 
@@ -72,7 +56,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
           }
         } else if (session) {
           // Log session loaded without PII (no email)
-          logger.info('Better Auth session loaded', {
+          logger.info('Better Auth session refreshed', {
             hasSession: true,
             userId: session.user?.id,
           })
@@ -89,7 +73,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
         }
       } catch (error) {
         // Sanitize error logging - only log safe properties
-        logger.warn('Session check failed (normal if not logged in)', {
+        logger.warn('Session refresh failed (normal if not logged in)', {
           name: (error as Error)?.name,
           message: (error as Error)?.message,
         })
@@ -97,20 +81,14 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
           setSession(null)
           setUser(null)
         }
-      } finally {
-        if (setLoading && isActive) {
-          inFlightWithLoading--
-          if (inFlightWithLoading === 0) {
-            setAuthLoading(false)
-            logger.info('BetterAuthProvider: All session checks complete, loading state cleared')
-          }
-        }
       }
     }
 
-    // Initial session check - only show loading if we don't have initialSession
-    // If we have initialSession, run silent background refresh instead
-    getSession(!initialSession)
+    // Only run background refresh if we had an initial session
+    // (to catch any server/client session drift)
+    if (initialSession) {
+      void getSession()
+    }
 
     // Set up periodic session refresh to prevent staleness
     // Runs silently (no loading state) to avoid UI flicker every 30 seconds
@@ -118,7 +96,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
     const refreshInterval = setInterval(() => {
       if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
         backgroundInFlight = true
-        void getSession(false).finally(() => {
+        void getSession().finally(() => {
           backgroundInFlight = false
         })
       }
@@ -130,7 +108,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
       if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
         backgroundInFlight = true
         logger.info('Page became visible, refreshing session')
-        void getSession(false).finally(() => {
+        void getSession().finally(() => {
           backgroundInFlight = false
         })
       }
@@ -140,7 +118,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
       if (!backgroundInFlight && isActive) {
         backgroundInFlight = true
         logger.info('Window gained focus, refreshing session')
-        void getSession(false).finally(() => {
+        void getSession().finally(() => {
           backgroundInFlight = false
         })
       }
@@ -156,7 +134,7 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [setSession, setUser, setAuthLoading, initialSession])
+  }, [setSession, setUser, initialSession])
 
   return <>{children}</>
 }
