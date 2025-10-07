@@ -187,6 +187,10 @@ test.describe('Session Persistence', () => {
             { timeout: TEST_TIMEOUTS.medium }
           )
 
+          // Assert authenticated UI remains visible (proves session persisted)
+          const authIndicator = page.locator('[data-testid="user-menu"]')
+          await expect(authIndicator).toBeVisible({ timeout: TEST_TIMEOUTS.short })
+
           // Brief pause to simulate realistic navigation
           await page.waitForTimeout(TEST_TIMEOUTS.short)
         }

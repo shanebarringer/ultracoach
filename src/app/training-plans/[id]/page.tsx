@@ -139,6 +139,12 @@ export default function TrainingPlanDetailPage() {
     }
   }, [session?.user?.id, planId, trainingPlan])
 
+  // Reset extended plan data when navigating to a different plan
+  // Prevents stale data (phases, race, adjacent plans) from previous plan
+  useEffect(() => {
+    setExtendedPlanData({})
+  }, [planId])
+
   useEffect(() => {
     if (status === 'loading') return
 

@@ -108,17 +108,24 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     }, 30000)
 
     // Refresh when user returns to the page - silent to avoid UX flicker
+    // Use backgroundInFlight guard to prevent concurrent refreshes and race conditions
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isActive) {
+      if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
+        backgroundInFlight = true
         logger.info('Page became visible, refreshing session')
-        getSession(false) // Silent refresh to avoid UX flicker
+        void getSession(false).finally(() => {
+          backgroundInFlight = false
+        })
       }
     }
 
     const handleFocus = () => {
-      if (isActive) {
+      if (!backgroundInFlight && isActive) {
+        backgroundInFlight = true
         logger.info('Window gained focus, refreshing session')
-        getSession(false) // Silent refresh to avoid UX flicker
+        void getSession(false).finally(() => {
+          backgroundInFlight = false
+        })
       }
     }
 
