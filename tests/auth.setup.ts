@@ -26,30 +26,83 @@ setup('authenticate @setup', async ({ page, context }) => {
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript issues
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: {
-      email: TEST_RUNNER_EMAIL,
-      password: TEST_RUNNER_PASSWORD,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+  // Retry configuration for handling intermittent JSON parsing errors (ULT-54)
+  const MAX_AUTH_RETRIES = 3
+  const BASE_RETRY_DELAY = 1000 // 1 second base delay
 
-  if (!response.ok()) {
-    const body = await response.text()
-    const preview = body
-      .slice(0, 300)
-      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
-    logger.error('Auth API failed', {
-      status: response.status(),
-      bodyPreview: preview,
-    })
-    throw new Error(`Authentication API failed with status ${response.status()}`)
+  let authResponse
+  let lastError: Error | null = null
+
+  // Implement retry logic with exponential backoff for intermittent auth failures
+  for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
+    try {
+      logger.info(`🔑 Authentication attempt ${attempt}/${MAX_AUTH_RETRIES}`)
+
+      authResponse = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
+        data: {
+          email: TEST_RUNNER_EMAIL,
+          password: TEST_RUNNER_PASSWORD,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      // Success case - break out of retry loop
+      if (authResponse.ok()) {
+        logger.info(`✅ Authentication API successful on attempt ${attempt}`)
+        break
+      }
+
+      // Non-500 errors (like 401 Unauthorized) should fail immediately - no retry
+      if (authResponse.status() !== 500) {
+        const body = await authResponse.text()
+        const preview = body
+          .slice(0, 300)
+          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
+        logger.error('Auth API failed with non-retryable error', {
+          status: authResponse.status(),
+          bodyPreview: preview,
+        })
+        throw new Error(`Authentication failed with status ${authResponse.status()} - ${preview}`)
+      }
+
+      // 500 error - log and prepare for retry
+      const body = await authResponse.text()
+      lastError = new Error(`Auth API returned 500 on attempt ${attempt}: ${body.slice(0, 100)}`)
+      logger.warn(`Auth attempt ${attempt} failed with 500 error, will retry...`, {
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
+      })
+    } catch (error) {
+      // Network or other errors
+      lastError = error as Error
+      logger.warn(`Auth attempt ${attempt} threw error, will retry...`, {
+        error: (error as Error).message,
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
+      })
+    }
+
+    // If this wasn't the last attempt, wait with exponential backoff
+    if (attempt < MAX_AUTH_RETRIES) {
+      const delay = BASE_RETRY_DELAY * attempt // Linear backoff: 1s, 2s, 3s
+      logger.info(`⏳ Waiting ${delay}ms before retry...`)
+      await page.waitForTimeout(delay)
+    }
   }
 
-  logger.info('✅ Authentication API successful')
+  // Check if we exhausted all retries without success
+  if (!authResponse || !authResponse.ok()) {
+    const finalError = lastError || new Error('Authentication failed after all retries')
+    logger.error('Auth API failed after all retry attempts', {
+      attempts: MAX_AUTH_RETRIES,
+      lastError: finalError.message,
+    })
+    throw new Error(
+      `Authentication failed after ${MAX_AUTH_RETRIES} attempts: ${finalError.message}`
+    )
+  }
 
   // The API call should have set cookies, now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/runner`)
