@@ -17,6 +17,7 @@ import { expect, test } from '@playwright/test'
 import {
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
+  TEST_TIMEOUTS,
   ensureAuthCookiesLoaded,
   navigateToDashboard,
 } from '../utils/test-helpers'
@@ -35,12 +36,12 @@ test.describe('Session Persistence', () => {
           await page.reload()
 
           // Should stay on dashboard
-          await expect(page).toHaveURL('/dashboard/runner')
+          await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
           // Dashboard should load properly
           const dashboard = page.locator('[data-testid="runner-dashboard-content"]')
-          await expect(dashboard).toBeVisible({ timeout: 15000 })
+          await expect(dashboard).toBeVisible({ timeout: TEST_TIMEOUTS.long })
         })
       }
     })
@@ -50,26 +51,26 @@ test.describe('Session Persistence', () => {
       await ensureAuthCookiesLoaded(page)
 
       // Navigate directly to workouts page (auth loaded via storageState)
-      await page.goto('/workouts', { timeout: 45000 })
+      await page.goto('/workouts', { timeout: TEST_TIMEOUTS.extraLong })
 
       // Wait for final URL (ensures no redirect to signin)
-      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: 30000 })
+      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
 
       // Wait for page content to prove authentication worked
       await expect(
         page.getByTestId('page-title').or(page.getByRole('heading', { name: /Training Log/i }))
-      ).toBeVisible({ timeout: 15000 })
+      ).toBeVisible({ timeout: TEST_TIMEOUTS.long })
 
       // Refresh page
       await page.reload()
 
       // Wait for final URL after refresh (critical test - should not redirect to signin)
-      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: 30000 })
+      await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
 
       // Verify page content is still accessible (proves session persisted)
       await expect(
         page.getByTestId('page-title').or(page.getByRole('heading', { name: /Training Log/i }))
-      ).toBeVisible({ timeout: 15000 })
+      ).toBeVisible({ timeout: TEST_TIMEOUTS.long })
     })
 
     test.skip('should maintain session on calendar page refresh', async ({ page }) => {
@@ -78,7 +79,7 @@ test.describe('Session Persistence', () => {
       // in async atoms. Should be re-enabled after fixing the session persistence bug.
       //
       await page.goto('/calendar')
-      await expect(page).toHaveURL('/calendar')
+      await expect(page).toHaveURL(/\/calendar(?:\?.*)?$/)
       await page.waitForLoadState('domcontentloaded')
 
       // Refresh page
@@ -86,12 +87,12 @@ test.describe('Session Persistence', () => {
       await page.waitForLoadState('domcontentloaded')
 
       // Should stay on calendar page
-      await expect(page).toHaveURL('/calendar')
-      await expect(page).not.toHaveURL('/auth/signin')
+      await expect(page).toHaveURL(/\/calendar(?:\?.*)?$/)
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
       // Calendar should load
       const calendarHeading = page.getByRole('heading', { name: /calendar/i })
-      await expect(calendarHeading).toBeVisible({ timeout: 10000 })
+      await expect(calendarHeading).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
     })
   })
 
@@ -119,8 +120,14 @@ test.describe('Session Persistence', () => {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
         await page.goto(route, { waitUntil: 'domcontentloaded' })
 
-        // Should be on the correct route
-        await expect(page).toHaveURL(route, { timeout: 30000 })
+        // Should be on the correct route (pathname comparison to handle query params)
+        await page.waitForURL(
+          url => {
+            const pathname = new URL(url).pathname
+            return pathname === route || pathname.startsWith(`${route}?`)
+          },
+          { timeout: 30000 }
+        )
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
         // Simplified approach: Just wait for the user menu to appear
@@ -131,7 +138,7 @@ test.describe('Session Persistence', () => {
         try {
           // Wait up to 30 seconds for user menu to appear
           // This accounts for: network latency + BetterAuthProvider init + React render cycles
-          await expect(authIndicators).toBeVisible({ timeout: 30000 })
+          await expect(authIndicators).toBeVisible({ timeout: TEST_TIMEOUTS.long })
         } catch (error) {
           // If user menu didn't appear, capture diagnostics
           const currentUrl = page.url()
@@ -177,11 +184,11 @@ test.describe('Session Persistence', () => {
               const pathname = new URL(url).pathname
               return pathname === route || pathname.startsWith(`${route}?`)
             },
-            { timeout: 5000 }
+            { timeout: TEST_TIMEOUTS.medium }
           )
 
           // Brief pause to simulate realistic navigation
-          await page.waitForTimeout(500)
+          await page.waitForTimeout(TEST_TIMEOUTS.short)
         }
       }
     })
@@ -243,7 +250,7 @@ test.describe('Session Persistence', () => {
           // If still on protected route, check if it shows signin form or redirect
           const signinForm = page.locator('form, input[type="email"]')
           try {
-            await expect(signinForm).toBeVisible({ timeout: 2000 })
+            await expect(signinForm).toBeVisible({ timeout: TEST_TIMEOUTS.short })
           } catch {
             throw new Error(`Still on protected route ${route} without visible signin form`)
           }
@@ -269,7 +276,9 @@ test.describe('Session Persistence', () => {
       const isOnSignin = page.url().includes('/auth/signin')
       let hasSigninForm = false
       try {
-        await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 5000 })
+        await expect(page.locator('input[type="email"]')).toBeVisible({
+          timeout: TEST_TIMEOUTS.medium,
+        })
         hasSigninForm = true
       } catch {
         // No signin form visible
@@ -294,8 +303,7 @@ test.describe('Session Persistence', () => {
       await page.getByRole('button', { name: /sign in|Begin Your Expedition/i }).click()
 
       // Should redirect to dashboard
-      await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
-      await expect(page).toHaveURL('/dashboard/runner')
+      await page.waitForURL('**/dashboard/runner', { timeout: TEST_TIMEOUTS.long })
 
       // Session should now persist across navigation
       await page.goto('/workouts')
@@ -326,8 +334,8 @@ test.describe('Session Persistence', () => {
       for (const selector of userMenuSelectors) {
         try {
           const element = page.locator(selector).first()
-          await expect(element).toBeVisible({ timeout: 2000 })
-          await element.click({ timeout: 5000 })
+          await expect(element).toBeVisible({ timeout: TEST_TIMEOUTS.short })
+          await element.click({ timeout: TEST_TIMEOUTS.medium })
           clicked = true
           break
         } catch {
@@ -343,7 +351,7 @@ test.describe('Session Persistence', () => {
       const signOutButton = page
         .getByRole('button', { name: /sign out/i })
         .or(page.getByRole('menuitem', { name: /sign out/i }))
-      await expect(signOutButton).toBeVisible({ timeout: 10000 })
+      await expect(signOutButton).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
       await signOutButton.click()
 
       // Should redirect to home
@@ -396,14 +404,14 @@ test.describe('Session Persistence', () => {
       for (const operation of operations) {
         await operation()
         // Brief pause between operations
-        await page.waitForTimeout(500)
+        await page.waitForTimeout(TEST_TIMEOUTS.short)
       }
 
       // Final verification - still authenticated
       await page.goto('/dashboard/runner')
       await expect(page).toHaveURL('/dashboard/runner')
       const dashboardContent = page.locator('[data-testid="runner-dashboard-content"]')
-      await expect(dashboardContent).toBeVisible({ timeout: 10000 })
+      await expect(dashboardContent).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
     })
   })
 })

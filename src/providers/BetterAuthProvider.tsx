@@ -20,15 +20,21 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
 
+    // Unmount guard to prevent state updates after component cleanup
+    let isActive = true
+
     // Track in-flight session checks with loading state to prevent race conditions
     let inFlightWithLoading = 0
 
+    // Track background refresh to prevent overlapping calls
+    let backgroundInFlight = false
+
     // Get session with optional loading state control
-    // setLoading=true shows loading spinner (initial check, user returns to page)
-    // setLoading=false runs silently (periodic background refresh)
+    // setLoading=true shows loading spinner (initial check)
+    // setLoading=false runs silently (periodic background refresh, focus/visibility events)
     const getSession = async (setLoading = false) => {
       // Track this check if it should show loading
-      if (setLoading) {
+      if (setLoading && isActive) {
         inFlightWithLoading++
         if (inFlightWithLoading === 1) {
           // Only set loading on the first in-flight check
@@ -44,24 +50,39 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
           if (error.status !== 404 && error.status !== 401) {
             logger.error('Better Auth session error:', error)
           }
-          setSession(null)
-          setUser(null)
+          if (isActive) {
+            setSession(null)
+            setUser(null)
+          }
         } else if (session) {
-          logger.info('Better Auth session loaded:', session.user?.email)
-          setSession(session)
-          setUser(session?.user ? (session.user as User) : null)
+          // Log session loaded without PII (no email)
+          logger.info('Better Auth session loaded', {
+            hasSession: true,
+            userId: session.user?.id,
+          })
+          if (isActive) {
+            setSession(session)
+            setUser(session?.user ? (session.user as User) : null)
+          }
         } else {
           // No session found, which is normal for unauthenticated users
+          if (isActive) {
+            setSession(null)
+            setUser(null)
+          }
+        }
+      } catch (error) {
+        // Sanitize error logging - only log safe properties
+        logger.warn('Session check failed (normal if not logged in)', {
+          name: (error as Error)?.name,
+          message: (error as Error)?.message,
+        })
+        if (isActive) {
           setSession(null)
           setUser(null)
         }
-      } catch (error) {
-        // Don't log network errors on homepage - it's normal not to have a session
-        logger.warn('Session check failed (normal if not logged in):', error)
-        setSession(null)
-        setUser(null)
       } finally {
-        if (setLoading) {
+        if (setLoading && isActive) {
           inFlightWithLoading--
           if (inFlightWithLoading === 0) {
             setAuthLoading(false)
@@ -76,23 +97,29 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
 
     // Set up periodic session refresh to prevent staleness
     // Runs silently (no loading state) to avoid UI flicker every 30 seconds
+    // Guard prevents overlapping calls on slow networks
     const refreshInterval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        getSession(false) // Silent background refresh
+      if (document.visibilityState === 'visible' && !backgroundInFlight && isActive) {
+        backgroundInFlight = true
+        void getSession(false).finally(() => {
+          backgroundInFlight = false
+        })
       }
     }, 30000)
 
-    // Refresh when user returns to the page - show loading state
+    // Refresh when user returns to the page - silent to avoid UX flicker
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && isActive) {
         logger.info('Page became visible, refreshing session')
-        getSession(true) // Show loading when user returns
+        getSession(false) // Silent refresh to avoid UX flicker
       }
     }
 
     const handleFocus = () => {
-      logger.info('Window gained focus, refreshing session')
-      getSession(true) // Show loading when window regains focus
+      if (isActive) {
+        logger.info('Window gained focus, refreshing session')
+        getSession(false) // Silent refresh to avoid UX flicker
+      }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -100,6 +127,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
 
     // Clean up interval and event listeners on unmount
     return () => {
+      isActive = false // Prevent any further state updates
       clearInterval(refreshInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)

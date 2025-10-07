@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -22,7 +22,8 @@ import Layout from '@/components/layout/Layout'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
-import { refreshWorkoutsAtom, refreshableTrainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
+import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
+import { asyncTrainingPlansAtom, refreshTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -45,9 +46,9 @@ export default function TrainingPlanDetailPage() {
   const planId = params.id as string
 
   // Use Jotai atoms for centralized state management
-  const allTrainingPlans = useAtomValue(refreshableTrainingPlansAtom)
+  const allTrainingPlans = useAtomValue(asyncTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const [, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+  const refreshTrainingPlans = useSetAtom(refreshTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom

@@ -4,7 +4,7 @@ import { loadable } from 'jotai/utils'
 
 import { asyncConversationsAtom } from '../chat'
 import { asyncNotificationsAtom } from '../notifications'
-import { refreshableTrainingPlansAtom } from '../training-plans'
+import { asyncTrainingPlansAtom } from '../training-plans'
 import { withDebugLabel } from '../utils'
 import { asyncWorkoutsAtom } from '../workouts'
 
@@ -31,7 +31,7 @@ export const loadableWorkoutsAtom = loadable(fetchWorkoutsAtom)
 export const workoutsLoadableAtom = loadable(asyncWorkoutsAtom)
 export const notificationsLoadableAtom = loadable(asyncNotificationsAtom)
 export const conversationsLoadableAtom = loadable(asyncConversationsAtom)
-export const trainingPlansLoadableAtom = loadable(refreshableTrainingPlansAtom)
+export const trainingPlansLoadableAtom = loadable(asyncTrainingPlansAtom)
 
 // Helper to check loading state
 export const isLoadingAtom = atom(get => {
