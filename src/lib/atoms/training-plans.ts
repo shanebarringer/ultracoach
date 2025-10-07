@@ -22,8 +22,6 @@ const isBrowser = typeof window !== 'undefined'
 
 // Core training plan atoms
 export const trainingPlansAtom = atom<ExtendedTrainingPlan[]>([])
-export const trainingPlansLoadingAtom = atom(false)
-export const trainingPlansErrorAtom = atom<string | null>(null)
 
 // Refresh trigger atom for training plans
 const trainingPlansRefreshTriggerAtom = atom(0)
@@ -53,7 +51,7 @@ export const asyncTrainingPlansAtom = atom(async get => {
     // API returns { trainingPlans: [...] } so extract the array
     const plansArray = normalizeListResponse(data, 'trainingPlans')
     logger.debug('Training plans fetched', { count: plansArray.length })
-    return plansArray as ExtendedTrainingPlan[]
+    return plansArray
   } catch (error) {
     logger.error('Error fetching training plans', error)
     return []
@@ -88,7 +86,7 @@ export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
     // API returns { trainingPlans: [...] } so extract the array
     const plansArray = normalizeListResponse(data, 'trainingPlans')
     logger.debug('Training plans fetched', { count: plansArray.length })
-    return plansArray as ExtendedTrainingPlan[]
+    return plansArray
   } catch (error) {
     logger.error('Error fetching training plans', error)
     return []
@@ -120,8 +118,6 @@ export const planTemplatesAtom = atom<PlanTemplate[]>([])
 
 // Jotai Devtools debug labels (dev-only)
 withDebugLabel(trainingPlansAtom, 'trainingPlans/list')
-withDebugLabel(trainingPlansLoadingAtom, 'trainingPlans/loading')
-withDebugLabel(trainingPlansErrorAtom, 'trainingPlans/error')
 withDebugLabel(asyncTrainingPlansAtom, 'trainingPlans/async')
 withDebugLabel(refreshableTrainingPlansAtom, 'trainingPlans/refreshable')
 withDebugLabel(selectedTrainingPlanAtom, 'trainingPlans/selected')

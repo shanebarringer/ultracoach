@@ -170,7 +170,15 @@ test.describe('Session Persistence', () => {
 
           // Should never be redirected to signin
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-          await expect(page).toHaveURL(new RegExp(`^${route}(?:\\?.*)?$`))
+
+          // Check pathname matches route (waitForURL compares full URL with origin)
+          await page.waitForURL(
+            url => {
+              const pathname = new URL(url).pathname
+              return pathname === route || pathname.startsWith(`${route}?`)
+            },
+            { timeout: 5000 }
+          )
 
           // Brief pause to simulate realistic navigation
           await page.waitForTimeout(500)

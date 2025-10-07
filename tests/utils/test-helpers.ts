@@ -109,9 +109,16 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
   await page.goto(user.expectedDashboard)
 
-  // Wait for dashboard URL (removed networkidle - causes CI hangs)
-  // Anchor the RegExp to prevent matching longer URLs
-  await page.waitForURL(new RegExp(`^${user.expectedDashboard}(?:\\?.*)?$`), { timeout: 30000 })
+  // Wait for dashboard URL using pathname comparison (RegExp won't work with full URL including origin)
+  await page.waitForURL(
+    url => {
+      const pathname = new URL(url).pathname
+      return (
+        pathname === user.expectedDashboard || pathname.startsWith(`${user.expectedDashboard}?`)
+      )
+    },
+    { timeout: 30000 }
+  )
 
   // Wait for Suspense boundary to resolve by checking for dashboard content
   const dashboardTestId =

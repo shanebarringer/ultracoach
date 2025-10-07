@@ -20,18 +20,23 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
 
+    // Track in-flight session checks with loading state to prevent race conditions
+    let inFlightWithLoading = 0
+
     // Get session with optional loading state control
     // setLoading=true shows loading spinner (initial check, user returns to page)
     // setLoading=false runs silently (periodic background refresh)
     const getSession = async (setLoading = false) => {
-      try {
-        // CRITICAL: Only set loading state for initial checks and explicit user actions
-        // Background refreshes (30s interval) run silently to avoid UI flicker
-        if (setLoading) {
+      // Track this check if it should show loading
+      if (setLoading) {
+        inFlightWithLoading++
+        if (inFlightWithLoading === 1) {
+          // Only set loading on the first in-flight check
           setAuthLoading(true)
           logger.info('BetterAuthProvider: Starting session check with loading state')
         }
-
+      }
+      try {
         const { data: session, error } = await authClient.getSession()
 
         if (error) {
@@ -57,8 +62,11 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         setUser(null)
       } finally {
         if (setLoading) {
-          setAuthLoading(false)
-          logger.info('BetterAuthProvider: Session check complete, loading state cleared')
+          inFlightWithLoading--
+          if (inFlightWithLoading === 0) {
+            setAuthLoading(false)
+            logger.info('BetterAuthProvider: All session checks complete, loading state cleared')
+          }
         }
       }
     }
