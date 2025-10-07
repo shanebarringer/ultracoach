@@ -65,7 +65,14 @@ export const refreshTrainingPlansAtom = atom(null, (_get, set) => {
   set(trainingPlansRefreshTriggerAtom, prev => prev + 1)
 })
 
-// Refreshable training plans atom using atomWithRefresh
+/**
+ * @deprecated This atom is superseded by asyncTrainingPlansAtom with Suspense pattern.
+ * Using loadable(refreshableAtom) with Suspense causes infinite render loops.
+ * Kept temporarily for backward compatibility. Will be removed in future version.
+ * Use asyncTrainingPlansAtom + useHydrateTrainingPlans() instead.
+ *
+ * See ULT-60 for app-wide audit of loadable + Suspense anti-patterns.
+ */
 export const refreshableTrainingPlansAtom = atomWithRefresh(async () => {
   // Only execute on client-side to prevent build-time fetch errors
   if (!isBrowser) return []

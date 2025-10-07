@@ -20,78 +20,71 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     // Only run on client side to prevent hydration issues
     if (typeof window === 'undefined') return
 
-    // Get initial session
-    const getSession = async () => {
+    // Get session with optional loading state control
+    // setLoading=true shows loading spinner (initial check, user returns to page)
+    // setLoading=false runs silently (periodic background refresh)
+    const getSession = async (setLoading = false) => {
       try {
-        // CRITICAL: Always set loading to true at the start of session check
-        // This ensures loading state is properly reset on each page navigation
-        // (Jotai atoms persist across navigations in tests, so explicit reset needed)
-        setAuthLoading(true)
+        // CRITICAL: Only set loading state for initial checks and explicit user actions
+        // Background refreshes (30s interval) run silently to avoid UI flicker
+        if (setLoading) {
+          setAuthLoading(true)
+          logger.info('BetterAuthProvider: Starting session check with loading state')
+        }
 
-        logger.info('BetterAuthProvider: Calling authClient.getSession()...')
         const { data: session, error } = await authClient.getSession()
-        logger.info('BetterAuthProvider: getSession() returned:', {
-          hasSession: !!session,
-          hasError: !!error,
-          email: session?.user?.email,
-        })
 
         if (error) {
           // Don't log error for normal "no session" cases
           if (error.status !== 404 && error.status !== 401) {
             logger.error('Better Auth session error:', error)
           }
-          logger.info('BetterAuthProvider: Setting session to null due to error')
           setSession(null)
           setUser(null)
         } else if (session) {
-          logger.info('BetterAuthProvider: Setting session and user:', session.user?.email)
+          logger.info('Better Auth session loaded:', session.user?.email)
           setSession(session)
           setUser(session?.user ? (session.user as User) : null)
-          logger.info('BetterAuthProvider: Session atoms updated successfully')
         } else {
           // No session found, which is normal for unauthenticated users
-          logger.info('BetterAuthProvider: No session returned, setting to null')
           setSession(null)
           setUser(null)
         }
       } catch (error) {
         // Don't log network errors on homepage - it's normal not to have a session
-        logger.warn(
-          'BetterAuthProvider: Session check failed (this is normal if not logged in):',
-          error
-        )
+        logger.warn('Session check failed (normal if not logged in):', error)
         setSession(null)
         setUser(null)
       } finally {
-        logger.info('BetterAuthProvider: Setting authLoading to false')
-        setAuthLoading(false)
+        if (setLoading) {
+          setAuthLoading(false)
+          logger.info('BetterAuthProvider: Session check complete, loading state cleared')
+        }
       }
     }
 
-    // Get initial session
-    getSession()
+    // Initial session check - show loading state
+    getSession(true)
 
     // Set up periodic session refresh to prevent staleness
-    // This helps fix the issue where users need manual refresh after login
+    // Runs silently (no loading state) to avoid UI flicker every 30 seconds
     const refreshInterval = setInterval(() => {
-      // Only refresh if we have a session and page is visible
       if (document.visibilityState === 'visible') {
-        getSession()
+        getSession(false) // Silent background refresh
       }
-    }, 30000) // Refresh every 30 seconds when page is visible
+    }, 30000)
 
-    // Also refresh when user returns to the page
+    // Refresh when user returns to the page - show loading state
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         logger.info('Page became visible, refreshing session')
-        getSession()
+        getSession(true) // Show loading when user returns
       }
     }
 
     const handleFocus = () => {
       logger.info('Window gained focus, refreshing session')
-      getSession()
+      getSession(true) // Show loading when window regains focus
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)

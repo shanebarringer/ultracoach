@@ -20,20 +20,27 @@ export const TEST_TIMEOUTS = {
  * causing redirects to /auth/signin despite valid authentication state.
  *
  * @param page - Playwright page instance
+ * @param baseUrl - Optional base URL for CHIPS-partitioned cookie support
+ * @param expectedCookieName - Exact cookie name to verify (default: 'better-auth.session_token')
  * @throws Error if Better Auth session cookie is not found after retries
  */
-export async function ensureAuthCookiesLoaded(page: Page): Promise<void> {
+export async function ensureAuthCookiesLoaded(
+  page: Page,
+  baseUrl?: string,
+  expectedCookieName = 'better-auth.session_token'
+): Promise<void> {
   const maxRetries = 3
   const retryDelay = process.env.CI ? 500 : 200
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
-    const cookies = await page.context().cookies()
+    // Pass URL for CHIPS-partitioned cookie support if provided
+    const cookies = baseUrl
+      ? await page.context().cookies([baseUrl])
+      : await page.context().cookies()
 
-    // Verify Better Auth session cookie exists
-    const sessionCookie = cookies.find(
-      cookie => cookie.name === 'better-auth.session_token' || cookie.name.includes('session')
-    )
+    // Verify Better Auth session cookie exists with exact name match
+    const sessionCookie = cookies.find(cookie => cookie.name === expectedCookieName)
 
     if (sessionCookie) {
       // Cookie found - add small buffer for browser processing
@@ -48,9 +55,11 @@ export async function ensureAuthCookiesLoaded(page: Page): Promise<void> {
   }
 
   // If we get here, cookies are not available
-  const allCookies = await page.context().cookies()
+  const allCookies = baseUrl
+    ? await page.context().cookies([baseUrl])
+    : await page.context().cookies()
   throw new Error(
-    `Better Auth session cookie not found after ${maxRetries} attempts. ` +
+    `Better Auth session cookie "${expectedCookieName}" not found after ${maxRetries} attempts. ` +
       `Available cookies: ${allCookies.map(c => c.name).join(', ')}`
   )
 }
@@ -101,7 +110,8 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   await page.goto(user.expectedDashboard)
 
   // Wait for dashboard URL (removed networkidle - causes CI hangs)
-  await page.waitForURL(new RegExp(user.expectedDashboard), { timeout: 30000 })
+  // Anchor the RegExp to prevent matching longer URLs
+  await page.waitForURL(new RegExp(`^${user.expectedDashboard}(?:\\?.*)?$`), { timeout: 30000 })
 
   // Wait for Suspense boundary to resolve by checking for dashboard content
   const dashboardTestId =

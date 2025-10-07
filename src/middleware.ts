@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   // This is an intentional architectural decision prioritizing test reliability while
   // maintaining security through Server Component authentication.
   //
-  // See: CLAUDE.md for complete Server/Client Component architecture requirements
+  // See: PLANNING.md for complete Server/Client Component architecture requirements
 
   // Default: allow other routes for now
   return NextResponse.next()

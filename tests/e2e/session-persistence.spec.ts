@@ -63,9 +63,6 @@ test.describe('Session Persistence', () => {
       // Refresh page
       await page.reload()
 
-      // Re-ensure cookies are loaded after page refresh
-      await ensureAuthCookiesLoaded(page)
-
       // Wait for final URL after refresh (critical test - should not redirect to signin)
       await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: 30000 })
 
@@ -101,7 +98,7 @@ test.describe('Session Persistence', () => {
   test.describe('Cross-Route Navigation', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
-    test('should maintain session across all protected routes', async ({ page }) => {
+    test('should maintain session across all protected routes', async ({ page }, testInfo) => {
       // Increase timeout for comprehensive 6-route navigation test
       // (Next.js compilation can take 20-30s for some routes on first visit)
       test.setTimeout(90000)
@@ -119,9 +116,6 @@ test.describe('Session Persistence', () => {
       await ensureAuthCookiesLoaded(page)
 
       for (const route of routes) {
-        // DEBUG: Log which route we're testing
-        console.log(`[DEBUG] Testing route: ${route}`)
-
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
         await page.goto(route, { waitUntil: 'domcontentloaded' })
 
@@ -143,9 +137,9 @@ test.describe('Session Persistence', () => {
           const currentUrl = page.url()
           const errorMessage = error instanceof Error ? error.message : String(error)
 
-          // Take screenshot for debugging
+          // Take screenshot for debugging (portable path via testInfo)
           await page.screenshot({
-            path: `/tmp/session-debug-${route.replace(/\//g, '-')}-failed.png`,
+            path: testInfo.outputPath(`session-debug-${route.replace(/\//g, '-')}-failed.png`),
           })
 
           if (currentUrl.includes('/auth/signin')) {
