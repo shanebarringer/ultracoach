@@ -10,7 +10,7 @@ export const TEST_TIMEOUTS = {
 }
 
 /**
- * Ensure authentication cookies are loaded from storageState context.
+ * Ensure authentication cookies are loaded from storageState context and verify they work.
  *
  * CRITICAL: Playwright loads storageState cookies asynchronously, but Next.js Server Components
  * need cookies immediately when calling requireAuth(). This helper synchronizes the timing
@@ -19,10 +19,14 @@ export const TEST_TIMEOUTS = {
  * This prevents race conditions where server-side auth checks happen before cookies are available,
  * causing redirects to /auth/signin despite valid authentication state.
  *
- * @param page - Playwright page instance
+ * ⚠️ WARNING: The page must have performed a navigation (e.g., page.goto or equivalent) before
+ * calling this function. The function uses page.evaluate(() => fetch()) to verify the session
+ * and relies on cookies being available in the page context.
+ *
+ * @param page - Playwright page instance (must have navigated to establish page context)
  * @param baseUrl - Optional base URL for CHIPS-partitioned cookie support
  * @param expectedCookieName - Exact cookie name to verify (default: 'better-auth.session_token')
- * @throws Error if Better Auth session cookie is not found after retries
+ * @throws Error if Better Auth session cookie is not working after retries
  */
 export async function ensureAuthCookiesLoaded(
   page: Page,
