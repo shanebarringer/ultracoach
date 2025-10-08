@@ -305,11 +305,12 @@ test.describe('Workout Management', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Ensure cookies are loaded from storageState before navigation
-      await ensureAuthCookiesLoaded(page)
-
       // Navigate directly to the coach dashboard - we're already authenticated
-      await page.goto('/dashboard/coach')
+      await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
+
+      // Ensure cookies are loaded from storageState AFTER navigation (CHIPS-compatible)
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 

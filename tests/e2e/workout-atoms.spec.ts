@@ -211,7 +211,9 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Either notification or status update should be visible
           try {
-            await expect(successNotification.or(statusUpdate)).toBeVisible({ timeout: 5000 })
+            await expect(successNotification.or(statusUpdate)).toBeVisible({
+              timeout: TEST_TIMEOUTS.short,
+            })
           } catch {
             // Fallback: prove the targeted workout left the "planned" list
             const remainingPlanned = await page

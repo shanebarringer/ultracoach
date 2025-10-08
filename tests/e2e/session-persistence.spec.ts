@@ -130,7 +130,7 @@ test.describe('Session Persistence', () => {
             const pathname = new URL(url).pathname
             return pathname === route || pathname.startsWith(`${route}?`)
           },
-          { timeout: 30000 }
+          { timeout: TEST_TIMEOUTS.long }
         )
         await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
@@ -322,6 +322,9 @@ test.describe('Session Persistence', () => {
 
       // Should redirect to dashboard
       await page.waitForURL(/\/dashboard\/runner(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
+
+      // Verify cookies after signin redirect for deterministic follow-up navigations (CHIPS-compatible)
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       // Session should now persist across navigation
       await page.goto('/workouts')

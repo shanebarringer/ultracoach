@@ -186,8 +186,10 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
     // Loading text may not appear, continue
   }
 
-  // Verify we're on the correct dashboard (use pathname predicate for consistency)
-  await expect(page).toHaveURL(url => new URL(url).pathname === user.expectedDashboard)
+  // Verify we're on the correct dashboard using regex with optional query params
+  //  user.expectedDashboard is either '/dashboard/coach' or '/dashboard/runner' - no special chars to escape
+  const dashboardRegex = new RegExp(`${user.expectedDashboard}(?:\\?.*)?$`)
+  await expect(page).toHaveURL(dashboardRegex, { timeout: TEST_TIMEOUTS.long })
 }
 
 /**
