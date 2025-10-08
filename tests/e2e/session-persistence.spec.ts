@@ -388,6 +388,8 @@ test.describe('Session Persistence', () => {
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
         },
         async () => {
+          // Re-ensure cookies before new navigation (long-running test may lose cookies)
+          await ensureAuthCookiesLoaded(page)
           await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
           await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
         },
@@ -396,6 +398,8 @@ test.describe('Session Persistence', () => {
           await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
         },
         async () => {
+          // Re-ensure cookies before final navigation (long-running test may lose cookies)
+          await ensureAuthCookiesLoaded(page)
           await page.goto('/training-plans', { waitUntil: 'domcontentloaded' })
           await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
         },

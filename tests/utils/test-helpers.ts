@@ -43,7 +43,30 @@ export async function ensureAuthCookiesLoaded(
     const sessionCookie = cookies.find(cookie => cookie.name === expectedCookieName)
 
     if (sessionCookie) {
-      // Cookie found - add longer buffer for CI browser processing
+      /**
+       * CRITICAL: Fixed timeout required for browser HTTP stack cookie propagation.
+       *
+       * Why this timeout exists:
+       * - Playwright's context.cookies() reads storageState synchronously
+       * - The browser's HTTP stack needs additional time to make cookies available for outgoing requests
+       * - Without this buffer, page.goto() may execute before cookies are attached to HTTP headers
+       *
+       * This is a known limitation of Playwright's storageState approach:
+       * - Cookie state is restored at browser context creation time
+       * - HTTP cookie jar synchronization happens asynchronously
+       * - No Playwright API exists to verify cookies are fully propagated to HTTP requests
+       *
+       * Alternative verification approach (not used):
+       * - Could make test request to /api/auth/get-session to verify cookie works
+       * - Risk: Creates circular dependency (auth API depends on this helper in tests)
+       * - Risk: Adds API call overhead to every test using ensureAuthCookiesLoaded()
+       * - Risk: API failures would cause false negatives in unrelated tests
+       *
+       * CI needs 5x longer buffer (500ms vs 100ms) due to:
+       * - Higher system load and resource contention
+       * - Docker container networking latency
+       * - Virtualized browser process scheduling delays
+       */
       await page.waitForTimeout(process.env.CI ? 500 : 100)
       return
     }
