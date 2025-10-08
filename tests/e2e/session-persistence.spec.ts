@@ -380,6 +380,8 @@ test.describe('Session Persistence', () => {
       // Perform multiple operations that would typically test session stability
       const operations = [
         async () => {
+          // CRITICAL: Ensure cookies loaded immediately before first navigation
+          await ensureAuthCookiesLoaded(page)
           await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
           await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
         },
