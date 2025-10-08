@@ -26,27 +26,40 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript issues
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: {
+  // Use page.evaluate(() => fetch()) to ensure cookies attach to browser context
+  // This is critical - page.request.post() would set cookies in isolated context
+  const response = await page.evaluate(
+    async ({ apiUrl, email, password }) => {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password }),
+      })
+      return {
+        ok: response.ok,
+        status: response.status,
+        body: response.ok ? await response.json() : await response.text(),
+      }
+    },
+    {
+      apiUrl: `${baseUrl}/api/auth/sign-in/email`,
       email: TEST_COACH_EMAIL,
       password: TEST_COACH_PASSWORD,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+    }
+  )
 
-  if (!response.ok()) {
-    const body = await response.text()
-    const preview = body
+  if (!response.ok) {
+    const bodyText =
+      typeof response.body === 'string' ? response.body : JSON.stringify(response.body)
+    const preview = bodyText
       .slice(0, 300)
       .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
     logger.error('Coach Auth API failed', {
-      status: response.status(),
+      status: response.status,
       bodyPreview: preview,
     })
-    throw new Error(`Coach authentication API failed with status ${response.status()}`)
+    throw new Error(`Coach authentication API failed with status ${response.status}`)
   }
 
   logger.info('✅ Coach authentication API successful')
