@@ -164,9 +164,7 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   await page.waitForURL(
     url => {
       const pathname = new URL(url).pathname
-      return (
-        pathname === user.expectedDashboard || pathname.startsWith(`${user.expectedDashboard}?`)
-      )
+      return pathname === user.expectedDashboard
     },
     { timeout: 30000 }
   )

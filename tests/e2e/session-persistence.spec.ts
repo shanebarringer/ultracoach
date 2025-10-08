@@ -391,8 +391,18 @@ test.describe('Session Persistence', () => {
       // Increase timeout for multiple route navigation with Next.js compilation
       test.setTimeout(60000)
 
-      // Use navigateToDashboard which is more reliable after many tests
-      await navigateToDashboard(page, 'runner')
+      // After many tests, get fresh auth to prevent session token expiry or corruption
+      // Clear old cookies and re-authenticate instead of relying on potentially stale storageState
+      await page.context().clearCookies()
+
+      // Re-authenticate with fresh API call to get new session token
+      await page.goto('/auth/signin')
+      await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)
+      await page.getByLabel(/password|passcode/i).fill(TEST_RUNNER_PASSWORD)
+      await page.getByRole('button', { name: /sign in|Begin Your Expedition/i }).click()
+
+      // Wait for successful redirect to dashboard
+      await page.waitForURL(/\/dashboard\/runner(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
 
       // Perform multiple operations that would typically test session stability
       await page.reload({ waitUntil: 'domcontentloaded' })
