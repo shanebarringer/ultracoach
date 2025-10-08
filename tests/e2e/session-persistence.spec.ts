@@ -244,6 +244,8 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Session Validation', () => {
+    test.use({ storageState: './playwright/.auth/runner.json' })
+
     test('should redirect unauthenticated users to signin', async ({ page }) => {
       // Clear all cookies and storage
       await page.context().clearCookies()
@@ -303,6 +305,8 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Authentication Flow Integration', () => {
+    test.use({ storageState: './playwright/.auth/runner.json' })
+
     test('should establish session after successful signin', async ({ page }) => {
       // Clear existing session
       await page.context().clearCookies()
