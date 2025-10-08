@@ -77,8 +77,10 @@ export default defineConfig({
   quiet: !!process.env.CI,
   /* Increase retries for CI stability */
   retries: process.env.CI ? 3 : 0,
-  /* Limited workers for CI balance of speed vs stability */
-  workers: process.env.CI ? 2 : undefined, // CI: 2 workers for better performance, Local: auto
+  /* Single worker to prevent concurrent session token usage (ULT-54) */
+  // Multiple workers sharing same storageState files causes session conflicts
+  // TODO: Implement per-worker auth fixtures (Phase 2) to restore parallelism
+  workers: process.env.CI ? 1 : undefined, // CI: 1 worker (session isolation), Local: auto
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   // Reporters: keep concise output in CI but always generate an HTML report for debugging
   reporter: process.env.CI ? [['dot'], ['html']] : [['list'], ['html']],
