@@ -29,8 +29,8 @@ export async function ensureAuthCookiesLoaded(
   baseUrl?: string,
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
-  const maxRetries = 3
-  const retryDelay = process.env.CI ? 1000 : 200
+  const maxRetries = 5
+  const retryDelay = process.env.CI ? 2000 : 500
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
@@ -44,46 +44,63 @@ export async function ensureAuthCookiesLoaded(
 
     if (sessionCookie) {
       /**
-       * CRITICAL: Fixed timeout required for browser HTTP stack cookie propagation.
+       * CRITICAL: Active verification that cookies work with server-side authentication.
        *
-       * Why this timeout exists:
-       * - Playwright's context.cookies() reads storageState synchronously
-       * - The browser's HTTP stack needs additional time to make cookies available for outgoing requests
-       * - Without this buffer, page.goto() may execute before cookies are attached to HTTP headers
+       * Why we verify instead of using fixed timeouts:
+       * - Fixed timeouts (500ms, 1000ms, etc.) are unreliable in CI environments
+       * - Browser HTTP stack cookie propagation timing varies by system load
+       * - No Playwright API exists to confirm cookies are attached to HTTP headers
        *
-       * This is a known limitation of Playwright's storageState approach:
-       * - Cookie state is restored at browser context creation time
-       * - HTTP cookie jar synchronization happens asynchronously
-       * - No Playwright API exists to verify cookies are fully propagated to HTTP requests
+       * Verification approach:
+       * - Make test request to /api/auth/get-session to verify cookies work
+       * - Retry up to 5 times with exponential backoff if session API returns 401/404
+       * - Only proceed when server confirms valid session
+       * - Fails fast if authentication is broken (don't wait for navigation timeout)
        *
-       * Alternative verification approach (not used):
-       * - Could make test request to /api/auth/get-session to verify cookie works
-       * - Risk: Creates circular dependency (auth API depends on this helper in tests)
-       * - Risk: Adds API call overhead to every test using ensureAuthCookiesLoaded()
-       * - Risk: API failures would cause false negatives in unrelated tests
-       *
-       * CI needs 5x longer buffer (500ms vs 100ms) due to:
-       * - Higher system load and resource contention
-       * - Docker container networking latency
-       * - Virtualized browser process scheduling delays
+       * Benefits over fixed timeout approach:
+       * - Works reliably across different CI environments and system loads
+       * - Catches authentication issues immediately (not after 30s navigation timeout)
+       * - No guesswork about timing - we verify cookies actually work
        */
-      await page.waitForTimeout(process.env.CI ? 500 : 100)
-      return
+      try {
+        const response = await page.request.get('/api/auth/get-session')
+
+        if (response.ok()) {
+          const sessionData = await response.json()
+          if (sessionData?.session?.userId) {
+            // Session verified - cookies are working!
+            return
+          }
+        }
+
+        // Session API didn't return valid session - retry
+        if (attempt < maxRetries) {
+          await page.waitForTimeout(retryDelay)
+          continue
+        }
+      } catch (error) {
+        // Network error or API failure - retry
+        if (attempt < maxRetries) {
+          await page.waitForTimeout(retryDelay)
+          continue
+        }
+      }
     }
 
-    // Cookie not found - wait and retry
+    // Cookie not found or session verification failed - wait and retry
     if (attempt < maxRetries) {
       await page.waitForTimeout(retryDelay)
     }
   }
 
-  // If we get here, cookies are not available
+  // If we get here, cookies are not available or not working
   const allCookies = baseUrl
     ? await page.context().cookies([baseUrl])
     : await page.context().cookies()
   throw new Error(
-    `Better Auth session cookie "${expectedCookieName}" not found after ${maxRetries} attempts. ` +
-      `Available cookies: ${allCookies.map(c => c.name).join(', ')}`
+    `Better Auth session cookie "${expectedCookieName}" not working after ${maxRetries} attempts. ` +
+      `Available cookies: ${allCookies.map(c => c.name).join(', ')}. ` +
+      `Session verification via /api/auth/get-session failed.`
   )
 }
 

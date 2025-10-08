@@ -169,9 +169,9 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Should show success notification
+      // Should show success notification (use .first() to avoid strict mode violation)
       await expect(
-        page.getByText(/connection request sent|coaching request sent|connected/i)
+        page.getByText(/connection request sent|coaching request sent|connected/i).first()
       ).toBeVisible()
 
       // Coach should move to pending connections or be connected
