@@ -53,7 +53,7 @@ export async function ensureAuthCookiesLoaded(
        *
        * Verification approach:
        * - Make test request to /api/auth/get-session to verify cookies work
-       * - Retry up to 5 times with exponential backoff if session API returns 401/404
+       * - Retry up to 5 times with fixed delay (2000ms CI, 500ms local) if session API fails
        * - Only proceed when server confirms valid session
        * - Fails fast if authentication is broken (don't wait for navigation timeout)
        *
@@ -63,14 +63,21 @@ export async function ensureAuthCookiesLoaded(
        * - No guesswork about timing - we verify cookies actually work
        */
       try {
-        const response = await page.request.get('/api/auth/get-session')
-
-        if (response.ok()) {
-          const sessionData = await response.json()
-          if (sessionData?.session?.userId) {
-            // Session verified - cookies are working!
-            return
+        // Get base URL from page context (Playwright automatically uses page's base URL)
+        // Use page.evaluate to make fetch call from within page context where cookies are guaranteed available
+        const sessionData = await page.evaluate(async () => {
+          const response = await fetch('/api/auth/get-session', {
+            credentials: 'same-origin',
+          })
+          if (!response.ok) {
+            throw new Error(`Session API returned ${response.status}`)
           }
+          return response.json()
+        })
+
+        if (sessionData?.session?.userId) {
+          // Session verified - cookies are working!
+          return
         }
 
         // Session API didn't return valid session - retry
@@ -177,8 +184,8 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
     // Loading text may not appear, continue
   }
 
-  // Verify we're on the correct dashboard
-  await expect(page).toHaveURL(new RegExp(user.expectedDashboard))
+  // Verify we're on the correct dashboard (use pathname predicate for consistency)
+  await expect(page).toHaveURL(url => new URL(url).pathname === user.expectedDashboard)
 }
 
 /**
