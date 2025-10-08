@@ -149,12 +149,12 @@ export type TestUserType = keyof typeof TEST_USERS
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // CRITICAL: Ensure cookies are loaded from storageState before navigation
-  // This prevents race conditions with server-side auth checks
-  await ensureAuthCookiesLoaded(page)
-
-  // Navigate to dashboard (middleware doesn't check cookies, page-level auth handles it)
+  // CRITICAL: Navigate first to establish browser context, THEN verify cookies
+  // Cookies from storageState need a navigation to activate in the browser context
   await page.goto(user.expectedDashboard)
+
+  // Now verify cookies are working with session API
+  await ensureAuthCookiesLoaded(page, `http://localhost:3001`)
 
   // Wait for dashboard URL using pathname comparison (RegExp won't work with full URL including origin)
   await page.waitForURL(
