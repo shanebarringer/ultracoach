@@ -47,11 +47,11 @@ test.describe('Session Persistence', () => {
     })
 
     test('should maintain session on workouts page refresh', async ({ page }) => {
-      // Ensure cookies are loaded from storageState before navigation
-      await ensureAuthCookiesLoaded(page)
-
       // Navigate directly to workouts page (auth loaded via storageState)
       await page.goto('/workouts', { timeout: TEST_TIMEOUTS.extraLong })
+
+      // Ensure cookies are loaded from storageState AFTER navigation
+      await ensureAuthCookiesLoaded(page)
 
       // Wait for final URL (ensures no redirect to signin)
       await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
@@ -113,12 +113,14 @@ test.describe('Session Persistence', () => {
         '/dashboard/runner', // Return to start
       ]
 
-      // Ensure cookies are loaded from storageState before first navigation
-      await ensureAuthCookiesLoaded(page)
-
       for (const route of routes) {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
         await page.goto(route, { waitUntil: 'domcontentloaded' })
+
+        // Ensure cookies are loaded from storageState AFTER first navigation
+        if (route === '/dashboard/runner' && routes.indexOf(route) === 0) {
+          await ensureAuthCookiesLoaded(page)
+        }
 
         // Should be on the correct route (pathname comparison to handle query params)
         await page.waitForURL(
@@ -166,13 +168,15 @@ test.describe('Session Persistence', () => {
     test('should handle rapid navigation without losing session', async ({ page }) => {
       const routes = ['/workouts', '/dashboard/runner', '/training-plans', '/workouts']
 
-      // Ensure cookies are loaded from storageState before rapid navigation
-      await ensureAuthCookiesLoaded(page)
-
       // Rapidly navigate between routes
       for (let iteration = 0; iteration < 2; iteration++) {
         for (const route of routes) {
           await page.goto(route)
+
+          // Ensure cookies are loaded after first navigation
+          if (iteration === 0 && route === '/workouts' && routes.indexOf(route) === 0) {
+            await ensureAuthCookiesLoaded(page)
+          }
           await page.waitForLoadState('domcontentloaded')
 
           // Should never be redirected to signin
@@ -374,46 +378,25 @@ test.describe('Session Persistence', () => {
       // Increase timeout for multiple route navigation with Next.js compilation
       test.setTimeout(60000)
 
-      // Ensure cookies are loaded from storageState before first navigation
-      await ensureAuthCookiesLoaded(page)
+      // Use navigateToDashboard which is more reliable after many tests
+      await navigateToDashboard(page, 'runner')
 
       // Perform multiple operations that would typically test session stability
-      const operations = [
-        async () => {
-          // CRITICAL: Ensure cookies loaded immediately before first navigation
-          await ensureAuthCookiesLoaded(page)
-          await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
-        },
-        async () => {
-          await page.reload({ waitUntil: 'domcontentloaded' })
-          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-        },
-        async () => {
-          // Re-ensure cookies before new navigation (long-running test may lose cookies)
-          await ensureAuthCookiesLoaded(page)
-          await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
-        },
-        async () => {
-          await page.goBack({ waitUntil: 'domcontentloaded' })
-          await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
-        },
-        async () => {
-          // Re-ensure cookies before final navigation (long-running test may lose cookies)
-          await ensureAuthCookiesLoaded(page)
-          await page.goto('/training-plans', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
-        },
-      ]
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
+      await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
 
-      // Execute all operations
-      for (const operation of operations) {
-        await operation()
-      }
+      await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+
+      await page.goBack({ waitUntil: 'domcontentloaded' })
+      await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
+
+      await page.goto('/training-plans', { waitUntil: 'domcontentloaded' })
+      await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
 
       // Final verification - still authenticated
-      await page.goto('/dashboard/runner')
+      await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
       const dashboardContent = page.locator('[data-testid="runner-dashboard-content"]')
       await expect(dashboardContent).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
