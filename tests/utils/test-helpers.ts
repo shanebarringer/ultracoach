@@ -30,7 +30,7 @@ export async function ensureAuthCookiesLoaded(
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
   const maxRetries = 3
-  const retryDelay = process.env.CI ? 500 : 200
+  const retryDelay = process.env.CI ? 1000 : 200
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
@@ -43,8 +43,8 @@ export async function ensureAuthCookiesLoaded(
     const sessionCookie = cookies.find(cookie => cookie.name === expectedCookieName)
 
     if (sessionCookie) {
-      // Cookie found - add small buffer for browser processing
-      await page.waitForTimeout(process.env.CI ? 200 : 100)
+      // Cookie found - add longer buffer for CI browser processing
+      await page.waitForTimeout(process.env.CI ? 500 : 100)
       return
     }
 

@@ -7,7 +7,7 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
-import { TEST_USERS } from '../utils/test-helpers'
+import { TEST_USERS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -19,6 +19,9 @@ test.describe('Workout Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
+      // Ensure cookies are loaded from storageState before navigation
+      await ensureAuthCookiesLoaded(page)
+
       // Navigate directly to the runner dashboard - we're already authenticated
       await page.goto('/dashboard/runner')
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
