@@ -321,7 +321,7 @@ test.describe('Session Persistence', () => {
       await page.getByRole('button', { name: /sign in|Begin Your Expedition/i }).click()
 
       // Should redirect to dashboard
-      await page.waitForURL('**/dashboard/runner', { timeout: TEST_TIMEOUTS.long })
+      await page.waitForURL(/\/dashboard\/runner(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
 
       // Session should now persist across navigation
       await page.goto('/workouts')

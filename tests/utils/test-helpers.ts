@@ -157,8 +157,8 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   // Cookies from storageState need a navigation to activate in the browser context
   await page.goto(user.expectedDashboard)
 
-  // Now verify cookies are working with session API
-  await ensureAuthCookiesLoaded(page, `http://localhost:3001`)
+  // Now verify cookies are working with session API (use dynamic origin for CHIPS compatibility)
+  await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
   // Wait for dashboard URL using pathname comparison (RegExp won't work with full URL including origin)
   await page.waitForURL(
