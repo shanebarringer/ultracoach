@@ -26,27 +26,40 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript issues
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: {
+  // CRITICAL: Use page.evaluate to run fetch in browser context where cookies are guaranteed available
+  // This ensures cookies attach to the browser's cookie jar, not just Playwright's request context
+  const authResult = await page.evaluate(
+    async ({ apiUrl, email, password }) => {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password }),
+      })
+      return {
+        ok: response.ok,
+        status: response.status,
+        body: response.ok ? await response.json() : await response.text(),
+      }
+    },
+    {
+      apiUrl: `${baseUrl}/api/auth/sign-in/email`,
       email: TEST_COACH_EMAIL,
       password: TEST_COACH_PASSWORD,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+    }
+  )
 
-  if (!response.ok()) {
-    const body = await response.text()
-    const preview = body
+  if (!authResult.ok) {
+    const bodyText =
+      typeof authResult.body === 'string' ? authResult.body : JSON.stringify(authResult.body)
+    const preview = bodyText
       .slice(0, 300)
       .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
     logger.error('Coach Auth API failed', {
-      status: response.status(),
+      status: authResult.status,
       bodyPreview: preview,
     })
-    throw new Error(`Coach authentication API failed with status ${response.status()}`)
+    throw new Error(`Coach authentication API failed with status ${authResult.status}`)
   }
 
   logger.info('✅ Coach authentication API successful')
