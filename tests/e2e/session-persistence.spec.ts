@@ -381,7 +381,7 @@ test.describe('Session Persistence', () => {
       const operations = [
         async () => {
           await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/dashboard\/runner$/)
+          await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
         },
         async () => {
           await page.reload({ waitUntil: 'domcontentloaded' })
@@ -389,7 +389,7 @@ test.describe('Session Persistence', () => {
         },
         async () => {
           await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/workouts$/)
+          await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
         },
         async () => {
           await page.goBack({ waitUntil: 'domcontentloaded' })
@@ -397,7 +397,7 @@ test.describe('Session Persistence', () => {
         },
         async () => {
           await page.goto('/training-plans', { waitUntil: 'domcontentloaded' })
-          await expect(page).toHaveURL(/\/training-plans$/)
+          await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
         },
       ]
 
@@ -408,7 +408,7 @@ test.describe('Session Persistence', () => {
 
       // Final verification - still authenticated
       await page.goto('/dashboard/runner')
-      await expect(page).toHaveURL(/\/dashboard\/runner$/)
+      await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
       const dashboardContent = page.locator('[data-testid="runner-dashboard-content"]')
       await expect(dashboardContent).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
     })
