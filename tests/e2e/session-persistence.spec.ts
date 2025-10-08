@@ -404,8 +404,6 @@ test.describe('Session Persistence', () => {
       // Execute all operations
       for (const operation of operations) {
         await operation()
-        // Brief pause between operations
-        await page.waitForTimeout(TEST_TIMEOUTS.short)
       }
 
       // Final verification - still authenticated
