@@ -51,7 +51,7 @@ test.describe('Session Persistence', () => {
       await page.goto('/workouts', { timeout: TEST_TIMEOUTS.extraLong })
 
       // Ensure cookies are loaded from storageState AFTER navigation
-      await ensureAuthCookiesLoaded(page)
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       // Wait for final URL (ensures no redirect to signin)
       await page.waitForURL(/\/workouts(?:\?.*)?$/, { timeout: TEST_TIMEOUTS.long })
@@ -113,13 +113,15 @@ test.describe('Session Persistence', () => {
         '/dashboard/runner', // Return to start
       ]
 
+      let ensuredCookies = false
       for (const route of routes) {
         // Navigate to route (middleware doesn't check cookies, page-level auth handles it)
         await page.goto(route, { waitUntil: 'domcontentloaded' })
 
         // Ensure cookies are loaded from storageState AFTER first navigation
-        if (route === '/dashboard/runner' && routes.indexOf(route) === 0) {
-          await ensureAuthCookiesLoaded(page)
+        if (!ensuredCookies) {
+          await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+          ensuredCookies = true
         }
 
         // Should be on the correct route (pathname comparison to handle query params)
@@ -147,8 +149,13 @@ test.describe('Session Persistence', () => {
           const errorMessage = error instanceof Error ? error.message : String(error)
 
           // Take screenshot for debugging (portable path via testInfo)
-          await page.screenshot({
-            path: testInfo.outputPath(`session-debug-${route.replace(/\//g, '-')}-failed.png`),
+          const shotPath = testInfo.outputPath(
+            `session-debug-${route.replace(/\//g, '-')}-failed.png`
+          )
+          await page.screenshot({ path: shotPath })
+          await testInfo.attach('session-debug', {
+            path: shotPath,
+            contentType: 'image/png',
           })
 
           if (currentUrl.includes('/auth/signin')) {
@@ -169,13 +176,15 @@ test.describe('Session Persistence', () => {
       const routes = ['/workouts', '/dashboard/runner', '/training-plans', '/workouts']
 
       // Rapidly navigate between routes
+      let ensuredCookies = false
       for (let iteration = 0; iteration < 2; iteration++) {
         for (const route of routes) {
           await page.goto(route)
 
           // Ensure cookies are loaded after first navigation
-          if (iteration === 0 && route === '/workouts' && routes.indexOf(route) === 0) {
-            await ensureAuthCookiesLoaded(page)
+          if (!ensuredCookies) {
+            await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+            ensuredCookies = true
           }
           await page.waitForLoadState('domcontentloaded')
 
@@ -300,7 +309,7 @@ test.describe('Session Persistence', () => {
 
       // Navigate to signin
       await page.goto('/auth/signin')
-      await expect(page).toHaveURL(/\/auth\/signin$/)
+      await expect(page).toHaveURL(/\/auth\/signin(\?.*)?$/)
 
       // Fill and submit signin form
       await page.getByLabel(/email/i).fill(TEST_RUNNER_EMAIL)

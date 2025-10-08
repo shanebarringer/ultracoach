@@ -19,11 +19,12 @@ test.describe('Workout Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Ensure cookies are loaded from storageState before navigation
-      await ensureAuthCookiesLoaded(page)
-
       // Navigate directly to the runner dashboard - we're already authenticated
       await page.goto('/dashboard/runner')
+
+      // Ensure cookies are loaded from storageState AFTER navigation
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 

@@ -26,7 +26,7 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Implement retry logic with exponential backoff for intermittent auth failures (matching runner auth)
+  // Implement retry logic with linear backoff for intermittent auth failures (matching runner auth)
   const MAX_AUTH_RETRIES = 3
   const RETRY_DELAY_MS = 1000 // 1 second base delay
 
@@ -96,7 +96,7 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
       )
       logger.warn(`Retry ${attempt}/${MAX_AUTH_RETRIES}`, { error: lastError.message })
 
-      // Wait before retrying (exponential backoff)
+      // Wait before retrying (linear backoff)
       if (attempt < MAX_AUTH_RETRIES) {
         const delay = RETRY_DELAY_MS * attempt
         logger.info(`⏳ Waiting ${delay}ms before retry ${attempt + 1}...`)
