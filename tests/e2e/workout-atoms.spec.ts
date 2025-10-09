@@ -11,7 +11,7 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
-import { ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { TEST_TIMEOUTS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
