@@ -87,6 +87,15 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
+      // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
+      const cookies = await page.context().cookies()
+      const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+      console.log('[workout-atoms persist test] Cookie diagnostic:', {
+        totalCookies: cookies.length,
+        sessionCookiePresent: !!sessionCookie,
+        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
+      })
+
       // First, go to calendar/weekly planner
       await page.goto('/calendar')
 
@@ -115,6 +124,15 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
+      // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
+      const cookies = await page.context().cookies()
+      const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+      console.log('[workout-atoms view test] Cookie diagnostic:', {
+        totalCookies: cookies.length,
+        sessionCookiePresent: !!sessionCookie,
+        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
+      })
+
       // Navigate to training plans page first
       await page.goto('/training-plans')
 
