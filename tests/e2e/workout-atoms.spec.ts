@@ -11,6 +11,8 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
+import { ensureAuthCookiesLoaded } from '../utils/test-helpers'
+
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
@@ -85,6 +87,10 @@ test.describe('Workout Atoms Functionality', () => {
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
       // First, go to calendar/weekly planner
       await page.goto('/calendar')
+
+      // Ensure authentication cookies are loaded before proceeding
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+
       await expect(page).toHaveURL('/calendar')
 
       // Wait for calendar to load
@@ -110,6 +116,10 @@ test.describe('Workout Atoms Functionality', () => {
     test('should show workouts in weekly planner view', async ({ page }) => {
       // Navigate to training plans page first
       await page.goto('/training-plans')
+
+      // Ensure authentication cookies are loaded before proceeding
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+
       await expect(page).toHaveURL('/training-plans')
 
       // Look for a training plan with workouts
