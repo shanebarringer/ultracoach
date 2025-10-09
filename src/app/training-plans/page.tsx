@@ -1,3 +1,8 @@
+import { Suspense } from 'react'
+
+import { headers } from 'next/headers'
+
+import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireAuth } from '@/utils/auth-server'
 
 import TrainingPlansPageClient from './TrainingPlansPageClient'
@@ -10,11 +15,22 @@ export const dynamic = 'force-dynamic'
  *
  * Forces dynamic rendering and handles server-side authentication.
  * Server-side validation provides better security and UX.
+ *
+ * IMPORTANT: Suspense wrapper at server level ensures Layout renders
+ * after session is fully hydrated, preventing user-menu visibility issues.
  */
 export default async function TrainingPlansPage() {
+  // Force dynamic rendering prior to auth check
+  await headers()
+
   // Server-side authentication - forces dynamic rendering
   const session = await requireAuth()
 
-  // Pass authenticated user data to Client Component
-  return <TrainingPlansPageClient user={session.user} />
+  // Pass authenticated user data to Client Component wrapped in Suspense
+  // This matches dashboard pattern and ensures proper session hydration timing
+  return (
+    <Suspense fallback={<TrainingPlansPageSkeleton />}>
+      <TrainingPlansPageClient user={session.user} />
+    </Suspense>
+  )
 }
