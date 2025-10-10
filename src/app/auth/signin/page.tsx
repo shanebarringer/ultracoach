@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { LockIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
 import React from 'react'
@@ -12,17 +12,25 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { authRedirectingAtom, authSuccessMessageAtom, signInFormAtom } from '@/lib/atoms/index'
+import {
+  authRedirectingAtom,
+  authSuccessMessageAtom,
+  sessionAtom,
+  signInFormAtom,
+  userAtom,
+} from '@/lib/atoms/index'
+import type { User } from '@/lib/better-auth'
+import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 import { type SignInForm, signInSchema } from '@/types/forms'
-
-import { signInAction } from './actions'
 
 const logger = createLogger('SignIn')
 
 export default function SignIn() {
   const [formState, setFormState] = useAtom(signInFormAtom)
   const router = useRouter()
+  const setSession = useSetAtom(sessionAtom)
+  const setUser = useSetAtom(userAtom)
   const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
   const [isRedirecting, setIsRedirecting] = useAtom(authRedirectingAtom)
 
@@ -58,35 +66,83 @@ export default function SignIn() {
     setFormState(prev => ({ ...prev, loading: true }))
 
     try {
-      logger.info('Attempting server-side sign in:', { email: data.email })
+      logger.info('Attempting sign in:', { email: data.email })
 
-      // Set redirecting state for smooth transition
-      setIsRedirecting(true)
+      const { data: authData, error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      })
 
-      // Call server action - this will handle authentication and redirect
-      // Server action will throw a redirect error which Next.js handles automatically
-      const result = await signInAction(data.email, data.password)
+      if (error) {
+        logger.error('SignIn error:', error)
+        // Sanitize error message for security - don't expose internal details
+        const sanitizedMessage =
+          error.message?.toLowerCase().includes('invalid') ||
+          error.message?.toLowerCase().includes('incorrect') ||
+          error.message?.toLowerCase().includes('not found')
+            ? 'Invalid email or password'
+            : 'Invalid credentials'
+        setError('email', { message: sanitizedMessage })
+        return
+      }
 
-      // If we get here, authentication failed (redirect would have thrown)
-      if (result && !result.success) {
-        logger.error('SignIn failed:', { email: data.email, error: result.error })
+      if (authData) {
+        logger.info('Sign in successful, fetching complete session data')
+
+        // Add delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Get the complete session data which includes the role
+        const sessionData = await authClient.getSession()
+
+        if (sessionData?.data) {
+          // Update Jotai atoms with complete session data
+          setSession(sessionData.data)
+          setUser(sessionData.data.user as User)
+
+          // Extract role from session - customSession handles userType mapping
+          const userRole = (sessionData.data.user as User).userType || 'runner'
+
+          logger.info('Final user role determined:', {
+            userRole,
+            userId: sessionData.data.user.id,
+            sessionUser: sessionData.data.user,
+            fullSessionData: sessionData.data,
+          })
+
+          // Set redirecting state for smooth transition
+          setIsRedirecting(true)
+
+          // Force a longer delay to ensure client state is fully synchronized
+          // This should fix the refresh issue on preview deployments
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // Determine the dashboard URL based on user role
+          const dashboardUrl = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+
+          logger.info('✅ Redirecting authenticated user to dashboard', {
+            userRole,
+            userId: sessionData.data.user.id,
+            dashboardUrl,
+          })
+
+          // Use Next.js router for client-side navigation (best practice)
+          router.push(dashboardUrl)
+        } else {
+          logger.error('Failed to get session data after sign in')
+          setIsRedirecting(false)
+          setError('email', { message: 'Login failed. Please try again.' })
+        }
+      } else {
+        logger.info('No authData received')
         setIsRedirecting(false)
-        setError('email', { message: result.error || 'Invalid email or password' })
+        setError('email', { message: 'Login failed. Please try again.' })
       }
     } catch (error) {
-      // Check if this is a Next.js redirect (which is expected)
-      if (error && typeof error === 'object' && 'digest' in error) {
-        // This is a redirect - let it propagate to Next.js
-        logger.info('Signin successful, redirect in progress')
-        throw error
-      }
-
-      // Other errors should be handled
       logger.error('SignIn exception:', error)
+      // Sanitize error message for security
       setIsRedirecting(false)
-      setError('email', {
-        message: error instanceof Error ? error.message : 'Login failed. Please try again.',
-      })
+      setError('email', { message: 'Login failed. Please try again.' })
     } finally {
       setFormState(prev => ({ ...prev, loading: false }))
     }
