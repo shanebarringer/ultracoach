@@ -11,7 +11,8 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
-import { TEST_TIMEOUTS } from '../utils/test-helpers'
+import { TEST_TIMEOUTS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { getTestLogger } from '../utils/test-logger'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
@@ -20,6 +21,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should display upcoming workouts on runner dashboard', async ({ page }) => {
       // Navigate to runner dashboard
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -56,6 +58,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should display recent/completed workouts on runner dashboard', async ({ page }) => {
       // Navigate to runner dashboard
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -87,10 +90,13 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
+      // Get logger for diagnostics
+      const logger = await getTestLogger('workout-atoms-persist')
+
       // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
       const cookies = await page.context().cookies()
       const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-      console.log('[workout-atoms persist test] Cookie diagnostic:', {
+      logger.info('[workout-atoms persist test] Cookie diagnostic:', {
         totalCookies: cookies.length,
         sessionCookiePresent: !!sessionCookie,
         cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
@@ -98,6 +104,7 @@ test.describe('Workout Atoms Functionality', () => {
 
       // First, go to calendar/weekly planner
       await page.goto('/calendar')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -110,11 +117,13 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate away to another page
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Navigate back to calendar
       await page.goto('/calendar')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -124,10 +133,13 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
+      // Get logger for diagnostics
+      const logger = await getTestLogger('workout-atoms-view')
+
       // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
       const cookies = await page.context().cookies()
       const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-      console.log('[workout-atoms view test] Cookie diagnostic:', {
+      logger.info('[workout-atoms view test] Cookie diagnostic:', {
         totalCookies: cookies.length,
         sessionCookiePresent: !!sessionCookie,
         cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
@@ -135,6 +147,7 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to training plans page first
       await page.goto('/training-plans')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/training-plans')
 
@@ -172,6 +185,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should successfully submit workout completion modal', async ({ page }) => {
       // Navigate to workouts page
       await page.goto('/workouts')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -256,6 +270,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should update dashboard after workout completion', async ({ page }) => {
       // Start on dashboard to get initial counts
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -265,6 +280,7 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to workouts page
       await page.goto('/workouts')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -289,6 +305,7 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Go back to dashboard
           await page.goto('/dashboard/runner')
+          await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
           await expect(page).toHaveURL('/dashboard/runner')
 
@@ -314,6 +331,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should refresh workouts when navigating between pages', async ({ page }) => {
       // Start on workouts page
       await page.goto('/workouts')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -323,6 +341,7 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to dashboard
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -334,6 +353,7 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to calendar
       await page.goto('/calendar')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -352,6 +372,7 @@ test.describe('Workout Atoms Functionality', () => {
     test('should maintain workout state across page refreshes', async ({ page }) => {
       // Navigate to workouts page
       await page.goto('/workouts')
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
