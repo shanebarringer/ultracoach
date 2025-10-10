@@ -6,13 +6,13 @@ test.use({ storageState: './playwright/.auth/runner.json' })
 
 // Parameterized route tests - reduces duplication and improves maintainability
 const routesToTest = [
-  { route: '/dashboard/runner', name: 'dashboard' },
-  { route: '/training-plans', name: 'training-plans' },
+  { route: '/dashboard/runner', name: 'runner-home' },
+  { route: '/training-plans', name: 'plans-page' },
 ]
 
-test.describe.parallel('Route authentication tests', () => {
+test.describe.parallel('Protected route access verification', () => {
   routesToTest.forEach(({ route, name }) => {
-    test(`${name} should show user menu`, async ({ page }) => {
+    test(`should show user menu on ${name}`, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' })
 
       // Ensure auth cookies are loaded after navigation
