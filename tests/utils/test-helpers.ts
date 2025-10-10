@@ -33,8 +33,9 @@ export async function ensureAuthCookiesLoaded(
   baseUrl?: string,
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
-  const maxRetries = 5
-  const retryDelay = process.env.CI ? 2000 : 500
+  // CI needs more retries and longer delays for session API to stabilize after auth setup
+  const maxRetries = process.env.CI ? 10 : 5
+  const retryDelay = process.env.CI ? 5000 : 500
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
@@ -57,7 +58,8 @@ export async function ensureAuthCookiesLoaded(
        *
        * Verification approach:
        * - Make test request to /api/auth/get-session to verify cookies work
-       * - Retry up to 5 times with fixed delay (2000ms CI, 500ms local) if session API fails
+       * - Retry up to 10 times in CI (5 locally) with fixed delay (5000ms CI, 500ms local)
+       * - Gives session API up to ~50 seconds in CI to stabilize after auth setup
        * - Only proceed when server confirms valid session
        * - Fails fast if authentication is broken (don't wait for navigation timeout)
        *

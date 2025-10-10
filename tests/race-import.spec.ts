@@ -457,14 +457,6 @@ test.describe('Race Import Flow', () => {
     await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 5000 })
     logger.info('[Test] First import successful - modal closed')
 
-    // Modal already closed automatically on success - this close attempt is redundant but harmless
-    const closeButton = page.locator('[aria-label="Close"], .modal-close, button:has-text("Close")')
-    try {
-      await closeButton.first().click({ timeout: 5000 })
-    } catch {
-      // Expected: modal already closed automatically
-    }
-
     // Refresh page and wait for it to load
     await page.reload()
     await page.waitForLoadState('domcontentloaded')
