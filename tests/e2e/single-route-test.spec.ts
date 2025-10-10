@@ -4,58 +4,43 @@ import { TEST_TIMEOUTS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
 
 test.use({ storageState: './playwright/.auth/runner.json' })
 
-test('dashboard should show user menu', async ({ page }) => {
-  await page.goto('/dashboard/runner', { waitUntil: 'load' })
+// Parameterized route tests - reduces duplication and improves maintainability
+const routesToTest = [
+  { route: '/dashboard/runner', name: 'dashboard' },
+  { route: '/training-plans', name: 'training-plans' },
+]
 
-  // Ensure auth cookies are loaded after navigation
-  await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+test.describe.parallel('Route authentication tests', () => {
+  routesToTest.forEach(({ route, name }) => {
+    test(`${name} should show user menu`, async ({ page }) => {
+      await page.goto(route, { waitUntil: 'load' })
 
-  // Log diagnostic info using Playwright's test.info()
-  const cookies = await page.context().cookies()
-  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-  test.info().attach('cookie-diagnostic', {
-    body: JSON.stringify(
-      {
-        testName: 'dashboard-test',
-        totalCookies: cookies.length,
-        sessionCookiePresent: !!sessionCookie,
-        sessionCookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
-        allCookieNames: cookies.map(c => c.name),
-      },
-      null,
-      2
-    ),
-    contentType: 'application/json',
+      // Ensure auth cookies are loaded after navigation
+      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
+
+      // Log diagnostic info using Playwright's test.info()
+      const cookies = await page.context().cookies()
+      const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+      test.info().attach('cookie-diagnostic', {
+        body: JSON.stringify(
+          {
+            testName: `${name}-test`,
+            route,
+            totalCookies: cookies.length,
+            sessionCookiePresent: !!sessionCookie,
+            sessionCookieValue: sessionCookie
+              ? `${sessionCookie.value.substring(0, 20)}...`
+              : 'NONE',
+            allCookieNames: cookies.map(c => c.name),
+          },
+          null,
+          2
+        ),
+        contentType: 'application/json',
+      })
+
+      const userMenu = page.locator('[data-testid="user-menu"]')
+      await expect(userMenu).toBeVisible({ timeout: TEST_TIMEOUTS.long })
+    })
   })
-
-  const userMenu = page.locator('[data-testid="user-menu"]')
-  await expect(userMenu).toBeVisible({ timeout: TEST_TIMEOUTS.long })
-})
-
-test('training-plans should show user menu', async ({ page }) => {
-  await page.goto('/training-plans', { waitUntil: 'load' })
-
-  // Ensure auth cookies are loaded after navigation
-  await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
-
-  // Log diagnostic info using Playwright's test.info()
-  const cookies = await page.context().cookies()
-  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-  test.info().attach('cookie-diagnostic', {
-    body: JSON.stringify(
-      {
-        testName: 'training-plans-test',
-        totalCookies: cookies.length,
-        sessionCookiePresent: !!sessionCookie,
-        sessionCookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
-        allCookieNames: cookies.map(c => c.name),
-      },
-      null,
-      2
-    ),
-    contentType: 'application/json',
-  })
-
-  const userMenu = page.locator('[data-testid="user-menu"]')
-  await expect(userMenu).toBeVisible({ timeout: TEST_TIMEOUTS.long })
 })
