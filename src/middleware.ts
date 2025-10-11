@@ -47,8 +47,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For dashboard routes, check for session cookie
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+  // Protected routes that require authentication
+  const protectedRoutes = [
+    '/dashboard',
+    '/workouts',
+    '/calendar',
+    '/training-plans',
+    '/profile',
+    '/chat',
+    '/relationships',
+    '/races',
+    '/weekly-planner',
+    '/settings',
+  ]
+
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+
+  if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('better-auth.session_token')
 
     if (!sessionCookie) {
@@ -58,7 +73,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Default: allow other routes for now
+  // Default: allow other routes
   return NextResponse.next()
 }
 

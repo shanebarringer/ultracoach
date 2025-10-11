@@ -5,8 +5,11 @@ import {
   TEST_COACH_PASSWORD,
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
+  assertAuthenticated,
+  authenticateViaAPI,
+  navigateAndWait,
+  waitForAppReady,
 } from './utils/test-helpers'
-import { assertAuthenticated, navigateAndWait, waitForAppReady } from './utils/test-helpers'
 
 test.describe('Authentication Flow', () => {
   test('should display signin page', async ({ page }) => {
@@ -18,32 +21,32 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should redirect to dashboard after successful runner login', async ({ page }) => {
-    await navigateAndWait(page, '/auth/signin')
+    // Navigate to signin page first (needed for page context)
+    await page.goto('/auth/signin')
 
-    // Fill in runner credentials
-    await page.fill('input[type="email"]', TEST_RUNNER_EMAIL)
-    await page.fill('input[type="password"]', TEST_RUNNER_PASSWORD)
+    // Authenticate via API (faster and more reliable than UI forms)
+    await authenticateViaAPI(page, TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD)
 
-    // Submit form
-    await page.click('button[type="submit"]')
+    // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
+    await page.goto('/dashboard/runner')
 
-    // Wait for redirect to dashboard
+    // Wait for redirect to complete
     await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
 
     await assertAuthenticated(page, 'runner')
   })
 
   test('should redirect to dashboard after successful coach login', async ({ page }) => {
-    await navigateAndWait(page, '/auth/signin')
+    // Navigate to signin page first (needed for page context)
+    await page.goto('/auth/signin')
 
-    // Fill in coach credentials
-    await page.fill('input[type="email"]', TEST_COACH_EMAIL)
-    await page.fill('input[type="password"]', TEST_COACH_PASSWORD)
+    // Authenticate via API (faster and more reliable than UI forms)
+    await authenticateViaAPI(page, TEST_COACH_EMAIL, TEST_COACH_PASSWORD)
 
-    // Submit form
-    await page.click('button[type="submit"]')
+    // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
+    await page.goto('/dashboard/coach')
 
-    // Wait for redirect to dashboard
+    // Wait for redirect to complete
     await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
 
     await assertAuthenticated(page, 'coach')

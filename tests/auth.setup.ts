@@ -26,32 +26,141 @@ setup('authenticate @setup', async ({ page, context }) => {
   // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Use the API directly instead of form submission to avoid JavaScript issues
-  const response = await page.request.post(`${baseUrl}/api/auth/sign-in/email`, {
-    data: {
-      email: TEST_RUNNER_EMAIL,
-      password: TEST_RUNNER_PASSWORD,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+  // Retry configuration for handling intermittent JSON parsing errors (ULT-54)
+  const MAX_AUTH_RETRIES = 3
+  const BASE_RETRY_DELAY = 1000 // 1 second base delay
 
-  if (!response.ok()) {
-    const body = await response.text()
-    const preview = body
-      .slice(0, 300)
-      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
-    logger.error('Auth API failed', {
-      status: response.status(),
-      bodyPreview: preview,
-    })
-    throw new Error(`Authentication API failed with status ${response.status()}`)
+  let authResponse
+  let lastError: Error | null = null
+
+  // Implement retry logic with exponential backoff for intermittent auth failures
+  for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
+    try {
+      logger.info(`🔑 Authentication attempt ${attempt}/${MAX_AUTH_RETRIES}`)
+
+      // Use page.evaluate(() => fetch()) to ensure cookies attach to browser context
+      // This is critical - page.request.post() would set cookies in isolated context
+      const authResult = await page.evaluate(
+        async ({ apiUrl, email, password }) => {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ email, password }),
+          })
+          return {
+            ok: response.ok,
+            status: response.status,
+            body: response.ok ? await response.json() : await response.text(),
+          }
+        },
+        {
+          apiUrl: `${baseUrl}/api/auth/sign-in/email`,
+          email: TEST_RUNNER_EMAIL,
+          password: TEST_RUNNER_PASSWORD,
+        }
+      )
+
+      authResponse = authResult
+
+      // Success case - break out of retry loop
+      if (authResponse.ok) {
+        logger.info(`✅ Authentication API successful on attempt ${attempt}`)
+        break
+      }
+
+      // Non-500 errors (like 401 Unauthorized) should fail immediately - no retry
+      if (authResponse.status !== 500) {
+        const bodyText =
+          typeof authResponse.body === 'string'
+            ? authResponse.body
+            : JSON.stringify(authResponse.body)
+        const preview = bodyText
+          .slice(0, 300)
+          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '<redacted-email>')
+        logger.error('Auth API failed with non-retryable error', {
+          status: authResponse.status,
+          bodyPreview: preview,
+        })
+        throw new Error(`Authentication failed with status ${authResponse.status} - ${preview}`)
+      }
+
+      // 500 error - log and prepare for retry
+      const bodyText =
+        typeof authResponse.body === 'string'
+          ? authResponse.body
+          : JSON.stringify(authResponse.body)
+      lastError = new Error(
+        `Auth API returned 500 on attempt ${attempt}: ${bodyText.slice(0, 100)}`
+      )
+      logger.warn(`Auth attempt ${attempt} failed with 500 error, will retry...`, {
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
+      })
+    } catch (error) {
+      // Network or other errors
+      lastError = error as Error
+      logger.warn(`Auth attempt ${attempt} threw error, will retry...`, {
+        error: (error as Error).message,
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
+      })
+    }
+
+    // If this wasn't the last attempt, wait with exponential backoff
+    if (attempt < MAX_AUTH_RETRIES) {
+      const delay = BASE_RETRY_DELAY * attempt // Linear backoff: 1s, 2s, 3s
+      logger.info(`⏳ Waiting ${delay}ms before retry...`)
+      await page.waitForTimeout(delay)
+    }
   }
 
-  logger.info('✅ Authentication API successful')
+  // Check if we exhausted all retries without success
+  if (!authResponse || !authResponse.ok) {
+    const finalError = lastError || new Error('Authentication failed after all retries')
+    logger.error('Auth API failed after all retry attempts', {
+      attempts: MAX_AUTH_RETRIES,
+      lastError: finalError.message,
+    })
+    throw new Error(
+      `Authentication failed after ${MAX_AUTH_RETRIES} attempts: ${finalError.message}`
+    )
+  }
 
-  // The API call should have set cookies, now navigate to dashboard and verify
+  // CRITICAL FIX: Explicitly extract and inject cookie to avoid storageState race condition
+  // The fetch call set cookies, but we need to explicitly add them to context
+  // to ensure they're immediately available in future tests (not async loaded)
+  logger.info('🍪 Extracting session cookie from browser context...')
+
+  const cookies = await context.cookies()
+  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+
+  if (!sessionCookie) {
+    logger.error('Session cookie not found after authentication', {
+      availableCookies: cookies.map(c => c.name).join(', '),
+    })
+    throw new Error('Session cookie not set by authentication API')
+  }
+
+  logger.info('✅ Session cookie found, re-injecting to ensure immediate availability', {
+    cookieName: sessionCookie.name,
+    domain: sessionCookie.domain,
+    path: sessionCookie.path,
+  })
+
+  // Re-inject cookie programmatically to ensure it's immediately available
+  // This fixes the race condition where storageState loads cookies asynchronously
+  await context.addCookies([
+    {
+      ...sessionCookie,
+      // Ensure cookie is set for localhost (dev) environment
+      domain: sessionCookie.domain || 'localhost',
+    },
+  ])
+
+  logger.info('🔐 Cookie injection complete - verifying authentication...')
+
+  // Now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/runner`)
   await waitForAuthenticationSuccess(page, 'runner', 15000)
 
@@ -68,7 +177,7 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // Save the authentication state
+  // Save the authentication state (now with explicitly injected cookie)
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved runner authentication state to ${authFile}`)
 })

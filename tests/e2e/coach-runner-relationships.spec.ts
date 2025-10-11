@@ -23,8 +23,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Coach dashboard shows "Your Athletes" heading (use more specific selector)
       await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
 
-      // Click "Find Athletes to Coach" button to navigate to runner selection
-      await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
+      // Click "Connect" button to navigate to runner selection
+      await page.getByRole('button', { name: /Connect|🏃‍♂️ Connect/ }).click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
@@ -38,8 +38,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send connection request to runner', async ({ page }) => {
-      // Click "Find Athletes to Coach" button from dashboard
-      await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
+      // Click "Connect" button from dashboard
+      await page.getByRole('button', { name: /Connect|🏃‍♂️ Connect/ }).click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
@@ -141,8 +141,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Runner dashboard shows "My Guides" section with Find Coach button
       await expect(page.getByText('My Guides')).toBeVisible()
 
-      // Click Find Coach button to navigate to coach selection
-      await page.getByRole('button', { name: 'Find Coach' }).click()
+      // Click Find Coach button to navigate to coach selection (handle different button texts)
+      await page.getByRole('button', { name: /Find Coach|Connect/ }).click()
 
       // Wait for navigation to relationships page
       await page.waitForURL('/relationships', { timeout: 10000 })
@@ -159,8 +159,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send coaching request to coach', async ({ page }) => {
-      // Click Find Coach button from dashboard
-      await page.getByRole('button', { name: 'Find Coach' }).click()
+      // Click Find Coach button from dashboard (handle different button texts)
+      await page.getByRole('button', { name: /Find Coach|Connect/ }).click()
 
       // Wait for navigation to relationships page
       await page.waitForURL('/relationships', { timeout: 10000 })
@@ -169,9 +169,9 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Should show success notification
+      // Should show success notification (use .first() to avoid strict mode violation)
       await expect(
-        page.getByText(/connection request sent|coaching request sent|connected/i)
+        page.getByText(/connection request sent|coaching request sent|connected/i).first()
       ).toBeVisible()
 
       // Coach should move to pending connections or be connected

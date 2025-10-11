@@ -1,15 +1,16 @@
 'use client'
 
-import { useAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 
-import { refreshableTrainingPlansAtom } from '@/lib/atoms/index'
+import { asyncTrainingPlansAtom, refreshTrainingPlansAtom } from '@/lib/atoms/training-plans'
 
 export function useRefreshableTrainingPlans() {
-  const [trainingPlans, refreshTrainingPlans] = useAtom(refreshableTrainingPlansAtom)
+  const trainingPlans = useAtomValue(asyncTrainingPlansAtom)
+  const refreshTrainingPlans = useSetAtom(refreshTrainingPlansAtom)
 
   return {
     trainingPlans,
     refreshTrainingPlans,
-    isLoading: false, // atomWithRefresh handles loading internally
+    isLoading: false, // Suspense handles loading state
   }
 }

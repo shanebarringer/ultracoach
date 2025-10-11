@@ -20,7 +20,7 @@ import {
   filteredWorkoutsAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
-import { refreshableTrainingPlansAtom } from '@/lib/atoms/training-plans'
+import { asyncTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
@@ -80,7 +80,7 @@ function CalendarContent({ user }: Props) {
   const filteredWorkouts = useAtomValue(filteredWorkoutsAtom)
   const workoutStats = useAtomValue(workoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
-  const trainingPlans = useAtomValue(refreshableTrainingPlansAtom) // Using async atom
+  const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
 
   // Prevent race conditions in modal operations

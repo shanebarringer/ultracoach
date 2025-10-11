@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
+import { ensureAuthCookiesLoaded } from './utils/test-helpers'
 import { type TestLogger, getTestLogger } from './utils/test-logger'
 
 let logger: TestLogger
@@ -97,6 +98,9 @@ test.describe('Race Import Flow', () => {
 
     // First go to the home page to ensure cookies are set
     await page.goto('/')
+
+    // Ensure authentication cookies are loaded before proceeding
+    await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
     // Navigate to races page after home visit
 
@@ -449,17 +453,9 @@ test.describe('Race Import Flow', () => {
     await uploadButton.click({ timeout: 10000 })
     logger.info('[Test] First import initiated')
 
-    // Wait for first import to complete - check that modal is still open (more reliable)
-    await page.locator('[role="dialog"]').waitFor({ state: 'visible', timeout: 5000 })
-    logger.info('[Test] First import successful')
-
-    // Close modal and try to import the same race again
-    const closeButton = page.locator('[aria-label="Close"], .modal-close, button:has-text("Close")')
-    try {
-      await closeButton.first().click({ timeout: 5000 })
-    } catch {
-      // Modal might have auto-closed
-    }
+    // Wait for first import to complete - modal closes on success
+    await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 5000 })
+    logger.info('[Test] First import successful - modal closed')
 
     // Refresh page and wait for it to load
     await page.reload()

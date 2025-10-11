@@ -25,9 +25,17 @@ export const userAtom = atom<User | null>(null)
 
 /**
  * Auth loading state - tracks authentication initialization
- * Set to false initially to show UI immediately for unauthenticated users
+ *
+ * CRITICAL: Starts with `true` to prevent flash of unauthenticated UI (FOUC)
+ * during initial session load. BetterAuthProvider sets this to `false` after
+ * the first getSession() call completes, ensuring users see loading state
+ * instead of "Sign In/Sign Up" buttons while session is being checked.
+ *
+ * This fixes ULT-54: Session persistence race condition causing:
+ * - Flash of sign-in buttons on page load/refresh
+ * - Playwright tests failing to find user menu during initial render
  */
-export const authLoadingAtom = atom(false)
+export const authLoadingAtom = atom(true)
 
 // Auth state atoms
 export const authErrorAtom = atom<string | null>(null)

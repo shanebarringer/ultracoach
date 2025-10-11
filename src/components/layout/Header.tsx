@@ -131,7 +131,7 @@ function Header() {
 
           {session && (
             <Dropdown>
-              <DropdownTrigger>
+              <DropdownTrigger data-testid="user-menu">
                 <Avatar
                   name={(session.user?.name as string) || 'User'}
                   className="cursor-pointer bg-primary text-white"
