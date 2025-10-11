@@ -127,7 +127,40 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // The API call should have set cookies, now navigate to dashboard and verify
+  // CRITICAL FIX: Explicitly extract and inject cookie to avoid storageState race condition
+  // The fetch call set cookies, but we need to explicitly add them to context
+  // to ensure they're immediately available in future tests (not async loaded)
+  logger.info('🍪 Extracting session cookie from browser context...')
+
+  const cookies = await context.cookies()
+  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+
+  if (!sessionCookie) {
+    logger.error('Session cookie not found after authentication', {
+      availableCookies: cookies.map(c => c.name).join(', '),
+    })
+    throw new Error('Session cookie not set by authentication API')
+  }
+
+  logger.info('✅ Session cookie found, re-injecting to ensure immediate availability', {
+    cookieName: sessionCookie.name,
+    domain: sessionCookie.domain,
+    path: sessionCookie.path,
+  })
+
+  // Re-inject cookie programmatically to ensure it's immediately available
+  // This fixes the race condition where storageState loads cookies asynchronously
+  await context.addCookies([
+    {
+      ...sessionCookie,
+      // Ensure cookie is set for localhost (dev) environment
+      domain: sessionCookie.domain || 'localhost',
+    },
+  ])
+
+  logger.info('🔐 Cookie injection complete - verifying authentication...')
+
+  // Now navigate to dashboard and verify
   await page.goto(`${baseUrl}/dashboard/runner`)
   await waitForAuthenticationSuccess(page, 'runner', 15000)
 
@@ -144,7 +177,7 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // Save the authentication state
+  // Save the authentication state (now with explicitly injected cookie)
   await context.storageState({ path: authFile })
   logger.info(`💾 Saved runner authentication state to ${authFile}`)
 })

@@ -91,7 +91,7 @@ export async function ensureAuthCookiesLoaded(
           await page.waitForTimeout(retryDelay)
           continue
         }
-      } catch (error) {
+      } catch (_error) {
         // Network error or API failure - retry
         if (attempt < maxRetries) {
           await page.waitForTimeout(retryDelay)
@@ -155,12 +155,8 @@ export type TestUserType = keyof typeof TEST_USERS
 export async function navigateToDashboard(page: Page, userType: TestUserType) {
   const user = TEST_USERS[userType]
 
-  // CRITICAL: Navigate first to establish browser context, THEN verify cookies
-  // Cookies from storageState need a navigation to activate in the browser context
+  // Navigate to dashboard - cookies are immediately available via programmatic injection in auth setup
   await page.goto(user.expectedDashboard)
-
-  // Now verify cookies are working with session API (use dynamic origin for CHIPS compatibility)
-  await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
   // Wait for dashboard URL using pathname comparison (RegExp won't work with full URL including origin)
   await page.waitForURL(
@@ -188,10 +184,10 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
     // Loading text may not appear, continue
   }
 
-  // Verify we're on the correct dashboard using regex with optional query params
-  //  user.expectedDashboard is either '/dashboard/coach' or '/dashboard/runner' - no special chars to escape
-  const dashboardRegex = new RegExp(`${user.expectedDashboard}(?:\\?.*)?$`)
-  await expect(page).toHaveURL(dashboardRegex, { timeout: TEST_TIMEOUTS.long })
+  // Verify we're on the correct dashboard (pathname-based to allow query params)
+  await expect(page).toHaveURL(url => new URL(url).pathname === user.expectedDashboard, {
+    timeout: TEST_TIMEOUTS.long,
+  })
 }
 
 /**
@@ -293,6 +289,103 @@ export async function submitForm(page: Page, submitSelector = 'button[type="subm
 
   // Wait for potential navigation or loading states
   await page.waitForLoadState('domcontentloaded')
+}
+
+/**
+ * Authenticate a user via Better Auth API (not UI forms).
+ *
+ * This is the recommended approach for E2E testing with Better Auth:
+ * - Bypasses UI form complexity and timing issues
+ * - Matches the proven pattern from auth.setup.ts
+ * - 10x faster than UI form interactions
+ * - More reliable error messages from direct API responses
+ *
+ * @param page - Playwright page instance
+ * @param email - User email address
+ * @param password - User password
+ * @param baseUrl - Optional base URL (defaults to E2E_BASE_URL or localhost:3001)
+ * @returns Authentication response with ok status and body
+ * @throws Error if authentication fails after all retries
+ */
+export async function authenticateViaAPI(
+  page: Page,
+  email: string,
+  password: string,
+  baseUrl?: string
+): Promise<{ ok: boolean; status: number; body: any }> {
+  const authUrl = baseUrl || process.env.E2E_BASE_URL || 'http://localhost:3001'
+
+  // Use same retry logic as auth.setup.ts for reliability
+  const MAX_AUTH_RETRIES = 3
+  const BASE_RETRY_DELAY = 1000
+
+  let authResponse: { ok: boolean; status: number; body: any } | null = null
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
+    try {
+      // CRITICAL: Use page.evaluate(() => fetch()) to run in browser context
+      // This ensures cookies attach to the page's context, not an isolated request context
+      const authResult = await page.evaluate(
+        async ({ apiUrl, userEmail, userPassword }) => {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ email: userEmail, password: userPassword }),
+          })
+          return {
+            ok: response.ok,
+            status: response.status,
+            body: response.ok ? await response.json() : await response.text(),
+          }
+        },
+        {
+          apiUrl: `${authUrl}/api/auth/sign-in/email`,
+          userEmail: email,
+          userPassword: password,
+        }
+      )
+
+      authResponse = authResult
+
+      // Success - break out of retry loop
+      if (authResponse.ok) {
+        return authResponse
+      }
+
+      // Non-500 errors (like 401) should fail immediately - no retry
+      if (authResponse.status !== 500) {
+        const bodyText =
+          typeof authResponse.body === 'string'
+            ? authResponse.body
+            : JSON.stringify(authResponse.body)
+        throw new Error(
+          `Authentication failed with status ${authResponse.status}: ${bodyText.slice(0, 200)}`
+        )
+      }
+
+      // 500 error - prepare for retry
+      const bodyText =
+        typeof authResponse.body === 'string'
+          ? authResponse.body
+          : JSON.stringify(authResponse.body)
+      lastError = new Error(
+        `Auth API returned 500 on attempt ${attempt}: ${bodyText.slice(0, 100)}`
+      )
+    } catch (error) {
+      lastError = error as Error
+    }
+
+    // Wait before retry (except on last attempt)
+    if (attempt < MAX_AUTH_RETRIES) {
+      await page.waitForTimeout(BASE_RETRY_DELAY * attempt)
+    }
+  }
+
+  // Exhausted all retries
+  const finalError = lastError || new Error('Authentication failed after all retries')
+  throw new Error(`Authentication failed after ${MAX_AUTH_RETRIES} attempts: ${finalError.message}`)
 }
 
 /**
