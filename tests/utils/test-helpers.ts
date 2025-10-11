@@ -349,7 +349,7 @@ export async function authenticateViaAPI(
 
       authResponse = authResult
 
-      // Success - break out of retry loop
+      // Success - cookies are set automatically by fetch() in browser context
       if (authResponse.ok) {
         return authResponse
       }
