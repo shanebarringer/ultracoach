@@ -122,11 +122,11 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
     )
   }
 
-  // Wait for cookies to be set (API auth via fetch() sets them automatically)
-  await page.waitForTimeout(1000)
-
   // Navigate to dashboard to verify authentication works
   await page.goto(`${baseUrl}/dashboard/coach`)
+
+  // Wait for final URL after all redirects (ensures cookies are working)
+  await page.waitForURL(`${baseUrl}/dashboard/coach`, { timeout: 15000 })
 
   // Wait for successful navigation and dashboard to load
   await waitForAuthenticationSuccess(page, 'coach', 15000)

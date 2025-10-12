@@ -8,7 +8,6 @@ import {
   assertAuthenticated,
   authenticateViaAPI,
   navigateAndWait,
-  waitForAppReady,
 } from './utils/test-helpers'
 
 test.describe('Authentication Flow', () => {
@@ -30,11 +29,8 @@ test.describe('Authentication Flow', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
 
-    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
-    await page.waitForTimeout(1000)
-
-    // Wait for redirect to complete
-    await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
+    // Wait for final URL (ensures auth completed successfully)
+    await page.waitForURL(/\/dashboard\/runner/, { timeout: 60000 })
 
     await assertAuthenticated(page, 'runner')
   })
@@ -49,11 +45,8 @@ test.describe('Authentication Flow', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
 
-    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
-    await page.waitForTimeout(1000)
-
-    // Wait for redirect to complete
-    await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
+    // Wait for final URL (ensures auth completed successfully)
+    await page.waitForURL(/\/dashboard\/coach/, { timeout: 60000 })
 
     await assertAuthenticated(page, 'coach')
   })

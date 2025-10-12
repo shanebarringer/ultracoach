@@ -65,6 +65,17 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
   - Updated CLAUDE.md with Playwright authentication best practices section
   - Aligns with official Playwright documentation and Better Auth recommendations
 
+#### Playwright Test Cleanup (✅ COMPLETED 2025-10-12)
+
+- [x] **Standardize auth test patterns (ULT-64)** - ✅ **COMPLETED 2025-10-12** - Replaced all fixed timeouts with condition-based waits
+  - ✅ Removed unused `waitForAppReady` import from auth.spec.ts
+  - ✅ Replaced text selector with `data-testid` (auth-flows.spec.ts line 249)
+  - ✅ Added TypeScript type annotations for `authResponse` variables
+  - ✅ Replaced all cookie propagation timeouts with `page.waitForURL()`
+  - ✅ All authentication tests passing (11/11 tests in 1.1 minutes)
+  - ✅ Zero ESLint warnings, clean builds, production-ready
+  - Linear Issue: ULT-64
+
 #### Test Re-enablement Tasks
 
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern

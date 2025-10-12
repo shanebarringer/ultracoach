@@ -29,7 +29,7 @@ setup('authenticate @setup', async ({ page, context }) => {
   const MAX_AUTH_RETRIES = 3
   const BASE_RETRY_DELAY = 1000
 
-  let authResponse
+  let authResponse: { ok: boolean; status: number; body: any } | null = null
   let lastError: Error | null = null
 
   // Authenticate via API using page.evaluate(() => fetch())
@@ -120,11 +120,11 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // Wait for cookies to be set (API auth via fetch() sets them automatically)
-  await page.waitForTimeout(1000)
-
   // Navigate to dashboard to verify authentication works
   await page.goto(`${baseUrl}/dashboard/runner`)
+
+  // Wait for final URL after all redirects (ensures cookies are working)
+  await page.waitForURL(`${baseUrl}/dashboard/runner`, { timeout: 15000 })
 
   // Wait for successful navigation and dashboard to load
   await waitForAuthenticationSuccess(page, 'runner', 15000)

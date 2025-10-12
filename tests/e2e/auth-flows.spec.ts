@@ -114,10 +114,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
 
-    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
-    await page.waitForTimeout(1000)
-
-    // Wait for successful redirect to dashboard
+    // Wait for successful redirect to dashboard (ensures cookies are working)
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
 
     // Verify we successfully accessed the dashboard (not redirected to signin)
@@ -137,7 +134,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Additional verification: try to access a protected route to confirm auth works
     await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await page.waitForURL('/workouts', { timeout: 10000 })
     await expect(page).toHaveURL('/workouts')
     await expect(page).not.toHaveURL('/auth/signin')
   })
@@ -204,10 +201,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
 
-    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
-    await page.waitForTimeout(1000)
-
-    // Should redirect to coach dashboard
+    // Should redirect to coach dashboard (wait for final URL to ensure cookies work)
     await page.waitForURL('**/dashboard/coach', { timeout: 10000 })
     await expect(page).toHaveURL('/dashboard/coach')
 
@@ -218,7 +212,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
 
     // Try to access runner dashboard (should redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(1000)
+    await page.waitForURL('/dashboard/coach', { timeout: 10000 })
     await expect(page).toHaveURL('/dashboard/coach')
   })
 
@@ -232,12 +226,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
 
-    // Wait for cookies to propagate to HTTP headers (ULT-54)
-    // Note: This is specific to our test pattern using page.evaluate(() => fetch())
-    // Production flow with nextCookies() plugin works immediately
-    await page.waitForTimeout(1000)
-
-    // Wait for dashboard
+    // Wait for dashboard (ensures cookies are working)
     await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
 
     // Refresh page
@@ -246,11 +235,11 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Should still be authenticated
     await expect(page).toHaveURL('/dashboard/runner')
     await page.waitForLoadState('domcontentloaded')
-    await expect(page.getByText('Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByTestId('runner-dashboard-content')).toBeVisible({ timeout: 10000 })
 
     // Navigate to workouts page to verify auth works
     await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await page.waitForURL('/workouts', { timeout: 10000 })
     await expect(page).toHaveURL('/workouts')
 
     // Verify we're still authenticated (not redirected to signin)
@@ -301,12 +290,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
 
-    // Wait for cookies to propagate to HTTP headers (ULT-54)
-    // Note: This is specific to our test pattern using page.evaluate(() => fetch())
-    // Production flow with nextCookies() plugin works immediately
-    await page.waitForTimeout(1000)
-
-    // Should redirect to dashboard (middleware doesn't preserve original URL)
+    // Should redirect to dashboard (ensures cookies are working)
     await page.waitForURL('**/dashboard/runner', { timeout: 10000 })
     await expect(page).toHaveURL('/dashboard/runner')
   })
