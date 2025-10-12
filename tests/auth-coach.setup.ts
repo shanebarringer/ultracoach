@@ -15,30 +15,28 @@ const authFile = path.join(__dirname, '../playwright/.auth/coach.json')
 
 setup('authenticate as coach @setup', async ({ page, context }) => {
   const logger = await getTestLogger('tests/auth-coach.setup')
-  logger.info('🔐 Starting coach authentication setup...')
+  logger.info('🔐 Starting coach authentication setup with storageState pattern...')
 
   const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
 
-  // Navigate to signin page
+  // Navigate to signin page to establish page context
   await page.goto(`${baseUrl}/auth/signin`)
   logger.info('📍 Navigated to signin page')
 
-  // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
-  // Implement retry logic with linear backoff for intermittent auth failures (matching runner auth)
+  // Retry configuration for handling intermittent JSON parsing errors (ULT-54)
   const MAX_AUTH_RETRIES = 3
-  const RETRY_DELAY_MS = 1000 // 1 second base delay
+  const RETRY_DELAY_MS = 1000
 
   let authResponse: { ok: boolean; status: number; body: string | object } | null = null
   let lastError: Error | null = null
 
+  // Authenticate via API using page.evaluate(() => fetch())
   for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
     try {
       logger.info(`🔑 Coach authentication attempt ${attempt}/${MAX_AUTH_RETRIES}`)
 
-      // Use page.evaluate(() => fetch()) to ensure cookies attach to browser context
-      // This is critical - page.request.post() would set cookies in isolated context
       const authResult = await page.evaluate(
         async ({ apiUrl, email, password }) => {
           const response = await fetch(apiUrl, {
@@ -62,13 +60,12 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
 
       authResponse = authResult
 
-      // Success case - break out of retry loop
       if (authResponse.ok) {
         logger.info(`✅ Coach authentication API successful on attempt ${attempt}`)
         break
       }
 
-      // Non-500 errors (like 401 Unauthorized) should fail immediately - no retry
+      // Non-500 errors (like 401) should fail immediately
       if (authResponse.status !== 500) {
         const bodyText =
           typeof authResponse.body === 'string'
@@ -86,7 +83,7 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
         )
       }
 
-      // 500 error - log and prepare for retry
+      // 500 error - prepare for retry
       const bodyText =
         typeof authResponse.body === 'string'
           ? authResponse.body
@@ -94,80 +91,46 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
       lastError = new Error(
         `Coach Auth API returned 500 on attempt ${attempt}: ${bodyText.slice(0, 100)}`
       )
-      logger.warn(`Retry ${attempt}/${MAX_AUTH_RETRIES}`, { error: lastError.message })
-
-      // Wait before retrying (linear backoff)
-      if (attempt < MAX_AUTH_RETRIES) {
-        const delay = RETRY_DELAY_MS * attempt
-        logger.info(`⏳ Waiting ${delay}ms before retry ${attempt + 1}...`)
-        await page.waitForTimeout(delay)
-      }
-    } catch (error) {
-      // Network errors or JSON parse errors - retry
-      lastError = error as Error
-      logger.error(`Coach authentication attempt ${attempt} failed`, {
-        error: lastError.message,
-        stack: lastError.stack,
+      logger.warn(`Coach auth attempt ${attempt} failed with 500 error, will retry...`, {
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
       })
+    } catch (error) {
+      lastError = error as Error
+      logger.warn(`Coach auth attempt ${attempt} threw error, will retry...`, {
+        error: (error as Error).message,
+        attempt,
+        maxRetries: MAX_AUTH_RETRIES,
+      })
+    }
 
-      if (attempt < MAX_AUTH_RETRIES) {
-        const delay = RETRY_DELAY_MS * attempt
-        logger.info(`⏳ Waiting ${delay}ms before retry ${attempt + 1}...`)
-        await page.waitForTimeout(delay)
-      }
+    if (attempt < MAX_AUTH_RETRIES) {
+      const delay = RETRY_DELAY_MS * attempt
+      logger.info(`⏳ Waiting ${delay}ms before retry...`)
+      await page.waitForTimeout(delay)
     }
   }
 
-  // Check if we have a successful auth response
   if (!authResponse || !authResponse.ok) {
-    const errorMessage = lastError
-      ? lastError.message
-      : authResponse
-        ? `Status ${authResponse.status}`
-        : 'Unknown error'
+    const finalError = lastError || new Error('Coach authentication failed after all retries')
+    logger.error('Coach Auth API failed after all retry attempts', {
+      attempts: MAX_AUTH_RETRIES,
+      lastError: finalError.message,
+    })
     throw new Error(
-      `Coach authentication failed after ${MAX_AUTH_RETRIES} attempts: ${errorMessage}`
+      `Coach authentication failed after ${MAX_AUTH_RETRIES} attempts: ${finalError.message}`
     )
   }
 
-  // CRITICAL FIX: Explicitly extract and inject cookie to avoid storageState race condition
-  // The fetch call set cookies, but we need to explicitly add them to context
-  // to ensure they're immediately available in future tests (not async loaded)
-  logger.info('🍪 Extracting session cookie from browser context...')
+  // Wait for cookies to be set (API auth via fetch() sets them automatically)
+  await page.waitForTimeout(1000)
 
-  const cookies = await context.cookies()
-  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-
-  if (!sessionCookie) {
-    logger.error('Session cookie not found after authentication', {
-      availableCookies: cookies.map(c => c.name).join(', '),
-    })
-    throw new Error('Session cookie not set by authentication API')
-  }
-
-  logger.info('✅ Session cookie found, re-injecting to ensure immediate availability', {
-    cookieName: sessionCookie.name,
-    domain: sessionCookie.domain,
-    path: sessionCookie.path,
-  })
-
-  // Re-inject cookie programmatically to ensure it's immediately available
-  // This fixes the race condition where storageState loads cookies asynchronously
-  await context.addCookies([
-    {
-      ...sessionCookie,
-      // Ensure cookie is set for localhost (dev) environment
-      domain: sessionCookie.domain || 'localhost',
-    },
-  ])
-
-  logger.info('🔐 Cookie injection complete - verifying authentication...')
-
-  // The API call should have set cookies, now navigate to dashboard and verify
+  // Navigate to dashboard to verify authentication works
   await page.goto(`${baseUrl}/dashboard/coach`)
-  await waitForAuthenticationSuccess(page, 'coach', 15000)
 
-  logger.info('✅ Successfully navigated to coach dashboard')
+  // Wait for successful navigation and dashboard to load
+  await waitForAuthenticationSuccess(page, 'coach', 15000)
+  logger.info('✅ Successfully verified authentication on coach dashboard')
 
   // Ensure the directory exists before saving authentication state
   const authDir = path.dirname(authFile)
@@ -180,7 +143,9 @@ setup('authenticate as coach @setup', async ({ page, context }) => {
     )
   }
 
-  // Save the authentication state (now with explicitly injected cookie)
+  // Save authenticated browser state - this is the Playwright storageState pattern!
+  // All future tests will automatically start with this authenticated state
   await context.storageState({ path: authFile })
-  logger.info(`💾 Saved coach authentication state to ${authFile}`)
+  logger.info(`💾 Saved coach authentication storageState to ${authFile}`)
+  logger.info('🎉 Tests using this project will automatically start authenticated!')
 })

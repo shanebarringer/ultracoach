@@ -29,7 +29,12 @@ test.describe('Authentication API Tests', () => {
     const cookies = await response.headers()
   })
 
-  test('should access dashboard after API authentication', async ({ page, request }) => {
+  test.skip('should access dashboard after API authentication', async ({ page, request }) => {
+    // SKIP REASON: request.post() sets cookies in request context, not page context
+    // This means page.goto() won't have access to the authentication cookies
+    // Use authenticateViaAPI() instead (see tests/auth.spec.ts for working examples)
+    // Related: ULT-54 - Cookie propagation between request and page contexts
+
     // First authenticate via API
     const authResponse = await request.post('http://localhost:3001/api/auth/sign-in/email', {
       data: {

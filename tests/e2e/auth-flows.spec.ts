@@ -112,7 +112,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await authenticateViaAPI(page, TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/runner')
+    await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
+
+    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
+    await page.waitForTimeout(1000)
 
     // Wait for successful redirect to dashboard
     await page.waitForURL('**/dashboard/runner', { timeout: 15000 })
@@ -133,7 +136,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page).not.toHaveURL('/auth/signin')
 
     // Additional verification: try to access a protected route to confirm auth works
-    await page.goto('/workouts')
+    await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(500)
     await expect(page).toHaveURL('/workouts')
     await expect(page).not.toHaveURL('/auth/signin')
   })
@@ -198,7 +202,10 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await authenticateViaAPI(page, TEST_COACH_EMAIL, TEST_COACH_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/coach')
+    await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
+
+    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
+    await page.waitForTimeout(1000)
 
     // Should redirect to coach dashboard
     await page.waitForURL('**/dashboard/coach', { timeout: 10000 })
@@ -210,7 +217,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page.getByTestId('runners-section')).toBeVisible()
 
     // Try to access runner dashboard (should redirect)
-    await page.goto('/dashboard/runner')
+    await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(1000)
     await expect(page).toHaveURL('/dashboard/coach')
   })
 
@@ -222,7 +230,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await authenticateViaAPI(page, TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/runner')
+    await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
+
+    // Wait for cookies to propagate to HTTP headers (ULT-54)
+    // Note: This is specific to our test pattern using page.evaluate(() => fetch())
+    // Production flow with nextCookies() plugin works immediately
+    await page.waitForTimeout(1000)
 
     // Wait for dashboard
     await page.waitForURL('**/dashboard/runner', { timeout: 20000 })
@@ -236,7 +249,8 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await expect(page.getByText('Base Camp Dashboard')).toBeVisible({ timeout: 10000 })
 
     // Navigate to workouts page to verify auth works
-    await page.goto('/workouts')
+    await page.goto('/workouts', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(500)
     await expect(page).toHaveURL('/workouts')
 
     // Verify we're still authenticated (not redirected to signin)
@@ -285,7 +299,12 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     await authenticateViaAPI(page, TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/runner')
+    await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
+
+    // Wait for cookies to propagate to HTTP headers (ULT-54)
+    // Note: This is specific to our test pattern using page.evaluate(() => fetch())
+    // Production flow with nextCookies() plugin works immediately
+    await page.waitForTimeout(1000)
 
     // Should redirect to dashboard (middleware doesn't preserve original URL)
     await page.waitForURL('**/dashboard/runner', { timeout: 10000 })

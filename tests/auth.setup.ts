@@ -15,31 +15,28 @@ const authFile = path.join(__dirname, '../playwright/.auth/runner.json')
 
 setup('authenticate @setup', async ({ page, context }) => {
   const logger = await getTestLogger('tests/auth.setup')
-  logger.info('🔐 Starting runner authentication setup...')
+  logger.info('🔐 Starting runner authentication setup with storageState pattern...')
 
   const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:3001'
 
-  // Navigate to signin page
+  // Navigate to signin page to establish page context
   await page.goto(`${baseUrl}/auth/signin`)
   logger.info('📍 Navigated to signin page')
 
-  // Wait for the page to be fully loaded
   await page.waitForLoadState('domcontentloaded')
 
   // Retry configuration for handling intermittent JSON parsing errors (ULT-54)
   const MAX_AUTH_RETRIES = 3
-  const BASE_RETRY_DELAY = 1000 // 1 second base delay
+  const BASE_RETRY_DELAY = 1000
 
   let authResponse
   let lastError: Error | null = null
 
-  // Implement retry logic with exponential backoff for intermittent auth failures
+  // Authenticate via API using page.evaluate(() => fetch())
   for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
     try {
       logger.info(`🔑 Authentication attempt ${attempt}/${MAX_AUTH_RETRIES}`)
 
-      // Use page.evaluate(() => fetch()) to ensure cookies attach to browser context
-      // This is critical - page.request.post() would set cookies in isolated context
       const authResult = await page.evaluate(
         async ({ apiUrl, email, password }) => {
           const response = await fetch(apiUrl, {
@@ -63,13 +60,12 @@ setup('authenticate @setup', async ({ page, context }) => {
 
       authResponse = authResult
 
-      // Success case - break out of retry loop
       if (authResponse.ok) {
         logger.info(`✅ Authentication API successful on attempt ${attempt}`)
         break
       }
 
-      // Non-500 errors (like 401 Unauthorized) should fail immediately - no retry
+      // Non-500 errors (like 401) should fail immediately
       if (authResponse.status !== 500) {
         const bodyText =
           typeof authResponse.body === 'string'
@@ -85,7 +81,7 @@ setup('authenticate @setup', async ({ page, context }) => {
         throw new Error(`Authentication failed with status ${authResponse.status} - ${preview}`)
       }
 
-      // 500 error - log and prepare for retry
+      // 500 error - prepare for retry
       const bodyText =
         typeof authResponse.body === 'string'
           ? authResponse.body
@@ -98,7 +94,6 @@ setup('authenticate @setup', async ({ page, context }) => {
         maxRetries: MAX_AUTH_RETRIES,
       })
     } catch (error) {
-      // Network or other errors
       lastError = error as Error
       logger.warn(`Auth attempt ${attempt} threw error, will retry...`, {
         error: (error as Error).message,
@@ -107,15 +102,13 @@ setup('authenticate @setup', async ({ page, context }) => {
       })
     }
 
-    // If this wasn't the last attempt, wait with exponential backoff
     if (attempt < MAX_AUTH_RETRIES) {
-      const delay = BASE_RETRY_DELAY * attempt // Linear backoff: 1s, 2s, 3s
+      const delay = BASE_RETRY_DELAY * attempt
       logger.info(`⏳ Waiting ${delay}ms before retry...`)
       await page.waitForTimeout(delay)
     }
   }
 
-  // Check if we exhausted all retries without success
   if (!authResponse || !authResponse.ok) {
     const finalError = lastError || new Error('Authentication failed after all retries')
     logger.error('Auth API failed after all retry attempts', {
@@ -127,44 +120,15 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // CRITICAL FIX: Explicitly extract and inject cookie to avoid storageState race condition
-  // The fetch call set cookies, but we need to explicitly add them to context
-  // to ensure they're immediately available in future tests (not async loaded)
-  logger.info('🍪 Extracting session cookie from browser context...')
+  // Wait for cookies to be set (API auth via fetch() sets them automatically)
+  await page.waitForTimeout(1000)
 
-  const cookies = await context.cookies()
-  const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-
-  if (!sessionCookie) {
-    logger.error('Session cookie not found after authentication', {
-      availableCookies: cookies.map(c => c.name).join(', '),
-    })
-    throw new Error('Session cookie not set by authentication API')
-  }
-
-  logger.info('✅ Session cookie found, re-injecting to ensure immediate availability', {
-    cookieName: sessionCookie.name,
-    domain: sessionCookie.domain,
-    path: sessionCookie.path,
-  })
-
-  // Re-inject cookie programmatically to ensure it's immediately available
-  // This fixes the race condition where storageState loads cookies asynchronously
-  await context.addCookies([
-    {
-      ...sessionCookie,
-      // Ensure cookie is set for localhost (dev) environment
-      domain: sessionCookie.domain || 'localhost',
-    },
-  ])
-
-  logger.info('🔐 Cookie injection complete - verifying authentication...')
-
-  // Now navigate to dashboard and verify
+  // Navigate to dashboard to verify authentication works
   await page.goto(`${baseUrl}/dashboard/runner`)
-  await waitForAuthenticationSuccess(page, 'runner', 15000)
 
-  logger.info('✅ Successfully navigated to dashboard')
+  // Wait for successful navigation and dashboard to load
+  await waitForAuthenticationSuccess(page, 'runner', 15000)
+  logger.info('✅ Successfully verified authentication on dashboard')
 
   // Ensure the directory exists before saving authentication state
   const authDir = path.dirname(authFile)
@@ -177,7 +141,9 @@ setup('authenticate @setup', async ({ page, context }) => {
     )
   }
 
-  // Save the authentication state (now with explicitly injected cookie)
+  // Save authenticated browser state - this is the Playwright storageState pattern!
+  // All future tests will automatically start with this authenticated state
   await context.storageState({ path: authFile })
-  logger.info(`💾 Saved runner authentication state to ${authFile}`)
+  logger.info(`💾 Saved runner authentication storageState to ${authFile}`)
+  logger.info('🎉 Tests using this project will automatically start authenticated!')
 })

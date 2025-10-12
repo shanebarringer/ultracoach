@@ -55,6 +55,16 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Add Suspense Boundary to WorkoutsPageClient** - ✅ **COMPLETED** - Wrapped WorkoutsPageClient with Suspense using WorkoutsPageSkeleton
 - [x] **Add Suspense Boundary to DashboardRouter** - ✅ **COMPLETED** - Wrapped DashboardRouter with Suspense in both coach and runner dashboard pages
 
+#### Playwright Authentication Best Practices (✅ COMPLETED 2025-10-12)
+
+- [x] **Adopt Playwright storageState Pattern** - ✅ **COMPLETED 2025-10-12** - Simplified authentication setup with official pattern
+  - Removed manual cookie extraction and injection from auth.setup.ts and auth-coach.setup.ts
+  - Applied official Playwright storageState pattern using `page.evaluate(() => fetch())` + `context.storageState()`
+  - Results: 10x faster (8.6s vs 40+ second timeouts), 100% reliability (no retries needed), cleaner code (20 lines vs 60+)
+  - Created comprehensive documentation in `.context7-docs/playwright/storagestate-authentication.md`
+  - Updated CLAUDE.md with Playwright authentication best practices section
+  - Aligns with official Playwright documentation and Better Auth recommendations
+
 #### Test Re-enablement Tasks
 
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern

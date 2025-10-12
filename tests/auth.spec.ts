@@ -28,7 +28,10 @@ test.describe('Authentication Flow', () => {
     await authenticateViaAPI(page, TEST_RUNNER_EMAIL, TEST_RUNNER_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/runner')
+    await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })
+
+    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
+    await page.waitForTimeout(1000)
 
     // Wait for redirect to complete
     await expect(page).toHaveURL(/\/dashboard\/runner/, { timeout: 60000 })
@@ -44,7 +47,10 @@ test.describe('Authentication Flow', () => {
     await authenticateViaAPI(page, TEST_COACH_EMAIL, TEST_COACH_PASSWORD)
 
     // Navigate to dashboard (API auth sets cookies, but doesn't redirect)
-    await page.goto('/dashboard/coach')
+    await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
+
+    // Wait a moment for cookies to propagate to HTTP headers (ULT-54)
+    await page.waitForTimeout(1000)
 
     // Wait for redirect to complete
     await expect(page).toHaveURL(/\/dashboard\/coach/, { timeout: 60000 })
