@@ -3,42 +3,50 @@ import { config } from 'dotenv'
 import * as fs from 'fs'
 import { resolve } from 'path'
 
-import { createLogger } from '../src/lib/logger'
+import { createLogger } from '../../src/lib/logger'
 
 // Load environment variables
 config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('seed-users-better-auth')
 
-// Test users with their passwords and roles
+// Test users with their passwords and user types
+// IMPORTANT: These must match the test credentials in tests/utils/test-helpers.ts
 const testUsers = [
   {
-    email: 'coach1@ultracoach.dev',
-    password: 'password123',
-    name: 'Elena Rodriguez',
-    role: 'coach',
-    fullName: 'Elena Rodriguez',
+    email: 'emma@ultracoach.dev',
+    password: 'UltraCoach2025!',
+    name: 'Emma Johnson',
+    userType: 'coach',
+    fullName: 'Emma Johnson',
   },
   {
-    email: 'coach2@ultracoach.dev',
-    password: 'password123',
-    name: 'Sarah Mountain',
-    role: 'coach',
-    fullName: 'Sarah Mountain',
+    email: 'sarah.martinez@ultracoach.dev',
+    password: 'UltraCoach2025!',
+    name: 'Sarah Martinez',
+    userType: 'coach',
+    fullName: 'Sarah Martinez',
   },
   {
-    email: 'testrunner@ultracoach.dev',
-    password: 'password123',
-    name: 'Alex Trail',
-    role: 'runner',
-    fullName: 'Alex Trail',
+    email: 'michael.chen@ultracoach.dev',
+    password: 'UltraCoach2025!',
+    name: 'Michael Chen',
+    userType: 'coach',
+    fullName: 'Michael Chen',
   },
   {
-    email: 'runner2@ultracoach.dev',
-    password: 'password123',
-    name: 'Mike Trailblazer',
-    role: 'runner',
-    fullName: 'Mike Trailblazer',
+    email: 'alex.rivera@ultracoach.dev',
+    password: 'RunnerPass2025!',
+    name: 'Alex Rivera',
+    userType: 'runner',
+    fullName: 'Alex Rivera',
+  },
+  {
+    email: 'riley.parker@ultracoach.dev',
+    password: 'RunnerPass2025!',
+    name: 'Riley Parker',
+    userType: 'runner',
+    fullName: 'Riley Parker',
   },
 ]
 
@@ -52,7 +60,7 @@ async function signUpUser(userData: (typeof testUsers)[0]) {
       email: userData.email,
       password: userData.password,
       name: userData.name,
-      role: userData.role,
+      userType: userData.userType,
       fullName: userData.fullName,
     }),
   })
@@ -86,7 +94,7 @@ async function createTestUsers() {
       logger.info(`Creating user: ${userData.email}`)
 
       const result = await signUpUser(userData)
-      logger.info(`✅ Created user: ${userData.email} (${userData.role})`)
+      logger.info(`✅ Created user: ${userData.email} (${userData.userType})`)
     } catch (error) {
       logger.error(`❌ Error creating ${userData.email}:`, error)
     }
@@ -126,11 +134,11 @@ function updateEnvLocal() {
 
   const roleCounters = { coach: 0, runner: 0 }
   testUsers.forEach(user => {
-    roleCounters[user.role as 'coach' | 'runner']++
-    const role = user.role.toUpperCase()
+    roleCounters[user.userType as 'coach' | 'runner']++
+    const role = user.userType.toUpperCase()
     const suffix =
-      roleCounters[user.role as 'coach' | 'runner'] > 1
-        ? roleCounters[user.role as 'coach' | 'runner'].toString()
+      roleCounters[user.userType as 'coach' | 'runner'] > 1
+        ? roleCounters[user.userType as 'coach' | 'runner'].toString()
         : ''
     const roleKey = `${role}${suffix}`
 
@@ -161,10 +169,11 @@ async function main() {
     logger.info('✅ Better Auth user seeding completed')
     console.log(`
 🎯 Test users created! Use these credentials to login:
-• coach1@ultracoach.dev / password123 (Coach)
-• coach2@ultracoach.dev / password123 (Coach)  
-• testrunner@ultracoach.dev / password123 (Runner)
-• runner2@ultracoach.dev / password123 (Runner)
+• emma@ultracoach.dev / UltraCoach2025! (Coach)
+• sarah.martinez@ultracoach.dev / UltraCoach2025! (Coach)
+• michael.chen@ultracoach.dev / UltraCoach2025! (Coach)
+• alex.rivera@ultracoach.dev / RunnerPass2025! (Runner)
+• riley.parker@ultracoach.dev / RunnerPass2025! (Runner)
     `)
     process.exit(0)
   } catch (error) {
