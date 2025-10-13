@@ -30,18 +30,18 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'coach_runners table cleared'
+        message: 'coach_runners table cleared',
       })
     }
 
-    return NextResponse.json(
-      { error: 'Invalid table specified' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Invalid table specified' }, { status: 400 })
   } catch (error) {
     logger.error('Error during test cleanup:', error)
     return NextResponse.json(
-      { error: 'Cleanup failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Cleanup failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }

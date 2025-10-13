@@ -13,11 +13,13 @@ test.describe('Coach-Runner Relationship Management', () => {
   // Clear relationships before all tests to ensure clean state
   test.beforeAll(async ({ request }) => {
     // Delete all coach_runners relationships
-    await request.post('/api/test/cleanup', {
-      data: { table: 'coach_runners' },
-    }).catch(() => {
-      // If endpoint doesn't exist yet, ignore error
-    })
+    await request
+      .post('/api/test/cleanup', {
+        data: { table: 'coach_runners' },
+      })
+      .catch(() => {
+        // If endpoint doesn't exist yet, ignore error
+      })
   })
 
   test.describe('Coach Perspective', () => {
@@ -58,14 +60,11 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click connect on first available runner
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Wait for UI to update after relationship creation
-      await page.waitForTimeout(1000)
+      // Wait for the pending status to appear (indicating the relationship was created and UI updated)
+      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
 
       // Runner should move to "My Relationships" section with pending status
       await expect(page.getByText('My Relationships')).toBeVisible()
-
-      // Should show the pending status indicator (use first() to avoid strict mode violation)
-      await expect(page.getByText('pending').first()).toBeVisible()
 
       // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
       await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
@@ -179,11 +178,11 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
+      // Wait for the pending status to appear (indicating the relationship was created and UI updated)
+      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
+
       // Coach should move to "My Relationships" section with pending status
       await expect(page.getByText('My Relationships')).toBeVisible()
-
-      // Should show the pending status indicator (use first() to avoid strict mode violation)
-      await expect(page.getByText('pending').first()).toBeVisible()
 
       // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
       await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
