@@ -24,7 +24,7 @@ test.describe('Coach-Runner Relationship Management', () => {
       await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
 
       // Click "Connect" button to navigate to runner selection
-      await page.getByRole('button', { name: /Connect|🏃‍♂️ Connect/ }).click()
+      await page.getByTestId('connect-athletes-button').click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
@@ -38,8 +38,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send connection request to runner', async ({ page }) => {
-      // Click "Connect" button from dashboard
-      await page.getByRole('button', { name: /Connect|🏃‍♂️ Connect/ }).click()
+      // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
+      await page.getByTestId('connect-athletes-button').click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
@@ -169,10 +169,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Should show success notification (use .first() to avoid strict mode violation)
-      await expect(
-        page.getByText(/connection request sent|coaching request sent|connected/i).first()
-      ).toBeVisible()
+      // Should show success notification
+      await expect(page.getByTestId('connection-success-notification')).toBeVisible()
 
       // Coach should move to pending connections or be connected
       // The exact UI behavior may vary based on the implementation

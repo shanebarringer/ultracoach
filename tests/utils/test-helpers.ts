@@ -34,9 +34,9 @@ export async function ensureAuthCookiesLoaded(
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
   // CI needs more retries and longer delays for session API to stabilize after auth setup
-  // Timeout configuration: 6 retries * 3000ms = 18s max (well under 45s test timeout)
-  const maxRetries = process.env.CI ? 6 : 5
-  const retryDelay = process.env.CI ? 3000 : 500
+  // Timeout configuration: 10 retries * 5000ms = 50s max (with 10s fetch timeout per attempt)
+  const maxRetries = process.env.CI ? 10 : 5
+  const retryDelay = process.env.CI ? 5000 : 500
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
@@ -58,11 +58,12 @@ export async function ensureAuthCookiesLoaded(
        * - No Playwright API exists to confirm cookies are attached to HTTP headers
        *
        * Verification approach:
-       * - Make test request to /api/auth/get-session to verify cookies work
+       * - Make test request to /api/auth/get-session with 10s timeout to verify cookies work
        * - Retry up to 10 times in CI (5 locally) with fixed delay (5000ms CI, 500ms local)
-       * - Gives session API up to ~50 seconds in CI to stabilize after auth setup
+       * - Each fetch has 10s timeout to prevent indefinite hangs on slow/unresponsive API
+       * - Gives session API up to 50s in CI to stabilize (10 retries * 5s delay)
        * - Only proceed when server confirms valid session
-       * - Fails fast if authentication is broken (don't wait for navigation timeout)
+       * - Fails fast if authentication is broken (10s timeout vs 30s navigation timeout)
        *
        * Benefits over fixed timeout approach:
        * - Works reliably across different CI environments and system loads
@@ -72,14 +73,26 @@ export async function ensureAuthCookiesLoaded(
       try {
         // Get base URL from page context (Playwright automatically uses page's base URL)
         // Use page.evaluate to make fetch call from within page context where cookies are guaranteed available
+        // CRITICAL: 10s timeout prevents indefinite hangs on slow/unresponsive API in CI
         const sessionData = await page.evaluate(async () => {
-          const response = await fetch('/api/auth/get-session', {
-            credentials: 'same-origin',
-          })
-          if (!response.ok) {
-            throw new Error(`Session API returned ${response.status}`)
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
+          try {
+            const response = await fetch('/api/auth/get-session', {
+              credentials: 'same-origin',
+              signal: controller.signal,
+            })
+            clearTimeout(timeoutId)
+
+            if (!response.ok) {
+              throw new Error(`Session API returned ${response.status}`)
+            }
+            return response.json()
+          } catch (error) {
+            clearTimeout(timeoutId)
+            throw error
           }
-          return response.json()
         })
 
         if (sessionData?.session?.userId) {

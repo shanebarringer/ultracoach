@@ -96,10 +96,16 @@ test.describe('Workout Atoms Functionality', () => {
       // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
       const cookies = await page.context().cookies()
       const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
+      // … around line 99 in tests/e2e/workout-atoms.spec.ts …
       logger.info('[workout-atoms persist test] Cookie diagnostic:', {
         totalCookies: cookies.length,
         sessionCookiePresent: !!sessionCookie,
-        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
+      })
+
+      // … around line 143 in the same file …
+      logger.info('[workout-atoms view test] Cookie diagnostic:', {
+        totalCookies: cookies.length,
+        sessionCookiePresent: !!sessionCookie,
       })
 
       // First, go to calendar/weekly planner
