@@ -216,30 +216,33 @@ jobs:
           echo "Checking if Next.js process is running..."
           ps aux | grep next || echo "Next.js process not found"
 
+          # Define BASE_URL for maintainability and DRY
+          BASE_URL="http://localhost:3001"
+
           for i in {1..45}; do
-            # First try health endpoint
-            if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
+            # First try health endpoint with timeouts
+            if curl -f -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health" >/dev/null 2>&1; then
               echo "✅ Health endpoint is ready!"
-              curl -s http://localhost:3001/api/health | head -3
+              curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health" | head -3
               exit 0
             fi
-            
-            # Fallback: try root endpoint  
-            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
+
+            # Fallback: try root endpoint with timeouts
+            if curl -f -s --connect-timeout 2 --max-time 5 "${BASE_URL}/" >/dev/null 2>&1; then
               echo "✅ Root endpoint is ready!"
               exit 0
             fi
-            
+
             # Show more debugging info every 10 attempts
             if [ $((i % 10)) -eq 0 ]; then
               echo "🔍 Debugging attempt $i/45:"
               echo "  - Port 3001 listening: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'NOT FOUND')"
               echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
-              echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
+              echo "  - Last curl error: $(curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health" 2>&1 || echo 'Connection failed')"
               echo "  - Recent app logs:"
               tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
             fi
-            
+
             echo "Waiting... ($i/45) - checking again in 2s"
             sleep 2
           done
@@ -338,17 +341,20 @@ jobs:
           echo "🔍 Checking if app is ready for tests..."
           echo "Polling health endpoint to ensure database and Better Auth are initialized..."
 
+          # Define BASE_URL for maintainability and DRY
+          BASE_URL="http://localhost:3001"
+
           # Poll database health endpoint (more comprehensive than root endpoint)
           for i in {1..30}; do
-            # Check database health endpoint (ensures database + Better Auth ready)
-            if curl -f -s http://localhost:3001/api/health/database >/dev/null 2>&1; then
+            # Check database health endpoint (ensures database + Better Auth ready) with timeouts
+            if curl -f -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health/database" >/dev/null 2>&1; then
               echo "✅ Database health check passed!"
-              curl -s http://localhost:3001/api/health/database | head -10
+              curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health/database" | head -10
               exit 0
             fi
 
-            # Fallback: check basic health endpoint
-            if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
+            # Fallback: check basic health endpoint with timeouts
+            if curl -f -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health" >/dev/null 2>&1; then
               echo "⚠️ Basic health check passed, but database health check failed"
               echo "Retrying database health check..."
             fi
@@ -357,7 +363,7 @@ jobs:
             if [ $((i % 10)) -eq 0 ]; then
               echo "🔍 Debugging attempt $i/30:"
               echo "  - Port 3001 listening: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'NOT FOUND')"
-              echo "  - Database health response: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Connection failed')"
+              echo "  - Database health response: $(curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health/database" 2>&1 | head -3 || echo 'Connection failed')"
               echo "  - Recent app logs:"
               tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
             fi
@@ -370,8 +376,8 @@ jobs:
           echo "❌ App/database not ready after 60 seconds!"
           echo "🔍 Final debugging info:"
           echo "  - Port 3001 status: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'PORT NOT LISTENING')"
-          echo "  - Basic health: $(curl -s http://localhost:3001/api/health 2>&1 | head -3 || echo 'Failed')"
-          echo "  - Database health: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Failed')"
+          echo "  - Basic health: $(curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health" 2>&1 | head -3 || echo 'Failed')"
+          echo "  - Database health: $(curl -s --connect-timeout 2 --max-time 5 "${BASE_URL}/api/health/database" 2>&1 | head -3 || echo 'Failed')"
           echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
           echo "  - Recent app logs:"
           tail -20 app.log 2>/dev/null || echo "No logs available"

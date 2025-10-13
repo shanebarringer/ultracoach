@@ -6,7 +6,7 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { TEST_USERS } from '../utils/test-helpers'
+import { TEST_USERS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
 import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
@@ -16,6 +16,7 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
+      await ensureAuthCookiesLoaded(page)
       await waitForPageReady(page)
     })
 
@@ -44,9 +45,6 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
-
-      // Get first runner's email to identify them later
-      const firstRunnerElement = page.locator('text=test.runner').first()
 
       // Click connect on first available runner
       await page.getByRole('button', { name: 'Connect' }).first().click()
@@ -134,6 +132,7 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
+      await ensureAuthCookiesLoaded(page)
       await waitForPageReady(page)
     })
 
@@ -141,11 +140,11 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Runner dashboard shows "My Guides" section with Find Coach button
       await expect(page.getByText('My Guides')).toBeVisible()
 
-      // Click Find Coach button to navigate to coach selection (handle different button texts)
-      await page.getByRole('button', { name: /Find Coach|Connect/ }).click()
+      // Click Find Coach button to navigate to coach selection using testid
+      await page.getByTestId('find-coach-button').click()
 
       // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
       // Should show "Find a Coach" section
@@ -159,11 +158,11 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send coaching request to coach', async ({ page }) => {
-      // Click Find Coach button from dashboard (handle different button texts)
-      await page.getByRole('button', { name: /Find Coach|Connect/ }).click()
+      // Click Find Coach button from dashboard using testid
+      await page.getByTestId('find-coach-button').click()
 
       // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
       // Click Connect on first available coach

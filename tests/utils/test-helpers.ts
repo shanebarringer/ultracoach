@@ -228,9 +228,9 @@ export async function navigateToDashboard(page: Page, userType: TestUserType) {
   }
 
   // Verify we're on the correct dashboard (pathname-based to allow query params)
-  await expect(page).toHaveURL(url => new URL(url).pathname === user.expectedDashboard, {
-    timeout: TEST_TIMEOUTS.long,
-  })
+  await expect
+    .poll(() => new URL(page.url()).pathname, { timeout: TEST_TIMEOUTS.long })
+    .toBe(user.expectedDashboard)
 }
 
 /**

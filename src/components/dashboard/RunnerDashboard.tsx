@@ -450,6 +450,7 @@ function RunnerDashboard() {
               color="primary"
               variant="flat"
               className="text-xs"
+              data-testid="find-coach-button"
             >
               Find Coach
             </Button>
@@ -470,6 +471,7 @@ function RunnerDashboard() {
                   color="primary"
                   size="sm"
                   className="bg-primary text-white font-medium"
+                  data-testid="find-your-guide-button"
                 >
                   Find Your Guide
                 </Button>

@@ -98,6 +98,7 @@ test.describe('Workout Atoms Functionality', () => {
       logger.info('[workout-atoms persist test] Cookie diagnostic:', {
         totalCookies: cookies.length,
         sessionCookiePresent: !!sessionCookie,
+        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
       })
 
       // … around line 143 in the same file …

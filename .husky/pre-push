@@ -1,12 +1,23 @@
 echo "🚀 Running pre-push checks..."
 
-# Run critical E2E tests (auth and race-import)
-echo "🧪 Running critical E2E tests..."
-pnpm test:critical || {
-  echo "❌ Critical tests failed. Please fix them before pushing."
-  echo "💡 Tip: Run 'pnpm test:critical' locally to debug"
-  exit 1
-}
+# Check if full test suite is requested via environment variable
+if [ "$PRE_PUSH_FULL_TESTS" = "true" ]; then
+  echo "🧪 Running full E2E test suite..."
+  pnpm test || {
+    echo "❌ Tests failed. Please fix them before pushing."
+    echo "💡 Tip: Run 'pnpm test' locally to debug"
+    exit 1
+  }
+else
+  # Run critical E2E tests (auth and race-import)
+  echo "🧪 Running critical E2E tests..."
+  pnpm test:critical || {
+    echo "❌ Critical tests failed. Please fix them before pushing."
+    echo "💡 Tip: Run 'pnpm test:critical' locally to debug"
+    echo "💡 Tip: Set PRE_PUSH_FULL_TESTS=true to run full test suite"
+    exit 1
+  }
+fi
 
 # Build check (ensures production build works)
 echo "🏗️  Checking build..."
