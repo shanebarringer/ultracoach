@@ -34,8 +34,9 @@ export async function ensureAuthCookiesLoaded(
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
   // CI needs more retries and longer delays for session API to stabilize after auth setup
-  const maxRetries = process.env.CI ? 10 : 5
-  const retryDelay = process.env.CI ? 5000 : 500
+  // Timeout configuration: 6 retries * 3000ms = 18s max (well under 45s test timeout)
+  const maxRetries = process.env.CI ? 6 : 5
+  const retryDelay = process.env.CI ? 3000 : 500
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
@@ -312,21 +313,25 @@ export async function authenticateViaAPI(
   email: string,
   password: string,
   baseUrl?: string
-): Promise<{ ok: boolean; status: number; body: any }> {
+): Promise<{ ok: boolean; status: number; body: unknown }> {
   const authUrl = baseUrl || process.env.E2E_BASE_URL || 'http://localhost:3001'
 
   // Use same retry logic as auth.setup.ts for reliability
   const MAX_AUTH_RETRIES = 3
   const BASE_RETRY_DELAY = 1000
 
-  let authResponse: { ok: boolean; status: number; body: any } | null = null
+  let authResponse: { ok: boolean; status: number; body: unknown } | null = null
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= MAX_AUTH_RETRIES; attempt++) {
     try {
       // CRITICAL: Use page.evaluate(() => fetch()) to run in browser context
       // This ensures cookies attach to the page's context, not an isolated request context
-      const authResult = await page.evaluate(
+      const authResult = await page.evaluate<{
+        ok: boolean
+        status: number
+        body: unknown
+      }>(
         async ({ apiUrl, userEmail, userPassword }) => {
           const response = await fetch(apiUrl, {
             method: 'POST',

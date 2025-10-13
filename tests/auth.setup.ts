@@ -29,7 +29,7 @@ setup('authenticate @setup', async ({ page, context }) => {
   const MAX_AUTH_RETRIES = 3
   const BASE_RETRY_DELAY = 1000
 
-  let authResponse: { ok: boolean; status: number; body: any } | null = null
+  let authResponse: { ok: boolean; status: number; body: unknown } | null = null
   let lastError: Error | null = null
 
   // Authenticate via API using page.evaluate(() => fetch())
@@ -37,7 +37,11 @@ setup('authenticate @setup', async ({ page, context }) => {
     try {
       logger.info(`🔑 Authentication attempt ${attempt}/${MAX_AUTH_RETRIES}`)
 
-      const authResult = await page.evaluate(
+      const authResult = await page.evaluate<{
+        ok: boolean
+        status: number
+        body: unknown
+      }>(
         async ({ apiUrl, email, password }) => {
           const response = await fetch(apiUrl, {
             method: 'POST',
