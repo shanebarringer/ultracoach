@@ -295,6 +295,8 @@ export default defineConfig({
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
+      // Ensure relationships spec never runs in this catch-all project
+      testIgnore: '**/coach-runner-relationships.spec.ts',
       grepInvert:
         /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships/,
       use: {

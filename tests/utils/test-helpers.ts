@@ -62,7 +62,7 @@ export async function ensureAuthCookiesLoaded(
     if (!healthReady) {
       throw new Error('Health check failed - database not ready after 30s')
     }
-  } catch (error) {
+  } catch {
     // Health check failed - but continue anyway and let session verification handle it
     // This ensures tests don't fail if health endpoint has issues
   }
@@ -134,7 +134,7 @@ export async function ensureAuthCookiesLoaded(
           await page.waitForTimeout(retryDelay)
           continue
         }
-      } catch (_error) {
+      } catch {
         // Network error or API failure - retry
         if (attempt < maxRetries) {
           await page.waitForTimeout(retryDelay)

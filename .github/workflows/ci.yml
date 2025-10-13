@@ -233,7 +233,7 @@ jobs:
             # Show more debugging info every 10 attempts
             if [ $((i % 10)) -eq 0 ]; then
               echo "🔍 Debugging attempt $i/45:"
-              echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
+              echo "  - Port 3001 listening: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'NOT FOUND')"
               echo "  - Next.js processes: $(pgrep -f 'next' | wc -l)"
               echo "  - Last curl error: $(curl -s http://localhost:3001/api/health 2>&1 || echo 'Connection failed')"
               echo "  - Recent app logs:"
@@ -246,7 +246,7 @@ jobs:
 
           echo "❌ Application failed to start within 90 seconds"
           echo "🔍 Final debugging info:"
-          echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
+          echo "  - Port 3001 status: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'PORT NOT LISTENING')"
           echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
           echo "  - Process PID file: $(cat .next_pid 2>/dev/null || echo 'PID file not found')"
           exit 1
@@ -356,7 +356,7 @@ jobs:
             # Show debugging info every 10 attempts
             if [ $((i % 10)) -eq 0 ]; then
               echo "🔍 Debugging attempt $i/30:"
-              echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
+              echo "  - Port 3001 listening: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'NOT FOUND')"
               echo "  - Database health response: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Connection failed')"
               echo "  - Recent app logs:"
               tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
@@ -369,7 +369,7 @@ jobs:
           # Final check
           echo "❌ App/database not ready after 60 seconds!"
           echo "🔍 Final debugging info:"
-          echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
+          echo "  - Port 3001 status: $(ss -ltn 2>/dev/null | grep ':3001' || echo 'PORT NOT LISTENING')"
           echo "  - Basic health: $(curl -s http://localhost:3001/api/health 2>&1 | head -3 || echo 'Failed')"
           echo "  - Database health: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Failed')"
           echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"

@@ -1,6 +1,6 @@
 echo "🚀 Running pre-push checks..."
 
-# Run critical E2E tests (auth, race-import, coach-runner relationships)
+# Run critical E2E tests (auth and race-import)
 echo "🧪 Running critical E2E tests..."
 pnpm test:critical || {
   echo "❌ Critical tests failed. Please fix them before pushing."
