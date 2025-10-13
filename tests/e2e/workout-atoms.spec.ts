@@ -11,7 +11,7 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
-import { TEST_TIMEOUTS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { TEST_TIMEOUTS } from '../utils/test-helpers'
 import { getTestLogger } from '../utils/test-logger'
 
 test.describe('Workout Atoms Functionality', () => {
@@ -21,7 +21,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should display upcoming workouts on runner dashboard', async ({ page }) => {
       // Navigate to runner dashboard
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -58,7 +57,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should display recent/completed workouts on runner dashboard', async ({ page }) => {
       // Navigate to runner dashboard
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -110,7 +108,6 @@ test.describe('Workout Atoms Functionality', () => {
 
       // First, go to calendar/weekly planner
       await page.goto('/calendar')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -123,13 +120,11 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate away to another page
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Navigate back to calendar
       await page.goto('/calendar')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -153,7 +148,6 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to training plans page first
       await page.goto('/training-plans')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/training-plans')
 
@@ -191,7 +185,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should successfully submit workout completion modal', async ({ page }) => {
       // Navigate to workouts page
       await page.goto('/workouts')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -276,7 +269,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should update dashboard after workout completion', async ({ page }) => {
       // Start on dashboard to get initial counts
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -286,7 +278,6 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to workouts page
       await page.goto('/workouts')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -311,7 +302,6 @@ test.describe('Workout Atoms Functionality', () => {
 
           // Go back to dashboard
           await page.goto('/dashboard/runner')
-          await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
           await expect(page).toHaveURL('/dashboard/runner')
 
@@ -337,7 +327,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should refresh workouts when navigating between pages', async ({ page }) => {
       // Start on workouts page
       await page.goto('/workouts')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 
@@ -347,7 +336,6 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to dashboard
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner')
 
@@ -359,7 +347,6 @@ test.describe('Workout Atoms Functionality', () => {
 
       // Navigate to calendar
       await page.goto('/calendar')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/calendar')
 
@@ -378,7 +365,6 @@ test.describe('Workout Atoms Functionality', () => {
     test('should maintain workout state across page refreshes', async ({ page }) => {
       // Navigate to workouts page
       await page.goto('/workouts')
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/workouts')
 

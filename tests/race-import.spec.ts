@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 
 import { waitForHeroUIReady } from './utils/heroui-helpers'
 import { waitForFileUploadError, waitForFileUploadProcessing } from './utils/suspense-helpers'
-import { ensureAuthCookiesLoaded } from './utils/test-helpers'
 import { type TestLogger, getTestLogger } from './utils/test-logger'
 
 let logger: TestLogger
@@ -96,15 +95,7 @@ test.describe('Race Import Flow', () => {
 
     // Auth cookies check removed - handled by test failures if auth is broken
 
-    // First go to the home page to ensure cookies are set
-    await page.goto('/')
-
-    // Ensure authentication cookies are loaded before proceeding
-    await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
-
-    // Navigate to races page after home visit
-
-    // Then navigate to races page
+    // Navigate directly to races page - storageState provides authentication
     await page.goto('/races')
 
     // Wait for either races page or potential redirect

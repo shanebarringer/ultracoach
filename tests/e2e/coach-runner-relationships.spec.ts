@@ -7,7 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { navigateToPage, signIn, waitForNavigation, waitForPageReady } from '../utils/wait-helpers'
+import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   test.describe('Coach Perspective', () => {

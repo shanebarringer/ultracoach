@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { TEST_TIMEOUTS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { TEST_TIMEOUTS } from '../utils/test-helpers'
 
 test.use({ storageState: './playwright/.auth/runner.json' })
 
@@ -14,9 +14,6 @@ test.describe.parallel('Protected route access verification', () => {
   routesToTest.forEach(({ route, name }) => {
     test(`should show user menu on ${name}`, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' })
-
-      // Ensure auth cookies are loaded after navigation
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       // Log diagnostic info using Playwright's test.info()
       const cookies = await page.context().cookies()
@@ -39,7 +36,7 @@ test.describe.parallel('Protected route access verification', () => {
         contentType: 'application/json',
       })
 
-      const userMenu = page.locator('[data-testid="user-menu"]')
+      const userMenu = page.getByTestId('user-menu')
       await expect(userMenu).toBeVisible({ timeout: TEST_TIMEOUTS.long })
     })
   })

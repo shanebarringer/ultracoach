@@ -295,7 +295,8 @@ export default defineConfig({
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
-      grepInvert: /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships/,
+      grepInvert:
+        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

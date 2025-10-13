@@ -7,7 +7,7 @@
 import { Page, expect, test } from '@playwright/test'
 import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
-import { TEST_USERS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { TEST_USERS } from '../utils/test-helpers'
 
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
@@ -23,7 +23,6 @@ test.describe('Workout Management', () => {
       await page.goto('/dashboard/runner')
 
       // Ensure cookies are loaded from storageState AFTER navigation
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
@@ -309,7 +308,6 @@ test.describe('Workout Management', () => {
       await page.goto('/dashboard/coach', { waitUntil: 'domcontentloaded' })
 
       // Ensure cookies are loaded from storageState AFTER navigation (CHIPS-compatible)
-      await ensureAuthCookiesLoaded(page, new URL(page.url()).origin)
 
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
