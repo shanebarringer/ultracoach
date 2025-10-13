@@ -336,27 +336,46 @@ jobs:
       - name: Verify app is ready before tests
         run: |
           echo "🔍 Checking if app is ready for tests..."
+          echo "Polling health endpoint to ensure database and Better Auth are initialized..."
+
+          # Poll database health endpoint (more comprehensive than root endpoint)
           for i in {1..30}; do
-            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
-              echo "✅ App is responding on port 3001!"
-              curl -I http://localhost:3001/ | head -5
-              break
+            # Check database health endpoint (ensures database + Better Auth ready)
+            if curl -f -s http://localhost:3001/api/health/database >/dev/null 2>&1; then
+              echo "✅ Database health check passed!"
+              curl -s http://localhost:3001/api/health/database | head -10
+              exit 0
             fi
-            echo "Waiting for app... ($i/30)"
+
+            # Fallback: check basic health endpoint
+            if curl -f -s http://localhost:3001/api/health >/dev/null 2>&1; then
+              echo "⚠️ Basic health check passed, but database health check failed"
+              echo "Retrying database health check..."
+            fi
+
+            # Show debugging info every 10 attempts
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "🔍 Debugging attempt $i/30:"
+              echo "  - Port 3001 listening: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'NOT FOUND')"
+              echo "  - Database health response: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Connection failed')"
+              echo "  - Recent app logs:"
+              tail -5 app.log 2>/dev/null | sed 's/^/    /' || echo "    No logs available"
+            fi
+
+            echo "Waiting for database health check... ($i/30)"
             sleep 2
           done
 
           # Final check
-          if ! curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
-            echo "❌ App is not responding after 60 seconds!"
-            echo "Checking processes:"
-            ps aux | grep -E '(next|node)' | head -10
-            echo "Checking port:"
-            netstat -tlnp 2>/dev/null | grep :3001 || echo "Port 3001 not listening"
-            echo "Recent app logs:"
-            tail -20 app.log 2>/dev/null || echo "No logs available"
-            exit 1
-          fi
+          echo "❌ App/database not ready after 60 seconds!"
+          echo "🔍 Final debugging info:"
+          echo "  - Port 3001 status: $(netstat -tlnp 2>/dev/null | grep :3001 || echo 'PORT NOT LISTENING')"
+          echo "  - Basic health: $(curl -s http://localhost:3001/api/health 2>&1 | head -3 || echo 'Failed')"
+          echo "  - Database health: $(curl -s http://localhost:3001/api/health/database 2>&1 | head -3 || echo 'Failed')"
+          echo "  - Process list: $(ps aux | grep -E '(next|node)' | head -5)"
+          echo "  - Recent app logs:"
+          tail -20 app.log 2>/dev/null || echo "No logs available"
+          exit 1
         timeout-minutes: 2
 
       - name: Run Playwright tests

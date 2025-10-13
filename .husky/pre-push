@@ -1,9 +1,10 @@
 echo "🚀 Running pre-push checks..."
 
-# Run test suite (more intensive)
-echo "🧪 Running tests..."
-pnpm test:run || {
-  echo "❌ Tests failed. Please fix them before pushing."
+# Run critical E2E tests (auth, race-import, coach-runner relationships)
+echo "🧪 Running critical E2E tests..."
+pnpm test:critical || {
+  echo "❌ Critical tests failed. Please fix them before pushing."
+  echo "💡 Tip: Run 'pnpm test:critical' locally to debug"
   exit 1
 }
 

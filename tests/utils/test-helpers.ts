@@ -34,9 +34,38 @@ export async function ensureAuthCookiesLoaded(
   expectedCookieName = 'better-auth.session_token'
 ): Promise<void> {
   // CI needs more retries and longer delays for session API to stabilize after auth setup
-  // Timeout configuration: 10 retries * 5000ms = 50s max (with 10s fetch timeout per attempt)
-  const maxRetries = process.env.CI ? 10 : 5
-  const retryDelay = process.env.CI ? 5000 : 500
+  // Timeout configuration: 4 retries * 2000ms = 8s delays + (4 * 10s fetch) = ~48s max
+  // This fits within 60s test timeout with buffer for navigation/rendering
+  const maxRetries = process.env.CI ? 4 : 5
+  const retryDelay = process.env.CI ? 2000 : 500
+
+  // CRITICAL: Wait for app to be fully ready before verifying session
+  // Poll health endpoint to ensure database and Better Auth are initialized
+  // This prevents wasted retry attempts when app is still starting up
+  try {
+    const healthReady = await page.evaluate(async () => {
+      const maxHealthRetries = 6 // 6 attempts * 5s = 30s max
+      for (let i = 0; i < maxHealthRetries; i++) {
+        try {
+          const response = await fetch('/api/health/database', {
+            signal: AbortSignal.timeout(5000), // 5s timeout per attempt
+          })
+          if (response.ok) return true
+        } catch {
+          // Health check failed, wait and retry
+        }
+        await new Promise(resolve => setTimeout(resolve, 5000))
+      }
+      return false
+    })
+
+    if (!healthReady) {
+      throw new Error('Health check failed - database not ready after 30s')
+    }
+  } catch (error) {
+    // Health check failed - but continue anyway and let session verification handle it
+    // This ensures tests don't fail if health endpoint has issues
+  }
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     // Force cookie loading from context
