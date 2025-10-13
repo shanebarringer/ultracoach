@@ -1,10 +1,14 @@
 import { Suspense } from 'react'
 
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { SuspenseBoundary } from '@/components/ui/SuspenseBoundary'
+import type { User } from '@/lib/better-auth-client'
+import { getServerSession } from '@/utils/auth-server'
 
 import { RelationshipsPageContent } from './RelationshipsPageContent'
 
@@ -13,7 +17,17 @@ export const metadata: Metadata = {
   description: 'Manage your coaching relationships and connect with coaches or runners',
 }
 
-export default function RelationshipsPage() {
+// Force dynamic rendering for this authenticated route
+export const dynamic = 'force-dynamic'
+
+export default async function RelationshipsPage() {
+  // Force dynamic rendering prior to auth check
+  await headers()
+
+  // Server-side authentication - forces dynamic rendering
+  const session = await getServerSession()
+  if (!session) redirect('/auth/signin')
+
   return (
     <Layout>
       <ModernErrorBoundary>
@@ -40,7 +54,7 @@ export default function RelationshipsPage() {
             }
           >
             <Suspense fallback={<div>Loading relationships...</div>}>
-              <RelationshipsPageContent />
+              <RelationshipsPageContent user={session.user as unknown as User} />
             </Suspense>
           </SuspenseBoundary>
         </div>

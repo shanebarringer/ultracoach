@@ -6,7 +6,7 @@
  */
 import { expect, test } from '@playwright/test'
 
-import { TEST_USERS, ensureAuthCookiesLoaded } from '../utils/test-helpers'
+import { TEST_USERS } from '../utils/test-helpers'
 import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
@@ -16,7 +16,6 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
-      await ensureAuthCookiesLoaded(page)
       await waitForPageReady(page)
     })
 
@@ -132,7 +131,6 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
-      await ensureAuthCookiesLoaded(page)
       await waitForPageReady(page)
     })
 

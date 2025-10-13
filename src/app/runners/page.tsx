@@ -1,3 +1,4 @@
+import type { User } from '@/lib/better-auth-client'
 import { requireCoach } from '@/utils/auth-server'
 
 import RunnersPageClient from './RunnersPageClient'
@@ -16,5 +17,5 @@ export default async function RunnersPage() {
   const session = await requireCoach()
 
   // Pass authenticated coach data to Client Component
-  return <RunnersPageClient user={session.user} />
+  return <RunnersPageClient user={session.user as unknown as User} />
 }

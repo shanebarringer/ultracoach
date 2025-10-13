@@ -8,13 +8,15 @@ import { toast } from 'sonner'
 import { useMemo, useState } from 'react'
 
 import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms/index'
+import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
-import type { User } from '@/lib/supabase'
+import type { User as DatabaseUser } from '@/lib/supabase'
 
 const logger = createLogger('CoachSelector')
 
 interface CoachSelectorProps {
   onRelationshipCreated?: () => void
+  user: User
 }
 
 export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
@@ -45,7 +47,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
   // Use useMemo for filtered coaches for better performance
   const filteredCoaches = useMemo(() => {
     return coaches.filter(
-      (coach: User) =>
+      (coach: DatabaseUser) =>
         coach.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coach.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -152,7 +154,7 @@ export function CoachSelector({ onRelationshipCreated }: CoachSelectorProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredCoaches.map((coach: User) => (
+              {filteredCoaches.map((coach: DatabaseUser) => (
                 <div
                   key={coach.id}
                   className="flex items-center gap-4 p-4 bg-default-50 hover:bg-default-100 rounded-lg transition-colors"

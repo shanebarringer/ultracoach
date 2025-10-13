@@ -32,10 +32,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
-import type { User } from '@/lib/supabase'
+import type { User as BetterAuthUser } from '@/lib/better-auth-client'
+import type { User as SupabaseUser } from '@/lib/supabase'
 
 // Extended User type with runner-specific fields that may be returned from API
-interface RunnerWithStats extends User {
+interface RunnerWithStats extends SupabaseUser {
   stats?: {
     trainingPlans: number
     completedWorkouts: number
@@ -45,15 +46,10 @@ interface RunnerWithStats extends User {
 }
 
 interface RunnersPageClientProps {
-  user: {
-    id: string
-    email: string
-    name: string | null
-    role: 'coach' | 'runner'
-  }
+  user: BetterAuthUser
 }
 
-export default function RunnersPageClient({ user: _user }: RunnersPageClientProps) {
+export default function RunnersPageClient({ user }: RunnersPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -175,7 +171,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
     </Card>
   )
 
-  const renderConnectedRunners = (runners: User[]) => {
+  const renderConnectedRunners = (runners: SupabaseUser[]) => {
     if (runners.length === 0) {
       return (
         <Card>
@@ -238,7 +234,7 @@ export default function RunnersPageClient({ user: _user }: RunnersPageClientProp
             </div>
           }
         >
-          <RunnerSelector />
+          <RunnerSelector user={user} />
         </Suspense>
       </CardBody>
     </Card>
