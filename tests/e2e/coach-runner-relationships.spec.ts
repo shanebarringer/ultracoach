@@ -10,6 +10,16 @@ import { TEST_USERS } from '../utils/test-helpers'
 import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
+  // Clear relationships before all tests to ensure clean state
+  test.beforeAll(async ({ request }) => {
+    // Delete all coach_runners relationships
+    await request.post('/api/test/cleanup', {
+      data: { table: 'coach_runners' },
+    }).catch(() => {
+      // If endpoint doesn't exist yet, ignore error
+    })
+  })
+
   test.describe('Coach Perspective', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
 
@@ -47,6 +57,9 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       // Click connect on first available runner
       await page.getByRole('button', { name: 'Connect' }).first().click()
+
+      // Wait for UI to update after relationship creation
+      await page.waitForTimeout(1000)
 
       // Runner should move to "My Relationships" section with pending status
       await expect(page.getByText('My Relationships')).toBeVisible()
@@ -166,15 +179,15 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Should show success notification
-      await expect(page.getByTestId('connection-success-notification')).toBeVisible()
+      // Coach should move to "My Relationships" section with pending status
+      await expect(page.getByText('My Relationships')).toBeVisible()
 
-      // Coach should move to pending connections or be connected
-      // The exact UI behavior may vary based on the implementation
-      // Wait for any success toast or UI update
-      await page
-        .waitForSelector('[role="status"]', { state: 'visible', timeout: 5000 })
-        .catch(() => {})
+      // Should show the pending status indicator (use first() to avoid strict mode violation)
+      await expect(page.getByText('pending').first()).toBeVisible()
+
+      // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
+      await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Decline' }).first()).toBeVisible()
     })
 
     test.skip('should manage coach relationship', async ({ page }) => {
