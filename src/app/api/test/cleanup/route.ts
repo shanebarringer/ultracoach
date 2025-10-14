@@ -3,20 +3,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { coach_runners } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('api:test:cleanup')
+
+// Allowed environments for cleanup endpoint
+const ALLOWED_ENVIRONMENTS = ['development', 'test']
 
 /**
  * Test cleanup endpoint - only available in development/test environments
  * Clears specified tables to ensure clean test state
+ * Requires authentication to prevent abuse
  */
 export async function POST(request: NextRequest) {
-  // Only allow in development and test environments
-  if (process.env.NODE_ENV === 'production') {
+  // Environment allowlist check (more robust than just checking NODE_ENV)
+  const currentEnv = process.env.NODE_ENV || 'development'
+  const isAllowedEnv = ALLOWED_ENVIRONMENTS.includes(currentEnv)
+  const isVercelPreview = process.env.VERCEL_ENV === 'preview'
+
+  if (!isAllowedEnv && !isVercelPreview) {
+    logger.warn('Cleanup endpoint accessed in disallowed environment', {
+      nodeEnv: currentEnv,
+      vercelEnv: process.env.VERCEL_ENV,
+    })
     return NextResponse.json(
-      { error: 'This endpoint is not available in production' },
+      { error: 'This endpoint is not available in this environment' },
       { status: 403 }
     )
+  }
+
+  // Authentication check - require valid session
+  const session = await getServerSession()
+  if (!session?.user) {
+    logger.warn('Cleanup endpoint accessed without authentication')
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
 
   try {
