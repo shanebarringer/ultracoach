@@ -10,9 +10,12 @@ import { TEST_USERS } from '../utils/test-helpers'
 import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
+  // Use coach authentication for cleanup operations
+  test.use({ storageState: './playwright/.auth/coach.json' })
+
   // Clear relationships before all tests to ensure clean state
   test.beforeAll(async ({ request }) => {
-    // Delete all coach_runners relationships
+    // Delete all coach_runners relationships (authenticated as coach)
     await request
       .post('/api/test/cleanup', {
         data: { table: 'coach_runners' },
@@ -23,8 +26,6 @@ test.describe('Coach-Runner Relationship Management', () => {
   })
 
   test.describe('Coach Perspective', () => {
-    test.use({ storageState: './playwright/.auth/coach.json' })
-
     test.beforeEach(async ({ page }) => {
       // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')

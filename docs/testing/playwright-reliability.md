@@ -93,7 +93,6 @@ The storageState pattern eliminates race conditions by design:
 
 **Use `page.request`** when:
 
-- Setting up authentication in auth setup files (saves cookies to storageState)
 - Testing public/unauthenticated endpoints
 - Setting up test data via utility endpoints (like `/api/test/reset-workouts`)
 - Explicitly testing API behavior independent of browser state

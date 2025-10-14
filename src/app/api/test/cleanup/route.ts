@@ -8,10 +8,12 @@ import { getServerSession } from '@/utils/auth-server'
 const logger = createLogger('api:test:cleanup')
 
 // Allowed environments for cleanup endpoint
+// Note: Vercel preview environments are also allowed via VERCEL_ENV check below
 const ALLOWED_ENVIRONMENTS = ['development', 'test']
 
 /**
  * Test cleanup endpoint - only available in development/test environments
+ * (including Vercel preview deployments)
  * Clears specified tables to ensure clean test state
  * Requires authentication to prevent abuse
  */
