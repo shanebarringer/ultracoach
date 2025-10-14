@@ -113,8 +113,7 @@ export const asyncUserSettingsAtom = atom(
 
     try {
       logger.debug('Fetching user settings...')
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const baseUrl = window.location.origin
       const response = await fetch(`${baseUrl}/api/settings`, {
         headers: {
           'Content-Type': 'application/json',
@@ -161,8 +160,7 @@ export const updateUserSettingsAtom = atom(
   async (get, set, settingsUpdate: Partial<UserSettings>) => {
     try {
       logger.debug('Updating user settings...')
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const baseUrl = window.location.origin
       const response = await fetch(`${baseUrl}/api/settings`, {
         method: 'PUT',
         headers: {
@@ -213,8 +211,7 @@ export const updateUserSettingsSectionAtom = atom(
 
     try {
       logger.debug(`Updating user settings section: ${section}...`)
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+      const baseUrl = window.location.origin
       const response = await fetch(`${baseUrl}/api/settings`, {
         method: 'PATCH',
         headers: {
