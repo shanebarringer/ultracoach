@@ -3,25 +3,56 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { coach_runners } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('api:test:cleanup')
 
+// Request body type for cleanup endpoint
+interface CleanupRequestBody {
+  table?: string
+}
+
+// Allowed environments for cleanup endpoint
+// Note: Vercel preview environments are also allowed via VERCEL_ENV check below
+const ALLOWED_ENVIRONMENTS = ['development', 'test'] as const
+
 /**
  * Test cleanup endpoint - only available in development/test environments
+ * (including Vercel preview deployments)
  * Clears specified tables to ensure clean test state
+ * Requires authentication to prevent abuse
  */
 export async function POST(request: NextRequest) {
-  // Only allow in development and test environments
-  if (process.env.NODE_ENV === 'production') {
+  // Environment allowlist check (more robust than just checking NODE_ENV)
+  const currentEnv = process.env.NODE_ENV || 'development'
+  const isAllowedEnv = (ALLOWED_ENVIRONMENTS as readonly string[]).includes(currentEnv)
+  const isVercelPreview = process.env.VERCEL_ENV === 'preview'
+
+  if (!isAllowedEnv && !isVercelPreview) {
+    logger.warn('Cleanup endpoint accessed in disallowed environment', {
+      nodeEnv: currentEnv,
+      vercelEnv: process.env.VERCEL_ENV,
+    })
     return NextResponse.json(
-      { error: 'This endpoint is not available in production' },
+      { error: 'This endpoint is not available in this environment' },
       { status: 403 }
     )
   }
 
+  // Authentication check - require valid session
+  const session = await getServerSession()
+  if (!session?.user) {
+    logger.warn('Cleanup endpoint accessed without authentication')
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+
   try {
-    const body = await request.json()
+    const body = (await request.json()) as CleanupRequestBody
     const { table } = body
+
+    if (!table || typeof table !== 'string') {
+      return NextResponse.json({ error: 'Invalid or missing table parameter' }, { status: 400 })
+    }
 
     if (table === 'coach_runners') {
       logger.info('Clearing coach_runners table for test cleanup')
