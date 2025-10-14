@@ -88,25 +88,6 @@ test.describe('Workout Atoms Functionality', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // Get logger for diagnostics
-      const logger = await getTestLogger('workout-atoms-persist')
-
-      // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
-      const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-      // … around line 99 in tests/e2e/workout-atoms.spec.ts …
-      logger.info('[workout-atoms persist test] Cookie diagnostic:', {
-        totalCookies: cookies.length,
-        sessionCookiePresent: !!sessionCookie,
-        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
-      })
-
-      // … around line 143 in the same file …
-      logger.info('[workout-atoms view test] Cookie diagnostic:', {
-        totalCookies: cookies.length,
-        sessionCookiePresent: !!sessionCookie,
-      })
-
       // First, go to calendar/weekly planner
       await page.goto('/calendar')
 
@@ -135,18 +116,6 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // Get logger for diagnostics
-      const logger = await getTestLogger('workout-atoms-view')
-
-      // Verify session cookie is loaded BEFORE navigation (ULT-54 diagnostic)
-      const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find(c => c.name === 'better-auth.session_token')
-      logger.info('[workout-atoms view test] Cookie diagnostic:', {
-        totalCookies: cookies.length,
-        sessionCookiePresent: !!sessionCookie,
-        cookieValue: sessionCookie ? `${sessionCookie.value.substring(0, 20)}...` : 'NONE',
-      })
-
       // Navigate to training plans page first
       await page.goto('/training-plans')
 
