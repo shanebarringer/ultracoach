@@ -113,8 +113,7 @@ export const asyncUserSettingsAtom = atom(
 
     try {
       logger.debug('Fetching user settings...')
-      const baseUrl = window.location.origin
-      const response = await fetch(`${baseUrl}/api/settings`, {
+      const response = await fetch('/api/settings', {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -160,8 +159,7 @@ export const updateUserSettingsAtom = atom(
   async (get, set, settingsUpdate: Partial<UserSettings>) => {
     try {
       logger.debug('Updating user settings...')
-      const baseUrl = window.location.origin
-      const response = await fetch(`${baseUrl}/api/settings`, {
+      const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -211,8 +209,7 @@ export const updateUserSettingsSectionAtom = atom(
 
     try {
       logger.debug(`Updating user settings section: ${section}...`)
-      const baseUrl = window.location.origin
-      const response = await fetch(`${baseUrl}/api/settings`, {
+      const response = await fetch('/api/settings', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
