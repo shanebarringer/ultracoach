@@ -4,13 +4,12 @@ import { Button, Card, CardBody, CardHeader, Checkbox } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { Calendar, Mountain, Plus, RefreshCw } from 'lucide-react'
 
-import React, { Suspense, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import CreateTrainingPlanModal from '@/components/training-plans/CreateTrainingPlanModal'
 import TrainingPlanCard from '@/components/training-plans/TrainingPlanCard'
-import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateTrainingPlans } from '@/hooks/useTrainingPlans'
 import { refreshTrainingPlansAtom, trainingPlansAtom, uiStateAtom } from '@/lib/atoms/index'
 import type { TrainingPlan } from '@/lib/supabase'
@@ -192,9 +191,7 @@ export default function TrainingPlansPageClient({ user }: Props) {
     <Layout>
       <ModernErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Suspense fallback={<TrainingPlansPageSkeleton />}>
-            <TrainingPlansContent user={user} />
-          </Suspense>
+          <TrainingPlansContent user={user} />
         </div>
       </ModernErrorBoundary>
     </Layout>

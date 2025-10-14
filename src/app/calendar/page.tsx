@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 
 import { headers } from 'next/headers'
 
-import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
+import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireAuth } from '@/utils/auth-server'
 
 import CalendarPageClient from './CalendarPageClient'
@@ -25,7 +25,7 @@ export default async function CalendarPage() {
 
   // Pass authenticated user data to Client Component wrapped in Suspense
   return (
-    <Suspense fallback={<WorkoutsPageSkeleton />}>
+    <Suspense fallback={<CalendarPageSkeleton />}>
       <CalendarPageClient user={session.user} />
     </Suspense>
   )

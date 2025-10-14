@@ -4,7 +4,7 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
 
-import { Suspense, memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation'
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
@@ -424,9 +423,5 @@ function CalendarContent({ user }: Props) {
 export default function CalendarPageClient({ user }: Props) {
   useHydrateWorkouts() // Hydrate workouts at entry point
 
-  return (
-    <Suspense fallback={<CalendarPageSkeleton />}>
-      <CalendarContent user={user} />
-    </Suspense>
-  )
+  return <CalendarContent user={user} />
 }
