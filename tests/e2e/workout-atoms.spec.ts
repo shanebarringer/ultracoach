@@ -12,7 +12,6 @@ import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
 import { TEST_TIMEOUTS } from '../utils/test-helpers'
-import { getTestLogger } from '../utils/test-logger'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
