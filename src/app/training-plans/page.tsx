@@ -1,5 +1,8 @@
+import { Suspense } from 'react'
+
 import { headers } from 'next/headers'
 
+import { TrainingPlansPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { requireAuth } from '@/utils/auth-server'
 
 import TrainingPlansPageClient from './TrainingPlansPageClient'
@@ -9,10 +12,6 @@ import TrainingPlansPageClient from './TrainingPlansPageClient'
  *
  * Forces dynamic rendering and handles server-side authentication.
  * Server-side validation provides better security and UX.
- *
- * ARCHITECTURE NOTE: TrainingPlansPageClient handles its own internal
- * Suspense boundaries for data loading. No outer Suspense needed here
- * because it's a regular import (not dynamic) and won't suspend.
  */
 export default async function TrainingPlansPage() {
   // Force dynamic rendering prior to auth check
@@ -21,7 +20,11 @@ export default async function TrainingPlansPage() {
   // Server-side authentication - this is the real security boundary
   const session = await requireAuth()
 
-  // Pass authenticated user data to Client Component
-  // Client Component contains Suspense for async data loading
-  return <TrainingPlansPageClient user={session.user} />
+  // Pass authenticated user data to Client Component wrapped in Suspense
+  // Provides consistent skeleton loading experience across all authenticated pages
+  return (
+    <Suspense fallback={<TrainingPlansPageSkeleton />}>
+      <TrainingPlansPageClient user={session.user} />
+    </Suspense>
+  )
 }

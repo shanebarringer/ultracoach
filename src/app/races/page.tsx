@@ -1,6 +1,9 @@
+import { Suspense } from 'react'
+
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { getServerSession } from '@/utils/auth-server'
 
 import RacesPageClient from './RacesPageClient'
@@ -23,6 +26,10 @@ export default async function RacesPage() {
   }
 
   // Both coaches and runners can access races page
-  // Client component will handle its own data fetching
-  return <RacesPageClient />
+  // Client component wrapped in Suspense for better loading experience
+  return (
+    <Suspense fallback={<RacesPageSkeleton />}>
+      <RacesPageClient />
+    </Suspense>
+  )
 }
