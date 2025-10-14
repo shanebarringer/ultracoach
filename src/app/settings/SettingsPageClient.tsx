@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardBody, CardHeader, Divider, Tab, Tabs } from '@heroui/react'
+import { useAtomValue } from 'jotai'
 import {
   Activity,
   BellIcon,
@@ -15,8 +16,7 @@ import {
 import { useState } from 'react'
 
 import Layout from '@/components/layout/Layout'
-import { SettingsPageSkeleton } from '@/components/ui/LoadingSkeletons'
-import { useUserSettings } from '@/hooks/useUserSettings'
+import { asyncUserSettingsAtom } from '@/lib/atoms'
 
 import CommunicationSettingsPanel from './components/CommunicationSettingsPanel'
 import DisplaySettingsPanel from './components/DisplaySettingsPanel'
@@ -37,40 +37,9 @@ interface SettingsPageClientProps {
 }
 
 export default function SettingsPageClient({ user: _user }: SettingsPageClientProps) {
-  const { settings, loading, error } = useUserSettings()
+  // Use async atom - Suspense at page level handles loading state
+  const settings = useAtomValue(asyncUserSettingsAtom)
   const [activeTab, setActiveTab] = useState<string>('profile')
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="max-w-6xl mx-auto p-6">
-          <SettingsPageSkeleton />
-        </div>
-      </Layout>
-    )
-  }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="max-w-6xl mx-auto p-6">
-          <Card className="border border-danger-200 bg-danger-50">
-            <CardBody>
-              <div className="text-center py-8">
-                <div className="text-danger-600 mb-4">
-                  <ShieldIcon className="w-12 h-12 mx-auto" />
-                </div>
-                <h2 className="text-xl font-semibold text-danger-800 mb-2">
-                  Failed to Load Settings
-                </h2>
-                <p className="text-danger-700">{error}</p>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      </Layout>
-    )
-  }
 
   const settingsTabs = [
     {

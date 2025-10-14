@@ -1,7 +1,9 @@
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 
-import { getServerSession } from '@/utils/auth-server'
+import { headers } from 'next/headers'
+
+import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
+import { requireAuth } from '@/utils/auth-server'
 
 import RacesPageClient from './RacesPageClient'
 
@@ -16,13 +18,13 @@ export default async function RacesPage() {
   await headers()
 
   // Server-side authentication check
-  const session = await getServerSession()
-
-  if (!session) {
-    redirect('/auth/signin')
-  }
+  await requireAuth()
 
   // Both coaches and runners can access races page
-  // Client component will handle its own data fetching
-  return <RacesPageClient />
+  // Client component wrapped in Suspense for better loading experience
+  return (
+    <Suspense fallback={<RacesPageSkeleton />}>
+      <RacesPageClient />
+    </Suspense>
+  )
 }

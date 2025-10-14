@@ -36,14 +36,21 @@ import {
   UsersIcon,
 } from 'lucide-react'
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { RacesPageSkeleton } from '@/components/ui/LoadingSkeletons'
-import { asyncRacesAtom, racesAtom, refreshRacesAtom, selectedRaceAtom } from '@/lib/atoms/index'
+import {
+  asyncRacesAtom,
+  raceDistanceFilterAtom,
+  raceSearchTermAtom,
+  raceTerrainFilterAtom,
+  racesAtom,
+  refreshRacesAtom,
+  selectedRaceAtom,
+} from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
@@ -71,10 +78,10 @@ function RacesContent() {
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
   const logger = useMemo(() => createLogger('RacesContent'), [])
 
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [distanceFilter, setDistanceFilter] = useState('all')
-  const [terrainFilter, setTerrainFilter] = useState('all')
+  // Search and filter state - using Jotai atoms for persistence
+  const [searchQuery, setSearchQuery] = useAtom(raceSearchTermAtom)
+  const [distanceFilter, setDistanceFilter] = useAtom(raceDistanceFilterAtom)
+  const [terrainFilter, setTerrainFilter] = useAtom(raceTerrainFilterAtom)
 
   // Update local races when async races are fetched
   useEffect(() => {
@@ -734,9 +741,7 @@ export default function RacesPageClient() {
   return (
     <Layout>
       <ErrorBoundary>
-        <Suspense fallback={<RacesPageSkeleton />}>
-          <RacesContent />
-        </Suspense>
+        <RacesContent />
       </ErrorBoundary>
     </Layout>
   )

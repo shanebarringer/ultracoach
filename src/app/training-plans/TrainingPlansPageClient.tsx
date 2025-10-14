@@ -180,23 +180,23 @@ function TrainingPlansContent({ user }: Props) {
 /**
  * Training Plans Page Client Component
  *
- * Follows the dashboard architecture pattern:
+ * Follows the correct Suspense architecture pattern:
  * - Layout is OUTSIDE Suspense (Header/user-menu always visible)
  * - Only content is INSIDE Suspense (loading states don't hide navigation)
  *
- * This ensures consistent behavior across all authenticated pages and
- * prevents test failures where user-menu disappears during loading.
+ * This ensures the header remains visible during async data loading and
+ * prevents test failures where user-menu disappears when Suspense triggers.
  */
 export default function TrainingPlansPageClient({ user }: Props) {
   return (
     <Layout>
-      <ModernErrorBoundary>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Suspense fallback={<TrainingPlansPageSkeleton />}>
+      <Suspense fallback={<TrainingPlansPageSkeleton />}>
+        <ModernErrorBoundary>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <TrainingPlansContent user={user} />
-          </Suspense>
-        </div>
-      </ModernErrorBoundary>
+          </div>
+        </ModernErrorBoundary>
+      </Suspense>
     </Layout>
   )
 }

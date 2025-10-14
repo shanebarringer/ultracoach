@@ -10,9 +10,8 @@ import TrainingPlansPageClient from './TrainingPlansPageClient'
  * Forces dynamic rendering and handles server-side authentication.
  * Server-side validation provides better security and UX.
  *
- * ARCHITECTURE NOTE: TrainingPlansPageClient handles its own internal
- * Suspense boundaries for data loading. No outer Suspense needed here
- * because it's a regular import (not dynamic) and won't suspend.
+ * Note: Suspense boundary is inside TrainingPlansPageClient to keep Layout
+ * (header/navigation) always visible while content loads.
  */
 export default async function TrainingPlansPage() {
   // Force dynamic rendering prior to auth check
@@ -22,6 +21,6 @@ export default async function TrainingPlansPage() {
   const session = await requireAuth()
 
   // Pass authenticated user data to Client Component
-  // Client Component contains Suspense for async data loading
+  // Suspense boundary is inside the client component to prevent header flicker
   return <TrainingPlansPageClient user={session.user} />
 }
