@@ -7,9 +7,14 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('api:test:cleanup')
 
+// Request body type for cleanup endpoint
+interface CleanupRequestBody {
+  table?: string
+}
+
 // Allowed environments for cleanup endpoint
 // Note: Vercel preview environments are also allowed via VERCEL_ENV check below
-const ALLOWED_ENVIRONMENTS = ['development', 'test']
+const ALLOWED_ENVIRONMENTS = ['development', 'test'] as const
 
 /**
  * Test cleanup endpoint - only available in development/test environments
@@ -20,7 +25,7 @@ const ALLOWED_ENVIRONMENTS = ['development', 'test']
 export async function POST(request: NextRequest) {
   // Environment allowlist check (more robust than just checking NODE_ENV)
   const currentEnv = process.env.NODE_ENV || 'development'
-  const isAllowedEnv = ALLOWED_ENVIRONMENTS.includes(currentEnv)
+  const isAllowedEnv = (ALLOWED_ENVIRONMENTS as readonly string[]).includes(currentEnv)
   const isVercelPreview = process.env.VERCEL_ENV === 'preview'
 
   if (!isAllowedEnv && !isVercelPreview) {
@@ -42,8 +47,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
+    const body = (await request.json()) as CleanupRequestBody
     const { table } = body
+
+    if (!table || typeof table !== 'string') {
+      return NextResponse.json({ error: 'Invalid or missing table parameter' }, { status: 400 })
+    }
 
     if (table === 'coach_runners') {
       logger.info('Clearing coach_runners table for test cleanup')
