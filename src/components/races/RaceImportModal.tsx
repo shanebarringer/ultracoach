@@ -856,6 +856,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       }
 
       toast.error('Import failed', errorMessage)
+      onClose() // Close modal even on error - user can retry by reopening
     } finally {
       setIsUploading(false)
       setUploadProgress(0)
