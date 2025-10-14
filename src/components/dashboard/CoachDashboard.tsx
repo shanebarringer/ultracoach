@@ -272,6 +272,7 @@ function CoachDashboard() {
                 size="sm"
                 color="primary"
                 className="bg-primary text-white font-medium"
+                data-testid="connect-athletes-button"
               >
                 🏃‍♂️ Connect
               </Button>
@@ -286,7 +287,13 @@ function CoachDashboard() {
                   <p className="text-sm text-foreground-500 mb-4">
                     Connect with runners to start coaching.
                   </p>
-                  <Button as={Link} href="/relationships" color="primary" size="sm">
+                  <Button
+                    as={Link}
+                    href="/relationships"
+                    color="primary"
+                    size="sm"
+                    data-testid="find-athletes-button"
+                  >
                     Find Athletes to Coach
                   </Button>
                 </div>

@@ -7,28 +7,27 @@ import { toast } from 'sonner'
 
 import { useMemo } from 'react'
 
-import { useSession } from '@/hooks/useBetterSession'
 import {
   availableRunnersAtom,
   connectedRunnersAtom,
   connectingRunnerIdsAtom,
   runnerSearchTermAtom,
 } from '@/lib/atoms/index'
+import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncRunnerSelector')
 
 interface AsyncRunnerSelectorProps {
   onRelationshipCreated?: () => void
+  user: User
 }
 
 /**
  * Async RunnerSelector component that uses Suspense
  * This component reads from the async atom directly and throws promises
  */
-export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelectorProps) {
-  const { data: session, status } = useSession()
-
+export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunnerSelectorProps) {
   // Read from async atom - this will suspend if data is loading
   const availableRunners = useAtomValue(availableRunnersAtom)
   const [searchTerm, setSearchTerm] = useAtom(runnerSearchTermAtom)
@@ -56,8 +55,8 @@ export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelect
   }, [availableRunners, searchTerm])
 
   const handleConnectToRunner = async (runnerId: string) => {
-    // Verify session before attempting connection
-    if (!session?.user || session.user.role !== 'coach') {
+    // Verify user before attempting connection
+    if (!user || user.userType !== 'coach') {
       toast.error('You must be logged in as a coach to connect with runners')
       return
     }
@@ -110,37 +109,6 @@ export function AsyncRunnerSelector({ onRelationshipCreated }: AsyncRunnerSelect
         return newSet
       })
     }
-  }
-
-  // Show loading while session is being fetched
-  if (status === 'loading') {
-    return (
-      <Card className="w-full">
-        <CardBody className="p-6">
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="h-6 w-6 bg-primary-200 rounded animate-pulse mx-auto mb-2" />
-              <p className="text-sm text-default-600">Checking authentication...</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-    )
-  }
-
-  // Show unauthorized message if not a coach
-  if (!session?.user || session.user.role !== 'coach') {
-    return (
-      <Card className="w-full">
-        <CardBody className="p-6">
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <p className="text-sm text-default-600">Only coaches can browse for runners</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-    )
   }
 
   return (

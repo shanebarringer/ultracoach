@@ -10,7 +10,7 @@ import {
   availableRunnersAtom,
   connectedRunnersAtom,
 } from '@/lib/atoms/relationships'
-import { refreshableTrainingPlansAtom } from '@/lib/atoms/training-plans'
+import { asyncTrainingPlansAtom, refreshTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { workoutsAtom } from '@/lib/atoms/workouts'
 
 import { createTestStore } from './utils/test-helpers'
@@ -225,7 +225,7 @@ describe('Async Atoms Integration', () => {
         data: mockPlans, // Training plans API returns array directly
       })
 
-      const plans = await store.get(refreshableTrainingPlansAtom)
+      const plans = await store.get(asyncTrainingPlansAtom)
 
       expect(Array.isArray(plans)).toBe(true)
       expect(plans).toHaveLength(2)
@@ -253,10 +253,10 @@ describe('Async Atoms Integration', () => {
           data: updatedPlans,
         })
 
-      await store.get(refreshableTrainingPlansAtom)
-      // Refresh using atomWithRefresh pattern
-      await store.set(refreshableTrainingPlansAtom)
-      const plans = await store.get(refreshableTrainingPlansAtom)
+      await store.get(asyncTrainingPlansAtom)
+      // Refresh using new trigger-based pattern
+      await store.set(refreshTrainingPlansAtom)
+      const plans = await store.get(asyncTrainingPlansAtom)
 
       expect(plans).toHaveLength(2)
     })
@@ -264,7 +264,7 @@ describe('Async Atoms Integration', () => {
     it('should handle API errors gracefully', async () => {
       mocks.mockApiGet.mockRejectedValueOnce(new Error('Unauthorized'))
 
-      const plans = await store.get(refreshableTrainingPlansAtom)
+      const plans = await store.get(asyncTrainingPlansAtom)
 
       expect(Array.isArray(plans)).toBe(true)
       expect(plans).toEqual([])
@@ -275,7 +275,7 @@ describe('Async Atoms Integration', () => {
         data: null,
       })
 
-      const plans = await store.get(refreshableTrainingPlansAtom)
+      const plans = await store.get(asyncTrainingPlansAtom)
 
       expect(Array.isArray(plans)).toBe(true)
       expect(plans).toEqual([])
@@ -315,7 +315,7 @@ describe('Async Atoms Integration', () => {
     it('should handle API errors', async () => {
       mocks.mockApiGet.mockRejectedValueOnce(new Error('Invalid API response'))
 
-      const plans = await store.get(refreshableTrainingPlansAtom)
+      const plans = await store.get(asyncTrainingPlansAtom)
 
       expect(Array.isArray(plans)).toBe(true)
       expect(plans).toEqual([])
@@ -349,7 +349,7 @@ describe('Async Atoms Integration', () => {
       const [runners, coaches, plans] = await Promise.all([
         store.get(connectedRunnersAtom),
         store.get(availableCoachesAtom),
-        store.get(refreshableTrainingPlansAtom),
+        store.get(asyncTrainingPlansAtom),
       ])
 
       expect(Array.isArray(runners) ? runners.length : 0).toBe(1)

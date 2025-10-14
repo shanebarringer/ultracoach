@@ -83,7 +83,7 @@ export default defineConfig({
   // Reporters: keep concise output in CI but always generate an HTML report for debugging
   reporter: process.env.CI ? [['dot'], ['html']] : [['list'], ['html']],
   /* Global timeout for each test */
-  timeout: process.env.CI ? 45000 : 30000, // CI: 45s (reduced from 3min), Local: 30s
+  timeout: process.env.CI ? 60000 : 30000, // CI: 60s (allows health check + session verification), Local: 30s
   /* Global timeout for expect assertions */
   expect: {
     timeout: process.env.CI ? 30000 : 15000, // CI: 30s (reduced from 90s), Local: 15s
@@ -252,11 +252,53 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
 
+    // Coach-Runner Relationship tests - Coach Perspective
+    {
+      name: 'chromium-relationships-coach',
+      testMatch: /coach-runner-relationships\.spec\.ts/,
+      grep: /Coach Perspective/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state for coach tests
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
+    // Coach-Runner Relationship tests - Runner Perspective
+    {
+      name: 'chromium-relationships-runner',
+      testMatch: /coach-runner-relationships\.spec\.ts/,
+      grep: /Runner Perspective/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state for runner tests
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
+    // Coach-Runner Relationship tests - Other tests
+    {
+      name: 'chromium-relationships-other',
+      testMatch: /coach-runner-relationships\.spec\.ts/,
+      grepInvert: /Coach Perspective|Runner Perspective/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state by default
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
-      grepInvert: /auth|dashboard|race-import|training-plan-management|chat-messaging/,
+      // Ensure relationships spec never runs in this catch-all project
+      testIgnore: '**/coach-runner-relationships.spec.ts',
+      grepInvert:
+        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

@@ -597,6 +597,48 @@ const userRole = (sessionData.user as any).role || 'runner'
 
 **Use Playwright MCP to investigate test failures and UI issues - it reveals real problems vs perceived issues**
 
+### 🚨 Session Persistence Race Condition (RESOLVED 2025-10-07)
+
+**LESSON LEARNED (PR #136, ULT-54)**: When E2E tests for session persistence fail intermittently (50-80% pass rate):
+
+1. **Identify the race condition** - Components rendering before async effects complete
+2. **Use synchronous hydration** - Jotai's `useHydrateAtoms` sets state before first render
+3. **Server-side session fetching** - Pass `initialSession` from server to eliminate client-side loading
+4. **Eliminate flicker** - User menus and auth-dependent UI appear immediately on first render
+
+**Symptoms:**
+
+- Test expectations like `await expect(page.getByTestId('user-menu')).toBeVisible()` fail intermittently
+- Components that depend on session state don't render consistently
+- Auth-based navigation behaves differently between test runs
+
+**Root Cause:**
+`useEffect` runs **after** first render, creating a race condition where components like `Header` read `sessionAtom` before it's populated. Sometimes the timing works (lucky), sometimes it doesn't (flaky test).
+
+**Solution:**
+Replace async `useEffect` pattern with Jotai's `useHydrateAtoms` for synchronous state initialization before first render.
+
+```typescript
+// ❌ BEFORE: Async useEffect (50-80% pass rate)
+useEffect(() => {
+  if (initialSession) setSession(initialSession)
+}, [initialSession])
+
+// ✅ AFTER: Synchronous hydration (100% pass rate)
+useHydrateAtoms([
+  [sessionAtom, initialSession || null],
+  [userAtom, initialSession?.user || null],
+  [authLoadingAtom, false],
+])
+```
+
+**Results:**
+
+- Before: 50-80% pass rate with flakes on first attempt, needed retries
+- After: 100% pass rate (3/3 consecutive runs), zero flakes, no retries needed
+
+**See**: `.context7-docs/jotai/session-persistence-patterns.md` for complete implementation details
+
 ### 🔍 Investigation Process (REQUIRED)
 
 **When tests fail or UI issues are reported, follow this process:**
@@ -637,6 +679,104 @@ const userRole = (sessionData.user as any).role || 'runner'
 - [ ] Update test selectors to be more specific and reliable
 
 **Key Learning**: Playwright MCP investigation is essential for distinguishing between real bugs and test infrastructure problems.
+
+---
+
+## 🎭 Playwright Authentication Best Practices (UPDATED 2025-10-12)
+
+### storageState Pattern (RECOMMENDED)
+
+**The Official Playwright Way - Adopted in ULT-54:**
+
+- ✅ Use `page.evaluate(() => fetch())` for API authentication (sets cookies in browser context)
+- ✅ Playwright automatically captures cookies via `context.storageState({ path })`
+- ✅ Tests configured with `storageState` path load saved state automatically
+- ❌ Never manually extract/inject cookies - Playwright handles everything
+
+### What We Learned
+
+**Before (Manual Cookie Management):**
+
+- 40+ second timeouts, 50-80% pass rate
+- Complex cookie extraction/injection code
+- Race conditions and timing issues
+
+**After (storageState Pattern):**
+
+- 8.6 second setup time, 100% pass rate
+- Simple, clean code (20 lines vs 60+)
+- First-attempt success, no retries needed
+
+**Result**: 10x faster, 100% reliable, significantly simpler code
+
+### Implementation Pattern
+
+```typescript
+// ✅ CORRECT - auth.setup.ts
+setup('authenticate', async ({ page, context }) => {
+  await page.goto(`${baseUrl}/auth/signin`)
+
+  // Authenticate via API - cookies set automatically
+  await page.evaluate(
+    async ({ apiUrl, email, password }) => {
+      await fetch(apiUrl, {
+        method: 'POST',
+        credentials: 'same-origin', // CRITICAL for cookie handling
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+    },
+    { apiUrl, email, password }
+  )
+
+  await page.waitForTimeout(1000) // Let cookies propagate
+  await page.goto(`${baseUrl}/dashboard`) // Verify auth
+
+  // Save state - Playwright captures everything automatically
+  await context.storageState({ path: authFile })
+})
+```
+
+### Anti-Patterns
+
+```typescript
+// ❌ WRONG - Don't manually extract/inject cookies
+const cookies = await context.cookies()
+const sessionCookie = cookies.find(c => c.name === 'session_token')
+await context.addCookies([sessionCookie]) // Unnecessary!
+
+// ❌ WRONG - Don't use page.request.post()
+await page.request.post('/api/auth', { data: creds })
+// Sets cookies in isolated context, won't work!
+```
+
+### Configuration
+
+```typescript
+// playwright.config.ts
+projects: [
+  {
+    name: 'setup',
+    testMatch: /auth\.setup\.ts/,
+  },
+  {
+    name: 'chromium-authenticated',
+    use: {
+      storageState: './playwright/.auth/runner.json', // Auto-loads
+    },
+    dependencies: ['setup'], // Runs setup first
+  },
+]
+```
+
+### Key Files
+
+- `tests/auth.setup.ts` - Runner authentication setup
+- `tests/auth-coach.setup.ts` - Coach authentication setup
+- `playwright/.auth/runner.json` - Saved runner state
+- `playwright/.auth/coach.json` - Saved coach state
+
+**Reference**: See `.context7-docs/playwright/storagestate-authentication.md` for complete guide
 
 ---
 

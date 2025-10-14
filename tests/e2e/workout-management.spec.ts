@@ -19,8 +19,9 @@ test.describe('Workout Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the runner dashboard - we're already authenticated
+      // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
+      await waitForPageReady(page)
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
     })
 
@@ -301,8 +302,9 @@ test.describe('Workout Management', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the coach dashboard - we're already authenticated
+      // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
+      await waitForPageReady(page)
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
     })
 

@@ -8,11 +8,14 @@ import { useCallback } from 'react'
 import { CoachSelector } from '@/components/relationships/CoachSelector'
 import { RelationshipsList } from '@/components/relationships/RelationshipsList'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
-import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { relationshipsAtom } from '@/lib/atoms/index'
+import type { User } from '@/lib/better-auth-client'
 
-export function RelationshipsPageContent() {
-  const { user } = useBetterAuth()
+interface RelationshipsPageContentProps {
+  user: User
+}
+
+export function RelationshipsPageContent({ user }: RelationshipsPageContentProps) {
   const [, setRelationships] = useAtom(relationshipsAtom)
 
   const handleRelationshipChange = useCallback(async () => {
@@ -28,16 +31,6 @@ export function RelationshipsPageContent() {
     }
   }, [setRelationships])
 
-  if (!user) {
-    return (
-      <Card className="w-full">
-        <CardBody className="p-6 text-center">
-          <p className="text-default-600">Please sign in to manage your relationships.</p>
-        </CardBody>
-      </Card>
-    )
-  }
-
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left Column - Existing Relationships */}
@@ -48,11 +41,11 @@ export function RelationshipsPageContent() {
       {/* Right Column - Find New Connections */}
       <div className="space-y-6">
         {user.userType === 'runner' && (
-          <CoachSelector onRelationshipCreated={handleRelationshipChange} />
+          <CoachSelector onRelationshipCreated={handleRelationshipChange} user={user} />
         )}
 
         {user.userType === 'coach' && (
-          <RunnerSelector onRelationshipCreated={handleRelationshipChange} />
+          <RunnerSelector onRelationshipCreated={handleRelationshipChange} user={user} />
         )}
 
         {/* Info Card */}

@@ -7,14 +7,26 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { navigateToPage, signIn, waitForNavigation, waitForPageReady } from '../utils/wait-helpers'
+import { waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
+  // Clear relationships before all tests to ensure clean state
+  test.beforeAll(async ({ request }) => {
+    // Delete all coach_runners relationships
+    await request
+      .post('/api/test/cleanup', {
+        data: { table: 'coach_runners' },
+      })
+      .catch(() => {
+        // If endpoint doesn't exist yet, ignore error
+      })
+  })
+
   test.describe('Coach Perspective', () => {
     test.use({ storageState: './playwright/.auth/coach.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the coach dashboard - we're already authenticated
+      // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
       await waitForPageReady(page)
     })
@@ -23,8 +35,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Coach dashboard shows "Your Athletes" heading (use more specific selector)
       await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
 
-      // Click "Find Athletes to Coach" button to navigate to runner selection
-      await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
+      // Click "Connect" button to navigate to runner selection
+      await page.getByTestId('connect-athletes-button').click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
@@ -38,24 +50,21 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send connection request to runner', async ({ page }) => {
-      // Click "Find Athletes to Coach" button from dashboard
-      await page.getByRole('button', { name: 'Find Athletes to Coach' }).click()
+      // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
+      await page.getByTestId('connect-athletes-button').click()
 
       // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Get first runner's email to identify them later
-      const firstRunnerElement = page.locator('text=test.runner').first()
-
       // Click connect on first available runner
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
+      // Wait for the pending status to appear (indicating the relationship was created and UI updated)
+      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
+
       // Runner should move to "My Relationships" section with pending status
       await expect(page.getByText('My Relationships')).toBeVisible()
-
-      // Should show the pending status indicator (use first() to avoid strict mode violation)
-      await expect(page.getByText('pending').first()).toBeVisible()
 
       // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
       await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
@@ -132,7 +141,7 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the runner dashboard - we're already authenticated
+      // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
       await waitForPageReady(page)
     })
@@ -141,11 +150,11 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Runner dashboard shows "My Guides" section with Find Coach button
       await expect(page.getByText('My Guides')).toBeVisible()
 
-      // Click Find Coach button to navigate to coach selection
-      await page.getByRole('button', { name: 'Find Coach' }).click()
+      // Click Find Coach button to navigate to coach selection using testid
+      await page.getByTestId('find-coach-button').click()
 
       // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
       // Should show "Find a Coach" section
@@ -159,27 +168,25 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should send coaching request to coach', async ({ page }) => {
-      // Click Find Coach button from dashboard
-      await page.getByRole('button', { name: 'Find Coach' }).click()
+      // Click Find Coach button from dashboard using testid
+      await page.getByTestId('find-coach-button').click()
 
       // Wait for navigation to relationships page
-      await page.waitForURL('/relationships', { timeout: 10000 })
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
-      // Should show success notification
-      await expect(
-        page.getByText(/connection request sent|coaching request sent|connected/i)
-      ).toBeVisible()
+      // Wait for the pending status to appear (indicating the relationship was created and UI updated)
+      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
 
-      // Coach should move to pending connections or be connected
-      // The exact UI behavior may vary based on the implementation
-      // Wait for any success toast or UI update
-      await page
-        .waitForSelector('[role="status"]', { state: 'visible', timeout: 5000 })
-        .catch(() => {})
+      // Coach should move to "My Relationships" section with pending status
+      await expect(page.getByText('My Relationships')).toBeVisible()
+
+      // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
+      await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Decline' }).first()).toBeVisible()
     })
 
     test.skip('should manage coach relationship', async ({ page }) => {

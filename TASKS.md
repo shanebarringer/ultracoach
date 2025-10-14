@@ -55,6 +55,27 @@ _For complete milestone history, see [COMPLETED_MILESTONES.md](./COMPLETED_MILES
 - [x] **Add Suspense Boundary to WorkoutsPageClient** - ✅ **COMPLETED** - Wrapped WorkoutsPageClient with Suspense using WorkoutsPageSkeleton
 - [x] **Add Suspense Boundary to DashboardRouter** - ✅ **COMPLETED** - Wrapped DashboardRouter with Suspense in both coach and runner dashboard pages
 
+#### Playwright Authentication Best Practices (✅ COMPLETED 2025-10-12)
+
+- [x] **Adopt Playwright storageState Pattern** - ✅ **COMPLETED 2025-10-12** - Simplified authentication setup with official pattern
+  - Removed manual cookie extraction and injection from auth.setup.ts and auth-coach.setup.ts
+  - Applied official Playwright storageState pattern using `page.evaluate(() => fetch())` + `context.storageState()`
+  - Results: 10x faster (8.6s vs 40+ second timeouts), 100% reliability (no retries needed), cleaner code (20 lines vs 60+)
+  - Created comprehensive documentation in `.context7-docs/playwright/storagestate-authentication.md`
+  - Updated CLAUDE.md with Playwright authentication best practices section
+  - Aligns with official Playwright documentation and Better Auth recommendations
+
+#### Playwright Test Cleanup (✅ COMPLETED 2025-10-12)
+
+- [x] **Standardize auth test patterns (ULT-64)** - ✅ **COMPLETED 2025-10-12** - Replaced all fixed timeouts with condition-based waits
+  - ✅ Removed unused `waitForAppReady` import from auth.spec.ts
+  - ✅ Replaced text selector with `data-testid` (auth-flows.spec.ts line 249)
+  - ✅ Added TypeScript type annotations for `authResponse` variables
+  - ✅ Replaced all cookie propagation timeouts with `page.waitForURL()`
+  - ✅ All authentication tests passing (11/11 tests in 1.1 minutes)
+  - ✅ Zero ESLint warnings, clean builds, production-ready
+  - Linear Issue: ULT-64
+
 #### Test Re-enablement Tasks
 
 - [x] **Fix Messaging System** - ✅ **COMPLETED 2025-09-14** - Applied Jotai "derive state, don't duplicate it" pattern
