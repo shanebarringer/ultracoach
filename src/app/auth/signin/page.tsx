@@ -135,7 +135,7 @@ export default function SignIn() {
 
           logger.info('✅ Redirecting authenticated user to dashboard', {
             userRole,
-            userId: sessionData.data.user.id,
+            userId: user.id,
             dashboardUrl,
           })
 
