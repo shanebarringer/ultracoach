@@ -11,10 +11,70 @@ export const DISABLE_ERROR_TOASTS = (() => {
 
 const logger = createLogger('ApiClient')
 
-// Axios instance with safe defaults; callers may opt-in to cookies per request
+// Axios instance with safe defaults
+// Note: do NOT set `withCredentials` here. Leaving it undefined allows the
+// request interceptor to detect whether the caller explicitly set it. The
+// browser/XHR default is effectively `false` for cross-origin, which is what
+// we want when the interceptor doesn't opt in for same-origin `/api/*`.
 export const apiClient = axios.create({
-  withCredentials: false, // Safe default; enable per-request when required
   timeout: 10000, // 10 seconds
+})
+
+// Helper to determine if a request is targeting our own Next.js API routes
+// Only runs on the client (window available). On the server it returns false.
+function isSameOriginApiRequest(url?: string, baseURL?: string): boolean {
+  if (!url || typeof window === 'undefined') return false
+
+  // Treat protocol-relative URLs (//host/path) as absolute
+  const isAbsoluteUrl = (u: string) => /^[a-z][a-z\d+.-]*:/i.test(u) || /^\/\//.test(u)
+
+  // Replicate Axios combine + buildFullPath semantics
+  const trimTrailing = (s: string) => s.replace(/\/+$/g, '')
+  const trimLeading = (s: string) => s.replace(/^\/+/, '')
+  const stripQueryHash = (s: string) => s.split(/[?#]/, 1)[0]
+  const combineUrls = (base: string, relative: string) =>
+    `${trimTrailing(stripQueryHash(base))}/${trimLeading(relative)}`
+
+  // Build the request path similar to Axios's `buildFullPath`
+  const fullPath = baseURL && !isAbsoluteUrl(url) ? combineUrls(baseURL, url) : url
+
+  try {
+    const { origin, protocol } = window.location
+
+    // Turn the string into an absolute URL for inspection
+    let absoluteUrl: URL
+    if (isAbsoluteUrl(fullPath)) {
+      // If protocol-relative, prefix the current protocol
+      const resolved = fullPath.startsWith('//') ? `${protocol}${fullPath}` : fullPath
+      absoluteUrl = new URL(resolved)
+    } else {
+      // Relative URL: resolve against current origin
+      absoluteUrl = new URL(
+        fullPath.startsWith('/') ? fullPath : `/${trimLeading(fullPath)}`,
+        origin
+      )
+    }
+
+    const sameOrigin = absoluteUrl.origin === origin
+    const path = absoluteUrl.pathname
+    const isApiPath = path === '/api' || path.startsWith('/api/')
+    return sameOrigin && isApiPath
+  } catch {
+    // Malformed URL or unsupported environment
+    return false
+  }
+}
+
+// Request interceptor: automatically send cookies for same-origin /api/* calls
+apiClient.interceptors.request.use(config => {
+  // If this is a same-origin Next.js API request, enable cookies by default.
+  // We only skip when the caller explicitly opted out with `withCredentials: false`.
+  if (isSameOriginApiRequest(config.url, config.baseURL)) {
+    if (config.withCredentials !== false) {
+      config.withCredentials = true
+    }
+  }
+  return config
 })
 
 // Add a per-request suppression flag for global error toasts
