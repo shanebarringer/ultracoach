@@ -27,6 +27,7 @@ function getAuthClient() {
         customSessionClient<typeof auth>(), // Enable custom session inference
       ],
       fetchOptions: {
+        credentials: 'same-origin', // Send cookies for same-origin /api/auth requests
         onError(context) {
           logger.error('Better Auth client error:', {
             error: context.error?.message || 'Unknown error',
