@@ -96,17 +96,30 @@ export default function SignIn() {
         const sessionData = await authClient.getSession()
 
         if (sessionData?.data) {
+          // Defensive check: ensure user data exists in session
+          const user = sessionData.data.user as User | undefined
+
+          if (!user) {
+            logger.error('Session exists but user data is missing', {
+              hasSession: !!sessionData.data,
+              sessionKeys: Object.keys(sessionData.data),
+            })
+            setIsRedirecting(false)
+            setError('email', { message: 'Session error. Please try signing in again.' })
+            return
+          }
+
           // Update Jotai atoms with complete session data
           setSession(sessionData.data)
-          setUser(sessionData.data.user as User)
+          setUser(user)
 
           // Extract role from session - customSession handles userType mapping
-          const userRole = (sessionData.data.user as User).userType || 'runner'
+          const userRole = user.userType || 'runner'
 
           logger.info('Final user role determined:', {
             userRole,
-            userId: sessionData.data.user.id,
-            sessionUser: sessionData.data.user,
+            userId: user.id,
+            sessionUser: user,
             fullSessionData: sessionData.data,
           })
 

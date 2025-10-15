@@ -27,6 +27,7 @@ function getAuthClient() {
         customSessionClient<typeof auth>(), // Enable custom session inference
       ],
       fetchOptions: {
+        credentials: 'include', // CRITICAL: Send cookies with all auth requests
         onError(context) {
           logger.error('Better Auth client error:', {
             error: context.error?.message || 'Unknown error',
