@@ -119,16 +119,12 @@ export default function SignIn() {
           logger.info('Final user role determined:', {
             userRole,
             userId: user.id,
-            sessionUser: user,
-            fullSessionData: sessionData.data,
+            userEmail: user.email,
+            sessionPresent: Boolean(sessionData.data),
           })
 
           // Set redirecting state for smooth transition
           setIsRedirecting(true)
-
-          // Force a longer delay to ensure client state is fully synchronized
-          // This should fix the refresh issue on preview deployments
-          await new Promise(resolve => setTimeout(resolve, 500))
 
           // Determine the dashboard URL based on user role
           const dashboardUrl = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
