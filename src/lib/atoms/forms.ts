@@ -1,6 +1,8 @@
 // Form state management atoms
 import { atom } from 'jotai'
 
+import { withDebugLabel } from './utils'
+
 // Generic form state
 export const formErrorsAtom = atom<Record<string, string>>({})
 export const formSubmittingAtom = atom(false)
@@ -77,15 +79,15 @@ export const workoutLogFormAtom = atom({
 export const authSuccessMessageAtom = atom<string | null>(null)
 export const authRedirectingAtom = atom(false)
 
-// Jotai Devtools debug labels
-formErrorsAtom.debugLabel = 'forms/errors'
-formSubmittingAtom.debugLabel = 'forms/submitting'
-formSuccessAtom.debugLabel = 'forms/success'
-signInFormAtom.debugLabel = 'forms/signIn'
-signUpFormAtom.debugLabel = 'forms/signUp'
-profileFormAtom.debugLabel = 'forms/profile'
-formValidationAtom.debugLabel = 'forms/validation'
-createTrainingPlanFormAtom.debugLabel = 'forms/createTrainingPlan'
-workoutLogFormAtom.debugLabel = 'forms/workoutLog'
-authSuccessMessageAtom.debugLabel = 'forms/authSuccessMessage'
-authRedirectingAtom.debugLabel = 'forms/authRedirecting'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(formErrorsAtom, 'forms/errors')
+withDebugLabel(formSubmittingAtom, 'forms/submitting')
+withDebugLabel(formSuccessAtom, 'forms/success')
+withDebugLabel(signInFormAtom, 'forms/signIn')
+withDebugLabel(signUpFormAtom, 'forms/signUp')
+withDebugLabel(profileFormAtom, 'forms/profile')
+withDebugLabel(formValidationAtom, 'forms/validation')
+withDebugLabel(createTrainingPlanFormAtom, 'forms/createTrainingPlan')
+withDebugLabel(workoutLogFormAtom, 'forms/workoutLog')
+withDebugLabel(authSuccessMessageAtom, 'forms/authSuccessMessage')
+withDebugLabel(authRedirectingAtom, 'forms/authRedirecting')

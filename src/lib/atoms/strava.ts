@@ -5,6 +5,8 @@ import { atomWithStorage } from 'jotai/utils'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity, StravaAthlete, StravaConnection } from '@/types/strava'
 
+import { withDebugLabel } from './utils'
+
 // Core Strava atoms
 export const stravaActivitiesAtom = atom<StravaActivity[]>([])
 export const stravaAthleteAtom = atom<StravaAthlete | null>(null)
@@ -202,26 +204,26 @@ export const matchingSummaryAtom = atom<{
   lastProcessed: null,
 })
 
-// Jotai Devtools debug labels
-stravaActivitiesAtom.debugLabel = 'strava/activities'
-stravaAthleteAtom.debugLabel = 'strava/athlete'
-stravaLoadingAtom.debugLabel = 'strava/loading'
-stravaErrorAtom.debugLabel = 'strava/error'
-stravaConnectionStatusAtom.debugLabel = 'strava/connectionStatus'
-stravaAccessTokenAtom.debugLabel = 'strava/accessToken'
-stravaRefreshTokenAtom.debugLabel = 'strava/refreshToken'
-stravaSyncInProgressAtom.debugLabel = 'strava/syncInProgress'
-stravaLastSyncAtom.debugLabel = 'strava/lastSync'
-stravaSyncProgressAtom.debugLabel = 'strava/syncProgress'
-workoutStravaShowPanelAtom.debugLabel = 'strava/workoutShowPanel'
-stravaSelectedActivitiesAtom.debugLabel = 'strava/selectedActivities'
-stravaActivitiesRefreshableAtom.debugLabel = 'strava/activitiesRefreshable'
-stravaStatusAtom.debugLabel = 'strava/status'
-stravaAutoReconnectAtom.debugLabel = 'strava/autoReconnect'
-syncProgressAtom.debugLabel = 'strava/syncProgressV2'
-stravaConnectionAtom.debugLabel = 'strava/connection'
-syncStatsAtom.debugLabel = 'strava/syncStats'
-stravaStateAtom.debugLabel = 'strava/state'
-stravaActionsAtom.debugLabel = 'strava/actions'
-triggerWorkoutMatchingAtom.debugLabel = 'strava/triggerWorkoutMatching'
-matchingSummaryAtom.debugLabel = 'strava/matchingSummary'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(stravaActivitiesAtom, 'strava/activities')
+withDebugLabel(stravaAthleteAtom, 'strava/athlete')
+withDebugLabel(stravaLoadingAtom, 'strava/loading')
+withDebugLabel(stravaErrorAtom, 'strava/error')
+withDebugLabel(stravaConnectionStatusAtom, 'strava/connectionStatus')
+withDebugLabel(stravaAccessTokenAtom, 'strava/accessToken')
+withDebugLabel(stravaRefreshTokenAtom, 'strava/refreshToken')
+withDebugLabel(stravaSyncInProgressAtom, 'strava/syncInProgress')
+withDebugLabel(stravaLastSyncAtom, 'strava/lastSync')
+withDebugLabel(stravaSyncProgressAtom, 'strava/syncProgress')
+withDebugLabel(workoutStravaShowPanelAtom, 'strava/workoutShowPanel')
+withDebugLabel(stravaSelectedActivitiesAtom, 'strava/selectedActivities')
+withDebugLabel(stravaActivitiesRefreshableAtom, 'strava/activitiesRefreshable')
+withDebugLabel(stravaStatusAtom, 'strava/status')
+withDebugLabel(stravaAutoReconnectAtom, 'strava/autoReconnect')
+withDebugLabel(syncProgressAtom, 'strava/syncProgressV2')
+withDebugLabel(stravaConnectionAtom, 'strava/connection')
+withDebugLabel(syncStatsAtom, 'strava/syncStats')
+withDebugLabel(stravaStateAtom, 'strava/state')
+withDebugLabel(stravaActionsAtom, 'strava/actions')
+withDebugLabel(triggerWorkoutMatchingAtom, 'strava/triggerWorkoutMatching')
+withDebugLabel(matchingSummaryAtom, 'strava/matchingSummary')

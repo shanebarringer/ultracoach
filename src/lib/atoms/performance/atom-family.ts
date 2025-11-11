@@ -38,7 +38,10 @@ export const workoutAtomFamily = atomFamily((workoutId: string) => {
       set(workoutAtomFamily(workoutId), newWorkout)
     }
   )
-  a.debugLabel = `family/workout/${workoutId}`
+  // Only set debug labels in development
+  if (process.env.NODE_ENV !== 'production') {
+    ;(a as { debugLabel?: string }).debugLabel = `family/workout/${workoutId}`
+  }
   return a
 })
 
@@ -65,7 +68,10 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
       set(trainingPlanAtomFamily(planId), newPlan)
     }
   )
-  a.debugLabel = `family/trainingPlan/${planId}`
+  // Only set debug labels in development
+  if (process.env.NODE_ENV !== 'production') {
+    ;(a as { debugLabel?: string }).debugLabel = `family/trainingPlan/${planId}`
+  }
   return a
 })
 
@@ -80,7 +86,10 @@ export const trainingPlanAtomFamily = atomFamily((planId: string) => {
  */
 export const conversationMessageCountFamily = atomFamily((_conversationId: string) => {
   const a = atom(0)
-  a.debugLabel = `family/conversationMessageCount/${_conversationId}`
+  // Only set debug labels in development
+  if (process.env.NODE_ENV !== 'production') {
+    ;(a as { debugLabel?: string }).debugLabel = `family/conversationMessageCount/${_conversationId}`
+  }
   return a
 })
 
@@ -97,7 +106,10 @@ export const conversationMessageCountFamily = atomFamily((_conversationId: strin
 export const formFieldAtomFamily = atomFamily(
   ({ formId: _formId, fieldName: _fieldName }: { formId: string; fieldName: string }) => {
     const a = atom('')
-    a.debugLabel = `family/formField/${_formId}/${_fieldName}`
+    // Only set debug labels in development
+    if (process.env.NODE_ENV !== 'production') {
+      ;(a as { debugLabel?: string }).debugLabel = `family/formField/${_formId}/${_fieldName}`
+    }
     return a
   }
 )
@@ -114,7 +126,10 @@ export const formFieldAtomFamily = atomFamily(
  */
 export const loadingStateFamily = atomFamily((_operationId: string) => {
   const a = atom(false)
-  a.debugLabel = `family/loadingState/${_operationId}`
+  // Only set debug labels in development
+  if (process.env.NODE_ENV !== 'production') {
+    ;(a as { debugLabel?: string }).debugLabel = `family/loadingState/${_operationId}`
+  }
   return a
 })
 
@@ -130,7 +145,10 @@ export const loadingStateFamily = atomFamily((_operationId: string) => {
  */
 export const errorStateFamily = atomFamily((_operationId: string) => {
   const a = atom<string | null>(null)
-  a.debugLabel = `family/errorState/${_operationId}`
+  // Only set debug labels in development
+  if (process.env.NODE_ENV !== 'production') {
+    ;(a as { debugLabel?: string }).debugLabel = `family/errorState/${_operationId}`
+  }
   return a
 })
 

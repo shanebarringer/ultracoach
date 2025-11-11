@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code when working with the UltraCoach project. It ensures consistency, context, and proper workflow across all development sessions.
 
+## 📚 Essential Documentation
+
+- **[PLANNING.md](./PLANNING.md)** - Project vision, architecture, and technical planning
+- **[TASKS.md](./TASKS.md)** - Active tasks and milestone tracking
+- **[CODING_STANDARDS.md](./docs/CODING_STANDARDS.md)** - Team coding conventions and best practices
+- **[ATOM_DEBUG_LABELS.md](./docs/ATOM_DEBUG_LABELS.md)** - Jotai atom debug label standards
+
 ## 🔄 Session Workflow (IMPORTANT)
 
 ### At the start of EVERY new conversation

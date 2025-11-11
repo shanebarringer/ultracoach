@@ -8,6 +8,7 @@ import { userAtom } from '../auth'
 import { conversationsAtom, unreadMessagesCountAtom } from '../chat'
 import { notificationsAtom } from '../notifications'
 import { trainingPlansAtom } from '../training-plans'
+import { withDebugLabel } from '../utils'
 import {
   workoutSearchTermAtom,
   workoutStatusFilterAtom,
@@ -143,14 +144,14 @@ export const filteredTrainingPlansAtom = atom(get => {
   return plans
 })
 
-// Jotai Devtools debug labels
-filteredWorkoutsAtom.debugLabel = 'derived/filteredWorkouts'
-unreadNotificationsAtom.debugLabel = 'derived/unreadNotifications'
-activeTrainingPlansAtom.debugLabel = 'derived/activeTrainingPlans'
-totalUnreadMessagesAtom.debugLabel = 'derived/totalUnreadMessages'
-activeConversationsAtom.debugLabel = 'derived/activeConversations'
-todaysWorkoutsAtom.debugLabel = 'derived/todaysWorkouts'
-thisWeeksWorkoutsAtom.debugLabel = 'derived/thisWeeksWorkouts'
-workoutCompletionRateAtom.debugLabel = 'derived/workoutCompletionRate'
-workoutStatsAtom.debugLabel = 'derived/workoutStats'
-filteredTrainingPlansAtom.debugLabel = 'derived/filteredTrainingPlans'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(filteredWorkoutsAtom, 'derived/filteredWorkouts')
+withDebugLabel(unreadNotificationsAtom, 'derived/unreadNotifications')
+withDebugLabel(activeTrainingPlansAtom, 'derived/activeTrainingPlans')
+withDebugLabel(totalUnreadMessagesAtom, 'derived/totalUnreadMessages')
+withDebugLabel(activeConversationsAtom, 'derived/activeConversations')
+withDebugLabel(todaysWorkoutsAtom, 'derived/todaysWorkouts')
+withDebugLabel(thisWeeksWorkoutsAtom, 'derived/thisWeeksWorkouts')
+withDebugLabel(workoutCompletionRateAtom, 'derived/workoutCompletionRate')
+withDebugLabel(workoutStatsAtom, 'derived/workoutStats')
+withDebugLabel(filteredTrainingPlansAtom, 'derived/filteredTrainingPlans')

@@ -4,6 +4,8 @@ import { atom } from 'jotai'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
+import { withDebugLabel } from './utils'
+
 // Module-level logger for better performance
 const logger = createLogger('SettingsAtom')
 
@@ -251,11 +253,11 @@ export const updateUserSettingsSectionAtom = atom(
   }
 )
 
-// Jotai Devtools debug labels
-userSettingsAtom.debugLabel = 'settings/user'
-userSettingsErrorAtom.debugLabel = 'settings/error'
-userSettingsRefreshTriggerAtom.debugLabel = 'settings/refreshTrigger'
-asyncUserSettingsAtom.debugLabel = 'settings/async'
-refreshUserSettingsAtom.debugLabel = 'settings/refreshAction'
-updateUserSettingsAtom.debugLabel = 'settings/updateAction'
-updateUserSettingsSectionAtom.debugLabel = 'settings/updateSectionAction'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(userSettingsAtom, 'settings/user')
+withDebugLabel(userSettingsErrorAtom, 'settings/error')
+withDebugLabel(userSettingsRefreshTriggerAtom, 'settings/refreshTrigger')
+withDebugLabel(asyncUserSettingsAtom, 'settings/async')
+withDebugLabel(refreshUserSettingsAtom, 'settings/refreshAction')
+withDebugLabel(updateUserSettingsAtom, 'settings/updateAction')
+withDebugLabel(updateUserSettingsSectionAtom, 'settings/updateSectionAction')

@@ -5,6 +5,8 @@ import { atomWithStorage } from 'jotai/utils'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
+import { withDebugLabel } from './utils'
+
 // Module-level logger for better performance
 const logger = createLogger('RacesAtom')
 
@@ -75,18 +77,18 @@ export const raceImportProgressAtom = atom({
 })
 export const raceImportErrorsAtom = atom<string[]>([])
 
-// Jotai Devtools debug labels
-racesAtom.debugLabel = 'races/list'
-racesLoadingAtom.debugLabel = 'races/loading'
-racesErrorAtom.debugLabel = 'races/error'
-racesRefreshTriggerAtom.debugLabel = 'races/refreshTrigger'
-asyncRacesAtom.debugLabel = 'races/async'
-refreshRacesAtom.debugLabel = 'races/refreshAction'
-selectedRaceAtom.debugLabel = 'races/selected'
-selectedRaceIdAtom.debugLabel = 'races/selectedId'
-raceSearchTermAtom.debugLabel = 'races/searchTerm'
-raceDistanceFilterAtom.debugLabel = 'races/distanceFilter'
-raceTerrainFilterAtom.debugLabel = 'races/terrainFilter'
-raceSortByAtom.debugLabel = 'races/sortBy'
-raceImportProgressAtom.debugLabel = 'races/importProgress'
-raceImportErrorsAtom.debugLabel = 'races/importErrors'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(racesAtom, 'races/list')
+withDebugLabel(racesLoadingAtom, 'races/loading')
+withDebugLabel(racesErrorAtom, 'races/error')
+withDebugLabel(racesRefreshTriggerAtom, 'races/refreshTrigger')
+withDebugLabel(asyncRacesAtom, 'races/async')
+withDebugLabel(refreshRacesAtom, 'races/refreshAction')
+withDebugLabel(selectedRaceAtom, 'races/selected')
+withDebugLabel(selectedRaceIdAtom, 'races/selectedId')
+withDebugLabel(raceSearchTermAtom, 'races/searchTerm')
+withDebugLabel(raceDistanceFilterAtom, 'races/distanceFilter')
+withDebugLabel(raceTerrainFilterAtom, 'races/terrainFilter')
+withDebugLabel(raceSortByAtom, 'races/sortBy')
+withDebugLabel(raceImportProgressAtom, 'races/importProgress')
+withDebugLabel(raceImportErrorsAtom, 'races/importErrors')

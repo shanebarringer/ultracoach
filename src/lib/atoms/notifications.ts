@@ -3,6 +3,8 @@ import { atom } from 'jotai'
 
 import type { Notification } from '@/types/notifications'
 
+import { withDebugLabel } from './utils'
+
 // Core notification atoms
 export const notificationsAtom = atom<Notification[]>([])
 export const notificationsLoadingAtom = atom(false)
@@ -27,11 +29,11 @@ export const notificationPreferencesAtom = atom({
   achievementAlerts: true,
 })
 
-// Jotai Devtools debug labels
-notificationsAtom.debugLabel = 'notifications/list'
-notificationsLoadingAtom.debugLabel = 'notifications/loading'
-notificationsErrorAtom.debugLabel = 'notifications/error'
-asyncNotificationsAtom.debugLabel = 'notifications/async'
-unreadNotificationsCountAtom.debugLabel = 'notifications/unreadCount'
-hasNewNotificationsAtom.debugLabel = 'notifications/hasNew'
-notificationPreferencesAtom.debugLabel = 'notifications/preferences'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(notificationsAtom, 'notifications/list')
+withDebugLabel(notificationsLoadingAtom, 'notifications/loading')
+withDebugLabel(notificationsErrorAtom, 'notifications/error')
+withDebugLabel(asyncNotificationsAtom, 'notifications/async')
+withDebugLabel(unreadNotificationsCountAtom, 'notifications/unreadCount')
+withDebugLabel(hasNewNotificationsAtom, 'notifications/hasNew')
+withDebugLabel(notificationPreferencesAtom, 'notifications/preferences')

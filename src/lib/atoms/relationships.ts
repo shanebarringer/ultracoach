@@ -15,6 +15,7 @@ import { api } from '../api-client'
 import { createLogger } from '../logger'
 import type { User } from '../supabase'
 import { normalizeListResponse } from '../utils/api-utils'
+import { withDebugLabel } from './utils'
 
 // Environment check
 const isBrowser = typeof window !== 'undefined'
@@ -140,21 +141,21 @@ export const availableRunnersAtom = makeAvailableUsersAtom<User>(
   availableRunnersLogger
 )
 
-// Jotai Devtools debug labels
-relationshipsAtom.debugLabel = 'relationships/list'
-relationshipsLoadingAtom.debugLabel = 'relationships/loading'
-relationshipsErrorAtom.debugLabel = 'relationships/error'
-relationshipsAsyncAtom.debugLabel = 'relationships/async'
-relationshipsLoadableAtom.debugLabel = 'relationships/loadable'
-selectedRelationshipAtom.debugLabel = 'relationships/selected'
-selectedRelationshipIdAtom.debugLabel = 'relationships/selectedId'
-relationshipStatusFilterAtom.debugLabel = 'relationships/statusFilter'
-relationshipSearchTermAtom.debugLabel = 'relationships/searchTerm'
-inviteRunnerFormAtom.debugLabel = 'relationships/inviteRunnerForm'
-connectCoachFormAtom.debugLabel = 'relationships/connectCoachForm'
-runnerSearchTermAtom.debugLabel = 'relationships/runnerSearchTerm'
-connectingRunnerIdsAtom.debugLabel = 'relationships/connectingRunnerIds'
-runnersAtom.debugLabel = 'relationships/runners'
-connectedRunnersAtom.debugLabel = 'relationships/connectedRunners'
-availableCoachesAtom.debugLabel = 'relationships/availableCoaches'
-availableRunnersAtom.debugLabel = 'relationships/availableRunners'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(relationshipsAtom, 'relationships/list')
+withDebugLabel(relationshipsLoadingAtom, 'relationships/loading')
+withDebugLabel(relationshipsErrorAtom, 'relationships/error')
+withDebugLabel(relationshipsAsyncAtom, 'relationships/async')
+withDebugLabel(relationshipsLoadableAtom, 'relationships/loadable')
+withDebugLabel(selectedRelationshipAtom, 'relationships/selected')
+withDebugLabel(selectedRelationshipIdAtom, 'relationships/selectedId')
+withDebugLabel(relationshipStatusFilterAtom, 'relationships/statusFilter')
+withDebugLabel(relationshipSearchTermAtom, 'relationships/searchTerm')
+withDebugLabel(inviteRunnerFormAtom, 'relationships/inviteRunnerForm')
+withDebugLabel(connectCoachFormAtom, 'relationships/connectCoachForm')
+withDebugLabel(runnerSearchTermAtom, 'relationships/runnerSearchTerm')
+withDebugLabel(connectingRunnerIdsAtom, 'relationships/connectingRunnerIds')
+withDebugLabel(runnersAtom, 'relationships/runners')
+withDebugLabel(connectedRunnersAtom, 'relationships/connectedRunners')
+withDebugLabel(availableCoachesAtom, 'relationships/availableCoaches')
+withDebugLabel(availableRunnersAtom, 'relationships/availableRunners')

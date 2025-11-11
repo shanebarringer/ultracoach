@@ -11,6 +11,8 @@ import { atomWithStorage } from 'jotai/utils'
 
 import type { Session, User } from '@/lib/better-auth-client'
 
+import { withDebugLabel } from './utils'
+
 // Core auth atoms
 
 /**
@@ -78,16 +80,16 @@ export const authStateAtom = atom({
   error: null as string | null,
 })
 
-// Jotai Devtools debug labels
-sessionAtom.debugLabel = 'auth/session'
-userAtom.debugLabel = 'auth/user'
-authLoadingAtom.debugLabel = 'auth/loading'
-authErrorAtom.debugLabel = 'auth/error'
-authSuccessAtom.debugLabel = 'auth/success'
-rememberMeAtom.debugLabel = 'auth/rememberMe'
-lastLoginEmailAtom.debugLabel = 'auth/lastLoginEmail'
-isAuthenticatedAtom.debugLabel = 'auth/isAuthenticated'
-userRoleAtom.debugLabel = 'auth/userRole'
-isCoachAtom.debugLabel = 'auth/isCoach'
-isRunnerAtom.debugLabel = 'auth/isRunner'
-authStateAtom.debugLabel = 'auth/state'
+// Jotai Devtools debug labels (dev-only)
+withDebugLabel(sessionAtom, 'auth/session')
+withDebugLabel(userAtom, 'auth/user')
+withDebugLabel(authLoadingAtom, 'auth/loading')
+withDebugLabel(authErrorAtom, 'auth/error')
+withDebugLabel(authSuccessAtom, 'auth/success')
+withDebugLabel(rememberMeAtom, 'auth/rememberMe')
+withDebugLabel(lastLoginEmailAtom, 'auth/lastLoginEmail')
+withDebugLabel(isAuthenticatedAtom, 'auth/isAuthenticated')
+withDebugLabel(userRoleAtom, 'auth/userRole')
+withDebugLabel(isCoachAtom, 'auth/isCoach')
+withDebugLabel(isRunnerAtom, 'auth/isRunner')
+withDebugLabel(authStateAtom, 'auth/state')
