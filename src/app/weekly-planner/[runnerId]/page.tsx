@@ -220,6 +220,9 @@ function RunnerWeeklyPage({
                   >
                     {selectedRunner.full_name || 'User'}
                   </p>
+                  {/* Status Chips - Note: connectedRunnersAtom only returns active relationships,
+                      so "Active" status is accurate. "Training" is a visual indicator that could be
+                      replaced with dynamic data from active training plans in a future enhancement. */}
                   <div className="flex items-center gap-2 mt-1">
                     <Chip
                       size="sm"
