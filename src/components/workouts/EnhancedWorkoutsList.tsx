@@ -37,7 +37,7 @@ type SortOption = 'date-desc' | 'date-asc' | 'type' | 'status' | 'distance'
 
 const EnhancedWorkoutsList = memo(
   ({ userRole, onEditWorkout, onLogWorkout, variant = 'default' }: EnhancedWorkoutsListProps) => {
-    const workouts = useAtomValue(filteredWorkoutsAtom)
+    const workouts = useAtomValue(filteredWorkoutsAtom) ?? []
     const searchParams = useSearchParams()
 
     // Centralized filtering and sorting state using atoms
