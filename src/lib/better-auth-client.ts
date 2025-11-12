@@ -1,7 +1,6 @@
 import { customSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
-import type { auth } from '@/lib/better-auth'
 // Re-exported types from better-auth
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Session, User } from '@/lib/better-auth'
@@ -24,7 +23,7 @@ function getAuthClient() {
     _authClient = createAuthClient({
       // baseURL is omitted - Better Auth will use current domain + /api/auth
       plugins: [
-        customSessionClient<typeof auth>(), // Enable custom session inference
+        customSessionClient(), // Enable custom session inference
       ],
       fetchOptions: {
         credentials: 'same-origin', // Send cookies for same-origin /api/auth requests
