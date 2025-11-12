@@ -154,7 +154,8 @@ export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: str
 }
 
 // Get workout details including parsed metrics
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { params } = ctx
   try {
     const session = await getServerSession()
     if (!session?.user) {
