@@ -194,9 +194,10 @@ function RunnerWeeklyPage({
               {sessionUser?.userType === 'coach' && (
                 <Button
                   variant="flat"
+                  color="secondary"
                   size="sm"
                   onPress={() => router.push('/weekly-planner')}
-                  className="text-secondary hover:bg-secondary/20 flex-shrink-0"
+                  className="flex-shrink-0"
                 >
                   Change Runner
                 </Button>
@@ -213,7 +214,10 @@ function RunnerWeeklyPage({
                   className="bg-primary text-white flex-shrink-0"
                 />
                 <div className="min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">
+                  <p
+                    className="font-medium text-foreground text-sm truncate"
+                    title={selectedRunner.full_name || 'User'}
+                  >
                     {selectedRunner.full_name || 'User'}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -240,14 +244,18 @@ function RunnerWeeklyPage({
               </div>
 
               {/* Week Navigation - Always Horizontal */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="text-left sm:text-right">
-                  <p className="font-semibold text-foreground text-sm whitespace-nowrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="text-left sm:text-right min-w-0">
+                  <p
+                    className="font-semibold text-foreground text-sm truncate"
+                    title={formatWeekRange(currentWeek)}
+                    aria-live="polite"
+                  >
                     {formatWeekRange(currentWeek)}
                   </p>
                   <p className="text-foreground/50 text-xs">Training Week</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <Button
                     isIconOnly
                     variant="ghost"
@@ -260,9 +268,10 @@ function RunnerWeeklyPage({
                   </Button>
                   <Button
                     variant="flat"
+                    color="warning"
                     size="sm"
                     onPress={goToCurrentWeek}
-                    className="text-warning px-2 lg:px-3 text-xs lg:text-sm"
+                    className="px-2 lg:px-3 text-xs lg:text-sm"
                   >
                     Today
                   </Button>
