@@ -162,11 +162,10 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
     },
 
-    // Runner tests for race import (verify no access)
+    // Runner tests for race import
     {
       name: 'chromium-race-import-runner',
-      testMatch: /race-import\.spec\.ts/,
-      grep: /should not allow runners to import/,
+      testMatch: /race-import-runner\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
