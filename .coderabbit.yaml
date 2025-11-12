@@ -39,6 +39,8 @@ reviews:
     - path: '**/*.{ts,tsx}'
       instructions: |
         Review TypeScript/React code against the following standards:
+
+        ## Code Quality & TypeScript
         - Ensure proper TypeScript types (no 'any' types unless absolutely necessary)
         - Check for React 19 best practices and modern patterns
         - Verify Jotai state management patterns are correctly implemented
@@ -47,6 +49,13 @@ reviews:
         - Verify HeroUI component usage follows Mountain Peak design system
         - Check for performance optimizations (memoization, lazy loading)
         - Ensure accessibility standards are met
+
+        ## HTTP Client Patterns
+        - Use 'credentials: same-origin' for all internal /api/* endpoints
+        - Use 'credentials: include' ONLY for cross-origin requests
+        - Use 'credentials: omit' for public APIs
+        - Prefer relative URLs (/api/...) over absolute URLs
+        - Ensure consistent error handling and proper Content-Type headers
 
     # Test files
     - path: '**/*.spec.{ts,tsx}'
@@ -96,16 +105,6 @@ reviews:
         - Proper environment variable usage
         - Consistent formatting
 
-    # HTTP client patterns
-    - path: '**/*.{ts,tsx}'
-      instructions: |
-        Review fetch calls for proper credentials usage:
-        - Use 'credentials: same-origin' for all internal /api/* endpoints
-        - Use 'credentials: include' ONLY for cross-origin requests
-        - Use 'credentials: omit' for public APIs
-        - Prefer relative URLs (/api/...) over absolute URLs
-        - Ensure consistent error handling and proper Content-Type headers
-
   # Tools configuration
   tools:
     # AST-based code analysis
@@ -137,10 +136,14 @@ reviews:
     description:
       mode: 'warning'
 
+  # Finishing touches - enable auto-generation features
+  finishing_touches:
+    docstrings:
+      enabled: true
+
 # Code generation settings
 code_generation:
   docstrings:
-    enabled: true
     path_instructions:
       - path: '**/*.{ts,tsx}'
         instructions: |
