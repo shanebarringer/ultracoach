@@ -214,11 +214,17 @@ export default function CreateTrainingPlanModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="4xl"
+      scrollBehavior="inside"
+      className="max-h-[90vh]"
+    >
       <ModalContent>
-        <ModalHeader>Create Training Plan</ModalHeader>
+        <ModalHeader className="text-xl font-bold">Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="space-y-4 max-h-[70svh] sm:max-h-[75svh] overflow-y-auto">
+          <ModalBody className="space-y-6 py-6">
             {formState.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 {formState.error}
@@ -304,26 +310,51 @@ export default function CreateTrainingPlanModal({
               )}
             />
 
-            <Select
-              label="Plan Type"
-              name="plan_type"
-              selectedKeys={formData.plan_type ? [formData.plan_type] : []}
-              onSelectionChange={keys => {
-                const selectedPlanType = Array.from(keys).join('') as
-                  | 'race_specific'
-                  | 'base_building'
-                  | 'bridge'
-                  | 'recovery'
-                  | ''
-                setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType)
-              }}
-              placeholder="Select plan type..."
-            >
-              <SelectItem key="race_specific">Race Specific</SelectItem>
-              <SelectItem key="base_building">Base Building</SelectItem>
-              <SelectItem key="bridge">Bridge Plan</SelectItem>
-              <SelectItem key="recovery">Recovery Plan</SelectItem>
-            </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="Plan Type"
+                name="plan_type"
+                selectedKeys={formData.plan_type ? [formData.plan_type] : []}
+                onSelectionChange={keys => {
+                  const selectedPlanType = Array.from(keys).join('') as
+                    | 'race_specific'
+                    | 'base_building'
+                    | 'bridge'
+                    | 'recovery'
+                    | ''
+                  setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType)
+                }}
+                placeholder="Select plan type..."
+              >
+                <SelectItem key="race_specific">Race Specific</SelectItem>
+                <SelectItem key="base_building">Base Building</SelectItem>
+                <SelectItem key="bridge">Bridge Plan</SelectItem>
+                <SelectItem key="recovery">Recovery Plan</SelectItem>
+              </Select>
+
+              <Select
+                label="Goal Type (Optional)"
+                name="goal_type"
+                selectedKeys={formData.goal_type ? [formData.goal_type] : []}
+                onSelectionChange={keys => {
+                  const selectedGoalType = Array.from(keys).join('') as
+                    | 'completion'
+                    | 'time'
+                    | 'placement'
+                    | ''
+                  setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType)
+                }}
+                placeholder="Select goal type..."
+                items={[
+                  { id: '', name: 'No specific goal' },
+                  { id: 'completion', name: 'Completion' },
+                  { id: 'time', name: 'Time Goal' },
+                  { id: 'placement', name: 'Placement Goal' },
+                ]}
+              >
+                {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
+              </Select>
+            </div>
 
             <Select
               label="Target Race (Optional)"
@@ -388,60 +419,37 @@ export default function CreateTrainingPlanModal({
             </Select>
 
             {!formData.race_id && (
-              <Controller
-                name="targetRaceDate"
-                control={control}
-                render={({ field }) => (
-                  <Input type="date" label="Target Race Date (Optional)" {...field} />
-                )}
-              />
-            )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="targetRaceDate"
+                  control={control}
+                  render={({ field }) => (
+                    <Input type="date" label="Target Race Date (Optional)" {...field} />
+                  )}
+                />
 
-            {!formData.race_id && (
-              <Select
-                label="Target Race Distance (Optional)"
-                name="targetRaceDistance"
-                selectedKeys={formData.targetRaceDistance ? [formData.targetRaceDistance] : []}
-                onSelectionChange={keys => {
-                  const selectedDistance = Array.from(keys).join('')
-                  setValue('targetRaceDistance', selectedDistance)
-                }}
-                placeholder="Select distance..."
-                items={[
-                  { id: '', name: 'Select distance...' },
-                  { id: '50K', name: '50K (31 miles)' },
-                  { id: '50M', name: '50 Miles' },
-                  { id: '100K', name: '100K (62 miles)' },
-                  { id: '100M', name: '100 Miles' },
-                  { id: 'Other', name: 'Other' },
-                ]}
-              >
-                {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
-              </Select>
+                <Select
+                  label="Target Race Distance (Optional)"
+                  name="targetRaceDistance"
+                  selectedKeys={formData.targetRaceDistance ? [formData.targetRaceDistance] : []}
+                  onSelectionChange={keys => {
+                    const selectedDistance = Array.from(keys).join('')
+                    setValue('targetRaceDistance', selectedDistance)
+                  }}
+                  placeholder="Select distance..."
+                  items={[
+                    { id: '', name: 'Select distance...' },
+                    { id: '50K', name: '50K (31 miles)' },
+                    { id: '50M', name: '50 Miles' },
+                    { id: '100K', name: '100K (62 miles)' },
+                    { id: '100M', name: '100 Miles' },
+                    { id: 'Other', name: 'Other' },
+                  ]}
+                >
+                  {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                </Select>
+              </div>
             )}
-
-            <Select
-              label="Goal Type (Optional)"
-              name="goal_type"
-              selectedKeys={formData.goal_type ? [formData.goal_type] : []}
-              onSelectionChange={keys => {
-                const selectedGoalType = Array.from(keys).join('') as
-                  | 'completion'
-                  | 'time'
-                  | 'placement'
-                  | ''
-                setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType)
-              }}
-              placeholder="Select goal type..."
-              items={[
-                { id: '', name: 'No specific goal' },
-                { id: 'completion', name: 'Completion' },
-                { id: 'time', name: 'Time Goal' },
-                { id: 'placement', name: 'Placement Goal' },
-              ]}
-            >
-              {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
-            </Select>
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onClick={onClose}>
