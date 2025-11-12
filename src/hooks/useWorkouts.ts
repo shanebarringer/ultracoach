@@ -30,10 +30,6 @@ export function useHydrateWorkouts() {
   // This prevents the race condition where component renders with empty atom
   useHydrateAtoms([[workoutsAtom, asyncWorkouts ?? []]])
 
-  logger.debug('Workouts atom hydrated', {
-    count: asyncWorkouts?.length ?? 0,
-  })
-
   return asyncWorkouts
 }
 
