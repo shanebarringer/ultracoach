@@ -603,3 +603,61 @@ export const strava_webhook_events = pgTable(
     }),
   })
 )
+
+// ===================================
+// GARMIN CONNECT IQ INTEGRATION
+// ===================================
+
+// Garmin OAuth Connections
+export const garmin_connections = pgTable('garmin_connections', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  garmin_user_id: text('garmin_user_id').notNull(),
+  // OAuth tokens (encrypted at rest using pgcrypto)
+  access_token: text('access_token').notNull(),
+  refresh_token: text('refresh_token').notNull(),
+  token_expires_at: timestamp('token_expires_at', { withTimezone: true }).notNull(),
+  scope: text('scope'), // e.g., 'ACTIVITY_WRITE,ACTIVITY_READ'
+  // Connection metadata
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  last_sync_at: timestamp('last_sync_at', { withTimezone: true }),
+  sync_status: text('sync_status').default('active').notNull(), // 'active', 'expired', 'disconnected'
+})
+
+// Garmin Workout Synchronization Tracking
+export const garmin_workout_syncs = pgTable('garmin_workout_syncs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  workout_id: uuid('workout_id')
+    .notNull()
+    .references(() => workouts.id, { onDelete: 'cascade' }),
+  // Garmin identifiers
+  garmin_workout_id: text('garmin_workout_id'), // Garmin's workout ID in their calendar
+  garmin_activity_id: bigint('garmin_activity_id', { mode: 'number' }), // Completed activity ID
+  // Sync metadata
+  sync_direction: text('sync_direction').notNull(), // 'to_garmin', 'from_garmin'
+  sync_status: text('sync_status').notNull(), // 'pending', 'synced', 'failed'
+  sync_error: text('sync_error'),
+  synced_at: timestamp('synced_at', { withTimezone: true }),
+  // Audit fields
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+// Garmin Device Information (Optional)
+export const garmin_devices = pgTable('garmin_devices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  // Device information
+  device_id: text('device_id').notNull(),
+  device_name: text('device_name').notNull(), // e.g., "Fenix 7", "Forerunner 955"
+  device_model: text('device_model'),
+  firmware_version: text('firmware_version'),
+  // Activity tracking
+  last_seen_at: timestamp('last_seen_at', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+})
