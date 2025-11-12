@@ -1,18 +1,39 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit Configuration for UltraCoach
 # AI-powered code review for ultramarathon coaching platform
-# This configuration applies to ALL branches and pull requests
 
-# Language and framework configuration
+# Language and tone configuration
 language: 'en-US'
+tone_instructions: 'Be constructive and provide actionable feedback while maintaining a professional, supportive tone.'
 
 # Review settings
 reviews:
-  # Enable auto-review on all PRs across all branches
+  # Profile for review depth
+  profile: 'assertive' # More thorough feedback for production code
+
+  # Enable auto-review on all PRs
   auto_review:
     enabled: true
-    # Reviews all PRs regardless of target branch (main, develop, feature/*, etc.)
+    drafts: false
+    # Automatic incremental reviews on each push
+    auto_incremental_review: true
 
-  # Review instructions
+  # Path filtering (replaces top-level 'ignore')
+  path_filters:
+    - '!node_modules/**'
+    - '!.next/**'
+    - '!dist/**'
+    - '!build/**'
+    - '!.env*'
+    - '!*.min.js'
+    - '!*.min.css'
+    - '!.context7-docs/**'
+    - '!coverage/**'
+    - '!.playwright/**'
+    # Include all other files
+    - '**/*'
+
+  # Review instructions (keeping your existing ones)
   path_instructions:
     # TypeScript and TSX files
     - path: '**/*.{ts,tsx}'
@@ -75,19 +96,19 @@ reviews:
         - Proper environment variable usage
         - Consistent formatting
 
-    # HTTP client patterns (fetch calls)
+    # HTTP client patterns
     - path: '**/*.{ts,tsx}'
       instructions: |
         Review fetch calls for proper credentials usage:
         - Use 'credentials: same-origin' for all internal /api/* endpoints
-        - Use 'credentials: include' ONLY for cross-origin requests that require cookies
-        - Use 'credentials: omit' for public APIs that don't need authentication
-        - Prefer relative URLs (/api/...) over absolute URLs for internal APIs
+        - Use 'credentials: include' ONLY for cross-origin requests
+        - Use 'credentials: omit' for public APIs
+        - Prefer relative URLs (/api/...) over absolute URLs
         - Ensure consistent error handling and proper Content-Type headers
 
   # Tools configuration
   tools:
-    # Enable AST-based code analysis
+    # AST-based code analysis
     ast-grep:
       essential_rules: true
 
@@ -95,81 +116,42 @@ reviews:
     eslint:
       enabled: true
 
-    # TypeScript checking is handled by ESLint with TypeScript plugin
+    # Security scanning (replaces top-level 'security')
+    gitleaks:
+      enabled: true
+
+  # Walkthrough options
+  high_level_summary: true
+  sequence_diagrams: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+
+  # Pre-merge checks
+  pre_merge_checks:
+    docstrings:
+      mode: 'warning'
+      threshold: 80
+    title:
+      mode: 'warning'
+      requirements: 'Title should be concise and descriptive, ideally under 50 characters.'
+    description:
+      mode: 'warning'
 
 # Code generation settings
 code_generation:
   enabled: true
-  style: 'jsdoc'
+  path_instructions:
+    - path: '**/*.{ts,tsx}'
+      instructions: |
+        Generate JSDoc-style documentation with TypeScript types.
+        Include @param, @returns, and @throws tags where applicable.
 
-# Security scanning
-security:
-  enabled: true
-  scan_dependencies: true
-
-# Performance analysis
-performance:
-  enabled: true
-  bundle_size_check: true
-
-# Custom commands
-commands:
-  - name: 'check-types'
-    run: 'pnpm typecheck'
-  - name: 'lint'
-    run: 'pnpm lint'
-  - name: 'format-check'
-    run: 'pnpm format:check'
-  - name: 'test'
-    run: 'pnpm test'
-
-# Ignore patterns
-ignore:
-  - 'node_modules/**'
-  - '.next/**'
-  - 'dist/**'
-  - 'build/**'
-  - '.env*'
-  - '*.min.js'
-  - '*.min.css'
-  - '.context7-docs/**'
-  - 'coverage/**'
-  - '.playwright/**'
-
-# Pull request settings
-pull_request:
-  # Summary configuration
-  summary:
+# Knowledge base integration
+knowledge_base:
+  # Enable issue linking (replaces top-level 'issues')
+  issues:
     enabled: true
-    include_stats: true
 
-  # Feedback configuration
-  feedback:
-    enabled: true
-    sentiment: 'constructive'
-
-  # Auto-merge settings (be careful with this)
-  auto_merge:
-    enabled: false
-
-# Issue integration
-issues:
-  link_issues: true
-  auto_close: false
-
-# Notifications
-notifications:
-  # Notify on high-severity issues
-  high_severity: true
-
-# Rate limiting
-rate_limit:
-  max_reviews_per_hour: 20
-
-# Custom badges
-badges:
-  enabled: true
-  types:
-    - 'security'
-    - 'performance'
-    - 'code-quality'
+  # Optional: Enable learnings from previous reviews
+  learnings:
+    scope: 'repo'
