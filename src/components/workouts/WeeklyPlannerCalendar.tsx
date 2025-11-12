@@ -325,7 +325,8 @@ export default function WeeklyPlannerCalendar({
       logger.debug('Triggering workout refresh for week planner')
       refreshWorkouts()
     }
-  }, [session?.user?.id, runner.id, refreshWorkouts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, runner.id])
 
   // Initialize week days
   useEffect(() => {
@@ -414,7 +415,8 @@ export default function WeeklyPlannerCalendar({
 
       return sortedDays
     })
-  }, [existingWorkouts, weekStart, weekWorkouts.length])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingWorkouts, weekStart])
 
   const updateDayWorkout = (
     dayIndex: number,
