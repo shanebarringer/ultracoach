@@ -154,6 +154,8 @@ export default defineConfig({
     {
       name: 'chromium-race-import-coach',
       testMatch: /race-import\.spec\.ts/,
+      // Exclude runner-tagged tests to avoid duplicates
+      grepInvert: /@runner/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state
@@ -162,10 +164,12 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
     },
 
-    // Runner tests for race import
+    // Runner tests for race import (verify runner access)
     {
       name: 'chromium-race-import-runner',
-      testMatch: /race-import-runner\.spec\.ts/,
+      testMatch: /race-import\.spec\.ts/,
+      // Run only runner-tagged tests
+      grep: /@runner/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

@@ -804,7 +804,7 @@ test.describe('Race Import Edge Cases', () => {
     })
   })
 
-  test('should only allow coaches to import races', async ({ page }) => {
+  test('should allow coaches to import races', async ({ page }) => {
     // This test runs with coach auth (from main test suite)
     // and verifies that import functionality is available to coaches
 
@@ -825,29 +825,49 @@ test.describe('Race Import Edge Cases', () => {
     await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 10000 })
   })
 
-  test.skip('should not allow runners to import races', async ({ page }) => {
-    // SKIPPED: Test currently fails because runners CAN see import button
-    // This is actually the DESIRED behavior per Linear ticket ULT-18:
-    // "Runners should have race import capabilities"
-    //
-    // The test discovered that the UI already allows runner access,
-    // but backend/API support may need implementation.
-    //
-    // TODO: Update this test when ULT-18 is complete to verify
-    // runners CAN import races (opposite of current expectation)
-
+  test('runner: should allow runners to import races (open modal + preview) @runner', async ({
+    page,
+  }) => {
     // This test runs with runner auth (from runner project config)
-    // and verifies that import functionality is NOT available to runners
+    // and verifies that import functionality is available to runners
 
-    // Navigate to races page to check lack of import functionality
+    // Navigate to races page
     await page.goto('/races')
     await page.waitForLoadState('domcontentloaded')
 
     // Wait for page to be ready
     await waitForHeroUIReady(page)
 
-    // Runner should NOT see the import button
+    // Runner should see the import button
     const importButton = page.getByTestId('import-races-modal-trigger')
-    await expect(importButton).not.toBeVisible({ timeout: 10000 })
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+
+    // Open modal
+    await importButton.click()
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 })
+
+    // Upload a minimal valid CSV (single row) to confirm preview works for runners as well
+    const minimalCsv = Buffer.from(
+      'name,date,location,distance_miles,distance_type,elevation_gain_feet,terrain_type\n' +
+        'Runner Test Race,2024-06-01,Anywhere,5,Custom,100,road\n'
+    )
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
+    await fileInput.setInputFiles({
+      name: 'runner-test.csv',
+      mimeType: 'text/csv',
+      buffer: minimalCsv,
+    })
+
+    // Wait for preview tab to populate
+    await waitForFileUploadProcessing(page, 'Runner Test Race', 30000, logger)
+
+    // Preview should list the parsed race
+    await expect(page.getByTestId('race-list').getByText('Runner Test Race')).toBeVisible({
+      timeout: 15000,
+    })
+
+    // Close modal to avoid leaking state
+    await page.keyboard.press('Escape').catch(() => {})
+    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 10000 })
   })
 })
