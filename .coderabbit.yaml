@@ -139,19 +139,20 @@ reviews:
 
 # Code generation settings
 code_generation:
-  enabled: true
-  path_instructions:
-    - path: '**/*.{ts,tsx}'
-      instructions: |
-        Generate JSDoc-style documentation with TypeScript types.
-        Include @param, @returns, and @throws tags where applicable.
+  docstrings:
+    enabled: true
+    path_instructions:
+      - path: '**/*.{ts,tsx}'
+        instructions: |
+          Generate JSDoc-style documentation with TypeScript types.
+          Include @param, @returns, and @throws tags where applicable.
 
 # Knowledge base integration
 knowledge_base:
   # Enable issue linking (replaces top-level 'issues')
   issues:
-    enabled: true
+    scope: 'auto'
 
   # Optional: Enable learnings from previous reviews
   learnings:
-    scope: 'repo'
+    scope: 'local'
