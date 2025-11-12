@@ -78,12 +78,16 @@ async function upsertWorkoutLog(
       'elevation_gain',
     ] as const
 
+    // Treat only non-null/undefined values as provided
+    const isProvided = (v: unknown) => v !== undefined && v !== null
+
     // Check if any primary fields are provided
-    const hasAllowedField = allowedFields.some(k => body[k] !== undefined)
+    const hasAllowedField = allowedFields.some(k => isProvided(body[k]))
 
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+      const v = body[field]
+      if (isProvided(v)) {
+        updateData[field] = v
       }
     }
 
@@ -100,14 +104,15 @@ async function upsertWorkoutLog(
     ] as const
 
     // Require at least one valid field (primary or metric) to avoid empty updates
-    const hasMetricField = metricFields.some(k => body[k] !== undefined)
+    const hasMetricField = metricFields.some(k => isProvided(body[k]))
     if (!hasAllowedField && !hasMetricField) {
       return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
     }
 
     for (const field of metricFields) {
-      if (body[field] !== undefined) {
-        additionalMetrics[field] = body[field]
+      const v = body[field]
+      if (isProvided(v)) {
+        additionalMetrics[field] = v
       }
     }
 
