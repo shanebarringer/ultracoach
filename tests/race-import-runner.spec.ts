@@ -64,8 +64,9 @@ test.describe('Runner race import capabilities', () => {
     await waitForFileUploadProcessing(page, 'Runner Test Ultra', 60000, logger)
 
     // Mock the import API to avoid DB dependency and speed up CI
-    await page.route('/api/races/import', route =>
-      route.fulfill({
+    await page.route('**/api/races/import', route => {
+      if (route.request().method() !== 'POST') return route.continue()
+      return route.fulfill({
         status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
@@ -85,7 +86,7 @@ test.describe('Runner race import capabilities', () => {
           message: 'Race imported successfully',
         }),
       })
-    )
+    })
 
     // Switch to preview and click Import
     await page.getByTestId('preview-tab').click()
@@ -114,8 +115,9 @@ test.describe('Runner race import capabilities', () => {
     await expect(page.getByTestId('race-list').getByText('Javelina Jundred')).toBeVisible()
 
     // Mock bulk import endpoint
-    await page.route('/api/races/bulk-import', route =>
-      route.fulfill({
+    await page.route('**/api/races/bulk-import', route => {
+      if (route.request().method() !== 'POST') return route.continue()
+      return route.fulfill({
         status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
@@ -139,7 +141,7 @@ test.describe('Runner race import capabilities', () => {
           message: 'Bulk import completed',
         }),
       })
-    )
+    })
 
     const confirm = page.getByTestId('import-races-button')
     await expect(confirm).toBeVisible()
