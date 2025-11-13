@@ -151,7 +151,7 @@
 **Test Data Note**:
 
 - Tests use coach authentication (`./playwright/.auth/coach.json`)
-- Test coaches: Emily (emily.chen@ultracoach.dev) and Sarah (sarah.martinez@ultracoach.dev)
+- Test coaches: Emily (`emily.chen@ultracoach.dev`) and Sarah (`sarah@ultracoach.dev`)
 - Tests require coach-runner relationships to exist in database
 - Current failure: No connected runners for test coaches to select
 - Test code is correct and will pass once proper test data is seeded
@@ -193,7 +193,7 @@
 
 Test by:
 
-1. Sign in as Alex: alex.rivera@ultracoach.dev / RunnerPass2025!
+1. Sign in as Alex: `alex.rivera@ultracoach.dev` / `RunnerPass2025!`
 2. Navigate to `/weekly-planner`
 3. Select a runner and add workouts
 4. **Refresh the page multiple times** - workouts should persist

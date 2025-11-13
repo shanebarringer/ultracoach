@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { gotoWeeklyPlannerForFirstRunner } from '../utils/test-helpers'
+
 /**
  * E2E Test: Weekly Planner Workout Persistence
  *
@@ -16,16 +18,8 @@ test.describe('Weekly Planner Workout Persistence', () => {
   test.use({ storageState: './playwright/.auth/coach.json' })
 
   test('should persist workouts across page refresh', async ({ page }) => {
-    // Navigate to weekly planner
-    await page.goto('/weekly-planner')
-
-    // Select a runner from the grid (first available runner)
-    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
-    await expect(runnerCard).toBeVisible({ timeout: 10000 })
-    await runnerCard.click()
-
-    // Wait for weekly planner to load
-    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    // Navigate to weekly planner and select first runner
+    await gotoWeeklyPlannerForFirstRunner(page)
 
     // Find Monday's card (first day of the week)
     const mondayCard = page.getByTestId('day-card-monday')
@@ -86,13 +80,7 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
   test('should load workouts from database on initial visit', async ({ page, context }) => {
     // First visit: Add a workout
-    await page.goto('/weekly-planner')
-
-    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
-    await expect(runnerCard).toBeVisible({ timeout: 10000 })
-    await runnerCard.click()
-
-    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    await gotoWeeklyPlannerForFirstRunner(page)
     const currentUrl = page.url()
 
     const mondayCard = page.getByTestId('day-card-monday')
@@ -147,13 +135,7 @@ test.describe('Weekly Planner Workout Persistence', () => {
   })
 
   test('should handle multiple workouts in a week', async ({ page }) => {
-    await page.goto('/weekly-planner')
-
-    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
-    await expect(runnerCard).toBeVisible({ timeout: 10000 })
-    await runnerCard.click()
-
-    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    await gotoWeeklyPlannerForFirstRunner(page)
 
     // Add workouts to multiple days
     const dayNames = ['monday', 'wednesday', 'saturday']
@@ -234,15 +216,8 @@ test.describe('Weekly Planner Workout Persistence', () => {
   test('should persist workouts on immediate reload (cache race condition test)', async ({
     page,
   }) => {
-    // Navigate to weekly planner
-    await page.goto('/weekly-planner')
-
-    // Select a runner
-    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
-    await expect(runnerCard).toBeVisible({ timeout: 10000 })
-    await runnerCard.click()
-
-    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    // Navigate to weekly planner and select first runner
+    await gotoWeeklyPlannerForFirstRunner(page)
 
     // Add a workout to Monday
     const mondayCard = page.getByTestId('day-card-monday')
@@ -305,14 +280,8 @@ test.describe('Weekly Planner Workout Persistence', () => {
    * between cache expiry and fresh data fetching.
    */
   test('should maintain consistency across multiple rapid reloads', async ({ page }) => {
-    // Navigate and select runner
-    await page.goto('/weekly-planner')
-
-    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
-    await expect(runnerCard).toBeVisible({ timeout: 10000 })
-    await runnerCard.click()
-
-    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    // Navigate to weekly planner and select first runner
+    await gotoWeeklyPlannerForFirstRunner(page)
 
     // Add workouts to two days
     const dayNames = ['monday', 'wednesday']

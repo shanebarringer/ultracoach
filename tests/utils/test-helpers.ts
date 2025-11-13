@@ -10,7 +10,7 @@ export const TEST_TIMEOUTS = {
 }
 
 // Centralized test credentials - use these instead of hard-coding
-export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
+export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'sarah@ultracoach.dev'
 export const TEST_COACH_PASSWORD = process.env.TEST_COACH_PASSWORD ?? 'UltraCoach2025!'
 export const TEST_RUNNER_EMAIL = process.env.TEST_RUNNER_EMAIL ?? 'alex.rivera@ultracoach.dev'
 export const TEST_RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD ?? 'RunnerPass2025!'
@@ -314,3 +314,20 @@ export const WORKOUT_TEST_LIMITS = {
   /** Maximum gap allowed between same-date workouts (for different workout types) */
   MAX_SAME_DATE_WORKOUT_GAP: 3,
 } as const
+
+/**
+ * Navigate to weekly planner and select first available runner.
+ * Reduces code duplication across multiple tests.
+ *
+ * @param page - Playwright page instance
+ * @throws Error if runner card is not found within timeout
+ */
+export async function gotoWeeklyPlannerForFirstRunner(page: Page): Promise<void> {
+  await page.goto('/weekly-planner')
+
+  const runnerCard = page.locator('[data-testid*="runner-card"]').first()
+  await expect(runnerCard).toBeVisible({ timeout: 10000 })
+  await runnerCard.click()
+
+  await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+}
