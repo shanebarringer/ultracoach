@@ -487,10 +487,42 @@ export default function WeeklyPlannerCalendar({
       }
 
       const plansData = await plansResponse.json()
-      const trainingPlan = plansData.trainingPlans?.[0]
+      let trainingPlan = plansData.trainingPlans?.[0]
 
+      // Auto-create default training plan if none exists
       if (!trainingPlan) {
-        throw new Error('No training plan found for this runner')
+        logger.info('No training plan found, creating default plan', {
+          runnerId: runner.id,
+          runnerName: runner.full_name,
+        })
+
+        const createPlanResponse = await fetch(`${baseUrl}/api/training-plans`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            title: `Weekly Training - ${runner.full_name || runner.email}`,
+            description: 'Auto-created training plan for weekly workouts',
+            runnerId: runner.id,
+            startDate: new Date().toISOString().split('T')[0],
+            isPublic: false,
+          }),
+        })
+
+        if (!createPlanResponse.ok) {
+          const errorData = await createPlanResponse.json()
+          throw new Error(errorData.error || 'Failed to create training plan')
+        }
+
+        const createdPlan = await createPlanResponse.json()
+        trainingPlan = createdPlan.trainingPlan
+
+        logger.info('Default training plan created', {
+          planId: trainingPlan.id,
+          title: trainingPlan.title,
+        })
       }
 
       // Prepare workouts for bulk creation
