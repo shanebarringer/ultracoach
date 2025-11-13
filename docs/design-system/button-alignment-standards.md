@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document defines the standardized button alignment patterns used across all UltraCoach pages. Consistent button placement improves usability, visual consistency, and follows Mountain Peak design system principles.
+This document defines the standardized button alignment patterns used across
+all UltraCoach pages. Consistent button placement improves usability, visual
+consistency, and follows Mountain Peak design system principles.
 
 ## Standard Page Header Pattern
 
@@ -11,10 +13,12 @@ This document defines the standardized button alignment patterns used across all
 ```tsx
 <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
   <CardHeader>
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4">
+    <div className="flex flex-col lg:flex-row lg:items-center
+         justify-between w-full gap-4">
       {/* Left: Title and Description */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <IconComponent className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0" />
+        <IconComponent className="w-6 lg:w-8 h-6 lg:h-8 text-primary
+                                 flex-shrink-0" />
         <div className="min-w-0">
           <h1 className="text-lg lg:text-2xl font-bold text-foreground">
             Page Title
@@ -26,7 +30,8 @@ This document defines the standardized button alignment patterns used across all
       </div>
 
       {/* Right: Action Buttons - Right-aligned */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto flex-shrink-0">
+      <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto
+                     flex-shrink-0">
         <Button>Secondary Action</Button>
         <Button color="primary">Primary Action</Button>
       </div>
@@ -38,11 +43,13 @@ This document defines the standardized button alignment patterns used across all
 ### Key Classes Explained
 
 #### Left Content Area
+
 - `flex-1 min-w-0` - Allows content to grow and text to truncate properly
 - `flex-shrink-0` on icon - Prevents icon from shrinking
 - `min-w-0` on text container - Enables proper text truncation
 
 #### Right Action Buttons
+
 - `sm:ml-auto` - Auto-margin pushes buttons to the right on larger screens
 - `flex-shrink-0` - Prevents button container from shrinking
 - `flex-col sm:flex-row` - Stack vertically on mobile, horizontal on tablet+
@@ -50,17 +57,20 @@ This document defines the standardized button alignment patterns used across all
 
 ### Responsive Behavior
 
-**Mobile (< 640px)**
+#### Mobile (< 640px)
+
 - Title and buttons stack vertically
 - Buttons left-aligned and full-width if needed
 - Maintains proper touch targets
 
-**Tablet (640px - 1024px)**
+#### Tablet (640px - 1024px)
+
 - Buttons arranged horizontally
 - Right-aligned using auto-margin
 - Text truncates if needed
 
-**Desktop (> 1024px)**
+#### Desktop (> 1024px)
+
 - Full horizontal layout
 - Buttons firmly right-aligned
 - Optimal spacing and proportions
@@ -68,9 +78,11 @@ This document defines the standardized button alignment patterns used across all
 ## Examples Across Pages
 
 ### Training Plans Page
+
 ```tsx
 // Header with checkbox filter and action buttons
-<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:ml-auto flex-shrink-0">
+<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3
+               sm:ml-auto flex-shrink-0">
   <Checkbox>Show archived</Checkbox>
   <Button variant="bordered" isIconOnly>
     <RefreshCw />
@@ -80,6 +92,7 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### Races Page
+
 ```tsx
 // Multiple action buttons with responsive text
 <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto flex-shrink-0">
@@ -95,6 +108,7 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### Weekly Planner Page
+
 ```tsx
 // Simple right-aligned info badge
 <div className="flex items-center gap-2 flex-shrink-0">
@@ -120,7 +134,8 @@ This document defines the standardized button alignment patterns used across all
 </ModalFooter>
 ```
 
-**Key Points:**
+#### Key Points
+
 - Use `justify-end` for right-alignment
 - Cancel/secondary actions on the left
 - Primary action on the right (last in visual flow)
@@ -129,6 +144,7 @@ This document defines the standardized button alignment patterns used across all
 ## Common Patterns
 
 ### Icon-Only Buttons
+
 ```tsx
 <Button
   isIconOnly
@@ -142,6 +158,7 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### Responsive Button Text
+
 ```tsx
 <Button>
   <span className="hidden sm:inline">Full Text</span>
@@ -150,6 +167,7 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### Button Groups
+
 ```tsx
 <div className="flex items-center gap-3">
   <Button variant={mode === 'a' ? 'solid' : 'flat'}>
@@ -164,6 +182,7 @@ This document defines the standardized button alignment patterns used across all
 ## Anti-Patterns to Avoid
 
 ### ❌ Don't: Center-align action buttons in headers
+
 ```tsx
 // Bad - buttons not aligned consistently
 <div className="flex items-center gap-3">
@@ -172,12 +191,14 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### ❌ Don't: Use absolute positioning
+
 ```tsx
 // Bad - breaks responsive behavior
 <Button className="absolute right-0">Action</Button>
 ```
 
 ### ❌ Don't: Mix alignment styles
+
 ```tsx
 // Bad - inconsistent across pages
 // Page A: justify-end
@@ -186,6 +207,7 @@ This document defines the standardized button alignment patterns used across all
 ```
 
 ### ✅ Do: Use standardized pattern
+
 ```tsx
 // Good - consistent across all pages
 <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto flex-shrink-0">
@@ -196,12 +218,14 @@ This document defines the standardized button alignment patterns used across all
 ## Accessibility Considerations
 
 ### Required Attributes
+
 - `aria-label` on icon-only buttons
 - Proper focus order (left to right)
 - Sufficient color contrast
 - Touch targets minimum 44x44px on mobile
 
 ### Focus Management
+
 ```tsx
 <Button
   aria-label="Clear description of action"
@@ -231,5 +255,8 @@ This document defines the standardized button alignment patterns used across all
 ---
 
 **Last Updated**: 2025-11-12
+
 **Issue**: ULT-33
-**Status**: ✅ Implemented across Training Plans, Races, and Weekly Planner pages
+
+**Status**: ✅ Implemented across Training Plans, Races, and Weekly Planner
+pages
