@@ -349,19 +349,17 @@ export default defineConfig({
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
         env: {
+          ...process.env, // Inherit all env vars so Next.js can load from .env.local
           NODE_ENV: 'development', // Use development mode for local testing
           // Load test environment variables from environment
           DATABASE_URL:
-            process.env.DATABASE_URL || 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
-          BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || randomBytes(32).toString('hex'),
-          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || resolvedBaseURL,
-          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || resolvedBaseURL,
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL || resolvedBaseURL,
+            process.env.DATABASE_URL ?? 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+          BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? randomBytes(32).toString('hex'),
+          BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? resolvedBaseURL,
+          NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ?? resolvedBaseURL,
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? resolvedBaseURL,
           PORT: String(resolvedPort),
-          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-          RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+          // Removed Supabase env var defaults - let Next.js load from .env.local instead
         },
       },
 })

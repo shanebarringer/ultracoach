@@ -173,4 +173,125 @@ test.describe('Weekly Planner Workout Persistence', () => {
       await expect(dayCard.locator('textarea[name="notes"]')).toHaveValue(workout.notes)
     }
   })
+
+  /**
+   * CRITICAL TEST: Immediate Reload (No Cache Expiry Wait)
+   *
+   * This test reloads IMMEDIATELY after save without waiting 1 second.
+   * Before the cache fix, this test would FAIL because the 1-second cache
+   * would return empty/stale data on immediate reload.
+   *
+   * This test verifies the fix in commit e822b9c where we:
+   * 1. Removed the 1-second workoutsCache
+   * 2. Read directly from asyncWorkoutsAtom instead of synced workoutsAtom
+   * 3. Added await to refreshWorkouts() call
+   */
+  test('should persist workouts on immediate reload (cache race condition test)', async ({
+    page,
+  }) => {
+    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
+
+    // Navigate to weekly planner
+    await page.goto(`${baseUrl}/weekly-planner`)
+    await page.waitForLoadState('networkidle')
+
+    // Select a runner
+    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
+    await expect(runnerCard).toBeVisible({ timeout: 10000 })
+    await runnerCard.click()
+
+    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    await page.waitForLoadState('networkidle')
+
+    // Add a workout to Monday
+    const mondayCard = page.locator('[data-testid*="day-card"]').first()
+    await expect(mondayCard).toBeVisible({ timeout: 10000 })
+
+    await mondayCard.locator('select[name="type"]').selectOption('interval')
+    await mondayCard.locator('input[name="distance"]').fill('10')
+    await mondayCard.locator('textarea[name="notes"]').fill('Immediate reload test - no cache wait')
+
+    // Save the week
+    await page.getByRole('button', { name: /save week/i }).click()
+    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
+
+    // CRITICAL: Reload IMMEDIATELY without waiting for cache to expire
+    // Before cache fix: This would FAIL (workouts disappear)
+    // After cache fix: This should PASS (workouts persist)
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+
+    // Verify workout persisted on immediate reload
+    const mondayCardAfterReload = page.locator('[data-testid*="day-card"]').first()
+    await expect(mondayCardAfterReload).toBeVisible({ timeout: 10000 })
+
+    await expect(mondayCardAfterReload.locator('select[name="type"]')).toHaveValue('interval')
+    await expect(mondayCardAfterReload.locator('input[name="distance"]')).toHaveValue('10')
+    await expect(mondayCardAfterReload.locator('textarea[name="notes"]')).toHaveValue(
+      'Immediate reload test - no cache wait'
+    )
+  })
+
+  /**
+   * CRITICAL TEST: Multiple Rapid Reloads
+   *
+   * This test performs 3 rapid reloads in succession to ensure
+   * data consistency under rapid refresh conditions.
+   *
+   * Before the cache fix, this would be flaky due to race conditions
+   * between cache expiry and fresh data fetching.
+   */
+  test('should maintain consistency across multiple rapid reloads', async ({ page }) => {
+    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
+
+    // Navigate and select runner
+    await page.goto(`${baseUrl}/weekly-planner`)
+    await page.waitForLoadState('networkidle')
+
+    const runnerCard = page.locator('[data-testid*="runner-card"]').first()
+    await expect(runnerCard).toBeVisible({ timeout: 10000 })
+    await runnerCard.click()
+
+    await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+    await page.waitForLoadState('networkidle')
+
+    // Add workouts to two days
+    const dayCards = page.locator('[data-testid*="day-card"]')
+
+    // Monday workout
+    await dayCards.nth(0).locator('select[name="type"]').selectOption('easy')
+    await dayCards.nth(0).locator('input[name="distance"]').fill('6')
+    await dayCards.nth(0).locator('textarea[name="notes"]').fill('Rapid reload test - Monday')
+
+    // Wednesday workout
+    await dayCards.nth(2).locator('select[name="type"]').selectOption('tempo')
+    await dayCards.nth(2).locator('input[name="distance"]').fill('12')
+    await dayCards.nth(2).locator('textarea[name="notes"]').fill('Rapid reload test - Wednesday')
+
+    // Save the week
+    await page.getByRole('button', { name: /save week/i }).click()
+    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
+
+    // Perform 3 rapid reloads and verify consistency
+    for (let i = 1; i <= 3; i++) {
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+
+      const dayCardsAfterReload = page.locator('[data-testid*="day-card"]')
+
+      // Verify Monday workout persists
+      await expect(dayCardsAfterReload.nth(0).locator('select[name="type"]')).toHaveValue('easy')
+      await expect(dayCardsAfterReload.nth(0).locator('input[name="distance"]')).toHaveValue('6')
+      await expect(dayCardsAfterReload.nth(0).locator('textarea[name="notes"]')).toHaveValue(
+        'Rapid reload test - Monday'
+      )
+
+      // Verify Wednesday workout persists
+      await expect(dayCardsAfterReload.nth(2).locator('select[name="type"]')).toHaveValue('tempo')
+      await expect(dayCardsAfterReload.nth(2).locator('input[name="distance"]')).toHaveValue('12')
+      await expect(dayCardsAfterReload.nth(2).locator('textarea[name="notes"]')).toHaveValue(
+        'Rapid reload test - Wednesday'
+      )
+    }
+  })
 })
