@@ -16,11 +16,8 @@ test.describe('Weekly Planner Workout Persistence', () => {
   test.use({ storageState: './playwright/.auth/coach.json' })
 
   test('should persist workouts across page refresh', async ({ page }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
-
     // Navigate to weekly planner
-    await page.goto(`${baseUrl}/weekly-planner`)
-    await page.waitForLoadState('networkidle')
+    await page.goto('/weekly-planner')
 
     // Select a runner from the grid (first available runner)
     const runnerCard = page.locator('[data-testid*="runner-card"]').first()
@@ -29,21 +26,29 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
     // Wait for weekly planner to load
     await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
-    await page.waitForLoadState('networkidle')
 
     // Find Monday's card (first day of the week)
-    const mondayCard = page.locator('[data-testid*="day-card"]').first()
+    const mondayCard = page.getByTestId('day-card-monday')
     await expect(mondayCard).toBeVisible({ timeout: 10000 })
 
-    // Fill in workout details for Monday
-    const workoutType = mondayCard.locator('select[name="type"]')
-    const workoutDistance = mondayCard.locator('input[name="distance"]')
-    const workoutNotes = mondayCard.locator('textarea[name="notes"]')
+    // First, click the "More" button to expand the card and reveal all fields
+    const moreButton = mondayCard.getByRole('button', { name: /more/i })
+    if (await moreButton.isVisible()) {
+      await moreButton.click()
+    }
 
-    await expect(workoutType).toBeVisible({ timeout: 5000 })
+    // Fill in workout type using HeroUI Select component
+    const workoutTypeSelect = mondayCard.getByTestId('workout-type-select-monday')
+    await expect(workoutTypeSelect).toBeVisible({ timeout: 5000 })
+    await workoutTypeSelect.click()
+    await page.getByRole('option', { name: 'Easy Run' }).click()
 
-    await workoutType.selectOption('easy')
+    // Fill in workout distance
+    const workoutDistance = mondayCard.getByTestId('workout-distance-input-monday')
     await workoutDistance.fill('5')
+
+    // Fill in workout notes
+    const workoutNotes = mondayCard.getByTestId('workout-notes-textarea-monday')
     await workoutNotes.fill('Test workout - persistence check')
 
     // Save the week
@@ -51,36 +56,37 @@ test.describe('Weekly Planner Workout Persistence', () => {
     await expect(saveButton).toBeVisible({ timeout: 5000 })
     await saveButton.click()
 
-    // Wait for save to complete (look for success toast)
-    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
-
-    // Give database time to commit the transaction
-    await page.waitForTimeout(1000)
+    // Wait for save to complete (look for success toast with flexible matching)
+    await expect(page.getByRole('status')).toContainText(/saved|success/i, { timeout: 10000 })
 
     // Refresh the page to test persistence
     await page.reload()
-    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('day-card-monday')).toBeVisible({ timeout: 10000 })
 
     // Verify the workout is still there after refresh
-    const mondayCardAfterRefresh = page.locator('[data-testid*="day-card"]').first()
-    await expect(mondayCardAfterRefresh).toBeVisible({ timeout: 10000 })
+    const mondayCardAfterRefresh = page.getByTestId('day-card-monday')
+
+    // Expand the card again if needed
+    const moreButtonAfterRefresh = mondayCardAfterRefresh.getByRole('button', { name: /more/i })
+    if (await moreButtonAfterRefresh.isVisible()) {
+      await moreButtonAfterRefresh.click()
+    }
 
     // Check that the workout data persisted
-    const typeAfterRefresh = mondayCardAfterRefresh.locator('select[name="type"]')
-    const distanceAfterRefresh = mondayCardAfterRefresh.locator('input[name="distance"]')
-    const notesAfterRefresh = mondayCardAfterRefresh.locator('textarea[name="notes"]')
+    const distanceAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-distance-input-monday')
+    const notesAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-notes-textarea-monday')
 
-    await expect(typeAfterRefresh).toHaveValue('easy')
     await expect(distanceAfterRefresh).toHaveValue('5')
     await expect(notesAfterRefresh).toHaveValue('Test workout - persistence check')
+
+    // Verify the workout type is still Easy Run
+    const typeSelectAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-type-select-monday')
+    await expect(typeSelectAfterRefresh).toContainText(/easy run/i)
   })
 
   test('should load workouts from database on initial visit', async ({ page, context }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
-
     // First visit: Add a workout
-    await page.goto(`${baseUrl}/weekly-planner`)
-    await page.waitForLoadState('networkidle')
+    await page.goto('/weekly-planner')
 
     const runnerCard = page.locator('[data-testid*="runner-card"]').first()
     await expect(runnerCard).toBeVisible({ timeout: 10000 })
@@ -88,15 +94,26 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
     await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
     const currentUrl = page.url()
-    await page.waitForLoadState('networkidle')
 
-    const mondayCard = page.locator('[data-testid*="day-card"]').first()
-    await mondayCard.locator('select[name="type"]').selectOption('tempo')
-    await mondayCard.locator('input[name="distance"]').fill('8')
-    await mondayCard.locator('textarea[name="notes"]').fill('Tempo run test')
+    const mondayCard = page.getByTestId('day-card-monday')
+    await expect(mondayCard).toBeVisible({ timeout: 10000 })
+
+    // Expand the card to access all fields
+    const moreButton = mondayCard.getByRole('button', { name: /more/i })
+    if (await moreButton.isVisible()) {
+      await moreButton.click()
+    }
+
+    // Fill in workout using HeroUI components
+    const workoutTypeSelect = mondayCard.getByTestId('workout-type-select-monday')
+    await workoutTypeSelect.click()
+    await page.getByRole('option', { name: 'Tempo Run' }).click()
+
+    await mondayCard.getByTestId('workout-distance-input-monday').fill('8')
+    await mondayCard.getByTestId('workout-notes-textarea-monday').fill('Tempo run test')
 
     await page.getByRole('button', { name: /save week/i }).click()
-    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('status')).toContainText(/saved|success/i, { timeout: 10000 })
 
     // Close the page to clear React state
     await page.close()
@@ -106,71 +123,98 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
     // Navigate directly to the same runner's weekly planner
     await newPage.goto(currentUrl)
-    await newPage.waitForLoadState('networkidle')
 
     // Verify the workout loads from the database (not from local state)
-    const mondayCardNew = newPage.locator('[data-testid*="day-card"]').first()
+    const mondayCardNew = newPage.getByTestId('day-card-monday')
     await expect(mondayCardNew).toBeVisible({ timeout: 10000 })
 
-    await expect(mondayCardNew.locator('select[name="type"]')).toHaveValue('tempo')
-    await expect(mondayCardNew.locator('input[name="distance"]')).toHaveValue('8')
-    await expect(mondayCardNew.locator('textarea[name="notes"]')).toHaveValue('Tempo run test')
+    // Expand the card to see all fields
+    const moreButtonNew = mondayCardNew.getByRole('button', { name: /more/i })
+    if (await moreButtonNew.isVisible()) {
+      await moreButtonNew.click()
+    }
+
+    // Verify persisted data
+    const typeSelectNew = mondayCardNew.getByTestId('workout-type-select-monday')
+    await expect(typeSelectNew).toContainText(/tempo run/i)
+
+    await expect(mondayCardNew.getByTestId('workout-distance-input-monday')).toHaveValue('8')
+    await expect(mondayCardNew.getByTestId('workout-notes-textarea-monday')).toHaveValue(
+      'Tempo run test'
+    )
 
     await newPage.close()
   })
 
   test('should handle multiple workouts in a week', async ({ page }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
-
-    await page.goto(`${baseUrl}/weekly-planner`)
-    await page.waitForLoadState('networkidle')
+    await page.goto('/weekly-planner')
 
     const runnerCard = page.locator('[data-testid*="runner-card"]').first()
+    await expect(runnerCard).toBeVisible({ timeout: 10000 })
     await runnerCard.click()
 
     await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
-    await page.waitForLoadState('networkidle')
 
     // Add workouts to multiple days
-    const dayCards = page.locator('[data-testid*="day-card"]')
+    const dayNames = ['monday', 'wednesday', 'saturday']
     const workoutData = [
-      { type: 'easy', distance: '5', notes: 'Easy Monday' },
-      { type: 'tempo', distance: '8', notes: 'Tempo Wednesday' },
-      { type: 'long_run', distance: '15', notes: 'Long Saturday' },
+      { type: 'Easy Run', distance: '5', notes: 'Easy Monday' },
+      { type: 'Tempo Run', distance: '8', notes: 'Tempo Wednesday' },
+      { type: 'Long Run', distance: '15', notes: 'Long Saturday' },
     ]
 
-    // Add workouts to days 0, 2, and 5 (Monday, Wednesday, Saturday)
-    const dayIndices = [0, 2, 5]
-
-    for (let i = 0; i < dayIndices.length; i++) {
-      const dayIndex = dayIndices[i]
+    for (let i = 0; i < dayNames.length; i++) {
+      const dayName = dayNames[i]
       const workout = workoutData[i]
-      const dayCard = dayCards.nth(dayIndex)
+      const dayCard = page.getByTestId(`day-card-${dayName}`)
 
-      await dayCard.locator('select[name="type"]').selectOption(workout.type)
-      await dayCard.locator('input[name="distance"]').fill(workout.distance)
-      await dayCard.locator('textarea[name="notes"]').fill(workout.notes)
+      await expect(dayCard).toBeVisible({ timeout: 5000 })
+
+      // Expand card to access all fields
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      if (await moreButton.isVisible()) {
+        await moreButton.click()
+      }
+
+      // Fill in workout using HeroUI components
+      const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
+      await typeSelect.click()
+      await page.getByRole('option', { name: workout.type }).click()
+
+      await dayCard.getByTestId(`workout-distance-input-${dayName}`).fill(workout.distance)
+      await dayCard.getByTestId(`workout-notes-textarea-${dayName}`).fill(workout.notes)
     }
 
     // Save the week
     await page.getByRole('button', { name: /save week/i }).click()
-    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
-    await page.waitForTimeout(1000)
+    await expect(page.getByRole('status')).toContainText(/saved|success/i, { timeout: 10000 })
 
     // Refresh and verify all workouts persisted
     await page.reload()
-    await page.waitForLoadState('networkidle')
 
-    const dayCardsAfterRefresh = page.locator('[data-testid*="day-card"]')
-
-    for (let i = 0; i < dayIndices.length; i++) {
-      const dayIndex = dayIndices[i]
+    for (let i = 0; i < dayNames.length; i++) {
+      const dayName = dayNames[i]
       const workout = workoutData[i]
-      const dayCard = dayCardsAfterRefresh.nth(dayIndex)
+      const dayCard = page.getByTestId(`day-card-${dayName}`)
 
-      await expect(dayCard.locator('select[name="type"]')).toHaveValue(workout.type)
-      await expect(dayCard.locator('input[name="distance"]')).toHaveValue(workout.distance)
-      await expect(dayCard.locator('textarea[name="notes"]')).toHaveValue(workout.notes)
+      await expect(dayCard).toBeVisible({ timeout: 10000 })
+
+      // Expand card to see all fields
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      if (await moreButton.isVisible()) {
+        await moreButton.click()
+      }
+
+      // Verify data persisted
+      const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
+      await expect(typeSelect).toContainText(new RegExp(workout.type, 'i'))
+
+      await expect(dayCard.getByTestId(`workout-distance-input-${dayName}`)).toHaveValue(
+        workout.distance
+      )
+      await expect(dayCard.getByTestId(`workout-notes-textarea-${dayName}`)).toHaveValue(
+        workout.notes
+      )
     }
   })
 
@@ -182,18 +226,16 @@ test.describe('Weekly Planner Workout Persistence', () => {
    * would return empty/stale data on immediate reload.
    *
    * This test verifies the fix in commit e822b9c where we:
-   * 1. Removed the 1-second workoutsCache
+   * 1. Removed the 1-second workoutsCache that caused stale data
    * 2. Read directly from asyncWorkoutsAtom instead of synced workoutsAtom
-   * 3. Added await to refreshWorkouts() call
+   * 3. Trigger refresh via refreshWorkoutsAtom (Jotai setter pattern - no await needed)
+   * Result: Immediate refetch of fresh data without cache interference
    */
   test('should persist workouts on immediate reload (cache race condition test)', async ({
     page,
   }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
-
     // Navigate to weekly planner
-    await page.goto(`${baseUrl}/weekly-planner`)
-    await page.waitForLoadState('networkidle')
+    await page.goto('/weekly-planner')
 
     // Select a runner
     const runnerCard = page.locator('[data-testid*="runner-card"]').first()
@@ -201,33 +243,54 @@ test.describe('Weekly Planner Workout Persistence', () => {
     await runnerCard.click()
 
     await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
-    await page.waitForLoadState('networkidle')
 
     // Add a workout to Monday
-    const mondayCard = page.locator('[data-testid*="day-card"]').first()
+    const mondayCard = page.getByTestId('day-card-monday')
     await expect(mondayCard).toBeVisible({ timeout: 10000 })
 
-    await mondayCard.locator('select[name="type"]').selectOption('interval')
-    await mondayCard.locator('input[name="distance"]').fill('10')
-    await mondayCard.locator('textarea[name="notes"]').fill('Immediate reload test - no cache wait')
+    // Expand card to access all fields
+    const moreButton = mondayCard.getByRole('button', { name: /more/i })
+    if (await moreButton.isVisible()) {
+      await moreButton.click()
+    }
+
+    // Fill in workout using HeroUI components
+    const typeSelect = mondayCard.getByTestId('workout-type-select-monday')
+    await typeSelect.click()
+    await page.getByRole('option', { name: 'Interval Training' }).click()
+
+    await mondayCard.getByTestId('workout-distance-input-monday').fill('10')
+    await mondayCard
+      .getByTestId('workout-notes-textarea-monday')
+      .fill('Immediate reload test - no cache wait')
 
     // Save the week
     await page.getByRole('button', { name: /save week/i }).click()
-    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('status')).toContainText(/saved|success/i, { timeout: 10000 })
 
     // CRITICAL: Reload IMMEDIATELY without waiting for cache to expire
     // Before cache fix: This would FAIL (workouts disappear)
     // After cache fix: This should PASS (workouts persist)
     await page.reload()
-    await page.waitForLoadState('networkidle')
 
     // Verify workout persisted on immediate reload
-    const mondayCardAfterReload = page.locator('[data-testid*="day-card"]').first()
+    const mondayCardAfterReload = page.getByTestId('day-card-monday')
     await expect(mondayCardAfterReload).toBeVisible({ timeout: 10000 })
 
-    await expect(mondayCardAfterReload.locator('select[name="type"]')).toHaveValue('interval')
-    await expect(mondayCardAfterReload.locator('input[name="distance"]')).toHaveValue('10')
-    await expect(mondayCardAfterReload.locator('textarea[name="notes"]')).toHaveValue(
+    // Expand card to see all fields
+    const moreButtonAfterReload = mondayCardAfterReload.getByRole('button', { name: /more/i })
+    if (await moreButtonAfterReload.isVisible()) {
+      await moreButtonAfterReload.click()
+    }
+
+    // Verify data persisted
+    const typeSelectAfterReload = mondayCardAfterReload.getByTestId('workout-type-select-monday')
+    await expect(typeSelectAfterReload).toContainText(/interval training/i)
+
+    await expect(mondayCardAfterReload.getByTestId('workout-distance-input-monday')).toHaveValue(
+      '10'
+    )
+    await expect(mondayCardAfterReload.getByTestId('workout-notes-textarea-monday')).toHaveValue(
       'Immediate reload test - no cache wait'
     )
   })
@@ -242,56 +305,79 @@ test.describe('Weekly Planner Workout Persistence', () => {
    * between cache expiry and fresh data fetching.
    */
   test('should maintain consistency across multiple rapid reloads', async ({ page }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3001'
-
     // Navigate and select runner
-    await page.goto(`${baseUrl}/weekly-planner`)
-    await page.waitForLoadState('networkidle')
+    await page.goto('/weekly-planner')
 
     const runnerCard = page.locator('[data-testid*="runner-card"]').first()
     await expect(runnerCard).toBeVisible({ timeout: 10000 })
     await runnerCard.click()
 
     await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
-    await page.waitForLoadState('networkidle')
 
     // Add workouts to two days
-    const dayCards = page.locator('[data-testid*="day-card"]')
+    const dayNames = ['monday', 'wednesday']
+    const workoutData = [
+      { type: 'Easy Run', distance: '6', notes: 'Rapid reload test - Monday' },
+      { type: 'Tempo Run', distance: '12', notes: 'Rapid reload test - Wednesday' },
+    ]
 
-    // Monday workout
-    await dayCards.nth(0).locator('select[name="type"]').selectOption('easy')
-    await dayCards.nth(0).locator('input[name="distance"]').fill('6')
-    await dayCards.nth(0).locator('textarea[name="notes"]').fill('Rapid reload test - Monday')
+    for (let i = 0; i < dayNames.length; i++) {
+      const dayName = dayNames[i]
+      const workout = workoutData[i]
+      const dayCard = page.getByTestId(`day-card-${dayName}`)
 
-    // Wednesday workout
-    await dayCards.nth(2).locator('select[name="type"]').selectOption('tempo')
-    await dayCards.nth(2).locator('input[name="distance"]').fill('12')
-    await dayCards.nth(2).locator('textarea[name="notes"]').fill('Rapid reload test - Wednesday')
+      await expect(dayCard).toBeVisible({ timeout: 5000 })
+
+      // Expand card to access all fields
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      if (await moreButton.isVisible()) {
+        await moreButton.click()
+      }
+
+      // Fill in workout using HeroUI components
+      const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
+      await typeSelect.click()
+      await page.getByRole('option', { name: workout.type }).click()
+
+      await dayCard.getByTestId(`workout-distance-input-${dayName}`).fill(workout.distance)
+      await dayCard.getByTestId(`workout-notes-textarea-${dayName}`).fill(workout.notes)
+    }
 
     // Save the week
     await page.getByRole('button', { name: /save week/i }).click()
-    await expect(page.locator('text=Week saved successfully')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('status')).toContainText(/saved|success/i, { timeout: 10000 })
 
     // Perform 3 rapid reloads and verify consistency
     for (let i = 1; i <= 3; i++) {
       await page.reload()
-      await page.waitForLoadState('networkidle')
 
-      const dayCardsAfterReload = page.locator('[data-testid*="day-card"]')
+      // Wait for first day card to be visible as readiness indicator
+      await expect(page.getByTestId('day-card-monday')).toBeVisible({ timeout: 10000 })
 
-      // Verify Monday workout persists
-      await expect(dayCardsAfterReload.nth(0).locator('select[name="type"]')).toHaveValue('easy')
-      await expect(dayCardsAfterReload.nth(0).locator('input[name="distance"]')).toHaveValue('6')
-      await expect(dayCardsAfterReload.nth(0).locator('textarea[name="notes"]')).toHaveValue(
-        'Rapid reload test - Monday'
-      )
+      for (let j = 0; j < dayNames.length; j++) {
+        const dayName = dayNames[j]
+        const workout = workoutData[j]
+        const dayCard = page.getByTestId(`day-card-${dayName}`)
 
-      // Verify Wednesday workout persists
-      await expect(dayCardsAfterReload.nth(2).locator('select[name="type"]')).toHaveValue('tempo')
-      await expect(dayCardsAfterReload.nth(2).locator('input[name="distance"]')).toHaveValue('12')
-      await expect(dayCardsAfterReload.nth(2).locator('textarea[name="notes"]')).toHaveValue(
-        'Rapid reload test - Wednesday'
-      )
+        await expect(dayCard).toBeVisible({ timeout: 5000 })
+
+        // Expand card to see all fields
+        const moreButton = dayCard.getByRole('button', { name: /more/i })
+        if (await moreButton.isVisible()) {
+          await moreButton.click()
+        }
+
+        // Verify data persisted
+        const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
+        await expect(typeSelect).toContainText(new RegExp(workout.type, 'i'))
+
+        await expect(dayCard.getByTestId(`workout-distance-input-${dayName}`)).toHaveValue(
+          workout.distance
+        )
+        await expect(dayCard.getByTestId(`workout-notes-textarea-${dayName}`)).toHaveValue(
+          workout.notes
+        )
+      }
     }
   })
 })

@@ -308,6 +308,7 @@ function CoachDashboard() {
                       return (
                         <div
                           key={runner.id}
+                          data-testid={`runner-card-${runner.id}`}
                           className="border border-divider rounded-lg p-3 bg-content2/50 hover:bg-content2 transition-colors"
                         >
                           <div className="flex items-center gap-3 mb-2">

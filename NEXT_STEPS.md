@@ -126,9 +126,13 @@
 **Test 1 - Immediate Reload** (lines 189-233):
 
 - Reloads page instantly after save without waiting for cache to expire
-- Before Phase 3 cache fix: This test would FAIL (workouts disappear)
-- After Phase 3 cache fix: This test PASSES (workouts persist)
-- Validates fix from commit e822b9c (cache removal and direct atom reading)
+- Before cache fix: This test would FAIL (workouts disappear due to stale 1-second cache)
+- After cache fix: This test PASSES (workouts persist correctly)
+- Validates fix from commit e822b9c:
+  - Removed the 1-second workoutsCache that caused stale data
+  - Read directly from asyncWorkoutsAtom instead of synced workoutsAtom
+  - Trigger refresh via refreshWorkoutsAtom (Jotai setter pattern - no await needed)
+  - Result: Immediate refetch of fresh data without cache interference
 
 **Test 2 - Multiple Rapid Reloads** (lines 244-296):
 

@@ -478,9 +478,7 @@ export default function WeeklyPlannerCalendar({
     setSaving(true)
     try {
       // Find the runner's training plan
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const plansResponse = await fetch(`${baseUrl}/api/training-plans?runnerId=${runner.id}`, {
+      const plansResponse = await fetch(`/api/training-plans?runnerId=${runner.id}`, {
         credentials: 'same-origin',
       })
       if (!plansResponse.ok) {
@@ -497,7 +495,7 @@ export default function WeeklyPlannerCalendar({
           runnerName: runner.full_name,
         })
 
-        const createPlanResponse = await fetch(`${baseUrl}/api/training-plans`, {
+        const createPlanResponse = await fetch('/api/training-plans', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -543,7 +541,7 @@ export default function WeeklyPlannerCalendar({
         }))
 
       // Bulk create workouts
-      const response = await fetch(`${baseUrl}/api/workouts/bulk`, {
+      const response = await fetch('/api/workouts/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -633,6 +631,7 @@ export default function WeeklyPlannerCalendar({
               return (
                 <Card
                   key={day.date.toISOString()}
+                  data-testid={`day-card-${day.dayName.toLowerCase()}`}
                   className={classNames(
                     'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
                     isToday(day.date)
@@ -689,6 +688,7 @@ export default function WeeklyPlannerCalendar({
                   >
                     {/* Compact Workout Type */}
                     <Select
+                      data-testid={`workout-type-select-${day.dayName.toLowerCase()}`}
                       label={isExpanded ? 'Workout Type' : 'Type'}
                       classNames={{ label: 'text-xs font-medium mb-1' }}
                       size="sm"
@@ -711,6 +711,7 @@ export default function WeeklyPlannerCalendar({
                         {/* Essential fields - always visible */}
                         <div className="grid grid-cols-1 gap-2">
                           <Input
+                            data-testid={`workout-distance-input-${day.dayName.toLowerCase()}`}
                             type="number"
                             label="Distance (mi)"
                             classNames={{ label: 'text-xs mb-1' }}
@@ -766,6 +767,7 @@ export default function WeeklyPlannerCalendar({
                             />
 
                             <Textarea
+                              data-testid={`workout-notes-textarea-${day.dayName.toLowerCase()}`}
                               label="Notes"
                               classNames={{ label: 'text-xs mb-1' }}
                               size="sm"
