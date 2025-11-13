@@ -59,6 +59,7 @@ export const asyncWorkoutsAtom = atom(async get => {
         Accept: 'application/json',
       },
       credentials: 'same-origin', // Use same-origin to ensure cookies are included
+      cache: 'no-store', // CRITICAL: Disable caching to always fetch fresh data
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId))
 
