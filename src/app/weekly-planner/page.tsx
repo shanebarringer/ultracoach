@@ -191,6 +191,7 @@ function RunnersPanel() {
             {runnersArray.map((runner: User) => (
               <Card
                 key={runner.id}
+                data-testid={`runner-card-${runner.id}`}
                 isPressable
                 onPress={() => router.push(`/weekly-planner/${runner.id}`)}
                 className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
