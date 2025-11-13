@@ -393,7 +393,8 @@ export default function WeeklyPlannerCalendar({
         workoutType: day.workout?.type,
       })),
     })
-  }, [weekStart, existingWorkouts, generateWeekDays, runner.id, session?.user?.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- session?.user?.id only used for debug logging, redundant with runner.id
+  }, [weekStart, existingWorkouts, generateWeekDays, runner.id])
 
   const updateDayWorkout = (
     dayIndex: number,
@@ -564,8 +565,8 @@ export default function WeeklyPlannerCalendar({
       // Show success toast with mountain theme
       commonToasts.workoutSaved()
 
-      // Refresh existing workouts - await to ensure cache is cleared before reload
-      await refreshWorkouts()
+      // Trigger async refetch of workouts via refreshWorkoutsAtom
+      refreshWorkouts()
     } catch (error) {
       logger.error('Error saving week plan:', error)
       commonToasts.workoutError(
