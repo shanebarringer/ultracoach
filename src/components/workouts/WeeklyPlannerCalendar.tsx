@@ -403,10 +403,13 @@ export default function WeeklyPlannerCalendar({
   ) => {
     setWeekWorkouts(prev => {
       const updated = [...prev]
-      const day = updated[dayIndex]
+      const originalDay = updated[dayIndex]
 
-      if (!day.workout) {
-        day.workout = { type: 'Easy Run' }
+      // CRITICAL FIX: Create new day object AND new workout object to avoid mutation
+      // React won't detect changes if we mutate the existing objects
+      const day = {
+        ...originalDay,
+        workout: originalDay.workout ? { ...originalDay.workout } : { type: 'Easy Run' },
       }
 
       if (field === 'type') {
@@ -458,6 +461,8 @@ export default function WeeklyPlannerCalendar({
         day.workout.elevationGain = value ? Number(value) : undefined
       }
 
+      // Replace with new day object so React detects the change
+      updated[dayIndex] = day
       return updated
     })
     setHasChanges(true)
