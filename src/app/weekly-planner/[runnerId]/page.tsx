@@ -18,15 +18,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
-import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
-
-// Internal component to handle workout hydration inside Suspense boundary
-function WorkoutsHydrator() {
-  useHydrateWorkouts()
-  return null // Invisible component that just handles hydration
-}
 
 export default function WeeklyPlannerRunnerPage() {
   const { data: session, status } = useSession()
@@ -90,7 +83,6 @@ export default function WeeklyPlannerRunnerPage() {
             </div>
           }
         >
-          <WorkoutsHydrator />
           <RunnerWeeklyPage
             sessionUser={session.user}
             runnerId={runnerId}

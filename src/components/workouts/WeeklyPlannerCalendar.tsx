@@ -22,6 +22,7 @@ import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-r
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
@@ -276,6 +277,9 @@ export default function WeeklyPlannerCalendar({
     weekStart: weekStart.toISOString(),
   })
 
+  // Ensure workouts are hydrated BEFORE any effects run
+  useHydrateWorkouts()
+
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
   const allWorkouts = useAtomValue(workoutsAtom)
@@ -319,42 +323,21 @@ export default function WeeklyPlannerCalendar({
     return days
   }, [])
 
-  // Trigger refresh of workouts when component mounts or key props change
+  // Initialize week days with existing workouts (consolidated effect)
+  // This effect runs when weekStart or existingWorkouts change
+  // It generates the week structure and immediately merges with workout data (no race condition)
   useEffect(() => {
-    if (session?.user?.id && runner.id) {
-      logger.debug('Triggering workout refresh for week planner')
-      refreshWorkouts()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, runner.id])
-
-  // Initialize week days
-  useEffect(() => {
-    logger.debug('useEffect triggered - initializing week days:', {
+    logger.debug('Initializing week with workouts:', {
       weekStart: weekStart.toISOString(),
+      existingWorkoutsCount: existingWorkouts.length,
       hasSession: !!session?.user?.id,
       runnerId: runner.id,
     })
 
+    // Generate week structure
     const days = generateWeekDays(weekStart)
-    setWeekWorkouts(days)
-    setHasChanges(false)
-  }, [weekStart, generateWeekDays, runner.id, session?.user?.id])
 
-  // Merge existing workouts with week structure
-  useEffect(() => {
-    logger.debug('Merging existing workouts with week structure:', {
-      existingWorkoutsCount: existingWorkouts.length,
-      existingWorkouts: existingWorkouts.map(w => ({
-        id: w.id,
-        date: w.date,
-        planned_type: w.planned_type,
-        training_plan_id: w.training_plan_id,
-      })),
-      weekStart: weekStart.toISOString(),
-      weekWorkoutsCount: weekWorkouts.length,
-    })
-    // Sort workouts by date ascending (ISO string)
+    // Sort existing workouts by date
     const sortedWorkouts = [...existingWorkouts].sort((a, b) => {
       const aDate =
         typeof a.date === 'string' ? a.date : new Date(a.date).toISOString().split('T')[0]
@@ -362,61 +345,55 @@ export default function WeeklyPlannerCalendar({
         typeof b.date === 'string' ? b.date : new Date(b.date).toISOString().split('T')[0]
       return aDate.localeCompare(bDate)
     })
-    // Map and then sort weekWorkouts by date
-    const mapped = (prevDays: DayWorkout[]) =>
-      prevDays.map(day => {
-        const dayIso = day.date.toISOString().split('T')[0]
-        const existingWorkout = sortedWorkouts.find(w => {
-          // Handle both string and Date objects for workout dates
-          const workoutDate = new Date(w.date).toISOString()
-          const workoutIso = workoutDate.split('T')[0]
 
-          logger.debug(
-            `Comparing dates: day=${dayIso} vs workout=${workoutIso} (original: ${w.date})`
-          )
-          return workoutIso === dayIso
+    // Immediately merge with existing workouts (no gap between init and merge)
+    const daysWithWorkouts = days.map(day => {
+      const dayIso = day.date.toISOString().split('T')[0]
+      const existingWorkout = sortedWorkouts.find(w => {
+        const workoutDate = new Date(w.date).toISOString()
+        const workoutIso = workoutDate.split('T')[0]
+        return workoutIso === dayIso
+      })
+
+      if (existingWorkout) {
+        logger.debug(`Matched workout for ${dayIso}:`, {
+          id: existingWorkout.id,
+          type: existingWorkout.planned_type,
+          distance: existingWorkout.planned_distance,
         })
-        if (existingWorkout) {
-          logger.debug(`Matched workout for ${dayIso}:`, existingWorkout)
+        return {
+          ...day,
+          workout: {
+            type: existingWorkout.planned_type,
+            distance: existingWorkout.planned_distance || undefined,
+            duration: existingWorkout.planned_duration || undefined,
+            notes: existingWorkout.workout_notes || undefined,
+            category: existingWorkout.category || undefined,
+            intensity: existingWorkout.intensity || undefined,
+            terrain: existingWorkout.terrain || undefined,
+            elevationGain: existingWorkout.elevation_gain || undefined,
+          },
         }
-        if (existingWorkout) {
-          return {
-            ...day,
-            workout: {
-              type: existingWorkout.planned_type,
-              distance: existingWorkout.planned_distance || undefined,
-              duration: existingWorkout.planned_duration || undefined,
-              notes: existingWorkout.workout_notes || undefined,
-              category: existingWorkout.category || undefined,
-              intensity: existingWorkout.intensity || undefined,
-              terrain: existingWorkout.terrain || undefined,
-              elevationGain: existingWorkout.elevation_gain || undefined,
-            },
-          }
-        }
-        return day
-      })
-    // Now sort mapped weekWorkouts by date
-    setWeekWorkouts(prevDays => {
-      const mappedDays = mapped(prevDays)
-      const sortedDays = [...mappedDays].sort((a, b) => a.date.getTime() - b.date.getTime())
-
-      logger.debug('Final weekWorkouts after merge:', {
-        count: sortedDays.length,
-        days: sortedDays.map(day => ({
-          date: day.date.toISOString().split('T')[0],
-          dayName: day.dayName,
-          hasWorkout: !!day.workout,
-          workoutType: day.workout?.type,
-          workoutDistance: day.workout?.distance,
-          workoutDuration: day.workout?.duration,
-        })),
-      })
-
-      return sortedDays
+      }
+      return day
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingWorkouts, weekStart])
+
+    // Sort and set in one operation
+    const sortedDays = [...daysWithWorkouts].sort((a, b) => a.date.getTime() - b.date.getTime())
+    setWeekWorkouts(sortedDays)
+    setHasChanges(false)
+
+    logger.debug('Week initialized with workouts:', {
+      count: sortedDays.length,
+      workoutsCount: sortedDays.filter(d => d.workout).length,
+      days: sortedDays.map(day => ({
+        date: day.date.toISOString().split('T')[0],
+        dayName: day.dayName,
+        hasWorkout: !!day.workout,
+        workoutType: day.workout?.type,
+      })),
+    })
+  }, [weekStart, existingWorkouts, generateWeekDays, runner.id, session?.user?.id])
 
   const updateDayWorkout = (
     dayIndex: number,
