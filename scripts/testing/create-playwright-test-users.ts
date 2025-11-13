@@ -82,9 +82,9 @@ const RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!'
 
 const PLAYWRIGHT_USERS = [
   {
-    email: 'emma@ultracoach.dev',
+    email: 'sarah@ultracoach.dev',
     password: COACH_PASSWORD,
-    name: 'Emma Mountain',
+    name: 'Sarah',
     role: 'coach',
   },
   {
@@ -200,7 +200,7 @@ async function createPlaywrightUsers() {
     await db
       .update(user)
       .set({ role: 'user', userType: 'coach' })
-      .where(sql`email = 'emma@ultracoach.dev'`)
+      .where(sql`email = 'sarah@ultracoach.dev'`)
 
     // Fix runners
     await db
@@ -217,7 +217,7 @@ async function createPlaywrightUsers() {
       .select()
       .from(user)
       .where(
-        sql`email IN ('emma@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+        sql`email IN ('sarah@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
       )
 
     if (finalUsers.length !== PLAYWRIGHT_USERS.length) {
@@ -234,21 +234,21 @@ async function createPlaywrightUsers() {
       logger.info(`  ✅ ${user.email}: role=${user.role}, userType=${user.userType}, id=${user.id}`)
     }
 
-    // Enhanced debugging for emma@ultracoach.dev specifically
-    const emmaUser = finalUsers.find(u => u.email === 'emma@ultracoach.dev')
-    if (emmaUser) {
-      logger.info('🎯 Emma user detailed verification:', {
-        id: emmaUser.id,
-        email: emmaUser.email,
-        name: emmaUser.name,
-        role: emmaUser.role,
-        userType: emmaUser.userType,
-        createdAt: emmaUser.createdAt,
-        updatedAt: emmaUser.updatedAt,
-        emailVerified: emmaUser.emailVerified,
+    // Enhanced debugging for sarah@ultracoach.dev specifically
+    const sarahUser = finalUsers.find(u => u.email === 'sarah@ultracoach.dev')
+    if (sarahUser) {
+      logger.info('🎯 Sarah user detailed verification:', {
+        id: sarahUser.id,
+        email: sarahUser.email,
+        name: sarahUser.name,
+        role: sarahUser.role,
+        userType: sarahUser.userType,
+        createdAt: sarahUser.createdAt,
+        updatedAt: sarahUser.updatedAt,
+        emailVerified: sarahUser.emailVerified,
       })
     } else {
-      logger.error('❌ Emma user not found in final verification!')
+      logger.error('❌ Sarah user not found in final verification!')
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
