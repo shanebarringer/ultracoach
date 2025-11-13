@@ -72,9 +72,9 @@ function TrainingPlansContent({ user }: Props) {
       <Card className="mb-8 bg-content1 border-l-4 border-l-primary">
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4">
-            <div className="flex items-center gap-3">
-              <Mountain className="w-8 h-8 text-primary" />
-              <div>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <Mountain className="w-8 h-8 text-primary flex-shrink-0" />
+              <div className="min-w-0">
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
                   🏔️ Training Expeditions
                 </h1>
@@ -86,8 +86,8 @@ function TrainingPlansContent({ user }: Props) {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Action Buttons - Right-aligned */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:ml-auto flex-shrink-0">
               <Checkbox
                 isSelected={uiState.showArchived}
                 onValueChange={handleShowArchivedChange}
