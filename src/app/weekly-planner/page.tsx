@@ -99,7 +99,10 @@ function RunnersPanel() {
         {/* Page Title and Partner Count */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full mb-4 gap-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0" />
+            <CalendarDaysIcon
+              className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0"
+              aria-hidden="true"
+            />
             <div className="min-w-0">
               <h1 className="text-lg lg:text-2xl font-bold text-foreground">🏔️ Weekly Planner</h1>
               <p className="text-foreground/70 text-xs lg:text-sm">
@@ -110,7 +113,10 @@ function RunnersPanel() {
 
           {/* Partner Count Badge - Right-aligned */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" />
+            <UsersIcon
+              className="w-4 lg:w-5 h-4 lg:h-5 text-secondary"
+              aria-hidden="true"
+            />
             <span className="text-xs lg:text-sm font-medium text-foreground/70">
               {runnersArray.length} Partner{runnersArray.length !== 1 ? 's' : ''}
             </span>
