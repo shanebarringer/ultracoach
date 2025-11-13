@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
-import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
+import { asyncWorkoutsAtom, refreshWorkoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -282,7 +282,7 @@ export default function WeeklyPlannerCalendar({
 
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
-  const allWorkouts = useAtomValue(workoutsAtom)
+  const allWorkouts = useAtomValue(asyncWorkoutsAtom) // Read directly from async atom to avoid cache race
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -564,8 +564,8 @@ export default function WeeklyPlannerCalendar({
       // Show success toast with mountain theme
       commonToasts.workoutSaved()
 
-      // Refresh existing workouts
-      refreshWorkouts()
+      // Refresh existing workouts - await to ensure cache is cleared before reload
+      await refreshWorkouts()
     } catch (error) {
       logger.error('Error saving week plan:', error)
       commonToasts.workoutError(
