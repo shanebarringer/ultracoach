@@ -29,7 +29,7 @@
     "test:e2e:ci": "CI=true pnpm exec playwright test --reporter=list",
     "test:e2e:race-import:ci": "CI=true pnpm exec playwright test race-import.spec.ts --reporter=list",
     "test:e2e:auth:ci": "CI=true pnpm exec playwright test auth-flows.spec.ts --reporter=list",
-    "test:critical": "CI=true pnpm exec playwright test tests/auth.setup.ts tests/auth-coach.setup.ts tests/auth.spec.ts tests/e2e/race-import.spec.ts --max-failures=5 --reporter=list",
+    "test:critical": "pnpm exec playwright test tests/auth.setup.ts tests/auth-coach.setup.ts tests/auth.spec.ts tests/e2e/race-import.spec.ts --max-failures=5 --reporter=list",
     "test:e2e:setup": "supabase start && echo 'Database ready for testing'",
     "test:e2e:ui": "playwright test --ui",
     "test:db:seed": "NODE_ENV=test tsx scripts/seed-test-database.ts",

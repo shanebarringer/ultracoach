@@ -342,9 +342,9 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined // CI environment already has server running
     : {
-        // Launch Next.js dev server via the repository's script and override the port
-        // Preserve any future behavior added to the dev script while ensuring port alignment
-        command: `pnpm run dev -- -p ${resolvedPort}`,
+        // Launch Next.js dev server directly to avoid command expansion issues
+        // Using 'next dev' instead of 'pnpm run dev' prevents double port flag parsing
+        command: `next dev -p ${resolvedPort}`,
         url: resolvedBaseURL,
         reuseExistingServer: true, // Use existing server if already running
         timeout: 120000, // Give dev server 2 minutes to start
