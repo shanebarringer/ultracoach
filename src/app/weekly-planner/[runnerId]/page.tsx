@@ -172,107 +172,123 @@ function RunnerWeeklyPage({
 
   return (
     <>
-      {/* Consolidated Header - Mobile Optimized */}
+      {/* Consolidated Header - Mobile Optimized with Fixed Alignment */}
       <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
-        <CardHeader className="pb-3 lg:pb-4 px-4 lg:px-6">
-          {/* Title and Actions Row - Responsive */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full mb-3 lg:mb-4 gap-3 lg:gap-0">
-            <div className="flex items-center gap-3">
-              <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary" />
-              <div>
-                <h1 className="text-lg lg:text-2xl font-bold text-foreground">
-                  🏔️ {sessionUser?.userType === 'runner' ? 'My Training' : 'Weekly Planner'}
-                </h1>
-                <p className="text-foreground/70 text-xs lg:text-sm">
-                  {sessionUser?.userType === 'runner'
-                    ? 'Your weekly overview'
-                    : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
-                </p>
-              </div>
-            </div>
-            {sessionUser?.userType === 'coach' && (
-              <Button
-                variant="flat"
-                size="sm"
-                onPress={() => router.push('/weekly-planner')}
-                className="text-secondary hover:bg-secondary/20 self-start lg:self-auto"
-              >
-                Change Runner
-              </Button>
-            )}
-          </div>
-
-          {/* Runner Info and Week Navigation - Mobile Stack */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full gap-3 lg:gap-4">
-            {/* Runner Info - Mobile Optimized */}
-            <div className="flex items-center gap-3">
-              <Avatar
-                name={selectedRunner.full_name || 'User'}
-                size="sm"
-                className="bg-primary text-white"
-              />
-              <div className="flex-1">
-                <p className="font-medium text-foreground text-sm">
-                  {selectedRunner.full_name || 'User'}
-                </p>
-                <div className="flex items-center gap-1 lg:gap-2 mt-1">
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color="success"
-                    startContent={<TrendingUpIcon className="w-3 h-3" />}
-                    className="text-xs"
-                  >
-                    Active
-                  </Chip>
-                  <Chip
-                    size="sm"
-                    variant="flat"
-                    color="secondary"
-                    startContent={<FlagIcon className="w-3 h-3" />}
-                    className="text-xs"
-                  >
-                    Training
-                  </Chip>
+        <CardHeader className="pb-4 px-4 lg:px-6">
+          <div className="flex flex-col w-full gap-4">
+            {/* Row 1: Title and Change Runner Button */}
+            <div className="flex items-start justify-between w-full gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg lg:text-2xl font-bold text-foreground">
+                    🏔️ {sessionUser?.userType === 'runner' ? 'My Training' : 'Weekly Planner'}
+                  </h1>
+                  <p className="text-foreground/70 text-xs lg:text-sm truncate">
+                    {sessionUser?.userType === 'runner'
+                      ? 'Your weekly overview'
+                      : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Week Navigation - Mobile Optimized */}
-            <div className="flex items-center justify-between lg:justify-end gap-3">
-              <div className="text-left lg:text-right">
-                <p className="font-semibold text-foreground text-sm">
-                  {formatWeekRange(currentWeek)}
-                </p>
-                <p className="text-foreground/50 text-xs">Training Week</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => navigateWeek('prev')}
-                  className="text-foreground/70 hover:text-foreground"
-                >
-                  <ChevronLeftIcon className="w-4 h-4" />
-                </Button>
+              {sessionUser?.userType === 'coach' && (
                 <Button
                   variant="flat"
+                  color="secondary"
                   size="sm"
-                  onPress={goToCurrentWeek}
-                  className="text-warning px-2 lg:px-3 text-xs lg:text-sm"
+                  onPress={() => router.push('/weekly-planner')}
+                  className="flex-shrink-0"
                 >
-                  Today
+                  Change Runner
                 </Button>
-                <Button
-                  isIconOnly
-                  variant="ghost"
+              )}
+            </div>
+
+            {/* Row 2: Runner Info and Week Navigation */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
+              {/* Runner Info */}
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar
+                  name={selectedRunner.full_name || 'User'}
                   size="sm"
-                  onPress={() => navigateWeek('next')}
-                  className="text-foreground/70 hover:text-foreground"
-                >
-                  <ChevronRightIcon className="w-4 h-4" />
-                </Button>
+                  className="bg-primary text-white flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <p
+                    className="font-medium text-foreground text-sm truncate"
+                    title={selectedRunner.full_name || 'User'}
+                  >
+                    {selectedRunner.full_name || 'User'}
+                  </p>
+                  {/* Status Chips - Note: connectedRunnersAtom only returns active relationships,
+                      so "Active" status is accurate. "Training" is a visual indicator that could be
+                      replaced with dynamic data from active training plans in a future enhancement. */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color="success"
+                      startContent={<TrendingUpIcon className="w-3 h-3" />}
+                      className="text-xs"
+                    >
+                      Active
+                    </Chip>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color="secondary"
+                      startContent={<FlagIcon className="w-3 h-3" />}
+                      className="text-xs"
+                    >
+                      Training
+                    </Chip>
+                  </div>
+                </div>
+              </div>
+
+              {/* Week Navigation - Always Horizontal */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="text-left sm:text-right min-w-0">
+                  <p
+                    className="font-semibold text-foreground text-sm truncate"
+                    title={formatWeekRange(currentWeek)}
+                    aria-live="polite"
+                  >
+                    {formatWeekRange(currentWeek)}
+                  </p>
+                  <p className="text-foreground/50 text-xs">Training Week</p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => navigateWeek('prev')}
+                    className="text-foreground/70 hover:text-foreground"
+                    aria-label="Previous week"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="flat"
+                    color="warning"
+                    size="sm"
+                    onPress={goToCurrentWeek}
+                    className="px-2 lg:px-3 text-xs lg:text-sm"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    isIconOnly
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => navigateWeek('next')}
+                    className="text-foreground/70 hover:text-foreground"
+                    aria-label="Next week"
+                  >
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
