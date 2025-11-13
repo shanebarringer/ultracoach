@@ -301,17 +301,21 @@ function RacesContent() {
       <Card className="mb-8 bg-primary/5 border-l-4 border-l-primary">
         <CardHeader>
           <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <FlagIcon className="w-8 h-8 text-primary" />
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">🏔️ Race Expeditions</h1>
-                  <p className="text-foreground-600 text-lg mt-1">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <FlagIcon className="w-8 h-8 text-primary flex-shrink-0" />
+                <div className="min-w-0">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                    🏔️ Race Expeditions
+                  </h1>
+                  <p className="text-foreground-600 text-base lg:text-lg mt-1">
                     Manage target races and summit challenges for your athletes
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3">
+
+              {/* Action Buttons - Right-aligned */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto flex-shrink-0">
                 <Button
                   onPress={onImportOpen}
                   color="secondary"
@@ -321,7 +325,8 @@ function RacesContent() {
                   aria-label="Import races from GPX or CSV files"
                   data-testid="import-races-modal-trigger"
                 >
-                  Import Races
+                  <span className="hidden sm:inline">Import Races</span>
+                  <span className="sm:hidden">Import</span>
                 </Button>
                 <Button
                   onPress={() => handleOpenModal()}
@@ -330,7 +335,8 @@ function RacesContent() {
                   startContent={<PlusIcon className="w-5 h-5" />}
                   aria-label="Add a new race manually"
                 >
-                  Add New Race
+                  <span className="hidden sm:inline">Add New Race</span>
+                  <span className="sm:hidden">Add Race</span>
                 </Button>
               </div>
             </div>
