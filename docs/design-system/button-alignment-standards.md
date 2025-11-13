@@ -13,25 +13,27 @@ consistency, and follows Mountain Peak design system principles.
 ```tsx
 <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
   <CardHeader>
-    <div className="flex flex-col lg:flex-row lg:items-center
-         justify-between w-full gap-4">
+    <div
+      className="flex flex-col lg:flex-row lg:items-center
+         justify-between w-full gap-4"
+    >
       {/* Left: Title and Description */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <IconComponent className="w-6 lg:w-8 h-6 lg:h-8 text-primary
-                                 flex-shrink-0" />
+        <IconComponent
+          className="w-6 lg:w-8 h-6 lg:h-8 text-primary
+                                 flex-shrink-0"
+        />
         <div className="min-w-0">
-          <h1 className="text-lg lg:text-2xl font-bold text-foreground">
-            Page Title
-          </h1>
-          <p className="text-foreground/70 text-xs lg:text-sm">
-            Page description
-          </p>
+          <h1 className="text-lg lg:text-2xl font-bold text-foreground">Page Title</h1>
+          <p className="text-foreground/70 text-xs lg:text-sm">Page description</p>
         </div>
       </div>
 
       {/* Right: Action Buttons - Right-aligned */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto
-                     flex-shrink-0">
+      <div
+        className="flex flex-col sm:flex-row gap-3 sm:ml-auto
+                     flex-shrink-0"
+      >
         <Button>Secondary Action</Button>
         <Button color="primary">Primary Action</Button>
       </div>
@@ -81,8 +83,10 @@ consistency, and follows Mountain Peak design system principles.
 
 ```tsx
 // Header with checkbox filter and action buttons
-<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3
-               sm:ml-auto flex-shrink-0">
+<div
+  className="flex flex-col sm:flex-row items-start sm:items-center gap-3
+               sm:ml-auto flex-shrink-0"
+>
   <Checkbox>Show archived</Checkbox>
   <Button variant="bordered" isIconOnly>
     <RefreshCw />
@@ -170,12 +174,8 @@ consistency, and follows Mountain Peak design system principles.
 
 ```tsx
 <div className="flex items-center gap-3">
-  <Button variant={mode === 'a' ? 'solid' : 'flat'}>
-    Option A
-  </Button>
-  <Button variant={mode === 'b' ? 'solid' : 'flat'}>
-    Option B
-  </Button>
+  <Button variant={mode === 'a' ? 'solid' : 'flat'}>Option A</Button>
+  <Button variant={mode === 'b' ? 'solid' : 'flat'}>Option B</Button>
 </div>
 ```
 
@@ -227,10 +227,7 @@ consistency, and follows Mountain Peak design system principles.
 ### Focus Management
 
 ```tsx
-<Button
-  aria-label="Clear description of action"
-  autoFocus={isFirstAction}
->
+<Button aria-label="Clear description of action" autoFocus={isFirstAction}>
   Action
 </Button>
 ```

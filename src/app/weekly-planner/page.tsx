@@ -89,6 +89,7 @@ function RunnersPanel() {
   const handleRunnerSelection = (keys: 'all' | Set<React.Key>) => {
     if (keys !== 'all' && keys.size > 0) {
       const selectedRunnerId = Array.from(keys)[0] as string
+      if (typeof selectedRunnerId !== 'string') return
       router.push(`/weekly-planner/${selectedRunnerId}`)
     }
   }
@@ -106,9 +107,7 @@ function RunnersPanel() {
                 aria-hidden="true"
               />
               <div className="min-w-0">
-                <h1 className="text-lg lg:text-2xl font-bold text-foreground">
-                  🏔️ Weekly Planner
-                </h1>
+                <h1 className="text-lg lg:text-2xl font-bold text-foreground">🏔️ Weekly Planner</h1>
                 <p className="text-foreground/70 text-xs lg:text-sm">
                   Select a training partner for weekly planning
                 </p>
@@ -116,13 +115,10 @@ function RunnersPanel() {
             </div>
 
             {/* Right: Partner Count and View Mode Buttons - Right-aligned */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-shrink-0">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 flex-shrink-0">
               {/* Partner Count Badge */}
               <div className="flex items-center gap-2">
-                <UsersIcon
-                  className="w-4 lg:w-5 h-4 lg:h-5 text-secondary"
-                  aria-hidden="true"
-                />
+                <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" aria-hidden="true" />
                 <span className="text-xs lg:text-sm font-medium text-foreground/70">
                   {runnersArray.length} Partner{runnersArray.length !== 1 ? 's' : ''}
                 </span>
@@ -135,6 +131,8 @@ function RunnersPanel() {
                   variant={viewMode === 'grid' ? 'solid' : 'flat'}
                   color="secondary"
                   onPress={() => setViewMode('grid')}
+                  aria-pressed={viewMode === 'grid'}
+                  className="focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   Grid View
                 </Button>
@@ -143,6 +141,8 @@ function RunnersPanel() {
                   variant={viewMode === 'dropdown' ? 'solid' : 'flat'}
                   color="secondary"
                   onPress={() => setViewMode('dropdown')}
+                  aria-pressed={viewMode === 'dropdown'}
+                  className="focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                 >
                   Quick Select
                 </Button>
@@ -158,7 +158,8 @@ function RunnersPanel() {
               variant="bordered"
               size="md"
               onSelectionChange={handleRunnerSelection}
-              startContent={<UsersIcon className="w-4 h-4" />}
+              startContent={<UsersIcon className="w-4 h-4" aria-hidden="true" />}
+              aria-label="Select training partner"
             >
               {runnersArray.map((runner: User) => (
                 <SelectItem key={runner.id} textValue={runner.full_name || runner.email}>
