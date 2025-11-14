@@ -42,7 +42,21 @@ async function globalSetup(config: FullConfig) {
         return
       }
 
+      // Non-OK response (404, 500, etc.) - treat as retry-able condition
       console.log(`⚠️  Server returned ${response?.status()} (attempt ${attempt}/${maxRetries})`)
+
+      if (attempt === maxRetries) {
+        console.error('❌ Server failed to become ready after 60 seconds')
+        console.error(`   Last status: ${response?.status()}`)
+        await browser.close()
+        throw new Error(
+          `Server at ${baseURL} not ready after ${maxRetries} attempts (${(maxRetries * retryDelay) / 1000}s total)`
+        )
+      }
+
+      // Wait before next attempt (same as catch block)
+      console.log(`⏳ Retrying... (attempt ${attempt}/${maxRetries})`)
+      await page.waitForTimeout(retryDelay)
     } catch (error) {
       if (attempt === maxRetries) {
         console.error('❌ Server failed to become ready after 60 seconds')

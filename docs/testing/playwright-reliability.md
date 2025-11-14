@@ -102,7 +102,81 @@ export default defineConfig({
 - Prefer isolated, deterministic test data with unique identifiers.
 - Use idempotent setup and cleanup via API routes or seeds when available.
 - Avoid cross-test contamination by scoping mutations and using timestamps.
-- **Idempotent user creation**: Check if users exist before creating (prevents CASCADE deletes)
+
+### Idempotent User Creation Pattern
+
+**Why Idempotency Matters**:
+
+- Prevents duplicate user creation errors in CI/CD pipelines
+- Eliminates CASCADE delete issues that can break test relationships
+- Allows scripts to run multiple times without failure
+- Simplifies test infrastructure by not requiring cleanup between runs
+
+**Implementation** (`scripts/testing/create-playwright-test-users.ts`):
+
+```typescript
+// Check for existing users and create only if needed (idempotent approach)
+for (const userData of PLAYWRIGHT_USERS) {
+  const existingUser = await db.select().from(user).where(eq(user.email, userData.email)).limit(1)
+
+  if (existingUser.length > 0) {
+    // User already exists - verify role/userType is correct
+    existingCount++
+    logger.info(`✅ User already exists: ${userData.email}`)
+
+    // Ensure role and userType are correct (in case of data inconsistency)
+    const currentUser = existingUser[0]
+    if (currentUser.role !== 'user' || currentUser.userType !== userData.role) {
+      logger.info(`🔧 Fixing role/userType for ${userData.email}`)
+      await db
+        .update(user)
+        .set({ role: 'user', userType: userData.role })
+        .where(eq(user.email, userData.email))
+    }
+  } else {
+    // User doesn't exist - create via Better Auth API
+    const result = await createSingleUser(userData)
+
+    if (result.success) {
+      logger.info(`✅ Created user: ${result.email} (${result.role})`)
+      createdCount++
+    } else {
+      logger.error(`❌ Failed to create ${userData.email}: ${result.error}`)
+
+      // In CI, fail fast on user creation errors
+      if (process.env.CI) {
+        process.exit(1)
+      }
+    }
+  }
+}
+
+// Create coach-runner relationships idempotently
+await db.execute(sql`
+  INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
+  VALUES
+    (gen_random_uuid(), ${coachId}, ${alexId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
+    (gen_random_uuid(), ${coachId}, ${rileyId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+  ON CONFLICT (coach_id, runner_id) DO NOTHING
+`)
+```
+
+**Key Principles**:
+
+1. **Check Before Create**: Always query for existing users before attempting creation
+2. **Repair Inconsistencies**: Fix incorrect role/userType values if detected
+3. **Use ON CONFLICT**: Database-level idempotency for relationship creation
+4. **Environment Variables**: Use configurable test credentials (TEST_COACH_EMAIL, TEST_COACH_PASSWORD, TEST_RUNNER_PASSWORD)
+5. **Fail Fast in CI**: Exit with error code 1 on failures in CI environment
+6. **Server Health Check**: Verify server is running before attempting user creation
+7. **Final Verification**: Confirm all required users exist with correct attributes after creation
+
+**Results**:
+
+- Can run multiple times without errors or duplicate data
+- Prevents CASCADE delete issues by maintaining existing user IDs
+- Automatically repairs data inconsistencies from manual database changes
+- Clear logging showing existing vs newly created users
 
 ## 6) Error Reporting
 

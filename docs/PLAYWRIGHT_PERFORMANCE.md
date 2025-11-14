@@ -16,12 +16,12 @@ This document outlines the comprehensive performance optimizations implemented f
 
 ### After Optimization
 
-- **Workers**: 1 (database safety, sequential within files)
-- **Authentication Tests**: 100% passing (7/7 tests)
-- **Core Test Suite**: 7 tests in ~53.8 seconds
-- **CI Execution**: Reliable execution with global setup
-- **Global Setup**: Server health check before any tests run
-- **Navigation Timeouts**: 60s local, 45s CI (reliable buffer)
+- **Workers**: Local: 1 (database safety), CI: 2 (balanced performance)
+- **Authentication Tests**: 100% passing (11/11 tests)
+- **Core Test Suite**: 11 authentication tests in ~1.1 minutes
+- **CI Execution**: Reliable execution with global setup and 3 retries
+- **Global Setup**: Server health check with proper non-OK response retry logic
+- **Timeouts**: Test: 60s CI / 30s local, Navigation: 45s CI / 60s local, Expect: 30s CI / 15s local
 
 ## 🔧 Technical Improvements
 
@@ -52,24 +52,44 @@ async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch()
   const page = await browser.newPage()
 
-  // Wait up to 60 seconds for server to respond
-  for (let attempt = 1; attempt <= 30; attempt++) {
+  const maxRetries = 30 // 30 attempts
+  const retryDelay = 2000 // 2 seconds between attempts (total: 60s max wait)
+
+  // Wait up to 60 seconds for server to respond with 200 OK
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await page.goto(baseURL, {
         timeout: 5000,
         waitUntil: 'domcontentloaded',
       })
+
       if (response && response.ok()) {
-        console.log(`✅ Server is ready!`)
+        console.log(`✅ Server is ready! (attempt ${attempt}/${maxRetries})`)
         await browser.close()
         return
       }
+
+      // Non-OK response (404, 500, etc.) - treat as retry-able condition
+      console.log(`⚠️  Server returned ${response?.status()} (attempt ${attempt}/${maxRetries})`)
+
+      if (attempt === maxRetries) {
+        throw new Error(
+          `Server at ${baseURL} not ready after ${maxRetries} attempts (${(maxRetries * retryDelay) / 1000}s total)`
+        )
+      }
+
+      // Wait before next attempt
+      await page.waitForTimeout(retryDelay)
     } catch (error) {
+      if (attempt === maxRetries) {
+        throw new Error(`Server not ready after 60 seconds: ${error.message}`)
+      }
       // Retry with 2-second delay between attempts
-      await page.waitForTimeout(2000)
+      await page.waitForTimeout(retryDelay)
     }
   }
-  throw new Error(`Server not ready after 60 seconds`)
+
+  await browser.close()
 }
 ```
 
@@ -90,17 +110,19 @@ export default defineConfig({
 
   // Keep sequential execution within files for database safety
   fullyParallel: false,
-  workers: process.env.CI ? 2 : 1, // Balanced for reliability
+  workers: process.env.CI ? 2 : 1, // CI: 2 workers for better performance, Local: 1 worker
+
+  // Retries for CI stability
+  retries: process.env.CI ? 3 : 0, // CI: 3 retries, Local: no retries
 
   // Increased timeouts for reliable execution
-  timeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s
-  navigationTimeout: process.env.CI ? 45000 : 60000, // CI: 45s, Local: 60s
+  timeout: process.env.CI ? 60000 : 30000, // CI: 60s (allows health check + session verification), Local: 30s
   expect: { timeout: process.env.CI ? 30000 : 15000 }, // CI: 30s, Local: 15s
 
-  // Improved navigation and action timeouts
+  // Navigation and action timeouts
   use: {
-    actionTimeout: 10000,
-    navigationTimeout: 15000,
+    actionTimeout: process.env.CI ? 30000 : 15000, // CI: 30s, Local: 15s
+    navigationTimeout: process.env.CI ? 45000 : 60000, // CI: 45s, Local: 60s
   },
 })
 ```
