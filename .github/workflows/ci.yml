@@ -153,44 +153,6 @@ jobs:
             ('test-runner-1-unconnected', 'test.runner@ultracoach.dev', 'Test Runner', 'Test Runner One', 'user', 'runner', true, NOW(), NOW()),
             ('test-runner-2-unconnected', 'test.runner2@ultracoach.dev', 'Runner Two', 'Test Runner Two', 'user', 'runner', true, NOW(), NOW())
           ON CONFLICT (id) DO NOTHING;
-
-          -- Create active coach-runner relationship (sarah → alex.rivera)
-          -- This relationship is required for workout-persistence.spec.ts tests
-          INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
-          SELECT
-            gen_random_uuid(),
-            coach.id,
-            runner.id,
-            'active',
-            'standard',
-            'coach',
-            NOW(),
-            NOW(),
-            NOW()
-          FROM better_auth_users coach
-          CROSS JOIN better_auth_users runner
-          WHERE coach.email = 'sarah@ultracoach.dev'
-            AND runner.email = 'alex.rivera@ultracoach.dev'
-          ON CONFLICT DO NOTHING;
-
-          -- Create second active coach-runner relationship (sarah → riley.parker)
-          -- Provides additional test runner for multi-runner test scenarios
-          INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
-          SELECT
-            gen_random_uuid(),
-            coach.id,
-            runner.id,
-            'active',
-            'standard',
-            'coach',
-            NOW(),
-            NOW(),
-            NOW()
-          FROM better_auth_users coach
-          CROSS JOIN better_auth_users runner
-          WHERE coach.email = 'sarah@ultracoach.dev'
-            AND runner.email = 'riley.parker@ultracoach.dev'
-          ON CONFLICT DO NOTHING;
           EOF
           echo "Test data setup complete"
 

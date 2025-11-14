@@ -8,7 +8,7 @@ import { config } from 'dotenv'
 import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { db } from '../../src/lib/db'
+import { db } from '../../src/lib/database'
 import { createLogger } from '../../src/lib/logger'
 import { account, user } from '../../src/lib/schema'
 
@@ -77,12 +77,13 @@ async function createSingleUser(userData: (typeof PLAYWRIGHT_USERS)[0]) {
 }
 
 // Use environment variables for passwords (with fallbacks for backwards compatibility)
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'sarah@ultracoach.dev'
 const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
 const RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!'
 
 const PLAYWRIGHT_USERS = [
   {
-    email: 'sarah@ultracoach.dev',
+    email: COACH_EMAIL,
     password: COACH_PASSWORD,
     name: 'Sarah',
     role: 'coach',
@@ -200,7 +201,7 @@ async function createPlaywrightUsers() {
     await db
       .update(user)
       .set({ role: 'user', userType: 'coach' })
-      .where(sql`email = 'sarah@ultracoach.dev'`)
+      .where(eq(user.email, COACH_EMAIL))
 
     // Fix runners
     await db
@@ -217,7 +218,7 @@ async function createPlaywrightUsers() {
       .select()
       .from(user)
       .where(
-        sql`email IN ('sarah@ultracoach.dev', 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
+        sql`email IN (${COACH_EMAIL}, 'alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`
       )
 
     if (finalUsers.length !== PLAYWRIGHT_USERS.length) {
@@ -234,21 +235,46 @@ async function createPlaywrightUsers() {
       logger.info(`  ✅ ${user.email}: role=${user.role}, userType=${user.userType}, id=${user.id}`)
     }
 
-    // Enhanced debugging for sarah@ultracoach.dev specifically
-    const sarahUser = finalUsers.find(u => u.email === 'sarah@ultracoach.dev')
-    if (sarahUser) {
-      logger.info('🎯 Sarah user detailed verification:', {
-        id: sarahUser.id,
-        email: sarahUser.email,
-        name: sarahUser.name,
-        role: sarahUser.role,
-        userType: sarahUser.userType,
-        createdAt: sarahUser.createdAt,
-        updatedAt: sarahUser.updatedAt,
-        emailVerified: sarahUser.emailVerified,
+    // Enhanced debugging for coach user specifically
+    const coachUser = finalUsers.find(u => u.email === COACH_EMAIL)
+    if (coachUser) {
+      logger.info('🎯 Coach user detailed verification:', {
+        id: coachUser.id,
+        email: coachUser.email,
+        name: coachUser.name,
+        role: coachUser.role,
+        userType: coachUser.userType,
+        createdAt: coachUser.createdAt,
+        updatedAt: coachUser.updatedAt,
+        emailVerified: coachUser.emailVerified,
       })
     } else {
-      logger.error('❌ Sarah user not found in final verification!')
+      logger.error(`❌ Coach user (${COACH_EMAIL}) not found in final verification!`)
+    }
+
+    // Create coach-runner relationships for testing
+    logger.info('🔗 Creating coach-runner relationships for testing...')
+
+    const coachId = finalUsers.find(u => u.email === COACH_EMAIL)?.id
+    const alexId = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')?.id
+    const rileyId = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')?.id
+
+    if (coachId && alexId && rileyId) {
+      // Create relationships via SQL to avoid FK constraint issues
+      await db.execute(sql`
+        INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
+        VALUES
+          (gen_random_uuid(), ${coachId}, ${alexId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
+          (gen_random_uuid(), ${coachId}, ${rileyId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+        ON CONFLICT DO NOTHING
+      `)
+      logger.info(`✅ Created 2 coach-runner relationships: ${COACH_EMAIL} -> alex.rivera@ultracoach.dev, ${COACH_EMAIL} -> riley.parker@ultracoach.dev`)
+    } else {
+      logger.error('❌ Cannot create relationships - missing user IDs:', {
+        coachId: coachId || 'MISSING',
+        alexId: alexId || 'MISSING',
+        rileyId: rileyId || 'MISSING',
+      })
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
