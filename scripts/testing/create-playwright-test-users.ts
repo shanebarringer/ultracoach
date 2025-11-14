@@ -274,6 +274,7 @@ async function createPlaywrightUsers() {
         VALUES
           (${emmaUser.id}, ${alexUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
           (${emmaUser.id}, ${rileyUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+        ON CONFLICT (coach_id, runner_id) DO NOTHING
       `)
 
       logger.info(`  ✅ Created relationship: emma@ultracoach.dev -> alex.rivera@ultracoach.dev`)
