@@ -6,10 +6,15 @@ import { createLogger } from '../src/lib/logger'
 
 const logger = createLogger('test-production-auth')
 
+// Use environment variable for test credentials
+const TEST_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+const TEST_PASSWORD = process.env.TEST_COACH_PASSWORD || 'Test123!@#'
+
 async function testAuth() {
   const prodUrl = 'https://ultracoach.vercel.app'
 
   logger.info('Testing authentication against production...')
+  logger.info(`Using test email: ${TEST_EMAIL}`)
 
   try {
     // Try to sign in with test credentials
@@ -19,8 +24,8 @@ async function testAuth() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'emma@ultracoach.dev',
-        password: 'Test123!@#',
+        email: TEST_EMAIL,
+        password: TEST_PASSWORD,
       }),
     })
 

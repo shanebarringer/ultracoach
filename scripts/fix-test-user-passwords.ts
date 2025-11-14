@@ -12,9 +12,12 @@ import { createLogger } from '../src/lib/logger'
 
 const logger = createLogger('fix-test-passwords')
 
+// Use environment variable for test coach email
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+
 // Test users that need to be recreated
 const TEST_USERS = [
-  { email: 'emma@ultracoach.dev', name: 'Emma Summit', userType: 'coach' },
+  { email: COACH_EMAIL, name: 'Emma Johnson', userType: 'coach' },
   { email: 'sarah@ultracoach.dev', name: 'Sarah Mountain', userType: 'coach' },
   { email: 'marcus@ultracoach.dev', name: 'Marcus Trail', userType: 'coach' },
 ]

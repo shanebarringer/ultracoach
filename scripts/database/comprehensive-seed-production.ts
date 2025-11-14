@@ -32,7 +32,18 @@ const sql = postgres(DATABASE_URL, { ssl: 'require' })
 const db = drizzle(sql, { schema })
 
 // Same data as comprehensive-seed.ts but for production
+// Use environment variable for primary coach email
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
+
 const coaches = [
+  {
+    name: 'Emma Johnson',
+    fullName: 'Emma Johnson',
+    email: COACH_EMAIL,
+    password: COACH_PASSWORD,
+    specialties: ['50-mile', 'nutrition', 'mental training'],
+  },
   {
     name: 'Sarah Mountain',
     fullName: 'Sarah Mountain',
@@ -46,13 +57,6 @@ const coaches = [
     email: 'marcus@ultracoach.dev',
     password: 'UltraCoach2025!',
     specialties: ['50K', 'speed work', 'injury prevention'],
-  },
-  {
-    name: 'Emma Summit',
-    fullName: 'Emma Summit',
-    email: 'emma@ultracoach.dev',
-    password: 'UltraCoach2025!',
-    specialties: ['50-mile', 'nutrition', 'mental training'],
   },
 ]
 

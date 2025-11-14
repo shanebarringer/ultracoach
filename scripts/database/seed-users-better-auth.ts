@@ -10,12 +10,16 @@ config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('seed-users-better-auth')
 
+// Use environment variable for coach email with emma@ultracoach.dev as default
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
+
 // Test users with their passwords and user types
 // IMPORTANT: These must match the test credentials in tests/utils/test-helpers.ts
 const testUsers = [
   {
-    email: 'emma@ultracoach.dev',
-    password: 'UltraCoach2025!',
+    email: COACH_EMAIL,
+    password: COACH_PASSWORD,
     name: 'Emma Johnson',
     userType: 'coach',
     fullName: 'Emma Johnson',
@@ -101,6 +105,51 @@ async function createTestUsers() {
   }
 }
 
+async function createCoachRunnerRelationships() {
+  logger.info('🔗 Creating coach-runner relationships...')
+
+  const { db } = await import('../../src/lib/database')
+  const { user } = await import('../../src/lib/schema')
+  const { eq, sql } = await import('drizzle-orm')
+
+  // Find coach and runner IDs
+  const coachUser = await db.select().from(user).where(eq(user.email, COACH_EMAIL)).limit(1)
+
+  const alexUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, 'alex.rivera@ultracoach.dev'))
+    .limit(1)
+
+  const rileyUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, 'riley.parker@ultracoach.dev'))
+    .limit(1)
+
+  if (coachUser.length === 0 || alexUser.length === 0 || rileyUser.length === 0) {
+    logger.error('❌ Cannot create relationships - missing required users')
+    return
+  }
+
+  const coachId = coachUser[0].id
+  const alexId = alexUser[0].id
+  const rileyId = rileyUser[0].id
+
+  // Create relationships (idempotent with ON CONFLICT DO NOTHING)
+  await db.execute(sql`
+    INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
+    VALUES
+      (gen_random_uuid(), ${coachId}, ${alexId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
+      (gen_random_uuid(), ${coachId}, ${rileyId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+    ON CONFLICT DO NOTHING
+  `)
+
+  logger.info(
+    `✅ Coach-runner relationships created: ${COACH_EMAIL} -> alex.rivera@ultracoach.dev, riley.parker@ultracoach.dev`
+  )
+}
+
 function updateEnvLocal() {
   const envPath = resolve(process.cwd(), '.env.local')
   let envContent = ''
@@ -170,14 +219,17 @@ async function main() {
     // Create test users via Better Auth API
     await createTestUsers()
 
+    // Create coach-runner relationships
+    await createCoachRunnerRelationships()
+
     logger.info('✅ Better Auth user seeding completed')
     logger.info(`
 🎯 Test users created! Use these credentials to login:
-• emma@ultracoach.dev / UltraCoach2025! (Coach)
+• ${COACH_EMAIL} / ${COACH_PASSWORD} (Coach)
 • sarah.martinez@ultracoach.dev / UltraCoach2025! (Coach)
 • michael.chen@ultracoach.dev / UltraCoach2025! (Coach)
-• alex.rivera@ultracoach.dev / RunnerPass2025! (Runner)
-• riley.parker@ultracoach.dev / RunnerPass2025! (Runner)
+• alex.rivera@ultracoach.dev / RunnerPass2025! (Runner - linked to ${COACH_EMAIL})
+• riley.parker@ultracoach.dev / RunnerPass2025! (Runner - linked to ${COACH_EMAIL})
     `)
     process.exit(0)
   } catch (error) {

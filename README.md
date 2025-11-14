@@ -151,10 +151,11 @@ The project includes comprehensive test data for development:
 
 #### Available Test Users
 
-- **Coach Account**: `emma@ultracoach.dev`
-- **Runner Accounts**: `alex.rivera@ultracoach.dev`, `riley.parker@ultracoach.dev`
+- **Primary Coach Account**: `emma@ultracoach.dev` (configurable via `TEST_COACH_EMAIL`)
+- **Linked Runner Accounts**: `alex.rivera@ultracoach.dev`, `riley.parker@ultracoach.dev` (both linked to emma)
+- **Additional Coaches**: `sarah@ultracoach.dev`, `marcus@ultracoach.dev`
 
-_Test credentials are managed securely through environment variables and CI/CD configuration._
+_Test credentials are managed securely through environment variables (`TEST_COACH_EMAIL`, `TEST_COACH_PASSWORD`) and CI/CD configuration._
 
 #### Development Seed Data
 

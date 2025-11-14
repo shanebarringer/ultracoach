@@ -2,12 +2,12 @@
 -- This SQL script corrects the userType field for existing users
 
 -- Update known coaches to have userType='coach'
-UPDATE better_auth_users 
+UPDATE better_auth_users
 SET user_type = 'coach', updated_at = NOW()
 WHERE email IN (
+  'emma@ultracoach.dev',
   'sarah@ultracoach.dev',
-  'marcus@ultracoach.dev', 
-  'emma@ultracoach.dev'
+  'marcus@ultracoach.dev'
 ) AND user_type != 'coach';
 
 -- Update known runners to have userType='runner' (should already be correct, but ensuring consistency)

@@ -19,11 +19,14 @@ config({ path: resolve(process.cwd(), '.env.production') })
 
 const logger = createLogger('reset-production-db')
 
+// Use environment variable for primary coach email
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+
 // Production-safe user data (same as comprehensive seed script)
 const coaches = [
+  { name: 'Emma Johnson', email: COACH_EMAIL, userType: 'coach' },
   { name: 'Sarah Mountain', email: 'sarah@ultracoach.dev', userType: 'coach' },
   { name: 'Marcus Trail', email: 'marcus@ultracoach.dev', userType: 'coach' },
-  { name: 'Emma Summit', email: 'emma@ultracoach.dev', userType: 'coach' },
 ]
 
 const runners = [

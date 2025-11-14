@@ -194,10 +194,6 @@ async function createPlaywrightUsers() {
       .set({ role: 'user', userType: 'runner' })
       .where(sql`email IN ('alex.rivera@ultracoach.dev', 'riley.parker@ultracoach.dev')`)
 
-    logger.info(
-      `🎉 Successfully created ${successCount}/${PLAYWRIGHT_USERS.length} Playwright test users`
-    )
-
     // Final verification - ensure all required users exist with correct roles
     const finalUsers = await db
       .select()
@@ -240,7 +236,7 @@ async function createPlaywrightUsers() {
     // Create coach-runner relationships for testing (idempotent)
     logger.info('🔗 Ensuring coach-runner relationships exist...')
 
-    const coachId = finalUsers.find(u => u.email === COACH_EMAIL)?.id
+    const coachId = coachUser?.id
     const alexId = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')?.id
     const rileyId = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')?.id
 

@@ -16,14 +16,14 @@ import {
   Textarea,
 } from '@heroui/react'
 import classNames from 'classnames'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useSetAtom } from 'jotai'
 import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-react'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
-import { asyncWorkoutsAtom, refreshWorkoutsAtom } from '@/lib/atoms/index'
+import { refreshWorkoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -277,12 +277,12 @@ export default function WeeklyPlannerCalendar({
     weekStart: weekStart.toISOString(),
   })
 
-  // Ensure workouts are hydrated BEFORE any effects run
-  useHydrateWorkouts()
+  // Ensure workouts are hydrated BEFORE any effects run and get the current list
+  // This avoids duplicate Jotai subscription by reusing the hook's return value
+  const allWorkouts = useHydrateWorkouts()
 
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
-  const allWorkouts = useAtomValue(asyncWorkoutsAtom) // Read directly from async atom to avoid cache race
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -471,7 +471,9 @@ export default function WeeklyPlannerCalendar({
   const clearDayWorkout = (dayIndex: number) => {
     setWeekWorkouts(prev => {
       const updated = [...prev]
-      updated[dayIndex].workout = undefined
+      // Create new day object to avoid mutation (mirrors updateDayWorkout pattern)
+      const day = { ...updated[dayIndex], workout: undefined }
+      updated[dayIndex] = day
       return updated
     })
     setHasChanges(true)
@@ -510,7 +512,7 @@ export default function WeeklyPlannerCalendar({
             title: `Weekly Training - ${runner.full_name || runner.email}`,
             description: 'Auto-created training plan for weekly workouts',
             runnerId: runner.id,
-            startDate: new Date().toISOString().split('T')[0],
+            startDate: weekStart.toISOString().split('T')[0], // Use weekStart for better semantic alignment
             isPublic: false,
           }),
         })

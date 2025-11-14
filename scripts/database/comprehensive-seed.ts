@@ -35,8 +35,19 @@ config({ path: resolve(process.cwd(), '.env.local') })
 
 const logger = createLogger('comprehensive-seed')
 
+// Use environment variable for primary coach email
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
+
 // Coach data
 const coaches = [
+  {
+    name: 'Emma Johnson',
+    fullName: 'Emma Johnson',
+    email: COACH_EMAIL,
+    password: COACH_PASSWORD,
+    specialties: ['50-mile', 'nutrition', 'mental training'],
+  },
   {
     name: 'Sarah Mountain',
     fullName: 'Sarah Mountain',
@@ -50,13 +61,6 @@ const coaches = [
     email: 'marcus@ultracoach.dev',
     password: 'UltraCoach2025!',
     specialties: ['50K', 'speed work', 'injury prevention'],
-  },
-  {
-    name: 'Emma Summit',
-    fullName: 'Emma Summit',
-    email: 'emma@ultracoach.dev',
-    password: 'UltraCoach2025!',
-    specialties: ['50-mile', 'nutrition', 'mental training'],
   },
 ]
 
@@ -309,32 +313,45 @@ async function createRelationships(
   const coachUsers = users.filter(u => u.role === 'coach')
   const runnerUsers = users.filter(u => u.role === 'runner')
 
-  // Connect 1 runner to each coach (3 active relationships)
-  // Connect runners 0, 5, 10 (one from each group of 5)
-  const connectedRunnerIndices = [0, 5, 10]
+  // Emma (coach 0) gets both alex (runner 0) and riley (runner 5)
+  // Other coaches get one runner each (10, 11)
+  const coachRunnerMappings = [
+    { coachIndex: 0, runnerIndices: [0, 5] }, // Emma -> Alex, Riley
+    { coachIndex: 1, runnerIndices: [10] }, // Sarah -> one runner
+    { coachIndex: 2, runnerIndices: [11] }, // Marcus -> one runner
+  ]
 
-  for (let i = 0; i < coachUsers.length; i++) {
-    const coach = coachUsers[i]
-    const runner = runnerUsers[connectedRunnerIndices[i]]
+  let relationshipCount = 0
+  for (const mapping of coachRunnerMappings) {
+    const coach = coachUsers[mapping.coachIndex]
+    if (!coach) continue
 
-    // Create active coach-runner relationship
-    await db.insert(coach_runners).values({
-      id: randomUUID(),
-      coach_id: coach.id,
-      runner_id: runner.id,
-      status: 'active',
-      relationship_type: 'standard',
-      invited_by: null,
-      relationship_started_at: new Date(),
-      notes: `Connected during comprehensive seeding - ${coach.name} coaching ${runner.name}`,
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
+    for (const runnerIndex of mapping.runnerIndices) {
+      if (runnerIndex >= runnerUsers.length) continue
+      const runner = runnerUsers[runnerIndex]
 
-    logger.info(`✅ Connected ${coach.name} ↔ ${runner.name}`)
+      // Create active coach-runner relationship
+      await db.insert(coach_runners).values({
+        id: randomUUID(),
+        coach_id: coach.id,
+        runner_id: runner.id,
+        status: 'active',
+        relationship_type: 'standard',
+        invited_by: null,
+        relationship_started_at: new Date(),
+        notes: `Connected during comprehensive seeding - ${coach.name} coaching ${runner.name}`,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+
+      logger.info(`✅ Connected ${coach.name} ↔ ${runner.name}`)
+      relationshipCount++
+    }
   }
 
-  logger.info(`✅ Created 3 active relationships, 12 runners available for discovery`)
+  logger.info(
+    `✅ Created ${relationshipCount} active relationships, ${runnerUsers.length - relationshipCount} runners available for discovery`
+  )
 }
 
 async function createTrainingPlans(
@@ -526,9 +543,9 @@ async function main() {
     logger.info(`   • .env.local updated with test credentials`)
 
     logger.info('🔐 Test Accounts:')
-    logger.info('   Coaches: sarah@ultracoach.dev, marcus@ultracoach.dev, emma@ultracoach.dev')
+    logger.info(`   Coaches: ${COACH_EMAIL}, sarah@ultracoach.dev, marcus@ultracoach.dev`)
     logger.info(
-      '   Runners: alex.rivera@ultracoach.dev, riley.parker@ultracoach.dev, river.martinez@ultracoach.dev'
+      `   Runners: alex.rivera@ultracoach.dev (linked to ${COACH_EMAIL}), riley.parker@ultracoach.dev (linked to ${COACH_EMAIL}), river.martinez@ultracoach.dev`
     )
     logger.info('   All passwords: UltraCoach2025! (coaches), RunnerPass2025! (runners)')
   } catch (error) {

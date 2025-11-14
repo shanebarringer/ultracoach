@@ -17,6 +17,10 @@ import { createLogger } from '../src/lib/logger'
 
 const logger = createLogger('ResetProductionDatabase')
 
+// Use environment variable for primary coach email
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
+const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
+
 // Load production environment variables
 // Try .env.production first, fallback to .env.local if not found
 let envPath = '.env.production'
@@ -275,6 +279,12 @@ async function resetProductionDatabase() {
     // Coach data (from comprehensive-seed.ts)
     const coaches = [
       {
+        name: 'Emma Johnson',
+        fullName: 'Emma Johnson',
+        email: COACH_EMAIL,
+        password: COACH_PASSWORD,
+      },
+      {
         name: 'Sarah Mountain',
         fullName: 'Sarah Mountain',
         email: 'sarah@ultracoach.dev',
@@ -284,12 +294,6 @@ async function resetProductionDatabase() {
         name: 'Marcus Trail',
         fullName: 'Marcus Trail',
         email: 'marcus@ultracoach.dev',
-        password: 'UltraCoach2025!',
-      },
-      {
-        name: 'Emma Summit',
-        fullName: 'Emma Summit',
-        email: 'emma@ultracoach.dev',
         password: 'UltraCoach2025!',
       },
     ]

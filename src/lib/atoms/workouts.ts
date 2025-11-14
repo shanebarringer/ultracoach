@@ -343,8 +343,8 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh to re-fetch workouts
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      // Trigger refresh to re-fetch workouts (centralized refresh logic)
+      set(refreshWorkoutsAtom)
 
       logger.info('Workout completed successfully', { workoutId })
       return updatedWorkout
@@ -436,8 +436,8 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Trigger refresh to re-fetch workouts
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      // Trigger refresh to re-fetch workouts (centralized refresh logic)
+      set(refreshWorkoutsAtom)
 
       logger.info('Workout details logged successfully', { workoutId })
       return updatedWorkout
@@ -509,8 +509,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Trigger refresh to re-fetch workouts
-    set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+    // Trigger refresh to re-fetch workouts (centralized refresh logic)
+    set(refreshWorkoutsAtom)
 
     logger.info('Workout skipped successfully', { workoutId })
     return updatedWorkout

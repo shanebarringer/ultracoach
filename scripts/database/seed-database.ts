@@ -232,24 +232,24 @@ function getTestUsersData() {
   // Coaches
   const coaches = [
     {
-      email: process.env.TEST_COACH_EMAIL || 'sarah@ultracoach.dev',
+      email: process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev',
       password: process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!',
+      name: 'Emma Johnson',
+      fullName: 'Emma Johnson',
+      role: 'coach' as const,
+    },
+    {
+      email: process.env.TEST_COACH2_EMAIL || 'sarah@ultracoach.dev',
+      password: process.env.TEST_COACH2_PASSWORD || 'UltraCoach2025!',
       name: 'Sarah Mountain',
       fullName: 'Sarah Mountain',
       role: 'coach' as const,
     },
     {
-      email: process.env.TEST_COACH2_EMAIL || 'marcus@ultracoach.dev',
-      password: process.env.TEST_COACH2_PASSWORD || 'UltraCoach2025!',
+      email: process.env.TEST_COACH3_EMAIL || 'marcus@ultracoach.dev',
+      password: process.env.TEST_COACH3_PASSWORD || 'UltraCoach2025!',
       name: 'Marcus Trail',
       fullName: 'Marcus Trail',
-      role: 'coach' as const,
-    },
-    {
-      email: process.env.TEST_COACH3_EMAIL || 'emma@ultracoach.dev',
-      password: process.env.TEST_COACH3_PASSWORD || 'UltraCoach2025!',
-      name: 'Emma Summit',
-      fullName: 'Emma Summit',
       role: 'coach' as const,
     },
   ]
@@ -509,15 +509,21 @@ async function createCoachRunnerRelationships() {
     return
   }
 
-  // Connect 1 runner to each coach (3 active relationships)
-  // Connect runners 0, 5, 10 (one from each group of 5)
-  const connectedRunnerIndices = [0, 5, 10]
+  // Connect runners to coaches
+  // First coach (emma) gets both alex (0) and riley (5)
+  // Second and third coaches get one runner each (10, 11)
+  const coachRunnerMappings = [
+    { coachIndex: 0, runnerIndices: [0, 5] }, // Emma -> Alex, Riley
+    { coachIndex: 1, runnerIndices: [10] }, // Sarah -> one runner
+    { coachIndex: 2, runnerIndices: [11] }, // Marcus -> one runner
+  ]
 
-  for (let i = 0; i < Math.min(coaches.length, connectedRunnerIndices.length); i++) {
-    const coach = coaches[i]
-    const runnerIndex = connectedRunnerIndices[i]
+  for (const mapping of coachRunnerMappings) {
+    const coach = coaches[mapping.coachIndex]
+    if (!coach) continue
 
-    if (runnerIndex < runners.length) {
+    for (const runnerIndex of mapping.runnerIndices) {
+      if (runnerIndex >= runners.length) continue
       const runner = runners[runnerIndex]
 
       try {
