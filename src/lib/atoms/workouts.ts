@@ -26,7 +26,7 @@ export const workoutsRefreshTriggerAtom = atom(0)
 
 // User-specific cache to prevent data leakage between accounts
 const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
+const CACHE_DURATION = 0 // Disabled cache to prevent stale data on page refresh
 
 // DRY helper: invalidate current user's workouts cache (fallback: clear all)
 async function invalidateUserWorkoutsCache(): Promise<void> {
@@ -87,6 +87,7 @@ export const asyncWorkoutsAtom = atom(async get => {
         Accept: 'application/json',
       },
       credentials: 'same-origin', // Use same-origin to ensure cookies are included
+      cache: 'no-store', // Prevent stale data on page reload
       signal: controller.signal,
     }).finally(() => clearTimeout(timeoutId))
 
