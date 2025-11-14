@@ -10,7 +10,7 @@ import { resolve } from 'path'
 
 import { db } from '../../src/lib/database'
 import { createLogger } from '../../src/lib/logger'
-import { account, user } from '../../src/lib/schema'
+import { account, coach_runners, user } from '../../src/lib/schema'
 
 // Load environment variables - CI uses environment variables directly, not .env.local
 if (process.env.NODE_ENV !== 'test') {
@@ -41,6 +41,7 @@ async function createSingleUser(userData: (typeof PLAYWRIGHT_USERS)[0]) {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'same-origin',
       signal: controller.signal,
       body: JSON.stringify({
         email: userData.email,
@@ -77,7 +78,7 @@ async function createSingleUser(userData: (typeof PLAYWRIGHT_USERS)[0]) {
 }
 
 // Use environment variables for passwords (with fallbacks for backwards compatibility)
-const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'sarah@ultracoach.dev'
+const COACH_EMAIL = process.env.TEST_COACH_EMAIL || 'emma@ultracoach.dev'
 const COACH_PASSWORD = process.env.TEST_COACH_PASSWORD || 'UltraCoach2025!'
 const RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD || 'RunnerPass2025!'
 
@@ -85,7 +86,7 @@ const PLAYWRIGHT_USERS = [
   {
     email: COACH_EMAIL,
     password: COACH_PASSWORD,
-    name: 'Sarah',
+    name: 'Emma',
     role: 'coach',
   },
   {
@@ -112,6 +113,7 @@ async function createPlaywrightUsers() {
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
       const healthCheck = await fetch('http://localhost:3001/api/health', {
+        credentials: 'same-origin',
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
@@ -233,35 +235,27 @@ async function createPlaywrightUsers() {
       logger.error(`❌ Coach user (${COACH_EMAIL}) not found in final verification!`)
     }
 
-    // Create coach-runner relationships for testing (idempotent)
-    logger.info('🔗 Ensuring coach-runner relationships exist...')
+    // Create coach-runner relationships (required for weekly planner tests)
+    logger.info('🔗 Creating coach-runner relationships...')
 
-    const coachId = coachUser?.id
-    const alexId = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')?.id
-    const rileyId = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')?.id
+    const alexUser = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')
+    const rileyUser = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')
 
-    if (coachId && alexId && rileyId) {
-      // Create relationships via SQL (ON CONFLICT DO NOTHING handles duplicates idempotently)
+    if (coachUser && alexUser && rileyUser) {
+      // Create relationships using ON CONFLICT for idempotency
       await db.execute(sql`
-        INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
+        INSERT INTO coach_runners (coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
         VALUES
-          (gen_random_uuid(), ${coachId}, ${alexId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
-          (gen_random_uuid(), ${coachId}, ${rileyId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
-        ON CONFLICT DO NOTHING
+          (${coachUser.id}, ${alexUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
+          (${coachUser.id}, ${rileyUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+        ON CONFLICT (coach_id, runner_id) DO NOTHING
       `)
 
-      logger.info(
-        `✅ Coach-runner relationships created/verified: ${COACH_EMAIL} -> alex.rivera@ultracoach.dev, riley.parker@ultracoach.dev`
-      )
+      logger.info(`  ✅ Created relationship: ${COACH_EMAIL} -> alex.rivera@ultracoach.dev`)
+      logger.info(`  ✅ Created relationship: ${COACH_EMAIL} -> riley.parker@ultracoach.dev`)
     } else {
-      logger.error('❌ Cannot create relationships - missing user IDs:', {
-        coachId: coachId || 'MISSING',
-        alexId: alexId || 'MISSING',
-        rileyId: rileyId || 'MISSING',
-      })
-
+      logger.error('❌ Cannot create relationships - missing required users')
       if (process.env.CI) {
-        logger.error('CI environment requires all test users to exist')
         process.exit(1)
       }
     }
