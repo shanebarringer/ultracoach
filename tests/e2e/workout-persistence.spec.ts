@@ -42,14 +42,16 @@ test.describe('Weekly Planner Workout Persistence', () => {
     const moreButton = mondayCard.getByRole('button', { name: /more/i })
     await expect(moreButton).toBeVisible({ timeout: 5000 })
     await moreButton.click()
-    await page.waitForTimeout(500) // Wait for expansion animation
 
-    // STEP 3: Fill in distance (always visible when workout type is not Rest)
+    // STEP 3: Wait for expansion by checking that notes field becomes visible
+    const workoutNotes = mondayCard.getByTestId('workout-notes-textarea-monday')
+    await expect(workoutNotes).toBeVisible({ timeout: 2000 })
+
+    // Fill in distance (always visible when workout type is not Rest)
     const workoutDistance = mondayCard.getByTestId('workout-distance-input-monday')
     await workoutDistance.fill('5')
 
-    // STEP 4: Fill in notes (only visible when expanded)
-    const workoutNotes = mondayCard.getByTestId('workout-notes-textarea-monday')
+    // STEP 4: Fill in notes (already visible since card is expanded)
     await workoutNotes.fill('Test workout - persistence check')
 
     // Save the week
@@ -75,11 +77,13 @@ test.describe('Weekly Planner Workout Persistence', () => {
     const moreButtonAfterRefresh = mondayCardAfterRefresh.getByRole('button', { name: /more/i })
     await expect(moreButtonAfterRefresh).toBeVisible({ timeout: 5000 })
     await moreButtonAfterRefresh.click()
-    await page.waitForTimeout(500) // Wait for expansion animation
+
+    // Wait for expansion by checking that notes field becomes visible
+    const notesAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-notes-textarea-monday')
+    await expect(notesAfterRefresh).toBeVisible({ timeout: 2000 })
 
     // Verify distance and notes persisted
     const distanceAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-distance-input-monday')
-    const notesAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-notes-textarea-monday')
 
     await expect(distanceAfterRefresh).toHaveValue('5')
     await expect(notesAfterRefresh).toHaveValue('Test workout - persistence check')
@@ -93,16 +97,15 @@ test.describe('Weekly Planner Workout Persistence', () => {
     const mondayCard = page.getByTestId('day-card-monday')
     await expect(mondayCard).toBeVisible({ timeout: 10000 })
 
-    // Expand the card to access all fields
-    const moreButton = mondayCard.getByRole('button', { name: /more/i })
-    if (await moreButton.isVisible()) {
-      await moreButton.click()
-    }
-
-    // Fill in workout using HeroUI components
+    // Fill in workout using HeroUI components (select type first)
     const workoutTypeSelect = mondayCard.getByTestId('workout-type-select-monday')
     await workoutTypeSelect.click()
     await page.getByRole('option', { name: 'Tempo Run' }).click()
+
+    // Now that workout type is selected, expand the card to access all fields
+    const moreButton = mondayCard.getByRole('button', { name: /more/i })
+    await expect(moreButton).toBeVisible({ timeout: 5000 })
+    await moreButton.click()
 
     await mondayCard.getByTestId('workout-distance-input-monday').fill('8')
     await mondayCard.getByTestId('workout-notes-textarea-monday').fill('Tempo run test')
@@ -159,16 +162,15 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
       await expect(dayCard).toBeVisible({ timeout: 5000 })
 
-      // Expand card to access all fields
-      const moreButton = dayCard.getByRole('button', { name: /more/i })
-      if (await moreButton.isVisible()) {
-        await moreButton.click()
-      }
-
-      // Fill in workout using HeroUI components
+      // Fill in workout using HeroUI components (select type first)
       const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
       await typeSelect.click()
       await page.getByRole('option', { name: workout.type }).click()
+
+      // Now that workout type is selected, expand card to access all fields
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      await expect(moreButton).toBeVisible({ timeout: 5000 })
+      await moreButton.click()
 
       await dayCard.getByTestId(`workout-distance-input-${dayName}`).fill(workout.distance)
       await dayCard.getByTestId(`workout-notes-textarea-${dayName}`).fill(workout.notes)
@@ -188,15 +190,14 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
       await expect(dayCard).toBeVisible({ timeout: 10000 })
 
-      // Expand card to see all fields
-      const moreButton = dayCard.getByRole('button', { name: /more/i })
-      if (await moreButton.isVisible()) {
-        await moreButton.click()
-      }
-
-      // Verify data persisted
+      // Verify workout type persisted first (this determines if More button appears)
       const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
       await expect(typeSelect).toContainText(workout.type)
+
+      // Now expand card to see all fields (More button appears for non-Rest workouts)
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      await expect(moreButton).toBeVisible({ timeout: 5000 })
+      await moreButton.click()
 
       await expect(dayCard.getByTestId(`workout-distance-input-${dayName}`)).toHaveValue(
         workout.distance
@@ -304,16 +305,15 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
       await expect(dayCard).toBeVisible({ timeout: 5000 })
 
-      // Expand card to access all fields
-      const moreButton = dayCard.getByRole('button', { name: /more/i })
-      if (await moreButton.isVisible()) {
-        await moreButton.click()
-      }
-
-      // Fill in workout using HeroUI components
+      // Fill in workout using HeroUI components (select type first)
       const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
       await typeSelect.click()
       await page.getByRole('option', { name: workout.type }).click()
+
+      // Now that workout type is selected, expand card to access all fields
+      const moreButton = dayCard.getByRole('button', { name: /more/i })
+      await expect(moreButton).toBeVisible({ timeout: 5000 })
+      await moreButton.click()
 
       await dayCard.getByTestId(`workout-distance-input-${dayName}`).fill(workout.distance)
       await dayCard.getByTestId(`workout-notes-textarea-${dayName}`).fill(workout.notes)
