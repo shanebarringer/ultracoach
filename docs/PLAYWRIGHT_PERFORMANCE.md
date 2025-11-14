@@ -17,8 +17,8 @@ This document outlines the comprehensive performance optimizations implemented f
 ### After Optimization
 
 - **Workers**: Local: 1 (database safety), CI: 2 (balanced performance)
-- **Authentication Tests**: 100% passing (11/11 tests)
-- **Core Test Suite**: 11 authentication tests in ~1.1 minutes
+- **Authentication Tests**: 100% passing (8 authentication tests)
+- **Core Test Suite**: 8 authentication tests in ~1.1 minutes
 - **CI Execution**: Reliable execution with global setup and 3 retries
 - **Global Setup**: Server health check with proper non-OK response retry logic
 - **Timeouts**: Test: 60s CI / 30s local, Navigation: 45s CI / 60s local, Expect: 30s CI / 15s local
@@ -126,6 +126,15 @@ export default defineConfig({
   },
 })
 ```
+
+**Timeout Strategy Explanation:**
+
+- **CI Test Timeout (60s)**: Longer to accommodate global server health check (up to 60s) + test execution + session verification
+- **Local Test Timeout (30s)**: Shorter because local dev server is typically already running and responsive
+- **CI Navigation Timeout (45s)**: Balanced for slower CI network conditions while preventing excessive hangs
+- **Local Navigation Timeout (60s)**: Longer to handle dev server cold starts and HMR (Hot Module Replacement) delays
+
+This configuration optimizes for CI reliability (longer timeouts for cold starts) while keeping local development feedback fast (shorter timeouts when server is warm).
 
 ### 3. Enhanced Test Helper Functions
 
@@ -282,8 +291,8 @@ npx playwright merge-reports --reporter html ./blob-reports
 
 ## 🎯 Success Criteria
 
-- ✅ **Authentication Tests**: 100% passing (6/6)
-- ✅ **Parallelization**: 2-3 workers enabled
+- ✅ **Authentication Tests**: 100% passing (8 authentication tests)
+- ✅ **Parallelization**: 2 workers enabled in CI
 - ✅ **CI Integration**: Sharded execution working
 - ✅ **MCP Features**: Enhanced automation capabilities
 - ✅ **Documentation**: Comprehensive performance guide
