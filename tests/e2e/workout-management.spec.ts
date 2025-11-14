@@ -23,10 +23,7 @@ test.describe('Workout Management', () => {
       await page.goto('/dashboard/runner')
       await waitForPageReady(page)
 
-      // Verify we're not redirected to signin (indicates session is valid)
-      await expect(page).not.toHaveURL('/auth/signin')
-
-      // Wait for final URL after any redirects
+      // Wait for final URL after any redirects (verifies successful authentication)
       await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
 
       // Wait for dashboard content to ensure full page load
@@ -272,11 +269,8 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
 
-      // Verify we're not redirected to signin (session should be valid from beforeEach)
-      await expect(page).not.toHaveURL('/auth/signin')
-
-      // Wait for URL to be workouts page
-      await expect(page).toHaveURL('/workouts', { timeout: 10000 })
+      // Wait for URL to be workouts page (verifies authentication)
+      await expect(page).toHaveURL('/workouts', { timeout: 15000 })
 
       // Wait for either workouts or empty state to be visible
       await page.waitForSelector(
@@ -320,10 +314,7 @@ test.describe('Workout Management', () => {
       await page.goto('/dashboard/coach')
       await waitForPageReady(page)
 
-      // Verify we're not redirected to signin (indicates session is valid)
-      await expect(page).not.toHaveURL('/auth/signin')
-
-      // Wait for final URL after any redirects
+      // Wait for final URL after any redirects (verifies successful authentication)
       await expect(page).toHaveURL('/dashboard/coach', { timeout: 15000 })
 
       // Wait for dashboard content to ensure full page load
