@@ -127,8 +127,12 @@ async function createPlaywrightUsers() {
       process.exit(1)
     }
 
-    // Clean up existing users first (handle foreign key constraints)
-    logger.info('🧹 Cleaning up existing test users...')
+    // Check for existing users and create only if needed (idempotent approach)
+    logger.info('👥 Ensuring test users exist (idempotent)...')
+
+    let createdCount = 0
+    let existingCount = 0
+
     for (const userData of PLAYWRIGHT_USERS) {
       const existingUser = await db
         .select()
@@ -137,62 +141,43 @@ async function createPlaywrightUsers() {
         .limit(1)
 
       if (existingUser.length > 0) {
-        const userId = existingUser[0].id
+        // User already exists - verify role/userType is correct
+        existingCount++
+        logger.info(`✅ User already exists: ${userData.email}`)
 
-        // Delete related records first to avoid foreign key constraint violations
-        try {
-          // Delete strava connections if they exist
-          await db.execute(sql`DELETE FROM strava_connections WHERE user_id = ${userId}`)
-
-          // Delete Better Auth account records
-          await db.delete(account).where(eq(account.userId, userId))
-
-          // Finally delete the user
-          await db.delete(user).where(eq(user.id, userId))
-
-          logger.info(`🗑️  Cleaned up existing user: ${userData.email}`)
-        } catch (error) {
-          logger.error(`Warning: Could not fully clean up ${userData.email}:`, error.message)
-          // Continue with other users even if one fails to clean up
+        // Ensure role and userType are correct (in case of data inconsistency)
+        const currentUser = existingUser[0]
+        if (currentUser.role !== 'user' || currentUser.userType !== userData.role) {
+          logger.info(
+            `🔧 Fixing role/userType for ${userData.email}: role=${currentUser.role}→user, userType=${currentUser.userType}→${userData.role}`
+          )
+          await db
+            .update(user)
+            .set({ role: 'user', userType: userData.role })
+            .where(eq(user.email, userData.email))
         }
-      }
-    }
-
-    // Create users via Better Auth API (parallel for better performance)
-    logger.info('👥 Creating test users via Better Auth API (parallel)...')
-
-    // Create all users concurrently for better performance
-    const userPromises = PLAYWRIGHT_USERS.map(userData => createSingleUser(userData))
-    const results = await Promise.allSettled(userPromises)
-
-    // Process results and handle errors appropriately
-    let successCount = 0
-    for (const [index, result] of results.entries()) {
-      const userData = PLAYWRIGHT_USERS[index]
-
-      if (result.status === 'fulfilled' && result.value.success) {
-        logger.info(`✅ Created user: ${result.value.email} (${result.value.role})`)
-        successCount++
       } else {
-        const error = result.status === 'rejected' ? result.reason : result.value.error
-        logger.error(`❌ Failed to create ${userData.email}: ${error}`)
+        // User doesn't exist - create via Better Auth API
+        const result = await createSingleUser(userData)
 
-        // In CI, we want to fail fast if user creation fails
-        if (process.env.CI) {
-          logger.error('CI environment detected - failing fast on user creation error')
-          process.exit(1)
+        if (result.success) {
+          logger.info(`✅ Created user: ${result.email} (${result.role})`)
+          createdCount++
+        } else {
+          logger.error(`❌ Failed to create ${userData.email}: ${result.error}`)
+
+          // In CI, fail fast on user creation errors
+          if (process.env.CI) {
+            logger.error('CI environment detected - failing fast on user creation error')
+            process.exit(1)
+          }
         }
       }
     }
 
-    // Ensure all users were created successfully
-    if (successCount !== PLAYWRIGHT_USERS.length) {
-      logger.error(`❌ Only created ${successCount}/${PLAYWRIGHT_USERS.length} users`)
-      if (process.env.CI) {
-        logger.error('CI environment requires all test users to be created successfully')
-        process.exit(1)
-      }
-    }
+    logger.info(
+      `🎉 Test users ready: ${existingCount} existing, ${createdCount} newly created (${existingCount + createdCount}/${PLAYWRIGHT_USERS.length} total)`
+    )
 
     // Fix role and userType mapping in database (Better Auth compatibility)
     logger.info('🔧 Ensuring proper Better Auth role and userType mapping...')
@@ -252,29 +237,72 @@ async function createPlaywrightUsers() {
       logger.error(`❌ Coach user (${COACH_EMAIL}) not found in final verification!`)
     }
 
-    // Create coach-runner relationships for testing
-    logger.info('🔗 Creating coach-runner relationships for testing...')
+    // Create coach-runner relationships for testing (idempotent)
+    logger.info('🔗 Ensuring coach-runner relationships exist...')
 
     const coachId = finalUsers.find(u => u.email === COACH_EMAIL)?.id
     const alexId = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')?.id
     const rileyId = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')?.id
 
     if (coachId && alexId && rileyId) {
-      // Create relationships via SQL to avoid FK constraint issues
-      await db.execute(sql`
+      // Check existing relationships before creating
+      const existingRelationships = await db.execute(sql`
+        SELECT coach_id, runner_id, status
+        FROM coach_runners
+        WHERE coach_id = ${coachId}
+        AND runner_id IN (${alexId}, ${rileyId})
+      `)
+
+      const existingCount = Array.isArray(existingRelationships)
+        ? existingRelationships.length
+        : existingRelationships.rowCount || 0
+
+      logger.info(`🔍 Found ${existingCount} existing relationships for coach ${COACH_EMAIL}`)
+
+      // Create relationships via SQL (ON CONFLICT DO NOTHING handles duplicates)
+      const insertResult = await db.execute(sql`
         INSERT INTO coach_runners (id, coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
         VALUES
           (gen_random_uuid(), ${coachId}, ${alexId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
           (gen_random_uuid(), ${coachId}, ${rileyId}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
         ON CONFLICT DO NOTHING
       `)
-      logger.info(`✅ Created 2 coach-runner relationships: ${COACH_EMAIL} -> alex.rivera@ultracoach.dev, ${COACH_EMAIL} -> riley.parker@ultracoach.dev`)
+
+      // Verify final state
+      const finalRelationships = await db.execute(sql`
+        SELECT coach_id, runner_id, status
+        FROM coach_runners
+        WHERE coach_id = ${coachId}
+      `)
+
+      const finalCount = Array.isArray(finalRelationships)
+        ? finalRelationships.length
+        : finalRelationships.rowCount || 0
+
+      logger.info(
+        `✅ Relationships ready: ${finalCount} total for ${COACH_EMAIL} (${COACH_EMAIL} -> alex.rivera@ultracoach.dev, ${COACH_EMAIL} -> riley.parker@ultracoach.dev)`
+      )
+
+      if (finalCount < 2) {
+        logger.error(
+          `⚠️  WARNING: Expected 2 relationships but found ${finalCount}. Tests may fail with "no runner cards" error.`
+        )
+        if (process.env.CI) {
+          logger.error('CI environment requires relationships to be created')
+          process.exit(1)
+        }
+      }
     } else {
       logger.error('❌ Cannot create relationships - missing user IDs:', {
         coachId: coachId || 'MISSING',
         alexId: alexId || 'MISSING',
         rileyId: rileyId || 'MISSING',
       })
+
+      if (process.env.CI) {
+        logger.error('CI environment requires all test users to exist')
+        process.exit(1)
+      }
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
