@@ -22,7 +22,15 @@ test.describe('Workout Management', () => {
       // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
       await waitForPageReady(page)
-      await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+
+      // Verify we're not redirected to signin (indicates session is valid)
+      await expect(page).not.toHaveURL('/auth/signin')
+
+      // Wait for final URL after any redirects
+      await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
+
+      // Wait for dashboard content to ensure full page load
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', { timeout: 10000 })
     })
 
     test('should display workouts list with proper filtering', async ({ page }) => {
@@ -264,11 +272,17 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
 
+      // Verify we're not redirected to signin (session should be valid from beforeEach)
+      await expect(page).not.toHaveURL('/auth/signin')
+
+      // Wait for URL to be workouts page
+      await expect(page).toHaveURL('/workouts', { timeout: 10000 })
+
       // Wait for either workouts or empty state to be visible
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: 15000, // Increased timeout for CI environment
         }
       )
 
@@ -305,7 +319,15 @@ test.describe('Workout Management', () => {
       // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
       await waitForPageReady(page)
-      await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
+
+      // Verify we're not redirected to signin (indicates session is valid)
+      await expect(page).not.toHaveURL('/auth/signin')
+
+      // Wait for final URL after any redirects
+      await expect(page).toHaveURL('/dashboard/coach', { timeout: 15000 })
+
+      // Wait for dashboard content to ensure full page load
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', { timeout: 10000 })
     })
 
     test.skip('should create workout for runner', async ({ page }) => {
