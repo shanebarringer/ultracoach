@@ -1,5 +1,9 @@
 import { FullConfig, chromium } from '@playwright/test'
 
+import { createLogger } from '../src/lib/logger'
+
+const logger = createLogger('global-setup')
+
 /**
  * Global Setup for Playwright Tests
  *
@@ -19,8 +23,8 @@ async function globalSetup(config: FullConfig) {
   // Get base URL from first project's config
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3001'
 
-  console.log('🔍 Global Setup: Waiting for server to be ready...')
-  console.log(`   Server URL: ${baseURL}`)
+  logger.info('🔍 Global Setup: Waiting for server to be ready...')
+  logger.info(`   Server URL: ${baseURL}`)
 
   const browser = await chromium.launch()
   const page = await browser.newPage()
@@ -37,17 +41,17 @@ async function globalSetup(config: FullConfig) {
       })
 
       if (response && response.ok()) {
-        console.log(`✅ Server is ready! (attempt ${attempt}/${maxRetries})`)
+        logger.info(`✅ Server is ready! (attempt ${attempt}/${maxRetries})`)
         await browser.close()
         return
       }
 
       // Non-OK response (404, 500, etc.) - treat as retry-able condition
-      console.log(`⚠️  Server returned ${response?.status()} (attempt ${attempt}/${maxRetries})`)
+      logger.warn(`⚠️  Server returned ${response?.status()} (attempt ${attempt}/${maxRetries})`)
 
       if (attempt === maxRetries) {
-        console.error('❌ Server failed to become ready after 60 seconds')
-        console.error(`   Last status: ${response?.status()}`)
+        logger.error('❌ Server failed to become ready after 60 seconds')
+        logger.error(`   Last status: ${response?.status()}`)
         await browser.close()
         throw new Error(
           `Server at ${baseURL} not ready after ${maxRetries} attempts (${(maxRetries * retryDelay) / 1000}s total)`
@@ -55,19 +59,21 @@ async function globalSetup(config: FullConfig) {
       }
 
       // Wait before next attempt (same as catch block)
-      console.log(`⏳ Retrying... (attempt ${attempt}/${maxRetries})`)
+      logger.info(`⏳ Retrying... (attempt ${attempt}/${maxRetries})`)
       await page.waitForTimeout(retryDelay)
     } catch (error) {
       if (attempt === maxRetries) {
-        console.error('❌ Server failed to become ready after 60 seconds')
-        console.error(`   Last error: ${error.message}`)
+        logger.error('❌ Server failed to become ready after 60 seconds')
+        // Type-safe error message extraction
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        logger.error(`   Last error: ${errorMessage}`)
         await browser.close()
         throw new Error(
           `Server at ${baseURL} not ready after ${maxRetries} attempts (${(maxRetries * retryDelay) / 1000}s total)`
         )
       }
 
-      console.log(`⏳ Waiting for server... (attempt ${attempt}/${maxRetries})`)
+      logger.info(`⏳ Waiting for server... (attempt ${attempt}/${maxRetries})`)
       await page.waitForTimeout(retryDelay)
     }
   }
