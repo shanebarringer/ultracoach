@@ -41,22 +41,13 @@ function updateEnvLocal(testUsers: ReturnType<typeof getTestUsersData>) {
     envContent = fs.readFileSync(envPath, 'utf8')
   }
 
-  // Remove existing test user credentials from env content
-  const testUserKeys = [
-    'TEST_COACH_EMAIL',
-    'TEST_COACH_PASSWORD',
-    'TEST_COACH2_EMAIL',
-    'TEST_COACH2_PASSWORD',
-    'TEST_RUNNER_EMAIL',
-    'TEST_RUNNER_PASSWORD',
-    'TEST_RUNNER2_EMAIL',
-    'TEST_RUNNER2_PASSWORD',
-  ]
-
-  // Remove old test user lines
+  // Remove ALL existing test user credentials from env content (handles TEST_COACH*, TEST_RUNNER*, etc.)
+  // This is more robust than maintaining a hardcoded list of keys
   const lines = envContent.split('\n').filter(line => {
-    const key = line.split('=')[0]
-    return !testUserKeys.includes(key) && !line.startsWith('# Test user credentials')
+    const key = line.split('=')[0].trim()
+    // Remove any line starting with TEST_COACH or TEST_RUNNER (handles numbered variants)
+    const isTestUserKey = key.startsWith('TEST_COACH') || key.startsWith('TEST_RUNNER')
+    return !isTestUserKey && !line.startsWith('# Test user credentials')
   })
 
   // Add updated test user credentials
@@ -571,7 +562,7 @@ async function createCoachRunnerRelationships() {
   }
 
   logger.info(
-    `✅ Created relationships for ${Math.min(coaches.length, connectedRunnerIndices.length)} coach-runner pairs`
+    `✅ Created relationships for ${Math.min(coaches.length, coachRunnerMappings.length)} coach-runner pairs`
   )
 }
 
