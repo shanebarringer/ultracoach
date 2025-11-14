@@ -151,11 +151,36 @@ The project includes comprehensive test data for development:
 
 #### Available Test Users
 
-- **Primary Coach Account**: `emma@ultracoach.dev` (configurable via `TEST_COACH_EMAIL`)
-- **Linked Runner Accounts**: `alex.rivera@ultracoach.dev`, `riley.parker@ultracoach.dev` (both linked to emma)
-- **Additional Coaches**: `sarah@ultracoach.dev`, `marcus@ultracoach.dev`
+**Primary Coach Account** (for E2E tests and weekly planner):
 
-_Test credentials are managed securely through environment variables (`TEST_COACH_EMAIL`, `TEST_COACH_PASSWORD`) and CI/CD configuration._
+- Email: `emma@ultracoach.dev` (default, configurable via `TEST_COACH_EMAIL`)
+- Password: `UltraCoach2025!` (default, configurable via `TEST_COACH_PASSWORD`)
+- Connected Runners: Alex Rivera, Riley Parker
+
+**Primary Runner Account** (for workout management tests):
+
+- Email: `alex.rivera@ultracoach.dev` (default, configurable via `TEST_RUNNER_EMAIL`)
+- Password: `RunnerPass2025!` (default, configurable via `TEST_RUNNER_PASSWORD`)
+- Coach: Emma (emma@ultracoach.dev)
+
+**Additional Test Accounts**:
+
+- Runner: `riley.parker@ultracoach.dev` / `RunnerPass2025!`
+- Coaches: `sarah@ultracoach.dev`, `marcus@ultracoach.dev`
+
+**Environment Variable Configuration** (optional):
+
+To customize test credentials, add these to your `.env.local`:
+
+```bash
+# Test user credentials (optional - defaults shown above)
+TEST_COACH_EMAIL=emma@ultracoach.dev
+TEST_COACH_PASSWORD=UltraCoach2025!
+TEST_RUNNER_EMAIL=alex.rivera@ultracoach.dev
+TEST_RUNNER_PASSWORD=RunnerPass2025!
+```
+
+_Note: Test credentials are managed through environment variables for security and flexibility. The defaults work out-of-the-box for most development scenarios._
 
 #### Development Seed Data
 

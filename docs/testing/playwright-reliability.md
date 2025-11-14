@@ -54,13 +54,20 @@ This guide documents the reliability standards applied across the E2E suite.
 ```typescript
 import { FullConfig, chromium } from '@playwright/test'
 
+import { createLogger } from '../src/lib/logger'
+
+const logger = createLogger('global-setup')
+
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3001'
   const browser = await chromium.launch()
   const page = await browser.newPage()
 
+  const maxRetries = 30 // 30 attempts
+  const retryDelay = 2000 // 2 seconds between attempts (total: 60s max wait)
+
   // Retry up to 30 times with 2-second delays (60s total)
-  for (let attempt = 1; attempt <= 30; attempt++) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await page.goto(baseURL, {
         timeout: 5000,
@@ -68,15 +75,32 @@ async function globalSetup(config: FullConfig) {
       })
 
       if (response && response.ok()) {
-        console.log(`✅ Server is ready! (attempt ${attempt}/30)`)
+        logger.info(`✅ Server is ready! (attempt ${attempt}/${maxRetries})`)
         await browser.close()
         return
       }
+
+      // Non-OK response - retry
+      logger.warn(`⚠️  Server returned ${response?.status()} (attempt ${attempt}/${maxRetries})`)
+
+      if (attempt === maxRetries) {
+        throw new Error(`Server not ready after ${maxRetries} attempts`)
+      }
+
+      await page.waitForTimeout(retryDelay)
     } catch (error) {
-      if (attempt === 30) throw new Error(`Server not ready after 60s`)
-      await page.waitForTimeout(2000)
+      if (attempt === maxRetries) {
+        // Type-safe error message extraction
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        logger.error(`❌ Server failed: ${errorMessage}`)
+        throw new Error(`Server not ready after ${maxRetries} attempts`)
+      }
+      logger.info(`⏳ Waiting for server... (attempt ${attempt}/${maxRetries})`)
+      await page.waitForTimeout(retryDelay)
     }
   }
+
+  await browser.close()
 }
 
 export default globalSetup

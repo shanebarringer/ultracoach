@@ -117,7 +117,7 @@
 
 **Purpose**: Ensure database persistence, not just React state
 
-### 8. Enhanced Test Coverage for Cache Race Conditions (Commit: 3f2ed0f)
+### 7. Enhanced Test Coverage for Cache Race Conditions (Commit: 3f2ed0f)
 
 **Problem**: Existing tests waited 1 second after save, allowing the 1-second cache to expire and masking the race condition bug
 
@@ -156,7 +156,7 @@
 - Previously: No connected runners for test coaches; now seeded in CI (Sarah→Alex/Riley) — tests should pass once Playwright users/helpers run
 - Test code is correct and will pass once proper test data is seeded
 
-### 7. Fixed Playwright webServer Command (Commit: 3befdee)
+### 8. Fixed Playwright webServer Command (Commit: 3befdee)
 
 **Problem**: Pre-push hook failing with auth test timeouts (20-40+ seconds)
 
