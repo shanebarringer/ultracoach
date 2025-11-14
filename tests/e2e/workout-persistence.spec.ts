@@ -25,23 +25,30 @@ test.describe('Weekly Planner Workout Persistence', () => {
     const mondayCard = page.getByTestId('day-card-monday')
     await expect(mondayCard).toBeVisible({ timeout: 10000 })
 
-    // First, click the "More" button to expand the card and reveal all fields
-    const moreButton = mondayCard.getByRole('button', { name: /more/i })
-    if (await moreButton.isVisible()) {
-      await moreButton.click()
-    }
-
-    // Fill in workout type using HeroUI Select component
+    // STEP 1: Fill in workout type first (this will make More button appear)
     const workoutTypeSelect = mondayCard.getByTestId('workout-type-select-monday')
     await expect(workoutTypeSelect).toBeVisible({ timeout: 5000 })
     await workoutTypeSelect.click()
-    await page.getByRole('option', { name: 'Easy Run' }).click()
 
-    // Fill in workout distance
+    // Wait for dropdown to open and option to be available
+    const easyRunOption = page.getByRole('option', { name: 'Easy Run' })
+    await expect(easyRunOption).toBeVisible({ timeout: 5000 })
+    await easyRunOption.click()
+
+    // Wait for the Select value to update (React re-render)
+    await expect(workoutTypeSelect).toContainText(/easy run/i, { timeout: 5000 })
+
+    // STEP 2: Now that workout type is selected, More button should appear
+    const moreButton = mondayCard.getByRole('button', { name: /more/i })
+    await expect(moreButton).toBeVisible({ timeout: 5000 })
+    await moreButton.click()
+    await page.waitForTimeout(500) // Wait for expansion animation
+
+    // STEP 3: Fill in distance (always visible when workout type is not Rest)
     const workoutDistance = mondayCard.getByTestId('workout-distance-input-monday')
     await workoutDistance.fill('5')
 
-    // Fill in workout notes
+    // STEP 4: Fill in notes (only visible when expanded)
     const workoutNotes = mondayCard.getByTestId('workout-notes-textarea-monday')
     await workoutNotes.fill('Test workout - persistence check')
 
@@ -57,25 +64,25 @@ test.describe('Weekly Planner Workout Persistence', () => {
     await page.reload()
     await expect(page.getByTestId('day-card-monday')).toBeVisible({ timeout: 10000 })
 
-    // Verify the workout is still there after refresh
+    // Verify the workout persisted after refresh
     const mondayCardAfterRefresh = page.getByTestId('day-card-monday')
 
-    // Expand the card again if needed
-    const moreButtonAfterRefresh = mondayCardAfterRefresh.getByRole('button', { name: /more/i })
-    if (await moreButtonAfterRefresh.isVisible()) {
-      await moreButtonAfterRefresh.click()
-    }
+    // Verify workout type persisted (Easy Run shows More button)
+    const typeSelectAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-type-select-monday')
+    await expect(typeSelectAfterRefresh).toContainText(/easy run/i)
 
-    // Check that the workout data persisted
+    // Expand the card to see notes (More button should exist for Easy Run)
+    const moreButtonAfterRefresh = mondayCardAfterRefresh.getByRole('button', { name: /more/i })
+    await expect(moreButtonAfterRefresh).toBeVisible({ timeout: 5000 })
+    await moreButtonAfterRefresh.click()
+    await page.waitForTimeout(500) // Wait for expansion animation
+
+    // Verify distance and notes persisted
     const distanceAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-distance-input-monday')
     const notesAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-notes-textarea-monday')
 
     await expect(distanceAfterRefresh).toHaveValue('5')
     await expect(notesAfterRefresh).toHaveValue('Test workout - persistence check')
-
-    // Verify the workout type is still Easy Run
-    const typeSelectAfterRefresh = mondayCardAfterRefresh.getByTestId('workout-type-select-monday')
-    await expect(typeSelectAfterRefresh).toContainText(/easy run/i)
   })
 
   test('should load workouts from database on initial visit', async ({ page, context }) => {
@@ -189,7 +196,7 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
       // Verify data persisted
       const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
-      await expect(typeSelect).toContainText(new RegExp(workout.type, 'i'))
+      await expect(typeSelect).toContainText(workout.type)
 
       await expect(dayCard.getByTestId(`workout-distance-input-${dayName}`)).toHaveValue(
         workout.distance
@@ -338,7 +345,7 @@ test.describe('Weekly Planner Workout Persistence', () => {
 
         // Verify data persisted
         const typeSelect = dayCard.getByTestId(`workout-type-select-${dayName}`)
-        await expect(typeSelect).toContainText(new RegExp(workout.type, 'i'))
+        await expect(typeSelect).toContainText(workout.type)
 
         await expect(dayCard.getByTestId(`workout-distance-input-${dayName}`)).toHaveValue(
           workout.distance

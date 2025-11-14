@@ -329,5 +329,7 @@ export async function gotoWeeklyPlannerForFirstRunner(page: Page): Promise<void>
   await expect(runnerCard).toBeVisible({ timeout: 10000 })
   await runnerCard.click()
 
-  await page.waitForURL(/\/weekly-planner\/[a-f0-9-]+/)
+  // Don't wait for navigation events - they may hang due to Suspense
+  // Instead wait for the actual content to appear
+  await expect(page.getByTestId('day-card-monday')).toBeVisible({ timeout: 30000 })
 }

@@ -153,7 +153,7 @@
 - Tests use coach authentication (`./playwright/.auth/coach.json`)
 - Test coaches: Emily (`emily.chen@ultracoach.dev`) and Sarah (`sarah@ultracoach.dev`)
 - Tests require coach-runner relationships to exist in database
-- Current failure: No connected runners for test coaches to select
+- Previously: No connected runners for test coaches; now seeded in CI (Sarah→Alex/Riley) — tests should pass once Playwright users/helpers run
 - Test code is correct and will pass once proper test data is seeded
 
 ### 7. Fixed Playwright webServer Command (Commit: 3befdee)

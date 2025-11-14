@@ -95,6 +95,7 @@ export const connectedRunnersAtom = atomWithRefresh(async (): Promise<User[]> =>
     connectedRunnersLogger.debug('Fetching connected runners...')
     const response = await api.get<{ runners?: User[] } | User[]>('/api/runners', {
       suppressGlobalToast: true,
+      timeout: 5000, // 5 second timeout to prevent hanging
     })
 
     const data = response.data

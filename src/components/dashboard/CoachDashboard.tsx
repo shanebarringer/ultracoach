@@ -306,10 +306,9 @@ function CoachDashboard() {
                       )
 
                       return (
-                        <div
+                        <article
                           key={runner.id}
                           data-testid={`runner-card-${runner.id}`}
-                          role="article"
                           aria-label={`Runner card for ${runner.full_name || 'User'}`}
                           className="border border-divider rounded-lg p-3 bg-content2/50 hover:bg-content2 transition-colors"
                         >
@@ -356,7 +355,7 @@ function CoachDashboard() {
                               Message
                             </Button>
                           </div>
-                        </div>
+                        </article>
                       )
                     })}
                   </div>
