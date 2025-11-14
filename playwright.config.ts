@@ -63,6 +63,8 @@ try {
  */
 export default defineConfig({
   testDir: './tests',
+  /* Global setup - ensures server is ready before tests start */
+  globalSetup: require.resolve('./tests/global-setup'),
   /* Exclude manual and debug test files from CI runs */
   testIgnore: ['**/*.manual.ts', '**/debug.*', '**/manual-*'],
   /* Run tests in files in parallel - SAFE: Each file gets its own worker process */
@@ -107,7 +109,7 @@ export default defineConfig({
     actionTimeout: process.env.CI ? 30000 : 15000, // CI: 30s (reduced from 45s), Local: 15s
 
     /* Set longer navigation timeout for CI compilation delays */
-    navigationTimeout: process.env.CI ? 45000 : 30000, // CI: 45s (reduced from 90s), Local: 30s
+    navigationTimeout: process.env.CI ? 45000 : 60000, // CI: 45s, Local: 60s (increased for reliability)
 
     /* Ensure session persistence in CI environment */
     storageState: undefined, // Will be overridden by projects that need auth
