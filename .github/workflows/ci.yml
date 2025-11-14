@@ -297,6 +297,18 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           BETTER_AUTH_URL: http://localhost:3001
 
+      - name: Verify coach-runner relationships
+        run: |
+          echo "Verifying coach-runner relationships..."
+          pnpm tsx scripts/testing/verify-test-relationships.ts
+          echo "Relationships verified successfully"
+        timeout-minutes: 1
+        env:
+          # Ensure test database is used
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_test
+          NODE_ENV: test
+          TEST_COACH_EMAIL: sarah@ultracoach.dev
+
       - name: Seed test data
         run: |
           echo "Seeding test workouts..."

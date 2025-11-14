@@ -325,7 +325,39 @@ export const WORKOUT_TEST_LIMITS = {
 export async function gotoWeeklyPlannerForFirstRunner(page: Page): Promise<void> {
   await page.goto('/weekly-planner')
 
-  const runnerCard = page.locator('[data-testid*="runner-card"]').first()
+  // Wait for page to finish loading
+  await page.waitForLoadState('domcontentloaded')
+
+  // Check if runner cards exist before trying to interact with them
+  const runnerCards = page.locator('[data-testid*="runner-card"]')
+  const count = await runnerCards.count()
+
+  if (count === 0) {
+    // Debug: capture page state when no runner cards are found
+    console.error('❌ No runner cards found on weekly planner page')
+    console.error(`   Page URL: ${page.url()}`)
+    console.error(`   Page title: ${await page.title()}`)
+
+    // Take screenshot for debugging in CI
+    if (process.env.CI) {
+      const screenshotPath = 'test-results/debug-no-runner-cards.png'
+      await page.screenshot({ path: screenshotPath, fullPage: true })
+      console.error(`   Screenshot saved: ${screenshotPath}`)
+    }
+
+    // Throw descriptive error with context
+    throw new Error(
+      `No runner cards found on /weekly-planner page. ` +
+        `This usually means the authenticated coach has no connected runners. ` +
+        `Verify that: (1) Test user creation script ran successfully, ` +
+        `(2) Coach-runner relationships were created in the database, ` +
+        `(3) Authentication is working correctly.`
+    )
+  }
+
+  console.log(`✅ Found ${count} runner card(s) on weekly planner page`)
+
+  const runnerCard = runnerCards.first()
   await expect(runnerCard).toBeVisible({ timeout: 10000 })
   await runnerCard.click()
 
