@@ -10,7 +10,7 @@ export const TEST_TIMEOUTS = {
 }
 
 // Centralized test credentials - use these instead of hard-coding
-export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'sarah@ultracoach.dev'
+export const TEST_COACH_EMAIL = process.env.TEST_COACH_EMAIL ?? 'emma@ultracoach.dev'
 export const TEST_COACH_PASSWORD = process.env.TEST_COACH_PASSWORD ?? 'UltraCoach2025!'
 export const TEST_RUNNER_EMAIL = process.env.TEST_RUNNER_EMAIL ?? 'alex.rivera@ultracoach.dev'
 export const TEST_RUNNER_PASSWORD = process.env.TEST_RUNNER_PASSWORD ?? 'RunnerPass2025!'
