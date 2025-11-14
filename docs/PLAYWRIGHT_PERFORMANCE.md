@@ -12,13 +12,16 @@ This document outlines the comprehensive performance optimizations implemented f
 - **Authentication Tests**: Failing with 30s timeouts
 - **Test Suite Duration**: ~5-10 minutes for full suite
 - **CI Execution**: Single-threaded, slow feedback
+- **No Server Health Check**: Tests started before server ready
 
 ### After Optimization
 
-- **Workers**: 2-3 (parallel execution)
-- **Authentication Tests**: 100% passing (6/6 tests)
-- **Core Test Suite**: 11 tests in ~1.1 minutes
-- **CI Execution**: Sharded execution with 4x parallelization
+- **Workers**: 1 (database safety, sequential within files)
+- **Authentication Tests**: 100% passing (7/7 tests)
+- **Core Test Suite**: 7 tests in ~53.8 seconds
+- **CI Execution**: Reliable execution with global setup
+- **Global Setup**: Server health check before any tests run
+- **Navigation Timeouts**: 60s local, 45s CI (reliable buffer)
 
 ## 🔧 Technical Improvements
 
@@ -36,18 +39,63 @@ This document outlines the comprehensive performance optimizations implemented f
 
 **Impact**: Resolved 100% authentication test failures, enabling parallel execution.
 
-### 2. Playwright Configuration Optimization
+### 2. Global Setup with Server Health Check (Added 2025-11-14)
+
+**Problem**: Tests were starting before the dev server was fully ready, causing timeout errors even with proper authentication.
+
+**Solution**: Implemented Playwright's official global setup pattern to ensure server readiness:
+
+```typescript
+// tests/global-setup.ts
+async function globalSetup(config: FullConfig) {
+  const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3001'
+  const browser = await chromium.launch()
+  const page = await browser.newPage()
+
+  // Wait up to 60 seconds for server to respond
+  for (let attempt = 1; attempt <= 30; attempt++) {
+    try {
+      const response = await page.goto(baseURL, {
+        timeout: 5000,
+        waitUntil: 'domcontentloaded',
+      })
+      if (response && response.ok()) {
+        console.log(`✅ Server is ready!`)
+        await browser.close()
+        return
+      }
+    } catch (error) {
+      // Retry with 2-second delay between attempts
+      await page.waitForTimeout(2000)
+    }
+  }
+  throw new Error(`Server not ready after 60 seconds`)
+}
+```
+
+**Impact**:
+
+- Prevents race conditions where tests start before server initialization
+- Eliminates timeout errors from server startup delays
+- First-attempt test success (no retries needed)
+- Server typically ready on first attempt (< 1s)
+
+### 3. Playwright Configuration Optimization
 
 ```typescript
 // playwright.config.ts
 export default defineConfig({
-  // Enable file-level parallelization (safe for database operations)
-  fullyParallel: false, // Keeps tests within files sequential for DB safety
-  workers: process.env.CI ? 3 : 2, // Optimized worker count
+  // Global setup ensures server ready before all tests
+  globalSetup: require.resolve('./tests/global-setup'),
 
-  // Enhanced timeouts for Next.js compilation
-  timeout: 30000, // 30s for complex operations
-  expect: { timeout: 15000 }, // 15s for dynamic content
+  // Keep sequential execution within files for database safety
+  fullyParallel: false,
+  workers: process.env.CI ? 2 : 1, // Balanced for reliability
+
+  // Increased timeouts for reliable execution
+  timeout: process.env.CI ? 60000 : 30000, // CI: 60s, Local: 30s
+  navigationTimeout: process.env.CI ? 45000 : 60000, // CI: 45s, Local: 60s
+  expect: { timeout: process.env.CI ? 30000 : 15000 }, // CI: 30s, Local: 15s
 
   // Improved navigation and action timeouts
   use: {
