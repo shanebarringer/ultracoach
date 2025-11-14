@@ -10,7 +10,7 @@ import { resolve } from 'path'
 
 import { db } from '../../src/lib/db'
 import { createLogger } from '../../src/lib/logger'
-import { account, user } from '../../src/lib/schema'
+import { account, coach_runners, user } from '../../src/lib/schema'
 
 // Load environment variables - CI uses environment variables directly, not .env.local
 if (process.env.NODE_ENV !== 'test') {
@@ -140,6 +140,11 @@ async function createPlaywrightUsers() {
 
         // Delete related records first to avoid foreign key constraint violations
         try {
+          // Delete coach-runner relationships
+          await db.execute(
+            sql`DELETE FROM coach_runners WHERE coach_id = ${userId} OR runner_id = ${userId}`
+          )
+
           // Delete strava connections if they exist
           await db.execute(sql`DELETE FROM strava_connections WHERE user_id = ${userId}`)
 
@@ -249,6 +254,35 @@ async function createPlaywrightUsers() {
       })
     } else {
       logger.error('❌ Emma user not found in final verification!')
+    }
+
+    // Create coach-runner relationships (required for weekly planner tests)
+    logger.info('🔗 Creating coach-runner relationships...')
+
+    const alexUser = finalUsers.find(u => u.email === 'alex.rivera@ultracoach.dev')
+    const rileyUser = finalUsers.find(u => u.email === 'riley.parker@ultracoach.dev')
+
+    if (emmaUser && alexUser && rileyUser) {
+      // Clean up existing relationships first
+      await db.execute(
+        sql`DELETE FROM coach_runners WHERE coach_id = ${emmaUser.id} OR runner_id IN (${alexUser.id}, ${rileyUser.id})`
+      )
+
+      // Create relationships using ON CONFLICT for idempotency
+      await db.execute(sql`
+        INSERT INTO coach_runners (coach_id, runner_id, status, relationship_type, invited_by, relationship_started_at, created_at, updated_at)
+        VALUES
+          (${emmaUser.id}, ${alexUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW()),
+          (${emmaUser.id}, ${rileyUser.id}, 'active', 'standard', 'coach', NOW(), NOW(), NOW())
+      `)
+
+      logger.info(`  ✅ Created relationship: emma@ultracoach.dev -> alex.rivera@ultracoach.dev`)
+      logger.info(`  ✅ Created relationship: emma@ultracoach.dev -> riley.parker@ultracoach.dev`)
+    } else {
+      logger.error('❌ Cannot create relationships - missing required users')
+      if (process.env.CI) {
+        process.exit(1)
+      }
     }
 
     logger.info('🏆 All Playwright test users are ready for E2E testing!')
