@@ -84,10 +84,52 @@ export async function getServerSession(): Promise<ServerSession | null> {
       userAgent: headersList.get('user-agent')?.substring(0, 50),
     })
 
-    // Better Auth server-side session retrieval
-    const rawSession = await auth.api.getSession({
-      headers: headersList,
-    })
+    // Better Auth server-side session retrieval with retry logic for CI reliability
+    const MAX_RETRIES = 3
+    let rawSession = null
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        rawSession = await auth.api.getSession({
+          headers: headersList,
+        })
+
+        // Success - session found
+        if (rawSession?.user) {
+          if (attempt > 1) {
+            logger.info('Session validation succeeded after retry', { attempt })
+          }
+          break
+        }
+
+        // No session found, but no error - normal case for unauthenticated users
+        if (attempt === MAX_RETRIES) {
+          logger.debug('No active session found after all retries', {
+            hasCookie: headersList.get('cookie')?.includes('better-auth.session_token'),
+            cookieLength:
+              headersList.get('cookie')?.split('better-auth.session_token=')[1]?.split(';')[0]
+                ?.length || 0,
+            attempts: MAX_RETRIES,
+          })
+        }
+
+        // Exponential backoff before retry
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
+        }
+      } catch (error) {
+        logger.warn(`Session validation attempt ${attempt}/${MAX_RETRIES} failed`, {
+          error: error instanceof Error ? error.message : String(error),
+          attempt,
+          willRetry: attempt < MAX_RETRIES,
+        })
+
+        // Exponential backoff before retry
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
+        }
+      }
+    }
 
     if (!rawSession?.user) {
       logger.info('No active session found')
