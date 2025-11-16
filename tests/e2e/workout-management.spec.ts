@@ -275,13 +275,13 @@ test.describe('Workout Management', () => {
       await page.waitForLoadState('domcontentloaded')
 
       // Wait for URL to be workouts page (verifies authentication)
-      await expect(page).toHaveURL('/workouts', { timeout: 15000 })
+      await expect(page).toHaveURL('/workouts', { timeout: CI_TIMEOUT })
 
       // Wait for either workouts or empty state to be visible
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 15000, // Increased timeout for CI environment
+          timeout: CI_TIMEOUT, // Use shared constant for consistent CI timeouts
         }
       )
 

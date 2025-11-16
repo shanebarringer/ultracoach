@@ -90,12 +90,10 @@ export function BetterAuthProvider({ children, initialSession }: BetterAuthProvi
       })
     }
 
-    // Only run background refresh if we had an initial session
-    // (to catch any server/client session drift)
-    // Guard prevents race condition with near-immediate focus/visibility triggers
-    if (initialSession) {
-      runBackgroundRefresh()
-    }
+    // Always run background refresh to pick up session from cookies
+    // This is critical for Playwright tests using storageState authentication
+    // Even without initialSession, cookies may contain valid session tokens
+    runBackgroundRefresh()
 
     // Set up periodic session refresh to prevent staleness
     // Runs silently (no loading state) to avoid UI flicker every 30 seconds
