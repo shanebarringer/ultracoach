@@ -84,8 +84,17 @@ export async function getServerSession(): Promise<ServerSession | null> {
       userAgent: headersList.get('user-agent')?.substring(0, 50),
     })
 
+    // Helper for linear backoff delays
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+    // Detect auth signal to avoid unnecessary retries for unauthenticated traffic
+    const hasAuthSignal =
+      headersList.get('cookie')?.includes('better-auth.session_token') ||
+      !!headersList.get('authorization')
+
     // Better Auth server-side session retrieval with retry logic for CI reliability
-    const MAX_RETRIES = 3
+    // Only retry when auth signal is present; otherwise do single attempt
+    const MAX_RETRIES = hasAuthSignal ? 3 : 1
     let rawSession = null
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -104,18 +113,15 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
         // No session found, but no error - normal case for unauthenticated users
         if (attempt === MAX_RETRIES) {
-          logger.debug('No active session found after all retries', {
-            hasCookie: headersList.get('cookie')?.includes('better-auth.session_token'),
-            cookieLength:
-              headersList.get('cookie')?.split('better-auth.session_token=')[1]?.split(';')[0]
-                ?.length || 0,
+          logger.debug('No active session found', {
+            hasAuthSignal,
             attempts: MAX_RETRIES,
           })
         }
 
-        // Linear backoff before retry (100ms, 200ms, 300ms)
+        // Linear backoff before retry (100ms, 200ms, 300ms) - only when retrying
         if (attempt < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
+          await sleep(100 * attempt)
         }
       } catch (error) {
         logger.warn(`Session validation attempt ${attempt}/${MAX_RETRIES} failed`, {
@@ -126,7 +132,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
         // Linear backoff before retry (100ms, 200ms, 300ms)
         if (attempt < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
+          await sleep(100 * attempt)
         }
       }
     }

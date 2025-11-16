@@ -38,14 +38,23 @@ interface Props {
 }
 
 /**
+ * Dedicated hydration component - ensures workouts are loaded BEFORE rendering
+ * This pattern prevents production build race conditions where components try to read
+ * from workoutsAtom before hydration completes
+ */
+function WorkoutsHydrator() {
+  useHydrateWorkouts()
+  return null
+}
+
+/**
  * Workouts Page Client Component
  *
  * Handles workout interactivity and state management.
  * Receives authenticated user data from Server Component parent.
  */
 function WorkoutsPageClientInner({ user }: Props) {
-  // Hydrate workouts at entry point - this will trigger Suspense if needed
-  const hydratedWorkouts = useHydrateWorkouts()
+  // Read from workoutsAtom - hydration happens in WorkoutsHydrator component
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
@@ -53,7 +62,6 @@ function WorkoutsPageClientInner({ user }: Props) {
   logger.debug('WorkoutsPageClient rendering', {
     userType: user.userType,
     workoutCount: workouts.length,
-    hydratedCount: hydratedWorkouts?.length || 0,
   })
 
   // Coach-specific state and data
@@ -322,6 +330,7 @@ function WorkoutsPageClientInner({ user }: Props) {
 export default function WorkoutsPageClient({ user }: Props) {
   return (
     <Suspense fallback={<WorkoutsPageSkeleton />}>
+      <WorkoutsHydrator />
       <WorkoutsPageClientInner user={user} />
     </Suspense>
   )

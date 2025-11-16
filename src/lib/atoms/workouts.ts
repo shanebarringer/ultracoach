@@ -102,8 +102,8 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
-  // Trigger a re-fetch by incrementing the refresh trigger
-  set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+  // Trigger a re-fetch by incrementing the refresh trigger (functional updater to avoid race)
+  set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
   import('@/lib/logger').then(({ createLogger }) => {
     const logger = createLogger('RefreshWorkoutsAtom')
@@ -346,7 +346,7 @@ export const completeWorkoutAtom = atom(
       set(workoutsAtom, updatedWorkouts)
 
       // Trigger refresh to fetch updated data
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
       return updatedWorkout
@@ -439,7 +439,7 @@ export const logWorkoutDetailsAtom = atom(
       set(workoutsAtom, updatedWorkouts)
 
       // Trigger refresh to fetch updated data
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
       return updatedWorkout
@@ -512,7 +512,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     set(workoutsAtom, updatedWorkouts)
 
     // Trigger refresh to fetch updated data
-    set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+    set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
     return updatedWorkout

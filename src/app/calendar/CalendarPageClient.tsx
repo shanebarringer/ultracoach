@@ -4,7 +4,7 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
 
-import { memo, useCallback, useRef } from 'react'
+import { Suspense, memo, useCallback, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
@@ -66,6 +67,16 @@ const logger = createLogger('CalendarPageClient')
 
 interface Props {
   user: ServerSession['user']
+}
+
+/**
+ * Dedicated hydration component - ensures workouts are loaded BEFORE rendering
+ * This pattern prevents production build race conditions where components try to read
+ * from workoutsAtom before hydration completes
+ */
+function CalendarHydrator() {
+  useHydrateWorkouts()
+  return null
 }
 
 /**
@@ -421,7 +432,10 @@ function CalendarContent({ user }: Props) {
  * Receives authenticated user data from Server Component parent.
  */
 export default function CalendarPageClient({ user }: Props) {
-  useHydrateWorkouts() // Hydrate workouts at entry point
-
-  return <CalendarContent user={user} />
+  return (
+    <Suspense fallback={<CalendarPageSkeleton />}>
+      <CalendarHydrator />
+      <CalendarContent user={user} />
+    </Suspense>
+  )
 }
