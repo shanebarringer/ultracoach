@@ -16,6 +16,7 @@ import { memo, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import GarminDashboardWidget from '@/components/garmin/GarminDashboardWidget'
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { CoachDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -490,8 +491,11 @@ function CoachDashboard() {
             />
           </div>
 
-          {/* Strava Integration Widget */}
-          <StravaDashboardWidget />
+          {/* Integration Widgets */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <StravaDashboardWidget />
+            <GarminDashboardWidget />
+          </div>
 
           {/* Recent Activity */}
           <RecentActivity

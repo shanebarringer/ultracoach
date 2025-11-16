@@ -22,6 +22,7 @@ import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
 
+import GarminDashboardWidget from '@/components/garmin/GarminDashboardWidget'
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
@@ -697,8 +698,11 @@ function RunnerDashboard() {
           </CardBody>
         </Card>
 
-        {/* Strava Integration Widget */}
-        <StravaDashboardWidget />
+        {/* Integration Widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <StravaDashboardWidget />
+          <GarminDashboardWidget />
+        </div>
       </div>
 
       {/* Workout Log Modal */}
