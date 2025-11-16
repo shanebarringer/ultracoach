@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import GarminWorkoutPanel from '@/components/garmin/GarminWorkoutPanel'
 import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'
@@ -311,8 +312,9 @@ function WorkoutsPageClientInner({ user }: Props) {
             />
           )}
 
-          {/* Strava Integration Panel */}
+          {/* Integration Panels */}
           <StravaWorkoutPanel />
+          <GarminWorkoutPanel />
         </div>
       </ModernErrorBoundary>
     </Layout>
