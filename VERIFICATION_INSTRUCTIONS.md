@@ -13,16 +13,19 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 ### Phase 1 - Core Hydration Architecture
 
 **File**: `src/lib/atoms/workouts.ts` (lines 47-77)
+
 - **Change**: Replaced raw `fetch()` with axios `api.get()` for production reliability
 - **Benefit**: Ensures automatic credential injection via interceptors configured in `@/lib/api-client`
 - **Implementation**: Dynamic import of `api` client with structured error handling and axios-specific error parsing
 
 **File**: `src/app/workouts/WorkoutsPageClient.tsx` (lines 46-58)
+
 - **Change**: Moved `useHydrateWorkouts()` call inside component (not separate null-returning component)
 - **Benefit**: Ensures Suspense properly waits for data before rendering component tree
 - **Critical Fix**: Eliminates race condition where workouts appeared on initial load but disappeared after refresh
 
 **File**: `src/hooks/useWorkouts.ts` (lines 25-38)
+
 - **Change**: Implemented `useHydrateWorkouts()` using Jotai's `useHydrateAtoms` for synchronous hydration
 - **Benefit**: Same pattern as BetterAuthProvider - data is guaranteed to be present before first render
 - **Key**: Uses `useAtomValue(asyncWorkoutsAtom)` which triggers Suspense, then synchronously hydrates with `useHydrateAtoms`
@@ -30,20 +33,24 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 ### Phase 2 - Weekly Planner Hydration
 
 **File**: `src/components/workouts/WeeklyPlannerCalendar.tsx` (line 277)
+
 - **Change**: Added `useHydrateWorkouts()` call at component start before reading `workoutsAtom`
 - **Benefit**: Fixes race condition where weekly planner showed empty state on refresh
 
 **File**: `src/app/weekly-planner/[runnerId]/page.tsx` (lines 300-315)
+
 - **Change**: Wrapped `WeeklyPlannerCalendar` in Suspense boundary with loading spinner
 - **Benefit**: Provides proper loading UI while workout data is being fetched and hydrated
 
 ### Supporting Infrastructure
 
 **File**: `src/middleware.ts` (new cookie validation logic)
+
 - **Change**: Added cookie pre-check optimization for session validation
 - **Benefit**: Faster authentication checks with better error handling
 
 **File**: `src/utils/auth-server.ts` (enhanced session validation)
+
 - **Change**: Added retry logic and improved logging for server-side session validation
 - **Benefit**: More resilient authentication in production environments
 
@@ -149,6 +156,7 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 ## Success Criteria
 
 ✅ **All tests must pass**:
+
 - Initial load shows loading skeleton → data appears
 - Page refresh maintains data (no empty state after refresh)
 - No `Failed to parse URL` errors in console
@@ -162,6 +170,7 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 ### Scenario 1: Workouts Load Initially But Disappear After Refresh
 
 **Symptoms**:
+
 - Initial load works fine
 - After refresh: Empty state or "No workouts found"
 - Console shows: `{ count: 0 }` despite workouts existing in database
@@ -169,6 +178,7 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 **Root Cause**: Hydration timing issue still present or axios client not configured correctly
 
 **Debug Steps**:
+
 1. Check Network tab during refresh - is `/api/workouts` being called?
 2. Check response - does it contain data or empty array `{ workouts: [] }`?
 3. Check console for error: `Failed to parse URL from /api/workouts`
@@ -176,6 +186,7 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 5. Check if cookies are being sent with request (see request headers)
 
 **Report Back**:
+
 ```
 ISSUE: Workouts disappear after refresh
 Network request status: [Success/Fail] [Status Code]
@@ -187,6 +198,7 @@ Cookie header present: [Yes/No]
 ### Scenario 2: "Failed to parse URL" Error
 
 **Symptoms**:
+
 - Console error: `TypeError: Failed to parse URL from /api/workouts`
 - Empty workout list even though data exists
 
@@ -195,6 +207,7 @@ Cookie header present: [Yes/No]
 **Solution Needed**: Add baseURL configuration to axios for SSR context
 
 **Report Back**:
+
 ```
 ISSUE: Failed to parse URL error
 Context: [Client-side / Server-side rendering]
@@ -205,12 +218,14 @@ Browser: [Chrome / Firefox / Safari]
 ### Scenario 3: 401 Unauthorized Errors
 
 **Symptoms**:
+
 - Network tab shows `/api/workouts` with 401 status
 - Console: "Unauthorized - user session expired or invalid"
 
 **Root Cause**: Cookie not being sent with request
 
 **Debug Steps**:
+
 1. Check Network tab → Request Headers
 2. Look for `Cookie:` header - is it present?
 3. Check Application tab → Cookies - are session cookies set?
@@ -218,6 +233,7 @@ Browser: [Chrome / Firefox / Safari]
 5. Check cookie `SameSite` attribute - should be `Lax` or `None` for cross-site
 
 **Report Back**:
+
 ```
 ISSUE: 401 Unauthorized
 Cookies present in Application tab: [Yes/No]
@@ -230,6 +246,7 @@ Deployment URL: [Preview URL]
 ### Scenario 4: Infinite Loading State
 
 **Symptoms**:
+
 - Loading skeleton never resolves
 - Data never appears
 - No errors in console
@@ -237,12 +254,14 @@ Deployment URL: [Preview URL]
 **Root Cause**: Suspense boundary never resolves - promise may be rejecting silently
 
 **Debug Steps**:
+
 1. Check console for any async errors
 2. Check Network tab - are requests completing?
 3. Look for promise rejections in console
 4. Check if `asyncWorkoutsAtom` is throwing an error that's being swallowed
 
 **Report Back**:
+
 ```
 ISSUE: Infinite loading
 Network requests: [Complete/Pending/Failed]
@@ -255,6 +274,7 @@ Response data: [Empty/Has data]
 ### Scenario 5: Workouts Load But Wrong User's Data
 
 **Symptoms**:
+
 - Workouts appear but belong to different user
 - Data changes when switching accounts
 - Cache not clearing between users
@@ -262,12 +282,14 @@ Response data: [Empty/Has data]
 **Root Cause**: User-specific cache not invalidating correctly
 
 **Debug Steps**:
+
 1. Sign in as User A, create workout
 2. Sign out, sign in as User B
 3. Check if User A's workout appears for User B
 4. Check console logs for cache operations
 
 **Report Back**:
+
 ```
 ISSUE: Wrong user's data displayed
 User A email: [Email]
@@ -301,6 +323,7 @@ Console logs: [Copy cache-related logs]
 ### How Hydration Works Now
 
 **Before (Broken)**:
+
 ```typescript
 // Separate null-returning component
 function WorkoutsHydrator() {
@@ -315,6 +338,7 @@ function WorkoutsPageClientInner() {
 ```
 
 **After (Fixed)**:
+
 ```typescript
 function WorkoutsPageClientInner() {
   // Call BEFORE reading atom - triggers Suspense ✅
@@ -328,12 +352,14 @@ function WorkoutsPageClientInner() {
 ### Why Axios Instead of Fetch
 
 **Problem with raw fetch()**:
+
 - In some production scenarios, cookies may not be included automatically
 - Requires manual `credentials: 'same-origin'` configuration on every call
 - No built-in retry logic for transient failures
 - Inconsistent error handling
 
 **Benefits of axios**:
+
 - Automatic credential injection via interceptors configured globally
 - Consistent header management across all requests
 - Production-tested with preview deployments
@@ -356,6 +382,7 @@ export function useHydrateWorkouts() {
 ```
 
 **Key Points**:
+
 1. `useAtomValue(asyncWorkoutsAtom)` triggers Suspense if promise not resolved
 2. `useHydrateAtoms` runs synchronously before component renders
 3. This guarantees `workoutsAtom` is populated before any child component reads it
@@ -427,6 +454,7 @@ Production deployment recommended
 ## Next Steps After Verification
 
 ### If All Tests Pass ✅
+
 1. Update this PR with verification results
 2. Update Linear issue ULT-82 with "Fixed - Verified in Preview"
 3. Request code review from team
@@ -435,6 +463,7 @@ Production deployment recommended
 6. Monitor production logs for any issues
 
 ### If Tests Fail ❌
+
 1. Document exact failure using templates above
 2. Provide console logs and network screenshots
 3. Note which specific test failed and how
