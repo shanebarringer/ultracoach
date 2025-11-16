@@ -29,13 +29,15 @@ export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
 
-  // Only run on client side
-  if (typeof window === 'undefined') {
-    return []
-  }
-
   const { createLogger } = await import('@/lib/logger')
   const logger = createLogger('AsyncWorkoutsAtom')
+
+  // CRITICAL FIX: Removed window check that was causing empty workouts in production
+  // The fetch will only run client-side anyway because:
+  // 1. It requires cookies (credentials: 'same-origin')
+  // 2. Server Components don't call async atoms
+  // 3. Relative URLs only work client-side
+  // Previous bug: returning [] during SSR caused that empty array to be hydrated permanently
 
   try {
     logger.debug('Fetching workouts...')
