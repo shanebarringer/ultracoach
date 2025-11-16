@@ -12,14 +12,6 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthServer')
 
-/**
- * Helper function for linear backoff delays
- * @param ms - Milliseconds to delay
- */
-async function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
 // Type definitions for Better Auth session data
 interface BetterAuthUser {
   id: string
@@ -92,13 +84,6 @@ export async function getServerSession(): Promise<ServerSession | null> {
       userAgent: headersList.get('user-agent')?.substring(0, 50),
     })
 
-    // Early exit for unauthenticated users - avoid database calls if no session cookie exists
-    const hasCookie = headersList.get('cookie')?.includes('better-auth.session_token')
-    if (!hasCookie) {
-      logger.debug('No session cookie found, skipping session validation')
-      return null
-    }
-
     // Better Auth server-side session retrieval with retry logic for CI reliability
     const MAX_RETRIES = 3
     let rawSession = null
@@ -130,7 +115,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
         // Linear backoff before retry (100ms, 200ms, 300ms)
         if (attempt < MAX_RETRIES) {
-          await delay(100 * attempt)
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
         }
       } catch (error) {
         logger.warn(`Session validation attempt ${attempt}/${MAX_RETRIES} failed`, {
@@ -141,7 +126,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
 
         // Linear backoff before retry (100ms, 200ms, 300ms)
         if (attempt < MAX_RETRIES) {
-          await delay(100 * attempt)
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt))
         }
       }
     }

@@ -24,26 +24,6 @@ function unwrapWorkout(json: unknown): Workout {
 export const workoutsAtom = atom<Workout[]>([])
 export const workoutsRefreshTriggerAtom = atom(0)
 
-// User-specific cache to prevent data leakage between accounts
-const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
-
-// DRY helper: invalidate current user's workouts cache (fallback: clear all)
-async function invalidateUserWorkoutsCache(): Promise<void> {
-  try {
-    const { authClient } = await import('@/lib/better-auth-client')
-    const session = await authClient.getSession()
-    const userId = session?.data?.user?.id
-    if (userId) {
-      workoutsCache.delete(userId)
-      return
-    }
-  } catch {
-    // ignore and clear all below
-  }
-  workoutsCache.clear()
-}
-
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
@@ -55,26 +35,15 @@ export const asyncWorkoutsAtom = atom(async get => {
   }
 
   const { createLogger } = await import('@/lib/logger')
-  const { authClient } = await import('@/lib/better-auth-client')
   const logger = createLogger('AsyncWorkoutsAtom')
 
   try {
     logger.debug('Fetching workouts...')
 
-    // Check if user is authenticated first
-    const session = await authClient.getSession()
-    if (!session?.data?.user) {
-      logger.debug('No authenticated session found, returning empty workouts')
-      return []
-    }
-
-    const userId = session.data.user.id
-
-    // Check user-specific cache to prevent unnecessary re-fetches
-    const userCache = workoutsCache.get(userId)
-    if (userCache && Date.now() - userCache.timestamp < CACHE_DURATION) {
-      return userCache.data
-    }
+    // FIXED: Removed client-side session check that caused race condition on page refresh
+    // Server Component already validates auth with requireAuth()
+    // API route validates session and returns 401 if unauthorized
+    // This eliminates race condition where session isn't hydrated yet from cookies
 
     // Use relative URL to ensure same-origin request with cookies
     // Create an AbortController with timeout for the fetch
@@ -92,6 +61,11 @@ export const asyncWorkoutsAtom = atom(async get => {
     }).finally(() => clearTimeout(timeoutId))
 
     if (!response.ok) {
+      // Handle authentication failures gracefully
+      if (response.status === 401) {
+        logger.debug('Unauthorized - user session expired or invalid')
+        return []
+      }
       const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
       logger.error(errorMessage)
       // Return empty array instead of throwing to prevent infinite Suspense
@@ -102,12 +76,6 @@ export const asyncWorkoutsAtom = atom(async get => {
     const workouts = data.workouts || []
 
     logger.info('Workouts fetched successfully', { count: workouts.length })
-
-    // Cache the result for this user to prevent re-fetching
-    workoutsCache.set(userId, {
-      data: workouts as Workout[],
-      timestamp: Date.now(),
-    })
 
     return workouts as Workout[]
   } catch (error) {
@@ -134,13 +102,12 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
-  await invalidateUserWorkoutsCache()
+  // Trigger a re-fetch by incrementing the refresh trigger
   set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
-  // Also trigger a re-fetch of async workouts by invalidating the cache
   import('@/lib/logger').then(({ createLogger }) => {
     const logger = createLogger('RefreshWorkoutsAtom')
-    logger.debug('Cache cleared and refresh triggered')
+    logger.debug('Refresh triggered')
   })
 })
 
@@ -378,8 +345,7 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only (DRY helper)
-      await invalidateUserWorkoutsCache()
+      // Trigger refresh to fetch updated data
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
@@ -472,8 +438,7 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only (DRY helper)
-      await invalidateUserWorkoutsCache()
+      // Trigger refresh to fetch updated data
       set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
@@ -546,8 +511,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Invalidate current user's cache only; fallback to clearing all
-    await invalidateUserWorkoutsCache()
+    // Trigger refresh to fetch updated data
     set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
