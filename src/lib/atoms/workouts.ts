@@ -29,6 +29,12 @@ export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
 
+  // CRITICAL: Only run on client side - server can't access cookies
+  // Return empty array during SSR, client will hydrate with actual data
+  if (typeof window === 'undefined') {
+    return []
+  }
+
   const { createLogger } = await import('@/lib/logger')
   const { api } = await import('@/lib/api-client')
   const logger = createLogger('AsyncWorkoutsAtom')
