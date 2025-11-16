@@ -1,8 +1,9 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useHydrateAtoms } from 'jotai/utils'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 
 import {
   asyncWorkoutsAtom,
@@ -18,20 +19,20 @@ const logger = createLogger('useWorkouts')
 
 /**
  * Hook to hydrate the synchronous workoutsAtom from the async Suspense-based atom
+ * Uses synchronous useHydrateAtoms to eliminate race condition with BetterAuthProvider
  * This ensures data consistency between the two atoms and prevents data mismatches
  */
 export function useHydrateWorkouts() {
-  const setWorkouts = useSetAtom(workoutsAtom)
-
   // This will trigger Suspense if not already loaded
   const asyncWorkouts = useAtomValue(asyncWorkoutsAtom)
 
-  useEffect(() => {
-    logger.debug('Hydrating workouts atom from async data', {
-      count: asyncWorkouts?.length ?? 0,
-    })
-    setWorkouts(asyncWorkouts ?? [])
-  }, [asyncWorkouts, setWorkouts])
+  // Synchronously hydrate BEFORE first render to prevent race condition
+  // Same pattern as BetterAuthProvider - eliminates timing issues on page refresh
+  useHydrateAtoms([[workoutsAtom, asyncWorkouts ?? []]])
+
+  logger.debug('Hydrating workouts atom from async data', {
+    count: asyncWorkouts?.length ?? 0,
+  })
 
   return asyncWorkouts
 }
