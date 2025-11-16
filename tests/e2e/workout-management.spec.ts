@@ -9,6 +9,9 @@ import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
 import { TEST_USERS } from '../utils/test-helpers'
 
+// CI timeout constant for consistent wait times
+const CI_TIMEOUT = 15000
+
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
   return page.waitForLoadState('domcontentloaded')
@@ -24,10 +27,12 @@ test.describe('Workout Management', () => {
       await waitForPageReady(page)
 
       // Wait for final URL after any redirects (verifies successful authentication)
-      await expect(page).toHaveURL('/dashboard/runner', { timeout: 15000 })
+      await expect(page).toHaveURL('/dashboard/runner', { timeout: CI_TIMEOUT })
 
       // Wait for dashboard content to ensure full page load
-      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', { timeout: 10000 })
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', {
+        timeout: CI_TIMEOUT,
+      })
     })
 
     test('should display workouts list with proper filtering', async ({ page }) => {
@@ -315,10 +320,12 @@ test.describe('Workout Management', () => {
       await waitForPageReady(page)
 
       // Wait for final URL after any redirects (verifies successful authentication)
-      await expect(page).toHaveURL('/dashboard/coach', { timeout: 15000 })
+      await expect(page).toHaveURL('/dashboard/coach', { timeout: CI_TIMEOUT })
 
       // Wait for dashboard content to ensure full page load
-      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', { timeout: 10000 })
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', {
+        timeout: CI_TIMEOUT,
+      })
     })
 
     test.skip('should create workout for runner', async ({ page }) => {

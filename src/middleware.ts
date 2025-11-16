@@ -66,7 +66,36 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('better-auth.session_token')
 
+    // Debug logging for CI to diagnose session issues
+    if (process.env.CI) {
+      const allCookies = request.cookies.getAll()
+      console.log('[Middleware CI Debug]', {
+        path: request.nextUrl.pathname,
+        hasSessionCookie: !!sessionCookie,
+        cookieValue: sessionCookie?.value?.substring(0, 20) + '...',
+        totalCookies: allCookies.length,
+        cookieNames: allCookies.map(c => c.name),
+        headers: {
+          cookie: request.headers.get('cookie')?.substring(0, 100),
+          userAgent: request.headers.get('user-agent'),
+        },
+      })
+    }
+
     if (!sessionCookie) {
+      console.warn('[Middleware] No session cookie found, redirecting to signin', {
+        path: request.nextUrl.pathname,
+        hasAnyCookies: request.cookies.getAll().length > 0,
+      })
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+
+    // Validate session token format (basic sanity check)
+    if (!sessionCookie.value || sessionCookie.value.length < 10) {
+      console.warn('[Middleware] Invalid session token format', {
+        path: request.nextUrl.pathname,
+        tokenLength: sessionCookie.value?.length || 0,
+      })
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
 
