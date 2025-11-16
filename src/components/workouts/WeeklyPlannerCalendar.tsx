@@ -22,6 +22,7 @@ import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-r
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
@@ -270,6 +271,11 @@ export default function WeeklyPlannerCalendar({
   // readOnly = false,
   onWeekUpdate,
 }: WeeklyPlannerCalendarProps) {
+  // CRITICAL FIX (Phase 2): Call useHydrateWorkouts() BEFORE reading workoutsAtom
+  // This ensures Suspense properly waits for workout data to load before rendering
+  // Fixes race condition where workouts were empty on page refresh in production
+  useHydrateWorkouts()
+
   logger.debug('WeeklyPlannerCalendar component rendered:', {
     runnerId: runner.id,
     runnerName: runner.full_name,
@@ -278,6 +284,7 @@ export default function WeeklyPlannerCalendar({
 
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
+  // Now safe to read - hydration is guaranteed to complete first
   const allWorkouts = useAtomValue(workoutsAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)

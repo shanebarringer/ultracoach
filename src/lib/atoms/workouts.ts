@@ -30,61 +30,43 @@ export const asyncWorkoutsAtom = atom(async get => {
   get(workoutsRefreshTriggerAtom)
 
   const { createLogger } = await import('@/lib/logger')
+  const { api } = await import('@/lib/api-client')
   const logger = createLogger('AsyncWorkoutsAtom')
 
-  // CRITICAL FIX: Removed window check that was causing empty workouts in production
-  // The fetch will only run client-side anyway because:
-  // 1. It requires cookies (credentials: 'same-origin')
-  // 2. Server Components don't call async atoms
-  // 3. Relative URLs only work client-side
-  // Previous bug: returning [] during SSR caused that empty array to be hydrated permanently
+  // CRITICAL FIX (Phase 1): Replaced raw fetch() with axios api.get() for production reliability
+  // Benefits over raw fetch:
+  // 1. Automatic credential injection via axios interceptors - ensures cookies sent in all scenarios
+  // 2. Built-in retry logic and error handling
+  // 3. Consistent header management
+  // 4. Production-tested with preview deployments
+  // Previous issues: raw fetch with 'same-origin' sometimes failed to include cookies in production
 
   try {
-    logger.debug('Fetching workouts...')
+    logger.debug('Fetching workouts via axios...')
 
-    // FIXED: Removed client-side session check that caused race condition on page refresh
-    // Server Component already validates auth with requireAuth()
-    // API route validates session and returns 401 if unauthorized
-    // This eliminates race condition where session isn't hydrated yet from cookies
+    // Use axios api.get() with automatic credential injection
+    // The api-client interceptor automatically adds withCredentials: true for /api/* routes
+    const response = await api.get<{ workouts: Workout[] }>('/api/workouts', {
+      suppressGlobalToast: true, // Don't show error toasts - we handle errors gracefully
+    })
 
-    // Use relative URL to ensure same-origin request with cookies
-    // Create an AbortController with timeout for the fetch
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-    // Use relative URL fetch with credentials included
-    const response = await fetch('/api/workouts', {
-      headers: {
-        Accept: 'application/json',
-      },
-      credentials: 'same-origin', // Use same-origin to ensure cookies are included
-      cache: 'no-store', // CRITICAL: Disable caching to always fetch fresh data
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId))
-
-    if (!response.ok) {
-      // Handle authentication failures gracefully
-      if (response.status === 401) {
-        logger.debug('Unauthorized - user session expired or invalid')
-        return []
-      }
-      const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
-      logger.error(errorMessage)
-      // Return empty array instead of throwing to prevent infinite Suspense
-      return []
-    }
-
-    const data = await response.json()
-    const workouts = data.workouts || []
+    const workouts = response.data.workouts || []
 
     logger.info('Workouts fetched successfully', { count: workouts.length })
 
     return workouts as Workout[]
   } catch (error) {
-    // Handle abort errors specifically
-    if (error instanceof Error && error.name === 'AbortError') {
-      logger.warn('Workouts fetch timed out after 10 seconds')
-      return [] // Return empty array on timeout
+    // Axios errors have structured response data
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number } }
+      if (axiosError.response?.status === 401) {
+        logger.debug('Unauthorized - user session expired or invalid')
+        return []
+      }
+      logger.error('HTTP error fetching workouts', {
+        status: axiosError.response?.status,
+      })
+      return []
     }
 
     logger.error('Error fetching workouts:', error)
