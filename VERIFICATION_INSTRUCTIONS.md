@@ -135,7 +135,7 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
    - Or use the runner ID from test credentials (visible in network requests)
 2. **Expected Result**:
    - Loading spinner appears with text "Loading weekly workouts..."
-   - Calendar renders with 7 day cards
+   - Calendar renders with 7-day cards
    - If workouts exist for this week, they appear in appropriate day cards
 
 ### Test 5: Weekly Planner - Refresh Persistence (⚠️ CRITICAL)
@@ -191,9 +191,9 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 
 **Debug Steps**:
 
-1. Check Network tab during refresh - is `/api/workouts` being called?
-2. Check response - does it contain data or empty array `{ workouts: [] }`?
-3. Check console for error: `Failed to parse URL from /api/workouts`
+1. During refresh, inspect the Network tab - is `/api/workouts` being called?
+2. Verify the response contains data or empty array `{ workouts: [] }`
+3. Look for errors in console: `Failed to parse URL from /api/workouts`
 4. If error present, axios may need baseURL configuration
 5. Check if cookies are being sent with request (see request headers)
 
@@ -238,11 +238,11 @@ Browser: [Chrome / Firefox / Safari]
 
 **Debug Steps**:
 
-1. Check Network tab → Request Headers
+1. In the Network tab, review Request Headers
 2. Look for `Cookie:` header - is it present?
-3. Check Application tab → Cookies - are session cookies set?
-4. Check cookie domain - does it match the deployment URL?
-5. Check cookie `SameSite` attribute - should be `Lax` or `None` for cross-site
+3. Navigate to the Application tab and verify cookies are present
+4. Confirm the cookie domain matches (localhost or your deployment domain)
+5. Verify the `SameSite` attribute is set to Lax or Strict
 
 **Report Back**:
 
