@@ -291,14 +291,40 @@ export default defineConfig({
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
 
+    // Workout management tests - Coach tests
+    {
+      name: 'chromium-workout-management-coach',
+      testMatch: /workout-management\.spec\.ts/,
+      grep: /Coach Workout Management/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state for coach workout tests
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
+    // Workout management tests - Runner tests
+    {
+      name: 'chromium-workout-management-runner',
+      testMatch: /workout-management\.spec\.ts/,
+      grep: /Runner Workout Management/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state for runner workout tests
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
-      // Ensure relationships spec never runs in this catch-all project
-      testIgnore: '**/coach-runner-relationships.spec.ts',
+      // Ensure these specs never run in this catch-all project
+      testIgnore: ['**/coach-runner-relationships.spec.ts', '**/workout-management.spec.ts'],
       grepInvert:
-        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships/,
+        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships|workout-management/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
