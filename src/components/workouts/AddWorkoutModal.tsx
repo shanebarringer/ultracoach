@@ -12,10 +12,16 @@ import {
   SelectItem,
   Textarea,
 } from '@heroui/react'
+import { useSetAtom } from 'jotai'
 
 import { useEffect, useState } from 'react'
 
+import { workoutsAtom } from '@/lib/atoms/index'
+import { createLogger } from '@/lib/logger'
+import type { Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+
+const logger = createLogger('AddWorkoutModal')
 
 interface AddWorkoutModalProps {
   isOpen: boolean
@@ -32,6 +38,7 @@ export default function AddWorkoutModal({
   trainingPlanId,
   initialDate,
 }: AddWorkoutModalProps) {
+  const setWorkouts = useSetAtom(workoutsAtom)
   const [formData, setFormData] = useState({
     date: initialDate || '',
     plannedType: '',
@@ -101,27 +108,74 @@ export default function AddWorkoutModal({
     setLoading(true)
     setError('')
 
+    // Generate temp ID for optimistic update
+    const tempId = `temp-${Date.now()}`
+
+    // Build workout payload
+    const workoutPayload = {
+      trainingPlanId: trainingPlanId || null,
+      date: formData.date,
+      plannedType: formData.plannedType,
+      plannedDistance: formData.plannedDistance ? parseFloat(formData.plannedDistance) : null,
+      plannedDuration: formData.plannedDuration ? parseInt(formData.plannedDuration) : null,
+      notes: formData.notes,
+      category: formData.category || null,
+      intensity: formData.intensity ? parseInt(formData.intensity) : null,
+      terrain: formData.terrain || null,
+      elevationGain: formData.elevationGain ? parseInt(formData.elevationGain) : null,
+    }
+
+    // Create temp workout for optimistic update
+    const tempWorkout: Workout = {
+      id: tempId,
+      user_id: '', // Will be set by server
+      training_plan_id: workoutPayload.trainingPlanId || null,
+      date: workoutPayload.date,
+      planned_type: workoutPayload.plannedType,
+      planned_distance: workoutPayload.plannedDistance ?? undefined,
+      planned_duration: workoutPayload.plannedDuration ?? undefined,
+      workout_notes: workoutPayload.notes,
+      category: workoutPayload.category ?? undefined,
+      intensity: workoutPayload.intensity ?? undefined,
+      terrain: workoutPayload.terrain ?? undefined,
+      elevation_gain: workoutPayload.elevationGain ?? undefined,
+      status: 'planned',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      // Optional fields set to undefined
+      actual_distance: undefined,
+      actual_duration: undefined,
+      actual_type: undefined,
+      injury_notes: undefined,
+    }
+
+    logger.debug('Optimistic update: Adding temp workout', { tempId })
+
+    // Optimistically add workout to atom immediately
+    setWorkouts(prev => [...prev, tempWorkout])
+
     try {
       const response = await fetch('/api/workouts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          trainingPlanId: trainingPlanId || null, // Handle optional trainingPlanId
-          date: formData.date,
-          plannedType: formData.plannedType,
-          plannedDistance: formData.plannedDistance ? parseFloat(formData.plannedDistance) : null,
-          plannedDuration: formData.plannedDuration ? parseInt(formData.plannedDuration) : null,
-          notes: formData.notes,
-          category: formData.category || null,
-          intensity: formData.intensity ? parseInt(formData.intensity) : null,
-          terrain: formData.terrain || null,
-          elevationGain: formData.elevationGain ? parseInt(formData.elevationGain) : null,
-        }),
+        body: JSON.stringify(workoutPayload),
       })
 
       if (response.ok) {
+        // Get real workout from server
+        const data = await response.json()
+        const savedWorkout = data.workout || data
+
+        logger.debug('API response received, replacing temp ID with real ID', {
+          tempId,
+          realId: savedWorkout.id,
+        })
+
+        // Replace temp workout with real server workout
+        setWorkouts(prev => prev.map(w => (w.id === tempId ? savedWorkout : w)))
+
         setFormData({
           date: '',
           plannedType: '',
@@ -134,22 +188,29 @@ export default function AddWorkoutModal({
           elevationGain: '',
         })
 
-        // Show success toast
         commonToasts.workoutSaved()
+
+        logger.info('Workout created successfully with optimistic update', {
+          workoutId: savedWorkout.id,
+        })
 
         onSuccess()
         onClose()
       } else {
+        // Rollback optimistic update on error
+        logger.debug('Rolling back optimistic update due to API error', { tempId })
+        setWorkouts(prev => prev.filter(w => w.id !== tempId))
+
         const data = await response.json()
         setError(data.error || 'Failed to add workout')
-
-        // Show error toast
         commonToasts.workoutError(data.error || 'Failed to add workout')
       }
-    } catch {
-      setError('An error occurred. Please try again.')
+    } catch (error) {
+      // Rollback optimistic update on error
+      logger.debug('Rolling back optimistic update due to exception', { tempId, error })
+      setWorkouts(prev => prev.filter(w => w.id !== tempId))
 
-      // Show error toast
+      setError('An error occurred. Please try again.')
       commonToasts.workoutError('An error occurred. Please try again.')
     } finally {
       setLoading(false)

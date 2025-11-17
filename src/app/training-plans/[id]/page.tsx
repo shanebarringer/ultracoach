@@ -23,7 +23,7 @@ import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { useSession } from '@/hooks/useBetterSession'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
-import { asyncTrainingPlansAtom, refreshTrainingPlansAtom } from '@/lib/atoms/training-plans'
+import { asyncTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { createLogger } from '@/lib/logger'
 import type { PlanPhase, Race, TrainingPlan, User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -48,7 +48,6 @@ export default function TrainingPlanDetailPage() {
   // Use Jotai atoms for centralized state management
   const allTrainingPlans = useAtomValue(asyncTrainingPlansAtom)
   const allWorkouts = useAtomValue(workoutsAtom)
-  const refreshTrainingPlans = useSetAtom(refreshTrainingPlansAtom)
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
 
   // Derive the specific training plan from the centralized atom
@@ -178,15 +177,13 @@ export default function TrainingPlanDetailPage() {
   ])
 
   const handleAddWorkoutSuccess = () => {
-    // Refresh both atoms to get updated data
-    refreshTrainingPlans()
-    refreshWorkouts()
+    // NO refreshWorkouts() call - AddWorkoutModal uses optimistic updates!
+    // Workouts will appear immediately via atom reactivity
   }
 
   const handleLogWorkoutSuccess = () => {
-    // Refresh atoms and clear selected workout
-    refreshTrainingPlans()
-    refreshWorkouts()
+    // NO refreshWorkouts() call - WorkoutLogModal uses optimistic updates!
+    // Clear selected workout for UI cleanup
     setSelectedWorkout(null)
   }
 
