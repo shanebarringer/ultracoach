@@ -25,7 +25,7 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { User } from '@/lib/supabase'
+import type { User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('WeeklyPlannerCalendar')
@@ -291,6 +291,7 @@ export default function WeeklyPlannerCalendar({
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
   // Now safe to read - hydration is guaranteed to complete first
   const allWorkouts = useAtomValue(workoutsAtom)
+  const setWorkouts = useSetAtom(workoutsAtom) // For optimistic updates
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -546,6 +547,10 @@ export default function WeeklyPlannerCalendar({
     if (!session?.user?.id || !runner.id) return
 
     setSaving(true)
+
+    // Store temp IDs for rollback on error
+    const tempIds: string[] = []
+
     try {
       // Find the runner's training plan
       const baseUrl =
@@ -580,7 +585,57 @@ export default function WeeklyPlannerCalendar({
           elevationGain: day.workout!.elevationGain || null,
         }))
 
-      // Bulk create workouts
+      // PHASE 2 FIX: Optimistic update - add workouts to atom BEFORE API call
+      // This prevents race condition where refresh returns stale data
+      const timestamp = Date.now()
+      const tempWorkouts = workoutsToCreate.map((workout, index) => {
+        const tempId = `temp-${timestamp}-${index}`
+        tempIds.push(tempId)
+        return {
+          id: tempId,
+          user_id: runner.id,
+          training_plan_id: workout.trainingPlanId,
+          date: workout.date,
+          planned_type: workout.plannedType,
+          planned_distance: workout.plannedDistance ?? undefined,
+          planned_duration: workout.plannedDuration ?? undefined,
+          workout_notes: workout.notes,
+          category: workout.category ?? undefined,
+          intensity: workout.intensity ?? undefined,
+          terrain: workout.terrain ?? undefined,
+          elevation_gain: workout.elevationGain ?? undefined,
+          status: 'planned' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Optional fields set to undefined
+          actual_distance: undefined,
+          actual_duration: undefined,
+          actual_elevation: undefined,
+          actual_heart_rate_avg: undefined,
+          actual_heart_rate_max: undefined,
+          actual_pace: undefined,
+          weather: undefined,
+          perceived_effort: undefined,
+          strava_activity_id: undefined,
+        } as Workout // Explicit type cast for safety
+      })
+
+      logger.debug('Optimistic update: Adding temp workouts to atom', {
+        tempWorkoutCount: tempWorkouts.length,
+        tempIds,
+      })
+
+      // Optimistically update the atom immediately
+      setWorkouts(prev => {
+        // Remove any existing workouts for these dates to avoid duplicates
+        const filtered = prev.filter(w => {
+          const workoutDate = w.date.split('T')[0]
+          return !workoutsToCreate.some(wc => wc.date === workoutDate && w.user_id === runner.id)
+        })
+        return [...filtered, ...tempWorkouts]
+      })
+
+      // Bulk create workouts (API call in background)
       const response = await fetch(`${baseUrl}/api/workouts/bulk`, {
         method: 'POST',
         headers: {
@@ -597,16 +652,49 @@ export default function WeeklyPlannerCalendar({
         throw new Error(errorData.error || 'Failed to save workouts')
       }
 
+      // Parse server response and get real workout objects with IDs
+      const responseData = await response.json()
+      const savedWorkouts = responseData.workouts || []
+
+      logger.debug('API response received, replacing temp IDs with real IDs', {
+        savedWorkoutCount: savedWorkouts.length,
+        tempIds,
+      })
+
+      // Replace temp workouts with real server workouts
+      setWorkouts(prev =>
+        prev.map(w => {
+          // If this is a temp workout, find matching real workout by date
+          if (tempIds.includes(w.id)) {
+            const workoutDate = w.date.split('T')[0]
+            const realWorkout = savedWorkouts.find(
+              (sw: { date: string; user_id: string }) =>
+                sw.date.split('T')[0] === workoutDate && sw.user_id === runner.id
+            )
+            return realWorkout || w // Use real workout if found, otherwise keep temp
+          }
+          return w // Keep non-temp workouts unchanged
+        })
+      )
+
       setHasChanges(false)
       onWeekUpdate()
 
       // Show success toast with mountain theme
       commonToasts.workoutSaved()
 
-      // Refresh existing workouts
-      refreshWorkouts()
+      logger.info('Week plan saved successfully with optimistic updates', {
+        savedCount: savedWorkouts.length,
+      })
+
+      // NO refreshWorkouts() call - state already updated optimistically!
     } catch (error) {
       logger.error('Error saving week plan:', error)
+
+      // PHASE 2 FIX: Rollback optimistic update on error
+      logger.debug('Rolling back optimistic update due to error', { tempIds })
+      setWorkouts(prev => prev.filter(w => !tempIds.includes(w.id)))
+
       commonToasts.workoutError(
         error instanceof Error ? error.message : 'Failed to save expedition plan'
       )

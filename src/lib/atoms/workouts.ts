@@ -13,6 +13,56 @@ import type { WorkoutMatch } from '@/utils/workout-matching'
 
 import { withDebugLabel } from './utils'
 
+/**
+ * WORKOUT ATOMS ARCHITECTURE
+ *
+ * This file implements a dual-atom pattern optimized for Suspense + optimistic updates:
+ *
+ * 1. asyncWorkoutsAtom (Read-Only, Suspense)
+ *    - Async atom that fetches from API and triggers Suspense boundaries
+ *    - Used ONLY for: Initial page load, hard refresh, manual refresh triggers
+ *    - Never write to this atom directly - it's controlled by refresh trigger
+ *
+ * 2. workoutsAtom (Read/Write, Sync)
+ *    - Synchronous cache of workout data hydrated from asyncWorkoutsAtom
+ *    - Used ALWAYS for: All component reads, optimistic updates, mutations
+ *    - This is the PRIMARY atom - components should ALWAYS read from here
+ *    - Supports fast optimistic updates without triggering Suspense
+ *
+ * 3. workoutsRefreshTriggerAtom (Write-Only)
+ *    - Counter that increments to trigger asyncWorkoutsAtom refetch
+ *    - Use ONLY when: Hard refresh needed (navigation, external data changes)
+ *    - DO NOT use after saves - use optimistic updates instead
+ *
+ * BEST PRACTICES:
+ *
+ * ✅ DO: Read from workoutsAtom in all components
+ * ✅ DO: Write optimistically to workoutsAtom before API calls
+ * ✅ DO: Update workoutsAtom with server response after API success
+ * ✅ DO: Only refresh on navigation or hard refresh needs
+ *
+ * ❌ DON'T: Read from asyncWorkoutsAtom directly (causes unnecessary Suspense)
+ * ❌ DON'T: Call refreshWorkouts() after every mutation (use optimistic updates)
+ * ❌ DON'T: Maintain separate local state that duplicates workoutsAtom
+ *
+ * EXAMPLE - Optimistic Update Pattern:
+ *
+ * const saveWorkout = async (workout: Workout) => {
+ *   // 1. Optimistic update (immediate UI feedback)
+ *   setWorkouts(prev => [...prev, { ...workout, id: `temp-${Date.now()}` }])
+ *
+ *   // 2. API call in background
+ *   const saved = await fetch('/api/workouts', { method: 'POST', body: JSON.stringify(workout) })
+ *
+ *   // 3. Replace temp ID with real ID
+ *   setWorkouts(prev => prev.map(w =>
+ *     w.id.startsWith('temp-') ? saved : w
+ *   ))
+ *
+ *   // 4. NO refreshWorkouts() call needed - state already updated
+ * }
+ */
+
 // Helper function to unwrap API response shapes
 function unwrapWorkout(json: unknown): Workout {
   return typeof json === 'object' && json !== null && 'workout' in json
