@@ -326,122 +326,284 @@ function RunnerDashboard() {
     return <RunnerDashboardSkeleton />
   }
 
+  // Get today's workout
+  const todaysWorkout = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return upcomingWorkouts.find(w => {
+      const workoutDate = new Date(w.date)
+      workoutDate.setHours(0, 0, 0, 0)
+      return workoutDate.getTime() === today.getTime()
+    })
+  }, [upcomingWorkouts])
+
   return (
     <div className="space-y-8" data-testid="runner-dashboard-content">
-      {/* Enhanced Header Section */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
-          <p className="text-foreground-600">
-            Welcome back, {(session?.user?.name || 'Athlete') as string}! Track your journey to peak
-            performance
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <Card className="bg-linear-to-br from-success/10 to-success/5 border border-success/20 p-4">
-            <div className="text-center">
-              <p className="text-xs text-success font-medium mb-1">OVERALL PROGRESS</p>
-              <p className="text-2xl font-bold text-foreground">
-                {dashboardMetrics.completionRate}%
-              </p>
-              <p className="text-sm text-foreground-600">All Time</p>
-            </div>
-          </Card>
-
-          <Card className="bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20 p-4">
-            <div className="text-center">
-              <p className="text-xs text-primary font-medium mb-1">THIS WEEK</p>
-              <p className="text-2xl font-bold text-foreground">
-                {dashboardMetrics.weeklyCompletionRate}%
-              </p>
-              <p className="text-sm text-foreground-600">Weekly Rate</p>
-            </div>
-          </Card>
-
-          <Card className="bg-linear-to-br from-warning/10 to-warning/5 border border-warning/20 p-4">
-            <div className="text-center">
-              <p className="text-xs text-warning font-medium mb-1">THIS MONTH</p>
-              <div className="flex items-center justify-center gap-1">
-                <p className="text-2xl font-bold text-foreground">
-                  {dashboardMetrics.monthlyStats.thisMonthRate}%
-                </p>
-                {dashboardMetrics.monthlyStats.trend !== 0 && (
-                  <span
-                    className={`text-sm font-medium ${dashboardMetrics.monthlyStats.trend > 0 ? 'text-success' : 'text-danger'}`}
-                  >
-                    {dashboardMetrics.monthlyStats.trend > 0 ? '↗' : '↘'}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-foreground-600">
-                {dashboardMetrics.monthlyStats.thisMonthCompleted}/
-                {dashboardMetrics.monthlyStats.thisMonthTotal} completed
-              </p>
-            </div>
-          </Card>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
+        <p className="text-foreground-600">
+          Welcome back, {(session?.user?.name || 'Athlete') as string}! Ready for today's training?
+        </p>
       </div>
 
-      {/* Advanced Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Active Training Plans"
-          value={trainingPlans.length}
-          subtitle="expeditions"
-          icon={MapPinIcon}
-          trend={{ value: 12, direction: 'up' }}
-          color="primary"
-          testId="active-plans-count"
-        />
+      {/* Today's Workout - Hero Section */}
+      {todaysWorkout ? (
+        <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardBody className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-lg bg-primary/20">
+                <ActivityIcon className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Today's Workout</h2>
+                <p className="text-foreground-600">
+                  {new Date(todaysWorkout.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
 
-        <MetricCard
-          title="Upcoming Ascents"
-          value={upcomingWorkouts.length}
-          subtitle="workouts"
-          icon={TrendingUpIcon}
-          trend={{ value: 8, direction: 'up' }}
-          color="success"
-          testId="upcoming-workouts-count"
-        />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Workout Details */}
+              <div className="lg:col-span-2 space-y-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-foreground capitalize mb-2">
+                    {todaysWorkout.planned_type?.replace('_', ' ')}
+                  </h3>
+                  {todaysWorkout.description && (
+                    <p className="text-foreground-600">{todaysWorkout.description}</p>
+                  )}
+                </div>
 
-        <MetricCard
-          title="Completion Rate"
-          value={dashboardMetrics.completionRate}
-          subtitle="%"
-          icon={CheckCircleIcon}
-          trend={{
-            value: dashboardMetrics.monthlyStats.trend,
-            direction:
-              dashboardMetrics.monthlyStats.trend > 0
-                ? 'up'
-                : dashboardMetrics.monthlyStats.trend < 0
-                  ? 'down'
-                  : 'neutral',
-          }}
-          color="warning"
-          testId="completion-rate"
-        />
+                <div className="grid grid-cols-2 gap-4">
+                  {todaysWorkout.planned_distance && (
+                    <div className="flex items-center gap-2">
+                      <MapPinIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-foreground-600">Distance</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {todaysWorkout.planned_distance} miles
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {todaysWorkout.planned_duration && (
+                    <div className="flex items-center gap-2">
+                      <ClockIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-foreground-600">Duration</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {todaysWorkout.planned_duration} min
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {todaysWorkout.planned_pace && (
+                    <div className="flex items-center gap-2">
+                      <TrendingUpIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-foreground-600">Pace</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {todaysWorkout.planned_pace}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {todaysWorkout.planned_elevation_gain && (
+                    <div className="flex items-center gap-2">
+                      <MountainSnowIcon className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-foreground-600">Elevation</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {todaysWorkout.planned_elevation_gain} ft
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-        <MetricCard
-          title="Weekly Distance"
-          value={dashboardMetrics.weeklyDistance}
-          subtitle="miles"
-          icon={ActivityIcon}
-          trend={{ value: 15, direction: 'up' }}
-          color="secondary"
-          testId="weekly-distance"
-        />
+              {/* Quick Stats */}
+              <div className="space-y-3">
+                <div className="bg-background/50 rounded-lg p-4 border border-divider">
+                  <p className="text-sm text-foreground-600 mb-1">This Week</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {dashboardMetrics.weeklyCompletionRate}%
+                  </p>
+                  <p className="text-xs text-foreground-500">completion rate</p>
+                </div>
+                <div className="bg-background/50 rounded-lg p-4 border border-divider">
+                  <p className="text-sm text-foreground-600 mb-1">Weekly Distance</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {dashboardMetrics.weeklyDistance}
+                  </p>
+                  <p className="text-xs text-foreground-500">miles logged</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {todaysWorkout.status === 'planned' && (
+              <div className="flex gap-3">
+                <Button
+                  size="lg"
+                  color="success"
+                  className="flex-1 font-semibold"
+                  startContent={<CheckCircleIcon className="w-5 h-5" />}
+                  onClick={() => handleMarkComplete(todaysWorkout)}
+                >
+                  Mark Complete
+                </Button>
+                <Button
+                  size="lg"
+                  variant="bordered"
+                  className="flex-1 font-semibold"
+                  onClick={() => handleLogDetails(todaysWorkout)}
+                >
+                  Log Details
+                </Button>
+              </div>
+            )}
+            {todaysWorkout.status === 'completed' && (
+              <div className="flex items-center justify-center gap-2 p-4 bg-success/10 rounded-lg border border-success/20">
+                <CheckCircleIcon className="w-6 h-6 text-success" />
+                <span className="text-lg font-semibold text-success">Workout Completed!</span>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      ) : (
+        <Card className="border-2 border-dashed border-divider">
+          <CardBody className="p-8 text-center">
+            <CalendarIcon className="w-12 h-12 text-foreground-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">No workout scheduled today</h2>
+            <p className="text-foreground-600 mb-4">Enjoy your rest day or check upcoming workouts</p>
+            <Button as={Link} href="/workouts" color="primary" variant="bordered">
+              View All Workouts
+            </Button>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Quick Actions & Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-t-4 border-t-success">
+          <CardBody className="p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircleIcon className="w-6 h-6 text-success" />
+              <h3 className="font-semibold text-foreground">This Week</h3>
+            </div>
+            <p className="text-3xl font-bold text-foreground mb-1">
+              {dashboardMetrics.weeklyCompletionRate}%
+            </p>
+            <p className="text-sm text-foreground-600">completion rate</p>
+          </CardBody>
+        </Card>
+
+        <Card className="border-t-4 border-t-primary">
+          <CardBody className="p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <ActivityIcon className="w-6 h-6 text-primary" />
+              <h3 className="font-semibold text-foreground">Weekly Miles</h3>
+            </div>
+            <p className="text-3xl font-bold text-foreground mb-1">
+              {dashboardMetrics.weeklyDistance}
+            </p>
+            <p className="text-sm text-foreground-600">miles completed</p>
+          </CardBody>
+        </Card>
+
+        <Card className="border-t-4 border-t-warning">
+          <CardBody className="p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUpIcon className="w-6 h-6 text-warning" />
+              <h3 className="font-semibold text-foreground">Upcoming</h3>
+            </div>
+            <p className="text-3xl font-bold text-foreground mb-1">
+              {dashboardMetrics.thisWeekWorkouts.length}
+            </p>
+            <p className="text-sm text-foreground-600">workouts this week</p>
+          </CardBody>
+        </Card>
       </div>
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* My Coaches Section */}
+        {/* This Week's Workouts */}
+        <Card className="h-fit" data-testid="upcoming-workouts-section">
+          <CardHeader className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold text-foreground">This Week's Workouts</h2>
+            </div>
+            <Button as={Link} href="/workouts" size="sm" color="primary" variant="flat">
+              View All
+            </Button>
+          </CardHeader>
+          <CardBody>
+            {dashboardMetrics.thisWeekWorkouts.length === 0 ? (
+              <div className="text-center py-8">
+                <ClockIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No workouts scheduled</h3>
+                <p className="text-foreground-600">Check your training plan or contact your coach</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dashboardMetrics.thisWeekWorkouts.slice(0, 5).map(workout => (
+                  <Card
+                    key={workout.id}
+                    className="border border-divider hover:shadow-md transition-shadow"
+                  >
+                    <CardBody className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-3">
+                          {getWorkoutTypeIcon(workout.planned_type)}
+                          <div>
+                            <h3 className="font-semibold text-foreground capitalize">
+                              {workout.planned_type?.replace('_', ' ')}
+                            </h3>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-sm text-foreground-600">
+                                {new Date(workout.date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
+                              {workout.planned_distance && (
+                                <span className="text-sm text-foreground-600">
+                                  {workout.planned_distance} mi
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Chip
+                          size="sm"
+                          color={workout.status === 'completed' ? 'success' : 'default'}
+                          variant="flat"
+                        >
+                          {workout.status === 'completed' ? 'Done' : 'Planned'}
+                        </Chip>
+                      </div>
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* My Coach */}
         <Card className="h-fit" data-testid="coaches-section">
           <CardHeader className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <MountainSnowIcon className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">My Guides</h2>
+              <h2 className="text-xl font-bold text-foreground">My Coach</h2>
             </div>
             <Button
               as={Link}
@@ -449,7 +611,6 @@ function RunnerDashboard() {
               size="sm"
               color="primary"
               variant="flat"
-              className="text-xs"
               data-testid="find-coach-button"
             >
               Find Coach
@@ -461,19 +622,18 @@ function RunnerDashboard() {
             ).length === 0 ? (
               <div className="text-center py-8">
                 <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No guide assigned</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No coach assigned</h3>
                 <p className="text-foreground-600 mb-4">
-                  Connect with an experienced coach to guide your summit journey
+                  Connect with an experienced coach to guide your training
                 </p>
                 <Button
                   as={Link}
                   href="/relationships"
                   color="primary"
                   size="sm"
-                  className="bg-primary text-white font-medium"
                   data-testid="find-your-guide-button"
                 >
-                  Find Your Guide
+                  Find a Coach
                 </Button>
               </div>
             ) : (
@@ -487,211 +647,30 @@ function RunnerDashboard() {
                     >
                       <CardBody className="p-4">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-semibold">
+                          <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
                             {(relationship.other_party.full_name || 'C').charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-foreground">
-                                {relationship.other_party.full_name}
-                              </h3>
-                              <Chip
-                                size="sm"
-                                color={relationship.status === 'active' ? 'success' : 'warning'}
-                                variant="flat"
-                                className="capitalize"
-                              >
-                                {relationship.status}
-                              </Chip>
-                            </div>
+                            <h3 className="font-semibold text-foreground text-lg">
+                              {relationship.other_party.full_name}
+                            </h3>
                             <p className="text-sm text-foreground-600">
                               {relationship.other_party.email}
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="flat" color="primary" className="flex-1">
-                            View Profile
-                          </Button>
-                          <Button
-                            as={Link}
-                            href={`/chat/${relationship.other_party.id}`}
-                            size="sm"
-                            variant="flat"
-                            color="success"
-                            className="flex-1"
-                            startContent={<MessageSquareIcon className="w-4 h-4" />}
-                          >
-                            Message
-                          </Button>
-                        </div>
+                        <Button
+                          as={Link}
+                          href={`/chat/${relationship.other_party.id}`}
+                          color="primary"
+                          className="w-full"
+                          startContent={<MessageSquareIcon className="w-4 h-4" />}
+                        >
+                          Send Message
+                        </Button>
                       </CardBody>
                     </Card>
                   ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-        {/* Training Plans */}
-        <Card className="h-fit" data-testid="training-plans-section">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MapPinIcon className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">Expedition Plans</h2>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {trainingPlans.length === 0 ? (
-              <div className="text-center py-8">
-                <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  No expeditions planned
-                </h3>
-                <p className="text-foreground-600 mb-4">
-                  Connect with your guide to plan your next summit
-                </p>
-                <Button color="primary" variant="bordered" size="sm">
-                  Find a Guide
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {trainingPlans.map(plan => {
-                  const progress = getTrainingPlanProgress(plan)
-                  return (
-                    <Card
-                      key={plan.id}
-                      className="border border-divider hover:shadow-md transition-shadow"
-                    >
-                      <CardBody className="p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-semibold text-foreground">{plan.title}</h3>
-                          <Chip size="sm" color="primary" variant="bordered">
-                            Active
-                          </Chip>
-                        </div>
-                        <p className="text-sm text-foreground-600 mb-3">{plan.description}</p>
-                        {plan.target_race_date && (
-                          <div className="flex items-center gap-2 mb-3">
-                            <FlagIcon className="w-4 h-4 text-danger" />
-                            <span className="text-sm font-medium text-foreground-700">
-                              Summit Target: {new Date(plan.target_race_date).toLocaleDateString()}
-                            </span>
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-foreground-600">Progress to summit</span>
-                            <span className="text-xs text-foreground-600">
-                              {Math.round(progress)}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={progress}
-                            color="primary"
-                            size="sm"
-                            className="w-full"
-                            showValueLabel={false}
-                          />
-                        </div>
-                      </CardBody>
-                    </Card>
-                  )
-                })}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Upcoming Workouts */}
-        <Card className="h-fit" data-testid="upcoming-workouts-section">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <TrendingUpIcon className="w-5 h-5 text-success" />
-              <h2 className="text-xl font-bold text-foreground">Upcoming Ascents</h2>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {upcomingWorkouts.length === 0 ? (
-              <div className="text-center py-8">
-                <ClockIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No ascents scheduled</h3>
-                <p className="text-foreground-600">Your next training session awaits planning</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {dashboardMetrics.thisWeekWorkouts.slice(0, 5).map(workout => (
-                  <Card
-                    key={workout.id}
-                    className="border border-divider hover:shadow-md transition-shadow"
-                  >
-                    <CardBody className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            {getWorkoutTypeIcon(workout.planned_type)}
-                            <div>
-                              <h3 className="font-semibold text-foreground capitalize">
-                                {workout.planned_type?.replace('_', ' ')}
-                              </h3>
-                              <div className="flex items-center gap-4 mt-1">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3 h-3 text-foreground-600" />
-                                  <span className="text-sm text-foreground-600">
-                                    {new Date(workout.date).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                {workout.planned_distance && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPinIcon className="w-3 h-3 text-foreground-600" />
-                                    <span className="text-sm text-foreground-600">
-                                      {workout.planned_distance} miles
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <Chip
-                            size="sm"
-                            color={workout.status === 'completed' ? 'success' : 'warning'}
-                            variant="flat"
-                            startContent={
-                              workout.status === 'completed' ? (
-                                <CheckCircleIcon className="w-3 h-3" />
-                              ) : undefined
-                            }
-                          >
-                            {workout.status === 'completed' ? 'Completed' : 'Planned'}
-                          </Chip>
-                        </div>
-
-                        {workout.status === 'planned' && (
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              size="sm"
-                              variant="flat"
-                              color="success"
-                              className="flex-1"
-                              startContent={<CheckCircleIcon className="w-4 h-4" />}
-                              onClick={() => handleMarkComplete(workout)}
-                            >
-                              Mark Complete
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="bordered"
-                              className="flex-1"
-                              onClick={() => handleLogDetails(workout)}
-                            >
-                              Log Details
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardBody>
-                  </Card>
-                ))}
               </div>
             )}
           </CardBody>
