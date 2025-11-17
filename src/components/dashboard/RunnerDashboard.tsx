@@ -1,16 +1,12 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Chip, Progress } from '@heroui/react'
-import classNames from 'classnames'
+import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
 import { useAtom } from 'jotai'
 import {
   ActivityIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
   CalendarIcon,
   CheckCircleIcon,
   ClockIcon,
-  FlagIcon,
   MapPinIcon,
   MessageSquareIcon,
   MountainSnowIcon,
@@ -29,126 +25,12 @@ import { useSession } from '@/hooks/useBetterSession'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { TrainingPlan, Workout } from '@/lib/supabase'
+import type { Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('RunnerDashboard')
 
-// Advanced metric card component for runner dashboard
-interface MetricCardProps {
-  title: string
-  value: string | number
-  subtitle?: string
-  icon: React.ComponentType<{ className?: string }>
-  trend?: {
-    value: number
-    direction: 'up' | 'down' | 'neutral'
-  }
-  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'default'
-  testId?: string
-}
-
-const MetricCard = memo(function MetricCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  trend,
-  color = 'primary',
-  testId,
-}: MetricCardProps) {
-  if (!Icon) {
-    logger.error('MetricCard: Icon is undefined for title:', title)
-    return (
-      <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-        <CardBody className="p-6">
-          <div className="text-red-500">Icon undefined for: {title}</div>
-        </CardBody>
-      </Card>
-    )
-  }
-
-  const getTrendColor = () => {
-    switch (trend?.direction) {
-      case 'up':
-        return 'text-success'
-      case 'down':
-        return 'text-danger'
-      default:
-        return 'text-default-500'
-    }
-  }
-
-  const TrendIcon =
-    trend?.direction === 'up' ? ArrowUpIcon : trend?.direction === 'down' ? ArrowDownIcon : null
-
-  return (
-    <Card className="border-t-4 border-t-primary/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-      <CardBody className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground-600 uppercase tracking-wider">
-              {title}
-            </p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-bold text-foreground" data-testid={testId}>
-                {value}
-              </span>
-              {subtitle && <span className="text-lg text-foreground-500">{subtitle}</span>}
-            </div>
-          </div>
-          <div
-            className={classNames('p-3 rounded-lg', {
-              'bg-primary/10': color === 'primary',
-              'bg-secondary/10': color === 'secondary',
-              'bg-success/10': color === 'success',
-              'bg-warning/10': color === 'warning',
-              'bg-danger/10': color === 'danger',
-              'bg-default/10': !color || color === 'default',
-            })}
-          >
-            <Icon
-              className={classNames('w-6 h-6', {
-                'text-primary': color === 'primary',
-                'text-secondary': color === 'secondary',
-                'text-success': color === 'success',
-                'text-warning': color === 'warning',
-                'text-danger': color === 'danger',
-                'text-default': !color || color === 'default',
-              })}
-            />
-          </div>
-        </div>
-
-        {trend && (
-          <div className="flex items-center gap-1">
-            {TrendIcon && <TrendIcon className={`w-4 h-4 ${getTrendColor()}`} />}
-            <span className={`text-sm font-medium ${getTrendColor()}`}>
-              {trend.value > 0 ? '+' : ''}
-              {trend.value}%
-            </span>
-            <span className="text-sm text-foreground-500">from last week</span>
-          </div>
-        )}
-      </CardBody>
-    </Card>
-  )
-})
-
 // Helper functions moved outside component for better performance
-const getTrainingPlanProgress = (plan: TrainingPlan) => {
-  // Calculate progress based on current date vs target race date
-  if (!plan.target_race_date) return 0
-  const today = new Date()
-  const raceDate = new Date(plan.target_race_date)
-  const createdDate = new Date(plan.created_at)
-  const totalDays = Math.max(
-    1,
-    Math.ceil((raceDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
-  )
-  const daysPassed = Math.ceil((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
-  return Math.min(100, Math.max(0, (daysPassed / totalDays) * 100))
-}
 
 const calculateCompletionRate = (workouts: Workout[]) => {
   if (!workouts.length) return 0
@@ -322,10 +204,6 @@ function RunnerDashboard() {
     }
   }, [upcomingWorkouts, trainingPlans.length, recentWorkouts, loading])
 
-  if (loading) {
-    return <RunnerDashboardSkeleton />
-  }
-
   // Get today's workout
   const todaysWorkout = useMemo(() => {
     const today = new Date()
@@ -337,13 +215,18 @@ function RunnerDashboard() {
     })
   }, [upcomingWorkouts])
 
+  if (loading) {
+    return <RunnerDashboardSkeleton />
+  }
+
   return (
     <div className="space-y-8" data-testid="runner-dashboard-content">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
         <p className="text-foreground-600">
-          Welcome back, {(session?.user?.name || 'Athlete') as string}! Ready for today's training?
+          Welcome back, {(session?.user?.name || 'Athlete') as string}! Ready for today&apos;s
+          training?
         </p>
       </div>
 
@@ -356,7 +239,7 @@ function RunnerDashboard() {
                 <ActivityIcon className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Today's Workout</h2>
+                <h2 className="text-2xl font-bold text-foreground">Today&apos;s Workout</h2>
                 <p className="text-foreground-600">
                   {new Date(todaysWorkout.date).toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -538,7 +421,7 @@ function RunnerDashboard() {
           <CardHeader className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">This Week's Workouts</h2>
+              <h2 className="text-xl font-bold text-foreground">This Week&apos;s Workouts</h2>
             </div>
             <Button as={Link} href="/workouts" size="sm" color="primary" variant="flat">
               View All
