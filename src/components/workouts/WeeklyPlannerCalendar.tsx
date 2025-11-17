@@ -563,7 +563,11 @@ export default function WeeklyPlannerCalendar({
       }
 
       const plansData = await plansResponse.json()
-      const trainingPlan = plansData.trainingPlans?.[0]
+
+      // CRITICAL FIX: Filter by runner.id since API returns all plans for all connected runners
+      const trainingPlan = plansData.trainingPlans?.find(
+        (plan: { runner_id: string }) => plan.runner_id === runner.id
+      )
 
       if (!trainingPlan) {
         throw new Error('No training plan found for this runner')
