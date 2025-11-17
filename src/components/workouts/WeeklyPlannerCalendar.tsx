@@ -30,6 +30,11 @@ import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('WeeklyPlannerCalendar')
 
+// Defensive guard constants for array bounds checking
+const DAYS_IN_WEEK = 7
+const isValidDayIndex = (index: number, arrayLength: number): boolean =>
+  Number.isInteger(index) && index >= 0 && index < arrayLength
+
 interface DayWorkout {
   date: Date
   dayName: string
@@ -429,8 +434,25 @@ export default function WeeklyPlannerCalendar({
     value: string | number | undefined
   ) => {
     setWeekWorkouts(prev => {
+      // DEFENSIVE GUARD: Validate dayIndex bounds before array access
+      if (!isValidDayIndex(dayIndex, prev.length)) {
+        logger.error('Invalid dayIndex in updateDayWorkout', {
+          dayIndex,
+          field,
+          weekWorkoutsLength: prev.length,
+          expectedLength: DAYS_IN_WEEK,
+        })
+        return prev // Early exit - return unchanged state
+      }
+
       const updated = [...prev]
       const originalDay = updated[dayIndex]
+
+      // Additional guard against undefined array element (defense in depth)
+      if (!originalDay) {
+        logger.error('originalDay is undefined at valid index', { dayIndex })
+        return prev
+      }
 
       // CRITICAL FIX: Create new day object AND new workout object to avoid mutation
       // React won't detect changes if we mutate the existing objects
@@ -497,6 +519,22 @@ export default function WeeklyPlannerCalendar({
 
   const clearDayWorkout = (dayIndex: number) => {
     setWeekWorkouts(prev => {
+      // DEFENSIVE GUARD: Validate dayIndex bounds before array access
+      if (!isValidDayIndex(dayIndex, prev.length)) {
+        logger.error('Invalid dayIndex in clearDayWorkout', {
+          dayIndex,
+          weekWorkoutsLength: prev.length,
+          expectedLength: DAYS_IN_WEEK,
+        })
+        return prev // Early exit - return unchanged state
+      }
+
+      // Additional guard against undefined array element
+      if (!prev[dayIndex]) {
+        logger.error('Array element is undefined at valid index', { dayIndex })
+        return prev
+      }
+
       const updated = [...prev]
       updated[dayIndex].workout = undefined
       return updated
