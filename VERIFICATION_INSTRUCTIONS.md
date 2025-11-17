@@ -42,6 +42,18 @@ We've implemented comprehensive fixes for **ULT-82** - a critical production iss
 - **Change**: Wrapped `WeeklyPlannerCalendar` in Suspense boundary with loading spinner
 - **Benefit**: Provides proper loading UI while workout data is being fetched and hydrated
 
+### Phase 3 - Critical Training Plan Selection Fix (2025-11-17)
+
+**File**: `src/components/workouts/WeeklyPlannerCalendar.tsx` (lines 565-574)
+
+- **Critical Bug**: Workouts being created for wrong runner when coach has multiple athletes
+- **Root Cause**: `/api/training-plans` returns ALL plans for ALL connected runners, but code was taking `trainingPlans[0]` blindly
+- **Evidence**: 3 workouts created for taylor.smith (plan ID: ce7d3544-acb0-46bb-938e-8d310744e5d7) when viewing alex.rivera's planner (should use plan ID: 50d19251-1fa1-4f86-a9fe-715a92a3d545)
+- **Fix**: Added `.find(plan => plan.runner_id === runner.id)` to filter by current runner before using plan
+- **Impact**: Prevents cross-user workout contamination and fixes "workouts disappear after refresh" symptom
+
+**Testing**: When coach creates workouts for alex.rivera in weekly planner, verify workouts are actually created for alex.rivera (not other connected runners like taylor.smith)
+
 ### Supporting Infrastructure
 
 **File**: `src/middleware.ts` (new cookie validation logic)
