@@ -1,13 +1,18 @@
 import { eq } from 'drizzle-orm'
+import { Resend } from 'resend'
 
 import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
+import { generateFeedbackEmailHTML, generateFeedbackEmailText } from '@/lib/email/feedback-template'
 import { createLogger } from '@/lib/logger'
 import { user_feedback } from '@/lib/schema'
 
 const logger = createLogger('api/feedback')
+
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface FeedbackRequest {
   feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
@@ -65,6 +70,67 @@ export async function POST(request: NextRequest) {
       .returning()
 
     logger.info(`New feedback submitted: ${feedback.id} by user ${session.user.id}`)
+
+    // Send email notification
+    try {
+      const feedbackEmail = process.env.FEEDBACK_EMAIL || 'shanebarringer@gmail.com'
+      const emailHTML = generateFeedbackEmailHTML({
+        feedback_type: feedback.feedback_type,
+        category: feedback.category || undefined,
+        title: feedback.title,
+        description: feedback.description,
+        priority: (feedback.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+        user_email: feedback.user_email || undefined,
+        user_name: session.user.name || undefined,
+        browser_info: feedback.browser_info as
+          | {
+              userAgent?: string
+              screenWidth?: number
+              screenHeight?: number
+              language?: string
+              timezone?: string
+            }
+          | undefined,
+        page_url: feedback.page_url || undefined,
+        submitted_at: feedback.created_at?.toISOString() || new Date().toISOString(),
+      })
+
+      const emailText = generateFeedbackEmailText({
+        feedback_type: feedback.feedback_type,
+        category: feedback.category || undefined,
+        title: feedback.title,
+        description: feedback.description,
+        priority: (feedback.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+        user_email: feedback.user_email || undefined,
+        user_name: session.user.name || undefined,
+        browser_info: feedback.browser_info as
+          | {
+              userAgent?: string
+              screenWidth?: number
+              screenHeight?: number
+              language?: string
+              timezone?: string
+            }
+          | undefined,
+        page_url: feedback.page_url || undefined,
+        submitted_at: feedback.created_at?.toISOString() || new Date().toISOString(),
+      })
+
+      await resend.emails.send({
+        from: 'UltraCoach Feedback <feedback@ultracoach.app>',
+        to: feedbackEmail,
+        replyTo: feedback.user_email || undefined,
+        subject: `[UltraCoach Feedback] ${feedback.feedback_type.replace(/_/g, ' ').toUpperCase()} - ${feedback.title}`,
+        html: emailHTML,
+        text: emailText,
+      })
+
+      logger.info(`Feedback email sent for feedback ID: ${feedback.id}`)
+    } catch (emailError) {
+      // Log the error but don't fail the request if email fails
+      logger.error('Error sending feedback email:', emailError)
+      logger.warn(`Feedback ${feedback.id} saved to database but email notification failed`)
+    }
 
     return NextResponse.json({
       success: true,
