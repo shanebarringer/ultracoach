@@ -140,7 +140,7 @@ test.describe('Workout Management', () => {
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: CI_TIMEOUT,
         }
       )
 
@@ -186,7 +186,7 @@ test.describe('Workout Management', () => {
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: CI_TIMEOUT,
         }
       )
 
@@ -302,7 +302,7 @@ test.describe('Workout Management', () => {
           await expect(stravaButton).toHaveText(/syncing/i)
 
           // Should eventually show success
-          await expect(page.getByText(/synced with strava/i)).toBeVisible({ timeout: 10000 })
+          await expect(page.getByText(/synced with strava/i)).toBeVisible({ timeout: CI_TIMEOUT })
 
           // stravaActivitiesAtom should be updated
           await expect(completedWorkout.locator('[data-testid="strava-badge"]')).toBeVisible()
