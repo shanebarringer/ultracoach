@@ -580,13 +580,14 @@ export default function WeeklyPlannerCalendar({
           trainingPlanId: trainingPlan.id,
           date: day.date.toISOString().split('T')[0],
           plannedType: day.workout!.type,
-          plannedDistance: day.workout!.distance || null,
-          plannedDuration: day.workout!.duration || null,
+          // CRITICAL: Convert string values to numbers for API validation
+          plannedDistance: day.workout!.distance ? Number(day.workout!.distance) : null,
+          plannedDuration: day.workout!.duration ? Number(day.workout!.duration) : null,
           notes: day.workout!.notes || '',
           category: day.workout!.category || null,
-          intensity: day.workout!.intensity || null,
+          intensity: day.workout!.intensity ? Number(day.workout!.intensity) : null,
           terrain: day.workout!.terrain || null,
-          elevationGain: day.workout!.elevationGain || null,
+          elevationGain: day.workout!.elevationGain ? Number(day.workout!.elevationGain) : null,
         }))
 
       // PHASE 2 FIX: Optimistic update - add workouts to atom BEFORE API call
@@ -653,6 +654,13 @@ export default function WeeklyPlannerCalendar({
 
       if (!response.ok) {
         const errorData = await response.json()
+        // Log detailed validation errors for debugging
+        if (errorData.details) {
+          logger.error('Validation failed with details:', {
+            error: errorData.error,
+            details: errorData.details,
+          })
+        }
         throw new Error(errorData.error || 'Failed to save workouts')
       }
 
