@@ -116,22 +116,51 @@ export const workoutCompletionRateAtom = atom(get => {
   return total > 0 ? (completed / total) * 100 : 0
 })
 
-// Workout statistics atom
+// Helper to safely convert to number
+const toNumber = (value: unknown): number => {
+  const num = Number(value)
+  return isNaN(num) ? 0 : num
+}
+
+// Workout statistics atom (for all filtered workouts)
 export const workoutStatsAtom = atom(get => {
   const workouts = get(filteredWorkoutsAtom) || []
+
+  const completed = workouts.filter(w => w.status === 'completed')
+  const totalIntensity = workouts.reduce((sum, w) => sum + toNumber(w.intensity), 0)
+
   return {
     total: workouts.length,
-    completed: workouts.filter(w => w.status === 'completed').length,
+    completed: completed.length,
     planned: workouts.filter(w => w.status === 'planned').length,
     skipped: workouts.filter(w => w.status === 'skipped').length,
-    plannedDistance: workouts.reduce((sum, w) => sum + (w.planned_distance || 0), 0),
-    completedDistance: workouts
-      .filter(w => w.status === 'completed')
-      .reduce((sum, w) => sum + (w.actual_distance || w.planned_distance || 0), 0),
-    avgIntensity:
-      workouts.length > 0
-        ? workouts.reduce((sum, w) => sum + (w.intensity || 0), 0) / workouts.length
-        : 0,
+    plannedDistance: workouts.reduce((sum, w) => sum + toNumber(w.planned_distance), 0),
+    completedDistance: completed.reduce(
+      (sum, w) => sum + toNumber(w.actual_distance || w.planned_distance),
+      0
+    ),
+    avgIntensity: workouts.length > 0 ? totalIntensity / workouts.length : 0,
+  }
+})
+
+// Weekly workout statistics atom (for this week's workouts only)
+export const weeklyWorkoutStatsAtom = atom(get => {
+  const workouts = get(thisWeeksWorkoutsAtom) || []
+
+  const completed = workouts.filter(w => w.status === 'completed')
+  const totalIntensity = workouts.reduce((sum, w) => sum + toNumber(w.intensity), 0)
+
+  return {
+    total: workouts.length,
+    completed: completed.length,
+    planned: workouts.filter(w => w.status === 'planned').length,
+    skipped: workouts.filter(w => w.status === 'skipped').length,
+    plannedDistance: workouts.reduce((sum, w) => sum + toNumber(w.planned_distance), 0),
+    completedDistance: completed.reduce(
+      (sum, w) => sum + toNumber(w.actual_distance || w.planned_distance),
+      0
+    ),
+    avgIntensity: workouts.length > 0 ? totalIntensity / workouts.length : 0,
   }
 })
 
@@ -153,4 +182,5 @@ todaysWorkoutsAtom.debugLabel = 'derived/todaysWorkouts'
 thisWeeksWorkoutsAtom.debugLabel = 'derived/thisWeeksWorkouts'
 workoutCompletionRateAtom.debugLabel = 'derived/workoutCompletionRate'
 workoutStatsAtom.debugLabel = 'derived/workoutStats'
+weeklyWorkoutStatsAtom.debugLabel = 'derived/weeklyWorkoutStats'
 filteredTrainingPlansAtom.debugLabel = 'derived/filteredTrainingPlans'
