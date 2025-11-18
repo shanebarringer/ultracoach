@@ -257,8 +257,8 @@ function RunnerDashboard() {
                   <h3 className="text-xl font-semibold text-foreground capitalize mb-2">
                     {todaysWorkout.planned_type?.replace('_', ' ')}
                   </h3>
-                  {todaysWorkout.description && (
-                    <p className="text-foreground-600">{todaysWorkout.description}</p>
+                  {todaysWorkout.workout_notes && (
+                    <p className="text-foreground-600">{todaysWorkout.workout_notes}</p>
                   )}
                 </div>
 
@@ -285,24 +285,24 @@ function RunnerDashboard() {
                       </div>
                     </div>
                   )}
-                  {todaysWorkout.planned_pace && (
+                  {todaysWorkout.category && (
                     <div className="flex items-center gap-2">
                       <TrendingUpIcon className="w-5 h-5 text-primary" />
                       <div>
-                        <p className="text-sm text-foreground-600">Pace</p>
-                        <p className="text-lg font-semibold text-foreground">
-                          {todaysWorkout.planned_pace}
+                        <p className="text-sm text-foreground-600">Type</p>
+                        <p className="text-lg font-semibold text-foreground capitalize">
+                          {todaysWorkout.category.replace('_', ' ')}
                         </p>
                       </div>
                     </div>
                   )}
-                  {todaysWorkout.planned_elevation_gain && (
+                  {todaysWorkout.elevation_gain && (
                     <div className="flex items-center gap-2">
                       <MountainSnowIcon className="w-5 h-5 text-primary" />
                       <div>
                         <p className="text-sm text-foreground-600">Elevation</p>
                         <p className="text-lg font-semibold text-foreground">
-                          {todaysWorkout.planned_elevation_gain} ft
+                          {todaysWorkout.elevation_gain} ft
                         </p>
                       </div>
                     </div>
