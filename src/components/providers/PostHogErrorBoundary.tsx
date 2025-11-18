@@ -2,7 +2,7 @@
 
 import posthog from 'posthog-js'
 
-import { Component, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -31,7 +31,7 @@ export class PostHogErrorBoundary extends Component<Props, State> {
     }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to PostHog
     if (posthog.has_opted_in_capturing()) {
       posthog.capture('$exception', {

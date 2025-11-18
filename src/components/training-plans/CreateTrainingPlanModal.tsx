@@ -188,7 +188,7 @@ export default function CreateTrainingPlanModal({
         goalType: data.goal_type,
         hasRace: !!data.race_id,
         hasTemplate: !!data.template_id,
-        planLength: data.targetRaceDistance,
+        targetRaceDistance: data.targetRaceDistance,
       })
 
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
