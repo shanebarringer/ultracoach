@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           const emailText = generateFeedbackEmailText(emailProps)
 
           await resend.emails.send({
-            from: 'UltraCoach Feedback <feedback@ultracoach.app>',
+            from: 'UltraCoach Feedback <feedback@ultracoach.dev>',
             to: feedbackEmail,
             replyTo: feedback.user_email || undefined,
             subject: `[UltraCoach Feedback] ${feedbackTypeLabel} - ${sanitizedTitle}`,
