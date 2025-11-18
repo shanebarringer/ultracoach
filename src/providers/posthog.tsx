@@ -30,6 +30,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         // Initialize PostHog
         posthog.init(apiKey, {
           api_host: apiHost || 'https://us.i.posthog.com',
+          defaults: '2025-05-24', // Use PostHog's latest defaults for best compatibility
           person_profiles: 'identified_only', // Only create profiles for identified users
           capture_pageview: false, // We'll manually capture pageviews
           capture_pageleave: true, // Automatically capture when users leave pages

@@ -32,14 +32,11 @@ export class PostHogErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to PostHog
+    // Log error to PostHog using the official captureException API
     if (posthog.has_opted_in_capturing()) {
-      posthog.capture('$exception', {
-        $exception_type: error.name,
-        $exception_message: error.message,
-        $exception_stack_trace_raw: error.stack,
-        $exception_level: 'error',
-        errorInfo: errorInfo.componentStack,
+      posthog.captureException(error, {
+        // Include component stack for React-specific debugging
+        componentStack: errorInfo.componentStack,
       })
     }
 
