@@ -17,7 +17,10 @@ const logger = createLogger('ApiClient')
 // browser/XHR default is effectively `false` for cross-origin, which is what
 // we want when the interceptor doesn't opt in for same-origin `/api/*`.
 export const apiClient = axios.create({
-  timeout: 10000, // 10 seconds
+  // In development, Next.js routes compile on-demand which can take 10+ seconds
+  // for large modules like /api/runners (5815 modules). Use 30s timeout to allow
+  // compilation to complete. Production builds are pre-compiled so 10s is sufficient.
+  timeout: process.env.NODE_ENV === 'development' ? 30000 : 10000, // 30s dev, 10s prod
 })
 
 // Helper to determine if a request is targeting our own Next.js API routes

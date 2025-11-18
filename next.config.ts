@@ -2,6 +2,12 @@ import path from 'path'
 
 import type { NextConfig } from 'next'
 
+// Increase max listeners for development mode to prevent memory leak warnings
+// Next.js hot module reloading can create multiple SIGTERM listeners during development
+if (process.env.NODE_ENV === 'development') {
+  process.setMaxListeners(20)
+}
+
 // Define minimal webpack plugin interface inline (no external webpack import needed)
 interface WebpackPlugin {
   apply(compiler: any): void
