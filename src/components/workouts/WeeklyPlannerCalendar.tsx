@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
+import { api } from '@/lib/api-client'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User, Workout } from '@/lib/supabase'
@@ -556,17 +557,11 @@ export default function WeeklyPlannerCalendar({
     const tempIds: string[] = []
 
     try {
-      // Find the runner's training plan
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const plansResponse = await fetch(`${baseUrl}/api/training-plans?runnerId=${runner.id}`, {
-        credentials: 'same-origin',
-      })
-      if (!plansResponse.ok) {
-        throw new Error('Failed to find training plan')
+      // Find the runner's training plan using api client (automatic credentials handling)
+      const plansResponse = await api.get(`/api/training-plans?runnerId=${runner.id}`)
+      const plansData = plansResponse.data as {
+        trainingPlans?: Array<{ id: string; runner_id: string }>
       }
-
-      const plansData = await plansResponse.json()
 
       // CRITICAL FIX: Filter by runner.id since API returns all plans for all connected runners
       const trainingPlan = plansData.trainingPlans?.find(
@@ -645,32 +640,13 @@ export default function WeeklyPlannerCalendar({
         return [...filtered, ...tempWorkouts]
       })
 
-      // Bulk create workouts (API call in background)
-      const response = await fetch(`${baseUrl}/api/workouts/bulk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          workouts: workoutsToCreate,
-        }),
+      // Bulk create workouts using api client (automatic credentials and error handling)
+      const response = await api.post('/api/workouts/bulk', {
+        workouts: workoutsToCreate,
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        // Log detailed validation errors for debugging
-        if (errorData.details) {
-          logger.error('Validation failed with details:', {
-            error: errorData.error,
-            details: errorData.details,
-          })
-        }
-        throw new Error(errorData.error || 'Failed to save workouts')
-      }
-
       // Parse server response and get real workout objects with IDs
-      const responseData = await response.json()
+      const responseData = response.data as { workouts?: Workout[] }
       const savedWorkouts = responseData.workouts || []
 
       logger.debug('API response received, replacing temp IDs with real IDs', {
