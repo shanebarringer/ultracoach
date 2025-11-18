@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { withPostHogConfig } from '@posthog/nextjs-config'
 import type { NextConfig } from 'next'
 
 // Increase max listeners for development mode to prevent memory leak warnings
@@ -85,4 +86,13 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+// Wrap with PostHog config for automatic source map upload
+export default withPostHogConfig(nextConfig, {
+  personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY || '',
+  envId: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID || '251417',
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+  sourcemaps: {
+    enabled: process.env.NODE_ENV === 'production' && !!process.env.POSTHOG_PERSONAL_API_KEY, // Only when API key is provided
+    deleteAfterUpload: true, // Clean up source maps after upload for security
+  },
+})

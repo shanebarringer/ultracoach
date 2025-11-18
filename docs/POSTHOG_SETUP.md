@@ -48,8 +48,25 @@ After signup, PostHog will show you your project details:
 1. Go to **Project Settings** (gear icon in left sidebar)
 2. Find your **Project API Key** (starts with `phc_`)
 3. Note the **Host** URL (should be `https://us.i.posthog.com` for US Cloud)
+4. Note your **Project ID** (shown in Project Settings)
 
-### 3. Add Environment Variables
+### 3. Get Personal API Key (for Source Maps)
+
+To enable readable error stack traces in production, you'll need a Personal API Key:
+
+1. Go to **Personal Settings** → **Personal API Keys**
+2. Click **Create Personal API Key**
+3. Name it "UltraCoach Source Maps"
+4. Select **Write-only** permissions (safer than full access)
+5. Copy the generated key (starts with `phx_`)
+
+**What are source maps?**
+- Production code is minified (e.g., `a.b.c()` instead of actual function names)
+- Source maps translate minified code back to original source
+- Makes debugging production errors **much easier**
+- Stack traces show real file names and line numbers
+
+### 4. Add Environment Variables
 
 Create or update your `.env.local` file:
 
@@ -57,26 +74,36 @@ Create or update your `.env.local` file:
 # PostHog Analytics & Error Tracking
 NEXT_PUBLIC_POSTHOG_KEY="phc_your_actual_key_here"
 NEXT_PUBLIC_POSTHOG_HOST="https://us.i.posthog.com"
+NEXT_PUBLIC_POSTHOG_PROJECT_ID="your-project-id"
+# Personal API Key for source map upload
+POSTHOG_PERSONAL_API_KEY="phx_your_personal_key_here"
 ```
 
 **Important Notes:**
 
 - Replace `phc_your_actual_key_here` with your actual PostHog Project API Key
+- Replace `phx_your_personal_key_here` with your Personal API Key
+- Replace `your-project-id` with your Project ID from settings
 - The `NEXT_PUBLIC_` prefix is required for Next.js client-side access
+- The Personal API Key is only used during builds, not at runtime
 - Never commit `.env.local` to version control (it's already in `.gitignore`)
 
-### 4. Add to Vercel (Production)
+### 5. Add to Vercel (Production)
 
 For production deployment on Vercel:
 
 1. Go to your Vercel project dashboard
 2. Navigate to **Settings** → **Environment Variables**
 3. Add these variables:
-   - `NEXT_PUBLIC_POSTHOG_KEY` = your PostHog API key
+   - `NEXT_PUBLIC_POSTHOG_KEY` = your PostHog Project API key
    - `NEXT_PUBLIC_POSTHOG_HOST` = `https://us.i.posthog.com`
+   - `NEXT_PUBLIC_POSTHOG_PROJECT_ID` = your Project ID
+   - `POSTHOG_PERSONAL_API_KEY` = your Personal API key (for source maps)
 4. Set them for **Production**, **Preview**, and **Development** environments
 
-### 5. Verify Installation
+**Important:** The Personal API Key enables automatic source map upload during builds, making production errors much easier to debug!
+
+### 6. Verify Installation
 
 Start your development server:
 
