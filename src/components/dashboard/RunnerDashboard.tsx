@@ -230,56 +230,56 @@ function RunnerDashboard() {
         </p>
       </div>
 
-      {/* Today's Workout - Hero Section */}
-      {todaysWorkout ? (
-        <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardBody className="p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 rounded-lg bg-primary/20">
-                <ActivityIcon className="w-8 h-8 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">Today&apos;s Workout</h2>
-                <p className="text-foreground-600">
-                  {new Date(todaysWorkout.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Workout Details */}
-              <div className="lg:col-span-2 space-y-4">
+      {/* Today's Workout & Quick Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Workout - Hero Section */}
+        {todaysWorkout ? (
+          <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardBody className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-lg bg-primary/20">
+                  <ActivityIcon className="w-6 h-6 text-primary" />
+                </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-foreground capitalize mb-2">
+                  <h2 className="text-xl font-bold text-foreground">Today&apos;s Workout</h2>
+                  <p className="text-sm text-foreground-600">
+                    {new Date(todaysWorkout.date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground capitalize mb-1">
                     {todaysWorkout.planned_type?.replace('_', ' ')}
                   </h3>
                   {todaysWorkout.workout_notes && (
-                    <p className="text-foreground-600">{todaysWorkout.workout_notes}</p>
+                    <p className="text-sm text-foreground-600">{todaysWorkout.workout_notes}</p>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {todaysWorkout.planned_distance && (
                     <div className="flex items-center gap-2">
-                      <MapPinIcon className="w-5 h-5 text-primary" />
+                      <MapPinIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <p className="text-sm text-foreground-600">Distance</p>
-                        <p className="text-lg font-semibold text-foreground">
-                          {todaysWorkout.planned_distance} miles
+                        <p className="text-xs text-foreground-600">Distance</p>
+                        <p className="text-base font-semibold text-foreground">
+                          {todaysWorkout.planned_distance} mi
                         </p>
                       </div>
                     </div>
                   )}
                   {todaysWorkout.planned_duration && (
                     <div className="flex items-center gap-2">
-                      <ClockIcon className="w-5 h-5 text-primary" />
+                      <ClockIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <p className="text-sm text-foreground-600">Duration</p>
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-xs text-foreground-600">Duration</p>
+                        <p className="text-base font-semibold text-foreground">
                           {todaysWorkout.planned_duration} min
                         </p>
                       </div>
@@ -287,10 +287,10 @@ function RunnerDashboard() {
                   )}
                   {todaysWorkout.category && (
                     <div className="flex items-center gap-2">
-                      <TrendingUpIcon className="w-5 h-5 text-primary" />
+                      <TrendingUpIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <p className="text-sm text-foreground-600">Type</p>
-                        <p className="text-lg font-semibold text-foreground capitalize">
+                        <p className="text-xs text-foreground-600">Type</p>
+                        <p className="text-base font-semibold text-foreground capitalize">
                           {todaysWorkout.category.replace('_', ' ')}
                         </p>
                       </div>
@@ -298,10 +298,10 @@ function RunnerDashboard() {
                   )}
                   {todaysWorkout.elevation_gain && (
                     <div className="flex items-center gap-2">
-                      <MountainSnowIcon className="w-5 h-5 text-primary" />
+                      <MountainSnowIcon className="w-4 h-4 text-primary" />
                       <div>
-                        <p className="text-sm text-foreground-600">Elevation</p>
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-xs text-foreground-600">Elevation</p>
+                        <p className="text-base font-semibold text-foreground">
                           {todaysWorkout.elevation_gain} ft
                         </p>
                       </div>
@@ -310,108 +310,94 @@ function RunnerDashboard() {
                 </div>
               </div>
 
-              {/* Quick Stats */}
-              <div className="space-y-3">
-                <div className="bg-background/50 rounded-lg p-4 border border-divider">
-                  <p className="text-sm text-foreground-600 mb-1">This Week</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {dashboardMetrics.weeklyCompletionRate}%
-                  </p>
-                  <p className="text-xs text-foreground-500">completion rate</p>
+              {/* Action Buttons */}
+              {todaysWorkout.status === 'planned' && (
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    size="md"
+                    color="success"
+                    className="flex-1 font-semibold"
+                    startContent={<CheckCircleIcon className="w-4 h-4" />}
+                    onClick={() => handleMarkComplete(todaysWorkout)}
+                  >
+                    Mark Complete
+                  </Button>
+                  <Button
+                    size="md"
+                    variant="bordered"
+                    className="flex-1 font-semibold"
+                    onClick={() => handleLogDetails(todaysWorkout)}
+                  >
+                    Log Details
+                  </Button>
                 </div>
-                <div className="bg-background/50 rounded-lg p-4 border border-divider">
-                  <p className="text-sm text-foreground-600 mb-1">Weekly Distance</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {dashboardMetrics.weeklyDistance}
-                  </p>
-                  <p className="text-xs text-foreground-500">miles logged</p>
+              )}
+              {todaysWorkout.status === 'completed' && (
+                <div className="flex items-center justify-center gap-2 p-3 bg-success/10 rounded-lg border border-success/20 mt-4">
+                  <CheckCircleIcon className="w-5 h-5 text-success" />
+                  <span className="text-base font-semibold text-success">Workout Completed!</span>
                 </div>
+              )}
+            </CardBody>
+          </Card>
+        ) : (
+          <Card className="border-2 border-dashed border-divider">
+            <CardBody className="p-6 text-center">
+              <CalendarIcon className="w-10 h-10 text-foreground-400 mx-auto mb-3" />
+              <h2 className="text-lg font-semibold text-foreground mb-2">
+                No workout scheduled today
+              </h2>
+              <p className="text-sm text-foreground-600 mb-3">
+                Enjoy your rest day or check upcoming workouts
+              </p>
+              <Button as={Link} href="/workouts" color="primary" variant="bordered" size="sm">
+                View All Workouts
+              </Button>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Quick Stats - Stacked Vertically */}
+        <div className="space-y-4">
+          <Card className="border-t-4 border-t-success">
+            <CardBody className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircleIcon className="w-5 h-5 text-success" />
+                <h3 className="font-semibold text-foreground">This Week</h3>
               </div>
-            </div>
+              <p className="text-2xl font-bold text-foreground mb-0.5">
+                {dashboardMetrics.weeklyCompletionRate}%
+              </p>
+              <p className="text-xs text-foreground-600">completion rate</p>
+            </CardBody>
+          </Card>
 
-            {/* Action Buttons */}
-            {todaysWorkout.status === 'planned' && (
-              <div className="flex gap-3">
-                <Button
-                  size="lg"
-                  color="success"
-                  className="flex-1 font-semibold"
-                  startContent={<CheckCircleIcon className="w-5 h-5" />}
-                  onClick={() => handleMarkComplete(todaysWorkout)}
-                >
-                  Mark Complete
-                </Button>
-                <Button
-                  size="lg"
-                  variant="bordered"
-                  className="flex-1 font-semibold"
-                  onClick={() => handleLogDetails(todaysWorkout)}
-                >
-                  Log Details
-                </Button>
+          <Card className="border-t-4 border-t-primary">
+            <CardBody className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <ActivityIcon className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Weekly Miles</h3>
               </div>
-            )}
-            {todaysWorkout.status === 'completed' && (
-              <div className="flex items-center justify-center gap-2 p-4 bg-success/10 rounded-lg border border-success/20">
-                <CheckCircleIcon className="w-6 h-6 text-success" />
-                <span className="text-lg font-semibold text-success">Workout Completed!</span>
+              <p className="text-2xl font-bold text-foreground mb-0.5">
+                {dashboardMetrics.weeklyDistance}
+              </p>
+              <p className="text-xs text-foreground-600">miles completed</p>
+            </CardBody>
+          </Card>
+
+          <Card className="border-t-4 border-t-warning">
+            <CardBody className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUpIcon className="w-5 h-5 text-warning" />
+                <h3 className="font-semibold text-foreground">Upcoming</h3>
               </div>
-            )}
-          </CardBody>
-        </Card>
-      ) : (
-        <Card className="border-2 border-dashed border-divider">
-          <CardBody className="p-8 text-center">
-            <CalendarIcon className="w-12 h-12 text-foreground-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-foreground mb-2">No workout scheduled today</h2>
-            <p className="text-foreground-600 mb-4">Enjoy your rest day or check upcoming workouts</p>
-            <Button as={Link} href="/workouts" color="primary" variant="bordered">
-              View All Workouts
-            </Button>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Quick Actions & Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-t-4 border-t-success">
-          <CardBody className="p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <CheckCircleIcon className="w-6 h-6 text-success" />
-              <h3 className="font-semibold text-foreground">This Week</h3>
-            </div>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {dashboardMetrics.weeklyCompletionRate}%
-            </p>
-            <p className="text-sm text-foreground-600">completion rate</p>
-          </CardBody>
-        </Card>
-
-        <Card className="border-t-4 border-t-primary">
-          <CardBody className="p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <ActivityIcon className="w-6 h-6 text-primary" />
-              <h3 className="font-semibold text-foreground">Weekly Miles</h3>
-            </div>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {dashboardMetrics.weeklyDistance}
-            </p>
-            <p className="text-sm text-foreground-600">miles completed</p>
-          </CardBody>
-        </Card>
-
-        <Card className="border-t-4 border-t-warning">
-          <CardBody className="p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <TrendingUpIcon className="w-6 h-6 text-warning" />
-              <h3 className="font-semibold text-foreground">Upcoming</h3>
-            </div>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {dashboardMetrics.thisWeekWorkouts.length}
-            </p>
-            <p className="text-sm text-foreground-600">workouts this week</p>
-          </CardBody>
-        </Card>
+              <p className="text-2xl font-bold text-foreground mb-0.5">
+                {dashboardMetrics.thisWeekWorkouts.length}
+              </p>
+              <p className="text-xs text-foreground-600">workouts this week</p>
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       {/* Content Grid */}
@@ -481,86 +467,89 @@ function RunnerDashboard() {
           </CardBody>
         </Card>
 
-        {/* My Coach */}
-        <Card className="h-fit" data-testid="coaches-section">
-          <CardHeader className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <MountainSnowIcon className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">My Coach</h2>
-            </div>
-            <Button
-              as={Link}
-              href="/relationships"
-              size="sm"
-              color="primary"
-              variant="flat"
-              data-testid="find-coach-button"
-            >
-              Find Coach
-            </Button>
-          </CardHeader>
-          <CardBody>
-            {relationships.filter(
-              (rel: { other_party: { role: string } }) => rel.other_party.role === 'coach'
-            ).length === 0 ? (
-              <div className="text-center py-8">
-                <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No coach assigned</h3>
-                <p className="text-foreground-600 mb-4">
-                  Connect with an experienced coach to guide your training
-                </p>
-                <Button
-                  as={Link}
-                  href="/relationships"
-                  color="primary"
-                  size="sm"
-                  data-testid="find-your-guide-button"
-                >
-                  Find a Coach
-                </Button>
+        {/* Right Column - Coach & Strava */}
+        <div className="space-y-8">
+          {/* My Coach */}
+          <Card className="h-fit" data-testid="coaches-section">
+            <CardHeader className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <MountainSnowIcon className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold text-foreground">My Coach</h2>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {relationships
-                  .filter((rel: RelationshipData) => rel.other_party.role === 'coach')
-                  .map((relationship: RelationshipData) => (
-                    <Card
-                      key={relationship.id}
-                      className="border border-divider hover:shadow-md transition-shadow"
-                    >
-                      <CardBody className="p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                            {(relationship.other_party.full_name || 'C').charAt(0)}
+              <Button
+                as={Link}
+                href="/relationships"
+                size="sm"
+                color="primary"
+                variant="flat"
+                data-testid="find-coach-button"
+              >
+                Find Coach
+              </Button>
+            </CardHeader>
+            <CardBody>
+              {relationships.filter(
+                (rel: { other_party: { role: string } }) => rel.other_party.role === 'coach'
+              ).length === 0 ? (
+                <div className="text-center py-8">
+                  <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No coach assigned</h3>
+                  <p className="text-foreground-600 mb-4">
+                    Connect with an experienced coach to guide your training
+                  </p>
+                  <Button
+                    as={Link}
+                    href="/relationships"
+                    color="primary"
+                    size="sm"
+                    data-testid="find-your-guide-button"
+                  >
+                    Find a Coach
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {relationships
+                    .filter((rel: RelationshipData) => rel.other_party.role === 'coach')
+                    .map((relationship: RelationshipData) => (
+                      <Card
+                        key={relationship.id}
+                        className="border border-divider hover:shadow-md transition-shadow"
+                      >
+                        <CardBody className="p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                              {(relationship.other_party.full_name || 'C').charAt(0)}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground text-lg">
+                                {relationship.other_party.full_name}
+                              </h3>
+                              <p className="text-sm text-foreground-600">
+                                {relationship.other_party.email}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-foreground text-lg">
-                              {relationship.other_party.full_name}
-                            </h3>
-                            <p className="text-sm text-foreground-600">
-                              {relationship.other_party.email}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          as={Link}
-                          href={`/chat/${relationship.other_party.id}`}
-                          color="primary"
-                          className="w-full"
-                          startContent={<MessageSquareIcon className="w-4 h-4" />}
-                        >
-                          Send Message
-                        </Button>
-                      </CardBody>
-                    </Card>
-                  ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                          <Button
+                            as={Link}
+                            href={`/chat/${relationship.other_party.id}`}
+                            color="primary"
+                            className="w-full"
+                            startContent={<MessageSquareIcon className="w-4 h-4" />}
+                          >
+                            Send Message
+                          </Button>
+                        </CardBody>
+                      </Card>
+                    ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
 
-        {/* Strava Integration Widget */}
-        <StravaDashboardWidget />
+          {/* Strava Integration Widget */}
+          <StravaDashboardWidget />
+        </div>
       </div>
 
       {/* Workout Log Modal */}
