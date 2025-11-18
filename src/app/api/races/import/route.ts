@@ -116,6 +116,130 @@ export async function POST(request: NextRequest) {
       raceData.distance_type = 'Custom'
     }
 
+    // Validate source type
+    if (!importData.source || !['gpx', 'csv'].includes(importData.source)) {
+      return NextResponse.json(
+        { error: 'Invalid source type - must be "gpx" or "csv"' },
+        { status: 400 }
+      )
+    }
+
+    // Validate GPX data structure if provided
+    if (importData.source === 'gpx' && importData.gpx_data) {
+      // Validate tracks array exists and is valid
+      if (!Array.isArray(importData.gpx_data.tracks)) {
+        return NextResponse.json(
+          { error: 'Invalid GPX data - tracks must be an array' },
+          { status: 400 }
+        )
+      }
+
+      // Validate waypoints array if provided
+      if (
+        importData.gpx_data.waypoints &&
+        !Array.isArray(importData.gpx_data.waypoints)
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid GPX data - waypoints must be an array' },
+          { status: 400 }
+        )
+      }
+
+      // Count total track points and enforce limits
+      const totalPoints = importData.gpx_data.tracks.reduce((sum, track) => {
+        if (!track.points || !Array.isArray(track.points)) {
+          return sum
+        }
+        return sum + track.points.length
+      }, 0)
+
+      // Limit to 50,000 points to prevent memory exhaustion
+      if (totalPoints > 50000) {
+        logger.warn('GPX file too large', {
+          totalPoints,
+          userId: session.user.id,
+          raceName: raceData.name,
+        })
+        return NextResponse.json(
+          {
+            error: 'GPX file too large',
+            details: `GPX file contains ${totalPoints} points. Maximum allowed is 50,000 points.`,
+          },
+          { status: 413 }
+        )
+      }
+
+      // Validate track point structure for first track (sample validation)
+      if (importData.gpx_data.tracks.length > 0) {
+        const firstTrack = importData.gpx_data.tracks[0]
+        if (firstTrack.points && firstTrack.points.length > 0) {
+          const samplePoint = firstTrack.points[0]
+
+          // Validate lat/lon are numbers
+          if (
+            typeof samplePoint.lat !== 'number' ||
+            typeof samplePoint.lon !== 'number'
+          ) {
+            return NextResponse.json(
+              { error: 'Invalid GPX data - track points must have numeric lat/lon' },
+              { status: 400 }
+            )
+          }
+
+          // Validate lat/lon ranges
+          if (
+            samplePoint.lat < -90 ||
+            samplePoint.lat > 90 ||
+            samplePoint.lon < -180 ||
+            samplePoint.lon > 180
+          ) {
+            return NextResponse.json(
+              {
+                error: 'Invalid GPX data - lat/lon out of valid range',
+                details: 'Latitude must be between -90 and 90, longitude between -180 and 180',
+              },
+              { status: 400 }
+            )
+          }
+        }
+      }
+
+      logger.info('GPX validation passed', {
+        totalPoints,
+        trackCount: importData.gpx_data.tracks.length,
+        waypointCount: importData.gpx_data.waypoints?.length || 0,
+        userId: session.user.id,
+      })
+    }
+
+    // Validate CSV data (basic validation for required fields)
+    if (importData.source === 'csv') {
+      // Ensure minimum required fields are present for CSV imports
+      if (!importData.name || importData.name.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'CSV import requires race name' },
+          { status: 400 }
+        )
+      }
+
+      // Validate distance for CSV imports
+      if (!importData.distance_miles || importData.distance_miles <= 0) {
+        return NextResponse.json(
+          {
+            error: 'CSV import requires valid distance',
+            details: 'Distance must be greater than 0',
+          },
+          { status: 400 }
+        )
+      }
+
+      logger.info('CSV validation passed', {
+        raceName: raceData.name,
+        distance: raceData.distance_miles,
+        userId: session.user.id,
+      })
+    }
+
     // Check for duplicate races to prevent importing the same race multiple times
     const duplicateQuery = db
       .select()
