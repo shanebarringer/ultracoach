@@ -445,8 +445,12 @@ function RunnerDashboard() {
             {dashboardMetrics.thisWeekWorkouts.length === 0 ? (
               <div className="text-center py-8">
                 <ClockIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No workouts scheduled</h3>
-                <p className="text-foreground-600">Check your training plan or contact your coach</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  No workouts scheduled
+                </h3>
+                <p className="text-foreground-600">
+                  Check your training plan or contact your coach
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
