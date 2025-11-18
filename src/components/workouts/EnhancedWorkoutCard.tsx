@@ -114,8 +114,10 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
     <div className="flex items-center gap-2">
       <Calendar className="h-4 w-4 text-foreground-400" />
       <div className="flex flex-col">
-        <span className={`text-sm font-medium ${getDateColor()}`}>{getDateLabel()}</span>
-        <span className="text-xs text-foreground-400">
+        <span className={`text-sm font-medium ${getDateColor()}`} suppressHydrationWarning>
+          {getDateLabel()}
+        </span>
+        <span className="text-xs text-foreground-400" suppressHydrationWarning>
           {workoutDate.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',

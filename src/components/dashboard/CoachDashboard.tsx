@@ -438,7 +438,9 @@ function CoachDashboard() {
                         {plan.target_race_date && (
                           <div className="flex items-center gap-1">
                             <CalendarDaysIcon className="w-3 h-3" />
-                            <span>{new Date(plan.target_race_date).toLocaleDateString()}</span>
+                            <span suppressHydrationWarning>
+                              {new Date(plan.target_race_date).toLocaleDateString()}
+                            </span>
                           </div>
                         )}
                       </div>

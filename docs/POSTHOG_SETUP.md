@@ -61,6 +61,7 @@ To enable readable error stack traces in production, you'll need a Personal API 
 5. Copy the generated key (starts with `phx_`)
 
 **What are source maps?**
+
 - Production code is minified (e.g., `a.b.c()` instead of actual function names)
 - Source maps translate minified code back to original source
 - Makes debugging production errors **much easier**

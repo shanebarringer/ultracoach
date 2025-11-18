@@ -1,6 +1,6 @@
+import { withPostHogConfig } from '@posthog/nextjs-config'
 import path from 'path'
 
-import { withPostHogConfig } from '@posthog/nextjs-config'
 import type { NextConfig } from 'next'
 
 // Increase max listeners for development mode to prevent memory leak warnings
