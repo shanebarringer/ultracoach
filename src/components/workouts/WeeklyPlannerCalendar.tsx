@@ -436,7 +436,7 @@ export default function WeeklyPlannerCalendar({
   ) => {
     setWeekWorkouts(prev => {
       // DEFENSIVE GUARD: Validate dayIndex bounds before array access
-      if (!isValidDayIndex(dayIndex, prev.length)) {
+      if (!isValidDayIndex(dayIndex, DAYS_IN_WEEK)) {
         logger.error('Invalid dayIndex in updateDayWorkout', {
           dayIndex,
           field,
@@ -496,19 +496,19 @@ export default function WeeklyPlannerCalendar({
           | 'rest'
           | undefined
       } else if (field === 'distance') {
-        day.workout.distance = value ? Number(value) : undefined
+        day.workout.distance = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'duration') {
-        day.workout.duration = value ? Number(value) : undefined
+        day.workout.duration = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'notes') {
         day.workout.notes = value as string
       } else if (field === 'intensity') {
-        day.workout.intensity = value ? Number(value) : undefined
+        day.workout.intensity = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'terrain') {
         if (typeof value === 'string') {
           day.workout.terrain = value as TerrainType
         }
       } else if (field === 'elevationGain') {
-        day.workout.elevationGain = value ? Number(value) : undefined
+        day.workout.elevationGain = value === '' || value === undefined ? undefined : Number(value)
       }
 
       // Replace with new day object so React detects the change
@@ -521,7 +521,7 @@ export default function WeeklyPlannerCalendar({
   const clearDayWorkout = (dayIndex: number) => {
     setWeekWorkouts(prev => {
       // DEFENSIVE GUARD: Validate dayIndex bounds before array access
-      if (!isValidDayIndex(dayIndex, prev.length)) {
+      if (!isValidDayIndex(dayIndex, DAYS_IN_WEEK)) {
         logger.error('Invalid dayIndex in clearDayWorkout', {
           dayIndex,
           weekWorkoutsLength: prev.length,
@@ -584,14 +584,15 @@ export default function WeeklyPlannerCalendar({
           trainingPlanId: trainingPlan.id,
           date: day.date.toISOString().split('T')[0],
           plannedType: day.workout!.type,
-          // CRITICAL: Convert string values to numbers for API validation
-          plannedDistance: day.workout!.distance ? Number(day.workout!.distance) : null,
-          plannedDuration: day.workout!.duration ? Number(day.workout!.duration) : null,
+          // CRITICAL: Use nullish coalescing to convert undefined to null while preserving 0
+          // These are already numbers (not strings), so ?? is the correct operator
+          plannedDistance: day.workout!.distance ?? null,
+          plannedDuration: day.workout!.duration ?? null,
           notes: day.workout!.notes || '',
           category: day.workout!.category || null,
-          intensity: day.workout!.intensity ? Number(day.workout!.intensity) : null,
+          intensity: day.workout!.intensity ?? null,
           terrain: day.workout!.terrain || null,
-          elevationGain: day.workout!.elevationGain ? Number(day.workout!.elevationGain) : null,
+          elevationGain: day.workout!.elevationGain ?? null,
         }))
 
       // PHASE 2 FIX: Optimistic update - add workouts to atom BEFORE API call

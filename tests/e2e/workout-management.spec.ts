@@ -350,11 +350,13 @@ test.describe('Workout Management', () => {
           console.log('No runner cards found, checking count for graceful skip...')
         })
 
-      // Get all available runner cards
+      // Get all available runner cards and check count IMMEDIATELY for early skip
+      // This avoids unnecessary setup work if we don't have enough runners
       const runnerCards = page.locator('[data-testid="runner-card"], .runner-selection-card')
       const runnerCount = await runnerCards.count()
 
       // Skip if coach has fewer than 2 connected runners (can't test multi-runner scenario)
+      // Check as early as possible to avoid wasted navigation/setup before skip
       if (runnerCount < 2) {
         console.log(
           `Skipping multi-runner test: coach has ${runnerCount} connected runners (need at least 2)`
@@ -457,8 +459,25 @@ test.describe('Workout Management', () => {
       await page.goto('/weekly-planner')
       await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
 
-      // Select first runner again
-      await firstRunnerCard.click()
+      // Re-wait for runner cards to ensure DOM is ready after navigation
+      // This prevents using stale locators from before navigation
+      await page
+        .waitForSelector('[data-testid="runner-card"], .runner-selection-card', {
+          timeout: CI_TIMEOUT,
+        })
+        .catch(() => {
+          console.log('Runner cards not found after navigation back')
+        })
+
+      // Re-acquire runner card locators to reference current DOM nodes (not stale pre-navigation nodes)
+      const refreshedRunnerCards = page.locator(
+        '[data-testid="runner-card"], .runner-selection-card'
+      )
+      const refreshedFirstRunnerCard = refreshedRunnerCards.first()
+      const refreshedSecondRunnerCard = refreshedRunnerCards.nth(1)
+
+      // Select first runner again (using fresh locator)
+      await refreshedFirstRunnerCard.click()
       await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
 
       // Navigate to the day where second runner's workout was created
