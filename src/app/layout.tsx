@@ -3,12 +3,14 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { headers } from 'next/headers'
 
 import KBarProvider from '@/components/kbar/KBarProvider'
+import { PostHogErrorBoundary } from '@/components/providers/PostHogErrorBoundary'
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
 import { Toaster } from '@/components/ui/toast'
 import { auth } from '@/lib/better-auth'
 import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
+import { PostHogProvider } from '@/providers/posthog'
 
 import './globals.css'
 
@@ -42,18 +44,22 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <JotaiProvider>
-          <BetterAuthProvider initialSession={session}>
-            <HeroUIProvider>
-              <ThemeWrapper>
-                <KBarProvider>
-                  {children}
-                  <Toaster />
-                </KBarProvider>
-              </ThemeWrapper>
-            </HeroUIProvider>
-          </BetterAuthProvider>
-        </JotaiProvider>
+        <PostHogProvider>
+          <PostHogErrorBoundary>
+            <JotaiProvider>
+              <BetterAuthProvider initialSession={session}>
+                <HeroUIProvider>
+                  <ThemeWrapper>
+                    <KBarProvider>
+                      {children}
+                      <Toaster />
+                    </KBarProvider>
+                  </ThemeWrapper>
+                </HeroUIProvider>
+              </BetterAuthProvider>
+            </JotaiProvider>
+          </PostHogErrorBoundary>
+        </PostHogProvider>
       </body>
     </html>
   )
