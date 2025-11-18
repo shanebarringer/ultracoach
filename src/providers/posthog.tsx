@@ -2,71 +2,98 @@
 
 import posthog from 'posthog-js'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { usePathname, useSearchParams } from 'next/navigation'
+
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('PostHogProvider')
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const isInitialized = useRef(false)
 
   useEffect(() => {
     // Only initialize PostHog on client-side with proper environment variables
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isInitialized.current) {
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
       const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
       if (!apiKey) {
-        console.warn('PostHog API key not found. Analytics disabled.')
+        logger.warn('PostHog API key not found. Analytics disabled.')
         return
       }
 
-      // Initialize PostHog
-      posthog.init(apiKey, {
-        api_host: apiHost || 'https://us.i.posthog.com',
-        person_profiles: 'identified_only', // Only create profiles for identified users
-        capture_pageview: false, // We'll manually capture pageviews
-        capture_pageleave: true, // Automatically capture when users leave pages
-        autocapture: {
-          // Capture clicks, form submissions, and other interactions
-          dom_event_allowlist: ['click', 'change', 'submit'],
-          // Don't capture sensitive data
-          capture_copied_text: false,
-        },
-        // Enable session recording with privacy controls
-        session_recording: {
-          maskAllInputs: true, // Mask all input fields by default
-          maskTextSelector: '[data-private]', // Mask elements with data-private attribute
-          recordCrossOriginIframes: false,
-        },
-        // Enable error tracking
-        capture_exceptions: {
-          capture_unhandled_rejections: true,
-          capture_unhandled_errors: true,
-          capture_console_errors: true,
-        },
-        // Respect Do Not Track
-        respect_dnt: true,
-        // Disable in development unless explicitly enabled
-        loaded: posthog => {
-          if (process.env.NODE_ENV === 'development') {
-            posthog.opt_out_capturing() // Opt out in development
-          }
-        },
-      })
+      try {
+        // Initialize PostHog
+        posthog.init(apiKey, {
+          api_host: apiHost || 'https://us.i.posthog.com',
+          person_profiles: 'identified_only', // Only create profiles for identified users
+          capture_pageview: false, // We'll manually capture pageviews
+          capture_pageleave: true, // Automatically capture when users leave pages
+          autocapture: {
+            // Capture clicks, form submissions, and other interactions
+            dom_event_allowlist: ['click', 'change', 'submit'],
+            // Don't capture sensitive data
+            capture_copied_text: false,
+          },
+          // Enable session recording with privacy controls
+          session_recording: {
+            maskAllInputs: true, // Mask all input fields by default
+            maskTextSelector: '[data-private]', // Mask elements with data-private attribute
+            recordCrossOriginIframes: false,
+          },
+          // Enable error tracking
+          capture_exceptions: {
+            capture_unhandled_rejections: true,
+            capture_unhandled_errors: true,
+            capture_console_errors: true,
+          },
+          // Respect Do Not Track
+          respect_dnt: true,
+          // Disable in development unless explicitly enabled
+          loaded: ph => {
+            if (process.env.NODE_ENV === 'development') {
+              ph.opt_out_capturing() // Opt out in development
+            }
+            // Mark as initialized after loaded callback
+            isInitialized.current = true
+            logger.info('PostHog initialized successfully')
+          },
+        })
+      } catch (error) {
+        logger.error('Failed to initialize PostHog:', error)
+        // Ensure PostHog is opted out on initialization failure
+        try {
+          posthog.opt_out_capturing()
+        } catch {
+          // Silently fail if opt_out also fails
+        }
+      }
     }
   }, [])
 
   // Track pageviews on route changes
   useEffect(() => {
-    if (pathname && posthog.has_opted_in_capturing()) {
-      let url = window.origin + pathname
-      if (searchParams && searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`
+    // Only track if PostHog is initialized and user has opted in
+    if (!isInitialized.current || !pathname) {
+      return
+    }
+
+    try {
+      if (posthog.has_opted_in_capturing()) {
+        let url = window.origin + pathname
+        if (searchParams && searchParams.toString()) {
+          url = url + `?${searchParams.toString()}`
+        }
+        posthog.capture('$pageview', {
+          $current_url: url,
+        })
       }
-      posthog.capture('$pageview', {
-        $current_url: url,
-      })
+    } catch (error) {
+      logger.error('Failed to capture pageview:', error)
     }
   }, [pathname, searchParams])
 
