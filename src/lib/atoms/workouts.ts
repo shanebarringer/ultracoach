@@ -13,6 +13,56 @@ import type { WorkoutMatch } from '@/utils/workout-matching'
 
 import { withDebugLabel } from './utils'
 
+/**
+ * WORKOUT ATOMS ARCHITECTURE
+ *
+ * This file implements a dual-atom pattern optimized for Suspense + optimistic updates:
+ *
+ * 1. asyncWorkoutsAtom (Read-Only, Suspense)
+ *    - Async atom that fetches from API and triggers Suspense boundaries
+ *    - Used ONLY for: Initial page load, hard refresh, manual refresh triggers
+ *    - Never write to this atom directly - it's controlled by refresh trigger
+ *
+ * 2. workoutsAtom (Read/Write, Sync)
+ *    - Synchronous cache of workout data hydrated from asyncWorkoutsAtom
+ *    - Used ALWAYS for: All component reads, optimistic updates, mutations
+ *    - This is the PRIMARY atom - components should ALWAYS read from here
+ *    - Supports fast optimistic updates without triggering Suspense
+ *
+ * 3. workoutsRefreshTriggerAtom (Write-Only)
+ *    - Counter that increments to trigger asyncWorkoutsAtom refetch
+ *    - Use ONLY when: Hard refresh needed (navigation, external data changes)
+ *    - DO NOT use after saves - use optimistic updates instead
+ *
+ * BEST PRACTICES:
+ *
+ * ✅ DO: Read from workoutsAtom in all components
+ * ✅ DO: Write optimistically to workoutsAtom before API calls
+ * ✅ DO: Update workoutsAtom with server response after API success
+ * ✅ DO: Only refresh on navigation or hard refresh needs
+ *
+ * ❌ DON'T: Read from asyncWorkoutsAtom directly (causes unnecessary Suspense)
+ * ❌ DON'T: Call refreshWorkouts() after every mutation (use optimistic updates)
+ * ❌ DON'T: Maintain separate local state that duplicates workoutsAtom
+ *
+ * EXAMPLE - Optimistic Update Pattern:
+ *
+ * const saveWorkout = async (workout: Workout) => {
+ *   // 1. Optimistic update (immediate UI feedback)
+ *   setWorkouts(prev => [...prev, { ...workout, id: `temp-${Date.now()}` }])
+ *
+ *   // 2. API call in background
+ *   const saved = await fetch('/api/workouts', { method: 'POST', body: JSON.stringify(workout) })
+ *
+ *   // 3. Replace temp ID with real ID
+ *   setWorkouts(prev => prev.map(w =>
+ *     w.id.startsWith('temp-') ? saved : w
+ *   ))
+ *
+ *   // 4. NO refreshWorkouts() call needed - state already updated
+ * }
+ */
+
 // Helper function to unwrap API response shapes
 function unwrapWorkout(json: unknown): Workout {
   return typeof json === 'object' && json !== null && 'workout' in json
@@ -24,96 +74,55 @@ function unwrapWorkout(json: unknown): Workout {
 export const workoutsAtom = atom<Workout[]>([])
 export const workoutsRefreshTriggerAtom = atom(0)
 
-// User-specific cache to prevent data leakage between accounts
-const workoutsCache: Map<string, { data: Workout[]; timestamp: number }> = new Map()
-const CACHE_DURATION = 1000 // 1 second cache to prevent flicker but allow faster refreshes
-
-// DRY helper: invalidate current user's workouts cache (fallback: clear all)
-async function invalidateUserWorkoutsCache(): Promise<void> {
-  try {
-    const { authClient } = await import('@/lib/better-auth-client')
-    const session = await authClient.getSession()
-    const userId = session?.data?.user?.id
-    if (userId) {
-      workoutsCache.delete(userId)
-      return
-    }
-  } catch {
-    // ignore and clear all below
-  }
-  workoutsCache.clear()
-}
-
 // Async workout atom with suspense support
 export const asyncWorkoutsAtom = atom(async get => {
   // Subscribe to refresh trigger to refetch when needed
   get(workoutsRefreshTriggerAtom)
 
-  // Only run on client side
+  // CRITICAL: Only run on client side - server can't access cookies
+  // Return empty array during SSR, client will hydrate with actual data
   if (typeof window === 'undefined') {
     return []
   }
 
   const { createLogger } = await import('@/lib/logger')
-  const { authClient } = await import('@/lib/better-auth-client')
+  const { api } = await import('@/lib/api-client')
   const logger = createLogger('AsyncWorkoutsAtom')
 
+  // CRITICAL FIX (Phase 1): Replaced raw fetch() with axios api.get() for production reliability
+  // Benefits over raw fetch:
+  // 1. Automatic credential injection via axios interceptors - ensures cookies sent in all scenarios
+  // 2. Built-in retry logic and error handling
+  // 3. Consistent header management
+  // 4. Production-tested with preview deployments
+  // Previous issues: raw fetch with 'same-origin' sometimes failed to include cookies in production
+
   try {
-    logger.debug('Fetching workouts...')
+    logger.debug('Fetching workouts via axios...')
 
-    // Check if user is authenticated first
-    const session = await authClient.getSession()
-    if (!session?.data?.user) {
-      logger.debug('No authenticated session found, returning empty workouts')
-      return []
-    }
+    // Use axios api.get() with automatic credential injection
+    // The api-client interceptor automatically adds withCredentials: true for /api/* routes
+    const response = await api.get<{ workouts: Workout[] }>('/api/workouts', {
+      suppressGlobalToast: true, // Don't show error toasts - we handle errors gracefully
+    })
 
-    const userId = session.data.user.id
-
-    // Check user-specific cache to prevent unnecessary re-fetches
-    const userCache = workoutsCache.get(userId)
-    if (userCache && Date.now() - userCache.timestamp < CACHE_DURATION) {
-      return userCache.data
-    }
-
-    // Use relative URL to ensure same-origin request with cookies
-    // Create an AbortController with timeout for the fetch
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-    // Use relative URL fetch with credentials included
-    const response = await fetch('/api/workouts', {
-      headers: {
-        Accept: 'application/json',
-      },
-      credentials: 'same-origin', // Use same-origin to ensure cookies are included
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId))
-
-    if (!response.ok) {
-      const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
-      logger.error(errorMessage)
-      // Return empty array instead of throwing to prevent infinite Suspense
-      return []
-    }
-
-    const data = await response.json()
-    const workouts = data.workouts || []
+    const workouts = response.data.workouts || []
 
     logger.info('Workouts fetched successfully', { count: workouts.length })
 
-    // Cache the result for this user to prevent re-fetching
-    workoutsCache.set(userId, {
-      data: workouts as Workout[],
-      timestamp: Date.now(),
-    })
-
     return workouts as Workout[]
   } catch (error) {
-    // Handle abort errors specifically
-    if (error instanceof Error && error.name === 'AbortError') {
-      logger.warn('Workouts fetch timed out after 10 seconds')
-      return [] // Return empty array on timeout
+    // Axios errors have structured response data
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number } }
+      if (axiosError.response?.status === 401) {
+        logger.debug('Unauthorized - user session expired or invalid')
+        return []
+      }
+      logger.error('HTTP error fetching workouts', {
+        status: axiosError.response?.status,
+      })
+      return []
     }
 
     logger.error('Error fetching workouts:', error)
@@ -133,13 +142,12 @@ export const workoutsWithSuspenseAtom = atom(get => {
 
 // Refresh action atom
 export const refreshWorkoutsAtom = atom(null, async (get, set) => {
-  await invalidateUserWorkoutsCache()
-  set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+  // Trigger a re-fetch by incrementing the refresh trigger (functional updater to avoid race)
+  set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
-  // Also trigger a re-fetch of async workouts by invalidating the cache
   import('@/lib/logger').then(({ createLogger }) => {
     const logger = createLogger('RefreshWorkoutsAtom')
-    logger.debug('Cache cleared and refresh triggered')
+    logger.debug('Refresh triggered')
   })
 })
 
@@ -377,9 +385,8 @@ export const completeWorkoutAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only (DRY helper)
-      await invalidateUserWorkoutsCache()
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      // Trigger refresh to fetch updated data
+      set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
       logger.info('Workout completed successfully', { workoutId })
       return updatedWorkout
@@ -471,9 +478,8 @@ export const logWorkoutDetailsAtom = atom(
       )
       set(workoutsAtom, updatedWorkouts)
 
-      // Invalidate current user's cache only (DRY helper)
-      await invalidateUserWorkoutsCache()
-      set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+      // Trigger refresh to fetch updated data
+      set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
       logger.info('Workout details logged successfully', { workoutId })
       return updatedWorkout
@@ -545,9 +551,8 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
     )
     set(workoutsAtom, updatedWorkouts)
 
-    // Invalidate current user's cache only; fallback to clearing all
-    await invalidateUserWorkoutsCache()
-    set(workoutsRefreshTriggerAtom, get(workoutsRefreshTriggerAtom) + 1)
+    // Trigger refresh to fetch updated data
+    set(workoutsRefreshTriggerAtom, prev => (prev ?? 0) + 1)
 
     logger.info('Workout skipped successfully', { workoutId })
     return updatedWorkout

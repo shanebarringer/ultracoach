@@ -72,6 +72,12 @@ debug-*.js
 debug-*.mjs
 test-*.js
 
+# AI conversation transcripts (prevent accidental commits)
+*-i-accidentally-*.txt
+*terminal*.txt
+*conversation*.txt
+*transcript*.txt
+
 # Supabase logs
 supabase/logs/
 

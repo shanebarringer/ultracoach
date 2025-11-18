@@ -295,16 +295,24 @@ function RunnerWeeklyPage({
         </CardHeader>
       </Card>
 
-      {/* Weekly Calendar - Responsive */}
+      {/* Weekly Calendar - Responsive with Suspense for workout hydration */}
       <div className="w-full">
-        <WeeklyPlannerCalendar
-          runner={selectedRunner}
-          weekStart={currentWeek}
-          readOnly={sessionUser?.userType === 'runner'}
-          onWeekUpdate={() => {
-            // Week updated successfully - data will be automatically refreshed
-          }}
-        />
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center min-h-[400px]">
+              <Spinner size="lg" color="primary" label="Loading weekly workouts..." />
+            </div>
+          }
+        >
+          <WeeklyPlannerCalendar
+            runner={selectedRunner}
+            weekStart={currentWeek}
+            readOnly={sessionUser?.userType === 'runner'}
+            onWeekUpdate={() => {
+              // Week updated successfully - data will be automatically refreshed
+            }}
+          />
+        </Suspense>
       </div>
     </>
   )

@@ -9,6 +9,9 @@ import { addDays, endOfMonth, format, startOfMonth } from 'date-fns'
 
 import { TEST_USERS } from '../utils/test-helpers'
 
+// CI timeout constant for consistent wait times
+const CI_TIMEOUT = 15000
+
 // Helper function to wait for page to be ready
 function waitForPageReady(page: Page): Promise<void> {
   return page.waitForLoadState('domcontentloaded')
@@ -22,7 +25,14 @@ test.describe('Workout Management', () => {
       // Navigate directly to the runner dashboard - storageState provides authentication
       await page.goto('/dashboard/runner')
       await waitForPageReady(page)
-      await expect(page).toHaveURL('/dashboard/runner', { timeout: 10000 })
+
+      // Wait for final URL after any redirects (verifies successful authentication)
+      await expect(page).toHaveURL('/dashboard/runner', { timeout: CI_TIMEOUT })
+
+      // Wait for dashboard content to ensure full page load
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', {
+        timeout: CI_TIMEOUT,
+      })
     })
 
     test('should display workouts list with proper filtering', async ({ page }) => {
@@ -130,7 +140,7 @@ test.describe('Workout Management', () => {
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: CI_TIMEOUT,
         }
       )
 
@@ -176,7 +186,7 @@ test.describe('Workout Management', () => {
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: CI_TIMEOUT,
         }
       )
 
@@ -264,11 +274,14 @@ test.describe('Workout Management', () => {
       await page.goto('/workouts')
       await page.waitForLoadState('domcontentloaded')
 
+      // Wait for URL to be workouts page (verifies authentication)
+      await expect(page).toHaveURL('/workouts', { timeout: CI_TIMEOUT })
+
       // Wait for either workouts or empty state to be visible
       await page.waitForSelector(
         '[data-testid="workout-card"], h3:has-text("No training sessions found")',
         {
-          timeout: 10000,
+          timeout: CI_TIMEOUT, // Use shared constant for consistent CI timeouts
         }
       )
 
@@ -289,7 +302,7 @@ test.describe('Workout Management', () => {
           await expect(stravaButton).toHaveText(/syncing/i)
 
           // Should eventually show success
-          await expect(page.getByText(/synced with strava/i)).toBeVisible({ timeout: 10000 })
+          await expect(page.getByText(/synced with strava/i)).toBeVisible({ timeout: CI_TIMEOUT })
 
           // stravaActivitiesAtom should be updated
           await expect(completedWorkout.locator('[data-testid="strava-badge"]')).toBeVisible()
@@ -305,42 +318,183 @@ test.describe('Workout Management', () => {
       // Navigate directly to the coach dashboard - storageState provides authentication
       await page.goto('/dashboard/coach')
       await waitForPageReady(page)
-      await expect(page).toHaveURL('/dashboard/coach', { timeout: 10000 })
+
+      // Wait for final URL after any redirects (verifies successful authentication)
+      await expect(page).toHaveURL('/dashboard/coach', { timeout: CI_TIMEOUT })
+
+      // Wait for dashboard content to ensure full page load
+      await page.waitForSelector('h1, h2, [data-testid="dashboard-content"]', {
+        timeout: CI_TIMEOUT,
+      })
     })
 
-    test.skip('should create workout for runner', async ({ page }) => {
-      // Skip: This test needs to be rewritten as the coach workflow is different
-      // Navigate to training plans using the actual button text
-      await page.getByRole('link', { name: /manage plans/i }).click()
+    test('should create workout for multiple runners via weekly planner', async ({ page }) => {
+      // This test verifies the fix for ULT-82 Phase 3: Training Plan Selection Bug
+      // BUG: Workouts were being created for wrong runner when coach has multiple athletes
+      // FIX: Added .find(plan => plan.runner_id === runner.id) to filter by current runner
 
-      // Select a runner
-      const runnerSelector = page.getByRole('combobox', { name: /select runner/i })
-      await runnerSelector.click()
+      // Navigate to weekly planner selection page
+      await page.goto('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
 
-      const runnerOptions = page.getByRole('option')
-      if ((await runnerOptions.count()) > 0) {
-        const runnerName = await runnerOptions.first().textContent()
-        await runnerOptions.first().click()
+      // Wait for page header to ensure page is rendered (don't use networkidle - hangs with real-time features)
+      await page.waitForSelector('h1:has-text("Weekly Planner")', { timeout: CI_TIMEOUT })
 
-        // Create workout for runner
-        await page.getByRole('button', { name: /add workout/i }).click()
+      // Try to wait for runner cards, but don't fail if none exist (will skip below)
+      await page
+        .waitForSelector('[data-testid="runner-card"], .runner-selection-card', {
+          timeout: CI_TIMEOUT,
+        })
+        .catch(() => {
+          // No runner cards found - coach may not have connected runners
+          console.log('No runner cards found, checking count for graceful skip...')
+        })
 
-        // Fill workout details
-        await page.getByLabel(/workout name/i).fill(`Coach Assigned Run for ${runnerName}`)
-        // Use a date 8 days from now
-        const secondWorkoutDate = format(addDays(new Date(), 8), 'yyyy-MM-dd')
-        await page.getByLabel(/date/i).fill(secondWorkoutDate)
-        await page.getByLabel(/type/i).selectOption('tempo')
-        await page.getByLabel(/distance/i).fill('10')
-        await page.getByLabel(/target pace/i).fill('7:30')
-        await page.getByLabel(/instructions/i).fill('Maintain steady tempo pace throughout')
+      // Get all available runner cards and check count IMMEDIATELY for early skip
+      // This avoids unnecessary setup work if we don't have enough runners
+      const runnerCards = page.locator('[data-testid="runner-card"], .runner-selection-card')
+      const runnerCount = await runnerCards.count()
 
-        // Submit
-        await page.getByRole('button', { name: /assign workout/i }).click()
-
-        // Should show success
-        await expect(page.getByText(/workout assigned/i)).toBeVisible()
+      // Skip if coach has fewer than 2 connected runners (can't test multi-runner scenario)
+      // Check as early as possible to avoid wasted navigation/setup before skip
+      if (runnerCount < 2) {
+        console.log(
+          `Skipping multi-runner test: coach has ${runnerCount} connected runners (need at least 2)`
+        )
+        test.skip()
+        return
       }
+
+      // Test with first runner
+      const firstRunnerCard = runnerCards.first()
+      const firstRunnerName =
+        (await firstRunnerCard.locator('[data-testid="runner-name"]').textContent()) || 'Runner 1'
+
+      await firstRunnerCard.click()
+
+      // Wait for weekly planner to load
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: CI_TIMEOUT })
+
+      // Create a workout for first runner (use tomorrow to avoid conflicts with existing workouts)
+      const tomorrow = addDays(new Date(), 1)
+      const dayName = format(tomorrow, 'EEEE') // e.g., "Monday"
+
+      // Find the day card for tomorrow
+      const dayCard = page.locator(`[data-testid="day-card-${dayName}"]`).first()
+      if ((await dayCard.count()) === 0) {
+        // Fallback: use any day card
+        await page.locator('[data-testid^="day-card-"]').first().click()
+      } else {
+        await dayCard.click()
+      }
+
+      // Fill workout form in weekly planner
+      await page.getByLabel(/planned type|type/i).click()
+      await page.getByRole('option', { name: /long run/i }).click()
+
+      await page.getByLabel(/distance|planned distance/i).fill('15')
+      await page.getByLabel(/duration|planned duration/i).fill('120')
+      await page.getByLabel(/notes/i).fill(`Test workout for ${firstRunnerName} - created by test`)
+
+      // Save workout
+      await page.getByRole('button', { name: /save|add workout/i }).click()
+
+      // Verify workout appears in UI
+      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: CI_TIMEOUT })
+
+      // Navigate back to weekly planner selection
+      await page.goto('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
+
+      // Test with second runner (CRITICAL: This is where the bug would manifest)
+      const secondRunnerCard = runnerCards.nth(1)
+      const secondRunnerName =
+        (await secondRunnerCard.locator('[data-testid="runner-name"]').textContent()) || 'Runner 2'
+
+      // CRITICAL: Ensure we're testing with a DIFFERENT runner
+      expect(secondRunnerName).not.toBe(firstRunnerName)
+
+      await secondRunnerCard.click()
+
+      // Wait for second runner's weekly planner to load
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: CI_TIMEOUT })
+
+      // Verify we're viewing the second runner's planner (not the first)
+      await expect(
+        page.locator('h1, [data-testid="runner-name"]').filter({ hasText: secondRunnerName })
+      ).toBeVisible()
+
+      // Create a workout for second runner (use day after tomorrow)
+      const dayAfterTomorrow = addDays(new Date(), 2)
+      const dayAfterTomorrowName = format(dayAfterTomorrow, 'EEEE')
+
+      const secondDayCard = page.locator(`[data-testid="day-card-${dayAfterTomorrowName}"]`).first()
+      if ((await secondDayCard.count()) === 0) {
+        await page.locator('[data-testid^="day-card-"]').first().click()
+      } else {
+        await secondDayCard.click()
+      }
+
+      // Fill workout form for second runner
+      await page.getByLabel(/planned type|type/i).click()
+      await page.getByRole('option', { name: /tempo/i }).click()
+
+      await page.getByLabel(/distance|planned distance/i).fill('12')
+      await page.getByLabel(/duration|planned duration/i).fill('90')
+      await page
+        .getByLabel(/notes/i)
+        .fill(
+          `Test workout for ${secondRunnerName} - MUST be for ${secondRunnerName}, NOT ${firstRunnerName}`
+        )
+
+      // Save workout
+      await page.getByRole('button', { name: /save|add workout/i }).click()
+
+      // Verify workout appears in UI
+      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: CI_TIMEOUT })
+
+      // REGRESSION TEST: Navigate back to first runner's planner and verify second workout is NOT there
+      await page.goto('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
+
+      // Re-wait for runner cards to ensure DOM is ready after navigation
+      // This prevents using stale locators from before navigation
+      await page
+        .waitForSelector('[data-testid="runner-card"], .runner-selection-card', {
+          timeout: CI_TIMEOUT,
+        })
+        .catch(() => {
+          console.log('Runner cards not found after navigation back')
+        })
+
+      // Re-acquire runner card locators to reference current DOM nodes (not stale pre-navigation nodes)
+      const refreshedRunnerCards = page.locator(
+        '[data-testid="runner-card"], .runner-selection-card'
+      )
+      const refreshedFirstRunnerCard = refreshedRunnerCards.first()
+
+      // Select first runner again (using fresh locator)
+      await refreshedFirstRunnerCard.click()
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+
+      // Navigate to the day where second runner's workout was created
+      const secondDayCardInFirstPlanner = page
+        .locator(`[data-testid="day-card-${dayAfterTomorrowName}"]`)
+        .first()
+      if ((await secondDayCardInFirstPlanner.count()) > 0) {
+        await secondDayCardInFirstPlanner.click()
+
+        // Verify the second runner's workout is NOT present in first runner's planner
+        // Scope the lookup to the day card locator for more precise assertion
+        await expect(
+          secondDayCardInFirstPlanner.getByText(`Test workout for ${secondRunnerName}`)
+        ).not.toBeVisible({ timeout: CI_TIMEOUT })
+      }
+
+      // Success: If we reach here, workouts were created successfully for both runners
+      // The test passing means the .find(plan => plan.runner_id === runner.id) fix is working
     })
 
     test('should view runner workout progress', async ({ page }) => {

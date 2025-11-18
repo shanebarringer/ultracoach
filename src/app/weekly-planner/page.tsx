@@ -211,6 +211,7 @@ function RunnersPanel() {
                 isPressable
                 onPress={() => router.push(`/weekly-planner/${runner.id}`)}
                 className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
+                data-testid="runner-card"
               >
                 <CardBody className="p-3 lg:p-4">
                   <div className="flex items-center gap-3">
@@ -220,10 +221,16 @@ function RunnersPanel() {
                       className="bg-primary text-white"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-sm lg:text-base truncate">
+                      <h3
+                        className="font-semibold text-foreground text-sm lg:text-base truncate"
+                        data-testid="runner-name"
+                      >
                         {runner.full_name || 'User'}
                       </h3>
-                      <p className="text-xs lg:text-sm text-foreground/70 truncate">
+                      <p
+                        className="text-xs lg:text-sm text-foreground/70 truncate"
+                        data-testid="runner-email"
+                      >
                         {runner.email}
                       </p>
                       <div className="flex items-center gap-1 lg:gap-2 mt-2">

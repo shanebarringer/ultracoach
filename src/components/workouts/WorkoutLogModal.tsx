@@ -23,9 +23,9 @@ import { Controller, useForm } from 'react-hook-form'
 import {
   completeWorkoutAtom,
   logWorkoutDetailsAtom,
-  refreshWorkoutsAtom,
   skipWorkoutAtom,
   workoutLogFormAtom,
+  workoutsAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -85,7 +85,7 @@ export default function WorkoutLogModal({
   const completeWorkout = useSetAtom(completeWorkoutAtom)
   const logWorkoutDetails = useSetAtom(logWorkoutDetailsAtom)
   const skipWorkout = useSetAtom(skipWorkoutAtom)
-  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
+  const setWorkouts = useSetAtom(workoutsAtom)
 
   // React Hook Form setup
   const {
@@ -163,35 +163,70 @@ export default function WorkoutLogModal({
         await skipWorkout(workout.id)
       } else if (data.status === 'completed') {
         // If we have actual data, use the log details atom, otherwise just mark complete
-        const hasActualData = data.actualDistance || data.actualDuration || data.workoutNotes
+        // Treat 0 as valid by checking against null/undefined
+        const hasActualData =
+          data.actualDistance != null ||
+          data.actualDuration != null ||
+          (data.workoutNotes != null && data.workoutNotes.trim().length > 0)
         if (hasActualData) {
           await logWorkoutDetails({ workoutId: workout.id, data: payload })
         } else {
           await completeWorkout({ workoutId: workout.id, data: {} })
         }
       } else {
-        // For 'planned' status, just update the workout with the API directly
-        const baseUrl =
-          typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-        const response = await fetch(`${baseUrl}/api/workouts/${workout.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({ ...payload, status: 'planned' }),
-        })
+        // For 'planned' status, use optimistic update pattern
+        const previousWorkout = { ...workout }
 
-        if (!response.ok) {
-          throw new Error('Failed to update workout')
+        // Optimistically update the workouts atom immediately
+        setWorkouts(prev =>
+          prev.map(w =>
+            w.id === workout.id
+              ? ({
+                  ...w,
+                  ...payload,
+                  status: 'planned' as const,
+                  updated_at: new Date().toISOString(),
+                  // Convert null to undefined for type compatibility
+                  category: payload.category || undefined,
+                  intensity: payload.intensity || undefined,
+                  terrain: payload.terrain || undefined,
+                  elevation_gain: payload.elevation_gain || undefined,
+                } as Workout)
+              : w
+          )
+        )
+
+        try {
+          const response = await fetch(`/api/workouts/${workout.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ ...payload, status: 'planned' }),
+          })
+
+          if (!response.ok) {
+            // Rollback on error
+            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
+            throw new Error('Failed to update workout')
+          }
+
+          // Update with server response
+          const updatedWorkout = await response.json()
+          setWorkouts(prev =>
+            prev.map(w => (w.id === workout.id ? updatedWorkout.workout || updatedWorkout : w))
+          )
+        } catch (error) {
+          // Rollback already happened in the if (!response.ok) block
+          throw error
         }
       }
 
       logger.info('Workout updated successfully')
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
 
-      // Trigger a refresh to ensure all components update
-      refreshWorkouts()
+      // NO refreshWorkouts() call - optimistic updates already applied!
 
       reset() // Reset form with react-hook-form
       onSuccess()

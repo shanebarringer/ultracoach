@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Middleware')
+
 export async function middleware(request: NextRequest) {
   // Handle OPTIONS requests (CORS preflight)
   if (request.method === 'OPTIONS') {
@@ -66,7 +70,43 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('better-auth.session_token')
 
+    // Debug logging for CI to diagnose session issues
+    if (process.env.CI) {
+      const allCookies = request.cookies.getAll()
+      const cookieHeaderValue = request.headers.get('cookie')
+      logger.debug('CI session debug', {
+        path: request.nextUrl.pathname,
+        hasSessionCookie: !!sessionCookie,
+        cookieValue:
+          sessionCookie?.value && sessionCookie.value.length > 20
+            ? sessionCookie.value.substring(0, 20) + '...'
+            : sessionCookie?.value,
+        totalCookies: allCookies.length,
+        cookieNames: allCookies.map(c => c.name),
+        headers: {
+          cookie:
+            cookieHeaderValue && cookieHeaderValue.length > 100
+              ? cookieHeaderValue.substring(0, 100) + '...'
+              : cookieHeaderValue,
+          userAgent: request.headers.get('user-agent'),
+        },
+      })
+    }
+
     if (!sessionCookie) {
+      logger.warn('No session cookie found, redirecting to signin', {
+        path: request.nextUrl.pathname,
+        hasAnyCookies: request.cookies.getAll().length > 0,
+      })
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
+
+    // Validate session token format (basic sanity check)
+    if (!sessionCookie.value || sessionCookie.value.length < 12) {
+      logger.warn('Invalid session token format', {
+        path: request.nextUrl.pathname,
+        tokenLength: sessionCookie.value?.length || 0,
+      })
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
 
