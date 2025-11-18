@@ -230,6 +230,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
               variant="flat"
               onClose={() => setChatUiState(prev => ({ ...prev, filterWorkoutId: null }))}
               size="sm"
+              suppressHydrationWarning
             >
               {filterWorkout.planned_type || 'Workout'} -{' '}
               {new Date(filterWorkout.date || '').toLocaleDateString()}
@@ -264,7 +265,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                     : []),
                   ...workoutsWithMessages.map(
                     (workout: { id: string; planned_type?: string; date?: string }) => (
-                      <DropdownItem key={workout.id}>
+                      <DropdownItem key={workout.id} suppressHydrationWarning>
                         {workout.planned_type || 'Workout'} -{' '}
                         {new Date(workout.date || '').toLocaleDateString()}
                       </DropdownItem>

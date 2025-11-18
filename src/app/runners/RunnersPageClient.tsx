@@ -105,7 +105,7 @@ export default function RunnersPageClient({ user }: RunnersPageClientProps) {
                   Runner
                 </Chip>
                 {runner.connected_at && (
-                  <Chip variant="flat" color="success" size="sm">
+                  <Chip variant="flat" color="success" size="sm" suppressHydrationWarning>
                     Connected {new Date(runner.connected_at).toLocaleDateString()}
                   </Chip>
                 )}

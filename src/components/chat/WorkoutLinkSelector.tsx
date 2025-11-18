@@ -165,7 +165,7 @@ export default function WorkoutLinkSelector({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <Calendar className="h-4 w-4 text-default-400" />
-                          <span className="text-small font-medium">
+                          <span className="text-small font-medium" suppressHydrationWarning>
                             {new Date(workout.date || '').toLocaleDateString()}
                           </span>
                           <Chip

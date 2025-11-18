@@ -388,7 +388,7 @@ export default function CreateTrainingPlanModal({
                           </span>
                         )}
                         {item.elevation_gain_feet > 0 && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1" suppressHydrationWarning>
                             ⛰️ {item.elevation_gain_feet.toLocaleString()}ft
                           </span>
                         )}

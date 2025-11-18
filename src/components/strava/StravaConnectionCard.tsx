@@ -236,7 +236,7 @@ export default function StravaConnectionCard() {
                   </Chip>
                 )}
               </h3>
-              <p className="text-sm text-default-500">
+              <p className="text-sm text-default-500" suppressHydrationWarning>
                 {athlete.username && `@${athlete.username} • `}
                 Connected since {connectedDate}
               </p>

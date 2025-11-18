@@ -266,7 +266,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">
+                          <p className="font-medium" suppressHydrationWarning>
                             {new Date(planned.date).toLocaleDateString()}
                           </p>
                         </div>
@@ -316,7 +316,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">
+                          <p className="font-medium" suppressHydrationWarning>
                             {new Date(actual.date).toLocaleDateString()}
                           </p>
                         </div>

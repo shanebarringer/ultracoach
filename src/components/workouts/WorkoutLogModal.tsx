@@ -254,7 +254,7 @@ export default function WorkoutLogModal({
                 {workout.planned_distance && ` • ${workout.planned_distance} miles`}
                 {workout.planned_duration && ` • ${workout.planned_duration} min`}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1" suppressHydrationWarning>
                 {new Date(workout.date).toLocaleDateString()}
               </p>
             </div>

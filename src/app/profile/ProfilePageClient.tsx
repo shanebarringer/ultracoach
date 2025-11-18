@@ -149,7 +149,9 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Member Since:</span>
-                    <span className="font-medium">{new Date().toLocaleDateString()}</span>
+                    <span className="font-medium" suppressHydrationWarning>
+                      {new Date().toLocaleDateString()}
+                    </span>
                   </div>
                 </CardBody>
               </Card>

@@ -311,7 +311,9 @@ const AsyncStravaDashboardWidget = memo(({ className = '' }: AsyncStravaDashboar
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-foreground-600">{activity.date}</span>
+                        <span className="text-xs text-foreground-600" suppressHydrationWarning>
+                          {activity.date}
+                        </span>
                         <ExternalLink className="h-3 w-3 text-foreground-400" />
                       </div>
                     </div>

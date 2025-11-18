@@ -220,7 +220,7 @@ export default function StravaActivityList() {
                     )}
                   </div>
                 </div>
-                <div className="text-small text-default-500">
+                <div className="text-small text-default-500" suppressHydrationWarning>
                   {new Date(activity.start_date_local).toLocaleDateString()}
                 </div>
               </div>

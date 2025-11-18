@@ -661,7 +661,7 @@ function RacesContent() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-foreground-600" />
-                    <span className="text-sm text-foreground-600">
+                    <span className="text-sm text-foreground-600" suppressHydrationWarning>
                       {new Date(race.date).toLocaleDateString()}
                     </span>
                   </div>
@@ -675,7 +675,7 @@ function RacesContent() {
                   </div>
                   <div className="flex items-center gap-2">
                     <MountainSnowIcon className="w-4 h-4 text-foreground-600" />
-                    <span className="text-sm text-foreground-600">
+                    <span className="text-sm text-foreground-600" suppressHydrationWarning>
                       {race.elevation_gain_feet.toLocaleString()} ft gain
                     </span>
                   </div>
