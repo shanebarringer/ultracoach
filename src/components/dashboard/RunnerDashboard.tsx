@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { endOfDay, isWithinInterval, startOfDay, addDays } from 'date-fns'
 import { useAtom } from 'jotai'
 import {
   ActivityIcon,
@@ -167,11 +168,11 @@ function RunnerDashboard() {
 
   // Memoize expensive computations and add logging
   const dashboardMetrics = useMemo(() => {
-    const today = new Date()
-    const weekFromToday = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const today = startOfDay(new Date())
+    const weekFromToday = endOfDay(addDays(today, 7))
     const thisWeekWorkouts = upcomingWorkouts.filter(w => {
-      const workoutDate = new Date(w.date)
-      return workoutDate >= today && workoutDate <= weekFromToday
+      const workoutDate = startOfDay(new Date(w.date))
+      return isWithinInterval(workoutDate, { start: today, end: weekFromToday })
     })
 
     // Calculate advanced metrics
@@ -206,11 +207,9 @@ function RunnerDashboard() {
 
   // Get today's workout
   const todaysWorkout = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = startOfDay(new Date())
     return upcomingWorkouts.find(w => {
-      const workoutDate = new Date(w.date)
-      workoutDate.setHours(0, 0, 0, 0)
+      const workoutDate = startOfDay(new Date(w.date))
       return workoutDate.getTime() === today.getTime()
     })
   }, [upcomingWorkouts])
@@ -218,6 +217,17 @@ function RunnerDashboard() {
   if (loading) {
     return <RunnerDashboardSkeleton />
   }
+
+  // Extract coach relationships once to avoid duplicate filtering
+  const coachRelationships: RelationshipData[] = relationships.filter(
+    (rel: RelationshipData) => rel.other_party.role === 'coach'
+  )
+
+  // Get user locale for date formatting (fallback to browser locale)
+  const userLocale = session?.user?.locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US')
+
+  // Helper to format workout type labels (replace all underscores)
+  const formatLabel = (label: string | undefined) => label?.replace(/_/g, ' ') || ''
 
   return (
     <div className="space-y-8" data-testid="runner-dashboard-content">
@@ -243,7 +253,7 @@ function RunnerDashboard() {
                 <div>
                   <h2 className="text-xl font-bold text-foreground">Today&apos;s Workout</h2>
                   <p className="text-sm text-foreground-600">
-                    {new Date(todaysWorkout.date).toLocaleDateString('en-US', {
+                    {new Date(todaysWorkout.date).toLocaleDateString(userLocale, {
                       weekday: 'long',
                       month: 'short',
                       day: 'numeric',
@@ -255,7 +265,7 @@ function RunnerDashboard() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground capitalize mb-1">
-                    {todaysWorkout.planned_type?.replace('_', ' ')}
+                    {formatLabel(todaysWorkout.planned_type)}
                   </h3>
                   {todaysWorkout.workout_notes && (
                     <p className="text-sm text-foreground-600">{todaysWorkout.workout_notes}</p>
@@ -291,7 +301,7 @@ function RunnerDashboard() {
                       <div>
                         <p className="text-xs text-foreground-600">Type</p>
                         <p className="text-base font-semibold text-foreground capitalize">
-                          {todaysWorkout.category.replace('_', ' ')}
+                          {formatLabel(todaysWorkout.category)}
                         </p>
                       </div>
                     </div>
@@ -433,11 +443,11 @@ function RunnerDashboard() {
                           {getWorkoutTypeIcon(workout.planned_type)}
                           <div>
                             <h3 className="font-semibold text-foreground capitalize">
-                              {workout.planned_type?.replace('_', ' ')}
+                              {formatLabel(workout.planned_type)}
                             </h3>
                             <div className="flex items-center gap-3 mt-1">
                               <span className="text-sm text-foreground-600">
-                                {new Date(workout.date).toLocaleDateString('en-US', {
+                                {new Date(workout.date).toLocaleDateString(userLocale, {
                                   weekday: 'short',
                                   month: 'short',
                                   day: 'numeric',
@@ -488,9 +498,7 @@ function RunnerDashboard() {
               </Button>
             </CardHeader>
             <CardBody>
-              {relationships.filter(
-                (rel: { other_party: { role: string } }) => rel.other_party.role === 'coach'
-              ).length === 0 ? (
+              {coachRelationships.length === 0 ? (
                 <div className="text-center py-8">
                   <MountainSnowIcon className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">No coach assigned</h3>
@@ -502,16 +510,14 @@ function RunnerDashboard() {
                     href="/relationships"
                     color="primary"
                     size="sm"
-                    data-testid="find-your-guide-button"
+                    data-testid="find-coach-button"
                   >
                     Find a Coach
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {relationships
-                    .filter((rel: RelationshipData) => rel.other_party.role === 'coach')
-                    .map((relationship: RelationshipData) => (
+                  {coachRelationships.map((relationship: RelationshipData) => (
                       <Card
                         key={relationship.id}
                         className="border border-divider hover:shadow-md transition-shadow"
