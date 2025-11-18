@@ -97,26 +97,8 @@ function getTrustedOrigins(): string[] {
   // Add main production domain
   origins.push('https://ultracoach.vercel.app')
 
-  // More permissive approach for development/preview deployments
-  // Trust all Vercel deployments for this project
-  if (process.env.NODE_ENV === 'development' || process.env.VERCEL_GIT_COMMIT_REF) {
-    // IMPORTANT: Better Auth doesn't support wildcard patterns in trustedOrigins
-    // We need to use the advanced mode with a custom origin check function instead
-    // For now, add common preview URL patterns and rely on VERCEL_URL for dynamic previews
-    const previewUrls = [
-      'https://ultracoach-hawqljwys-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-fix-cors-error-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-main-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-develop-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-feature-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-preview-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-staging-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-test-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-refactor-jotai-atom-6ba6ae-shane-hehims-projects.vercel.app',
-      'https://ultracoach-git-fix-workout-persist-c3e33f-shane-hehims-projects.vercel.app',
-    ]
-    origins.push(...previewUrls)
-  }
+  // Note: Preview URLs are automatically handled via VERCEL_URL environment variable (lines 93-95)
+  // No need to hardcode branch-specific preview URLs as they become stale quickly
 
   // Allow additional trusted origins from environment variable
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
