@@ -141,11 +141,44 @@ const EnhancedWorkoutsList = memo(
         .sort((a, b) => {
           switch (sortBy) {
             case 'date-desc': {
-              const primary = b.dateTime - a.dateTime
-              if (primary !== 0) return primary
+              // Smart sort: Today -> Tomorrow -> Upcoming -> Past
+              const today = new Date()
+              const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+              const todayEnd = new Date(todayStart)
+              todayEnd.setDate(todayEnd.getDate() + 1)
+              const tomorrowEnd = new Date(todayEnd)
+              tomorrowEnd.setDate(tomorrowEnd.getDate() + 1)
+
+              const aDate = a.dateTime
+              const bDate = b.dateTime
+
+              // Categorize workouts
+              const getCategory = (dateTime: number) => {
+                if (dateTime >= todayStart.getTime() && dateTime < todayEnd.getTime()) return 0 // Today
+                if (dateTime >= todayEnd.getTime() && dateTime < tomorrowEnd.getTime()) return 1 // Tomorrow
+                if (dateTime >= tomorrowEnd.getTime()) return 2 // Upcoming
+                return 3 // Past
+              }
+
+              const aCat = getCategory(aDate)
+              const bCat = getCategory(bDate)
+
+              // Sort by category first
+              if (aCat !== bCat) return aCat - bCat
+
+              // Within category, sort by date
+              if (aCat === 3) {
+                // Past workouts: most recent first
+                const primary = b.dateTime - a.dateTime
+                if (primary !== 0) return primary
+              } else {
+                // Today, Tomorrow, Upcoming: chronological order
+                const primary = a.dateTime - b.dateTime
+                if (primary !== 0) return primary
+              }
+
               const secondary = b.createdTime - a.createdTime
               if (secondary !== 0) return secondary
-              // Final deterministic tie-breaker
               return (b.workout.id || '').localeCompare(a.workout.id || '')
             }
             case 'date-asc': {
@@ -403,7 +436,7 @@ const EnhancedWorkoutsList = memo(
                 <SelectItem key="date-desc">
                   <div className="flex items-center gap-2">
                     <SortDesc className="h-4 w-4" />
-                    Latest First
+                    Smart Sort
                   </div>
                 </SelectItem>
                 <SelectItem key="date-asc">
