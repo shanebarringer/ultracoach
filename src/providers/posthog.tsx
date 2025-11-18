@@ -41,9 +41,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         },
         // Enable error tracking
         capture_exceptions: {
-          enabled: true,
-          capture_unhandled_promise_rejections: true,
+          capture_unhandled_rejections: true,
           capture_unhandled_errors: true,
+          capture_console_errors: true,
         },
         // Respect Do Not Track
         respect_dnt: true,
