@@ -510,7 +510,7 @@ function RunnerDashboard() {
                     href="/relationships"
                     color="primary"
                     size="sm"
-                    data-testid="find-coach-button"
+                    data-testid="find-coach-cta-button"
                   >
                     Find a Coach
                   </Button>
