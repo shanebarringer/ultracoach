@@ -18,6 +18,7 @@ import {
   calendarUiStateAtom,
   connectedRunnersAtom,
   filteredWorkoutsAtom,
+  weeklyWorkoutStatsAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
 import { asyncTrainingPlansAtom } from '@/lib/atoms/training-plans'
@@ -89,6 +90,7 @@ function CalendarContent({ user }: Props) {
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
   const filteredWorkouts = useAtomValue(filteredWorkoutsAtom)
   const workoutStats = useAtomValue(workoutStatsAtom)
+  const weeklyStats = useAtomValue(weeklyWorkoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
@@ -349,19 +351,19 @@ function CalendarContent({ user }: Props) {
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned Distance:</span>
                     <span className="font-medium">
-                      {Number(workoutStats.plannedDistance || 0).toFixed(1)} mi
+                      {Number(weeklyStats.plannedDistance || 0).toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>
                     <span className="font-medium text-success">
-                      {Number(workoutStats.completedDistance || 0).toFixed(1)} mi
+                      {Number(weeklyStats.completedDistance || 0).toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
                     <span className="font-medium">
-                      {Number(workoutStats.avgIntensity || 0).toFixed(1)}
+                      {Number(weeklyStats.avgIntensity || 0).toFixed(1)}
                     </span>
                   </div>
                 </div>
