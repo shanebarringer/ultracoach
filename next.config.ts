@@ -89,10 +89,13 @@ const nextConfig: NextConfig = {
 // Wrap with PostHog config for automatic source map upload
 export default withPostHogConfig(nextConfig, {
   personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY || '',
-  envId: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID || '251417',
+  envId: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID || '', // No fallback - must be explicitly set
   host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
   sourcemaps: {
-    enabled: process.env.NODE_ENV === 'production' && !!process.env.POSTHOG_PERSONAL_API_KEY, // Only when API key is provided
+    enabled:
+      process.env.NODE_ENV === 'production' &&
+      !!process.env.POSTHOG_PERSONAL_API_KEY &&
+      !!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID, // Require both API key and project ID
     deleteAfterUpload: true, // Clean up source maps after upload for security
   },
 })

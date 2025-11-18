@@ -18,7 +18,7 @@ NEXT_PUBLIC_POSTHOG_PROJECT_ID="your-project-id"
 
 Open your preview site with **Developer Tools** (F12) and check the Console tab for:
 
-```
+```text
 ✅ Good signs:
 - "PostHog initialized successfully" (from tslog)
 - "[PostHog] Tracking pageview" messages
@@ -198,6 +198,7 @@ This will log all PostHog activity to console.
 
 1. Set `NODE_ENV=production` in your `.env.local`
 2. Or temporarily remove the opt-out code:
+
    ```typescript
    // Comment out in posthog.tsx:
    // if (process.env.NODE_ENV === 'development') {

@@ -58,6 +58,7 @@ export class PostHogErrorBoundary extends Component<Props, State> {
                 We&apos;ve been notified and will look into it. Please try refreshing the page.
               </p>
               <button
+                type="button"
                 onClick={() => {
                   this.setState({ hasError: false, error: undefined })
                   window.location.reload()

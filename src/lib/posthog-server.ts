@@ -36,10 +36,17 @@ export async function identifyUser(userId: string, properties?: Record<string, u
   const posthog = getPostHogServer()
   if (!posthog) return
 
-  posthog.identify({
-    distinctId: userId,
-    properties,
-  })
+  try {
+    posthog.identify({
+      distinctId: userId,
+      properties,
+    })
+    // Flush immediately to ensure event is sent before serverless function terminates
+    await posthog.flush()
+  } catch (error) {
+    console.error('Failed to identify user in PostHog:', error)
+    throw error
+  }
 }
 
 /**
@@ -56,11 +63,18 @@ export async function trackServerEvent(
   const posthog = getPostHogServer()
   if (!posthog) return
 
-  posthog.capture({
-    distinctId: userId,
-    event,
-    properties,
-  })
+  try {
+    posthog.capture({
+      distinctId: userId,
+      event,
+      properties,
+    })
+    // Flush immediately to ensure event is sent before serverless function terminates
+    await posthog.flush()
+  } catch (error) {
+    console.error('Failed to track event in PostHog:', error)
+    throw error
+  }
 }
 
 /**

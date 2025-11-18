@@ -143,9 +143,13 @@ export default function RaceTrainingPlansModal({
                           name: plan.runner_name || plan.runner_email,
                         }}
                       />
-                      <div className="text-xs text-foreground-500" suppressHydrationWarning>
+                      <time
+                        className="text-xs text-foreground-500"
+                        dateTime={plan.created_at}
+                        suppressHydrationWarning
+                      >
                         Created {new Date(plan.created_at).toLocaleDateString()}
-                      </div>
+                      </time>
                     </div>
                   </CardBody>
                 </Card>

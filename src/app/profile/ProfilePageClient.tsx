@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
+import { format, parseISO } from 'date-fns'
 import { MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
 import { useState } from 'react'
@@ -20,6 +21,7 @@ interface ProfilePageClientProps {
     email: string
     name: string | null
     role: 'coach' | 'runner'
+    createdAt: string | Date
   }
 }
 
@@ -149,8 +151,15 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Member Since:</span>
-                    <span className="font-medium" suppressHydrationWarning>
-                      {new Date().toLocaleDateString()}
+                    <span className="font-medium">
+                      {user.createdAt
+                        ? format(
+                            typeof user.createdAt === 'string'
+                              ? parseISO(user.createdAt)
+                              : user.createdAt,
+                            'MMM d, yyyy'
+                          )
+                        : 'Unknown'}
                     </span>
                   </div>
                 </CardBody>
