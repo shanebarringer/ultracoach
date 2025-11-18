@@ -30,6 +30,14 @@ import {
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+import {
+  GOAL_TYPES,
+  GOAL_TYPE_LABELS,
+  type GoalType,
+  PLAN_TYPES,
+  PLAN_TYPE_LABELS,
+  type PlanType,
+} from '@/types/training'
 
 const logger = createLogger('CreateTrainingPlanModal')
 
@@ -42,8 +50,8 @@ const createTrainingPlanSchema = z.object({
   description: z.string().max(500, 'Description must be at most 500 characters').optional(),
   runnerId: z.string().min(1, 'Please select a runner'),
   race_id: z.string().nullable(),
-  goal_type: z.enum(['completion', 'time', 'placement']).nullable(),
-  plan_type: z.enum(['race_specific', 'base_building', 'bridge', 'recovery']).nullable(),
+  goal_type: z.enum(GOAL_TYPES).nullable(),
+  plan_type: z.enum(PLAN_TYPES).nullable(),
   targetRaceDate: z.string().optional(),
   targetRaceDistance: z.string().optional(),
   template_id: z.string().nullable(),
@@ -316,20 +324,14 @@ export default function CreateTrainingPlanModal({
                 name="plan_type"
                 selectedKeys={formData.plan_type ? [formData.plan_type] : []}
                 onSelectionChange={keys => {
-                  const selectedPlanType = Array.from(keys).join('') as
-                    | 'race_specific'
-                    | 'base_building'
-                    | 'bridge'
-                    | 'recovery'
-                    | ''
+                  const selectedPlanType = Array.from(keys).join('') as PlanType | ''
                   setValue('plan_type', selectedPlanType === '' ? null : selectedPlanType)
                 }}
                 placeholder="Select plan type..."
               >
-                <SelectItem key="race_specific">Race Specific</SelectItem>
-                <SelectItem key="base_building">Base Building</SelectItem>
-                <SelectItem key="bridge">Bridge Plan</SelectItem>
-                <SelectItem key="recovery">Recovery Plan</SelectItem>
+                {PLAN_TYPES.map(type => (
+                  <SelectItem key={type}>{PLAN_TYPE_LABELS[type]}</SelectItem>
+                ))}
               </Select>
 
               <Select
@@ -337,19 +339,13 @@ export default function CreateTrainingPlanModal({
                 name="goal_type"
                 selectedKeys={formData.goal_type ? [formData.goal_type] : []}
                 onSelectionChange={keys => {
-                  const selectedGoalType = Array.from(keys).join('') as
-                    | 'completion'
-                    | 'time'
-                    | 'placement'
-                    | ''
+                  const selectedGoalType = Array.from(keys).join('') as GoalType | ''
                   setValue('goal_type', selectedGoalType === '' ? null : selectedGoalType)
                 }}
                 placeholder="Select goal type..."
                 items={[
                   { id: '', name: 'No specific goal' },
-                  { id: 'completion', name: 'Completion' },
-                  { id: 'time', name: 'Time Goal' },
-                  { id: 'placement', name: 'Placement Goal' },
+                  ...GOAL_TYPES.map(type => ({ id: type, name: GOAL_TYPE_LABELS[type] })),
                 ]}
               >
                 {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
