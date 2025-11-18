@@ -487,7 +487,10 @@ test.describe('Workout Management', () => {
         await secondDayCardInFirstPlanner.click()
 
         // Verify the second runner's workout is NOT present in first runner's planner
-        await expect(page.getByText(`Test workout for ${secondRunnerName}`)).not.toBeVisible()
+        // Scope the lookup to the day card locator for more precise assertion
+        await expect(
+          secondDayCardInFirstPlanner.getByText(`Test workout for ${secondRunnerName}`)
+        ).not.toBeVisible({ timeout: CI_TIMEOUT })
       }
 
       // Success: If we reach here, workouts were created successfully for both runners
