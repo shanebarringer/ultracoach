@@ -163,7 +163,11 @@ export default function WorkoutLogModal({
         await skipWorkout(workout.id)
       } else if (data.status === 'completed') {
         // If we have actual data, use the log details atom, otherwise just mark complete
-        const hasActualData = data.actualDistance || data.actualDuration || data.workoutNotes
+        // Treat 0 as valid by checking against null/undefined
+        const hasActualData =
+          data.actualDistance != null ||
+          data.actualDuration != null ||
+          (data.workoutNotes != null && data.workoutNotes.trim().length > 0)
         if (hasActualData) {
           await logWorkoutDetails({ workoutId: workout.id, data: payload })
         } else {
@@ -193,9 +197,7 @@ export default function WorkoutLogModal({
         )
 
         try {
-          const baseUrl =
-            typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-          const response = await fetch(`${baseUrl}/api/workouts/${workout.id}`, {
+          const response = await fetch(`/api/workouts/${workout.id}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',

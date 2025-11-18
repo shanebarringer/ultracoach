@@ -16,6 +16,7 @@ import { useSetAtom } from 'jotai'
 
 import { useEffect, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -155,63 +156,46 @@ export default function AddWorkoutModal({
     setWorkouts(prev => [...prev, tempWorkout])
 
     try {
-      const response = await fetch('/api/workouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(workoutPayload),
+      const response = await api.post<{ workout: Workout }>('/api/workouts', workoutPayload)
+      const savedWorkout = response.data.workout || (response.data as unknown as Workout)
+
+      logger.debug('API response received, replacing temp ID with real ID', {
+        tempId,
+        realId: savedWorkout.id,
       })
 
-      if (response.ok) {
-        // Get real workout from server
-        const data = await response.json()
-        const savedWorkout = data.workout || data
+      // Replace temp workout with real server workout
+      setWorkouts(prev => prev.map(w => (w.id === tempId ? savedWorkout : w)))
 
-        logger.debug('API response received, replacing temp ID with real ID', {
-          tempId,
-          realId: savedWorkout.id,
-        })
+      setFormData({
+        date: '',
+        plannedType: '',
+        plannedDistance: '',
+        plannedDuration: '',
+        notes: '',
+        category: '',
+        intensity: '',
+        terrain: '',
+        elevationGain: '',
+      })
 
-        // Replace temp workout with real server workout
-        setWorkouts(prev => prev.map(w => (w.id === tempId ? savedWorkout : w)))
+      commonToasts.workoutSaved()
 
-        setFormData({
-          date: '',
-          plannedType: '',
-          plannedDistance: '',
-          plannedDuration: '',
-          notes: '',
-          category: '',
-          intensity: '',
-          terrain: '',
-          elevationGain: '',
-        })
+      logger.info('Workout created successfully with optimistic update', {
+        workoutId: savedWorkout.id,
+      })
 
-        commonToasts.workoutSaved()
-
-        logger.info('Workout created successfully with optimistic update', {
-          workoutId: savedWorkout.id,
-        })
-
-        onSuccess()
-        onClose()
-      } else {
-        // Rollback optimistic update on error
-        logger.debug('Rolling back optimistic update due to API error', { tempId })
-        setWorkouts(prev => prev.filter(w => w.id !== tempId))
-
-        const data = await response.json()
-        setError(data.error || 'Failed to add workout')
-        commonToasts.workoutError(data.error || 'Failed to add workout')
-      }
+      onSuccess()
+      onClose()
     } catch (error) {
       // Rollback optimistic update on error
       logger.debug('Rolling back optimistic update due to exception', { tempId, error })
       setWorkouts(prev => prev.filter(w => w.id !== tempId))
 
-      setError('An error occurred. Please try again.')
-      commonToasts.workoutError('An error occurred. Please try again.')
+      const errorMessage =
+        error instanceof Error ? error.message : 'An error occurred. Please try again.'
+      setError(errorMessage)
+      commonToasts.workoutError(errorMessage)
     } finally {
       setLoading(false)
     }
