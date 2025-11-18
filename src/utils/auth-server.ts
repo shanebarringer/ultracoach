@@ -20,6 +20,7 @@ interface BetterAuthUser {
   role?: 'coach' | 'runner'
   userType?: string
   fullName?: string | null
+  createdAt?: string | Date
 }
 
 interface BetterAuthSession {
@@ -40,6 +41,7 @@ export interface ServerSession {
     name: string | null
     role: 'coach' | 'runner'
     userType: 'coach' | 'runner'
+    createdAt: string | Date
   }
 }
 
@@ -184,6 +186,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
         name: user.name || null,
         role: userRole,
         userType: userRole,
+        createdAt: user.createdAt || new Date().toISOString(),
       },
     }
 
