@@ -474,7 +474,6 @@ test.describe('Workout Management', () => {
         '[data-testid="runner-card"], .runner-selection-card'
       )
       const refreshedFirstRunnerCard = refreshedRunnerCards.first()
-      const refreshedSecondRunnerCard = refreshedRunnerCards.nth(1)
 
       // Select first runner again (using fresh locator)
       await refreshedFirstRunnerCard.click()
