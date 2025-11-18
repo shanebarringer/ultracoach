@@ -223,8 +223,8 @@ function RunnerDashboard() {
     (rel: RelationshipData) => rel.other_party.role === 'coach'
   )
 
-  // Get user locale for date formatting (fallback to browser locale)
-  const userLocale = session?.user?.locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US')
+  // Get user locale for date formatting from browser
+  const userLocale = typeof navigator !== 'undefined' ? navigator.language : 'en-US'
 
   // Helper to format workout type labels (replace all underscores)
   const formatLabel = (label: string | undefined) => label?.replace(/_/g, ' ') || ''
