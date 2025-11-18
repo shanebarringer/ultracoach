@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, raceImportLimiter } from '@/lib/rate-limiter'
+import { addRateLimitHeaders, raceImportLimiter } from '@/lib/redis-rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Apply rate limiting
-    const rateLimitResult = raceImportLimiter.check(session.user.id)
+    const rateLimitResult = await raceImportLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
       const response = NextResponse.json(
         {
