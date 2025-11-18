@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import {
+  type FeedbackEmailProps,
   feedbackTypeLabels,
   generateFeedbackEmailHTML,
   generateFeedbackEmailText,
@@ -25,6 +26,12 @@ if (!RESEND_API_KEY) {
 }
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
+// Transform empty strings to undefined to prevent persisting '' in database
+const emptyStringToUndefined = z
+  .literal('')
+  .transform(() => undefined)
+  .optional()
+
 // Zod schema for runtime validation of feedback request
 const feedbackRequestSchema = z.object({
   feedback_type: z.enum([
@@ -41,7 +48,7 @@ const feedbackRequestSchema = z.object({
     .min(1, 'Description is required')
     .max(5000, 'Description must be 5000 characters or less'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  user_email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  user_email: z.union([z.string().email('Invalid email format'), emptyStringToUndefined]),
   browser_info: z
     .object({
       userAgent: z.string().optional(),
@@ -51,7 +58,7 @@ const feedbackRequestSchema = z.object({
       timezone: z.string().optional(),
     })
     .optional(),
-  page_url: z.string().url('Invalid URL format').optional().or(z.literal('')),
+  page_url: z.union([z.string().url('Invalid URL format'), emptyStringToUndefined]),
 })
 
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>
@@ -67,7 +74,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const rawBody = await request.json()
+    // Parse JSON with explicit error handling
+    let rawBody: unknown
+    try {
+      rawBody = await request.json()
+    } catch (parseError) {
+      logger.warn('Invalid JSON payload received:', parseError)
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
 
     // Validate request body with Zod for runtime type safety
     const validation = feedbackRequestSchema.safeParse(rawBody)
@@ -109,8 +123,8 @@ export async function POST(request: NextRequest) {
       throw new Error('Database failed to set created_at timestamp')
     }
 
-    // Prepare email props (DRY - used by both HTML and text generators)
-    const emailProps = {
+    // Prepare email props (type-safe with FeedbackEmailProps interface)
+    const emailProps: FeedbackEmailProps = {
       feedback_type: feedback.feedback_type,
       category: feedback.category || undefined,
       title: feedback.title,
@@ -137,6 +151,9 @@ export async function POST(request: NextRequest) {
       const feedbackEmail = process.env.FEEDBACK_EMAIL || 'feedback@example.com'
       const feedbackTypeLabel = feedbackTypeLabels[feedback.feedback_type] || 'Feedback'
 
+      // Sanitize title to prevent header injection (strip CR/LF)
+      const sanitizedTitle = feedback.title.replace(/[\r\n]/g, ' ')
+
       // Use setImmediate to defer email sending until after response is sent
       // NOTE: On serverless/edge runtimes, setImmediate work may not complete if the
       // process freezes after response. This is acceptable for best-effort email delivery.
@@ -150,7 +167,7 @@ export async function POST(request: NextRequest) {
             from: 'UltraCoach Feedback <feedback@ultracoach.app>',
             to: feedbackEmail,
             replyTo: feedback.user_email || undefined,
-            subject: `[UltraCoach Feedback] ${feedbackTypeLabel} - ${feedback.title}`,
+            subject: `[UltraCoach Feedback] ${feedbackTypeLabel} - ${sanitizedTitle}`,
             html: emailHTML,
             text: emailText,
           })

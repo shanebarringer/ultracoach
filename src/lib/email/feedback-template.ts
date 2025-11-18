@@ -47,16 +47,22 @@ function formatDateSafely(
 
 /**
  * Validates a URL to ensure it uses a safe scheme (http or https)
- * Returns the URL if valid, or null if invalid/unsafe
+ * Supports both absolute URLs and relative paths (when baseOrigin is provided)
+ * Returns the validated absolute URL if valid, or null if invalid/unsafe
+ *
+ * @param url - The URL to validate (absolute or relative)
+ * @param baseOrigin - Optional base origin for resolving relative URLs (e.g., 'https://ultracoach.app')
+ * @returns Validated absolute URL or null if invalid
  */
-function validateUrl(url: string | undefined): string | null {
+function validateUrl(url: string | undefined, baseOrigin?: string): string | null {
   if (!url || url.trim() === '') return null
 
   try {
-    const parsed = new URL(url)
+    // Resolve URL (works for both absolute and relative if baseOrigin is provided)
+    const parsed = new URL(url, baseOrigin)
     // Only allow http and https schemes
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return url
+      return parsed.href
     }
     return null
   } catch {
@@ -65,7 +71,7 @@ function validateUrl(url: string | undefined): string | null {
   }
 }
 
-interface FeedbackEmailProps {
+export interface FeedbackEmailProps {
   feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
   category?: string
   title: string
@@ -92,7 +98,7 @@ export const feedbackTypeLabels = {
   compliment: '👍 Compliment',
 } as const
 
-const priorityLabels = {
+export const priorityLabels = {
   low: '🟢 Low',
   medium: '🟡 Medium',
   high: '🟠 High',
@@ -315,6 +321,7 @@ export function generateFeedbackEmailText(props: FeedbackEmailProps): string {
   const priorityLabel = priorityLabels[props.priority]
 
   const formattedDate = formatDateSafely(props.submitted_at)
+  const validatedPageUrl = validateUrl(props.page_url)
 
   return `
 NEW FEEDBACK RECEIVED - ULTRACOACH
@@ -337,7 +344,7 @@ ${'-'.repeat(50)}
 ${props.user_name ? `Submitted By: ${props.user_name}` : ''}
 ${props.user_email ? `Email: ${props.user_email}` : ''}
 Submitted At: ${formattedDate}
-${props.page_url ? `Page URL: ${props.page_url}` : ''}
+${validatedPageUrl ? `Page URL: ${validatedPageUrl}` : ''}
 
 ${
   props.browser_info
