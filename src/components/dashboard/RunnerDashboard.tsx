@@ -102,10 +102,11 @@ const calculateWeeklyDistance = (workouts: Workout[]) => {
         w.status === 'completed'
       )
     })
-    .reduce(
-      (total, workout) => total + (workout.actual_distance || workout.planned_distance || 0),
-      0
-    )
+    .reduce((total, workout) => {
+      const rawDistance = workout.actual_distance ?? workout.planned_distance ?? 0
+      const distance = typeof rawDistance === 'string' ? parseFloat(rawDistance) : rawDistance
+      return total + (Number.isFinite(distance) ? distance : 0)
+    }, 0)
 }
 
 const calculateRecentActivity = (workouts: Workout[]) => {
@@ -175,7 +176,7 @@ function RunnerDashboard() {
   // Memoize expensive computations and add logging
   const dashboardMetrics = useMemo(() => {
     const today = startOfDay(new Date())
-    const weekFromToday = endOfDay(addDays(today, 7))
+    const weekFromToday = endOfDay(addDays(today, 6)) // 7-day window (today + 6 more days)
     const thisWeekWorkouts = upcomingWorkouts.filter(w => {
       const workoutDate = new Date(w.date)
       return (
@@ -215,6 +216,9 @@ function RunnerDashboard() {
   }, [upcomingWorkouts, trainingPlans.length, recentWorkouts, loading])
 
   // Get today's workout
+  // Note: Returns only the first workout for today if multiple exist.
+  // UX currently assumes single workout per day. If doubles are needed,
+  // update to filter all workouts and select primary based on priority rules.
   const todaysWorkout = useMemo(() => {
     const today = startOfDay(new Date())
     return upcomingWorkouts.find(w => {
@@ -241,8 +245,7 @@ function RunnerDashboard() {
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
         <p className="text-foreground-600">
-          Welcome back, {(session?.user?.name || 'Athlete') as string}! Ready for today&apos;s
-          training?
+          Welcome back, {session?.user?.name || 'Athlete'}! Ready for today&apos;s training?
         </p>
       </div>
 
@@ -333,8 +336,9 @@ function RunnerDashboard() {
                     size="md"
                     color="success"
                     className="flex-1 font-semibold"
-                    startContent={<CheckCircleIcon className="w-4 h-4" />}
+                    startContent={<CheckCircleIcon className="w-4 h-4" aria-hidden="true" />}
                     onClick={() => handleMarkComplete(todaysWorkout)}
+                    aria-label={`Mark ${formatLabel(todaysWorkout.planned_type)} as complete`}
                   >
                     Mark Complete
                   </Button>
@@ -343,6 +347,7 @@ function RunnerDashboard() {
                     variant="bordered"
                     className="flex-1 font-semibold"
                     onClick={() => handleLogDetails(todaysWorkout)}
+                    aria-label="Log details for today's workout"
                   >
                     Log Details
                   </Button>
@@ -366,7 +371,14 @@ function RunnerDashboard() {
               <p className="text-sm text-foreground-600 mb-3">
                 Enjoy your rest day or check upcoming workouts
               </p>
-              <Button as={Link} href="/workouts" color="primary" variant="bordered" size="sm">
+              <Button
+                as={Link}
+                href="/workouts"
+                color="primary"
+                variant="bordered"
+                size="sm"
+                aria-label="View all scheduled workouts"
+              >
                 View All Workouts
               </Button>
             </CardBody>
@@ -523,37 +535,37 @@ function RunnerDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {coachRelationships.map((relationship: RelationshipData) => (
-                      <Card
-                        key={relationship.id}
-                        className="border border-divider hover:shadow-md transition-shadow"
-                      >
-                        <CardBody className="p-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                              {(relationship.other_party.full_name || 'C').charAt(0)}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-foreground text-lg">
-                                {relationship.other_party.full_name}
-                              </h3>
-                              <p className="text-sm text-foreground-600">
-                                {relationship.other_party.email}
-                              </p>
-                            </div>
+                  {coachRelationships.map(relationship => (
+                    <Card
+                      key={relationship.id}
+                      className="border border-divider hover:shadow-md transition-shadow"
+                    >
+                      <CardBody className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            {(relationship.other_party.full_name || 'C').charAt(0)}
                           </div>
-                          <Button
-                            as={Link}
-                            href={`/chat/${relationship.other_party.id}`}
-                            color="primary"
-                            className="w-full"
-                            startContent={<MessageSquareIcon className="w-4 h-4" />}
-                          >
-                            Send Message
-                          </Button>
-                        </CardBody>
-                      </Card>
-                    ))}
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-foreground text-lg">
+                              {relationship.other_party.full_name || relationship.other_party.name}
+                            </h3>
+                            <p className="text-sm text-foreground-600">
+                              {relationship.other_party.email}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          as={Link}
+                          href={`/chat/${relationship.other_party.id}`}
+                          color="primary"
+                          className="w-full"
+                          startContent={<MessageSquareIcon className="w-4 h-4" />}
+                        >
+                          Send Message
+                        </Button>
+                      </CardBody>
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardBody>
