@@ -579,15 +579,18 @@ export default function WeeklyPlannerCalendar({
           trainingPlanId: trainingPlan.id,
           date: day.date.toISOString().split('T')[0],
           plannedType: day.workout!.type,
-          // CRITICAL: Use nullish coalescing to convert undefined to null while preserving 0
-          // These are already numbers (not strings), so ?? is the correct operator
-          plannedDistance: day.workout!.distance ?? null,
-          plannedDuration: day.workout!.duration ?? null,
+          // CRITICAL: Explicit type conversion to match database schema and API validation
+          // plannedDistance: DECIMAL(5,2) - use parseFloat() for decimals (26.2 miles)
+          // plannedDuration, intensity, elevationGain: INTEGER - use parseInt() for whole numbers
+          plannedDistance: day.workout!.distance ? parseFloat(String(day.workout!.distance)) : null,
+          plannedDuration: day.workout!.duration ? parseInt(String(day.workout!.duration)) : null,
           notes: day.workout!.notes || '',
           category: day.workout!.category || null,
-          intensity: day.workout!.intensity ?? null,
+          intensity: day.workout!.intensity ? parseInt(String(day.workout!.intensity)) : null,
           terrain: day.workout!.terrain || null,
-          elevationGain: day.workout!.elevationGain ?? null,
+          elevationGain: day.workout!.elevationGain
+            ? parseInt(String(day.workout!.elevationGain))
+            : null,
         }))
 
       // PHASE 2 FIX: Optimistic update - add workouts to atom BEFORE API call
