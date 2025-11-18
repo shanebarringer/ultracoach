@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
 import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
@@ -65,6 +66,7 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const trackEvent = usePostHogEvent()
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -179,6 +181,16 @@ export default function CreateTrainingPlanModal({
       })
 
       logger.info('Training plan created successfully', response.data)
+
+      // Track training plan creation in PostHog
+      trackEvent('training_plan_created', {
+        planType: data.plan_type,
+        goalType: data.goal_type,
+        hasRace: !!data.race_id,
+        hasTemplate: !!data.template_id,
+        planLength: data.targetRaceDistance,
+      })
+
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form
 

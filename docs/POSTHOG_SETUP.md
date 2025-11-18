@@ -5,6 +5,7 @@ This guide will help you complete the PostHog setup for UltraCoach.
 ## What is PostHog?
 
 PostHog is an all-in-one product analytics platform that provides:
+
 - **Product Analytics**: Track user behavior, feature usage, and conversion funnels
 - **Session Replay**: Watch recordings of user sessions to understand behavior
 - **Feature Flags**: Gradual rollouts and A/B testing
@@ -14,6 +15,7 @@ PostHog is an all-in-one product analytics platform that provides:
 ## Why PostHog over Sentry?
 
 PostHog was chosen for UltraCoach because:
+
 - **100x more generous free tier**: 1M events vs Sentry's 5K errors
 - **Product analytics included**: Track user engagement alongside errors
 - **Session replays**: 5K recordings vs Sentry's 50 replays
@@ -58,6 +60,7 @@ NEXT_PUBLIC_POSTHOG_HOST="https://us.i.posthog.com"
 ```
 
 **Important Notes:**
+
 - Replace `phc_your_actual_key_here` with your actual PostHog Project API Key
 - The `NEXT_PUBLIC_` prefix is required for Next.js client-side access
 - Never commit `.env.local` to version control (it's already in `.gitignore`)
@@ -82,10 +85,12 @@ pnpm dev
 ```
 
 **Check the browser console:**
+
 - You should see a warning: "PostHog API key not found. Analytics disabled." (because it's disabled in development)
 - This is expected - PostHog is configured to opt-out in development mode
 
 **To test in development:**
+
 1. Open `src/providers/posthog.tsx`
 2. Comment out the opt-out line (line 50-52)
 3. Visit `http://localhost:3000`
@@ -149,7 +154,7 @@ export async function POST(req: Request) {
   // Track server-side event
   await trackServerEvent(userId, 'training_plan_created', {
     planType: 'ultramarathon',
-    duration: 16 // weeks
+    duration: 16, // weeks
   })
 
   return Response.json({ success: true })
@@ -216,6 +221,7 @@ trackEvent('feature_flag_evaluated', { flagKey, value })
 ### No Data Appearing in PostHog?
 
 1. **Check environment variables are set correctly**
+
    ```bash
    # Verify variables are loaded
    echo $NEXT_PUBLIC_POSTHOG_KEY
@@ -236,6 +242,7 @@ trackEvent('feature_flag_evaluated', { flagKey, value })
 ### Session Replays Not Recording?
 
 Session recording has strict privacy controls:
+
 - All inputs are masked by default
 - Check `session_recording` config in `src/providers/posthog.tsx`
 - Ensure you have available recording credits

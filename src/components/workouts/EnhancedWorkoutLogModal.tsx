@@ -39,6 +39,7 @@ import { z } from 'zod'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
 import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -169,6 +170,7 @@ const EnhancedWorkoutLogModal = memo(
     const [formState, setFormState] = useAtom(workoutLogFormAtom)
     const [stravaState] = useAtom(stravaStateAtom)
     const [activeTab, setActiveTab] = useState('basic')
+    const trackEvent = usePostHogEvent()
 
     // React Hook Form setup with enhanced schema
     const {
@@ -310,6 +312,21 @@ const EnhancedWorkoutLogModal = memo(
 
           if (response.ok) {
             logger.info('Enhanced workout updated successfully')
+
+            // Track workout completion event in PostHog
+            trackEvent('workout_logged', {
+              status: data.status,
+              workoutType: data.actualType || workout.planned_type,
+              category: data.category,
+              distance: data.actualDistance,
+              duration: data.actualDuration,
+              intensity: data.intensity,
+              terrain: data.terrain,
+              elevationGain: data.elevationGain,
+              hasHeartRate: !!(data.avgHeartRate || data.maxHeartRate),
+              hasStravaMatch: !!potentialStravaMatch,
+            })
+
             setFormState(prev => ({ ...prev, loading: false, error: '' }))
             reset()
             onSuccess()
@@ -332,7 +349,16 @@ const EnhancedWorkoutLogModal = memo(
           }))
         }
       },
-      [workout.id, setFormState, reset, onSuccess, onClose]
+      [
+        workout.id,
+        workout.planned_type,
+        setFormState,
+        reset,
+        onSuccess,
+        onClose,
+        trackEvent,
+        potentialStravaMatch,
+      ]
     )
 
     // Handle Strava data import

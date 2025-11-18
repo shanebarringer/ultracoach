@@ -5,6 +5,7 @@ import { Activity, Calendar, ExternalLink, Unlink } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
+import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
 import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -34,6 +35,7 @@ export default function StravaConnectionCard() {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const trackEvent = usePostHogEvent()
 
   const fetchStatus = async () => {
     try {
@@ -67,6 +69,12 @@ export default function StravaConnectionCard() {
     setConnecting(true)
     try {
       logger.info('Redirecting to Strava authorization...')
+
+      // Track Strava connection attempt
+      trackEvent('strava_connect_initiated', {
+        source: 'connection_card',
+      })
+
       const currentUrl = window.location.pathname
       window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`
     } catch (error) {
@@ -86,6 +94,12 @@ export default function StravaConnectionCard() {
 
       if (response.ok) {
         logger.info('Successfully disconnected from Strava')
+
+        // Track Strava disconnection
+        trackEvent('strava_disconnected', {
+          source: 'connection_card',
+        })
+
         toast.success('Strava account disconnected successfully')
         await fetchStatus() // Refresh status
       } else {
