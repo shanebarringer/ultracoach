@@ -673,6 +673,10 @@ export default function WeeklyPlannerCalendar({
         })
       )
 
+      // CRITICAL: Invalidate atom cache so navigating to /workouts shows new workouts
+      // This increments workoutsRefreshTriggerAtom which forces asyncWorkoutsAtom to refetch
+      refreshWorkouts()
+
       setHasChanges(false)
       onWeekUpdate()
 
