@@ -5,14 +5,24 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
-import { generateFeedbackEmailHTML, generateFeedbackEmailText } from '@/lib/email/feedback-template'
+import {
+  feedbackTypeLabels,
+  generateFeedbackEmailHTML,
+  generateFeedbackEmailText,
+} from '@/lib/email/feedback-template'
 import { createLogger } from '@/lib/logger'
 import { user_feedback } from '@/lib/schema'
 
 const logger = createLogger('api/feedback')
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Validate and initialize Resend with API key
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+if (!RESEND_API_KEY) {
+  logger.warn(
+    'RESEND_API_KEY is not configured - email notifications will not be sent. Set RESEND_API_KEY environment variable to enable email notifications.'
+  )
+}
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
 interface FeedbackRequest {
   feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
@@ -71,65 +81,66 @@ export async function POST(request: NextRequest) {
 
     logger.info(`New feedback submitted: ${feedback.id} by user ${session.user.id}`)
 
-    // Send email notification
-    try {
-      const feedbackEmail = process.env.FEEDBACK_EMAIL || 'shanebarringer@gmail.com'
-      const emailHTML = generateFeedbackEmailHTML({
-        feedback_type: feedback.feedback_type,
-        category: feedback.category || undefined,
-        title: feedback.title,
-        description: feedback.description,
-        priority: (feedback.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
-        user_email: feedback.user_email || undefined,
-        user_name: session.user.name || undefined,
-        browser_info: feedback.browser_info as
-          | {
-              userAgent?: string
-              screenWidth?: number
-              screenHeight?: number
-              language?: string
-              timezone?: string
-            }
-          | undefined,
-        page_url: feedback.page_url || undefined,
-        submitted_at: feedback.created_at?.toISOString() || new Date().toISOString(),
-      })
+    // Validate that created_at was properly set by the database
+    if (!feedback.created_at) {
+      logger.error(`Feedback ${feedback.id} missing created_at timestamp`)
+      throw new Error('Database failed to set created_at timestamp')
+    }
 
-      const emailText = generateFeedbackEmailText({
-        feedback_type: feedback.feedback_type,
-        category: feedback.category || undefined,
-        title: feedback.title,
-        description: feedback.description,
-        priority: (feedback.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
-        user_email: feedback.user_email || undefined,
-        user_name: session.user.name || undefined,
-        browser_info: feedback.browser_info as
-          | {
-              userAgent?: string
-              screenWidth?: number
-              screenHeight?: number
-              language?: string
-              timezone?: string
-            }
-          | undefined,
-        page_url: feedback.page_url || undefined,
-        submitted_at: feedback.created_at?.toISOString() || new Date().toISOString(),
-      })
+    // Prepare email props (DRY - used by both HTML and text generators)
+    const emailProps = {
+      feedback_type: feedback.feedback_type,
+      category: feedback.category || undefined,
+      title: feedback.title,
+      description: feedback.description,
+      priority: (feedback.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+      user_email: feedback.user_email || undefined,
+      user_name: session.user.name || undefined,
+      browser_info: feedback.browser_info as
+        | {
+            userAgent?: string
+            screenWidth?: number
+            screenHeight?: number
+            language?: string
+            timezone?: string
+          }
+        | undefined,
+      page_url: feedback.page_url || undefined,
+      submitted_at: feedback.created_at,
+    }
 
-      await resend.emails.send({
-        from: 'UltraCoach Feedback <feedback@ultracoach.app>',
-        to: feedbackEmail,
-        replyTo: feedback.user_email || undefined,
-        subject: `[UltraCoach Feedback] ${feedback.feedback_type.replace(/_/g, ' ').toUpperCase()} - ${feedback.title}`,
-        html: emailHTML,
-        text: emailText,
-      })
+    // Send email notification asynchronously (non-blocking)
+    if (resend) {
+      // Fire-and-forget: send email without blocking the response
+      const feedbackEmail = process.env.FEEDBACK_EMAIL || 'feedback@example.com'
+      const feedbackTypeLabel = feedbackTypeLabels[feedback.feedback_type] || 'Feedback'
 
-      logger.info(`Feedback email sent for feedback ID: ${feedback.id}`)
-    } catch (emailError) {
-      // Log the error but don't fail the request if email fails
-      logger.error('Error sending feedback email:', emailError)
-      logger.warn(`Feedback ${feedback.id} saved to database but email notification failed`)
+      // Use setImmediate to defer email sending until after response is sent
+      setImmediate(async () => {
+        try {
+          const emailHTML = generateFeedbackEmailHTML(emailProps)
+          const emailText = generateFeedbackEmailText(emailProps)
+
+          await resend.emails.send({
+            from: 'UltraCoach Feedback <feedback@ultracoach.app>',
+            to: feedbackEmail,
+            replyTo: feedback.user_email || undefined,
+            subject: `[UltraCoach Feedback] ${feedbackTypeLabel} - ${feedback.title}`,
+            html: emailHTML,
+            text: emailText,
+          })
+
+          logger.info(`Feedback email sent for feedback ID: ${feedback.id}`)
+        } catch (emailError) {
+          // Log the error but don't fail the request since it's async
+          logger.error('Error sending feedback email:', emailError)
+          logger.warn(`Feedback ${feedback.id} saved to database but email notification failed`)
+        }
+      })
+    } else {
+      logger.debug(
+        `Skipping email notification for feedback ${feedback.id} - Resend not configured`
+      )
     }
 
     return NextResponse.json({

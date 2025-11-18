@@ -1,3 +1,30 @@
+/**
+ * HTML escaping utility to prevent XSS in email templates
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\//g, '&#x2F;')
+}
+
+/**
+ * Escapes HTML and converts newlines to <br> tags for safe HTML display
+ */
+function escapeHtmlWithLineBreaks(value: string): string {
+  return escapeHtml(value).replace(/\n/g, '<br>')
+}
+
+/**
+ * Normalizes a Date or string to a Date object
+ */
+function normalizeDate(value: string | Date): Date {
+  return value instanceof Date ? value : new Date(value)
+}
+
 interface FeedbackEmailProps {
   feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
   category?: string
@@ -14,16 +41,16 @@ interface FeedbackEmailProps {
     timezone?: string
   }
   page_url?: string
-  submitted_at: string
+  submitted_at: string | Date
 }
 
-const feedbackTypeLabels = {
+export const feedbackTypeLabels = {
   bug_report: '🐛 Bug Report',
   feature_request: '💡 Feature Request',
   general_feedback: '💬 General Feedback',
   complaint: '👎 Complaint',
   compliment: '👍 Compliment',
-}
+} as const
 
 const priorityLabels = {
   low: '🟢 Low',
@@ -35,6 +62,29 @@ const priorityLabels = {
 export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
   const typeLabel = feedbackTypeLabels[props.feedback_type]
   const priorityLabel = priorityLabels[props.priority]
+
+  // Escape all user-supplied values
+  const safeTitle = escapeHtml(props.title)
+  const safeDescription = escapeHtmlWithLineBreaks(props.description)
+  const safeCategory = props.category ? escapeHtml(props.category.replace(/_/g, ' ')) : undefined
+  const safeName = props.user_name ? escapeHtml(props.user_name) : undefined
+  const safeEmail = props.user_email ? escapeHtml(props.user_email) : undefined
+  const safePageUrl = props.page_url ? escapeHtml(props.page_url) : undefined
+  const safeUserAgent = props.browser_info?.userAgent
+    ? escapeHtml(props.browser_info.userAgent)
+    : undefined
+  const safeLanguage = props.browser_info?.language
+    ? escapeHtml(props.browser_info.language)
+    : undefined
+  const safeTimezone = props.browser_info?.timezone
+    ? escapeHtml(props.browser_info.timezone)
+    : undefined
+
+  const submittedDate = normalizeDate(props.submitted_at)
+  const formattedDate = submittedDate.toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 
   return `
 <!DOCTYPE html>
@@ -138,58 +188,55 @@ export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
       <div>
         <span class="badge badge-type">${typeLabel}</span>
         <span class="badge badge-priority">${priorityLabel}</span>
-        ${props.category ? `<span class="badge badge-type">${props.category.replace(/_/g, ' ')}</span>` : ''}
+        ${safeCategory ? `<span class="badge badge-type">${safeCategory}</span>` : ''}
       </div>
     </div>
 
     <div class="section">
       <div class="section-title">Title</div>
       <div class="section-content">
-        <strong>${props.title}</strong>
+        <strong>${safeTitle}</strong>
       </div>
     </div>
 
     <div class="section">
       <div class="section-title">Description</div>
       <div class="section-content">
-        ${props.description.replace(/\n/g, '<br>')}
+        ${safeDescription}
       </div>
     </div>
 
     <div class="metadata">
       ${
-        props.user_name
+        safeName
           ? `
         <div class="metadata-item">
           <span class="metadata-label">Submitted By</span>
-          ${props.user_name}
+          ${safeName}
         </div>
       `
           : ''
       }
       ${
-        props.user_email
+        safeEmail
           ? `
         <div class="metadata-item">
           <span class="metadata-label">Email</span>
-          <a href="mailto:${props.user_email}">${props.user_email}</a>
+          <a href="mailto:${safeEmail}">${safeEmail}</a>
         </div>
       `
           : ''
       }
       <div class="metadata-item">
         <span class="metadata-label">Submitted At</span>
-        ${new Date(props.submitted_at).toLocaleString('en-US', {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        })}
+        ${formattedDate}
       </div>
       ${
-        props.page_url
+        safePageUrl
           ? `
         <div class="metadata-item">
           <span class="metadata-label">Page URL</span>
-          <a href="${props.page_url}">${props.page_url}</a>
+          <a href="${safePageUrl}">${safePageUrl}</a>
         </div>
       `
           : ''
@@ -202,10 +249,10 @@ export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
       <div class="section">
         <div class="section-title">Browser Information</div>
         <div class="section-content" style="font-size: 12px;">
-          ${props.browser_info.userAgent ? `<div><strong>User Agent:</strong> ${props.browser_info.userAgent}</div>` : ''}
+          ${safeUserAgent ? `<div><strong>User Agent:</strong> ${safeUserAgent}</div>` : ''}
           ${props.browser_info.screenWidth && props.browser_info.screenHeight ? `<div><strong>Screen Size:</strong> ${props.browser_info.screenWidth}x${props.browser_info.screenHeight}</div>` : ''}
-          ${props.browser_info.language ? `<div><strong>Language:</strong> ${props.browser_info.language}</div>` : ''}
-          ${props.browser_info.timezone ? `<div><strong>Timezone:</strong> ${props.browser_info.timezone}</div>` : ''}
+          ${safeLanguage ? `<div><strong>Language:</strong> ${safeLanguage}</div>` : ''}
+          ${safeTimezone ? `<div><strong>Timezone:</strong> ${safeTimezone}</div>` : ''}
         </div>
       </div>
     `
@@ -225,6 +272,12 @@ export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
 export function generateFeedbackEmailText(props: FeedbackEmailProps): string {
   const typeLabel = feedbackTypeLabels[props.feedback_type]
   const priorityLabel = priorityLabels[props.priority]
+
+  const submittedDate = normalizeDate(props.submitted_at)
+  const formattedDate = submittedDate.toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
 
   return `
 NEW FEEDBACK RECEIVED - ULTRACOACH
@@ -246,7 +299,7 @@ METADATA
 ${'-'.repeat(50)}
 ${props.user_name ? `Submitted By: ${props.user_name}` : ''}
 ${props.user_email ? `Email: ${props.user_email}` : ''}
-Submitted At: ${new Date(props.submitted_at).toLocaleString()}
+Submitted At: ${formattedDate}
 ${props.page_url ? `Page URL: ${props.page_url}` : ''}
 
 ${
