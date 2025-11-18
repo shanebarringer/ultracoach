@@ -537,7 +537,11 @@ export default function WeeklyPlannerCalendar({
       }
 
       const updated = [...prev]
-      updated[dayIndex].workout = undefined
+      // Clone the day object to preserve immutability
+      updated[dayIndex] = {
+        ...updated[dayIndex],
+        workout: undefined,
+      }
       return updated
     })
     setHasChanges(true)
@@ -706,6 +710,9 @@ export default function WeeklyPlannerCalendar({
       // PHASE 2 FIX: Rollback optimistic update on error
       logger.debug('Rolling back optimistic update due to error', { tempIds })
       setWorkouts(prev => prev.filter(w => !tempIds.includes(w.id)))
+
+      // Ensure original workouts are restored from the backend
+      refreshWorkouts()
 
       commonToasts.workoutError(
         error instanceof Error ? error.message : 'Failed to save expedition plan'

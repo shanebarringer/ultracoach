@@ -335,12 +335,26 @@ test.describe('Workout Management', () => {
 
       // Navigate to weekly planner selection page
       await page.goto('/weekly-planner')
-      await expect(page).toHaveURL('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
 
-      // Wait for runner cards to load
-      await page.waitForSelector('[data-testid="runner-card"], .runner-selection-card', {
-        timeout: 10000,
-      })
+      // Wait for page header to ensure page is rendered (don't use networkidle - hangs with real-time features)
+      await page.waitForSelector('h1:has-text("Weekly Planner")', { timeout: CI_TIMEOUT })
+
+      // Wait for runner cards to load with extended timeout for CI
+      try {
+        await page.waitForSelector('[data-testid="runner-card"], .runner-selection-card', {
+          timeout: CI_TIMEOUT * 2,
+        })
+      } catch (error) {
+        // Capture debug info if timeout occurs
+        await page.screenshot({ path: './test-results/runner-cards-timeout-debug.png' })
+        const partnerText = await page
+          .locator('text=/\\d+ Partner/')
+          .textContent()
+          .catch(() => 'unknown')
+        console.error(`Failed to find runner cards. Partner count visible: ${partnerText}`)
+        throw error
+      }
 
       // Get all available runner cards
       const runnerCards = page.locator('[data-testid="runner-card"], .runner-selection-card')
@@ -351,6 +365,7 @@ test.describe('Workout Management', () => {
         console.log(
           `Skipping multi-runner test: coach has ${runnerCount} connected runners (need at least 2)`
         )
+        test.skip()
         return
       }
 
@@ -358,18 +373,15 @@ test.describe('Workout Management', () => {
       const firstRunnerCard = runnerCards.first()
       const firstRunnerName =
         (await firstRunnerCard.locator('[data-testid="runner-name"]').textContent()) || 'Runner 1'
-      const firstRunnerEmail =
-        (await firstRunnerCard.locator('[data-testid="runner-email"]').textContent()) || ''
 
       await firstRunnerCard.click()
 
       // Wait for weekly planner to load
-      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: 10000 })
-      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: 10000 })
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: CI_TIMEOUT })
 
       // Create a workout for first runner (use tomorrow to avoid conflicts with existing workouts)
       const tomorrow = addDays(new Date(), 1)
-      const tomorrowFormatted = format(tomorrow, 'yyyy-MM-dd')
       const dayName = format(tomorrow, 'EEEE') // e.g., "Monday"
 
       // Find the day card for tomorrow
@@ -393,14 +405,11 @@ test.describe('Workout Management', () => {
       await page.getByRole('button', { name: /save|add workout/i }).click()
 
       // Verify workout appears in UI
-      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: 5000 })
-
-      // Database verification: Query to check workout belongs to first runner
-      // Note: In production, we'd use the database query here, but for CI we'll rely on UI verification
+      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: CI_TIMEOUT })
 
       // Navigate back to weekly planner selection
       await page.goto('/weekly-planner')
-      await expect(page).toHaveURL('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
 
       // Test with second runner (CRITICAL: This is where the bug would manifest)
       const secondRunnerCard = runnerCards.nth(1)
@@ -413,8 +422,8 @@ test.describe('Workout Management', () => {
       await secondRunnerCard.click()
 
       // Wait for second runner's weekly planner to load
-      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: 10000 })
-      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: 10000 })
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+      await page.waitForSelector('h1:has-text(/Weekly Planner|Training/i)', { timeout: CI_TIMEOUT })
 
       // Verify we're viewing the second runner's planner (not the first)
       await expect(
@@ -448,10 +457,26 @@ test.describe('Workout Management', () => {
       await page.getByRole('button', { name: /save|add workout/i }).click()
 
       // Verify workout appears in UI
-      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(/workout.*saved|success/i)).toBeVisible({ timeout: CI_TIMEOUT })
 
-      // CRITICAL VERIFICATION: The bug would cause this workout to be created for firstRunner
-      // Our fix ensures it's created for secondRunner by filtering training plans by runner.id
+      // REGRESSION TEST: Navigate back to first runner's planner and verify second workout is NOT there
+      await page.goto('/weekly-planner')
+      await expect(page).toHaveURL('/weekly-planner', { timeout: CI_TIMEOUT })
+
+      // Select first runner again
+      await firstRunnerCard.click()
+      await page.waitForURL(/\/weekly-planner\/.+/, { timeout: CI_TIMEOUT })
+
+      // Navigate to the day where second runner's workout was created
+      const secondDayCardInFirstPlanner = page
+        .locator(`[data-testid="day-card-${dayAfterTomorrowName}"]`)
+        .first()
+      if ((await secondDayCardInFirstPlanner.count()) > 0) {
+        await secondDayCardInFirstPlanner.click()
+
+        // Verify the second runner's workout is NOT present in first runner's planner
+        await expect(page.getByText(`Test workout for ${secondRunnerName}`)).not.toBeVisible()
+      }
 
       // Success: If we reach here, workouts were created successfully for both runners
       // The test passing means the .find(plan => plan.runner_id === runner.id) fix is working
