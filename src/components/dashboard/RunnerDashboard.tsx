@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip } from '@heroui/react'
-import { endOfDay, isWithinInterval, startOfDay, addDays } from 'date-fns'
+import { addDays, endOfDay, isValid, isWithinInterval, startOfDay } from 'date-fns'
 import { useAtom } from 'jotai'
 import {
   ActivityIcon,
@@ -28,6 +28,7 @@ import { uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { RelationshipData } from '@/types/relationships'
+import { formatLabel, getUserLocale } from '@/utils/formatting'
 
 const logger = createLogger('RunnerDashboard')
 
@@ -45,7 +46,7 @@ const calculateWeeklyCompletionRate = (workouts: Workout[]) => {
 
   const weeklyWorkouts = workouts.filter(w => {
     const workoutDate = new Date(w.date)
-    return workoutDate >= weekAgo && workoutDate <= today
+    return isValid(workoutDate) && workoutDate >= weekAgo && workoutDate <= today
   })
 
   if (!weeklyWorkouts.length) return 0
@@ -60,12 +61,12 @@ const calculateMonthlyStats = (workouts: Workout[]) => {
 
   const thisMonth = workouts.filter(w => {
     const workoutDate = new Date(w.date)
-    return workoutDate >= monthAgo && workoutDate <= today
+    return isValid(workoutDate) && workoutDate >= monthAgo && workoutDate <= today
   })
 
   const lastMonth = workouts.filter(w => {
     const workoutDate = new Date(w.date)
-    return workoutDate >= twoMonthsAgo && workoutDate < monthAgo
+    return isValid(workoutDate) && workoutDate >= twoMonthsAgo && workoutDate < monthAgo
   })
 
   const thisMonthCompleted = thisMonth.filter(w => w.status === 'completed').length
@@ -94,7 +95,12 @@ const calculateWeeklyDistance = (workouts: Workout[]) => {
   return workouts
     .filter(w => {
       const workoutDate = new Date(w.date)
-      return workoutDate >= weekAgo && workoutDate <= today && w.status === 'completed'
+      return (
+        isValid(workoutDate) &&
+        workoutDate >= weekAgo &&
+        workoutDate <= today &&
+        w.status === 'completed'
+      )
     })
     .reduce(
       (total, workout) => total + (workout.actual_distance || workout.planned_distance || 0),
@@ -108,7 +114,7 @@ const calculateRecentActivity = (workouts: Workout[]) => {
 
   return workouts.filter(w => {
     const workoutDate = new Date(w.date)
-    return workoutDate >= twoWeeksAgo && w.status === 'completed'
+    return isValid(workoutDate) && workoutDate >= twoWeeksAgo && w.status === 'completed'
   }).length
 }
 
@@ -171,8 +177,11 @@ function RunnerDashboard() {
     const today = startOfDay(new Date())
     const weekFromToday = endOfDay(addDays(today, 7))
     const thisWeekWorkouts = upcomingWorkouts.filter(w => {
-      const workoutDate = startOfDay(new Date(w.date))
-      return isWithinInterval(workoutDate, { start: today, end: weekFromToday })
+      const workoutDate = new Date(w.date)
+      return (
+        isValid(workoutDate) &&
+        isWithinInterval(startOfDay(workoutDate), { start: today, end: weekFromToday })
+      )
     })
 
     // Calculate advanced metrics
@@ -209,8 +218,8 @@ function RunnerDashboard() {
   const todaysWorkout = useMemo(() => {
     const today = startOfDay(new Date())
     return upcomingWorkouts.find(w => {
-      const workoutDate = startOfDay(new Date(w.date))
-      return workoutDate.getTime() === today.getTime()
+      const workoutDate = new Date(w.date)
+      return isValid(workoutDate) && startOfDay(workoutDate).getTime() === today.getTime()
     })
   }, [upcomingWorkouts])
 
@@ -223,11 +232,8 @@ function RunnerDashboard() {
     (rel: RelationshipData) => rel.other_party.role === 'coach'
   )
 
-  // Get user locale for date formatting from browser
-  const userLocale = typeof navigator !== 'undefined' ? navigator.language : 'en-US'
-
-  // Helper to format workout type labels (replace all underscores)
-  const formatLabel = (label: string | undefined) => label?.replace(/_/g, ' ') || ''
+  // Get user locale for date formatting
+  const userLocale = getUserLocale()
 
   return (
     <div className="space-y-8" data-testid="runner-dashboard-content">
