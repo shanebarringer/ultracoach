@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { Resend } from 'resend'
+import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -24,22 +25,36 @@ if (!RESEND_API_KEY) {
 }
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
-interface FeedbackRequest {
-  feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
-  category?: string
-  title: string
-  description: string
-  priority?: 'low' | 'medium' | 'high' | 'urgent'
-  user_email?: string
-  browser_info?: {
-    userAgent?: string
-    screenWidth?: number
-    screenHeight?: number
-    language?: string
-    timezone?: string
-  }
-  page_url?: string
-}
+// Zod schema for runtime validation of feedback request
+const feedbackRequestSchema = z.object({
+  feedback_type: z.enum([
+    'bug_report',
+    'feature_request',
+    'general_feedback',
+    'complaint',
+    'compliment',
+  ]),
+  category: z.string().optional(),
+  title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or less'),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(5000, 'Description must be 5000 characters or less'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  user_email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  browser_info: z
+    .object({
+      userAgent: z.string().optional(),
+      screenWidth: z.number().optional(),
+      screenHeight: z.number().optional(),
+      language: z.string().optional(),
+      timezone: z.string().optional(),
+    })
+    .optional(),
+  page_url: z.string().url('Invalid URL format').optional().or(z.literal('')),
+})
+
+export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>
 
 // Submit new feedback
 export async function POST(request: NextRequest) {
@@ -52,15 +67,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body: FeedbackRequest = await request.json()
+    const rawBody = await request.json()
 
-    // Validate required fields
-    if (!body.feedback_type || !body.title || !body.description) {
+    // Validate request body with Zod for runtime type safety
+    const validation = feedbackRequestSchema.safeParse(rawBody)
+    if (!validation.success) {
+      logger.warn('Invalid feedback request:', validation.error.flatten())
       return NextResponse.json(
-        { error: 'Missing required fields: feedback_type, title, description' },
+        {
+          error: 'Invalid request data',
+          details: validation.error.flatten().fieldErrors,
+        },
         { status: 400 }
       )
     }
+
+    const body = validation.data
 
     // Insert feedback into database
     const [feedback] = await db
@@ -116,6 +138,9 @@ export async function POST(request: NextRequest) {
       const feedbackTypeLabel = feedbackTypeLabels[feedback.feedback_type] || 'Feedback'
 
       // Use setImmediate to defer email sending until after response is sent
+      // NOTE: On serverless/edge runtimes, setImmediate work may not complete if the
+      // process freezes after response. This is acceptable for best-effort email delivery.
+      // For guaranteed delivery, consider using a durable queue or await the send (slower).
       setImmediate(async () => {
         try {
           const emailHTML = generateFeedbackEmailHTML(emailProps)

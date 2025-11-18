@@ -25,6 +25,46 @@ function normalizeDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(value)
 }
 
+/**
+ * Formats a date safely, returning a fallback string if the date is invalid
+ */
+function formatDateSafely(
+  value: string | Date,
+  locale: string = 'en-US',
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' }
+): string {
+  try {
+    const date = normalizeDate(value)
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Unknown submission time'
+    }
+    return date.toLocaleString(locale, options)
+  } catch {
+    return 'Unknown submission time'
+  }
+}
+
+/**
+ * Validates a URL to ensure it uses a safe scheme (http or https)
+ * Returns the URL if valid, or null if invalid/unsafe
+ */
+function validateUrl(url: string | undefined): string | null {
+  if (!url || url.trim() === '') return null
+
+  try {
+    const parsed = new URL(url)
+    // Only allow http and https schemes
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return url
+    }
+    return null
+  } catch {
+    // Invalid URL format
+    return null
+  }
+}
+
 interface FeedbackEmailProps {
   feedback_type: 'bug_report' | 'feature_request' | 'general_feedback' | 'complaint' | 'compliment'
   category?: string
@@ -69,7 +109,11 @@ export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
   const safeCategory = props.category ? escapeHtml(props.category.replace(/_/g, ' ')) : undefined
   const safeName = props.user_name ? escapeHtml(props.user_name) : undefined
   const safeEmail = props.user_email ? escapeHtml(props.user_email) : undefined
-  const safePageUrl = props.page_url ? escapeHtml(props.page_url) : undefined
+
+  // Validate and escape URL (only http/https schemes allowed)
+  const validatedPageUrl = validateUrl(props.page_url)
+  const safePageUrl = validatedPageUrl ? escapeHtml(validatedPageUrl) : undefined
+
   const safeUserAgent = props.browser_info?.userAgent
     ? escapeHtml(props.browser_info.userAgent)
     : undefined
@@ -80,11 +124,8 @@ export function generateFeedbackEmailHTML(props: FeedbackEmailProps): string {
     ? escapeHtml(props.browser_info.timezone)
     : undefined
 
-  const submittedDate = normalizeDate(props.submitted_at)
-  const formattedDate = submittedDate.toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  // Format date safely with fallback for invalid dates
+  const formattedDate = formatDateSafely(props.submitted_at)
 
   return `
 <!DOCTYPE html>
@@ -273,11 +314,7 @@ export function generateFeedbackEmailText(props: FeedbackEmailProps): string {
   const typeLabel = feedbackTypeLabels[props.feedback_type]
   const priorityLabel = priorityLabels[props.priority]
 
-  const submittedDate = normalizeDate(props.submitted_at)
-  const formattedDate = submittedDate.toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  const formattedDate = formatDateSafely(props.submitted_at)
 
   return `
 NEW FEEDBACK RECEIVED - ULTRACOACH
