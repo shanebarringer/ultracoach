@@ -12,6 +12,10 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthServer')
 
+// Stable sentinel fallback for missing createdAt timestamps
+// Using epoch instead of current time ensures deterministic behavior
+const SENTINEL_CREATED_AT = '1970-01-01T00:00:00.000Z'
+
 // Type definitions for Better Auth session data
 interface BetterAuthUser {
   id: string
@@ -179,6 +183,21 @@ export async function getServerSession(): Promise<ServerSession | null> {
       })
     }
 
+    // Determine stable createdAt timestamp with proper fallback chain
+    // Priority: user.createdAt > session.createdAt > sentinel epoch
+    const sessionCreatedAt = rawSession.session?.createdAt
+    const createdAt = user.createdAt ?? sessionCreatedAt ?? SENTINEL_CREATED_AT
+
+    // Log warning if we had to use the sentinel fallback (indicates data integrity issue)
+    if (!user.createdAt && !sessionCreatedAt) {
+      logger.warn('User createdAt timestamp missing - using sentinel fallback', {
+        userId: user.id,
+        email: user.email?.replace(/(^..).+(@.*$)/, '$1***$2'),
+        fallbackValue: SENTINEL_CREATED_AT,
+        context: 'This may indicate incomplete user data or migration issues',
+      })
+    }
+
     const serverSession: ServerSession = {
       user: {
         id: user.id,
@@ -186,7 +205,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
         name: user.name || null,
         role: userRole,
         userType: userRole,
-        createdAt: user.createdAt || new Date().toISOString(),
+        createdAt,
       },
     }
 
