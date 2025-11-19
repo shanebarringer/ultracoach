@@ -31,6 +31,7 @@ import {
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 import {
   GOAL_TYPES,
   GOAL_TYPE_LABELS,
@@ -406,12 +407,7 @@ export default function CreateTrainingPlanModal({
                         )}
                         {item.date && (
                           <span className="flex items-center gap-1">
-                            📅{' '}
-                            {new Date(item.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            📅 {formatDateConsistent(item.date, 'MMM d, yyyy')}
                           </span>
                         )}
                         {item.elevation_gain_feet > 0 && (

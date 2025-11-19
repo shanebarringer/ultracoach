@@ -2,7 +2,7 @@
 
 import posthog from 'posthog-js'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 import { usePathname, useSearchParams } from 'next/navigation'
 
@@ -13,11 +13,14 @@ const logger = createLogger('PostHogProvider')
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const isInitialized = useRef(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
+  // Initialize PostHog only once on mount
+  // We intentionally don't add isInitialized to deps to prevent re-initialization
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only initialize PostHog on client-side with proper environment variables
-    if (typeof window !== 'undefined' && !isInitialized.current) {
+    if (typeof window !== 'undefined' && !isInitialized) {
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
       const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
@@ -60,7 +63,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
               ph.opt_out_capturing() // Opt out in development
             }
             // Mark as initialized after loaded callback
-            isInitialized.current = true
+            setIsInitialized(true)
             logger.info('PostHog initialized successfully')
           },
         })
@@ -79,7 +82,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   // Track pageviews on route changes
   useEffect(() => {
     // Only track if PostHog is initialized and user has opted in
-    if (!isInitialized.current || !pathname) {
+    if (!isInitialized || !pathname) {
       return
     }
 
@@ -96,7 +99,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       logger.error('Failed to capture pageview:', error)
     }
-  }, [pathname, searchParams])
+  }, [pathname, searchParams, isInitialized])
 
   return <>{children}</>
 }

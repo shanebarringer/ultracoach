@@ -261,7 +261,7 @@ trackEvent('feature_flag_evaluated', { flagKey, value })
 
 3. **Verify opt-out is disabled**
    - PostHog is disabled in development by default
-   - Check `src/providers/posthog.tsx` line 50-52
+   - Check `src/providers/posthog.tsx` for the `ph.opt_out_capturing()` call in the loaded callback
 
 4. **Check PostHog dashboard settings**
    - Ensure your project is active
