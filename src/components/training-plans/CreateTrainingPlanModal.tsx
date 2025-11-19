@@ -324,7 +324,12 @@ export default function CreateTrainingPlanModal({
                     </Select>
                   }
                 >
-                  <RunnerSelectField field={field} fieldState={fieldState} />
+                  <RunnerSelectField
+                    field={field}
+                    fieldState={fieldState}
+                    connectedRunners={connectedRunners}
+                    hasRunners={hasRunners}
+                  />
                 </Suspense>
               )}
             />
@@ -486,13 +491,14 @@ export default function CreateTrainingPlanModal({
 function RunnerSelectField({
   field,
   fieldState,
+  connectedRunners,
+  hasRunners,
 }: {
   field: { value: string; onChange: (v: string) => void }
   fieldState: { error?: { message?: string } }
+  connectedRunners: User[]
+  hasRunners: boolean
 }) {
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
-  const hasRunners = connectedRunners.length > 0
-
   return (
     <Select
       label="Select Runner"

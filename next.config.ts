@@ -76,13 +76,15 @@ const nextConfig: NextConfig = {
 
   // Headers for security
   async headers() {
-    // Conditionally include 'unsafe-eval' only in development and test (needed for HMR and testing)
-    // In production, remove it to strengthen XSS protection
+    // Conditionally include 'unsafe-eval' and 'unsafe-inline' only in development and test
+    // unsafe-eval: Required for HMR (Hot Module Replacement) in development
+    // unsafe-inline: Required for Next.js dev mode inline scripts
+    // In production: Remove both for maximum XSS protection
     const isNonProduction =
       process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
     const scriptSrc = isNonProduction
       ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-      : "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self'"
 
     return [
       {
