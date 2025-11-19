@@ -8,12 +8,10 @@ if (process.env.NODE_ENV === 'development') {
   process.setMaxListeners(20)
 }
 
-// Define minimal webpack plugin interface inline (no external webpack import needed)
-interface WebpackPlugin {
-  apply(compiler: any): void
-}
-
-type CodeInspectorFactory = (options: { bundler: string }) => any
+// Type-safe code-inspector-plugin configuration
+type CodeInspectorFactory = (options: {
+  bundler: 'webpack' | 'turbopack'
+}) => ReturnType<typeof import('code-inspector-plugin').codeInspectorPlugin>
 
 // Properly typed plugin factory for code-inspector-plugin
 let codeInspectorFactory: CodeInspectorFactory | null = null
@@ -22,7 +20,6 @@ try {
   if (mod && typeof mod === 'object' && 'codeInspectorPlugin' in mod) {
     const factory = (mod as { codeInspectorPlugin: unknown }).codeInspectorPlugin
     if (typeof factory === 'function') {
-      // @ts-ignore - Plugin structure verified at runtime, not build time
       codeInspectorFactory = factory as CodeInspectorFactory
     }
   }
