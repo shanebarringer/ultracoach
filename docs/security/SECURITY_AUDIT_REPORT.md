@@ -297,32 +297,43 @@ if (startDate) {
 **Current Protections:**
 - ✅ React escapes rendered content by default
 - ✅ `X-Content-Type-Options: nosniff` header - `next.config.ts:76`
-- ❌ **No Content Security Policy (CSP)**
+- ✅ **Content Security Policy (CSP)** ✅ **IMPLEMENTED (PR #194)**
 
-**Issues Identified:**
+**Status:** ✅ **RESOLVED**
 
-#### 🟠 HIGH: Missing Content Security Policy
-**Location:** `next.config.ts`
+#### ✅ COMPLETED: Content Security Policy Implementation
+**Location:** `next.config.ts:65-110`
 
-**Risk:** No CSP headers to prevent XSS attacks
-**Impact:** Malicious scripts could execute if XSS vulnerability is discovered
-**Recommendation:** Add strict CSP headers
+**Implementation Details:**
+- Environment-aware CSP configuration
+- Production: Strict policy (no `unsafe-eval`)
+- Dev/Test: Permissive policy (HMR support with `unsafe-eval`)
+- Specific domain allowlist for images (Strava, Supabase only)
 
 ```typescript
-// next.config.ts - Add to headers() function
+// next.config.ts - Environment-aware CSP
+const isNonProduction = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+const scriptSrc = isNonProduction
+  ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"  // Dev/Test only
+  : "script-src 'self' 'unsafe-inline'"                // Production
+
 {
   key: 'Content-Security-Policy',
   value: [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Adjust based on actual needs
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
+    "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.strava.com https://*.supabase.co",
+    "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co",
     "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
   ].join('; '),
-},
+}
 ```
+
+**Impact:** XSS attack surface significantly reduced in production
 
 #### 🟢 LOW: User-Generated Content Not Sanitized
 **Location:** Message and workout notes fields
@@ -464,46 +475,60 @@ See Section 3.2 for CSP recommendations
 - ✅ Exponential backoff utility - Lines 176-185
 - ✅ Proper rate limit headers - Lines 155-171
 
-**Issues Identified:**
+**Status:** ✅ **RESOLVED (PR #194)**
 
-#### 🟠 HIGH: In-Memory Rate Limiting Won't Scale
-**Location:** `src/lib/rate-limiter.ts:6`
+#### ✅ COMPLETED: Redis-Based Rate Limiting Implementation
+**Location:** `src/lib/redis-rate-limiter.ts`
+
+**Implementation Details:**
+- Upstash Redis integration for distributed rate limiting
+- Automatic fallback to in-memory when Redis unavailable
+- Pre-configured limiters for different operations:
+  - Race imports: 5 per 15 minutes
+  - Feedback: 10 per hour
+  - Messages: 30 per minute
+- Defensive TTL handling for Redis edge cases
+- Periodic cleanup for in-memory fallback (O(1) amortized)
+
 ```typescript
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
-```
-**Risk:**
-- Multiple Vercel instances won't share rate limit state
-- Server restart resets all counters
-- Distributed denial of service (DDoS) attacks can bypass limits
-
-**Recommendation:** Migrate to Redis-based rate limiting
-
-```typescript
-// Use @upstash/redis for Vercel Edge compatibility
 import { Redis } from '@upstash/redis'
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-})
 
 export class RedisRateLimiter {
   async check(identifier: string): Promise<RateLimitResult> {
-    const key = `ratelimit:${identifier}`
-    const count = await redis.incr(key)
-
-    if (count === 1) {
-      await redis.expire(key, this.windowMs / 1000)
+    if (redis) {
+      return this.checkRedis(key, now)  // Distributed rate limiting
     }
+    return this.checkMemory(key, now)   // Fallback for dev/test
+  }
+
+  private async checkRedis(key: string, now: number): Promise<RateLimitResult> {
+    const count = await redis.incr(key)
+    if (count === 1) {
+      await redis.expire(key, Math.ceil(this.windowMs / 1000))
+    }
+
+    const ttl = await redis.ttl(key)
+    const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)  // Defensive
+    const resetTime = now + safeTTL * 1000
 
     return {
       allowed: count <= this.max,
       remaining: Math.max(0, this.max - count),
-      // ...
+      resetTime,
+      retryAfter: count > this.max ? Math.ceil((resetTime - now) / 1000) : 0,
+      limit: this.max,
     }
   }
 }
 ```
+
+**Applied to Endpoints:**
+- `/api/feedback` - Prevents feedback spam
+- `/api/messages` - Prevents message spam
+- `/api/races/import` - Prevents import abuse
+- `/api/races/bulk-import` - Stricter bulk operation limits
+
+**Impact:** Production-ready distributed rate limiting that scales horizontally
 
 ### 5.4 CORS Configuration ✅ **APPROPRIATE**
 
