@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { headers } from 'next/headers'
 
 import KBarProvider from '@/components/kbar/KBarProvider'
@@ -12,14 +12,30 @@ import { JotaiProvider } from '@/providers/JotaiProvider'
 
 import './globals.css'
 
-const geistSans = Geist({
+// Use local Geist fonts for reliability (no Google Fonts API dependency)
+// This ensures builds succeed even when external font services are unavailable
+const geistSans = localFont({
+  src: '../../public/fonts/Geist-Variable.woff2',
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  weight: '100 900', // Variable font supports full weight range
+  display: 'swap',
+  fallback: [
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'Segoe UI',
+    'Roboto',
+    'Helvetica Neue',
+    'Arial',
+    'sans-serif',
+  ],
 })
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: '../../public/fonts/GeistMono-Variable.woff2',
   variable: '--font-geist-mono',
-  subsets: ['latin'],
+  weight: '100 900',
+  display: 'swap',
+  fallback: ['Monaco', 'Courier New', 'monospace'],
 })
 
 export const metadata: Metadata = {
