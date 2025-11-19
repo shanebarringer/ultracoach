@@ -165,6 +165,60 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // If waypoints exist, validate at least one waypoint structure
+      if (
+        importData.gpx_data.waypoints &&
+        Array.isArray(importData.gpx_data.waypoints) &&
+        importData.gpx_data.waypoints.length > 0
+      ) {
+        // Sample middle waypoint for validation
+        const waypointCount = importData.gpx_data.waypoints.length
+        const sampleIndex = Math.floor(waypointCount / 2)
+        const sampleWaypoint = importData.gpx_data.waypoints[sampleIndex]
+
+        if (sampleWaypoint) {
+          // Validate lat/lon are numbers
+          if (
+            typeof sampleWaypoint.lat !== 'number' ||
+            typeof sampleWaypoint.lon !== 'number'
+          ) {
+            logger.warn('GPX waypoint has invalid lat/lon types', {
+              userId: session.user.id,
+              waypointIndex: sampleIndex,
+            })
+            return NextResponse.json(
+              {
+                error: 'Invalid GPX data - waypoints must have numeric lat/lon',
+                details: `Invalid waypoint at index ${sampleIndex}`,
+              },
+              { status: 400 }
+            )
+          }
+
+          // Validate lat/lon ranges
+          if (
+            sampleWaypoint.lat < -90 ||
+            sampleWaypoint.lat > 90 ||
+            sampleWaypoint.lon < -180 ||
+            sampleWaypoint.lon > 180
+          ) {
+            logger.warn('GPX waypoint lat/lon out of valid range', {
+              userId: session.user.id,
+              waypointIndex: sampleIndex,
+              lat: sampleWaypoint.lat,
+              lon: sampleWaypoint.lon,
+            })
+            return NextResponse.json(
+              {
+                error: 'Invalid GPX data - waypoint lat/lon out of valid range',
+                details: `Waypoint ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+              },
+              { status: 400 }
+            )
+          }
+        }
+      }
+
       // Count total track points and enforce limits
       const totalPoints = importData.gpx_data.tracks.reduce((sum, track) => {
         if (!track.points || !Array.isArray(track.points)) {
