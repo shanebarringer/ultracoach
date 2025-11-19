@@ -15,7 +15,7 @@ import './globals.css'
 // Use local Geist fonts for reliability (no Google Fonts API dependency)
 // This ensures builds succeed even when external font services are unavailable
 const geistSans = localFont({
-  src: '../../public/fonts/Geist-Variable.woff2',
+  src: '../fonts/Geist-Variable.woff2',
   variable: '--font-geist-sans',
   weight: '100 900', // Variable font supports full weight range
   display: 'swap',
@@ -31,7 +31,7 @@ const geistSans = localFont({
 })
 
 const geistMono = localFont({
-  src: '../../public/fonts/GeistMono-Variable.woff2',
+  src: '../fonts/GeistMono-Variable.woff2',
   variable: '--font-geist-mono',
   weight: '100 900',
   display: 'swap',
