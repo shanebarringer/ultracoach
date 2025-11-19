@@ -6,7 +6,6 @@
  * React hook that provides a UnitConverter instance based on user settings.
  * Automatically updates when user preferences change.
  */
-
 import { useAtomValue } from 'jotai'
 
 import { useMemo } from 'react'

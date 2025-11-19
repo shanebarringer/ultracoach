@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils/date'
 import type { WorkoutMatch } from '@/utils/workout-matching'
 
+import { asyncUserSettingsAtom } from './settings'
 import { withDebugLabel } from './utils'
 
 /**
@@ -214,6 +215,29 @@ export const workoutQuickFilterAtom = atomWithStorage<
   'all' | 'today' | 'this-week' | 'completed' | 'planned'
 >('workoutQuickFilter', 'all')
 export const workoutShowAdvancedFiltersAtom = atomWithStorage('workoutShowAdvancedFilters', false)
+
+/**
+ * Training preferences for workouts
+ * Derives show_completed_workouts setting from user's training preferences
+ */
+export const workoutShowCompletedAtom = atom(get => {
+  const settings = get(asyncUserSettingsAtom)
+  return settings?.training_preferences?.show_completed_workouts ?? true
+})
+
+/**
+ * Workout metric tracking preferences
+ * Determines which metrics should be visible based on user settings
+ */
+export const workoutMetricPreferencesAtom = atom(get => {
+  const settings = get(asyncUserSettingsAtom)
+  const prefs = settings?.training_preferences
+  return {
+    trackHeartRate: prefs?.track_heart_rate ?? true,
+    trackCadence: prefs?.track_cadence ?? true,
+    trackPower: prefs?.track_power ?? false, // Power meters less common
+  }
+})
 
 // Workout form atoms
 export const workoutFormDataAtom = atom<Partial<Workout>>({})
