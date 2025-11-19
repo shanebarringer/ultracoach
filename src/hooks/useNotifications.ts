@@ -1,14 +1,15 @@
 'use client'
 
-import { useAtom, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms/index'
+import { asyncUserSettingsAtom } from '@/lib/atoms/settings'
 import { createLogger } from '@/lib/logger'
-import { toast } from '@/lib/toast'
+import { NotificationManager } from '@/lib/notification-manager'
 import type { Notification } from '@/types/notifications'
 
 const logger = createLogger('useNotifications')
@@ -17,15 +18,10 @@ export function useNotifications() {
   const { data: session } = useSession()
   const [notifications, setNotifications] = useAtom(notificationsAtom)
   const setUnreadCount = useSetAtom(unreadNotificationsCountAtom)
-  const [preferences, setPreferences] = useState<{
-    toast_notifications?: boolean
-    messages?: boolean
-    workouts?: boolean
-    training_plans?: boolean
-    races?: boolean
-    reminders?: boolean
-    email_notifications?: boolean
-  } | null>(null)
+
+  // Get notification preferences from user settings atom
+  const userSettings = useAtomValue(asyncUserSettingsAtom)
+  const notificationPrefs = userSettings?.notification_preferences
 
   const fetchNotifications = useCallback(async () => {
     if (!session?.user?.id) return
@@ -36,6 +32,7 @@ export function useNotifications() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
@@ -51,36 +48,11 @@ export function useNotifications() {
     }
   }, [session?.user?.id, setNotifications, setUnreadCount])
 
-  // Fetch user preferences
-  const fetchPreferences = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/user/notification-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        setPreferences(data.preferences)
-      }
-    } catch (error) {
-      logger.error('Error fetching notification preferences:', error)
-      // Set default preferences if fetch fails
-      setPreferences({
-        toast_notifications: true,
-        messages: true,
-        workouts: true,
-        training_plans: true,
-        races: true,
-        reminders: true,
-      })
-    }
-  }, [session?.user?.id])
-
   useEffect(() => {
     if (session?.user?.id) {
       fetchNotifications()
-      fetchPreferences()
     }
-  }, [session?.user?.id, fetchNotifications, fetchPreferences])
+  }, [session?.user?.id, fetchNotifications])
 
   // Enhanced real-time updates with toast notifications
   // Temporarily disabled due to schema mismatch - relying on polling fallback
@@ -114,11 +86,8 @@ export function useNotifications() {
 
   // Helper function to show toast notifications with preference filtering
   const showNotificationToast = (notification: Notification) => {
-    // Check if toast notifications are enabled
-    if (!preferences?.toast_notifications) return
-
-    // Map notification types to preference keys
-    const getPreferenceKey = (type: string) => {
+    // Map notification types to NotificationManager types
+    const getNotificationType = (type: string) => {
       switch (type) {
         case 'message':
           return 'messages'
@@ -128,14 +97,13 @@ export function useNotifications() {
           return 'training_plans'
         case 'race':
           return 'races'
+        case 'reminder':
+          return 'reminders'
+        case 'system':
+          return 'system_updates'
         default:
-          return null
+          return 'system_updates'
       }
-    }
-
-    const preferenceKey = getPreferenceKey(notification.type)
-    if (preferenceKey && preferences?.[preferenceKey as keyof typeof preferences] === false) {
-      return
     }
 
     const getNotificationIcon = (type: string) => {
@@ -148,15 +116,24 @@ export function useNotifications() {
           return '💬'
         case 'race':
           return '🏁'
+        case 'reminder':
+          return '⏰'
         default:
           return '📢'
       }
     }
 
+    const notificationType = getNotificationType(notification.type)
     const icon = getNotificationIcon(notification.type)
     const title = `${icon} ${notification.title}`
 
-    toast.info(title, notification.message)
+    // Use NotificationManager to respect preferences
+    NotificationManager.showInfoSync(
+      notificationType as Parameters<typeof NotificationManager.showInfoSync>[0],
+      title,
+      notification.message,
+      notificationPrefs
+    )
   }
 
   const markAsRead = async (notificationId: string) => {
