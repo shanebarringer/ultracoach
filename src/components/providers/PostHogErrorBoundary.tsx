@@ -4,6 +4,10 @@ import posthog from 'posthog-js'
 
 import { Component, ErrorInfo, ReactNode } from 'react'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('PostHogErrorBoundary')
+
 interface Props {
   children: ReactNode
   fallback?: ReactNode
@@ -40,10 +44,11 @@ export class PostHogErrorBoundary extends Component<Props, State> {
       })
     }
 
-    // Also log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error caught by PostHogErrorBoundary:', error, errorInfo)
-    }
+    // Log error with structured logger
+    logger.error('Error caught by PostHogErrorBoundary:', {
+      error,
+      componentStack: errorInfo.componentStack,
+    })
   }
 
   render() {
@@ -53,12 +58,15 @@ export class PostHogErrorBoundary extends Component<Props, State> {
         this.props.fallback || (
           <div className="flex min-h-screen flex-col items-center justify-center p-4">
             <div className="max-w-md text-center">
-              <h1 className="mb-4 text-2xl font-bold text-red-600">Something went wrong</h1>
+              <h1 className="mb-4 text-2xl font-bold text-red-600" role="alert">
+                Something went wrong
+              </h1>
               <p className="mb-6 text-gray-600">
                 We&apos;ve been notified and will look into it. Please try refreshing the page.
               </p>
               <button
                 type="button"
+                aria-label="Refresh page to recover from error"
                 onClick={() => {
                   this.setState({ hasError: false, error: undefined })
                   window.location.reload()

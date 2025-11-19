@@ -192,11 +192,11 @@ export default function CreateTrainingPlanModal({
 
       // Track training plan creation in PostHog
       trackEvent('training_plan_created', {
-        planType: data.plan_type,
-        goalType: data.goal_type,
-        hasRace: !!data.race_id,
-        hasTemplate: !!data.template_id,
-        targetRaceDistance: data.targetRaceDistance,
+        planType: payload.plan_type,
+        goalType: payload.goal_type,
+        hasRace: !!payload.race_id,
+        hasTemplate: !!payload.template_id,
+        targetRaceDistance: payload.targetRaceDistance,
       })
 
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
@@ -415,8 +415,8 @@ export default function CreateTrainingPlanModal({
                           </span>
                         )}
                         {item.elevation_gain_feet > 0 && (
-                          <span className="flex items-center gap-1" suppressHydrationWarning>
-                            ⛰️ {item.elevation_gain_feet.toLocaleString()}ft
+                          <span className="flex items-center gap-1">
+                            ⛰️ {item.elevation_gain_feet.toLocaleString('en-US')}ft
                           </span>
                         )}
                       </div>

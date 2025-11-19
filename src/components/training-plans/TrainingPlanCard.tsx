@@ -34,6 +34,7 @@ import { useTrainingPlansActions } from '@/hooks/useTrainingPlansActions'
 import { createLogger } from '@/lib/logger'
 import type { Race, TrainingPlan, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('TrainingPlanCard')
 
@@ -243,9 +244,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                     <div className="flex items-center gap-3 text-xs text-foreground/70">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-3 h-3" />
-                        <span suppressHydrationWarning>
-                          {new Date(plan.race.date).toLocaleDateString()}
-                        </span>
+                        <span>{formatDateConsistent(plan.race.date)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPinIcon className="w-3 h-3" />

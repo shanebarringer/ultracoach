@@ -1,5 +1,7 @@
 import { PostHog } from 'posthog-node'
 
+import logger from '@/lib/logger'
+
 let posthogServerInstance: PostHog | null = null
 
 /**
@@ -44,8 +46,8 @@ export async function identifyUser(userId: string, properties?: Record<string, u
     // Flush immediately to ensure event is sent before serverless function terminates
     await posthog.flush()
   } catch (error) {
-    console.error('Failed to identify user in PostHog:', error)
-    throw error
+    // Fire-and-forget: log error but don't throw to avoid forcing callers to handle PostHog failures
+    logger.error('Failed to identify user in PostHog:', error)
   }
 }
 
@@ -72,8 +74,8 @@ export async function trackServerEvent(
     // Flush immediately to ensure event is sent before serverless function terminates
     await posthog.flush()
   } catch (error) {
-    console.error('Failed to track event in PostHog:', error)
-    throw error
+    // Fire-and-forget: log error but don't throw to avoid forcing callers to handle PostHog failures
+    logger.error('Failed to track event in PostHog:', error)
   }
 }
 

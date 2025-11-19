@@ -26,6 +26,7 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('AsyncStravaDashboardWidget')
@@ -91,7 +92,7 @@ const AsyncStravaDashboardWidget = memo(({ className = '' }: AsyncStravaDashboar
       .map((activity: StravaActivity) => ({
         id: activity.id,
         name: activity.name,
-        date: new Date(activity.start_date).toLocaleDateString(),
+        date: formatDateConsistent(activity.start_date),
         distance: (activity.distance / 1000).toFixed(1),
         duration: Math.round(activity.moving_time / 60),
         location: activity.location_city,
@@ -311,9 +312,7 @@ const AsyncStravaDashboardWidget = memo(({ className = '' }: AsyncStravaDashboar
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-foreground-600" suppressHydrationWarning>
-                          {activity.date}
-                        </span>
+                        <span className="text-xs text-foreground-600">{activity.date}</span>
                         <ExternalLink className="h-3 w-3 text-foreground-400" />
                       </div>
                     </div>

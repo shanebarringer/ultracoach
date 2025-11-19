@@ -13,7 +13,7 @@ import { sessionAtom, userAtom } from '@/lib/atoms'
  *
  * Usage: Call this hook in a component that's always mounted (like Layout or Dashboard)
  */
-export function usePostHogIdentify() {
+export function usePostHogIdentify(): void {
   const session = useAtomValue(sessionAtom)
   const user = useAtomValue(userAtom)
 
@@ -54,7 +54,10 @@ export function usePostHogIdentify() {
  * const trackEvent = usePostHogEvent()
  * trackEvent('workout_completed', { workoutType: 'long_run', distance: 20 })
  */
-export function usePostHogEvent() {
+export function usePostHogEvent(): (
+  eventName: string,
+  properties?: Record<string, unknown>
+) => void {
   return (eventName: string, properties?: Record<string, unknown>) => {
     if (posthog.has_opted_in_capturing()) {
       posthog.capture(eventName, properties)
@@ -75,7 +78,7 @@ export function usePostHogEvent() {
  *   return <NewDashboard />
  * }
  */
-export function usePostHogFeatureFlag(flagKey: string) {
+export function usePostHogFeatureFlag(flagKey: string): string | boolean | undefined {
   const session = useAtomValue(sessionAtom)
 
   useEffect(() => {
