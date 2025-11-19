@@ -34,6 +34,7 @@ import { memo, useCallback, useMemo } from 'react'
 
 import { selectedMatchAtom, showWorkoutDiffModalAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
+import { formatDateConsistent } from '@/lib/utils/date'
 import type { WorkoutDiscrepancy, WorkoutMatch } from '@/utils/workout-matching'
 
 const logger = createLogger('WorkoutDiffModal')
@@ -266,9 +267,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">
-                            {new Date(planned.date).toLocaleDateString()}
-                          </p>
+                          <p className="font-medium">{formatDateConsistent(planned.date)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-foreground-600">Type</p>
@@ -316,9 +315,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-foreground-600">Date</p>
-                          <p className="font-medium">
-                            {new Date(actual.date).toLocaleDateString()}
-                          </p>
+                          <p className="font-medium">{formatDateConsistent(actual.date)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-foreground-600">Type</p>

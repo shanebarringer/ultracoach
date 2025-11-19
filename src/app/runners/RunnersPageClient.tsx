@@ -34,6 +34,7 @@ import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User as BetterAuthUser } from '@/lib/better-auth-client'
 import type { User as SupabaseUser } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 // Extended User type with runner-specific fields that may be returned from API
 interface RunnerWithStats extends SupabaseUser {
@@ -106,7 +107,7 @@ export default function RunnersPageClient({ user }: RunnersPageClientProps) {
                 </Chip>
                 {runner.connected_at && (
                   <Chip variant="flat" color="success" size="sm">
-                    Connected {new Date(runner.connected_at).toLocaleDateString()}
+                    Connected {formatDateConsistent(runner.connected_at)}
                   </Chip>
                 )}
               </div>
