@@ -8,6 +8,10 @@ if curl -s -f http://localhost:3001/api/health > /dev/null 2>&1; then
 else
   echo "🌐 Dev server not running, starting it..."
 
+  # Set up cleanup trap to kill background server on script exit
+  # This ensures the dev server is stopped even if tests or build fail
+  trap 'if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" 2>/dev/null || true; fi' EXIT INT TERM
+
   # Start dev server in background
   pnpm dev > /tmp/ultracoach-dev-server.log 2>&1 &
   SERVER_PID=$!

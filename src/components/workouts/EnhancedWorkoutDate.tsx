@@ -48,7 +48,7 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
 
   return (
     <div className="flex items-center gap-2">
-      <Calendar className="h-4 w-4 text-foreground-400" />
+      <Calendar className="h-4 w-4 text-foreground-400" aria-hidden="true" focusable="false" />
       <div className="flex flex-col">
         <span className={`text-sm font-medium ${getDateColor()}`}>{getDateLabel()}</span>
         <time className="text-xs text-foreground-400" dateTime={workout.date}>

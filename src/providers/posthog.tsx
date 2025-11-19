@@ -10,6 +10,10 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('PostHogProvider')
 
+// Module-level flag to track PostHog initialization
+// This prevents re-initialization during hot module reloading or strict mode double-mounting
+let posthogInitialized = false
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -18,10 +22,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   // Initialize PostHog only once on mount
   useEffect(() => {
     // Only initialize PostHog on client-side with proper environment variables
-    // Check both component state and PostHog's internal loaded state to prevent re-initialization
+    // Check both component state and module-level initialization flag to prevent re-initialization
     // during hot module reloading or strict mode double-mounting
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && !isInitialized && !(posthog as any).__loaded) {
+    if (typeof window !== 'undefined' && !isInitialized && !posthogInitialized) {
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
       const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
@@ -65,11 +68,13 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
             }
             // Mark as initialized after loaded callback
             setIsInitialized(true)
+            posthogInitialized = true
             logger.info('PostHog initialized successfully')
           },
         })
       } catch (error) {
         logger.error('Failed to initialize PostHog:', error)
+        posthogInitialized = false
         // Ensure PostHog is opted out on initialization failure
         try {
           posthog.opt_out_capturing()
