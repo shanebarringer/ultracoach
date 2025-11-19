@@ -3,6 +3,7 @@
 import { Card, CardBody, CardHeader } from '@heroui/react'
 import { Activity } from 'lucide-react'
 
+import GarminActivityList from '@/components/garmin/GarminActivityList'
 import GarminConnectionCard from '@/components/settings/GarminConnectionCard'
 import StravaActivityList from '@/components/strava/StravaActivityList'
 import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
@@ -32,7 +33,16 @@ export default function IntegrationsSettingsPanel() {
 
         <div>
           <h3 className="text-lg font-medium mb-4">Activity Sync</h3>
-          <StravaActivityList />
+          <div className="space-y-8">
+            <div>
+              <h4 className="text-md font-medium mb-3 text-default-600">Strava Activities</h4>
+              <StravaActivityList />
+            </div>
+            <div>
+              <h4 className="text-md font-medium mb-3 text-default-600">Garmin Activities</h4>
+              <GarminActivityList />
+            </div>
+          </div>
         </div>
 
         {/* Future integrations */}

@@ -89,6 +89,7 @@ function RunnersPanel() {
   const handleRunnerSelection = (keys: 'all' | Set<React.Key>) => {
     if (keys !== 'all' && keys.size > 0) {
       const selectedRunnerId = Array.from(keys)[0] as string
+      if (typeof selectedRunnerId !== 'string') return
       router.push(`/weekly-planner/${selectedRunnerId}`)
     }
   }
@@ -96,53 +97,69 @@ function RunnersPanel() {
   return (
     <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
       <CardHeader className="px-4 lg:px-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full mb-4 gap-3 lg:gap-0">
-          <div className="flex items-center gap-3">
-            <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary" />
-            <div>
-              <h1 className="text-lg lg:text-2xl font-bold text-foreground">🏔️ Weekly Planner</h1>
-              <p className="text-foreground/70 text-xs lg:text-sm">
-                Select a training partner for weekly planning
-              </p>
+        <div className="flex flex-col gap-4 w-full">
+          {/* Header Row: Title and Action Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full gap-4">
+            {/* Left: Page Title */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <CalendarDaysIcon
+                className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0"
+                aria-hidden="true"
+              />
+              <div className="min-w-0">
+                <h1 className="text-lg lg:text-2xl font-bold text-foreground">🏔️ Weekly Planner</h1>
+                <p className="text-foreground/70 text-xs lg:text-sm">
+                  Select a training partner for weekly planning
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Partner Count and View Mode Buttons - Right-aligned */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 flex-shrink-0">
+              {/* Partner Count Badge */}
+              <div className="flex items-center gap-2">
+                <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" aria-hidden="true" />
+                <span className="text-xs lg:text-sm font-medium text-foreground/70">
+                  {runnersArray.length} Partner{runnersArray.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* View Mode Toggle Buttons */}
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant={viewMode === 'grid' ? 'solid' : 'flat'}
+                  color="secondary"
+                  onPress={() => setViewMode('grid')}
+                  aria-pressed={viewMode === 'grid'}
+                  className="focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                >
+                  Grid View
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === 'dropdown' ? 'solid' : 'flat'}
+                  color="secondary"
+                  onPress={() => setViewMode('dropdown')}
+                  aria-pressed={viewMode === 'dropdown'}
+                  className="focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                >
+                  Quick Select
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-start lg:self-auto">
-            <UsersIcon className="w-4 lg:w-5 h-4 lg:h-5 text-secondary" />
-            <span className="text-xs lg:text-sm font-medium text-foreground/70">
-              {runnersArray.length} Partner{runnersArray.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        </div>
 
-        {/* View Mode Toggle and Quick Selection */}
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant={viewMode === 'grid' ? 'solid' : 'flat'}
-              color="secondary"
-              onPress={() => setViewMode('grid')}
-            >
-              Grid View
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === 'dropdown' ? 'solid' : 'flat'}
-              color="secondary"
-              onPress={() => setViewMode('dropdown')}
-            >
-              Quick Select
-            </Button>
-          </div>
-
+          {/* Quick Selection Dropdown - Full width when visible */}
           {viewMode === 'dropdown' && (
             <Select
               placeholder="Choose your training partner..."
-              className="max-w-sm"
+              className="w-full sm:max-w-md"
               variant="bordered"
-              size="sm"
+              size="md"
               onSelectionChange={handleRunnerSelection}
-              startContent={<UsersIcon className="w-4 h-4" />}
+              startContent={<UsersIcon className="w-4 h-4" aria-hidden="true" />}
+              aria-label="Select training partner"
             >
               {runnersArray.map((runner: User) => (
                 <SelectItem key={runner.id} textValue={runner.full_name || runner.email}>
@@ -194,6 +211,7 @@ function RunnersPanel() {
                 isPressable
                 onPress={() => router.push(`/weekly-planner/${runner.id}`)}
                 className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:bg-content2 border border-transparent hover:border-primary/20"
+                data-testid="runner-card"
               >
                 <CardBody className="p-3 lg:p-4">
                   <div className="flex items-center gap-3">
@@ -203,10 +221,16 @@ function RunnersPanel() {
                       className="bg-primary text-white"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-sm lg:text-base truncate">
+                      <h3
+                        className="font-semibold text-foreground text-sm lg:text-base truncate"
+                        data-testid="runner-name"
+                      >
                         {runner.full_name || 'User'}
                       </h3>
-                      <p className="text-xs lg:text-sm text-foreground/70 truncate">
+                      <p
+                        className="text-xs lg:text-sm text-foreground/70 truncate"
+                        data-testid="runner-email"
+                      >
                         {runner.email}
                       </p>
                       <div className="flex items-center gap-1 lg:gap-2 mt-2">

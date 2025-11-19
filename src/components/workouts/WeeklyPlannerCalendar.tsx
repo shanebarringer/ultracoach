@@ -22,12 +22,19 @@ import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-r
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { useHydrateWorkouts } from '@/hooks/useWorkouts'
+import { api } from '@/lib/api-client'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import type { User } from '@/lib/supabase'
+import type { User, Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('WeeklyPlannerCalendar')
+
+// Defensive guard constants for array bounds checking
+const DAYS_IN_WEEK = 7
+const isValidDayIndex = (index: number, arrayLength: number): boolean =>
+  Number.isInteger(index) && index >= 0 && index < arrayLength
 
 interface DayWorkout {
   date: Date
@@ -270,6 +277,11 @@ export default function WeeklyPlannerCalendar({
   // readOnly = false,
   onWeekUpdate,
 }: WeeklyPlannerCalendarProps) {
+  // CRITICAL FIX (Phase 2): Call useHydrateWorkouts() BEFORE reading workoutsAtom
+  // This ensures Suspense properly waits for workout data to load before rendering
+  // Fixes race condition where workouts were empty on page refresh in production
+  useHydrateWorkouts()
+
   logger.debug('WeeklyPlannerCalendar component rendered:', {
     runnerId: runner.id,
     runnerName: runner.full_name,
@@ -278,7 +290,9 @@ export default function WeeklyPlannerCalendar({
 
   const { data: session } = useSession()
   const [weekWorkouts, setWeekWorkouts] = useState<DayWorkout[]>([])
+  // Now safe to read - hydration is guaranteed to complete first
   const allWorkouts = useAtomValue(workoutsAtom)
+  const setWorkouts = useSetAtom(workoutsAtom) // For optimistic updates
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
@@ -422,11 +436,31 @@ export default function WeeklyPlannerCalendar({
     value: string | number | undefined
   ) => {
     setWeekWorkouts(prev => {
-      const updated = [...prev]
-      const day = updated[dayIndex]
+      // DEFENSIVE GUARD: Validate dayIndex bounds before array access
+      if (!isValidDayIndex(dayIndex, DAYS_IN_WEEK)) {
+        logger.error('Invalid dayIndex in updateDayWorkout', {
+          dayIndex,
+          field,
+          weekWorkoutsLength: prev.length,
+          expectedLength: DAYS_IN_WEEK,
+        })
+        return prev // Early exit - return unchanged state
+      }
 
-      if (!day.workout) {
-        day.workout = { type: 'Easy Run' }
+      const updated = [...prev]
+      const originalDay = updated[dayIndex]
+
+      // Additional guard against undefined array element (defense in depth)
+      if (!originalDay) {
+        logger.error('originalDay is undefined at valid index', { dayIndex })
+        return prev
+      }
+
+      // CRITICAL FIX: Create new day object AND new workout object to avoid mutation
+      // React won't detect changes if we mutate the existing objects
+      const day = {
+        ...originalDay,
+        workout: originalDay.workout ? { ...originalDay.workout } : { type: 'Easy Run' },
       }
 
       if (field === 'type') {
@@ -463,21 +497,23 @@ export default function WeeklyPlannerCalendar({
           | 'rest'
           | undefined
       } else if (field === 'distance') {
-        day.workout.distance = value ? Number(value) : undefined
+        day.workout.distance = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'duration') {
-        day.workout.duration = value ? Number(value) : undefined
+        day.workout.duration = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'notes') {
         day.workout.notes = value as string
       } else if (field === 'intensity') {
-        day.workout.intensity = value ? Number(value) : undefined
+        day.workout.intensity = value === '' || value === undefined ? undefined : Number(value)
       } else if (field === 'terrain') {
         if (typeof value === 'string') {
           day.workout.terrain = value as TerrainType
         }
       } else if (field === 'elevationGain') {
-        day.workout.elevationGain = value ? Number(value) : undefined
+        day.workout.elevationGain = value === '' || value === undefined ? undefined : Number(value)
       }
 
+      // Replace with new day object so React detects the change
+      updated[dayIndex] = day
       return updated
     })
     setHasChanges(true)
@@ -485,8 +521,28 @@ export default function WeeklyPlannerCalendar({
 
   const clearDayWorkout = (dayIndex: number) => {
     setWeekWorkouts(prev => {
+      // DEFENSIVE GUARD: Validate dayIndex bounds before array access
+      if (!isValidDayIndex(dayIndex, DAYS_IN_WEEK)) {
+        logger.error('Invalid dayIndex in clearDayWorkout', {
+          dayIndex,
+          weekWorkoutsLength: prev.length,
+          expectedLength: DAYS_IN_WEEK,
+        })
+        return prev // Early exit - return unchanged state
+      }
+
+      // Additional guard against undefined array element
+      if (!prev[dayIndex]) {
+        logger.error('Array element is undefined at valid index', { dayIndex })
+        return prev
+      }
+
       const updated = [...prev]
-      updated[dayIndex].workout = undefined
+      // Clone the day object to preserve immutability
+      updated[dayIndex] = {
+        ...updated[dayIndex],
+        workout: undefined,
+      }
       return updated
     })
     setHasChanges(true)
@@ -496,19 +552,21 @@ export default function WeeklyPlannerCalendar({
     if (!session?.user?.id || !runner.id) return
 
     setSaving(true)
+
+    // Store temp IDs for rollback on error
+    const tempIds: string[] = []
+
     try {
-      // Find the runner's training plan
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const plansResponse = await fetch(`${baseUrl}/api/training-plans?runnerId=${runner.id}`, {
-        credentials: 'same-origin',
-      })
-      if (!plansResponse.ok) {
-        throw new Error('Failed to find training plan')
+      // Find the runner's training plan using api client (automatic credentials handling)
+      const plansResponse = await api.get(`/api/training-plans?runnerId=${runner.id}`)
+      const plansData = plansResponse.data as {
+        trainingPlans?: Array<{ id: string; runner_id: string }>
       }
 
-      const plansData = await plansResponse.json()
-      const trainingPlan = plansData.trainingPlans?.[0]
+      // CRITICAL FIX: Filter by runner.id since API returns all plans for all connected runners
+      const trainingPlan = plansData.trainingPlans?.find(
+        (plan: { runner_id: string }) => plan.runner_id === runner.id
+      )
 
       if (!trainingPlan) {
         throw new Error('No training plan found for this runner')
@@ -521,31 +579,114 @@ export default function WeeklyPlannerCalendar({
           trainingPlanId: trainingPlan.id,
           date: day.date.toISOString().split('T')[0],
           plannedType: day.workout!.type,
-          plannedDistance: day.workout!.distance || null,
-          plannedDuration: day.workout!.duration || null,
+          // CRITICAL: Explicit type conversion to match database schema and API validation
+          // plannedDistance: DECIMAL(5,2) - use parseFloat() for decimals (26.2 miles)
+          // plannedDuration, intensity, elevationGain: INTEGER - use parseInt() for whole numbers
+          // Use typeof checks instead of truthy checks to preserve 0 as valid value
+          plannedDistance:
+            typeof day.workout!.distance === 'number'
+              ? parseFloat(String(day.workout!.distance))
+              : null,
+          plannedDuration:
+            typeof day.workout!.duration === 'number'
+              ? parseInt(String(day.workout!.duration))
+              : null,
           notes: day.workout!.notes || '',
           category: day.workout!.category || null,
-          intensity: day.workout!.intensity || null,
+          intensity:
+            typeof day.workout!.intensity === 'number'
+              ? parseInt(String(day.workout!.intensity))
+              : null,
           terrain: day.workout!.terrain || null,
-          elevationGain: day.workout!.elevationGain || null,
+          elevationGain:
+            typeof day.workout!.elevationGain === 'number'
+              ? parseInt(String(day.workout!.elevationGain))
+              : null,
         }))
 
-      // Bulk create workouts
-      const response = await fetch(`${baseUrl}/api/workouts/bulk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          workouts: workoutsToCreate,
-        }),
+      // PHASE 2 FIX: Optimistic update - add workouts to atom BEFORE API call
+      // This prevents race condition where refresh returns stale data
+      const timestamp = Date.now()
+      const tempWorkouts = workoutsToCreate.map((workout, index) => {
+        const tempId = `temp-${timestamp}-${index}`
+        tempIds.push(tempId)
+        return {
+          id: tempId,
+          user_id: runner.id,
+          training_plan_id: workout.trainingPlanId,
+          date: workout.date,
+          planned_type: workout.plannedType,
+          planned_distance: workout.plannedDistance ?? undefined,
+          planned_duration: workout.plannedDuration ?? undefined,
+          workout_notes: workout.notes,
+          category: workout.category ?? undefined,
+          intensity: workout.intensity ?? undefined,
+          terrain: workout.terrain ?? undefined,
+          elevation_gain: workout.elevationGain ?? undefined,
+          status: 'planned' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Optional fields set to undefined
+          actual_distance: undefined,
+          actual_duration: undefined,
+          actual_elevation: undefined,
+          actual_heart_rate_avg: undefined,
+          actual_heart_rate_max: undefined,
+          actual_pace: undefined,
+          weather: undefined,
+          perceived_effort: undefined,
+          strava_activity_id: undefined,
+        } as Workout // Explicit type cast for safety
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save workouts')
-      }
+      logger.debug('Optimistic update: Adding temp workouts to atom', {
+        tempWorkoutCount: tempWorkouts.length,
+        tempIds,
+      })
+
+      // Optimistically update the atom immediately
+      setWorkouts(prev => {
+        // Remove any existing workouts for these dates to avoid duplicates
+        const filtered = prev.filter(w => {
+          const workoutDate = w.date.split('T')[0]
+          return !workoutsToCreate.some(wc => wc.date === workoutDate && w.user_id === runner.id)
+        })
+        return [...filtered, ...tempWorkouts]
+      })
+
+      // Bulk create workouts using api client (automatic credentials and error handling)
+      const response = await api.post('/api/workouts/bulk', {
+        workouts: workoutsToCreate,
+      })
+
+      // Parse server response and get real workout objects with IDs
+      const responseData = response.data as { workouts?: Workout[] }
+      const savedWorkouts = responseData.workouts || []
+
+      logger.debug('API response received, replacing temp IDs with real IDs', {
+        savedWorkoutCount: savedWorkouts.length,
+        tempIds,
+      })
+
+      // Replace temp workouts with real server workouts
+      setWorkouts(prev =>
+        prev.map(w => {
+          // If this is a temp workout, find matching real workout by date
+          if (tempIds.includes(w.id)) {
+            const workoutDate = w.date.split('T')[0]
+            const realWorkout = savedWorkouts.find(
+              (sw: { date: string; user_id: string }) =>
+                sw.date.split('T')[0] === workoutDate && sw.user_id === runner.id
+            )
+            return realWorkout || w // Use real workout if found, otherwise keep temp
+          }
+          return w // Keep non-temp workouts unchanged
+        })
+      )
+
+      // CRITICAL: Invalidate atom cache so navigating to /workouts shows new workouts
+      // This increments workoutsRefreshTriggerAtom which forces asyncWorkoutsAtom to refetch
+      refreshWorkouts()
 
       setHasChanges(false)
       onWeekUpdate()
@@ -553,10 +694,21 @@ export default function WeeklyPlannerCalendar({
       // Show success toast with mountain theme
       commonToasts.workoutSaved()
 
-      // Refresh existing workouts
-      refreshWorkouts()
+      logger.info('Week plan saved successfully with optimistic updates', {
+        savedCount: savedWorkouts.length,
+      })
+
+      // NO refreshWorkouts() call - state already updated optimistically!
     } catch (error) {
       logger.error('Error saving week plan:', error)
+
+      // PHASE 2 FIX: Rollback optimistic update on error
+      logger.debug('Rolling back optimistic update due to error', { tempIds })
+      setWorkouts(prev => prev.filter(w => !tempIds.includes(w.id)))
+
+      // Ensure original workouts are restored from the backend
+      refreshWorkouts()
+
       commonToasts.workoutError(
         error instanceof Error ? error.message : 'Failed to save expedition plan'
       )

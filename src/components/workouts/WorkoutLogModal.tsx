@@ -23,9 +23,9 @@ import { Controller, useForm } from 'react-hook-form'
 import {
   completeWorkoutAtom,
   logWorkoutDetailsAtom,
-  refreshWorkoutsAtom,
   skipWorkoutAtom,
   workoutLogFormAtom,
+  workoutsAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -85,7 +85,7 @@ export default function WorkoutLogModal({
   const completeWorkout = useSetAtom(completeWorkoutAtom)
   const logWorkoutDetails = useSetAtom(logWorkoutDetailsAtom)
   const skipWorkout = useSetAtom(skipWorkoutAtom)
-  const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
+  const setWorkouts = useSetAtom(workoutsAtom)
 
   // React Hook Form setup
   const {
@@ -163,35 +163,70 @@ export default function WorkoutLogModal({
         await skipWorkout(workout.id)
       } else if (data.status === 'completed') {
         // If we have actual data, use the log details atom, otherwise just mark complete
-        const hasActualData = data.actualDistance || data.actualDuration || data.workoutNotes
+        // Treat 0 as valid by checking against null/undefined
+        const hasActualData =
+          data.actualDistance != null ||
+          data.actualDuration != null ||
+          (data.workoutNotes != null && data.workoutNotes.trim().length > 0)
         if (hasActualData) {
           await logWorkoutDetails({ workoutId: workout.id, data: payload })
         } else {
           await completeWorkout({ workoutId: workout.id, data: {} })
         }
       } else {
-        // For 'planned' status, just update the workout with the API directly
-        const baseUrl =
-          typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-        const response = await fetch(`${baseUrl}/api/workouts/${workout.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({ ...payload, status: 'planned' }),
-        })
+        // For 'planned' status, use optimistic update pattern
+        const previousWorkout = { ...workout }
 
-        if (!response.ok) {
-          throw new Error('Failed to update workout')
+        // Optimistically update the workouts atom immediately
+        setWorkouts(prev =>
+          prev.map(w =>
+            w.id === workout.id
+              ? ({
+                  ...w,
+                  ...payload,
+                  status: 'planned' as const,
+                  updated_at: new Date().toISOString(),
+                  // Convert null to undefined for type compatibility
+                  category: payload.category || undefined,
+                  intensity: payload.intensity || undefined,
+                  terrain: payload.terrain || undefined,
+                  elevation_gain: payload.elevation_gain || undefined,
+                } as Workout)
+              : w
+          )
+        )
+
+        try {
+          const response = await fetch(`/api/workouts/${workout.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ ...payload, status: 'planned' }),
+          })
+
+          if (!response.ok) {
+            // Rollback on error
+            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
+            throw new Error('Failed to update workout')
+          }
+
+          // Update with server response
+          const updatedWorkout = await response.json()
+          setWorkouts(prev =>
+            prev.map(w => (w.id === workout.id ? updatedWorkout.workout || updatedWorkout : w))
+          )
+        } catch (error) {
+          // Rollback already happened in the if (!response.ok) block
+          throw error
         }
       }
 
       logger.info('Workout updated successfully')
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
 
-      // Trigger a refresh to ensure all components update
-      refreshWorkouts()
+      // NO refreshWorkouts() call - optimistic updates already applied!
 
       reset() // Reset form with react-hook-form
       onSuccess()
@@ -207,11 +242,17 @@ export default function WorkoutLogModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="5xl"
+      scrollBehavior="inside"
+      className="max-h-[90vh]"
+    >
       <ModalContent>
-        <ModalHeader>Log Workout</ModalHeader>
+        <ModalHeader className="text-xl font-bold">Log Workout</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="space-y-4">
+          <ModalBody className="space-y-6 py-6">
             <div className="p-3 bg-gray-50 rounded-lg">
               <h3 className="font-medium text-gray-900 mb-2">Planned Workout</h3>
               <p className="text-sm text-gray-600">
@@ -260,99 +301,167 @@ export default function WorkoutLogModal({
 
             {watchedStatus === 'completed' && (
               <>
-                <Controller
-                  name="actualType"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Select
-                      label="Actual Workout Type"
-                      selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={keys => {
-                        const selectedType = Array.from(keys).join('')
-                        field.onChange(selectedType)
-                      }}
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                      items={[
-                        { id: 'Easy Run', name: 'Easy Run' },
-                        { id: 'Long Run', name: 'Long Run' },
-                        { id: 'Tempo Run', name: 'Tempo Run' },
-                        { id: 'Interval Training', name: 'Interval Training' },
-                        { id: 'Fartlek', name: 'Fartlek' },
-                        { id: 'Hill Training', name: 'Hill Training' },
-                        { id: 'Recovery Run', name: 'Recovery Run' },
-                        { id: 'Cross Training', name: 'Cross Training' },
-                        { id: 'Strength Training', name: 'Strength Training' },
-                        { id: 'Rest Day', name: 'Rest Day' },
-                      ]}
-                    >
-                      {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
-                    </Select>
-                  )}
-                />
+                {/* Primary Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Controller
+                    name="actualType"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Select
+                        label="Actual Workout Type"
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={keys => {
+                          const selectedType = Array.from(keys).join('')
+                          field.onChange(selectedType)
+                        }}
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                        items={[
+                          { id: 'Easy Run', name: 'Easy Run' },
+                          { id: 'Long Run', name: 'Long Run' },
+                          { id: 'Tempo Run', name: 'Tempo Run' },
+                          { id: 'Interval Training', name: 'Interval Training' },
+                          { id: 'Fartlek', name: 'Fartlek' },
+                          { id: 'Hill Training', name: 'Hill Training' },
+                          { id: 'Recovery Run', name: 'Recovery Run' },
+                          { id: 'Cross Training', name: 'Cross Training' },
+                          { id: 'Strength Training', name: 'Strength Training' },
+                          { id: 'Rest Day', name: 'Rest Day' },
+                        ]}
+                      >
+                        {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                      </Select>
+                    )}
+                  />
 
-                <Controller
-                  name="category"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Select
-                      label="Category"
-                      selectedKeys={field.value ? [field.value] : []}
-                      onSelectionChange={keys => {
-                        const selectedCategory = Array.from(keys).join('') as
-                          | 'easy'
-                          | 'tempo'
-                          | 'interval'
-                          | 'long_run'
-                          | 'race_simulation'
-                          | 'recovery'
-                          | 'strength'
-                          | 'cross_training'
-                          | 'rest'
-                          | ''
-                        field.onChange(selectedCategory || undefined)
-                      }}
-                      placeholder="Select category..."
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                      items={[
-                        { id: 'easy', name: 'Easy' },
-                        { id: 'tempo', name: 'Tempo' },
-                        { id: 'interval', name: 'Interval' },
-                        { id: 'long_run', name: 'Long Run' },
-                        { id: 'race_simulation', name: 'Race Simulation' },
-                        { id: 'recovery', name: 'Recovery' },
-                        { id: 'strength', name: 'Strength' },
-                        { id: 'cross_training', name: 'Cross Training' },
-                        { id: 'rest', name: 'Rest' },
-                      ]}
-                    >
-                      {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
-                    </Select>
-                  )}
-                />
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Select
+                        label="Category"
+                        selectedKeys={field.value ? [field.value] : []}
+                        onSelectionChange={keys => {
+                          const selectedCategory = Array.from(keys).join('') as
+                            | 'easy'
+                            | 'tempo'
+                            | 'interval'
+                            | 'long_run'
+                            | 'race_simulation'
+                            | 'recovery'
+                            | 'strength'
+                            | 'cross_training'
+                            | 'rest'
+                            | ''
+                          field.onChange(selectedCategory || undefined)
+                        }}
+                        placeholder="Select category..."
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                        items={[
+                          { id: 'easy', name: 'Easy' },
+                          { id: 'tempo', name: 'Tempo' },
+                          { id: 'interval', name: 'Interval' },
+                          { id: 'long_run', name: 'Long Run' },
+                          { id: 'race_simulation', name: 'Race Simulation' },
+                          { id: 'recovery', name: 'Recovery' },
+                          { id: 'strength', name: 'Strength' },
+                          { id: 'cross_training', name: 'Cross Training' },
+                          { id: 'rest', name: 'Rest' },
+                        ]}
+                      >
+                        {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                      </Select>
+                    )}
+                  />
+                </div>
 
-                <Controller
-                  name="intensity"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      label="Intensity (1-10)"
-                      min="1"
-                      max="10"
-                      value={field.value?.toString() || ''}
-                      onChange={e =>
-                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      placeholder="e.g., 7"
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                    />
-                  )}
-                />
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Controller
+                    name="actualDistance"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Distance (miles)"
+                        step="0.1"
+                        min="0"
+                        value={field.value?.toString() || ''}
+                        onChange={e =>
+                          field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                        }
+                        placeholder="e.g., 5.5"
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                      />
+                    )}
+                  />
 
+                  <Controller
+                    name="actualDuration"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Duration (min)"
+                        min="0"
+                        value={field.value?.toString() || ''}
+                        onChange={e =>
+                          field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                        }
+                        placeholder="e.g., 60"
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="intensity"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Intensity (1-10)"
+                        min="1"
+                        max="10"
+                        value={field.value?.toString() || ''}
+                        onChange={e =>
+                          field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                        }
+                        placeholder="e.g., 7"
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="elevationGain"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="number"
+                        label="Elevation (ft)"
+                        min="0"
+                        value={field.value?.toString() || ''}
+                        onChange={e =>
+                          field.onChange(e.target.value ? Number(e.target.value) : undefined)
+                        }
+                        placeholder="e.g., 500"
+                        isInvalid={!!fieldState.error}
+                        errorMessage={fieldState.error?.message}
+                      />
+                    )}
+                  />
+                </div>
+
+                {/* Terrain */}
                 <Controller
                   name="terrain"
                   control={control}
@@ -381,67 +490,6 @@ export default function WorkoutLogModal({
                     >
                       {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
                     </Select>
-                  )}
-                />
-
-                <Controller
-                  name="elevationGain"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      label="Elevation Gain (feet)"
-                      min="0"
-                      value={field.value?.toString() || ''}
-                      onChange={e =>
-                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      placeholder="e.g., 500"
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="actualDistance"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      label="Actual Distance (miles)"
-                      step="0.1"
-                      min="0"
-                      value={field.value?.toString() || ''}
-                      onChange={e =>
-                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      placeholder="e.g., 5.5"
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="actualDuration"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      label="Actual Duration (minutes)"
-                      min="0"
-                      value={field.value?.toString() || ''}
-                      onChange={e =>
-                        field.onChange(e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      placeholder="e.g., 60"
-                      isInvalid={!!fieldState.error}
-                      errorMessage={fieldState.error?.message}
-                    />
                   )}
                 />
               </>

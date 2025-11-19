@@ -148,8 +148,8 @@ test.describe('Coach-Runner Relationship Management', () => {
     })
 
     test('should display available coaches to connect with', async ({ page }) => {
-      // Runner dashboard shows "My Guides" section with Find Coach button
-      await expect(page.getByText('My Guides')).toBeVisible()
+      // Runner dashboard shows "My Coach" section with Find Coach button
+      await expect(page.getByText('My Coach')).toBeVisible()
 
       // Click Find Coach button to navigate to coach selection using testid
       await page.getByTestId('find-coach-button').click()

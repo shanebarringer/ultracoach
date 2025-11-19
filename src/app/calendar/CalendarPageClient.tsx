@@ -4,7 +4,7 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
 
-import { memo, useCallback, useRef } from 'react'
+import { Suspense, memo, useCallback, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -12,11 +12,13 @@ import { useRouter } from 'next/navigation'
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
 import {
   calendarUiStateAtom,
   connectedRunnersAtom,
   filteredWorkoutsAtom,
+  weeklyWorkoutStatsAtom,
   workoutStatsAtom,
 } from '@/lib/atoms/index'
 import { asyncTrainingPlansAtom } from '@/lib/atoms/training-plans'
@@ -69,6 +71,16 @@ interface Props {
 }
 
 /**
+ * Dedicated hydration component - ensures workouts are loaded BEFORE rendering
+ * This pattern prevents production build race conditions where components try to read
+ * from workoutsAtom before hydration completes
+ */
+function CalendarHydrator() {
+  useHydrateWorkouts()
+  return null
+}
+
+/**
  * Calendar Content Component (uses async atoms with Suspense)
  *
  * Handles calendar content that requires async data loading.
@@ -78,6 +90,7 @@ function CalendarContent({ user }: Props) {
   const { loading: workoutsLoading, fetchWorkouts } = useWorkouts()
   const filteredWorkouts = useAtomValue(filteredWorkoutsAtom)
   const workoutStats = useAtomValue(workoutStatsAtom)
+  const weeklyStats = useAtomValue(weeklyWorkoutStatsAtom)
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
@@ -338,19 +351,19 @@ function CalendarContent({ user }: Props) {
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Planned Distance:</span>
                     <span className="font-medium">
-                      {Number(workoutStats.plannedDistance || 0).toFixed(1)} mi
+                      {Number(weeklyStats.plannedDistance || 0).toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Completed Distance:</span>
                     <span className="font-medium text-success">
-                      {Number(workoutStats.completedDistance || 0).toFixed(1)} mi
+                      {Number(weeklyStats.completedDistance || 0).toFixed(1)} mi
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Avg Intensity:</span>
                     <span className="font-medium">
-                      {Number(workoutStats.avgIntensity || 0).toFixed(1)}
+                      {Number(weeklyStats.avgIntensity || 0).toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -421,7 +434,10 @@ function CalendarContent({ user }: Props) {
  * Receives authenticated user data from Server Component parent.
  */
 export default function CalendarPageClient({ user }: Props) {
-  useHydrateWorkouts() // Hydrate workouts at entry point
-
-  return <CalendarContent user={user} />
+  return (
+    <Suspense fallback={<CalendarPageSkeleton />}>
+      <CalendarHydrator />
+      <CalendarContent user={user} />
+    </Suspense>
+  )
 }

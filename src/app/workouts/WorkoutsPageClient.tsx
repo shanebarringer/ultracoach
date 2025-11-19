@@ -43,10 +43,17 @@ interface Props {
  *
  * Handles workout interactivity and state management.
  * Receives authenticated user data from Server Component parent.
+ *
+ * CRITICAL FIX (Phase 1): Moved useHydrateWorkouts() inside this component
+ * instead of separate null-returning WorkoutsHydrator. This ensures Suspense
+ * properly waits for data before rendering the component tree.
  */
 function WorkoutsPageClientInner({ user }: Props) {
-  // Hydrate workouts at entry point - this will trigger Suspense if needed
-  const hydratedWorkouts = useHydrateWorkouts()
+  // CRITICAL: Call useHydrateWorkouts() BEFORE reading workoutsAtom
+  // This triggers Suspense and ensures workouts are loaded before component renders
+  useHydrateWorkouts()
+
+  // Now safe to read from workoutsAtom - hydration is guaranteed to complete first
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const [showStravaPanel, setShowStravaPanel] = useAtom(workoutStravaShowPanelAtom)
   const [workouts, setWorkouts] = useAtom(workoutsAtom)
@@ -54,7 +61,6 @@ function WorkoutsPageClientInner({ user }: Props) {
   logger.debug('WorkoutsPageClient rendering', {
     userType: user.userType,
     workoutCount: workouts.length,
-    hydratedCount: hydratedWorkouts?.length || 0,
   })
 
   // Coach-specific state and data

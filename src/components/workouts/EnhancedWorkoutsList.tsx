@@ -1,7 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Switch } from '@heroui/react'
-import { isSameDay, isWithinInterval } from 'date-fns'
+import { endOfDay, isSameDay, isWithinInterval, startOfDay } from 'date-fns'
 import { useAtom, useAtomValue } from 'jotai'
 import { Calendar, Grid3X3, List, Search, SortAsc, SortDesc, X } from 'lucide-react'
 
@@ -72,12 +72,23 @@ const EnhancedWorkoutsList = memo(
     const [dayKey, setDayKey] = useState(() => toLocalYMD(new Date()))
 
     useEffect(() => {
-      const now = new Date()
-      const nextMidnight = new Date(now)
-      nextMidnight.setHours(24, 0, 0, 0)
-      const ms = nextMidnight.getTime() - now.getTime()
-      const id = setTimeout(() => setDayKey(toLocalYMD(new Date())), ms)
-      return () => clearTimeout(id)
+      let timeoutId: ReturnType<typeof setTimeout>
+
+      const scheduleNextMidnight = () => {
+        const now = new Date()
+        const nextMidnight = new Date(now)
+        nextMidnight.setHours(24, 0, 0, 0)
+        const ms = nextMidnight.getTime() - now.getTime()
+
+        timeoutId = setTimeout(() => {
+          setDayKey(toLocalYMD(new Date()))
+          scheduleNextMidnight() // Reschedule for the next day
+        }, ms)
+      }
+
+      scheduleNextMidnight()
+
+      return () => clearTimeout(timeoutId)
     }, [])
     // Filter and sort workouts
     const processedWorkouts = useMemo(() => {
@@ -130,6 +141,20 @@ const EnhancedWorkoutsList = memo(
         filtered = filtered.filter(workout => (workout.status || 'planned') === statusFilter)
       }
 
+      // Pre-compute date boundaries for smart sort (calculated once per useMemo)
+      const today = new Date()
+      const todayStart = startOfDay(today).getTime()
+      const todayEnd = endOfDay(today).getTime()
+      const tomorrowEnd = endOfDay(new Date(today.getTime() + 24 * 60 * 60 * 1000)).getTime()
+
+      // Categorize workouts helper (hoisted out of comparator)
+      const getCategory = (dateTime: number): number => {
+        if (dateTime >= todayStart && dateTime <= todayEnd) return 0 // Today
+        if (dateTime > todayEnd && dateTime <= tomorrowEnd) return 1 // Tomorrow
+        if (dateTime > tomorrowEnd) return 2 // Upcoming
+        return 3 // Past
+      }
+
       // Apply sorting with pre-computed timestamps for performance
       const withParsedDates = filtered.map(workout => ({
         workout,
@@ -141,11 +166,26 @@ const EnhancedWorkoutsList = memo(
         .sort((a, b) => {
           switch (sortBy) {
             case 'date-desc': {
-              const primary = b.dateTime - a.dateTime
-              if (primary !== 0) return primary
+              // Smart sort: Today -> Tomorrow -> Upcoming -> Past
+              const aCat = getCategory(a.dateTime)
+              const bCat = getCategory(b.dateTime)
+
+              // Sort by category first
+              if (aCat !== bCat) return aCat - bCat
+
+              // Within category, sort by date
+              if (aCat === 3) {
+                // Past workouts: most recent first
+                const primary = b.dateTime - a.dateTime
+                if (primary !== 0) return primary
+              } else {
+                // Today, Tomorrow, Upcoming: chronological order
+                const primary = a.dateTime - b.dateTime
+                if (primary !== 0) return primary
+              }
+
               const secondary = b.createdTime - a.createdTime
               if (secondary !== 0) return secondary
-              // Final deterministic tie-breaker
               return (b.workout.id || '').localeCompare(a.workout.id || '')
             }
             case 'date-asc': {
@@ -401,9 +441,14 @@ const EnhancedWorkoutsList = memo(
                 className="min-w-[130px]"
               >
                 <SelectItem key="date-desc">
-                  <div className="flex items-center gap-2">
-                    <SortDesc className="h-4 w-4" />
-                    Latest First
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <SortDesc className="h-4 w-4" />
+                      Smart Sort
+                    </div>
+                    <span className="text-xs text-foreground-500 ml-6">
+                      Today → Tomorrow → Upcoming → Past
+                    </span>
                   </div>
                 </SelectItem>
                 <SelectItem key="date-asc">
