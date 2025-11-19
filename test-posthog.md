@@ -20,9 +20,9 @@
 Temporarily enable PostHog in dev mode:
 
 1. Open `src/providers/posthog.tsx`
-2. Comment out lines 50-52 (the opt-out code)
+2. Search for and comment out the `ph.opt_out_capturing()` call
 3. Restart dev server
-4. Open http://localhost:3001
+4. Open <http://localhost:3001>
 5. Check browser console - should see PostHog initialized
 6. Check PostHog dashboard for events
 
@@ -39,7 +39,7 @@ If you already have production deployed:
 
 Once you visit your site (preview/production):
 
-1. **Go to PostHog Dashboard**: https://app.posthog.com
+1. **Go to PostHog Dashboard**: <https://app.posthog.com>
 2. **Check "Events" tab**: You should see:
    - `$pageview` events (automatic)
    - `$autocapture` events (clicks, etc.)

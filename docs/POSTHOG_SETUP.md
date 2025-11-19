@@ -120,8 +120,8 @@ pnpm dev
 **To test in development:**
 
 1. Open `src/providers/posthog.tsx`
-2. Comment out the opt-out line (line 50-52)
-3. Visit `http://localhost:3000`
+2. Search for and comment out the `ph.opt_out_capturing()` call
+3. Visit <http://localhost:3001>
 4. Check PostHog dashboard for events
 
 ## What's Already Configured

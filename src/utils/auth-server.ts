@@ -45,7 +45,7 @@ export interface ServerSession {
     name: string | null
     role: 'coach' | 'runner'
     userType: 'coach' | 'runner'
-    createdAt: string | Date
+    createdAt: string
   }
 }
 
@@ -186,14 +186,17 @@ export async function getServerSession(): Promise<ServerSession | null> {
     // Determine stable createdAt timestamp with proper fallback chain
     // Priority: user.createdAt > session.createdAt > sentinel epoch
     const sessionCreatedAt = rawSession.session?.createdAt
-    const createdAt = user.createdAt ?? sessionCreatedAt ?? SENTINEL_CREATED_AT
+    const rawCreatedAt = user.createdAt ?? sessionCreatedAt ?? SENTINEL_CREATED_AT
+
+    // Normalize createdAt to always be an ISO string for consistency
+    const createdAt = typeof rawCreatedAt === 'string' ? rawCreatedAt : rawCreatedAt.toISOString()
 
     // Log warning if we had to use the sentinel fallback (indicates data integrity issue)
     if (!user.createdAt && !sessionCreatedAt) {
       logger.warn('User createdAt timestamp missing - using sentinel fallback', {
         userId: user.id,
         email: user.email?.replace(/(^..).+(@.*$)/, '$1***$2'),
-        fallbackValue: SENTINEL_CREATED_AT,
+        fallbackValue: createdAt,
         context: 'This may indicate incomplete user data or migration issues',
       })
     }
