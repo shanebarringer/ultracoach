@@ -328,7 +328,7 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                             </span>
                           </div>
                         )}
-                      <div className="text-xs text-foreground-500" suppressHydrationWarning>
+                      <div className="text-xs text-foreground-500">
                         Last analyzed:{' '}
                         {matchingSummary.lastProcessed
                           ? formatTimeConsistent(matchingSummary.lastProcessed)

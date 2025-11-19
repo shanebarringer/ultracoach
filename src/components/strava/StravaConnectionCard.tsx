@@ -1,6 +1,7 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { format, parseISO } from 'date-fns'
 import { Activity, Calendar, ExternalLink, Unlink } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
@@ -212,7 +213,7 @@ export default function StravaConnectionCard() {
   const athlete = status.athlete!
   const isExpired = status.is_expired
   const connectedDate = status.connected_since
-    ? new Date(status.connected_since).toLocaleDateString()
+    ? format(parseISO(status.connected_since), 'MMM d, yyyy')
     : 'Unknown'
 
   return (
@@ -236,7 +237,7 @@ export default function StravaConnectionCard() {
                   </Chip>
                 )}
               </h3>
-              <p className="text-sm text-default-500" suppressHydrationWarning>
+              <p className="text-sm text-default-500">
                 {athlete.username && `@${athlete.username} • `}
                 Connected since {connectedDate}
               </p>

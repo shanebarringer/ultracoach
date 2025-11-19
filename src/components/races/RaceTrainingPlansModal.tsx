@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('RaceTrainingPlansModal')
 
@@ -143,12 +144,8 @@ export default function RaceTrainingPlansModal({
                           name: plan.runner_name || plan.runner_email,
                         }}
                       />
-                      <time
-                        className="text-xs text-foreground-500"
-                        dateTime={plan.created_at}
-                        suppressHydrationWarning
-                      >
-                        Created {new Date(plan.created_at).toLocaleDateString()}
+                      <time className="text-xs text-foreground-500" dateTime={plan.created_at}>
+                        Created {formatDateConsistent(plan.created_at)}
                       </time>
                     </div>
                   </CardBody>
