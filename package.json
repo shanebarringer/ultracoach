@@ -7,8 +7,8 @@
   "scripts": {
     "db:validate:schema": "bash supabase/scripts/validate_schema.sh --verbose",
     "db:validate:schema:fix": "bash supabase/scripts/validate_schema.sh --verbose --fix",
-    "dev": "next dev -p 3001",
-    "dev:local": "concurrently \"supabase start\" \"next dev -p 3001\"",
+    "dev": "next dev -p 3001 --turbo",
+    "dev:local": "concurrently \"supabase start\" \"next dev -p 3001 --turbo\"",
     "dev:db": "supabase start",
     "build": "next build",
     "build:charlie": "bash scripts/build-charlie.sh",
@@ -71,8 +71,8 @@
     "@better-auth/cli": "^1.2.12",
     "@heroicons/react": "^2.2.0",
     "@heroui/drawer": "^2.2.21",
-    "@heroui/react": "^2.7.11",
-    "@heroui/theme": "^2.4.17",
+    "@heroui/react": "2.8.5",
+    "@heroui/theme": "2.4.23",
     "@hookform/resolvers": "^5.1.1",
     "@internationalized/date": "3.8.2",
     "@posthog/nextjs-config": "^1.4.0",
@@ -108,7 +108,6 @@
     "resend": "^4.7.0",
     "sonner": "^2.0.7",
     "strava-v3": "^2.2.1",
-    "tailwindcss": "^4.1.11",
     "tslog": "^4.9.3",
     "zod": "^4.0.7"
   },
@@ -141,6 +140,7 @@
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.11",
     "tsx": "^4.20.3",
     "typescript": "^5",
     "vitest": "^3.2.4"

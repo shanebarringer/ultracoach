@@ -250,14 +250,40 @@ trackEvent('feature_flag_evaluated', { flagKey, value })
 
 1. **Check environment variables are set correctly**
 
+   **Verify in your .env.local file:**
+
    ```bash
-   # Verify variables are loaded
-   echo $NEXT_PUBLIC_POSTHOG_KEY
+   # Check that all required variables are set in .env.local
+   cat .env.local | grep POSTHOG
+
+   # Should show:
+   # NEXT_PUBLIC_POSTHOG_KEY=phc_...
+   # NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+   # NEXT_PUBLIC_POSTHOG_PROJECT_ID=12345
+   # POSTHOG_PERSONAL_API_KEY=phx_...
    ```
+
+   **Verify in browser console:**
+
+   ```javascript
+   // Open DevTools → Console and run:
+   console.log('PostHog Key:', process.env.NEXT_PUBLIC_POSTHOG_KEY)
+
+   // For production builds, check the network tab instead:
+   // Look for requests to posthog.com that include your project key
+   ```
+
+   **Verify in network requests:**
+   - Open DevTools → Network tab
+   - Look for requests to `i.posthog.com/e/` or your custom PostHog host
+   - Check request payload includes your project API key
+
+   **Note:** `NEXT_PUBLIC_` variables are injected at **build time**, not runtime. If you change these variables, you must rebuild your application with `pnpm build` or restart your dev server with `pnpm dev`.
 
 2. **Check browser console for errors**
    - Open DevTools → Console
    - Look for PostHog initialization messages
+   - Should see: "PostHog initialized successfully"
 
 3. **Verify opt-out is disabled**
    - PostHog is disabled in development by default

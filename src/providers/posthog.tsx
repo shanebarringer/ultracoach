@@ -16,11 +16,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
 
   // Initialize PostHog only once on mount
-  // We intentionally don't add isInitialized to deps to prevent re-initialization
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only initialize PostHog on client-side with proper environment variables
-    if (typeof window !== 'undefined' && !isInitialized) {
+    // Check both component state and PostHog's internal loaded state to prevent re-initialization
+    // during hot module reloading or strict mode double-mounting
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== 'undefined' && !isInitialized && !(posthog as any).__loaded) {
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
       const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
@@ -77,6 +78,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
+    // Empty deps array intentional: we only want to initialize PostHog once on mount
+    // isInitialized is checked but not included to prevent re-initialization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Track pageviews on route changes

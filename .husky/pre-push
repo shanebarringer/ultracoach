@@ -1,5 +1,38 @@
 echo "🚀 Running pre-push checks..."
 
+# Check if dev server is running on port 3001
+SERVER_RUNNING=false
+if curl -s -f http://localhost:3001/api/health > /dev/null 2>&1; then
+  echo "✅ Dev server already running on port 3001"
+  SERVER_RUNNING=true
+else
+  echo "🌐 Dev server not running, starting it..."
+
+  # Start dev server in background
+  pnpm dev > /tmp/ultracoach-dev-server.log 2>&1 &
+  SERVER_PID=$!
+  echo "📝 Dev server started with PID: $SERVER_PID"
+
+  # Wait for server to be ready (max 60 seconds)
+  echo "⏳ Waiting for dev server to be ready..."
+  for i in {1..60}; do
+    if curl -s -f http://localhost:3001/api/health > /dev/null 2>&1; then
+      echo "✅ Dev server is ready!"
+      SERVER_RUNNING=true
+      break
+    fi
+    sleep 1
+    echo "   Attempt $i/60..."
+  done
+
+  if [ "$SERVER_RUNNING" = false ]; then
+    echo "❌ Dev server failed to start within 60 seconds"
+    echo "💡 Check logs at /tmp/ultracoach-dev-server.log"
+    kill $SERVER_PID 2>/dev/null || true
+    exit 1
+  fi
+fi
+
 # Check if full test suite is requested via environment variable
 if [ "$PRE_PUSH_FULL_TESTS" = "true" ]; then
   echo "🧪 Running full E2E test suite..."

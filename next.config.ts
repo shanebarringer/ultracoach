@@ -28,12 +28,10 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// Define minimal webpack plugin interface inline (no external webpack import needed)
-interface WebpackPlugin {
-  apply(compiler: any): void
-}
-
-type CodeInspectorFactory = (options: { bundler: string }) => WebpackPlugin
+// Type-safe code-inspector-plugin configuration
+type CodeInspectorFactory = (options: {
+  bundler: 'webpack' | 'turbopack'
+}) => ReturnType<typeof import('code-inspector-plugin').codeInspectorPlugin>
 
 // Properly typed plugin factory for code-inspector-plugin
 let codeInspectorFactory: CodeInspectorFactory | null = null
@@ -42,7 +40,6 @@ try {
   if (mod && typeof mod === 'object' && 'codeInspectorPlugin' in mod) {
     const factory = (mod as { codeInspectorPlugin: unknown }).codeInspectorPlugin
     if (typeof factory === 'function') {
-      // @ts-ignore - Plugin structure verified at runtime, not build time
       codeInspectorFactory = factory as CodeInspectorFactory
     }
   }
@@ -66,6 +63,22 @@ const nextConfig: NextConfig = {
     }
     return config
   },
+  // Turbopack configuration (Next.js 15.2+)
+  // Performance optimizations for faster builds and better developer experience
+  ...(process.env.NODE_ENV !== 'test' &&
+  process.env.NODE_ENV !== 'production' &&
+  codeInspectorFactory
+    ? {
+        turbopack: {
+          // Optimize module resolution by specifying extensions explicitly
+          // This helps Turbopack resolve modules faster by reducing filesystem lookups
+          resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+
+          // Code inspector plugin integration for development debugging
+          rules: codeInspectorFactory({ bundler: 'turbopack' }),
+        },
+      }
+    : {}),
   // Production optimizations (swcMinify is enabled by default in Next.js 15)
   compress: true,
   poweredByHeader: false,

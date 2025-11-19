@@ -1,7 +1,7 @@
 'use client'
 
 import { differenceInCalendarDays, isValid, parseISO } from 'date-fns'
-import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { Calendar } from 'lucide-react'
 
 import { memo } from 'react'
@@ -17,7 +17,7 @@ type WorkoutAtom = import('jotai').Atom<import('@/lib/supabase').Workout | null>
  * It's rendered client-side only to avoid hydration mismatches.
  */
 const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
-  const [workout] = useAtom(workoutAtom)
+  const workout = useAtomValue(workoutAtom)
 
   // Guard: return null if workout is missing or date is falsy/invalid
   if (!workout || !workout.date) return null
@@ -51,9 +51,9 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
       <Calendar className="h-4 w-4 text-foreground-400" />
       <div className="flex flex-col">
         <span className={`text-sm font-medium ${getDateColor()}`}>{getDateLabel()}</span>
-        <span className="text-xs text-foreground-400">
+        <time className="text-xs text-foreground-400" dateTime={workout.date}>
           {formatDateConsistent(workoutDate, 'EEE, MMM d')}
-        </span>
+        </time>
       </div>
     </div>
   )
