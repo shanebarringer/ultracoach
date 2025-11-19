@@ -173,33 +173,48 @@ export async function POST(request: NextRequest) {
       if (importData.gpx_data.tracks.length > 0) {
         const firstTrack = importData.gpx_data.tracks[0]
         if (firstTrack.points && firstTrack.points.length > 0) {
-          const samplePoint = firstTrack.points[0]
+          // Sample multiple points across the track (first, middle, last) for better validation
+          const pointCount = firstTrack.points.length
+          const sampleIndices = [
+            0, // First point
+            Math.floor(pointCount / 2), // Middle point
+            pointCount - 1, // Last point
+          ]
 
-          // Validate lat/lon are numbers
-          if (
-            typeof samplePoint.lat !== 'number' ||
-            typeof samplePoint.lon !== 'number'
-          ) {
-            return NextResponse.json(
-              { error: 'Invalid GPX data - track points must have numeric lat/lon' },
-              { status: 400 }
-            )
-          }
+          // Validate each sample point
+          for (const index of sampleIndices) {
+            const samplePoint = firstTrack.points[index]
+            if (!samplePoint) continue
 
-          // Validate lat/lon ranges
-          if (
-            samplePoint.lat < -90 ||
-            samplePoint.lat > 90 ||
-            samplePoint.lon < -180 ||
-            samplePoint.lon > 180
-          ) {
-            return NextResponse.json(
-              {
-                error: 'Invalid GPX data - lat/lon out of valid range',
-                details: 'Latitude must be between -90 and 90, longitude between -180 and 180',
-              },
-              { status: 400 }
-            )
+            // Validate lat/lon are numbers
+            if (
+              typeof samplePoint.lat !== 'number' ||
+              typeof samplePoint.lon !== 'number'
+            ) {
+              return NextResponse.json(
+                {
+                  error: 'Invalid GPX data - track points must have numeric lat/lon',
+                  details: `Invalid point at index ${index}`,
+                },
+                { status: 400 }
+              )
+            }
+
+            // Validate lat/lon ranges
+            if (
+              samplePoint.lat < -90 ||
+              samplePoint.lat > 90 ||
+              samplePoint.lon < -180 ||
+              samplePoint.lon > 180
+            ) {
+              return NextResponse.json(
+                {
+                  error: 'Invalid GPX data - lat/lon out of valid range',
+                  details: `Point ${index}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+                },
+                { status: 400 }
+              )
+            }
           }
         }
       }

@@ -36,6 +36,7 @@ interface RateLimitResult {
   remaining: number
   resetTime: number
   retryAfter: number // Always present - 0 when allowed, positive when rate limited
+  limit: number // The configured maximum requests per window
 }
 
 /**
@@ -113,6 +114,7 @@ export class RedisRateLimiter {
           remaining: 0,
           resetTime,
           retryAfter,
+          limit: this.max,
         }
       }
 
@@ -128,6 +130,7 @@ export class RedisRateLimiter {
         remaining: Math.max(0, this.max - count),
         resetTime,
         retryAfter: 0, // No retry needed when request is allowed
+        limit: this.max,
       }
     } catch (error) {
       logger.error('Redis rate limiting failed, falling back to memory:', error)
@@ -173,6 +176,7 @@ export class RedisRateLimiter {
         remaining: 0,
         resetTime: entry.resetTime,
         retryAfter,
+        limit: this.max,
       }
     }
 
@@ -192,6 +196,7 @@ export class RedisRateLimiter {
       remaining: this.max - entry.count,
       resetTime: entry.resetTime,
       retryAfter: 0, // No retry needed when request is allowed
+      limit: this.max,
     }
   }
 
@@ -302,11 +307,8 @@ export const messageLimiter = new RedisRateLimiter({
  * Mutates the response headers directly to avoid stream reusability issues
  */
 export function addRateLimitHeaders<T extends Response>(response: T, result: RateLimitResult): T {
-  // Calculate the limit value (total allowed requests in window)
-  const limit = result.remaining + (result.allowed ? 1 : 0)
-
-  // Mutate headers directly on the NextResponse object
-  response.headers.set('X-RateLimit-Limit', String(limit))
+  // Use the configured limit directly from result (no reconstruction needed)
+  response.headers.set('X-RateLimit-Limit', String(result.limit))
   response.headers.set('X-RateLimit-Remaining', String(result.remaining))
   response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetTime / 1000)))
 
