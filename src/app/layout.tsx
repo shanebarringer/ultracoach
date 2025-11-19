@@ -13,11 +13,16 @@ import { JotaiProvider } from '@/providers/JotaiProvider'
 import './globals.css'
 
 // Use local Geist fonts for reliability (no Google Fonts API dependency)
-// This ensures builds succeed even when external font services are unavailable
+// Fonts in public/ are served from root, accessible at /fonts/
 const geistSans = localFont({
-  src: '../fonts/Geist-Variable.woff2',
+  src: [
+    {
+      path: '../../public/fonts/Geist-Variable.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+  ],
   variable: '--font-geist-sans',
-  weight: '100 900', // Variable font supports full weight range
   display: 'swap',
   fallback: [
     '-apple-system',
@@ -31,9 +36,14 @@ const geistSans = localFont({
 })
 
 const geistMono = localFont({
-  src: '../fonts/GeistMono-Variable.woff2',
+  src: [
+    {
+      path: '../../public/fonts/GeistMono-Variable.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+  ],
   variable: '--font-geist-mono',
-  weight: '100 900',
   display: 'swap',
   fallback: ['Monaco', 'Courier New', 'monospace'],
 })

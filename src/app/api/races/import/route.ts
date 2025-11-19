@@ -173,17 +173,6 @@ export async function POST(request: NextRequest) {
         return sum + track.points.length
       }, 0)
 
-      // Log GPX data metrics for audit purposes
-      const trackCounts = importData.gpx_data.tracks.map(track => track.points?.length || 0)
-      const waypointCount = importData.gpx_data.waypoints?.length || 0
-      logger.info('GPX validation passed', {
-        userId: session.user.id,
-        totalPoints,
-        trackCount: importData.gpx_data.tracks.length,
-        trackCounts,
-        waypointCount,
-      })
-
       // Limit to 50,000 points to prevent memory exhaustion
       if (totalPoints > 50000) {
         logger.warn('GPX file too large', {
@@ -240,11 +229,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Log GPX validation success with metrics for audit purposes
+      const trackCounts = importData.gpx_data.tracks.map(track => track.points?.length || 0)
+      const waypointCount = importData.gpx_data.waypoints?.length || 0
       logger.info('GPX validation passed', {
+        userId: session.user.id,
         totalPoints,
         trackCount: importData.gpx_data.tracks.length,
-        waypointCount: importData.gpx_data.waypoints?.length || 0,
-        userId: session.user.id,
+        trackCounts,
+        waypointCount,
       })
     }
 
