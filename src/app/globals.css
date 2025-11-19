@@ -225,6 +225,52 @@
   }
 }
 
+/* Display Preferences - Density */
+:root {
+  --spacing-unit: 1rem; /* Default: comfortable */
+}
+
+[data-density='compact'] {
+  --spacing-unit: 0.75rem;
+}
+
+[data-density='comfortable'] {
+  --spacing-unit: 1rem;
+}
+
+[data-density='spacious'] {
+  --spacing-unit: 1.5rem;
+}
+
+/* Apply density to common spacing elements */
+[data-density='compact'] .space-y-4 > * + *,
+[data-density='compact'] .gap-4 {
+  --spacing-unit: 0.75rem;
+}
+
+[data-density='spacious'] .space-y-4 > * + *,
+[data-density='spacious'] .gap-4 {
+  --spacing-unit: 1.5rem;
+}
+
+/* Display Preferences - Reduced Motion */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Display Preferences - Disable Animations */
+.disable-animations *,
+.disable-animations *::before,
+.disable-animations *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 @layer components {
   @keyframes shimmer {
     0% {
