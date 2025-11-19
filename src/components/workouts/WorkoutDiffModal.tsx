@@ -34,7 +34,7 @@ import { memo, useCallback, useMemo } from 'react'
 
 import { selectedMatchAtom, showWorkoutDiffModalAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
-import { formatDateConsistent } from '@/lib/utils/date'
+import { formatDateConsistent, toLocalYMD } from '@/lib/utils/date'
 import type { WorkoutDiscrepancy, WorkoutMatch } from '@/utils/workout-matching'
 
 const logger = createLogger('WorkoutDiffModal')
@@ -77,7 +77,7 @@ const WorkoutDiffModal = memo(({ isOpen, onClose, onApproveMatch }: WorkoutDiffM
     // Convert activity data to comparable format
     const actualDistance = Number((activity.distance / 1609.34).toFixed(2)) // meters to miles
     const actualDuration = Math.round(activity.moving_time / 60) // seconds to minutes
-    const actualDate = new Date(activity.start_date).toISOString().split('T')[0]
+    const actualDate = toLocalYMD(activity.start_date)
 
     return {
       planned: {

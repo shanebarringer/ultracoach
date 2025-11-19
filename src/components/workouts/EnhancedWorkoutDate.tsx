@@ -1,5 +1,6 @@
 'use client'
 
+import { differenceInCalendarDays, isValid, parseISO } from 'date-fns'
 import { useAtom } from 'jotai'
 import { Calendar } from 'lucide-react'
 
@@ -17,11 +18,17 @@ type WorkoutAtom = import('jotai').Atom<import('@/lib/supabase').Workout | null>
  */
 const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
   const [workout] = useAtom(workoutAtom)
-  if (!workout) return null
 
-  const workoutDate = new Date(workout.date || '')
+  // Guard: return null if workout is missing or date is falsy/invalid
+  if (!workout || !workout.date) return null
+
+  const workoutDate = parseISO(workout.date)
+
+  // Guard: return null if date is invalid
+  if (!isValid(workoutDate)) return null
+
   const today = new Date()
-  const diffInDays = Math.ceil((workoutDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const diffInDays = differenceInCalendarDays(workoutDate, today)
 
   const getDateLabel = () => {
     if (diffInDays === 0) return 'Today'

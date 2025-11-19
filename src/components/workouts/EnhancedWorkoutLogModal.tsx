@@ -315,6 +315,7 @@ const EnhancedWorkoutLogModal = memo(
 
             // Track workout completion event in PostHog
             trackEvent('workout_logged', {
+              workoutId: workout.id,
               status: data.status,
               workoutType: data.actualType || workout.planned_type,
               category: data.category,
