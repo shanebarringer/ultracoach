@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, formatRetryAfter, raceBulkImportLimiter } from '@/lib/redis-rate-limiter'
+import {
+  addRateLimitHeaders,
+  formatRetryAfter,
+  raceBulkImportLimiter,
+} from '@/lib/redis-rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 

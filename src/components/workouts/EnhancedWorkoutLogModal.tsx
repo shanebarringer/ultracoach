@@ -83,7 +83,11 @@ const enhancedWorkoutLogSchema = z.object({
     .nullable()
     .optional(),
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
-  elevationGain: z.number().min(0, { message: 'Elevation gain must be positive' }).nullable().optional(),
+  elevationGain: z
+    .number()
+    .min(0, { message: 'Elevation gain must be positive' })
+    .nullable()
+    .optional(),
   actualDistance: z.number().min(0, { message: 'Distance must be positive' }).nullable().optional(),
   actualDuration: z.number().min(0, { message: 'Duration must be positive' }).nullable().optional(),
   avgHeartRate: z
@@ -115,9 +119,18 @@ const enhancedWorkoutLogSchema = z.object({
     .enum(['none', 'light', 'moderate', 'strong', 'very_strong'])
     .nullable()
     .optional(),
-  location: z.string().max(200, { message: 'Location must be less than 200 characters' }).optional(),
-  workoutNotes: z.string().max(2000, { message: 'Notes must be less than 2000 characters' }).optional(),
-  injuryNotes: z.string().max(1000, { message: 'Injury notes must be less than 1000 characters' }).optional(),
+  location: z
+    .string()
+    .max(200, { message: 'Location must be less than 200 characters' })
+    .optional(),
+  workoutNotes: z
+    .string()
+    .max(2000, { message: 'Notes must be less than 2000 characters' })
+    .optional(),
+  injuryNotes: z
+    .string()
+    .max(1000, { message: 'Injury notes must be less than 1000 characters' })
+    .optional(),
   energyLevel: z
     .number()
     .min(1, { message: 'Energy level must be at least 1' })
@@ -134,7 +147,10 @@ const enhancedWorkoutLogSchema = z.object({
     .string()
     .max(500, { message: 'Nutrition notes must be less than 500 characters' })
     .optional(),
-  gearNotes: z.string().max(500, { message: 'Gear notes must be less than 500 characters' }).optional(),
+  gearNotes: z
+    .string()
+    .max(500, { message: 'Gear notes must be less than 500 characters' })
+    .optional(),
 })
 
 type EnhancedWorkoutLogForm = z.infer<typeof enhancedWorkoutLogSchema>

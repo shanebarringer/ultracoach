@@ -7,7 +7,10 @@ export const signUpSchema = z.object({
     .string()
     .min(1, { message: 'Full name is required' })
     .min(2, { message: 'Full name must be at least 2 characters' }),
-  email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Please enter a valid email address' }),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
   password: z
     .string()
     .min(1, { message: 'Password is required' })
@@ -16,7 +19,10 @@ export const signUpSchema = z.object({
 })
 
 export const signInSchema = z.object({
-  email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Please enter a valid email address' }),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
   password: z
     .string()
     .min(1, { message: 'Password is required' })
@@ -80,7 +86,10 @@ export const trainingPlanFormSchema = z.object({
 
 // Message Forms
 export const messageFormSchema = z.object({
-  content: z.string().min(1, { message: 'Message cannot be empty' }).max(5000, { message: 'Message too long' }),
+  content: z
+    .string()
+    .min(1, { message: 'Message cannot be empty' })
+    .max(5000, { message: 'Message too long' }),
   workoutId: z.string().optional(),
 })
 

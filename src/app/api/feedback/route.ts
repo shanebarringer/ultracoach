@@ -43,13 +43,19 @@ const feedbackRequestSchema = z.object({
     'compliment',
   ]),
   category: z.string().optional(),
-  title: z.string().min(1, { message: 'Title is required' }).max(200, { message: 'Title must be 200 characters or less' }),
+  title: z
+    .string()
+    .min(1, { message: 'Title is required' })
+    .max(200, { message: 'Title must be 200 characters or less' }),
   description: z
     .string()
     .min(1, { message: 'Description is required' })
     .max(5000, { message: 'Description must be 5000 characters or less' }),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  user_email: z.union([z.string().email({ message: 'Invalid email format' }), emptyStringToUndefined]),
+  user_email: z.union([
+    z.string().email({ message: 'Invalid email format' }),
+    emptyStringToUndefined,
+  ]),
   browser_info: z
     .object({
       userAgent: z.string().optional(),

@@ -47,7 +47,10 @@ const createTrainingPlanSchema = z.object({
     .string()
     .min(1, { message: 'Plan title is required' })
     .max(100, { message: 'Title must be at most 100 characters' }),
-  description: z.string().max(500, { message: 'Description must be at most 500 characters' }).optional(),
+  description: z
+    .string()
+    .max(500, { message: 'Description must be at most 500 characters' })
+    .optional(),
   runnerId: z.string().min(1, { message: 'Please select a runner' }),
   race_id: z.string().nullable(),
   goal_type: z.enum(GOAL_TYPES).nullable(),

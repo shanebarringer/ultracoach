@@ -14,6 +14,7 @@ The UltraCoach platform demonstrates **strong foundational security** with moder
 ### Overall Security Score: **7.5/10** (Good, with room for improvement)
 
 **Key Strengths:**
+
 - ✅ Modern Better Auth implementation with secure session management
 - ✅ Comprehensive role-based access control (RBAC) with coach-runner relationships
 - ✅ SQL injection protection via Drizzle ORM parameterized queries
@@ -22,6 +23,7 @@ The UltraCoach platform demonstrates **strong foundational security** with moder
 - ✅ OAuth 2.0 state parameter validation for Strava integration
 
 **Critical Findings:**
+
 - 🔴 **Missing Row-Level Security (RLS) policies** - Database relies solely on application-layer authorization
 - 🔴 **Sensitive tokens stored in plaintext** - Strava access/refresh tokens not encrypted at rest
 - 🟠 **No Content Security Policy (CSP)** - Missing protection against XSS attacks
@@ -37,6 +39,7 @@ The UltraCoach platform demonstrates **strong foundational security** with moder
 **Location:** `src/lib/better-auth.ts`
 
 **Strengths:**
+
 - ✅ Proper secret validation (minimum 32 characters) - Lines 14-33
 - ✅ Secure session expiration: 14 days with 1-hour fresh age - Line 144
 - ✅ Production-ready cookie configuration with `useSecureCookies` - Line 154
@@ -48,15 +51,20 @@ The UltraCoach platform demonstrates **strong foundational security** with moder
 **Issues Identified:**
 
 #### 🟡 MEDIUM: Email Verification Disabled
+
 **Location:** `src/lib/better-auth.ts:164`
+
 ```typescript
 requireEmailVerification: false, // Will be enabled once email provider is configured
 ```
+
 **Risk:** Users can create accounts without email verification, enabling potential abuse
 **Recommendation:** Enable email verification before production launch using Resend integration
 
 #### 🟢 LOW: Password Reset Email Logging in Development
+
 **Location:** `src/lib/better-auth.ts:169-180`
+
 ```typescript
 if (process.env.NODE_ENV === 'development') {
   logger.info('Password reset requested (dev):', {
@@ -66,12 +74,14 @@ if (process.env.NODE_ENV === 'development') {
   })
 }
 ```
+
 **Risk:** Password reset tokens logged in development could be exposed if logs are compromised
 **Recommendation:** Remove `resetUrl` and `tokenPreview` from development logs, only log email
 
 ### 1.2 Password Security ✅ **EXCELLENT**
 
 **Strengths:**
+
 - ✅ Better Auth handles password hashing internally (industry-standard bcrypt/argon2)
 - ✅ Passwords stored in `better_auth_accounts` table with `provider_id: 'credential'`
 - ✅ Minimum 8-character requirement enforced
@@ -84,6 +94,7 @@ if (process.env.NODE_ENV === 'development') {
 **Location:** `src/utils/auth-server.ts`
 
 **Strengths:**
+
 - ✅ Session validation with retry logic (up to 3 attempts) - Lines 97-138
 - ✅ Session token format validation (minimum 12 characters) - Middleware line 105
 - ✅ Proper session expiration handling (14 days)
@@ -93,10 +104,13 @@ if (process.env.NODE_ENV === 'development') {
 **Issues Identified:**
 
 #### 🟢 LOW: Session Token Length Check Too Permissive
+
 **Location:** `src/middleware.ts:105`
+
 ```typescript
 if (!sessionCookie.value || sessionCookie.value.length < 12) {
 ```
+
 **Risk:** Better Auth tokens are typically 32+ characters; 12-character check is too lenient
 **Recommendation:** Increase minimum length to 24 characters to match actual token format
 
@@ -105,6 +119,7 @@ if (!sessionCookie.value || sessionCookie.value.length < 12) {
 **Location:** `src/app/api/strava/callback/route.ts`
 
 **Strengths:**
+
 - ✅ State parameter validation with base64url encoding - Lines 54-61
 - ✅ State expiration check (5-minute window) - Lines 66-69
 - ✅ Prevents Strava account from connecting to multiple UltraCoach users - Lines 96-110
@@ -114,7 +129,9 @@ if (!sessionCookie.value || sessionCookie.value.length < 12) {
 **Issues Identified:**
 
 #### 🔴 CRITICAL: Strava Tokens Stored in Plaintext
+
 **Location:** Database schema `strava_connections` table - `src/lib/schema.ts:506-532`
+
 ```typescript
 export const strava_connections = pgTable('strava_connections', {
   access_token: text('access_token').notNull(),
@@ -122,16 +139,19 @@ export const strava_connections = pgTable('strava_connections', {
   // ... no encryption
 })
 ```
+
 **Risk:** Database breach would expose all Strava OAuth tokens
 **Impact:** Attackers could access users' Strava data and impersonate them
 **Recommendation:**
+
 - Implement AES-256-GCM encryption for tokens using `@aws-crypto/client-node` or similar
 - Store encryption keys in environment variables or AWS Secrets Manager
 - Add `encrypted: true` metadata field to track encryption status
 
 **Example Implementation:**
+
 ```typescript
-import { encrypt, decrypt } from '@/lib/crypto'
+import { decrypt, encrypt } from '@/lib/crypto'
 
 // Before storing
 const encryptedAccessToken = await encrypt(tokenData.access_token)
@@ -145,6 +165,7 @@ await db.insert(strava_connections).values({
 ```
 
 #### 🟡 MEDIUM: No PKCE for OAuth Flow
+
 **Risk:** Authorization code interception attack possible
 **Recommendation:** Implement Proof Key for Code Exchange (PKCE) for enhanced OAuth security
 
@@ -157,11 +178,13 @@ await db.insert(strava_connections).values({
 **Location:** Multiple API endpoints
 
 **Strengths:**
+
 - ✅ Clear role separation: `coach` vs `runner` with `userType` field
 - ✅ Server-side role verification using `requireAuth()`, `requireCoach()`, `requireRunner()`
 - ✅ Type-safe role handling with proper TypeScript enums - `auth-server.ts:46-48`
 
 **Example from Workouts API:**
+
 ```typescript
 // src/app/api/workouts/route.ts:330-332
 if (sessionUser.userType !== 'coach') {
@@ -174,33 +197,35 @@ if (sessionUser.userType !== 'coach') {
 **Location:** `src/app/api/workouts/route.ts`, `src/app/api/messages/route.ts`
 
 **Strengths:**
+
 - ✅ Active relationship verification before data access - Workouts API lines 42-75
 - ✅ Bidirectional relationship checks for messaging - Messages API lines 40-67
 - ✅ Direct database queries for relationship verification (no cookie forwarding issues)
 - ✅ Proper authorization for both plan-based and standalone workouts - Lines 122-201
 
 **Example:**
+
 ```typescript
 // Coach can only see authorized runners' workouts
 const relationships = await db
   .select({ runner_id: coach_runners.runner_id })
   .from(coach_runners)
-  .where(and(
-    eq(coach_runners.coach_id, sessionUser.id),
-    eq(coach_runners.status, 'active')
-  ))
+  .where(and(eq(coach_runners.coach_id, sessionUser.id), eq(coach_runners.status, 'active')))
 ```
 
 **Issues Identified:**
 
 #### 🟡 MEDIUM: Pending Relationships Allow Messaging
+
 **Location:** `src/app/api/messages/route.ts:58-60`
+
 ```typescript
 or(
   eq(coach_runners.status, 'active'),
   eq(coach_runners.status, 'pending') // Allow messages for pending relationships
 )
 ```
+
 **Risk:** Users can message before relationship is formally accepted
 **Assessment:** This appears intentional for user experience but should be documented
 **Recommendation:** Add comment explaining business logic and consider rate limiting for pending relationships
@@ -209,16 +234,16 @@ or(
 
 **Audit of Critical Endpoints:**
 
-| Endpoint | Auth Check | Authorization | Status |
-|----------|-----------|---------------|---------|
-| `GET /api/workouts` | ✅ Yes | ✅ RBAC + Relationship | ✅ SECURE |
-| `POST /api/workouts` | ✅ Yes | ✅ Coach-only + Relationship | ✅ SECURE |
-| `GET /api/messages` | ✅ Yes | ✅ Relationship required | ✅ SECURE |
-| `POST /api/messages` | ✅ Yes | ✅ Relationship + workout access | ✅ SECURE |
-| `POST /api/races/import` | ✅ Yes | ✅ Authentication required | ✅ SECURE |
-| `GET /api/strava/callback` | ⚠️ No* | ✅ State parameter validation | ✅ SECURE |
+| Endpoint                   | Auth Check | Authorization                    | Status    |
+| -------------------------- | ---------- | -------------------------------- | --------- |
+| `GET /api/workouts`        | ✅ Yes     | ✅ RBAC + Relationship           | ✅ SECURE |
+| `POST /api/workouts`       | ✅ Yes     | ✅ Coach-only + Relationship     | ✅ SECURE |
+| `GET /api/messages`        | ✅ Yes     | ✅ Relationship required         | ✅ SECURE |
+| `POST /api/messages`       | ✅ Yes     | ✅ Relationship + workout access | ✅ SECURE |
+| `POST /api/races/import`   | ✅ Yes     | ✅ Authentication required       | ✅ SECURE |
+| `GET /api/strava/callback` | ⚠️ No\*    | ✅ State parameter validation    | ✅ SECURE |
 
-*OAuth callback doesn't require session but validates state parameter containing user ID
+\*OAuth callback doesn't require session but validates state parameter containing user ID
 
 ### 2.4 Row-Level Security (RLS) Policies 🔴 **CRITICAL GAP**
 
@@ -228,6 +253,7 @@ or(
 
 **Risk:** Application-layer authorization is the ONLY protection
 **Impact:**
+
 - Database access via SQL injection would bypass all authorization
 - Direct database access (compromised credentials) exposes all data
 - No defense-in-depth strategy
@@ -276,11 +302,13 @@ WITH CHECK (
 ### 3.1 SQL Injection Prevention ✅ **EXCELLENT**
 
 **Strengths:**
+
 - ✅ Drizzle ORM used throughout - all queries parameterized
 - ✅ No raw SQL strings with user input concatenation
 - ✅ Type-safe query builder prevents injection
 
 **Example:**
+
 ```typescript
 // Safe parameterized query - workouts/route.ts:207-209
 if (startDate) {
@@ -295,6 +323,7 @@ if (startDate) {
 ### 3.2 XSS Prevention 🟠 **NEEDS IMPROVEMENT**
 
 **Current Protections:**
+
 - ✅ React escapes rendered content by default
 - ✅ `X-Content-Type-Options: nosniff` header - `next.config.ts:76`
 - ✅ **Content Security Policy (CSP)** ✅ **IMPLEMENTED (PR #194)**
@@ -302,9 +331,11 @@ if (startDate) {
 **Status:** ✅ **RESOLVED**
 
 #### ✅ COMPLETED: Content Security Policy Implementation
+
 **Location:** `next.config.ts:65-110`
 
 **Implementation Details:**
+
 - Environment-aware CSP configuration
 - Production: Strict policy (no `unsafe-eval`)
 - Dev/Test: Permissive policy (HMR support with `unsafe-eval`)
@@ -336,6 +367,7 @@ const scriptSrc = isNonProduction
 **Impact:** XSS attack surface significantly reduced in production
 
 #### 🟢 LOW: User-Generated Content Not Sanitized
+
 **Location:** Message and workout notes fields
 
 **Risk:** Low risk due to React escaping, but stored XSS possible in edge cases
@@ -346,6 +378,7 @@ const scriptSrc = isNonProduction
 **Location:** `src/app/api/races/import/route.ts`
 
 **Strengths:**
+
 - ✅ Content-Length validation (10MB limit) - Lines 67-74
 - ✅ Rate limiting (5 imports per 15 minutes) - Lines 53-64
 - ✅ Input validation for race data - Lines 79-117
@@ -354,6 +387,7 @@ const scriptSrc = isNonProduction
 **Issues Identified:**
 
 #### 🟡 MEDIUM: No File Type Validation
+
 **Risk:** API accepts any JSON payload, no validation that GPX/CSV format is correct
 **Recommendation:** Add file type validation
 
@@ -376,6 +410,7 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 ```
 
 #### 🟢 LOW: No Virus Scanning for Uploaded Files
+
 **Risk:** If file uploads are added, no malware detection
 **Recommendation:** Integrate ClamAV or similar for production file uploads
 
@@ -387,20 +422,21 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 
 **Audit Results:**
 
-| Data Type | Encryption Status | Risk Level |
-|-----------|------------------|------------|
-| Passwords | ✅ Hashed (Better Auth) | ✅ SECURE |
-| Session Tokens | ✅ Signed by Better Auth | ✅ SECURE |
-| Strava Access Tokens | 🔴 **Plaintext** | 🔴 CRITICAL |
-| Strava Refresh Tokens | 🔴 **Plaintext** | 🔴 CRITICAL |
-| User Email | ⚠️ Plaintext (acceptable) | 🟢 LOW |
-| User PII (name, etc) | ⚠️ Plaintext (acceptable) | 🟢 LOW |
+| Data Type             | Encryption Status         | Risk Level  |
+| --------------------- | ------------------------- | ----------- |
+| Passwords             | ✅ Hashed (Better Auth)   | ✅ SECURE   |
+| Session Tokens        | ✅ Signed by Better Auth  | ✅ SECURE   |
+| Strava Access Tokens  | 🔴 **Plaintext**          | 🔴 CRITICAL |
+| Strava Refresh Tokens | 🔴 **Plaintext**          | 🔴 CRITICAL |
+| User Email            | ⚠️ Plaintext (acceptable) | 🟢 LOW      |
+| User PII (name, etc)  | ⚠️ Plaintext (acceptable) | 🟢 LOW      |
 
 **Critical Issue:** See Section 1.4 for Strava token encryption recommendations
 
 ### 4.2 Environment Variable Security ✅ **GOOD**
 
 **Strengths:**
+
 - ✅ `.env.example` template with no actual secrets - Verified
 - ✅ `.env.local` excluded from version control (gitignore)
 - ✅ Proper secret validation in Better Auth - Lines 14-33
@@ -409,8 +445,10 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 **Issues Identified:**
 
 #### 🟡 MEDIUM: No Secret Rotation Strategy
+
 **Risk:** Secrets (DATABASE_PASSWORD, BETTER_AUTH_SECRET) never rotated
 **Recommendation:** Document secret rotation procedures:
+
 1. Use Vercel environment variables for production
 2. Rotate BETTER_AUTH_SECRET every 90 days
 3. Rotate DATABASE_PASSWORD every 180 days
@@ -421,6 +459,7 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 **Location:** `src/lib/database.ts`
 
 **Strengths:**
+
 - ✅ SSL/TLS enforced for Supabase connections (default)
 - ✅ Connection pooling via Drizzle with `drizzle-orm/vercel-postgres`
 - ✅ Credentials from environment variables only
@@ -432,6 +471,7 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 ### 5.1 HTTPS Enforcement ✅ **PRODUCTION READY**
 
 **Strengths:**
+
 - ✅ Vercel enforces HTTPS by default
 - ✅ `useSecureCookies` enabled in production - `better-auth.ts:154`
 - ✅ Secure cookies prevent session theft over HTTP
@@ -441,6 +481,7 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 **Location:** `next.config.ts:65-85`
 
 **Current Headers:**
+
 - ✅ `X-Frame-Options: DENY` - Prevents clickjacking
 - ✅ `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
 - ✅ `Referrer-Policy: origin-when-cross-origin` - Limits referrer leakage
@@ -448,6 +489,7 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 **Missing Headers:**
 
 #### 🟠 HIGH: Missing Strict-Transport-Security (HSTS)
+
 ```typescript
 {
   key: 'Strict-Transport-Security',
@@ -456,9 +498,11 @@ if (importData.source === 'gpx' && importData.gpx_data) {
 ```
 
 #### 🟠 HIGH: Missing Content-Security-Policy
+
 See Section 3.2 for CSP recommendations
 
 #### 🟡 MEDIUM: Missing Permissions-Policy
+
 ```typescript
 {
   key: 'Permissions-Policy',
@@ -471,6 +515,7 @@ See Section 3.2 for CSP recommendations
 **Location:** `src/lib/rate-limiter.ts`
 
 **Strengths:**
+
 - ✅ In-memory rate limiter implemented for critical operations
 - ✅ Exponential backoff utility - Lines 176-185
 - ✅ Proper rate limit headers - Lines 155-171
@@ -478,9 +523,11 @@ See Section 3.2 for CSP recommendations
 **Status:** ✅ **RESOLVED (PR #194)**
 
 #### ✅ COMPLETED: Redis-Based Rate Limiting Implementation
+
 **Location:** `src/lib/redis-rate-limiter.ts`
 
 **Implementation Details:**
+
 - Upstash Redis integration for distributed rate limiting
 - Automatic fallback to in-memory when Redis unavailable
 - Pre-configured limiters for different operations:
@@ -496,9 +543,9 @@ import { Redis } from '@upstash/redis'
 export class RedisRateLimiter {
   async check(identifier: string): Promise<RateLimitResult> {
     if (redis) {
-      return this.checkRedis(key, now)  // Distributed rate limiting
+      return this.checkRedis(key, now) // Distributed rate limiting
     }
-    return this.checkMemory(key, now)   // Fallback for dev/test
+    return this.checkMemory(key, now) // Fallback for dev/test
   }
 
   private async checkRedis(key: string, now: number): Promise<RateLimitResult> {
@@ -508,7 +555,7 @@ export class RedisRateLimiter {
     }
 
     const ttl = await redis.ttl(key)
-    const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)  // Defensive
+    const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000) // Defensive
     const resetTime = now + safeTTL * 1000
 
     return {
@@ -523,6 +570,7 @@ export class RedisRateLimiter {
 ```
 
 **Applied to Endpoints:**
+
 - `/api/feedback` - Prevents feedback spam
 - `/api/messages` - Prevents message spam
 - `/api/races/import` - Prevents import abuse
@@ -535,6 +583,7 @@ export class RedisRateLimiter {
 **Location:** `src/middleware.ts:9-19`
 
 **Strengths:**
+
 - ✅ CORS headers only for OPTIONS preflight requests
 - ✅ Wildcard `*` acceptable for public API endpoints
 - ✅ Better Auth handles CORS for auth endpoints via `trustedOrigins`
@@ -544,6 +593,7 @@ export class RedisRateLimiter {
 ## 6. CSRF Protection 🟡 **MODERATE CONCERN**
 
 **Current State:**
+
 - ✅ Better Auth includes CSRF protection for auth endpoints
 - ✅ Same-origin cookie policy (`credentials: 'same-origin'`)
 - ❌ No explicit CSRF tokens for custom API endpoints
@@ -551,6 +601,7 @@ export class RedisRateLimiter {
 **Risk Level:** 🟡 MEDIUM
 
 **Analysis:**
+
 - Next.js uses POST for mutations (good)
 - Cookies are `SameSite=Lax` by default (some protection)
 - No anti-CSRF tokens for state-changing operations
@@ -558,6 +609,7 @@ export class RedisRateLimiter {
 **Recommendation:**
 
 #### 🟡 MEDIUM: Add CSRF Tokens for Critical Operations
+
 ```typescript
 // Example middleware for CSRF token validation
 import { createHash } from 'crypto'
@@ -574,6 +626,7 @@ export function validateCSRFToken(sessionId: string, token: string): boolean {
 ```
 
 For now, relying on SameSite cookies is acceptable, but add explicit CSRF protection for:
+
 - Relationship creation/deletion
 - Workout deletion
 - Account deletion
@@ -586,12 +639,14 @@ For now, relying on SameSite cookies is acceptable, but add explicit CSRF protec
 **Location:** Throughout codebase using `tslog`
 
 **Strengths:**
+
 - ✅ Structured logging with proper redaction
 - ✅ PII reduction in production logs - `better-auth.ts:328-343`
 - ✅ Sensitive data excluded from logs (passwords, tokens)
 - ✅ Security events logged (rate limit violations, auth failures)
 
 **Example:**
+
 ```typescript
 // Proper PII handling - auth-server.ts:162
 logger.debug('🔍 AUTH DEBUG - Type-Safe Session Data:', {
@@ -604,6 +659,7 @@ logger.debug('🔍 AUTH DEBUG - Type-Safe Session Data:', {
 **Issues Identified:**
 
 #### 🟢 LOW: Development Logs May Contain Sensitive URLs
+
 See Section 1.1 for password reset URL logging recommendation
 
 ---
@@ -623,6 +679,7 @@ pnpm audit --json > security-audit.json
 ```
 
 **Key Dependencies to Monitor:**
+
 - `better-auth` - Auth library (critical)
 - `drizzle-orm` - Database ORM (critical)
 - `next` - Framework (critical)
@@ -725,6 +782,7 @@ pnpm audit --json > security-audit.json
 Before production launch, complete these tests:
 
 #### Authentication Tests
+
 - [ ] Test session expiration after 14 days
 - [ ] Test password reset flow end-to-end
 - [ ] Test account lockout after failed login attempts (if implemented)
@@ -732,6 +790,7 @@ Before production launch, complete these tests:
 - [ ] Test session fixation attacks
 
 #### Authorization Tests
+
 - [ ] Test coach accessing another coach's runners
 - [ ] Test runner accessing another runner's workouts
 - [ ] Test workout access without active relationship
@@ -739,6 +798,7 @@ Before production launch, complete these tests:
 - [ ] Test RLS policies with direct SQL queries
 
 #### Input Validation Tests
+
 - [ ] Test SQL injection attempts in all text inputs
 - [ ] Test XSS payloads in messages and notes
 - [ ] Test oversized file uploads (>10MB)
@@ -746,6 +806,7 @@ Before production launch, complete these tests:
 - [ ] Test race import duplicate detection
 
 #### Infrastructure Tests
+
 - [ ] Test HTTPS enforcement on all routes
 - [ ] Test security headers on all pages
 - [ ] Test rate limiting with burst requests
@@ -755,6 +816,7 @@ Before production launch, complete these tests:
 ### Automated Security Testing
 
 **Recommended Tools:**
+
 ```bash
 # Install security testing tools
 pnpm add -D @playwright/test  # E2E security tests
@@ -777,6 +839,7 @@ pnpm audit --audit-level=moderate
 **Current Status:** 🟡 Partial Compliance
 
 **Required for Full Compliance:**
+
 1. ✅ User consent tracking (notification preferences exist)
 2. ❌ Data export functionality (user can request their data)
 3. ❌ Right to be forgotten (account deletion with cascade)
@@ -784,6 +847,7 @@ pnpm audit --audit-level=moderate
 5. ⚠️ Privacy policy and terms of service
 
 **Recommendations:**
+
 - Implement user data export API endpoint
 - Add account deletion with proper cascade (currently exists at DB level)
 - Document data breach response procedures
@@ -827,6 +891,7 @@ With these improvements, the UltraCoach platform will achieve a **9/10 security 
 ## Appendix A: Security Best Practices Checklist
 
 ### Authentication ✅
+
 - [x] Strong password requirements (8+ chars)
 - [x] Secure session management (14-day expiration)
 - [x] Production-ready cookie configuration
@@ -834,12 +899,14 @@ With these improvements, the UltraCoach platform will achieve a **9/10 security 
 - [ ] Account lockout after failed attempts
 
 ### Authorization ✅
+
 - [x] Role-based access control (RBAC)
 - [x] Relationship-based authorization
 - [ ] Row-level security (RLS) policies
 - [x] Server-side authorization checks
 
 ### Input Validation ✅
+
 - [x] SQL injection prevention (ORM)
 - [x] XSS prevention (React escaping)
 - [ ] Content Security Policy (CSP)
@@ -847,6 +914,7 @@ With these improvements, the UltraCoach platform will achieve a **9/10 security 
 - [ ] File type validation
 
 ### Data Protection 🟡
+
 - [x] Password hashing (Better Auth)
 - [x] Session token signing
 - [ ] Sensitive token encryption
@@ -854,6 +922,7 @@ With these improvements, the UltraCoach platform will achieve a **9/10 security 
 - [ ] Secret rotation procedures
 
 ### Infrastructure ✅
+
 - [x] HTTPS enforcement (Vercel)
 - [x] Basic security headers
 - [ ] Complete security headers (HSTS, CSP)
@@ -861,6 +930,7 @@ With these improvements, the UltraCoach platform will achieve a **9/10 security 
 - [ ] Redis rate limiting (scalable)
 
 ### Monitoring ✅
+
 - [x] Structured logging (tslog)
 - [x] PII redaction in logs
 - [x] Security event logging

@@ -55,7 +55,10 @@ const BulkWorkoutSchema = z.object({
         !isAfter(date, addYears(new Date(), 5)),
       { message: 'Invalid date or date out of reasonable range (2020-2030)' }
     ),
-  plannedType: z.string().min(1, { message: 'Planned type is required' }).max(100, { message: 'Planned type too long' }),
+  plannedType: z
+    .string()
+    .min(1, { message: 'Planned type is required' })
+    .max(100, { message: 'Planned type too long' }),
   plannedDistance: z
     .number()
     .min(VALIDATION_RULES.MIN_DISTANCE)

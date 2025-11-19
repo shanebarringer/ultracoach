@@ -7,9 +7,11 @@ This document shows how each issue raised in the PR review has been systematical
 ## ✅ High-Severity Issues (All Fixed)
 
 ### 1. Type Safety: `retryAfter` Optional but Assumed
+
 **Issue**: `retryAfter` was typed as optional but used with non-null assertions (`!`)
 
 **Resolution** (Commit 8040e63):
+
 ```typescript
 // BEFORE
 interface RateLimitResult {
@@ -23,6 +25,7 @@ interface RateLimitResult {
 ```
 
 **Changes**:
+
 - Made `retryAfter` required in `RateLimitResult` interface
 - Always return `retryAfter: 0` when request is allowed
 - Always return `retryAfter: <seconds>` when rate limited
@@ -33,9 +36,11 @@ interface RateLimitResult {
 ---
 
 ### 2. Redis TTL Edge Cases
+
 **Issue**: Redis TTL can return `-2` (key doesn't exist) or `-1` (no expiration), causing negative `resetTime`
 
 **Resolution** (Commit 8040e63):
+
 ```typescript
 // Defensive handling: If TTL is invalid, use full window duration
 const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)
@@ -43,6 +48,7 @@ const resetTime = now + safeTTL * 1000
 ```
 
 **Changes**:
+
 - Added comment explaining Redis TTL special values
 - Implemented defensive fallback to window duration
 - Prevents negative `resetTime` and `retryAfter` values
@@ -52,9 +58,11 @@ const resetTime = now + safeTTL * 1000
 ---
 
 ### 3. Response Stream Reusability
+
 **Issue**: Creating new `Response` with `response.body` can fail if stream already consumed
 
 **Resolution** (Commit 8040e63):
+
 ```typescript
 // BEFORE - Created new Response (risky)
 return new Response(response.body, {
@@ -72,6 +80,7 @@ export function addRateLimitHeaders<T extends Response>(response: T, result: Rat
 ```
 
 **Changes**:
+
 - Mutate headers directly on existing NextResponse
 - Use generic type `<T extends Response>` for type safety
 - No stream consumption issues
@@ -81,9 +90,11 @@ export function addRateLimitHeaders<T extends Response>(response: T, result: Rat
 ---
 
 ### 4. Memory Cleanup Performance (O(n) Per Request)
+
 **Issue**: Fallback memory store iterated entire map on every request
 
 **Resolution** (Commit 8040e63):
+
 ```typescript
 // Added periodic cleanup tracking
 private lastCleanup: number
@@ -102,6 +113,7 @@ if (now - this.lastCleanup > this.cleanupInterval) {
 ```
 
 **Changes**:
+
 - Periodic cleanup instead of per-request
 - Configurable interval (max 1/minute or 1/window)
 - O(1) amortized cost instead of O(n) per request
@@ -111,9 +123,11 @@ if (now - this.lastCleanup > this.cleanupInterval) {
 ---
 
 ### 5. Rate Limit Unit Inconsistency
+
 **Issue**: Different endpoints showed `retryAfter` in different units (seconds vs minutes)
 
 **Resolution** (Commit 8040e63):
+
 ```typescript
 // ALL endpoints now return seconds in API, convert for user display
 const retryAfterMinutes = Math.ceil(rateLimitResult.retryAfter / 60)
@@ -125,9 +139,10 @@ const response = NextResponse.json({
 ```
 
 **Changes**:
+
 - **API Contract**: All endpoints return `retryAfter` in seconds
 - **User Messages**: Convert to minutes/seconds for readability
-- **Headers**: X-RateLimit-* headers use seconds (standard)
+- **Headers**: X-RateLimit-\* headers use seconds (standard)
 
 **Files**: `src/app/api/feedback/route.ts`, `src/app/api/races/bulk-import/route.ts`
 
@@ -136,16 +151,18 @@ const response = NextResponse.json({
 ## ✅ Medium-Priority Issues (All Fixed)
 
 ### 6. GPX Validation Only Samples First Point
+
 **Issue**: Only validated first track point, allowing mostly-invalid data through
 
 **Resolution** (Commit e5ebfe4):
+
 ```typescript
 // Sample multiple points across the track (first, middle, last)
 const pointCount = firstTrack.points.length
 const sampleIndices = [
-  0,                           // First point
-  Math.floor(pointCount / 2),  // Middle point
-  pointCount - 1               // Last point
+  0, // First point
+  Math.floor(pointCount / 2), // Middle point
+  pointCount - 1, // Last point
 ]
 
 // Validate each sample point
@@ -156,6 +173,7 @@ for (const index of sampleIndices) {
 ```
 
 **Changes**:
+
 - 3x better validation coverage (first, middle, last points)
 - Still maintains performance (3 checks vs full O(n) scan)
 - Enhanced error messages include point index
@@ -165,18 +183,21 @@ for (const index of sampleIndices) {
 ---
 
 ### 7. CSP Too Permissive for Production
+
 **Issue**: Included `'unsafe-eval'` unconditionally, weakening XSS protection
 
 **Resolution** (Commits e5ebfe4, bef68f0):
+
 ```typescript
 // Conditionally include 'unsafe-eval' only in development/test
 const isNonProduction = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
 const scriptSrc = isNonProduction
-  ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"  // Dev/Test: HMR needs unsafe-eval
-  : "script-src 'self' 'unsafe-inline'"                // Production: no unsafe-eval
+  ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev/Test: HMR needs unsafe-eval
+  : "script-src 'self' 'unsafe-inline'" // Production: no unsafe-eval
 ```
 
 **Changes**:
+
 - **Production**: Strict CSP (no `'unsafe-eval'`) for XSS protection
 - **Development**: Permissive CSP (HMR requires `'unsafe-eval'`)
 - **Test**: Permissive CSP (CI tests require `'unsafe-eval'`)
@@ -186,9 +207,11 @@ const scriptSrc = isNonProduction
 ---
 
 ### 8. Rate Limit Header Calculation
+
 **Issue**: Reconstructing limit from `remaining + (allowed ? 1 : 0)` was fragile
 
 **Resolution** (Commit e5ebfe4):
+
 ```typescript
 // Added limit to RateLimitResult
 interface RateLimitResult {
@@ -200,6 +223,7 @@ response.headers.set('X-RateLimit-Limit', String(result.limit))
 ```
 
 **Changes**:
+
 - Added `limit` field to interface
 - Pass configured `max` through all return paths
 - More accurate, less fragile implementation
@@ -211,6 +235,7 @@ response.headers.set('X-RateLimit-Limit', String(result.limit))
 ## ✅ Dependency Verification
 
 ### Issue: Zod 4 and Tailwind 4 Breaking Changes
+
 **Resolution**: Verified all dependencies are installed and working
 
 ```bash
@@ -227,17 +252,17 @@ zod 4.1.12
 
 ## 📊 Summary
 
-| Issue | Severity | Status | Commit |
-|-------|----------|--------|--------|
-| `retryAfter` type safety | High | ✅ Fixed | 8040e63 |
-| Redis TTL edge cases | High | ✅ Fixed | 8040e63 |
-| Response stream reusability | High | ✅ Fixed | 8040e63 |
-| Memory cleanup performance | High | ✅ Fixed | 8040e63 |
-| Rate limit unit inconsistency | Medium | ✅ Fixed | 8040e63 |
-| GPX validation coverage | Medium | ✅ Fixed | e5ebfe4 |
-| CSP production security | Medium | ✅ Fixed | e5ebfe4, bef68f0 |
-| Rate limit header calculation | Low | ✅ Fixed | e5ebfe4 |
-| Dependency verification | N/A | ✅ Verified | N/A |
+| Issue                         | Severity | Status      | Commit           |
+| ----------------------------- | -------- | ----------- | ---------------- |
+| `retryAfter` type safety      | High     | ✅ Fixed    | 8040e63          |
+| Redis TTL edge cases          | High     | ✅ Fixed    | 8040e63          |
+| Response stream reusability   | High     | ✅ Fixed    | 8040e63          |
+| Memory cleanup performance    | High     | ✅ Fixed    | 8040e63          |
+| Rate limit unit inconsistency | Medium   | ✅ Fixed    | 8040e63          |
+| GPX validation coverage       | Medium   | ✅ Fixed    | e5ebfe4          |
+| CSP production security       | Medium   | ✅ Fixed    | e5ebfe4, bef68f0 |
+| Rate limit header calculation | Low      | ✅ Fixed    | e5ebfe4          |
+| Dependency verification       | N/A      | ✅ Verified | N/A              |
 
 ---
 

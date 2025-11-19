@@ -65,7 +65,8 @@ const nextConfig: NextConfig = {
   async headers() {
     // Conditionally include 'unsafe-eval' only in development and test (needed for HMR and testing)
     // In production, remove it to strengthen XSS protection
-    const isNonProduction = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+    const isNonProduction =
+      process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
     const scriptSrc = isNonProduction
       ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
       : "script-src 'self' 'unsafe-inline'"

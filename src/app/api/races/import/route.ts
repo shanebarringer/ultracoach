@@ -136,10 +136,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate waypoints array if provided
-      if (
-        importData.gpx_data.waypoints &&
-        !Array.isArray(importData.gpx_data.waypoints)
-      ) {
+      if (importData.gpx_data.waypoints && !Array.isArray(importData.gpx_data.waypoints)) {
         return NextResponse.json(
           { error: 'Invalid GPX data - waypoints must be an array' },
           { status: 400 }
@@ -181,10 +178,7 @@ export async function POST(request: NextRequest) {
 
           if (samplePoint) {
             // Validate lat/lon are numbers
-            if (
-              typeof samplePoint.lat !== 'number' ||
-              typeof samplePoint.lon !== 'number'
-            ) {
+            if (typeof samplePoint.lat !== 'number' || typeof samplePoint.lon !== 'number') {
               return NextResponse.json(
                 {
                   error: 'Invalid GPX data - track points must have numeric lat/lon',
@@ -225,10 +219,7 @@ export async function POST(request: NextRequest) {
     if (importData.source === 'csv') {
       // Ensure minimum required fields are present for CSV imports
       if (!importData.name || importData.name.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'CSV import requires race name' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'CSV import requires race name' }, { status: 400 })
       }
 
       // Validate distance for CSV imports

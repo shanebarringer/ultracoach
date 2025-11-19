@@ -184,9 +184,10 @@ supabase db push --linked
 Create test file `scripts/test-rls-policies.ts`:
 
 ```typescript
-import { db } from '@/lib/database'
-import { workouts, coach_runners } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
+
+import { db } from '@/lib/database'
+import { coach_runners, workouts } from '@/lib/schema'
 
 async function testRLSPolicies() {
   console.log('Testing RLS policies...')
@@ -286,9 +287,7 @@ export async function decryptToken(ciphertext: string): Promise<string> {
 
     // Validate versioned format
     if (parts.length !== 5 || parts[0] !== 'enc' || parts[1] !== 'v1') {
-      throw new Error(
-        'Invalid ciphertext format - expected enc:v1:iv:authTag:ciphertext'
-      )
+      throw new Error('Invalid ciphertext format - expected enc:v1:iv:authTag:ciphertext')
     }
 
     const [, , ivHex, authTagHex, encryptedHex] = parts
@@ -623,24 +622,28 @@ export default function VerifyEmailPage() {
 After implementing all fixes:
 
 ### RLS Testing
+
 - [ ] Coach cannot access other coaches' runners via SQL
 - [ ] Runner cannot access other runners' workouts via SQL
 - [ ] Direct database queries respect RLS policies
 - [ ] Service role can bypass RLS for admin operations
 
 ### Encryption Testing
+
 - [ ] New Strava connections store encrypted tokens
 - [ ] Existing tokens migrated successfully
 - [ ] Token decryption works for API calls
 - [ ] Encrypted tokens are not readable in database
 
 ### CSP Testing
+
 - [ ] No CSP violations in browser console
 - [ ] All third-party scripts load correctly
 - [ ] Inline styles work (or are refactored)
 - [ ] API calls to Supabase and Strava succeed
 
 ### Email Verification Testing
+
 - [ ] Sign-up sends verification email
 - [ ] Verification link works
 - [ ] Unverified users cannot access protected routes
