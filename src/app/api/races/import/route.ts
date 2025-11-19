@@ -178,10 +178,7 @@ export async function POST(request: NextRequest) {
 
         if (sampleWaypoint) {
           // Validate lat/lon are numbers
-          if (
-            typeof sampleWaypoint.lat !== 'number' ||
-            typeof sampleWaypoint.lon !== 'number'
-          ) {
+          if (typeof sampleWaypoint.lat !== 'number' || typeof sampleWaypoint.lon !== 'number') {
             logger.warn('GPX waypoint has invalid lat/lon types', {
               userId: session.user.id,
               waypointIndex: sampleIndex,
