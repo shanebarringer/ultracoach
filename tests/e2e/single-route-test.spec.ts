@@ -2,8 +2,6 @@ import { expect, test } from '@playwright/test'
 
 import { TEST_TIMEOUTS } from '../utils/test-helpers'
 
-test.use({ storageState: './playwright/.auth/runner.json' })
-
 // Parameterized route tests - reduces duplication and improves maintainability
 const routesToTest = [
   { route: '/dashboard/runner', name: 'runner-home' },
