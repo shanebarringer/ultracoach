@@ -232,48 +232,42 @@ pnpm add @aws-crypto/client-node
 Create `src/lib/encryption.ts`:
 
 ```typescript
-import {
-  KmsKeyringNode,
-  buildClient,
-  CommitmentPolicy,
-} from '@aws-crypto/client-node'
 import { createLogger } from './logger'
 
 const logger = createLogger('Encryption')
 
-const { encrypt: awsEncrypt, decrypt: awsDecrypt } = buildClient(
-  CommitmentPolicy.REQUIRE_ENCRYPT_REQUIRE_DECRYPT
-)
-
-// Use AES-256-GCM with environment variable key for local dev
-// For production, use AWS KMS or similar
+// Use AES-256-GCM with environment variable key
+// Key must be exactly 32 bytes for AES-256
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
-if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length < 32) {
-  throw new Error('ENCRYPTION_KEY must be at least 32 characters')
+if (!ENCRYPTION_KEY) {
+  throw new Error('ENCRYPTION_KEY environment variable is required')
+}
+
+// Validate key is exactly 32 bytes (256 bits)
+const keyBuffer = Buffer.from(ENCRYPTION_KEY, 'utf-8')
+if (keyBuffer.length !== 32) {
+  throw new Error(
+    `ENCRYPTION_KEY must be exactly 32 bytes (currently ${keyBuffer.length} bytes). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+  )
 }
 
 /**
  * Encrypt sensitive data (access tokens, refresh tokens)
+ * Returns format: enc:v1:iv:authTag:ciphertext
  */
 export async function encryptToken(plaintext: string): Promise<string> {
   try {
-    // Simple AES-256-GCM encryption for now
-    // TODO: Migrate to AWS KMS for production
     const crypto = await import('crypto')
     const iv = crypto.randomBytes(16)
-    const cipher = crypto.createCipheriv(
-      'aes-256-gcm',
-      Buffer.from(ENCRYPTION_KEY!, 'utf-8').slice(0, 32),
-      iv
-    )
+    const cipher = crypto.createCipheriv('aes-256-gcm', keyBuffer, iv)
 
     let encrypted = cipher.update(plaintext, 'utf8', 'hex')
     encrypted += cipher.final('hex')
 
     const authTag = cipher.getAuthTag().toString('hex')
 
-    // Return iv:authTag:ciphertext
-    const result = `${iv.toString('hex')}:${authTag}:${encrypted}`
+    // Return versioned format for future compatibility
+    const result = `enc:v1:${iv.toString('hex')}:${authTag}:${encrypted}`
     logger.debug('Token encrypted successfully', { length: result.length })
     return result
   } catch (error) {
@@ -284,24 +278,25 @@ export async function encryptToken(plaintext: string): Promise<string> {
 
 /**
  * Decrypt sensitive data
+ * Supports format: enc:v1:iv:authTag:ciphertext
  */
 export async function decryptToken(ciphertext: string): Promise<string> {
   try {
     const parts = ciphertext.split(':')
-    if (parts.length !== 3) {
-      throw new Error('Invalid ciphertext format')
+
+    // Validate versioned format
+    if (parts.length !== 5 || parts[0] !== 'enc' || parts[1] !== 'v1') {
+      throw new Error(
+        'Invalid ciphertext format - expected enc:v1:iv:authTag:ciphertext'
+      )
     }
 
-    const [ivHex, authTagHex, encryptedHex] = parts
+    const [, , ivHex, authTagHex, encryptedHex] = parts
 
     const crypto = await import('crypto')
     const iv = Buffer.from(ivHex, 'hex')
     const authTag = Buffer.from(authTagHex, 'hex')
-    const decipher = crypto.createDecipheriv(
-      'aes-256-gcm',
-      Buffer.from(ENCRYPTION_KEY!, 'utf-8').slice(0, 32),
-      iv
-    )
+    const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv)
 
     decipher.setAuthTag(authTag)
 
@@ -358,10 +353,12 @@ const refreshToken = await decryptToken(connection[0].refresh_token)
 Create `scripts/encrypt-existing-strava-tokens.ts`:
 
 ```typescript
+import { eq } from 'drizzle-orm'
+
 import { db } from '@/lib/database'
-import { strava_connections } from '@/lib/schema'
 import { encryptToken } from '@/lib/encryption'
 import { createLogger } from '@/lib/logger'
+import { strava_connections } from '@/lib/schema'
 
 const logger = createLogger('StravaTokenMigration')
 
@@ -374,8 +371,8 @@ async function encryptExistingTokens() {
 
   for (const connection of connections) {
     try {
-      // Check if already encrypted (contains ':' separator)
-      if (connection.access_token.includes(':')) {
+      // Check if already encrypted using versioned format marker
+      if (connection.access_token.startsWith('enc:v1:')) {
         logger.info(`Skipping already encrypted connection: ${connection.id}`)
         continue
       }
@@ -407,14 +404,17 @@ encryptExistingTokens()
 ### Step 6: Add ENCRYPTION_KEY to Environment
 
 ```bash
-# .env.local (development)
-ENCRYPTION_KEY="your-random-32-character-key-here-change-this"
-
-# Generate secure key
+# Generate a secure 32-byte key (required for AES-256)
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# .env.local (development)
+ENCRYPTION_KEY="<paste-generated-key-here>"
+
+# IMPORTANT: Key MUST be exactly 32 bytes when UTF-8 encoded
+# The generated base64 key above will be 44 characters but encode to 32 bytes
 ```
 
-Add to Vercel environment variables for production.
+Add to Vercel environment variables for production with the same generated key.
 
 ---
 

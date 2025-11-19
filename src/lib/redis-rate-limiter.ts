@@ -325,6 +325,19 @@ export function addRateLimitHeaders<T extends Response>(response: T, result: Rat
 }
 
 /**
+ * Format retry-after duration into human-readable text
+ * Uses minutes for durations > 60 seconds, otherwise seconds
+ */
+export function formatRetryAfter(retryAfterSeconds: number): string {
+  if (retryAfterSeconds > 60) {
+    const minutes = Math.ceil(retryAfterSeconds / 60)
+    return `${minutes} minute${minutes === 1 ? '' : 's'}`
+  }
+  const seconds = Math.ceil(retryAfterSeconds)
+  return `${seconds} second${seconds === 1 ? '' : 's'}`
+}
+
+/**
  * Check if Redis client was successfully configured at initialization
  * Note: This checks configuration status, not runtime connectivity.
  * Runtime failures are handled gracefully by automatic fallback to in-memory storage.

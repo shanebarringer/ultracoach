@@ -6,7 +6,7 @@ import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, messageLimiter } from '@/lib/redis-rate-limiter'
+import { addRateLimitHeaders, formatRetryAfter, messageLimiter } from '@/lib/redis-rate-limiter'
 import {
   coach_runners,
   message_workout_links,
@@ -185,6 +185,7 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting to prevent message spam
     const rateLimitResult = await messageLimiter.check(sessionUser.id)
     if (!rateLimitResult.allowed) {
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
       logger.warn('Message rate limit exceeded', {
         userId: sessionUser.id,
         retryAfter: rateLimitResult.retryAfter,
@@ -192,8 +193,8 @@ export async function POST(request: NextRequest) {
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many messages sent. Please try again in ${rateLimitResult.retryAfter} seconds.`,
-          retryAfter: rateLimitResult.retryAfter,
+          details: `Too many messages sent. Please try again in ${retryDisplay}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for API consistency
         },
         { status: 429 }
       )

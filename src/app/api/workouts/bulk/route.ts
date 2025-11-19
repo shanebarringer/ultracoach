@@ -55,7 +55,7 @@ const BulkWorkoutSchema = z.object({
         !isAfter(date, addYears(new Date(), 5)),
       { message: 'Invalid date or date out of reasonable range (2020-2030)' }
     ),
-  plannedType: z.string().min(1, 'Planned type is required').max(100, 'Planned type too long'),
+  plannedType: z.string().min(1, { message: 'Planned type is required' }).max(100, { message: 'Planned type too long' }),
   plannedDistance: z
     .number()
     .min(VALIDATION_RULES.MIN_DISTANCE)
@@ -68,7 +68,7 @@ const BulkWorkoutSchema = z.object({
     .max(VALIDATION_RULES.MAX_DURATION)
     .optional()
     .nullable(),
-  notes: z.string().max(1000, 'Notes must be 1000 characters or less').optional(),
+  notes: z.string().max(1000, { message: 'Notes must be 1000 characters or less' }).optional(),
   category: z.enum(VALID_CATEGORIES).optional().nullable(),
   intensity: z
     .number()
@@ -83,11 +83,10 @@ const BulkWorkoutSchema = z.object({
 const BulkWorkoutRequestSchema = z.object({
   workouts: z
     .array(BulkWorkoutSchema)
-    .min(1, 'At least one workout is required')
-    .max(
-      VALIDATION_RULES.MAX_BULK_WORKOUTS,
-      `Maximum ${VALIDATION_RULES.MAX_BULK_WORKOUTS} workouts allowed`
-    ),
+    .min(1, { message: 'At least one workout is required' })
+    .max(VALIDATION_RULES.MAX_BULK_WORKOUTS, {
+      message: `Maximum ${VALIDATION_RULES.MAX_BULK_WORKOUTS} workouts allowed`,
+    }),
 })
 
 // Type inference handled directly in the function

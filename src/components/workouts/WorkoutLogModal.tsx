@@ -52,16 +52,16 @@ const workoutLogSchema = z.object({
     .optional(),
   intensity: z
     .number()
-    .min(1, 'Intensity must be at least 1')
-    .max(10, 'Intensity must be at most 10')
+    .min(1, { message: 'Intensity must be at least 1' })
+    .max(10, { message: 'Intensity must be at most 10' })
     .nullable()
     .optional(),
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
-  elevationGain: z.number().min(0, 'Elevation gain must be positive').nullable().optional(),
-  actualDistance: z.number().min(0, 'Distance must be positive').nullable().optional(),
-  actualDuration: z.number().min(0, 'Duration must be positive').nullable().optional(),
-  workoutNotes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
-  injuryNotes: z.string().max(500, 'Injury notes must be less than 500 characters').optional(),
+  elevationGain: z.number().min(0, { message: 'Elevation gain must be positive' }).nullable().optional(),
+  actualDistance: z.number().min(0, { message: 'Distance must be positive' }).nullable().optional(),
+  actualDuration: z.number().min(0, { message: 'Duration must be positive' }).nullable().optional(),
+  workoutNotes: z.string().max(1000, { message: 'Notes must be less than 1000 characters' }).optional(),
+  injuryNotes: z.string().max(500, { message: 'Injury notes must be less than 500 characters' }).optional(),
 })
 
 type WorkoutLogForm = z.infer<typeof workoutLogSchema>

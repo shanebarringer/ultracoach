@@ -45,10 +45,10 @@ const logger = createLogger('CreateTrainingPlanModal')
 const createTrainingPlanSchema = z.object({
   title: z
     .string()
-    .min(1, 'Plan title is required')
-    .max(100, 'Title must be at most 100 characters'),
-  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
-  runnerId: z.string().min(1, 'Please select a runner'),
+    .min(1, { message: 'Plan title is required' })
+    .max(100, { message: 'Title must be at most 100 characters' }),
+  description: z.string().max(500, { message: 'Description must be at most 500 characters' }).optional(),
+  runnerId: z.string().min(1, { message: 'Please select a runner' }),
   race_id: z.string().nullable(),
   goal_type: z.enum(GOAL_TYPES).nullable(),
   plan_type: z.enum(PLAN_TYPES).nullable(),

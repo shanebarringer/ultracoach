@@ -13,7 +13,7 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('forgot-password')
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
 })
 
 type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>

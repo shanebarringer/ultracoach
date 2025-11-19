@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, raceImportLimiter } from '@/lib/redis-rate-limiter'
+import { addRateLimitHeaders, formatRetryAfter, raceImportLimiter } from '@/lib/redis-rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
@@ -31,7 +31,7 @@ interface ImportRaceData {
         time?: string
       }>
     }>
-    waypoints: Array<{
+    waypoints?: Array<{
       name?: string
       lat: number
       lon: number
@@ -52,11 +52,12 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting
     const rateLimitResult = await raceImportLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many race imports. Please try again in ${rateLimitResult.retryAfter} seconds.`,
-          retryAfter: rateLimitResult.retryAfter,
+          details: `Too many race imports. Please try again in ${retryDisplay}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for API consistency
         },
         { status: 429 }
       )

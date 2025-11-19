@@ -13,7 +13,7 @@ import {
   generateFeedbackEmailText,
 } from '@/lib/email/feedback-template'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, feedbackLimiter } from '@/lib/redis-rate-limiter'
+import { addRateLimitHeaders, feedbackLimiter, formatRetryAfter } from '@/lib/redis-rate-limiter'
 import { user_feedback } from '@/lib/schema'
 
 const logger = createLogger('api/feedback')
@@ -43,13 +43,13 @@ const feedbackRequestSchema = z.object({
     'compliment',
   ]),
   category: z.string().optional(),
-  title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or less'),
+  title: z.string().min(1, { message: 'Title is required' }).max(200, { message: 'Title must be 200 characters or less' }),
   description: z
     .string()
-    .min(1, 'Description is required')
-    .max(5000, 'Description must be 5000 characters or less'),
+    .min(1, { message: 'Description is required' })
+    .max(5000, { message: 'Description must be 5000 characters or less' }),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  user_email: z.union([z.string().email('Invalid email format'), emptyStringToUndefined]),
+  user_email: z.union([z.string().email({ message: 'Invalid email format' }), emptyStringToUndefined]),
   browser_info: z
     .object({
       userAgent: z.string().optional(),
@@ -78,12 +78,12 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting to prevent feedback spam
     const rateLimitResult = await feedbackLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
-      const retryAfterMinutes = Math.ceil(rateLimitResult.retryAfter / 60)
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many feedback submissions. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
-          retryAfter: rateLimitResult.retryAfter, // Always in seconds for consistency
+          details: `Too many feedback submissions. Please try again in ${retryDisplay}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for API consistency
         },
         { status: 429 }
       )
