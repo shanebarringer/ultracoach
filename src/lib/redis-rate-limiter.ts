@@ -67,7 +67,6 @@ export class RedisRateLimiter {
   async check(identifier: string): Promise<RateLimitResult> {
     const key = `ratelimit:${this.keyGenerator(identifier)}`
     const now = Date.now()
-    const windowStart = now - this.windowMs
 
     // Use Redis if available
     if (redis) {
@@ -75,7 +74,7 @@ export class RedisRateLimiter {
     }
 
     // Fallback to in-memory rate limiting
-    return this.checkMemory(key, now, windowStart)
+    return this.checkMemory(key, now)
   }
 
   /**
@@ -135,25 +134,24 @@ export class RedisRateLimiter {
     } catch (error) {
       logger.error('Redis rate limiting failed, falling back to memory:', error)
       // Fallback to in-memory if Redis fails
-      const windowStart = now - this.windowMs
-      return this.checkMemory(key, now, windowStart)
+      return this.checkMemory(key, now)
     }
   }
 
   /**
    * In-memory rate limiting (fallback, single-instance only)
    */
-  private checkMemory(key: string, now: number, windowStart: number): RateLimitResult {
+  private checkMemory(key: string, now: number): RateLimitResult {
     // Periodic cleanup to avoid O(n) overhead on every request
     // Only cleanup if enough time has passed since last cleanup
     if (now - this.lastCleanup > this.cleanupInterval) {
-      this.cleanupMemory(windowStart)
+      this.cleanupMemory(now)
       this.lastCleanup = now
     }
 
     // Get or create rate limit entry
     let entry = this.memoryStore.get(key)
-    if (!entry || entry.resetTime <= windowStart) {
+    if (!entry || entry.resetTime <= now) {
       // Create new entry or reset expired one
       entry = {
         count: 0,
@@ -203,9 +201,9 @@ export class RedisRateLimiter {
   /**
    * Clean up expired rate limit entries from memory
    */
-  private cleanupMemory(windowStart: number): void {
+  private cleanupMemory(now: number): void {
     for (const [key, entry] of this.memoryStore.entries()) {
-      if (entry.resetTime <= windowStart) {
+      if (entry.resetTime <= now) {
         this.memoryStore.delete(key)
       }
     }
@@ -213,20 +211,24 @@ export class RedisRateLimiter {
 
   /**
    * Reset rate limit for specific identifier (admin function)
+   * Clears both Redis and memory stores to ensure complete reset
    */
   async reset(identifier: string): Promise<void> {
     const key = `ratelimit:${this.keyGenerator(identifier)}`
 
+    // Always clear memory store (may have fallback entries)
+    this.memoryStore.delete(key)
+
+    // Also clear Redis if configured
     if (redis) {
       try {
         await redis.del(key)
-        logger.info('Rate limit reset (Redis)', { key })
+        logger.info('Rate limit reset (both Redis and memory)', { key })
       } catch (error) {
-        logger.error('Failed to reset rate limit in Redis:', error)
+        logger.error('Failed to reset rate limit in Redis (memory cleared)', { key, error })
       }
     } else {
-      this.memoryStore.delete(key)
-      logger.info('Rate limit reset (memory)', { key })
+      logger.info('Rate limit reset (memory only)', { key })
     }
   }
 
@@ -243,8 +245,11 @@ export class RedisRateLimiter {
         const count = await redis.get<number>(key)
         if (!count) return null
 
+        // Get TTL with defensive handling for edge cases
         const ttl = await redis.ttl(key)
-        const resetTime = Date.now() + ttl * 1000
+        // Defensive handling: If TTL is invalid, use full window duration
+        const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)
+        const resetTime = Date.now() + safeTTL * 1000
 
         return {
           count,
@@ -320,8 +325,10 @@ export function addRateLimitHeaders<T extends Response>(response: T, result: Rat
 }
 
 /**
- * Check if Redis is available
+ * Check if Redis client was successfully configured at initialization
+ * Note: This checks configuration status, not runtime connectivity.
+ * Runtime failures are handled gracefully by automatic fallback to in-memory storage.
  */
-export function isRedisAvailable(): boolean {
+export function isRedisConfigured(): boolean {
   return redis !== null
 }

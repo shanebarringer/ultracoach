@@ -169,23 +169,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Validate track point structure for first track (sample validation)
-      if (importData.gpx_data.tracks.length > 0) {
-        const firstTrack = importData.gpx_data.tracks[0]
-        if (firstTrack.points && firstTrack.points.length > 0) {
-          // Sample multiple points across the track (first, middle, last) for better validation
-          const pointCount = firstTrack.points.length
-          const sampleIndices = [
-            0, // First point
-            Math.floor(pointCount / 2), // Middle point
-            pointCount - 1, // Last point
-          ]
+      // Validate track point structure from ALL tracks (sample from each track)
+      for (let trackIndex = 0; trackIndex < importData.gpx_data.tracks.length; trackIndex++) {
+        const track = importData.gpx_data.tracks[trackIndex]
+        if (track.points && track.points.length > 0) {
+          // Sample one representative point from each track (middle point)
+          const pointCount = track.points.length
+          const sampleIndex = Math.floor(pointCount / 2)
+          const samplePoint = track.points[sampleIndex]
 
-          // Validate each sample point
-          for (const index of sampleIndices) {
-            const samplePoint = firstTrack.points[index]
-            if (!samplePoint) continue
-
+          if (samplePoint) {
             // Validate lat/lon are numbers
             if (
               typeof samplePoint.lat !== 'number' ||
@@ -194,7 +187,7 @@ export async function POST(request: NextRequest) {
               return NextResponse.json(
                 {
                   error: 'Invalid GPX data - track points must have numeric lat/lon',
-                  details: `Invalid point at index ${index}`,
+                  details: `Invalid point in track ${trackIndex + 1} at index ${sampleIndex}`,
                 },
                 { status: 400 }
               )
@@ -210,7 +203,7 @@ export async function POST(request: NextRequest) {
               return NextResponse.json(
                 {
                   error: 'Invalid GPX data - lat/lon out of valid range',
-                  details: `Point ${index}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+                  details: `Track ${trackIndex + 1}, Point ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
                 },
                 { status: 400 }
               )

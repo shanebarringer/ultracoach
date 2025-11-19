@@ -100,7 +100,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               scriptSrc, // Conditionally includes 'unsafe-eval' in dev/test, excluded in production
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https: blob:",
+              "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
               "font-src 'self' data:",
               "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co",
               "frame-ancestors 'none'",
