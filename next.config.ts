@@ -13,7 +13,7 @@ interface WebpackPlugin {
   apply(compiler: any): void
 }
 
-type CodeInspectorFactory = (options: { bundler: string }) => WebpackPlugin
+type CodeInspectorFactory = (options: { bundler: string }) => any
 
 // Properly typed plugin factory for code-inspector-plugin
 let codeInspectorFactory: CodeInspectorFactory | null = null
@@ -46,6 +46,15 @@ const nextConfig: NextConfig = {
     }
     return config
   },
+  // Turbopack configuration (Next.js 15.2+)
+  // Only enable code inspector in development mode (not test) when Turbopack is used
+  ...(process.env.NODE_ENV === 'development' && codeInspectorFactory
+    ? {
+        turbopack: {
+          rules: codeInspectorFactory({ bundler: 'turbopack' }),
+        },
+      }
+    : {}),
   // Production optimizations (swcMinify is enabled by default in Next.js 15)
   compress: true,
   poweredByHeader: false,
