@@ -2,12 +2,15 @@
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
 import { format, parseISO } from 'date-fns'
+import { useAtomValue } from 'jotai'
 import { Activity, Calendar, ExternalLink, Unlink } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
-import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
 import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { userAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -36,7 +39,8 @@ export default function StravaConnectionCard() {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
-  const trackEvent = usePostHogEvent()
+  const user = useAtomValue(userAtom) // Read-only access
+  const trackEvent = useTypedPostHogEvent()
 
   const fetchStatus = async () => {
     try {
@@ -71,9 +75,10 @@ export default function StravaConnectionCard() {
     try {
       logger.info('Redirecting to Strava authorization...')
 
-      // Track Strava connection attempt
-      trackEvent('strava_connect_initiated', {
+      // Track Strava connection attempt (type-safe)
+      trackEvent(ANALYTICS_EVENTS.STRAVA_CONNECT_INITIATED, {
         source: 'connection_card',
+        userId: user?.id || '',
       })
 
       const currentUrl = window.location.pathname
@@ -96,8 +101,8 @@ export default function StravaConnectionCard() {
       if (response.ok) {
         logger.info('Successfully disconnected from Strava')
 
-        // Track Strava disconnection
-        trackEvent('strava_disconnected', {
+        // Track Strava disconnection (type-safe)
+        trackEvent(ANALYTICS_EVENTS.STRAVA_DISCONNECTED, {
           source: 'connection_card',
         })
 

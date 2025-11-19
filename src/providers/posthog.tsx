@@ -1,11 +1,17 @@
 'use client'
 
+import { useSetAtom } from 'jotai'
 import posthog from 'posthog-js'
 
 import { useEffect, useState } from 'react'
 
 import { usePathname, useSearchParams } from 'next/navigation'
 
+import {
+  setFeatureFlagsAtom,
+  setFeatureFlagsErrorAtom,
+  setFeatureFlagsLoadingAtom,
+} from '@/lib/atoms/feature-flags'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('PostHogProvider')
@@ -18,6 +24,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isInitialized, setIsInitialized] = useState(false)
+
+  // Jotai setters for feature flags
+  const setFlags = useSetAtom(setFeatureFlagsAtom)
+  const setFlagsLoading = useSetAtom(setFeatureFlagsLoadingAtom)
+  const setFlagsError = useSetAtom(setFeatureFlagsErrorAtom)
 
   // Initialize PostHog only once on mount
   useEffect(() => {
@@ -66,15 +77,34 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
             if (process.env.NODE_ENV === 'development') {
               ph.opt_out_capturing() // Opt out in development
             }
+
             // Mark as initialized after loaded callback
             setIsInitialized(true)
             posthogInitialized = true
             logger.info('PostHog initialized successfully')
+
+            // Initialize feature flags in Jotai atoms
+            try {
+              setFlagsLoading(true)
+
+              // Wait for feature flags to load
+              // Note: PostHog doesn't provide a method to enumerate all flags
+              // Individual flags are fetched on-demand when components request them
+              ph.onFeatureFlags(() => {
+                // Mark flags as loaded - individual flags will be fetched when requested
+                setFlags(new Map())
+                logger.info('Feature flags system initialized and ready')
+              })
+            } catch (error) {
+              logger.error('Failed to load feature flags:', error)
+              setFlagsError(error instanceof Error ? error : new Error('Failed to load flags'))
+            }
           },
         })
       } catch (error) {
         logger.error('Failed to initialize PostHog:', error)
         posthogInitialized = false
+        setFlagsError(error instanceof Error ? error : new Error('Failed to initialize PostHog'))
         // Ensure PostHog is opted out on initialization failure
         try {
           posthog.opt_out_capturing()
@@ -85,6 +115,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     }
     // Empty deps array intentional: we only want to initialize PostHog once on mount
     // isInitialized is checked but not included to prevent re-initialization
+    // Jotai setters (setFlags, setFlagsLoading, setFlagsError) are stable and don't need to be included
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

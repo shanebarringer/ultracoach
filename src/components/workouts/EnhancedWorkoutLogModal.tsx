@@ -19,7 +19,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import {
   Activity,
   AlertCircle,
@@ -39,8 +39,9 @@ import { z } from 'zod'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
-import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms/index'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { stravaStateAtom, userAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
@@ -169,8 +170,9 @@ const EnhancedWorkoutLogModal = memo(
   }: EnhancedWorkoutLogModalProps) => {
     const [formState, setFormState] = useAtom(workoutLogFormAtom)
     const [stravaState] = useAtom(stravaStateAtom)
+    const user = useAtomValue(userAtom) // Read-only, no setter needed
     const [activeTab, setActiveTab] = useState('basic')
-    const trackEvent = usePostHogEvent()
+    const trackEvent = useTypedPostHogEvent()
 
     // React Hook Form setup with enhanced schema
     const {
@@ -313,19 +315,31 @@ const EnhancedWorkoutLogModal = memo(
           if (response.ok) {
             logger.info('Enhanced workout updated successfully')
 
-            // Track workout completion event in PostHog
-            trackEvent('workout_logged', {
+            // Track workout completion event in PostHog (type-safe)
+            trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
               workoutId: workout.id,
-              status: data.status,
-              workoutType: data.actualType || workout.planned_type,
-              category: data.category,
-              distance: data.actualDistance,
-              duration: data.actualDuration,
-              intensity: data.intensity,
-              terrain: data.terrain,
-              elevationGain: data.elevationGain,
-              hasHeartRate: !!(data.avgHeartRate || data.maxHeartRate),
-              hasStravaMatch: !!potentialStravaMatch,
+              status: data.status as 'planned' | 'completed' | 'skipped',
+              workoutType: (data.actualType || workout.planned_type) as
+                | 'easy'
+                | 'tempo'
+                | 'interval'
+                | 'long_run'
+                | 'race_simulation'
+                | 'recovery'
+                | 'speed_work'
+                | undefined,
+              distance: data.actualDistance ?? undefined,
+              duration: data.actualDuration ?? undefined,
+              effort: data.intensity ?? undefined,
+              terrainType: data.terrain as
+                | 'road'
+                | 'trail'
+                | 'track'
+                | 'treadmill'
+                | 'mixed'
+                | undefined,
+              elevationGain: data.elevationGain ?? undefined,
+              userId: user?.id || '',
             })
 
             setFormState(prev => ({ ...prev, loading: false, error: '' }))
@@ -359,6 +373,7 @@ const EnhancedWorkoutLogModal = memo(
         onClose,
         trackEvent,
         potentialStravaMatch,
+        user?.id, // Required for analytics tracking
       ]
     )
 

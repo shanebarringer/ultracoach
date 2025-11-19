@@ -1,11 +1,23 @@
 'use client'
 
-import { useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import posthog from 'posthog-js'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
+import { type AnalyticsEventMap } from '@/lib/analytics/event-types'
 import { sessionAtom, userAtom } from '@/lib/atoms'
+import {
+  type FeatureFlagState,
+  clearFeatureFlagsAtom,
+  featureFlagFamily,
+  featureFlagsErrorAtom,
+  featureFlagsLastLoadedAtom,
+  featureFlagsLoadingAtom,
+  setFeatureFlagsAtom,
+  setFeatureFlagsErrorAtom,
+  setFeatureFlagsLoadingAtom,
+} from '@/lib/atoms/feature-flags'
 
 /**
  * Hook to identify the current user with PostHog
@@ -47,9 +59,10 @@ export function usePostHogIdentify(): void {
 }
 
 /**
- * Hook to track custom events with PostHog
- * Returns a function to capture events
+ * Hook to track custom events with PostHog (basic, untyped version)
+ * For type-safe events, use useTypedPostHogEvent instead
  *
+ * @deprecated Use useTypedPostHogEvent for type safety
  * @example
  * const trackEvent = usePostHogEvent()
  * trackEvent('workout_completed', { workoutType: 'long_run', distance: 20 })
@@ -58,39 +71,138 @@ export function usePostHogEvent(): (
   eventName: string,
   properties?: Record<string, unknown>
 ) => void {
-  return (eventName: string, properties?: Record<string, unknown>) => {
+  return useCallback((eventName: string, properties?: Record<string, unknown>) => {
     if (posthog.has_opted_in_capturing()) {
       posthog.capture(eventName, properties)
     }
-  }
+  }, [])
 }
 
 /**
- * Hook to get feature flag values from PostHog
- * Useful for A/B testing and gradual feature rollouts
- *
- * @param flagKey - The feature flag key
- * @returns The flag value (boolean, string, or undefined if not set)
+ * Hook to track type-safe events with PostHog
+ * Provides compile-time validation and IntelliSense for event names and properties
  *
  * @example
- * const useNewDashboard = usePostHogFeatureFlag('new-dashboard-ui')
- * if (useNewDashboard) {
- *   return <NewDashboard />
- * }
+ * const trackEvent = useTypedPostHogEvent()
+ * trackEvent('workout_logged', {
+ *   workoutId: '123',
+ *   status: 'completed', // Autocomplete works!
+ *   distance: 10
+ * })
+ */
+export function useTypedPostHogEvent() {
+  return useCallback(
+    <K extends keyof AnalyticsEventMap>(eventName: K, properties: AnalyticsEventMap[K]): void => {
+      if (posthog.has_opted_in_capturing()) {
+        posthog.capture(eventName, properties as unknown as Record<string, unknown>)
+      }
+    },
+    []
+  )
+}
+
+// ========================================
+// Jotai-Based Feature Flag Hooks
+// ========================================
+
+/**
+ * Hook to get a feature flag value with loading and error state (Jotai-based)
+ * Uses global Jotai atoms for state management
+ *
+ * @param flagKey - The feature flag key
+ * @returns Object with { value, loading, error, lastLoaded }
+ *
+ * @example
+ * const { value: newDashboard, loading } = useFeatureFlag('new-dashboard')
+ * if (loading) return <Skeleton />
+ * if (newDashboard) return <NewDashboard />
+ * return <OldDashboard />
+ */
+export function useFeatureFlag(flagKey: string): FeatureFlagState {
+  const value = useAtomValue(featureFlagFamily(flagKey))
+  const loading = useAtomValue(featureFlagsLoadingAtom)
+  const error = useAtomValue(featureFlagsErrorAtom)
+  const lastLoaded = useAtomValue(featureFlagsLastLoadedAtom)
+
+  return { value, loading, error, lastLoaded }
+}
+
+/**
+ * Hook to get just the feature flag value (simplified version)
+ * Use this when you don't need loading/error states
+ *
+ * @param flagKey - The feature flag key
+ * @returns The flag value (boolean, string, or undefined)
+ *
+ * @example
+ * const newDashboard = useFeatureFlagValue('new-dashboard')
+ * if (newDashboard) return <NewDashboard />
+ */
+export function useFeatureFlagValue(flagKey: string): boolean | string | undefined {
+  return useAtomValue(featureFlagFamily(flagKey))
+}
+
+/**
+ * Hook to reload feature flags from PostHog
+ * Returns a function that can be called to trigger a reload
+ *
+ * @example
+ * const reloadFlags = useReloadFeatureFlags()
+ * <button onClick={reloadFlags}>Refresh Flags</button>
+ */
+export function useReloadFeatureFlags() {
+  const setLoading = useSetAtom(setFeatureFlagsLoadingAtom)
+  const setFlags = useSetAtom(setFeatureFlagsAtom)
+  const setError = useSetAtom(setFeatureFlagsErrorAtom)
+
+  return useCallback(() => {
+    if (!posthog.has_opted_in_capturing()) {
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // Reload flags from PostHog
+      posthog.reloadFeatureFlags()
+
+      // Wait for flags to load, then update atoms
+      // Note: PostHog doesn't provide a method to enumerate all flags
+      // Flags are loaded on-demand when components request them
+      posthog.onFeatureFlags(() => {
+        // Just mark as loaded - individual flags will be fetched when requested
+        setFlags(new Map())
+      })
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to reload feature flags'))
+    }
+  }, [setLoading, setFlags, setError])
+}
+
+/**
+ * Hook to clear all feature flags (e.g., on sign out)
+ * Returns a function that clears flags and resets state
+ *
+ * @example
+ * const clearFlags = useClearFeatureFlags()
+ * <button onClick={clearFlags}>Sign Out</button>
+ */
+export function useClearFeatureFlags() {
+  const clearFlags = useSetAtom(clearFeatureFlagsAtom)
+
+  return useCallback(() => {
+    clearFlags()
+    if (posthog.has_opted_in_capturing()) {
+      posthog.reset()
+    }
+  }, [clearFlags])
+}
+
+/**
+ * Legacy hook for backward compatibility
+ * @deprecated Use useFeatureFlag or useFeatureFlagValue instead
  */
 export function usePostHogFeatureFlag(flagKey: string): string | boolean | undefined {
-  const session = useAtomValue(sessionAtom)
-
-  useEffect(() => {
-    // Reload feature flags when session changes
-    if (session && posthog.has_opted_in_capturing()) {
-      posthog.reloadFeatureFlags()
-    }
-  }, [session])
-
-  if (!posthog.has_opted_in_capturing()) {
-    return undefined
-  }
-
-  return posthog.getFeatureFlag(flagKey)
+  const { value } = useFeatureFlag(flagKey)
+  return value
 }

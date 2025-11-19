@@ -20,13 +20,15 @@ import { z } from 'zod'
 import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
+  userAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
@@ -75,7 +77,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const trackEvent = usePostHogEvent()
+  const user = useAtomValue(userAtom) // Read-only access
+  const trackEvent = useTypedPostHogEvent()
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -191,13 +194,15 @@ export default function CreateTrainingPlanModal({
 
       logger.info('Training plan created successfully', response.data)
 
-      // Track training plan creation in PostHog
-      trackEvent('training_plan_created', {
-        planType: payload.plan_type,
-        goalType: payload.goal_type,
-        hasRace: !!payload.race_id,
-        hasTemplate: !!payload.template_id,
-        targetRaceDistance: payload.targetRaceDistance,
+      // Track training plan creation in PostHog (type-safe)
+      trackEvent(ANALYTICS_EVENTS.TRAINING_PLAN_CREATED, {
+        planType: payload.plan_type as 'custom' | 'template' | 'ai_generated',
+        goalType: payload.goal_type as 'completion' | 'time' | 'placement' | 'training',
+        duration: undefined, // Duration not captured in form, can be added later
+        raceGoal: payload.race_id ? String(payload.race_id) : undefined,
+        templateId: payload.template_id ? String(payload.template_id) : undefined,
+        userId: user?.id || '',
+        userType: (user?.userType as 'runner' | 'coach') || 'runner',
       })
 
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
