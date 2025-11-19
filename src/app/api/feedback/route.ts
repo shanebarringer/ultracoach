@@ -13,6 +13,7 @@ import {
   generateFeedbackEmailText,
 } from '@/lib/email/feedback-template'
 import { createLogger } from '@/lib/logger'
+import { addRateLimitHeaders, feedbackLimiter } from '@/lib/redis-rate-limiter'
 import { user_feedback } from '@/lib/schema'
 
 const logger = createLogger('api/feedback')
@@ -72,6 +73,20 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Apply rate limiting to prevent feedback spam
+    const rateLimitResult = await feedbackLimiter.check(session.user.id)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          details: `Too many feedback submissions. Please try again in ${Math.ceil(rateLimitResult.retryAfter! / 60)} minutes.`,
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        { status: 429 }
+      )
+      return addRateLimitHeaders(response, rateLimitResult)
     }
 
     // Parse JSON with explicit error handling
@@ -185,7 +200,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       feedback: {
         id: feedback.id,
@@ -194,6 +209,7 @@ export async function POST(request: NextRequest) {
         created_at: feedback.created_at,
       },
     })
+    return addRateLimitHeaders(response, rateLimitResult)
   } catch (error) {
     logger.error('Error submitting feedback:', error)
     return NextResponse.json({ error: 'Failed to submit feedback' }, { status: 500 })

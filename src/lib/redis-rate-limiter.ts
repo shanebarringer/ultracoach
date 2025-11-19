@@ -269,6 +269,20 @@ export const apiLimiter = new RedisRateLimiter({
   keyGenerator: (userId: string) => `api:${userId}`,
 })
 
+// Feedback submission rate limiter (prevent spam)
+export const feedbackLimiter = new RedisRateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 feedback submissions per hour per user
+  keyGenerator: (userId: string) => `feedback:${userId}`,
+})
+
+// Message sending rate limiter (prevent spam)
+export const messageLimiter = new RedisRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 messages per minute per user
+  keyGenerator: (userId: string) => `messages:${userId}`,
+})
+
 /**
  * Utility function to add rate limit headers to response
  */
