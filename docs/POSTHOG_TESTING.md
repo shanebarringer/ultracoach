@@ -128,12 +128,39 @@ echo $NEXT_PUBLIC_POSTHOG_HOST
 
 **Solution 2**: Disable development mode detection temporarily
 
+⚠️ **CRITICAL WARNING**: Temporarily disabling PostHog development-mode detection must **NEVER** be committed or deployed to any branch!
+
+**Safe local-only method (recommended)**:
+
+1. Use an ephemeral environment variable in `.env.local` (which is gitignored)
+2. Add a conspicuous TODO comment with explicit revert instructions
+3. Verify changes are **not present** in any branch destined for CI/CD or production before pushing
+
+**Example safe approach**:
+
 ```typescript
-// In src/providers/posthog.tsx, temporarily comment out:
-// if (process.env.NODE_ENV === 'development') {
-//   ph.opt_out_capturing()
-// }
+// In src/providers/posthog.tsx
+// TODO: REVERT THIS BEFORE COMMIT - Development debugging only!
+// Uncomment line below to re-enable opt-out after debugging
+const shouldOptOut =
+  process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE
+
+if (shouldOptOut) {
+  ph.opt_out_capturing()
+}
 ```
+
+Then in `.env.local` (gitignored):
+
+```bash
+NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE=true
+```
+
+**Before pushing**:
+
+- Run `git diff` to verify NO changes to PostHog opt-out logic
+- Remove the `NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE` env var from `.env.local`
+- Ensure your commit message does NOT mention disabling opt-out
 
 **Solution 3**: Check PostHog project API key
 
@@ -196,15 +223,41 @@ This will log all PostHog activity to console.
 
 **To test locally** (with tracking enabled):
 
-1. Set `NODE_ENV=production` in your `.env.local`
-2. Or temporarily remove the opt-out code:
+⚠️ **SAFER OPT-IN APPROACH** (recommended over changing NODE_ENV or editing code):
+
+Use a public environment variable to gate the opt-out behavior:
+
+1. **Add to `.env.local`** (gitignored, so safe):
+
+   ```bash
+   NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE=true
+   ```
+
+2. **Update `posthog.tsx`** to check for this env var:
 
    ```typescript
-   // Comment out in posthog.tsx:
-   // if (process.env.NODE_ENV === 'development') {
-   //   ph.opt_out_capturing()
-   // }
+   // Safe opt-in toggle - only opts out when NOT explicitly debugging
+   const shouldOptOut =
+     process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE
+
+   if (shouldOptOut) {
+     ph.opt_out_capturing()
+     logger.info('PostHog opted out of capturing in development mode')
+   }
    ```
+
+3. **To disable debugging**: Simply remove `NEXT_PUBLIC_POSTHOG_DEBUG_ENABLE` from `.env.local`
+
+**Alternative approaches** (use with caution):
+
+- **Option 2**: Set `NODE_ENV=production` in `.env.local`
+  - ⚠️ **Warning**: This may affect other development behavior (hot reload, error overlays, etc.)
+  - Only use if you understand the full implications
+
+- **Option 3** (last resort): Comment out opt-out code
+  - ⚠️ **MUST NOT BE COMMITTED** - temporary debugging only
+  - Add explicit `TODO: REVERT` comment
+  - Verify with `git diff` before any commit
 
 ---
 

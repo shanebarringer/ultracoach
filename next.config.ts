@@ -9,6 +9,25 @@ if (process.env.NODE_ENV === 'development') {
   process.setMaxListeners(20)
 }
 
+// Build-time validation for PostHog configuration (production only)
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID) {
+    console.warn(
+      '⚠️  PostHog: NEXT_PUBLIC_POSTHOG_PROJECT_ID is not set - analytics will be disabled'
+    )
+  }
+  if (!process.env.POSTHOG_PERSONAL_API_KEY) {
+    console.warn(
+      '⚠️  PostHog: POSTHOG_PERSONAL_API_KEY is not set - source map upload will be disabled'
+    )
+  }
+  if (!process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+    console.warn(
+      '⚠️  PostHog: NEXT_PUBLIC_POSTHOG_HOST is not set - using default (https://us.i.posthog.com)'
+    )
+  }
+}
+
 // Define minimal webpack plugin interface inline (no external webpack import needed)
 interface WebpackPlugin {
   apply(compiler: any): void
