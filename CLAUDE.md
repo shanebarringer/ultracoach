@@ -218,6 +218,11 @@ supabase db dump --linked      # Dump production data
   - Manual: `pnpm typecheck` (TypeScript validation)
   - Pre-commit: `pnpm typecheck` (same)
 - **DEBUGGING TIP**: If pre-commit fails but manual commands pass, run `pnpm format:check` to verify formatting
+- **PRE-PUSH HOOK REQUIREMENTS**: Dev server must be running on port 3001 for E2E tests
+  - Start dev server: `pnpm dev` (in separate terminal)
+  - Verify server is ready: `curl http://localhost:3001`
+  - Pre-push hook will check for running server and fail early with helpful message if not detected
+  - Critical E2E tests (auth, race-import) require live server for authentication flows
 
 ### Database Philosophy:
 

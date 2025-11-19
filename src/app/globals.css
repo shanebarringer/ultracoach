@@ -1,5 +1,16 @@
 @import 'tailwindcss';
-/* Temporarily disabled - @tailwindcss/forms may not be compatible with v4 */
+/*
+ * @tailwindcss/forms plugin - Disabled pending Tailwind CSS v4 compatibility
+ *
+ * The official @tailwindcss/forms plugin has not yet been updated for Tailwind CSS v4.
+ * This is a known upstream compatibility issue, not related to Turbopack or our build setup.
+ *
+ * Workaround: Custom form styles are already in place throughout the application.
+ * No functional impact - forms render correctly with existing custom styling.
+ *
+ * Track progress: https://github.com/tailwindlabs/tailwindcss-forms/issues
+ * Re-enable when: @tailwindcss/forms releases v4-compatible version
+ */
 /* @plugin @tailwindcss/forms {
   strategy: class;
 } */
