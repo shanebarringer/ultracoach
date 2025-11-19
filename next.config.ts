@@ -63,10 +63,10 @@ const nextConfig: NextConfig = {
 
   // Headers for security
   async headers() {
-    // Conditionally include 'unsafe-eval' only in development (needed for HMR)
+    // Conditionally include 'unsafe-eval' only in development and test (needed for HMR and testing)
     // In production, remove it to strengthen XSS protection
-    const isDevelopment = process.env.NODE_ENV === 'development'
-    const scriptSrc = isDevelopment
+    const isNonProduction = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+    const scriptSrc = isNonProduction
       ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
       : "script-src 'self' 'unsafe-inline'"
 
@@ -98,7 +98,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              scriptSrc, // Conditionally includes 'unsafe-eval' only in development
+              scriptSrc, // Conditionally includes 'unsafe-eval' in dev/test, excluded in production
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
