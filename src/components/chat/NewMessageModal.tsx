@@ -21,7 +21,7 @@ const logger = createLogger('NewMessageModal')
 const searchSchema = z.object({
   searchTerm: z
     .string()
-    .max(100, { message: 'Search term must be less than 100 characters' })
+    .max(100, { message: 'Search term must be at most 100 characters' })
     .optional(),
 })
 

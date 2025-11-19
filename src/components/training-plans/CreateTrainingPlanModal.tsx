@@ -76,6 +76,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
+  const hasRunners = connectedRunners.length > 0
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -169,6 +171,12 @@ export default function CreateTrainingPlanModal({
   }, [isOpen, races, planTemplates, setRaces, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
+    // Short-circuit if no runners connected
+    if (!hasRunners) {
+      logger.warn('Attempted to create training plan without connected runners')
+      return
+    }
+
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
@@ -450,13 +458,24 @@ export default function CreateTrainingPlanModal({
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
-              {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
-            </Button>
+          <ModalFooter className="flex-col items-stretch gap-2">
+            {!hasRunners && (
+              <div className="text-sm text-warning bg-warning/10 px-3 py-2 rounded-md">
+                You must have at least one connected runner before creating a training plan
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="light" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="primary"
+                disabled={!hasRunners || isSubmitting || formState.loading}
+              >
+                {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
+              </Button>
+            </div>
           </ModalFooter>
         </form>
       </ModalContent>

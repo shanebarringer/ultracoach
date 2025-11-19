@@ -58,6 +58,7 @@ next-env.d.ts
 # Package manager lock files
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 # Database files
 *.db
