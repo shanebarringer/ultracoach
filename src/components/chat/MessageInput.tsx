@@ -15,7 +15,6 @@ interface MessageInputProps {
   disabled?: boolean
   onStartTyping?: () => void
   onStopTyping?: () => void
-  recipientId: string
 }
 
 export default function MessageInput({
@@ -23,7 +22,6 @@ export default function MessageInput({
   disabled = false,
   onStartTyping,
   onStopTyping,
-  recipientId,
 }: MessageInputProps) {
   const [messageInput, setMessageInput] = useAtom(messageInputAtom)
 
@@ -152,7 +150,6 @@ export default function MessageInput({
         isOpen={messageInput.showWorkoutSelector}
         onClose={() => setMessageInput(prev => ({ ...prev, showWorkoutSelector: false }))}
         onSelectWorkout={handleSelectWorkout}
-        recipientId={recipientId}
       />
     </>
   )

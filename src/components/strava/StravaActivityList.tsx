@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('StravaActivityList')
 
@@ -220,8 +221,8 @@ export default function StravaActivityList() {
                     )}
                   </div>
                 </div>
-                <div className="text-small text-default-500" suppressHydrationWarning>
-                  {new Date(activity.start_date_local).toLocaleDateString()}
+                <div className="text-small text-default-500">
+                  {formatDateConsistent(activity.start_date_local)}
                 </div>
               </div>
             </CardHeader>

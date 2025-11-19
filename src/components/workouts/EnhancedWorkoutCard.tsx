@@ -18,10 +18,24 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
+import dynamic from 'next/dynamic'
+
 import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
+
+// Import EnhancedWorkoutDate as client-only to prevent hydration mismatches
+// with relative date calculations ("Today", "Tomorrow", etc.)
+const EnhancedWorkoutDate = dynamic(() => import('./EnhancedWorkoutDate'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center gap-2 h-10">
+      <Calendar className="h-4 w-4 text-foreground-400" />
+      <div className="h-8 w-32 bg-default-100 animate-pulse rounded" />
+    </div>
+  ),
+})
 
 const logger = createLogger('EnhancedWorkoutCard')
 
@@ -84,51 +98,6 @@ const EnhancedWorkoutStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom 
   )
 })
 EnhancedWorkoutStatus.displayName = 'EnhancedWorkoutStatus'
-
-// Enhanced date with relative time
-const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
-  const [workout] = useAtom(workoutAtom)
-  if (!workout) return null
-
-  const workoutDate = new Date(workout.date || '')
-  const today = new Date()
-  const diffInDays = Math.ceil((workoutDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-  const getDateLabel = () => {
-    if (diffInDays === 0) return 'Today'
-    if (diffInDays === 1) return 'Tomorrow'
-    if (diffInDays === -1) return 'Yesterday'
-    if (diffInDays > 0) return `In ${diffInDays} days`
-    if (diffInDays < 0) return `${Math.abs(diffInDays)} days ago`
-    return workoutDate.toLocaleDateString()
-  }
-
-  const getDateColor = () => {
-    if (diffInDays === 0) return 'text-primary'
-    if (diffInDays === 1) return 'text-secondary'
-    if (diffInDays < -7) return 'text-foreground-400'
-    return 'text-foreground-600'
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <Calendar className="h-4 w-4 text-foreground-400" />
-      <div className="flex flex-col">
-        <span className={`text-sm font-medium ${getDateColor()}`} suppressHydrationWarning>
-          {getDateLabel()}
-        </span>
-        <span className="text-xs text-foreground-400" suppressHydrationWarning>
-          {workoutDate.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </span>
-      </div>
-    </div>
-  )
-})
-EnhancedWorkoutDate.displayName = 'EnhancedWorkoutDate'
 
 // Enhanced metrics row
 const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {

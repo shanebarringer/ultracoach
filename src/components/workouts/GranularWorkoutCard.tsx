@@ -8,6 +8,7 @@ import { memo } from 'react'
 
 import { workoutAtomFamily } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 type WorkoutAtom = import('jotai').Atom<Workout | null>
 
@@ -69,7 +70,7 @@ const WorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
       suppressHydrationWarning
     >
       <Calendar className="h-4 w-4 mr-1" />
-      {new Date(workout.date || '').toLocaleDateString()}
+      {formatDateConsistent(workout.date)}
     </div>
   )
 })

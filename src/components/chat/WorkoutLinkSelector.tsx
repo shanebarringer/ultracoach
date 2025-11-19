@@ -17,17 +17,17 @@ import {
 import { useAtom } from 'jotai'
 import { Calendar, Link2, MapPin, Target } from 'lucide-react'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { useWorkouts } from '@/hooks/useWorkouts'
 import { workoutLinkSelectorSearchAtom } from '@/lib/atoms/index'
 import { Workout } from '@/lib/supabase'
+import { compareDatesDesc, formatDateConsistent } from '@/lib/utils/date'
 
 interface WorkoutLinkSelectorProps {
   isOpen: boolean
   onClose: () => void
   onSelectWorkout: (workout: Workout, linkType: string) => void
-  recipientId: string
 }
 
 const LINK_TYPES = [
@@ -48,22 +48,19 @@ export default function WorkoutLinkSelector({
   const [linkType, setLinkType] = useState('reference')
   const [searchTerm, setSearchTerm] = useAtom(workoutLinkSelectorSearchAtom)
 
-  // Filter workouts for the current conversation context
-  const filteredWorkouts = workouts.filter((workout: Workout) => {
-    const matchesSearch =
-      searchTerm === '' ||
-      workout.planned_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      workout.date?.includes(searchTerm)
-    return matchesSearch
-  })
-
-  // Group workouts by date (recent first)
-  const groupedWorkouts = filteredWorkouts
-    .sort(
-      (a: Workout, b: Workout) =>
-        new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
-    )
-    .slice(0, 20) // Limit to recent 20 workouts
+  // Filter and sort workouts with memoization to prevent unnecessary re-computation
+  const groupedWorkouts = useMemo(() => {
+    return workouts
+      .filter((workout: Workout) => {
+        const matchesSearch =
+          searchTerm === '' ||
+          workout.planned_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          workout.date?.includes(searchTerm)
+        return matchesSearch
+      })
+      .sort((a: Workout, b: Workout) => compareDatesDesc(a.date || '', b.date || ''))
+      .slice(0, 20) // Limit to recent 20 workouts
+  }, [workouts, searchTerm])
 
   const getWorkoutStatusColor = (status: string) => {
     switch (status) {
@@ -165,8 +162,8 @@ export default function WorkoutLinkSelector({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <Calendar className="h-4 w-4 text-default-400" />
-                          <span className="text-small font-medium" suppressHydrationWarning>
-                            {new Date(workout.date || '').toLocaleDateString()}
+                          <span className="text-small font-medium">
+                            {formatDateConsistent(workout.date)}
                           </span>
                           <Chip
                             size="sm"
