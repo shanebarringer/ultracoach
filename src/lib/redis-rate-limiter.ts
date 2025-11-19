@@ -35,7 +35,7 @@ interface RateLimitResult {
   allowed: boolean
   remaining: number
   resetTime: number
-  retryAfter?: number
+  retryAfter: number // Always present - 0 when allowed, positive when rate limited
 }
 
 /**
@@ -47,12 +47,16 @@ export class RedisRateLimiter {
   private max: number
   private keyGenerator: (identifier: string) => string
   private memoryStore: Map<string, { count: number; resetTime: number }>
+  private lastCleanup: number
+  private cleanupInterval: number
 
   constructor(options: RateLimitOptions) {
     this.windowMs = options.windowMs
     this.max = options.max
     this.keyGenerator = options.keyGenerator || ((id: string) => id)
     this.memoryStore = new Map() // Fallback for when Redis is unavailable
+    this.lastCleanup = Date.now()
+    this.cleanupInterval = Math.max(60000, this.windowMs) // Cleanup at most once per minute or window duration
   }
 
   /**
@@ -87,8 +91,12 @@ export class RedisRateLimiter {
       }
 
       // Get TTL to calculate reset time
+      // Note: TTL can return -2 (key doesn't exist) or -1 (no expiration)
       const ttl = await redis!.ttl(key)
-      const resetTime = now + ttl * 1000
+
+      // Defensive handling: If TTL is invalid, use full window duration
+      const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)
+      const resetTime = now + safeTTL * 1000
 
       if (count > this.max) {
         const retryAfter = Math.ceil((resetTime - now) / 1000)
@@ -119,6 +127,7 @@ export class RedisRateLimiter {
         allowed: true,
         remaining: Math.max(0, this.max - count),
         resetTime,
+        retryAfter: 0, // No retry needed when request is allowed
       }
     } catch (error) {
       logger.error('Redis rate limiting failed, falling back to memory:', error)
@@ -132,8 +141,12 @@ export class RedisRateLimiter {
    * In-memory rate limiting (fallback, single-instance only)
    */
   private checkMemory(key: string, now: number, windowStart: number): RateLimitResult {
-    // Clean up expired entries
-    this.cleanupMemory(windowStart)
+    // Periodic cleanup to avoid O(n) overhead on every request
+    // Only cleanup if enough time has passed since last cleanup
+    if (now - this.lastCleanup > this.cleanupInterval) {
+      this.cleanupMemory(windowStart)
+      this.lastCleanup = now
+    }
 
     // Get or create rate limit entry
     let entry = this.memoryStore.get(key)
@@ -178,6 +191,7 @@ export class RedisRateLimiter {
       allowed: true,
       remaining: this.max - entry.count,
       resetTime: entry.resetTime,
+      retryAfter: 0, // No retry needed when request is allowed
     }
   }
 
@@ -285,23 +299,22 @@ export const messageLimiter = new RedisRateLimiter({
 
 /**
  * Utility function to add rate limit headers to response
+ * Mutates the response headers directly to avoid stream reusability issues
  */
-export function addRateLimitHeaders(response: Response, result: RateLimitResult): Response {
-  const headers = new Headers(response.headers)
+export function addRateLimitHeaders<T extends Response>(response: T, result: RateLimitResult): T {
+  // Calculate the limit value (total allowed requests in window)
+  const limit = result.remaining + (result.allowed ? 1 : 0)
 
-  headers.set('X-RateLimit-Limit', String(result.remaining + (result.allowed ? 1 : 0)))
-  headers.set('X-RateLimit-Remaining', String(result.remaining))
-  headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetTime / 1000)))
+  // Mutate headers directly on the NextResponse object
+  response.headers.set('X-RateLimit-Limit', String(limit))
+  response.headers.set('X-RateLimit-Remaining', String(result.remaining))
+  response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetTime / 1000)))
 
-  if (result.retryAfter) {
-    headers.set('Retry-After', String(result.retryAfter))
+  if (result.retryAfter > 0) {
+    response.headers.set('Retry-After', String(result.retryAfter))
   }
 
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  })
+  return response
 }
 
 /**

@@ -78,11 +78,12 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting to prevent feedback spam
     const rateLimitResult = await feedbackLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
+      const retryAfterMinutes = Math.ceil(rateLimitResult.retryAfter / 60)
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many feedback submissions. Please try again in ${Math.ceil(rateLimitResult.retryAfter! / 60)} minutes.`,
-          retryAfter: rateLimitResult.retryAfter,
+          details: `Too many feedback submissions. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for consistency
         },
         { status: 429 }
       )

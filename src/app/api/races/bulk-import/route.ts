@@ -67,11 +67,12 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting (stricter for bulk operations)
     const rateLimitResult = await raceBulkImportLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
+      const retryAfterMinutes = Math.ceil(rateLimitResult.retryAfter / 60)
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many bulk imports. Please try again in ${Math.ceil(rateLimitResult.retryAfter! / 60)} minutes.`,
-          retryAfter: rateLimitResult.retryAfter,
+          details: `Too many bulk imports. Please try again in ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for consistency
         },
         { status: 429 }
       )
