@@ -1,5 +1,16 @@
 echo "🚀 Running pre-push checks..."
 
+# Check if dev server is running (required for E2E tests)
+if ! curl -s http://localhost:3001 > /dev/null 2>&1; then
+  echo "❌ Error: Dev server not running on port 3001"
+  echo "💡 Start dev server in another terminal: pnpm dev"
+  echo "💡 Verify dev server is ready: curl http://localhost:3001"
+  echo "💡 Then retry your push"
+  exit 1
+fi
+
+echo "✅ Dev server is running on port 3001"
+
 # Check if full test suite is requested via environment variable
 if [ "$PRE_PUSH_FULL_TESTS" = "true" ]; then
   echo "🧪 Running full E2E test suite..."
