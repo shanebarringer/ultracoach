@@ -104,6 +104,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
               "font-src 'self' data:",
               "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co",
+              "object-src 'none'",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

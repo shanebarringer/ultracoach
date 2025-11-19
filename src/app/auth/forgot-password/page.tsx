@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordData) => {
     setIsLoading(true)
-    logger.info('Password reset requested for:', { email: data.email })
+    logger.info('Password reset requested') // PII removed for compliance
 
     try {
       const { error } = await authClient.forgetPassword({

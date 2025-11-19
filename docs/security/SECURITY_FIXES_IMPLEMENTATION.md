@@ -222,13 +222,9 @@ testRLSPolicies()
 **Time:** 6 hours
 **Difficulty:** Medium
 
-### Step 1: Install Encryption Library
+### Step 1: Create Encryption Utilities
 
-```bash
-pnpm add @aws-crypto/client-node
-```
-
-### Step 2: Create Encryption Utilities
+**Note:** This implementation uses Node.js's built-in `crypto` module. No additional dependencies are required.
 
 Create `src/lib/encryption.ts`:
 
@@ -244,11 +240,11 @@ if (!ENCRYPTION_KEY) {
   throw new Error('ENCRYPTION_KEY environment variable is required')
 }
 
-// Validate key is exactly 32 bytes (256 bits)
-const keyBuffer = Buffer.from(ENCRYPTION_KEY, 'utf-8')
+// Validate key decodes to exactly 32 bytes (256 bits)
+const keyBuffer = Buffer.from(ENCRYPTION_KEY, 'base64')
 if (keyBuffer.length !== 32) {
   throw new Error(
-    `ENCRYPTION_KEY must be exactly 32 bytes (currently ${keyBuffer.length} bytes). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+    `ENCRYPTION_KEY must decode to exactly 32 bytes (currently ${keyBuffer.length} bytes). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
   )
 }
 
@@ -680,9 +676,9 @@ Before deploying to production:
 
 ## Support & Resources
 
-- **RLS Documentation:** https://supabase.com/docs/guides/auth/row-level-security
-- **Better Auth Docs:** https://better-auth.com/docs
-- **CSP Generator:** https://csp-evaluator.withgoogle.com/
-- **Resend Docs:** https://resend.com/docs
+- **RLS Documentation:** [https://supabase.com/docs/guides/auth/row-level-security](https://supabase.com/docs/guides/auth/row-level-security)
+- **Better Auth Docs:** [https://better-auth.com/docs](https://better-auth.com/docs)
+- **CSP Generator:** [https://csp-evaluator.withgoogle.com/](https://csp-evaluator.withgoogle.com/)
+- **Resend Docs:** [https://resend.com/docs](https://resend.com/docs)
 
 For questions or issues, refer to `SECURITY_AUDIT_REPORT.md` for detailed analysis.

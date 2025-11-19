@@ -125,12 +125,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate GPX data structure if provided
-    if (importData.source === 'gpx' && importData.gpx_data) {
+    // Validate GPX data structure when source is 'gpx'
+    if (importData.source === 'gpx') {
+      // Ensure gpx_data exists
+      if (!importData.gpx_data) {
+        logger.warn('GPX import missing gpx_data', { userId: session.user.id })
+        return NextResponse.json(
+          { error: 'GPX data is required when source is "gpx"' },
+          { status: 400 }
+        )
+      }
+
       // Validate tracks array exists and is valid
       if (!Array.isArray(importData.gpx_data.tracks)) {
+        logger.warn('GPX import has invalid tracks structure', { userId: session.user.id })
         return NextResponse.json(
           { error: 'Invalid GPX data - tracks must be an array' },
+          { status: 400 }
+        )
+      }
+
+      // Ensure at least one track contains points
+      const hasValidTrack = importData.gpx_data.tracks.some(
+        track => track.points && Array.isArray(track.points) && track.points.length > 0
+      )
+      if (!hasValidTrack) {
+        logger.warn('GPX import has no valid tracks with points', { userId: session.user.id })
+        return NextResponse.json(
+          { error: 'GPX data must contain at least one track with points' },
           { status: 400 }
         )
       }
@@ -150,6 +172,17 @@ export async function POST(request: NextRequest) {
         }
         return sum + track.points.length
       }, 0)
+
+      // Log GPX data metrics for audit purposes
+      const trackCounts = importData.gpx_data.tracks.map(track => track.points?.length || 0)
+      const waypointCount = importData.gpx_data.waypoints?.length || 0
+      logger.info('GPX validation passed', {
+        userId: session.user.id,
+        totalPoints,
+        trackCount: importData.gpx_data.tracks.length,
+        trackCounts,
+        waypointCount,
+      })
 
       // Limit to 50,000 points to prevent memory exhaustion
       if (totalPoints > 50000) {
