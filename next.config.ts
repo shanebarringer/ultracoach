@@ -44,8 +44,10 @@ const nextConfig: NextConfig = {
     return config
   },
   // Turbopack configuration (Next.js 15.2+)
-  // Only enable code inspector in development mode (not test) when Turbopack is used
-  ...(process.env.NODE_ENV === 'development' && codeInspectorFactory
+  // Only enable code inspector in development mode (not test or production) when Turbopack is used
+  ...(process.env.NODE_ENV !== 'test' &&
+  process.env.NODE_ENV !== 'production' &&
+  codeInspectorFactory
     ? {
         turbopack: {
           rules: codeInspectorFactory({ bundler: 'turbopack' }),
