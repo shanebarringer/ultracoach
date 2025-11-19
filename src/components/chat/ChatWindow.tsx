@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 
 import { ChatWindowSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useSession } from '@/hooks/useBetterSession'
+import { useCommunicationSettings } from '@/hooks/useCommunicationSettings'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingStatus } from '@/hooks/useTypingStatus'
 import { useWorkouts } from '@/hooks/useWorkouts'
@@ -50,6 +51,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const { messages, loading, sendMessage } = useMessages(recipientId)
   const { isRecipientTyping, startTyping, stopTyping } = useTypingStatus(recipientId)
   const { workouts } = useWorkouts()
+  const { isInQuietHours } = useCommunicationSettings()
 
   // Prevent race conditions in modal and async operations
   const operationInProgress = useRef(false)
@@ -99,6 +101,17 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       // Enhanced race condition protection
       if (!session?.user?.id || chatUiState.sending || operationInProgress.current) return
 
+      // Check if sender is in quiet hours (courtesy notification)
+      const quietHoursResult = isInQuietHours()
+      if (quietHoursResult.inQuietHours) {
+        logger.info('Sender is in quiet hours but choosing to send message', quietHoursResult)
+        // Note: We still allow sending, just inform the user
+        toast.info(
+          'Quiet Hours Active',
+          'Your quiet hours are currently active. This message will be sent, but you may not receive immediate replies.'
+        )
+      }
+
       operationInProgress.current = true
       setChatUiState(prev => ({ ...prev, sending: true }))
 
@@ -143,6 +156,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       sendMessage,
       setChatUiState,
       setOfflineQueue,
+      isInQuietHours,
     ]
   )
 
