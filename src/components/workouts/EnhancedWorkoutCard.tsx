@@ -18,6 +18,7 @@ import {
 
 import { memo, useCallback, useMemo } from 'react'
 
+import { useUnitConverter } from '@/hooks/useUnitConverter'
 import { stravaStateAtom, workoutAtomFamily } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -128,23 +129,27 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
 })
 EnhancedWorkoutDate.displayName = 'EnhancedWorkoutDate'
 
-// Enhanced metrics row
+// Enhanced metrics row with unit conversion
 const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
   const [workout] = useAtom(workoutAtom)
+  const converter = useUnitConverter()
+
   if (!workout) return null
 
   const distance = workout.actual_distance || workout.planned_distance
   const duration = workout.actual_duration || workout.planned_duration
   const intensity = workout.intensity
 
+  // Convert distance to user's preferred unit
+  const distanceDisplay = distance ? converter.distance(Number(distance), 'miles') : null
+
   return (
     <div className="grid grid-cols-3 gap-3">
-      {distance && (
+      {distanceDisplay && (
         <div className="flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-primary" />
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">{distance}</span>
-            <span className="text-xs text-foreground-500">miles</span>
+            <span className="text-sm font-semibold text-foreground">{distanceDisplay}</span>
           </div>
         </div>
       )}
@@ -153,8 +158,7 @@ const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
         <div className="flex items-center gap-1.5">
           <Clock className="h-4 w-4 text-secondary" />
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">{duration}</span>
-            <span className="text-xs text-foreground-500">min</span>
+            <span className="text-sm font-semibold text-foreground">{duration} min</span>
           </div>
         </div>
       )}
