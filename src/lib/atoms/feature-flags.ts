@@ -51,6 +51,7 @@ export const featureFlagsLastLoadedAtom = atom<Date | null>(null)
 /**
  * Atom family for accessing individual feature flags
  * Provides granular subscriptions - components only re-render when their specific flag changes
+ * Implements on-demand flag fetching with caching
  *
  * Usage:
  * ```typescript
@@ -60,7 +61,35 @@ export const featureFlagsLastLoadedAtom = atom<Date | null>(null)
 export const featureFlagFamily = atomFamily((flagKey: string) =>
   atom(get => {
     const flags = get(featureFlagsAtom)
-    return flags.get(flagKey)
+    const cachedValue = flags.get(flagKey)
+
+    // Return cached value if available
+    if (cachedValue !== undefined) {
+      return cachedValue
+    }
+
+    // On-demand flag fetching from PostHog (only on client-side)
+    if (typeof window !== 'undefined') {
+      try {
+        // Use window.posthog if available (initialized by provider)
+        const posthog = (
+          window as typeof window & { posthog?: typeof import('posthog-js').default }
+        ).posthog
+
+        if (posthog && posthog.has_opted_in_capturing()) {
+          const value = posthog.getFeatureFlag(flagKey)
+
+          // Note: We can't call set() in a read function, but PostHog will cache this internally
+          // The provider's onFeatureFlags callback should populate the atom when flags change
+          return value
+        }
+      } catch (error) {
+        // Silently fail - feature flags are optional enhancements
+        console.warn(`Failed to fetch feature flag "${flagKey}":`, error)
+      }
+    }
+
+    return undefined
   })
 )
 

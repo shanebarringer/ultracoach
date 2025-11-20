@@ -114,8 +114,9 @@ pnpm dev
 
 **Check the browser console:**
 
-- You should see a warning: "PostHog API key not found. Analytics disabled." (because it's disabled in development)
-- This is expected - PostHog is configured to opt-out in development mode
+- **If API keys are not configured**: You'll see "PostHog API key not found. Analytics disabled."
+- **If API keys are configured**: You'll see "PostHog initialized successfully" (with capturing opted-out in development)
+- Both behaviors are expected - PostHog automatically opts-out in development mode even when keys are present
 
 **To test in development:**
 
@@ -135,19 +136,26 @@ pnpm dev
 
 ## How to Use PostHog in Your Code
 
-### Track Custom Events
+### Track Custom Events (Type-Safe)
 
 ```typescript
-import { usePostHogEvent } from '@/hooks/usePostHogIdentify'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
 function MyComponent() {
-  const trackEvent = usePostHogEvent()
+  const trackEvent = useTypedPostHogEvent()
 
   const handleWorkoutComplete = () => {
-    trackEvent('workout_completed', {
+    // Type-safe event tracking with autocomplete support
+    trackEvent(ANALYTICS_EVENTS.WORKOUT_COMPLETED, {
+      workoutId: '123',
       workoutType: 'long_run',
       distance: 20,
-      duration: 180 // minutes
+      duration: 180, // minutes
+      pace: 9, // min/mile
+      elevationGain: 500,
+      effortLevel: 7,
+      userId: user.id,
     })
   }
 

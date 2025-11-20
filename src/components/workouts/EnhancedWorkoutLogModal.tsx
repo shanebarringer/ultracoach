@@ -309,6 +309,7 @@ const EnhancedWorkoutLogModal = memo(
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'same-origin',
             body: JSON.stringify(payload),
           })
 
@@ -372,7 +373,6 @@ const EnhancedWorkoutLogModal = memo(
         onSuccess,
         onClose,
         trackEvent,
-        potentialStravaMatch,
         user?.id, // Required for analytics tracking
       ]
     )

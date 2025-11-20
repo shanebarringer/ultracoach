@@ -194,16 +194,40 @@ export default function CreateTrainingPlanModal({
 
       logger.info('Training plan created successfully', response.data)
 
-      // Track training plan creation in PostHog (type-safe)
-      trackEvent(ANALYTICS_EVENTS.TRAINING_PLAN_CREATED, {
-        planType: payload.plan_type as 'custom' | 'template' | 'ai_generated',
-        goalType: payload.goal_type as 'completion' | 'time' | 'placement' | 'training',
-        duration: undefined, // Duration not captured in form, can be added later
-        raceGoal: payload.race_id ? String(payload.race_id) : undefined,
-        templateId: payload.template_id ? String(payload.template_id) : undefined,
-        userId: user?.id || '',
-        userType: (user?.userType as 'runner' | 'coach') || 'runner',
-      })
+      // Track training plan creation in PostHog (type-safe) - only if user is authenticated
+      if (user?.id && user?.userType) {
+        // Validate plan_type and goal_type against allowed values
+        const validPlanTypes: Array<'custom' | 'template' | 'ai_generated'> = [
+          'custom',
+          'template',
+          'ai_generated',
+        ]
+        const validGoalTypes: Array<'completion' | 'time' | 'placement' | 'training'> = [
+          'completion',
+          'time',
+          'placement',
+          'training',
+        ]
+
+        const isPlanTypeValid = (type: string | null): type is (typeof validPlanTypes)[number] =>
+          type !== null && validPlanTypes.includes(type as (typeof validPlanTypes)[number])
+        const isGoalTypeValid = (type: string | null): type is (typeof validGoalTypes)[number] =>
+          type !== null && validGoalTypes.includes(type as (typeof validGoalTypes)[number])
+
+        const planType = isPlanTypeValid(payload.plan_type) ? payload.plan_type : 'custom'
+        const goalType = isGoalTypeValid(payload.goal_type) ? payload.goal_type : 'completion'
+
+        trackEvent(ANALYTICS_EVENTS.TRAINING_PLAN_CREATED, {
+          planType,
+          goalType,
+          duration: undefined, // Duration not captured in form, can be added later
+          raceGoal: payload.race_id ? String(payload.race_id) : undefined,
+          templateId: payload.template_id ? String(payload.template_id) : undefined,
+          userId: user.id,
+          userType:
+            user.userType === 'coach' || user.userType === 'runner' ? user.userType : 'runner',
+        })
+      }
 
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form

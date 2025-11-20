@@ -75,11 +75,13 @@ export default function StravaConnectionCard() {
     try {
       logger.info('Redirecting to Strava authorization...')
 
-      // Track Strava connection attempt (type-safe)
-      trackEvent(ANALYTICS_EVENTS.STRAVA_CONNECT_INITIATED, {
-        source: 'connection_card',
-        userId: user?.id || '',
-      })
+      // Track Strava connection attempt (type-safe) - only if user is authenticated
+      if (user?.id) {
+        trackEvent(ANALYTICS_EVENTS.STRAVA_CONNECT_INITIATED, {
+          source: 'connection_card',
+          userId: user.id,
+        })
+      }
 
       const currentUrl = window.location.pathname
       window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`

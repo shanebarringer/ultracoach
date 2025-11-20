@@ -35,6 +35,7 @@ export type PlanType = 'custom' | 'template' | 'ai_generated'
 export type GoalType = 'completion' | 'time' | 'placement' | 'training'
 export type RelationshipStatus = 'pending' | 'active' | 'inactive'
 export type SyncStatus = 'success' | 'partial' | 'failed'
+export type StravaSource = 'connection_card' | 'dashboard' | 'settings' | 'workout_page'
 
 // ========================================
 // Training Plan Events
@@ -73,6 +74,26 @@ export interface TrainingPlanCompletedEvent {
   planId: string
   completionDate: string // ISO date string
   completionRate: number // Percentage of workouts completed
+  userId: string
+}
+
+export interface TrainingPlanAbandonedEvent {
+  planId: string
+  abandonedDate: string // ISO date string
+  completionRate: number // Percentage of workouts completed before abandoning
+  reason?: string
+  userId: string
+}
+
+export interface TrainingPlanSharedEvent {
+  planId: string
+  sharedWith: string // User ID or email
+  userId: string
+}
+
+export interface TrainingPlanTemplateUsedEvent {
+  templateId: string
+  templateName: string
   userId: string
 }
 
@@ -121,6 +142,34 @@ export interface WorkoutRescheduledEvent {
   userId: string
 }
 
+export interface WorkoutCreatedEvent {
+  workoutId: string
+  workoutType: WorkoutType
+  plannedDate: string // ISO date string
+  distance?: number
+  duration?: number
+  userId: string
+}
+
+export interface WorkoutUpdatedEvent {
+  workoutId: string
+  workoutType?: WorkoutType
+  changes: string[] // List of changed fields
+  userId: string
+}
+
+export interface WorkoutDeletedEvent {
+  workoutId: string
+  workoutType?: WorkoutType
+  userId: string
+}
+
+export interface WorkoutNotesAddedEvent {
+  workoutId: string
+  noteLength: number
+  userId: string
+}
+
 // ========================================
 // Race Events
 // ========================================
@@ -161,24 +210,54 @@ export interface RaceGoalSetEvent {
   userId: string
 }
 
+export interface RaceUpdatedEvent {
+  raceId: string
+  raceName?: string
+  changes: string[] // List of changed fields
+  userId: string
+}
+
+export interface RaceDeletedEvent {
+  raceId: string
+  raceName: string
+  userId: string
+}
+
+export interface RaceRegisteredEvent {
+  raceId: string
+  raceName: string
+  registrationDate: string // ISO date string
+  registrationFee?: number
+  userId: string
+}
+
+export interface RaceCompletedEvent {
+  raceId: string
+  raceName: string
+  completionTime?: number // Time in minutes
+  placement?: number
+  finishTime?: string
+  userId: string
+}
+
 // ========================================
 // Strava Integration Events
 // ========================================
 
 export interface StravaConnectInitiatedEvent {
-  source: 'connection_card' | 'dashboard' | 'settings' | 'workout_page'
+  source: StravaSource
   userId: string
 }
 
 export interface StravaConnectedEvent {
   stravaUserId: string
   athleteName: string
-  source: string
+  source: StravaSource
   userId: string
 }
 
 export interface StravaDisconnectedEvent {
-  source: 'connection_card' | 'dashboard' | 'settings'
+  source: StravaSource
   userId?: string
 }
 
@@ -215,6 +294,13 @@ export interface StravaWorkoutMatchedEvent {
   userId: string
 }
 
+export interface StravaSyncFailedEvent {
+  syncType: 'full' | 'incremental' | 'selective'
+  errorMessage: string
+  errorCode?: string
+  userId: string
+}
+
 // ========================================
 // Coach-Runner Relationship Events
 // ========================================
@@ -241,6 +327,26 @@ export interface RelationshipEndedEvent {
   runnerId: string
 }
 
+export interface RelationshipRejectedEvent {
+  relationshipId: string
+  rejectedBy: UserType
+  reason?: string
+  coachId: string
+  runnerId: string
+}
+
+export interface CoachInvitationSentEvent {
+  invitationId: string
+  coachId: string
+  runnerEmail: string
+}
+
+export interface RunnerInvitationAcceptedEvent {
+  invitationId: string
+  runnerId: string
+  coachId: string
+}
+
 // ========================================
 // Communication Events
 // ========================================
@@ -259,6 +365,33 @@ export interface ConversationStartedEvent {
   participants: string[] // User IDs
   initiatedBy: string
   initiatorType: UserType
+}
+
+export interface MessageReceivedEvent {
+  conversationId: string
+  messageId: string
+  messageLength: number
+  senderId: string
+  receiverId: string
+}
+
+export interface NotificationSentEvent {
+  notificationId: string
+  notificationType: string
+  recipientId: string
+  channel: 'in_app' | 'email' | 'push'
+}
+
+export interface NotificationReadEvent {
+  notificationId: string
+  userId: string
+  timeToRead?: number // Time in seconds from sent to read
+}
+
+export interface NotificationClickedEvent {
+  notificationId: string
+  userId: string
+  targetUrl?: string
 }
 
 // ========================================
@@ -285,6 +418,23 @@ export interface UserProfileUpdatedEvent {
   userType: UserType
 }
 
+export interface UserSignedOutEvent {
+  userId: string
+  sessionDuration: number // Session duration in minutes
+  userType: UserType
+}
+
+export interface UserSettingsChangedEvent {
+  userId: string
+  settingsCategory: string
+  changedSettings: string[]
+}
+
+export interface UserPasswordResetEvent {
+  userId: string
+  resetMethod: 'email' | 'sms'
+}
+
 // ========================================
 // Navigation & Engagement Events
 // ========================================
@@ -304,6 +454,24 @@ export interface DashboardViewedEvent {
 export interface WeeklyPlannerDayExpandedEvent {
   dayIndex: number // 0-6 (Sunday-Saturday)
   workoutCount: number
+  userId: string
+}
+
+export interface CalendarViewedEvent {
+  month: number // 1-12
+  year: number
+  userId: string
+}
+
+export interface WeeklyPlannerViewedEvent {
+  weekStartDate: string // ISO date string
+  workoutCount: number
+  userId: string
+}
+
+export interface TrainingLogViewedEvent {
+  filterType?: string
+  dateRange?: string
   userId: string
 }
 
@@ -327,6 +495,20 @@ export interface APIErrorEvent {
   userId?: string
 }
 
+export interface ValidationErrorEvent {
+  formName: string
+  fieldName: string
+  errorMessage: string
+  userId?: string
+}
+
+export interface NetworkErrorEvent {
+  endpoint?: string
+  errorType: string
+  errorMessage: string
+  userId?: string
+}
+
 // ========================================
 // Feature Usage Events
 // ========================================
@@ -340,6 +522,28 @@ export interface FeatureFlagEvaluatedEvent {
 export interface ExportInitiatedEvent {
   exportType: 'csv' | 'pdf' | 'gpx' | 'tcx'
   dataType: 'workouts' | 'training_plan' | 'race_data'
+  userId: string
+}
+
+export interface ExportCompletedEvent {
+  exportType: 'csv' | 'pdf' | 'gpx' | 'tcx'
+  dataType: 'workouts' | 'training_plan' | 'race_data'
+  recordCount: number
+  fileSizeKB?: number
+  userId: string
+}
+
+export interface ImportInitiatedEvent {
+  importType: 'csv' | 'gpx' | 'tcx' | 'json'
+  dataType: 'workouts' | 'races' | 'training_plan'
+  userId: string
+}
+
+export interface ImportCompletedEvent {
+  importType: 'csv' | 'gpx' | 'tcx' | 'json'
+  dataType: 'workouts' | 'races' | 'training_plan'
+  successCount: number
+  errorCount: number
   userId: string
 }
 
@@ -372,15 +576,26 @@ export interface AnalyticsEventMap {
   [ANALYTICS_EVENTS.TRAINING_PLAN_DELETED]: TrainingPlanDeletedEvent
   [ANALYTICS_EVENTS.TRAINING_PLAN_STARTED]: TrainingPlanStartedEvent
   [ANALYTICS_EVENTS.TRAINING_PLAN_COMPLETED]: TrainingPlanCompletedEvent
+  [ANALYTICS_EVENTS.TRAINING_PLAN_ABANDONED]: TrainingPlanAbandonedEvent
+  [ANALYTICS_EVENTS.TRAINING_PLAN_SHARED]: TrainingPlanSharedEvent
+  [ANALYTICS_EVENTS.TRAINING_PLAN_TEMPLATE_USED]: TrainingPlanTemplateUsedEvent
 
   // Workouts
+  [ANALYTICS_EVENTS.WORKOUT_CREATED]: WorkoutCreatedEvent
+  [ANALYTICS_EVENTS.WORKOUT_UPDATED]: WorkoutUpdatedEvent
+  [ANALYTICS_EVENTS.WORKOUT_DELETED]: WorkoutDeletedEvent
   [ANALYTICS_EVENTS.WORKOUT_LOGGED]: WorkoutLoggedEvent
   [ANALYTICS_EVENTS.WORKOUT_COMPLETED]: WorkoutCompletedEvent
   [ANALYTICS_EVENTS.WORKOUT_SKIPPED]: WorkoutSkippedEvent
   [ANALYTICS_EVENTS.WORKOUT_RESCHEDULED]: WorkoutRescheduledEvent
+  [ANALYTICS_EVENTS.WORKOUT_NOTES_ADDED]: WorkoutNotesAddedEvent
 
   // Races
   [ANALYTICS_EVENTS.RACE_ADDED]: RaceAddedEvent
+  [ANALYTICS_EVENTS.RACE_UPDATED]: RaceUpdatedEvent
+  [ANALYTICS_EVENTS.RACE_DELETED]: RaceDeletedEvent
+  [ANALYTICS_EVENTS.RACE_REGISTERED]: RaceRegisteredEvent
+  [ANALYTICS_EVENTS.RACE_COMPLETED]: RaceCompletedEvent
   [ANALYTICS_EVENTS.RACE_IMPORTED_GPX]: RaceImportedGPXEvent
   [ANALYTICS_EVENTS.RACE_IMPORTED_CSV]: RaceImportedCSVEvent
   [ANALYTICS_EVENTS.RACE_GOAL_SET]: RaceGoalSetEvent
@@ -391,35 +606,54 @@ export interface AnalyticsEventMap {
   [ANALYTICS_EVENTS.STRAVA_DISCONNECTED]: StravaDisconnectedEvent
   [ANALYTICS_EVENTS.STRAVA_SYNC_STARTED]: StravaSyncStartedEvent
   [ANALYTICS_EVENTS.STRAVA_SYNC_COMPLETED]: StravaSyncCompletedEvent
+  [ANALYTICS_EVENTS.STRAVA_SYNC_FAILED]: StravaSyncFailedEvent
   [ANALYTICS_EVENTS.STRAVA_ACTIVITY_IMPORTED]: StravaActivityImportedEvent
   [ANALYTICS_EVENTS.STRAVA_WORKOUT_MATCHED]: StravaWorkoutMatchedEvent
 
   // Relationships
   [ANALYTICS_EVENTS.RELATIONSHIP_REQUESTED]: RelationshipRequestedEvent
   [ANALYTICS_EVENTS.RELATIONSHIP_ACCEPTED]: RelationshipAcceptedEvent
+  [ANALYTICS_EVENTS.RELATIONSHIP_REJECTED]: RelationshipRejectedEvent
   [ANALYTICS_EVENTS.RELATIONSHIP_ENDED]: RelationshipEndedEvent
+  [ANALYTICS_EVENTS.COACH_INVITATION_SENT]: CoachInvitationSentEvent
+  [ANALYTICS_EVENTS.RUNNER_INVITATION_ACCEPTED]: RunnerInvitationAcceptedEvent
 
   // Communication
   [ANALYTICS_EVENTS.MESSAGE_SENT]: MessageSentEvent
+  [ANALYTICS_EVENTS.MESSAGE_RECEIVED]: MessageReceivedEvent
   [ANALYTICS_EVENTS.CONVERSATION_STARTED]: ConversationStartedEvent
+  [ANALYTICS_EVENTS.NOTIFICATION_SENT]: NotificationSentEvent
+  [ANALYTICS_EVENTS.NOTIFICATION_READ]: NotificationReadEvent
+  [ANALYTICS_EVENTS.NOTIFICATION_CLICKED]: NotificationClickedEvent
 
   // User
   [ANALYTICS_EVENTS.USER_SIGNED_UP]: UserSignedUpEvent
   [ANALYTICS_EVENTS.USER_SIGNED_IN]: UserSignedInEvent
+  [ANALYTICS_EVENTS.USER_SIGNED_OUT]: UserSignedOutEvent
   [ANALYTICS_EVENTS.USER_PROFILE_UPDATED]: UserProfileUpdatedEvent
+  [ANALYTICS_EVENTS.USER_SETTINGS_CHANGED]: UserSettingsChangedEvent
+  [ANALYTICS_EVENTS.USER_PASSWORD_RESET]: UserPasswordResetEvent
 
   // Navigation
   [ANALYTICS_EVENTS.PAGE_VIEWED]: PageViewedEvent
   [ANALYTICS_EVENTS.DASHBOARD_VIEWED]: DashboardViewedEvent
+  [ANALYTICS_EVENTS.CALENDAR_VIEWED]: CalendarViewedEvent
+  [ANALYTICS_EVENTS.WEEKLY_PLANNER_VIEWED]: WeeklyPlannerViewedEvent
   [ANALYTICS_EVENTS.WEEKLY_PLANNER_DAY_EXPANDED]: WeeklyPlannerDayExpandedEvent
+  [ANALYTICS_EVENTS.TRAINING_LOG_VIEWED]: TrainingLogViewedEvent
 
   // Errors
   [ANALYTICS_EVENTS.ERROR_OCCURRED]: ErrorOccurredEvent
   [ANALYTICS_EVENTS.API_ERROR]: APIErrorEvent
+  [ANALYTICS_EVENTS.VALIDATION_ERROR]: ValidationErrorEvent
+  [ANALYTICS_EVENTS.NETWORK_ERROR]: NetworkErrorEvent
 
   // Features
   [ANALYTICS_EVENTS.FEATURE_FLAG_EVALUATED]: FeatureFlagEvaluatedEvent
   [ANALYTICS_EVENTS.EXPORT_INITIATED]: ExportInitiatedEvent
+  [ANALYTICS_EVENTS.EXPORT_COMPLETED]: ExportCompletedEvent
+  [ANALYTICS_EVENTS.IMPORT_INITIATED]: ImportInitiatedEvent
+  [ANALYTICS_EVENTS.IMPORT_COMPLETED]: ImportCompletedEvent
   [ANALYTICS_EVENTS.FILTER_APPLIED]: FilterAppliedEvent
   [ANALYTICS_EVENTS.SEARCH_PERFORMED]: SearchPerformedEvent
 }

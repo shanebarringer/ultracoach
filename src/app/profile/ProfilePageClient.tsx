@@ -1,7 +1,6 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
-import { format, parseISO } from 'date-fns'
 import { MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
 import { useState } from 'react'
@@ -12,6 +11,7 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('Profile')
 
@@ -151,16 +151,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Member Since:</span>
-                    <span className="font-medium">
-                      {user.createdAt
-                        ? format(
-                            typeof user.createdAt === 'string'
-                              ? parseISO(user.createdAt)
-                              : user.createdAt,
-                            'MMM d, yyyy'
-                          )
-                        : 'Unknown'}
-                    </span>
+                    <span className="font-medium">{formatDateConsistent(user.createdAt)}</span>
                   </div>
                 </CardBody>
               </Card>

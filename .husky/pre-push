@@ -22,6 +22,8 @@ else
   for i in {1..60}; do
     if curl -s -f http://localhost:3001/api/health > /dev/null 2>&1; then
       echo "✅ Dev server is ready!"
+      # Brief stabilization delay to avoid race conditions
+      sleep 1
       SERVER_RUNNING=true
       break
     fi

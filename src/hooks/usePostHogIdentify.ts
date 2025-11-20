@@ -14,7 +14,6 @@ import {
   featureFlagsErrorAtom,
   featureFlagsLastLoadedAtom,
   featureFlagsLoadingAtom,
-  setFeatureFlagsAtom,
   setFeatureFlagsErrorAtom,
   setFeatureFlagsLoadingAtom,
 } from '@/lib/atoms/feature-flags'
@@ -152,7 +151,6 @@ export function useFeatureFlagValue(flagKey: string): boolean | string | undefin
  */
 export function useReloadFeatureFlags() {
   const setLoading = useSetAtom(setFeatureFlagsLoadingAtom)
-  const setFlags = useSetAtom(setFeatureFlagsAtom)
   const setError = useSetAtom(setFeatureFlagsErrorAtom)
 
   return useCallback(() => {
@@ -164,19 +162,16 @@ export function useReloadFeatureFlags() {
 
     try {
       // Reload flags from PostHog
+      // The provider's global onFeatureFlags handler will update the atoms when flags finish loading
       posthog.reloadFeatureFlags()
 
-      // Wait for flags to load, then update atoms
-      // Note: PostHog doesn't provide a method to enumerate all flags
-      // Flags are loaded on-demand when components request them
-      posthog.onFeatureFlags(() => {
-        // Just mark as loaded - individual flags will be fetched when requested
-        setFlags(new Map())
-      })
+      // Clear loading state after triggering reload
+      // Individual flags will be fetched on-demand when components request them
+      setLoading(false)
     } catch (error) {
       setError(error instanceof Error ? error : new Error('Failed to reload feature flags'))
     }
-  }, [setLoading, setFlags, setError])
+  }, [setLoading, setError])
 }
 
 /**

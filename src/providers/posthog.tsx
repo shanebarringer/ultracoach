@@ -78,9 +78,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
               ph.opt_out_capturing() // Opt out in development
             }
 
-            // Mark as initialized after loaded callback
+            // Mark as ready after loaded callback (preserves "ready" state distinction)
             setIsInitialized(true)
-            posthogInitialized = true
             logger.info('PostHog initialized successfully')
 
             // Initialize feature flags in Jotai atoms
@@ -101,6 +100,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
             }
           },
         })
+
+        // CRITICAL: Set initialization flag immediately (synchronously) to prevent
+        // React Strict Mode from re-running the effect before the async loaded callback
+        posthogInitialized = true
       } catch (error) {
         logger.error('Failed to initialize PostHog:', error)
         posthogInitialized = false
