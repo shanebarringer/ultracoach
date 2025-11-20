@@ -7,16 +7,23 @@ import { Mountain, Pin, PinOff } from 'lucide-react'
 
 import { useCallback } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
 import { useNavigationItems } from '@/hooks/useNavigationItems'
 import { uiStateAtom } from '@/lib/atoms/index'
+import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 
 import MobileNavContent from './MobileNavContent'
+
+const logger = createLogger('AppDrawer')
 
 export default function AppDrawer() {
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
+  const router = useRouter()
 
   const onClose = useCallback(() => {
     // Only close if not pinned
@@ -34,9 +41,23 @@ export default function AppDrawer() {
   }, [setUiState])
 
   const handleSignOut = useCallback(async () => {
-    await signOut()
-    window.location.href = '/'
-  }, [signOut])
+    try {
+      logger.info('User signing out')
+      const result = await signOut()
+
+      if (result.success === false) {
+        logger.error('Sign out failed:', result.error)
+        toast.error('Sign out failed', result.error || 'Unable to sign out. Please try again.')
+        return
+      }
+
+      logger.info('Sign out successful, navigating to home')
+      router.push('/')
+    } catch (error) {
+      logger.error('Sign out exception:', error)
+      toast.error('Sign out failed', 'An unexpected error occurred. Please try again.')
+    }
+  }, [signOut, router])
 
   // Use centralized navigation hook to eliminate DRY violation
   const userNavItems = useNavigationItems(session)
