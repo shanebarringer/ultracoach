@@ -365,10 +365,10 @@ export async function POST(request: NextRequest) {
         message: content.length > 100 ? content.substring(0, 100) + '...' : content,
         read: false,
         created_at: new Date(),
-        data: JSON.stringify({
+        data: {
           sender_id: sessionUser.id,
           message_id: message.id,
-        }),
+        },
       })
 
       logger.info('Notification created for new message', {
