@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import localFont from 'next/font/local'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import { headers } from 'next/headers'
 
 import KBarProvider from '@/components/kbar/KBarProvider'
@@ -11,32 +12,6 @@ import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
 
 import './globals.css'
-
-// Use local Geist fonts for reliability (no Google Fonts API dependency)
-// Paths are relative to this file (src/app/layout.tsx)
-const geistSans = localFont({
-  src: '../../public/fonts/Geist-Variable.woff2',
-  variable: '--font-geist-sans',
-  weight: '100 900',
-  display: 'swap',
-  fallback: [
-    '-apple-system',
-    'BlinkMacSystemFont',
-    'Segoe UI',
-    'Roboto',
-    'Helvetica Neue',
-    'Arial',
-    'sans-serif',
-  ],
-})
-
-const geistMono = localFont({
-  src: '../../public/fonts/GeistMono-Variable.woff2',
-  variable: '--font-geist-mono',
-  weight: '100 900',
-  display: 'swap',
-  fallback: ['Monaco', 'Courier New', 'monospace'],
-})
 
 export const metadata: Metadata = {
   title: 'UltraCoach - Ultramarathon Training Platform',
@@ -57,7 +32,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <JotaiProvider>
           <BetterAuthProvider initialSession={session}>
             <HeroUIProvider>
