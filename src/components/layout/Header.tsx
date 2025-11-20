@@ -24,6 +24,7 @@ import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
 import { themeModeAtom, uiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 
 const logger = createLogger('Header')
 
@@ -77,9 +78,22 @@ function Header() {
   const router = useRouter()
 
   const handleSignOut = useCallback(async () => {
-    logger.info('User signing out')
-    await signOut()
-    router.push('/')
+    try {
+      logger.info('User signing out')
+      const result = await signOut()
+
+      if (result.success === false) {
+        logger.error('Sign out failed:', result.error)
+        toast.error('Sign out failed', result.error || 'Unable to sign out. Please try again.')
+        return
+      }
+
+      logger.info('Sign out successful, navigating to home')
+      router.push('/')
+    } catch (error) {
+      logger.error('Sign out exception:', error)
+      toast.error('Sign out failed', 'An unexpected error occurred. Please try again.')
+    }
   }, [signOut, router])
 
   return (
