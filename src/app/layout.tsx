@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { headers } from 'next/headers'
 
 import KBarProvider from '@/components/kbar/KBarProvider'
@@ -11,36 +12,15 @@ import { JotaiProvider } from '@/providers/JotaiProvider'
 
 import './globals.css'
 
-// Conditionally import Google Fonts only in non-CI environments
-// In CI, we'll use system fonts to avoid network dependency
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
-let fontVariables = ''
-
-if (!isCI) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Geist, Geist_Mono } = require('next/font/google')
-
-    const geistSans = Geist({
-      variable: '--font-geist-sans',
-      subsets: ['latin'],
-      display: 'swap',
-      fallback: ['system-ui', 'arial'],
-    })
-
-    const geistMono = Geist_Mono({
-      variable: '--font-geist-mono',
-      subsets: ['latin'],
-      display: 'swap',
-      fallback: ['ui-monospace', 'monospace'],
-    })
-
-    fontVariables = `${geistSans.variable} ${geistMono.variable}`
-  } catch {
-    console.warn('Failed to load Google Fonts, using system fonts')
-  }
-}
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: 'UltraCoach - Ultramarathon Training Platform',
@@ -61,10 +41,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body
-        className={`${fontVariables} antialiased`}
-        style={{ fontFamily: isCI ? 'system-ui, arial' : undefined }}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <JotaiProvider>
           <BetterAuthProvider initialSession={session}>
             <HeroUIProvider>
