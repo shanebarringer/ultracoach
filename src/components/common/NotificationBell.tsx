@@ -13,11 +13,18 @@ import {
 import classNames from 'classnames'
 import { formatDistanceToNow } from 'date-fns'
 import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
+
 import { useRouter } from 'next/navigation'
 
 import { useNotifications } from '@/hooks/useNotifications'
 import type { Notification } from '@/types/notifications'
-import { isMessageNotification, isTrainingPlanNotification, isWorkoutNotification } from '@/types/notifications'
+import {
+  isAchievementNotification,
+  isMessageNotification,
+  isRaceNotification,
+  isTrainingPlanNotification,
+  isWorkoutNotification,
+} from '@/types/notifications'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
@@ -61,10 +68,18 @@ export default function NotificationBell() {
       router.push(`/workouts/${notification.data.workout_id}`)
     } else if (isTrainingPlanNotification(notification)) {
       router.push(`/training-plans/${notification.data.plan_id}`)
+    } else if (isRaceNotification(notification)) {
+      router.push(`/races/${notification.data.race_id}`)
+    } else if (isAchievementNotification(notification)) {
+      router.push(`/achievements/${notification.data.achievement_id}`)
     }
   }
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean, notification: Notification) => {
+  const handleNotificationClick = async (
+    notificationId: string,
+    isRead: boolean,
+    notification: Notification
+  ) => {
     if (!isRead) {
       await markAsRead(notificationId)
     }
@@ -72,48 +87,105 @@ export default function NotificationBell() {
   }
 
   const getNotificationActions = (notification: Notification) => {
-    // Return action buttons based on notification type
-    switch (notification.type) {
-      case 'message':
-        return (
-          <Button
-            size="sm"
-            variant="flat"
-            color="primary"
-            startContent={<ExternalLinkIcon className="w-3 h-3" />}
-            className="h-6"
-            onPress={() => navigateToNotification(notification)}
-          >
-            Reply
-          </Button>
-        )
-      case 'workout':
-        return (
-          <Button
-            size="sm"
-            variant="flat"
-            color="success"
-            className="h-6"
-            onPress={() => navigateToNotification(notification)}
-          >
-            View Workout
-          </Button>
-        )
-      case 'plan':
-        return (
-          <Button
-            size="sm"
-            variant="flat"
-            color="primary"
-            className="h-6"
-            onPress={() => navigateToNotification(notification)}
-          >
-            View Plan
-          </Button>
-        )
-      default:
-        return null
+    // Check type guards first - only render buttons when notification.data exists
+    if (isMessageNotification(notification)) {
+      return (
+        <Button
+          size="sm"
+          variant="flat"
+          color="primary"
+          startContent={<ExternalLinkIcon className="w-3 h-3" />}
+          className="h-6"
+          onPress={async () => {
+            if (!notification.read) {
+              await markAsRead(notification.id)
+            }
+            navigateToNotification(notification)
+          }}
+        >
+          Reply
+        </Button>
+      )
     }
+
+    if (isWorkoutNotification(notification)) {
+      return (
+        <Button
+          size="sm"
+          variant="flat"
+          color="success"
+          className="h-6"
+          onPress={async () => {
+            if (!notification.read) {
+              await markAsRead(notification.id)
+            }
+            navigateToNotification(notification)
+          }}
+        >
+          View Workout
+        </Button>
+      )
+    }
+
+    if (isTrainingPlanNotification(notification)) {
+      return (
+        <Button
+          size="sm"
+          variant="flat"
+          color="primary"
+          className="h-6"
+          onPress={async () => {
+            if (!notification.read) {
+              await markAsRead(notification.id)
+            }
+            navigateToNotification(notification)
+          }}
+        >
+          View Plan
+        </Button>
+      )
+    }
+
+    if (isRaceNotification(notification)) {
+      return (
+        <Button
+          size="sm"
+          variant="flat"
+          color="warning"
+          className="h-6"
+          onPress={async () => {
+            if (!notification.read) {
+              await markAsRead(notification.id)
+            }
+            navigateToNotification(notification)
+          }}
+        >
+          View Race
+        </Button>
+      )
+    }
+
+    if (isAchievementNotification(notification)) {
+      return (
+        <Button
+          size="sm"
+          variant="flat"
+          color="success"
+          className="h-6"
+          onPress={async () => {
+            if (!notification.read) {
+              await markAsRead(notification.id)
+            }
+            navigateToNotification(notification)
+          }}
+        >
+          View Achievement
+        </Button>
+      )
+    }
+
+    // No action button for notifications without proper data
+    return null
   }
 
   return (
@@ -181,7 +253,9 @@ export default function NotificationBell() {
                     !notification.read ? 'bg-primary-50 border-l-primary' : 'border-l-transparent'
                   )}
                   textValue={notification.title}
-                  onPress={() => handleNotificationClick(notification.id, notification.read, notification)}
+                  onPress={() =>
+                    handleNotificationClick(notification.id, notification.read, notification)
+                  }
                 >
                   <div className="flex gap-3 w-full">
                     <div className="shrink-0 text-xl">{getNotificationIcon(notification.type)}</div>

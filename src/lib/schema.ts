@@ -13,6 +13,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
+import type { NotificationData } from '@/types/notifications'
+
 // ===================================
 // BETTER AUTH TABLES (Primary Auth System)
 // ===================================
@@ -235,7 +237,7 @@ export const notifications = pgTable('notifications', {
   message: text('message').notNull(),
   read: boolean('read').default(false),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  data: json('data').$type<Record<string, unknown>>(),
+  data: json('data').$type<NotificationData>(),
 })
 
 // Training Phases
