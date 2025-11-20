@@ -13,11 +13,13 @@ import {
 import classNames from 'classnames'
 import { formatDistanceToNow } from 'date-fns'
 import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 import { useNotifications } from '@/hooks/useNotifications'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const router = useRouter()
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -49,14 +51,30 @@ export default function NotificationBell() {
     }
   }
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
+  const handleNotificationClick = async (
+    notificationId: string,
+    isRead: boolean,
+    notification: { type: string; data?: Record<string, unknown> }
+  ) => {
     if (!isRead) {
       await markAsRead(notificationId)
     }
-    // TODO: Add navigation logic based on notification type
+
+    // Navigate based on notification type and data
+    if (notification.type === 'message' && notification.data) {
+      const senderId = notification.data.sender_id as string
+      if (senderId) {
+        router.push(`/chat/${senderId}`)
+      }
+    }
+    // Add more navigation cases as needed for other notification types
   }
 
-  const getNotificationActions = (notification: { type: string; id: string }) => {
+  const getNotificationActions = (notification: {
+    type: string
+    id: string
+    data?: Record<string, unknown>
+  }) => {
     // Return action buttons based on notification type
     switch (notification.type) {
       case 'message':
@@ -67,19 +85,44 @@ export default function NotificationBell() {
             color="primary"
             startContent={<ExternalLinkIcon className="w-3 h-3" />}
             className="h-6"
+            onPress={e => {
+              e.stopPropagation() // Prevent dropdown from closing
+              const senderId = notification.data?.sender_id as string
+              if (senderId) {
+                router.push(`/chat/${senderId}`)
+              }
+            }}
           >
             Reply
           </Button>
         )
       case 'workout':
         return (
-          <Button size="sm" variant="flat" color="success" className="h-6">
+          <Button
+            size="sm"
+            variant="flat"
+            color="success"
+            className="h-6"
+            onPress={e => {
+              e.stopPropagation()
+              // TODO: Navigate to workout page when route is defined
+            }}
+          >
             View Workout
           </Button>
         )
       case 'training_plan':
         return (
-          <Button size="sm" variant="flat" color="primary" className="h-6">
+          <Button
+            size="sm"
+            variant="flat"
+            color="primary"
+            className="h-6"
+            onPress={e => {
+              e.stopPropagation()
+              // TODO: Navigate to training plan page when route is defined
+            }}
+          >
             View Plan
           </Button>
         )
@@ -153,7 +196,7 @@ export default function NotificationBell() {
                     !notification.read ? 'bg-primary-50 border-l-primary' : 'border-l-transparent'
                   )}
                   textValue={notification.title}
-                  onPress={() => handleNotificationClick(notification.id, notification.read)}
+                  onPress={() => handleNotificationClick(notification.id, notification.read, notification)}
                 >
                   <div className="flex gap-3 w-full">
                     <div className="shrink-0 text-xl">{getNotificationIcon(notification.type)}</div>

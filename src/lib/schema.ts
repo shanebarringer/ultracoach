@@ -235,6 +235,7 @@ export const notifications = pgTable('notifications', {
   message: text('message').notNull(),
   read: boolean('read').default(false),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  data: text('data', { mode: 'json' }).$type<Record<string, unknown>>(),
 })
 
 // Training Phases
