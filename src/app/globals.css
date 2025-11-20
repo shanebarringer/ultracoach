@@ -33,6 +33,13 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  :root {
+    /* Font family variables - using system fonts for maximum compatibility */
+    --font-geist-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    --font-geist-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  }
 }
 
 @utility mountain-gradient {
