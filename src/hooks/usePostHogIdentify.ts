@@ -3,8 +3,9 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import posthog from 'posthog-js'
 
-import { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
+import { COMMON_FEATURE_FLAGS } from '@/config/posthog-flags'
 import { type AnalyticsEventMap } from '@/lib/analytics/event-types'
 import { sessionAtom, userAtom } from '@/lib/atoms'
 import {
@@ -14,12 +15,14 @@ import {
   featureFlagsErrorAtom,
   featureFlagsLastLoadedAtom,
   featureFlagsLoadingAtom,
+  setFeatureFlagsAtom,
   setFeatureFlagsErrorAtom,
   setFeatureFlagsLoadingAtom,
 } from '@/lib/atoms/feature-flags'
 
-// Module-level flag to prevent concurrent reload operations and listener accumulation
+// Module-level flags to prevent concurrent reload operations and listener accumulation
 let isReloadingFlags = false
+let hasRegisteredReloadListener = false
 
 /**
  * Hook to identify the current user with PostHog
@@ -148,6 +151,9 @@ export function useFeatureFlagValue(flagKey: string): boolean | string | undefin
  * Hook to reload feature flags from PostHog
  * Returns a Promise-based function that can be awaited
  *
+ * The listener is registered once at module level (similar to posthog.tsx pattern)
+ * and updates Jotai atoms directly, preventing memory leaks from multiple listeners.
+ *
  * @example
  * const reloadFlags = useReloadFeatureFlags()
  * await reloadFlags() // Waits for flags to finish loading
@@ -157,44 +163,66 @@ export function useFeatureFlagValue(flagKey: string): boolean | string | undefin
 export function useReloadFeatureFlags() {
   const setLoading = useSetAtom(setFeatureFlagsLoadingAtom)
   const setError = useSetAtom(setFeatureFlagsErrorAtom)
+  const setFlags = useSetAtom(setFeatureFlagsAtom)
+
+  // Register the listener once at module level to prevent accumulation
+  // This follows the same pattern as posthog.tsx for consistency
+  React.useEffect(() => {
+    if (hasRegisteredReloadListener || typeof window === 'undefined') {
+      return
+    }
+
+    hasRegisteredReloadListener = true
+
+    // Module-level listener that updates atoms when flags change
+    posthog.onFeatureFlags(() => {
+      if (isReloadingFlags) {
+        // Flags finished reloading - update atoms with common flags
+        const allFlags = new Map<string, boolean | string>()
+
+        // Fetch each common flag (PostHog doesn't provide flag enumeration)
+        COMMON_FEATURE_FLAGS.forEach(flagKey => {
+          const value = posthog.getFeatureFlag(flagKey)
+          if (value !== undefined) {
+            allFlags.set(flagKey, value as boolean | string)
+          }
+        })
+
+        setFlags(allFlags)
+        isReloadingFlags = false
+      }
+    })
+  }, [setFlags])
 
   return useCallback(async (): Promise<void> => {
     if (!posthog.has_opted_in_capturing()) {
       return
     }
 
-    // Prevent concurrent reloads to avoid listener accumulation
+    // Prevent concurrent reloads
     if (isReloadingFlags) {
       return
     }
 
-    return new Promise((resolve, reject) => {
-      isReloadingFlags = true
-      setLoading(true)
+    isReloadingFlags = true
+    setLoading(true)
 
-      try {
-        // Create a one-time listener for when flags finish loading
-        const onFlagsLoaded = () => {
-          isReloadingFlags = false
-          setLoading(false)
-          resolve()
-        }
+    try {
+      // Trigger the reload - the module-level listener will handle completion
+      posthog.reloadFeatureFlags()
 
-        // Attach the listener before triggering reload
-        // PostHog will call this callback when flags are ready
-        posthog.onFeatureFlags(onFlagsLoaded)
+      // Wait a short time for flags to reload (PostHog usually responds quickly)
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-        // Trigger the reload
-        posthog.reloadFeatureFlags()
-      } catch (error) {
-        isReloadingFlags = false
-        setLoading(false)
-        const errorObj =
-          error instanceof Error ? error : new Error('Failed to reload feature flags')
-        setError(errorObj)
-        reject(errorObj)
-      }
-    })
+      setLoading(false)
+      setError(null)
+    } catch (error) {
+      isReloadingFlags = false
+      setLoading(false)
+      const errorObj = error instanceof Error ? error : new Error('Failed to reload feature flags')
+      setError(errorObj)
+      throw errorObj
+    }
   }, [setLoading, setError])
 }
 

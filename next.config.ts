@@ -1,4 +1,3 @@
-import { withPostHogConfig } from '@posthog/nextjs-config'
 import path from 'path'
 
 import type { NextConfig } from 'next'
@@ -10,15 +9,11 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Build-time validation for PostHog configuration (production only)
+// Note: Source maps are now uploaded via PostHog CLI in package.json scripts
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID) {
     console.warn(
       '⚠️  PostHog: NEXT_PUBLIC_POSTHOG_PROJECT_ID is not set - analytics will be disabled'
-    )
-  }
-  if (!process.env.POSTHOG_PERSONAL_API_KEY) {
-    console.warn(
-      '⚠️  PostHog: POSTHOG_PERSONAL_API_KEY is not set - source map upload will be disabled'
     )
   }
   if (!process.env.NEXT_PUBLIC_POSTHOG_HOST) {
@@ -48,10 +43,18 @@ try {
 }
 
 const nextConfig: NextConfig = {
+  // Enable source maps for production (uploaded separately via PostHog CLI)
+  productionBrowserSourceMaps: true,
+
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
     if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorFactory) {
       config.plugins.push(codeInspectorFactory({ bundler: 'webpack' }))
+    }
+
+    // Server-side source maps for better error tracking
+    if (isServer) {
+      config.devtool = 'source-map'
     }
 
     // Ignore pg-native module since it's not available in browser environments
@@ -118,16 +121,7 @@ const nextConfig: NextConfig = {
   },
 }
 
-// Wrap with PostHog config for automatic source map upload
-export default withPostHogConfig(nextConfig, {
-  personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY || '',
-  envId: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID || '', // No fallback - must be explicitly set
-  host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
-  sourcemaps: {
-    enabled:
-      process.env.NODE_ENV === 'production' &&
-      !!process.env.POSTHOG_PERSONAL_API_KEY &&
-      !!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID, // Require both API key and project ID
-    deleteAfterUpload: true, // Clean up source maps after upload for security
-  },
-})
+// Export the config directly
+// Source maps are uploaded separately via PostHog CLI (see package.json scripts)
+// This approach avoids Next.js 15.3+ compatibility issues with withPostHogConfig wrapper
+export default nextConfig
