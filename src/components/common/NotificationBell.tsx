@@ -99,7 +99,6 @@ export default function NotificationBell() {
             View Workout
           </Button>
         )
-      case 'training_plan':
       case 'plan':
         return (
           <Button
