@@ -47,11 +47,18 @@ export function usePostHogIdentify(): void {
 
     // User is authenticated - identify them in PostHog
     if (posthog.has_opted_in_capturing()) {
+      // Format createdAt as ISO string to match codebase date formatting convention
+      const createdAtISO = user.createdAt
+        ? user.createdAt instanceof Date
+          ? user.createdAt.toISOString()
+          : user.createdAt
+        : undefined
+
       posthog.identify(user.id, {
         email: user.email,
         name: user.name || undefined,
         userType: user.userType || 'runner',
-        createdAt: user.createdAt,
+        createdAt: createdAtISO,
         // Add any other user properties you want to track
       })
 
@@ -60,6 +67,7 @@ export function usePostHogIdentify(): void {
         email: user.email,
         name: user.name || undefined,
         userType: user.userType || 'runner',
+        createdAt: createdAtISO,
       })
     }
   }, [session, user])
