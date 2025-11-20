@@ -210,9 +210,11 @@ test.describe('Session Persistence', () => {
       await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
       await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
-      // Go back to dashboard
+      // Go back to dashboard (two steps)
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
       await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
