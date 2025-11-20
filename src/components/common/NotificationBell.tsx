@@ -16,6 +16,8 @@ import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import { useNotifications } from '@/hooks/useNotifications'
+import type { Notification } from '@/types/notifications'
+import { isMessageNotification, isTrainingPlanNotification, isWorkoutNotification } from '@/types/notifications'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
@@ -51,30 +53,25 @@ export default function NotificationBell() {
     }
   }
 
-  const handleNotificationClick = async (
-    notificationId: string,
-    isRead: boolean,
-    notification: { type: string; data?: Record<string, unknown> }
-  ) => {
+  // Centralized navigation logic with type-safe guards
+  const navigateToNotification = (notification: Notification) => {
+    if (isMessageNotification(notification)) {
+      router.push(`/chat/${notification.data.sender_id}`)
+    } else if (isWorkoutNotification(notification)) {
+      router.push(`/workouts/${notification.data.workout_id}`)
+    } else if (isTrainingPlanNotification(notification)) {
+      router.push(`/training-plans/${notification.data.plan_id}`)
+    }
+  }
+
+  const handleNotificationClick = async (notificationId: string, isRead: boolean, notification: Notification) => {
     if (!isRead) {
       await markAsRead(notificationId)
     }
-
-    // Navigate based on notification type and data
-    if (notification.type === 'message' && notification.data) {
-      const senderId = notification.data.sender_id as string
-      if (senderId) {
-        router.push(`/chat/${senderId}`)
-      }
-    }
-    // Add more navigation cases as needed for other notification types
+    navigateToNotification(notification)
   }
 
-  const getNotificationActions = (notification: {
-    type: string
-    id: string
-    data?: Record<string, unknown>
-  }) => {
+  const getNotificationActions = (notification: Notification) => {
     // Return action buttons based on notification type
     switch (notification.type) {
       case 'message':
@@ -85,13 +82,7 @@ export default function NotificationBell() {
             color="primary"
             startContent={<ExternalLinkIcon className="w-3 h-3" />}
             className="h-6"
-            onPress={e => {
-              e.stopPropagation() // Prevent dropdown from closing
-              const senderId = notification.data?.sender_id as string
-              if (senderId) {
-                router.push(`/chat/${senderId}`)
-              }
-            }}
+            onPress={() => navigateToNotification(notification)}
           >
             Reply
           </Button>
@@ -103,25 +94,20 @@ export default function NotificationBell() {
             variant="flat"
             color="success"
             className="h-6"
-            onPress={e => {
-              e.stopPropagation()
-              // TODO: Navigate to workout page when route is defined
-            }}
+            onPress={() => navigateToNotification(notification)}
           >
             View Workout
           </Button>
         )
       case 'training_plan':
+      case 'plan':
         return (
           <Button
             size="sm"
             variant="flat"
             color="primary"
             className="h-6"
-            onPress={e => {
-              e.stopPropagation()
-              // TODO: Navigate to training plan page when route is defined
-            }}
+            onPress={() => navigateToNotification(notification)}
           >
             View Plan
           </Button>
