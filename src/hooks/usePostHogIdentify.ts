@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import posthog from 'posthog-js'
 
-import React, { useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import { COMMON_FEATURE_FLAGS } from '@/config/posthog-flags'
 import { type AnalyticsEventMap } from '@/lib/analytics/event-types'
@@ -172,7 +172,7 @@ export function useReloadFeatureFlags() {
 
   // Register the listener once at module level to prevent accumulation
   // This follows the same pattern as posthog.tsx for consistency
-  React.useEffect(() => {
+  useEffect(() => {
     if (hasRegisteredReloadListener || typeof window === 'undefined') {
       return
     }

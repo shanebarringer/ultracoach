@@ -212,6 +212,7 @@ test.describe('Session Persistence', () => {
 
       // Go back to dashboard
       await page.goBack()
+      await page.waitForLoadState('domcontentloaded')
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
       await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
