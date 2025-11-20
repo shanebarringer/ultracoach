@@ -373,9 +373,8 @@ const EnhancedWorkoutLogModal = memo(
                 workoutType: normalizeWorkoutType(data.actualType || workout.planned_type),
                 distance: data.actualDistance ?? undefined,
                 duration: data.actualDuration ?? undefined,
-                // Note: Using 'intensity' field for perceived effort (1-10 scale)
-                // This tracks how hard the workout felt, not planned intensity
-                effort: data.intensity ?? undefined,
+                // Perceived effort from the dedicated slider (1-10 scale)
+                effort: data.effort ?? undefined,
                 terrainType: normalizeTerrainType(data.terrain),
                 elevationGain: data.elevationGain ?? undefined,
                 userId: user.id,

@@ -18,6 +18,9 @@ import {
   setFeatureFlagsLoadingAtom,
 } from '@/lib/atoms/feature-flags'
 
+// Module-level flag to prevent concurrent reload operations and listener accumulation
+let isReloadingFlags = false
+
 /**
  * Hook to identify the current user with PostHog
  * Automatically identifies users when they sign in and resets on sign out
@@ -160,12 +163,19 @@ export function useReloadFeatureFlags() {
       return
     }
 
+    // Prevent concurrent reloads to avoid listener accumulation
+    if (isReloadingFlags) {
+      return
+    }
+
     return new Promise((resolve, reject) => {
+      isReloadingFlags = true
       setLoading(true)
 
       try {
         // Create a one-time listener for when flags finish loading
         const onFlagsLoaded = () => {
+          isReloadingFlags = false
           setLoading(false)
           resolve()
         }
@@ -177,6 +187,7 @@ export function useReloadFeatureFlags() {
         // Trigger the reload
         posthog.reloadFeatureFlags()
       } catch (error) {
+        isReloadingFlags = false
         setLoading(false)
         const errorObj =
           error instanceof Error ? error : new Error('Failed to reload feature flags')

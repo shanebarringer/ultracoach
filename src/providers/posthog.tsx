@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 
 import { usePathname, useSearchParams } from 'next/navigation'
 
+import { COMMON_FEATURE_FLAGS } from '@/config/posthog-flags'
 import {
   setFeatureFlagsAtom,
   setFeatureFlagsErrorAtom,
@@ -90,18 +91,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
               // PostHog doesn't provide enumeration, but we can fetch common flags eagerly
               ph.onFeatureFlags(() => {
                 try {
-                  // List of common feature flags to pre-fetch (add your flags here)
-                  const commonFlags = [
-                    'new-dashboard',
-                    'premium-features',
-                    'beta-access',
-                    'enhanced-analytics',
-                  ]
-
+                  // Common feature flags to pre-fetch (configured in @/config/posthog-flags.ts)
                   const flagsMap = new Map<string, boolean | string>()
 
                   // Fetch each common flag and populate the Map
-                  commonFlags.forEach(flagKey => {
+                  COMMON_FEATURE_FLAGS.forEach(flagKey => {
                     const value = ph.getFeatureFlag(flagKey)
                     if (value !== undefined) {
                       flagsMap.set(flagKey, value as boolean | string)

@@ -323,16 +323,16 @@ console.log('PostHog Key:', process.env.NEXT_PUBLIC_POSTHOG_KEY)
 
 **Note:** `NEXT_PUBLIC_` variables are injected at **build time**, not runtime. If you change these variables, you must rebuild your application with `pnpm build` or restart your dev server with `pnpm dev`.
 
-2. **Check browser console for errors**
+1. **Check browser console for errors**
    - Open DevTools → Console
    - Look for PostHog initialization messages
    - Should see: "PostHog initialized successfully"
 
-3. **Verify opt-out is disabled**
+1. **Verify opt-out is disabled**
    - PostHog is disabled in development by default
    - Check `src/providers/posthog.tsx` for the `ph.opt_out_capturing()` call in the loaded callback
 
-4. **Check PostHog dashboard settings**
+1. **Check PostHog dashboard settings**
    - Ensure your project is active
    - Check if API key is correct
 
