@@ -61,7 +61,7 @@ export default function NotificationBell() {
   }
 
   // Centralized navigation logic with type-safe guards and fallbacks for legacy notifications
-  const navigateToNotification = (notification: Notification) => {
+  const navigateToNotification = async (notification: Notification) => {
     // Try type-safe navigation with data first
     if (isMessageNotification(notification)) {
       router.push(`/chat/${notification.data.sender_id}`)
@@ -84,11 +84,40 @@ export default function NotificationBell() {
       return
     }
 
-    // Fallback for legacy notifications without data - navigate based on type
+    // Fallback for legacy message notifications - try to extract sender from title
+    if (notification.type === 'message') {
+      // Title format: "New message from 🏃 Riley Johnson" or "New message from 🏔️ Sarah Martinez"
+      const nameMatch = notification.title.match(/New message from (?:🏃|🏔️)\s+(.+)/)
+      if (nameMatch && nameMatch[1]) {
+        const senderName = nameMatch[1].trim()
+        try {
+          // Query users API to find sender by name
+          const response = await fetch('/api/users', {
+            credentials: 'same-origin',
+          })
+          if (response.ok) {
+            const users = await response.json()
+            const sender = users.find(
+              (u: { name?: string; fullName?: string }) =>
+                u.fullName === senderName || u.name === senderName
+            )
+            if (sender?.id) {
+              router.push(`/chat/${sender.id}`)
+              return
+            }
+          }
+        } catch (error) {
+          // If lookup fails, fall through to default /chat navigation
+          console.error('Failed to lookup sender for legacy notification:', error)
+        }
+      }
+      // If we couldn't find the sender, navigate to general chat page
+      router.push('/chat')
+      return
+    }
+
+    // Fallback for other notification types without data
     switch (notification.type) {
-      case 'message':
-        router.push('/chat')
-        break
       case 'workout':
         router.push('/workouts')
         break
