@@ -43,8 +43,11 @@ try {
 }
 
 const nextConfig: NextConfig = {
-  // Enable source maps for production (uploaded separately via PostHog CLI)
-  productionBrowserSourceMaps: true,
+  // Enable source maps for production only when PostHog CLI env vars are set
+  // This prevents unnecessary build overhead and improves security when PostHog is disabled
+  productionBrowserSourceMaps: !!(
+    process.env.POSTHOG_CLI_TOKEN || process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ),
 
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)

@@ -95,7 +95,10 @@ export function usePostHogEvent(): (
  *   distance: 10
  * })
  */
-export function useTypedPostHogEvent() {
+export function useTypedPostHogEvent(): <K extends keyof AnalyticsEventMap>(
+  eventName: K,
+  properties: AnalyticsEventMap[K]
+) => void {
   return useCallback(
     <K extends keyof AnalyticsEventMap>(eventName: K, properties: AnalyticsEventMap[K]): void => {
       if (posthog.has_opted_in_capturing()) {
@@ -175,24 +178,41 @@ export function useReloadFeatureFlags() {
     hasRegisteredReloadListener = true
 
     // Module-level listener that updates atoms when flags change
-    posthog.onFeatureFlags(() => {
-      if (isReloadingFlags) {
-        // Flags finished reloading - update atoms with common flags
-        const allFlags = new Map<string, boolean | string>()
-
-        // Fetch each common flag (PostHog doesn't provide flag enumeration)
-        COMMON_FEATURE_FLAGS.forEach(flagKey => {
-          const value = posthog.getFeatureFlag(flagKey)
-          if (value !== undefined) {
-            allFlags.set(flagKey, value as boolean | string)
+    // The callback receives errorsLoading parameter indicating request failures
+    posthog.onFeatureFlags(
+      (
+        _flags: string[],
+        _variants: Record<string, string | boolean>,
+        context?: { errorsLoading?: boolean }
+      ) => {
+        const errorsLoading = context?.errorsLoading
+        if (isReloadingFlags) {
+          // Handle errors from PostHog flag loading
+          if (errorsLoading) {
+            setError(new Error('Failed to load feature flags from PostHog'))
+            setLoading(false)
+            isReloadingFlags = false
+            return
           }
-        })
 
-        setFlags(allFlags)
-        isReloadingFlags = false
+          // Flags finished reloading successfully - update atoms with common flags
+          const allFlags = new Map<string, boolean | string>()
+
+          // Fetch each common flag (PostHog doesn't provide flag enumeration)
+          COMMON_FEATURE_FLAGS.forEach(flagKey => {
+            const value = posthog.getFeatureFlag(flagKey)
+            if (value !== undefined) {
+              allFlags.set(flagKey, value as boolean | string)
+            }
+          })
+
+          setFlags(allFlags)
+          setLoading(false)
+          isReloadingFlags = false
+        }
       }
-    })
-  }, [setFlags])
+    )
+  }, [setFlags, setLoading, setError])
 
   return useCallback(async (): Promise<void> => {
     if (!posthog.has_opted_in_capturing()) {
@@ -206,16 +226,33 @@ export function useReloadFeatureFlags() {
 
     isReloadingFlags = true
     setLoading(true)
+    setError(null)
 
     try {
       // Trigger the reload - the module-level listener will handle completion
+      // The onFeatureFlags callback will update loading state and flags when done
       posthog.reloadFeatureFlags()
 
-      // Wait a short time for flags to reload (PostHog usually responds quickly)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Wait for the listener to process the reload (max 5 seconds timeout)
+      // The listener will reset isReloadingFlags and setLoading(false) when done
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          if (isReloadingFlags) {
+            isReloadingFlags = false
+            setLoading(false)
+            reject(new Error('Feature flag reload timed out after 5 seconds'))
+          }
+        }, 5000)
 
-      setLoading(false)
-      setError(null)
+        // Poll for completion (listener resets isReloadingFlags)
+        const checkCompletion = setInterval(() => {
+          if (!isReloadingFlags) {
+            clearInterval(checkCompletion)
+            clearTimeout(timeout)
+            resolve()
+          }
+        }, 100)
+      })
     } catch (error) {
       isReloadingFlags = false
       setLoading(false)
