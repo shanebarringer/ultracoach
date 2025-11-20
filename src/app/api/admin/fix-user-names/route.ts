@@ -7,13 +7,19 @@ import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { user } from '@/lib/schema'
+import { getNameUpdates } from '@/lib/utils/user-names'
 
 const logger = createLogger('api-admin-fix-user-names')
 
 /**
  * Admin endpoint to fix missing user names
- * GET /api/admin/fix-user-names?preview=true - Preview changes
- * POST /api/admin/fix-user-names - Apply changes
+ *
+ * SECURITY NOTE: This endpoint checks for userType === 'coach', not a dedicated admin role.
+ * In the current architecture, this means any coach can run this repair operation.
+ * Consider adding a dedicated admin flag if this level of access is too broad.
+ *
+ * GET /api/admin/fix-user-names - Preview changes (read-only, shows what would be fixed)
+ * POST /api/admin/fix-user-names - Apply changes (writes to database)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -27,15 +33,12 @@ export async function GET(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    // Check if user is admin/coach (you may want to add proper admin role)
+    // Check if user is coach (acting as admin in current architecture)
     if (sessionUser.userType !== 'coach') {
       return NextResponse.json({ error: 'Forbidden - coaches only' }, { status: 403 })
     }
 
-    const url = new URL(request.url)
-    const preview = url.searchParams.get('preview') === 'true'
-
-    logger.info('Fetching users for name fix...', { preview, requestedBy: sessionUser.email })
+    logger.info('Fetching users for name fix preview...', { requestedBy: sessionUser.email })
 
     // Fetch all users
     const users = await db.select().from(user)
@@ -51,56 +54,20 @@ export async function GET(request: NextRequest) {
     }> = []
 
     for (const u of users) {
-      let needsUpdate = false
-      const proposed: { name?: string; fullName?: string } = {}
+      const updates = getNameUpdates({
+        name: u.name,
+        fullName: u.fullName,
+        email: u.email,
+      })
 
-      // Check if fullName is missing
-      if (!u.fullName || u.fullName.trim() === '') {
-        if (u.name && u.name.trim() !== '') {
-          proposed.fullName = u.name
-          needsUpdate = true
-        } else if (u.email) {
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          proposed.fullName = displayName
-          needsUpdate = true
-        }
-      } else {
-        proposed.fullName = u.fullName
-      }
-
-      // Check if name is missing
-      if (!u.name || u.name.trim() === '') {
-        if (proposed.fullName) {
-          proposed.name = proposed.fullName
-          needsUpdate = true
-        } else if (u.fullName && u.fullName.trim() !== '') {
-          proposed.name = u.fullName
-          needsUpdate = true
-        } else if (u.email) {
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          proposed.name = displayName
-          needsUpdate = true
-        }
-      } else {
-        proposed.name = u.name
-      }
-
-      if (needsUpdate) {
+      if (updates.needsUpdate) {
         usersToFix.push({
           id: u.id,
           email: u.email,
           currentName: u.name,
           currentFullName: u.fullName,
-          proposedName: proposed.name || '',
-          proposedFullName: proposed.fullName || '',
+          proposedName: updates.name,
+          proposedFullName: updates.fullName,
         })
       }
     }
@@ -110,7 +77,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       total: users.length,
       needsFix: usersToFix.length,
-      preview: true,
+      preview: true, // GET is always read-only/preview mode
       users: usersToFix,
     })
   } catch (error) {
@@ -131,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    // Check if user is admin/coach
+    // Check if user is coach (acting as admin in current architecture)
     if (sessionUser.userType !== 'coach') {
       return NextResponse.json({ error: 'Forbidden - coaches only' }, { status: 403 })
     }
@@ -139,52 +106,33 @@ export async function POST(request: NextRequest) {
     logger.info('Applying user name fixes...', { requestedBy: sessionUser.email })
 
     // Fetch all users
+    // NOTE: For large user tables, this could be optimized with batch processing
+    // and bulk updates. Acceptable for current scale but may need refactoring
+    // if user count grows significantly.
     const users = await db.select().from(user)
     let updatedCount = 0
 
     for (const u of users) {
-      let needsUpdate = false
-      const updates: Partial<typeof user.$inferInsert> = {}
+      const updates = getNameUpdates({
+        name: u.name,
+        fullName: u.fullName,
+        email: u.email,
+      })
 
-      // Check if fullName is missing
-      if (!u.fullName || u.fullName.trim() === '') {
-        if (u.name && u.name.trim() !== '') {
-          updates.fullName = u.name
-          needsUpdate = true
-        } else if (u.email) {
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          updates.fullName = displayName
-          needsUpdate = true
-        }
-      }
+      if (updates.needsUpdate) {
+        await db
+          .update(user)
+          .set({
+            name: updates.name,
+            fullName: updates.fullName,
+          })
+          .where(eq(user.id, u.id))
 
-      // Check if name is missing
-      if (!u.name || u.name.trim() === '') {
-        if (updates.fullName) {
-          updates.name = updates.fullName
-          needsUpdate = true
-        } else if (u.fullName && u.fullName.trim() !== '') {
-          updates.name = u.fullName
-          needsUpdate = true
-        } else if (u.email) {
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          updates.name = displayName
-          needsUpdate = true
-        }
-      }
-
-      if (needsUpdate) {
-        await db.update(user).set(updates).where(eq(user.id, u.id))
         updatedCount++
-        logger.info(`Updated user ${u.email}`, { updates })
+        logger.info(`Updated user ${u.email}`, {
+          name: updates.name,
+          fullName: updates.fullName,
+        })
       }
     }
 

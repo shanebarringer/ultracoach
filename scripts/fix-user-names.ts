@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
 import { user } from '../src/lib/schema'
+import { getNameUpdates } from '../src/lib/utils/user-names'
 
 const logger = createLogger('fix-user-names')
 
@@ -12,6 +13,10 @@ const logger = createLogger('fix-user-names')
  * - Populates fullName from name if missing
  * - Populates name from email if missing
  * - Ensures all users have displayable names
+ *
+ * NOTE: This script loads all users into memory and performs per-row updates.
+ * For large user tables, consider batch processing or bulk updates.
+ * Acceptable for current scale but may need optimization for production-scale datasets.
  */
 async function fixUserNames() {
   try {
@@ -25,64 +30,26 @@ async function fixUserNames() {
     let skippedCount = 0
 
     for (const u of users) {
-      let needsUpdate = false
-      const updates: Partial<typeof user.$inferInsert> = {}
+      const updates = getNameUpdates({
+        name: u.name,
+        fullName: u.fullName,
+        email: u.email,
+      })
 
-      // Check if fullName is missing
-      if (!u.fullName || u.fullName.trim() === '') {
-        // Use name if available, otherwise extract from email
-        if (u.name && u.name.trim() !== '') {
-          updates.fullName = u.name
-          needsUpdate = true
-          logger.info(`Will set fullName from name for user ${u.email}`, {
-            name: u.name,
+      if (updates.needsUpdate) {
+        await db
+          .update(user)
+          .set({
+            name: updates.name,
+            fullName: updates.fullName,
           })
-        } else if (u.email) {
-          // Extract name from email (before @)
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          updates.fullName = displayName
-          needsUpdate = true
-          logger.info(`Will set fullName from email for user ${u.email}`, {
-            extractedName: displayName,
-          })
-        }
-      }
+          .where(eq(user.id, u.id))
 
-      // Check if name is missing
-      if (!u.name || u.name.trim() === '') {
-        // Use fullName if available, otherwise extract from email
-        if (updates.fullName) {
-          // Use the fullName we just computed
-          updates.name = updates.fullName
-          needsUpdate = true
-          logger.info(`Will set name from computed fullName for user ${u.email}`)
-        } else if (u.fullName && u.fullName.trim() !== '') {
-          updates.name = u.fullName
-          needsUpdate = true
-          logger.info(`Will set name from fullName for user ${u.email}`)
-        } else if (u.email) {
-          // Extract name from email
-          const emailName = u.email.split('@')[0]
-          const displayName = emailName
-            .split('.')
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ')
-          updates.name = displayName
-          needsUpdate = true
-          logger.info(`Will set name from email for user ${u.email}`, {
-            extractedName: displayName,
-          })
-        }
-      }
-
-      if (needsUpdate) {
-        await db.update(user).set(updates).where(eq(user.id, u.id))
         updatedCount++
-        logger.info(`✅ Updated user ${u.email}`, updates)
+        logger.info(`✅ Updated user ${u.email}`, {
+          name: updates.name,
+          fullName: updates.fullName,
+        })
       } else {
         skippedCount++
         logger.debug(`Skipped user ${u.email} (already has both name and fullName)`, {
@@ -110,15 +77,21 @@ async function fixUserNames() {
         count: stillMissing.length,
         emails: stillMissing.map(u => u.email),
       })
+      // Set exit code to indicate partial success
+      process.exitCode = 1
     } else {
       logger.info('✅ All users now have both name and fullName fields populated')
     }
   } catch (error) {
     logger.error('Error fixing user names:', error)
+    // Set exit code to indicate failure
+    process.exitCode = 1
     throw error
-  } finally {
-    process.exit(0)
   }
 }
 
-fixUserNames()
+// Run the fix and handle errors properly
+fixUserNames().catch(error => {
+  logger.error('Fatal error in fixUserNames:', error)
+  process.exitCode = 1
+})
