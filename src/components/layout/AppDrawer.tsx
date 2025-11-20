@@ -7,6 +7,8 @@ import { Mountain, Pin, PinOff } from 'lucide-react'
 
 import { useCallback } from 'react'
 
+import { useRouter } from 'next/navigation'
+
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
 import { useNavigationItems } from '@/hooks/useNavigationItems'
 import { uiStateAtom } from '@/lib/atoms/index'
@@ -17,6 +19,7 @@ export default function AppDrawer() {
   const [uiState, setUiState] = useAtom(uiStateAtom)
   const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
+  const router = useRouter()
 
   const onClose = useCallback(() => {
     // Only close if not pinned
@@ -35,8 +38,8 @@ export default function AppDrawer() {
 
   const handleSignOut = useCallback(async () => {
     await signOut()
-    window.location.href = '/'
-  }, [signOut])
+    router.push('/')
+  }, [signOut, router])
 
   // Use centralized navigation hook to eliminate DRY violation
   const userNavItems = useNavigationItems(session)

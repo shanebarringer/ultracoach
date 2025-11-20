@@ -18,6 +18,7 @@ import { Menu, Search } from 'lucide-react'
 import { memo, useCallback } from 'react'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 import NotificationBell from '@/components/common/NotificationBell'
 import { useBetterSession, useSession } from '@/hooks/useBetterSession'
@@ -73,12 +74,13 @@ function Header() {
   const { data: session, status } = useSession()
   const { signOut } = useBetterSession()
   const [, setUiState] = useAtom(uiStateAtom)
+  const router = useRouter()
 
   const handleSignOut = useCallback(async () => {
     logger.info('User signing out')
     await signOut()
-    window.location.href = '/'
-  }, [signOut])
+    router.push('/')
+  }, [signOut, router])
 
   return (
     <Navbar
