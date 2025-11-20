@@ -8,6 +8,21 @@ if (process.env.NODE_ENV === 'development') {
   process.setMaxListeners(20)
 }
 
+// Build-time validation for PostHog configuration (production only)
+// Note: Source maps are now uploaded via PostHog CLI in package.json scripts
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID) {
+    console.warn(
+      '⚠️  PostHog: NEXT_PUBLIC_POSTHOG_PROJECT_ID is not set - analytics will be disabled'
+    )
+  }
+  if (!process.env.NEXT_PUBLIC_POSTHOG_HOST) {
+    console.warn(
+      '⚠️  PostHog: NEXT_PUBLIC_POSTHOG_HOST is not set - using default (https://us.i.posthog.com)'
+    )
+  }
+}
+
 // Type-safe code-inspector-plugin configuration
 type CodeInspectorFactory = (options: {
   bundler: 'webpack' | 'turbopack'
@@ -28,10 +43,21 @@ try {
 }
 
 const nextConfig: NextConfig = {
+  // Enable source maps for production only when PostHog CLI env vars are set
+  // This prevents unnecessary build overhead and improves security when PostHog is disabled
+  productionBrowserSourceMaps: !!(
+    process.env.POSTHOG_CLI_TOKEN || process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ),
+
   webpack: (config, { dev, isServer }) => {
     // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
     if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorFactory) {
       config.plugins.push(codeInspectorFactory({ bundler: 'webpack' }))
+    }
+
+    // Server-side source maps for better error tracking
+    if (isServer) {
+      config.devtool = 'source-map'
     }
 
     // Ignore pg-native module since it's not available in browser environments
@@ -98,4 +124,7 @@ const nextConfig: NextConfig = {
   },
 }
 
+// Export the config directly
+// Source maps are uploaded separately via PostHog CLI (see package.json scripts)
+// This approach avoids Next.js 15.3+ compatibility issues with withPostHogConfig wrapper
 export default nextConfig

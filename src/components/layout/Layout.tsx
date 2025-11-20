@@ -1,5 +1,6 @@
 'use client'
 
+import { PostHogIdentifier } from '../analytics/PostHogIdentifier'
 import FeedbackButton from '../feedback/FeedbackButton'
 import AppDrawer from './AppDrawer'
 import Footer from './Footer'
@@ -12,6 +13,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
+      <PostHogIdentifier />
       <Header />
       <AppDrawer />
       <main className="flex-1">{children}</main>
