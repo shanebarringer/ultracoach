@@ -274,3 +274,17 @@ export const formatNumberConsistent = (
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   return parts.join('.')
 }
+
+/**
+ * Formats a date as "Month Year" for better UX (e.g., "November 2024")
+ * Uses consistent formatting to prevent hydration mismatches
+ *
+ * @param date - Date to format (Date object or ISO string)
+ * @returns Formatted string like "November 2024" or "No date" if invalid
+ */
+export const formatMonthYear = (date: Date | string | null | undefined): string => {
+  if (!date) return 'No date'
+  const parsed = parseWorkoutDate(date)
+  if (!parsed) return 'Invalid date'
+  return format(parsed, 'MMMM yyyy')
+}

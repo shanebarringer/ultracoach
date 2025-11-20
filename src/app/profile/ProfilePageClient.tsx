@@ -11,7 +11,7 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
-import { formatDateConsistent } from '@/lib/utils/date'
+import { formatMonthYear } from '@/lib/utils/date'
 
 const logger = createLogger('Profile')
 
@@ -151,7 +151,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Member Since:</span>
-                    <span className="font-medium">{formatDateConsistent(user.createdAt)}</span>
+                    <span className="font-medium">{formatMonthYear(user.createdAt)}</span>
                   </div>
                 </CardBody>
               </Card>

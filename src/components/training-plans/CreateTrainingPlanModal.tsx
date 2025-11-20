@@ -21,6 +21,10 @@ import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import type {
+  GoalType as AnalyticsGoalType,
+  PlanType as AnalyticsPlanType,
+} from '@/lib/analytics/event-types'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { api } from '@/lib/api-client'
 import {
@@ -196,23 +200,19 @@ export default function CreateTrainingPlanModal({
 
       // Track training plan creation in PostHog (type-safe) - only if user is authenticated
       if (user?.id && user?.userType) {
-        // Validate plan_type and goal_type against allowed values
-        const validPlanTypes: Array<'custom' | 'template' | 'ai_generated'> = [
-          'custom',
-          'template',
-          'ai_generated',
-        ]
-        const validGoalTypes: Array<'completion' | 'time' | 'placement' | 'training'> = [
+        // Validate plan_type and goal_type against canonical analytics types from event-types.ts
+        const validAnalyticsPlanTypes: AnalyticsPlanType[] = ['custom', 'template', 'ai_generated']
+        const validAnalyticsGoalTypes: AnalyticsGoalType[] = [
           'completion',
           'time',
           'placement',
           'training',
         ]
 
-        const isPlanTypeValid = (type: string | null): type is (typeof validPlanTypes)[number] =>
-          type !== null && validPlanTypes.includes(type as (typeof validPlanTypes)[number])
-        const isGoalTypeValid = (type: string | null): type is (typeof validGoalTypes)[number] =>
-          type !== null && validGoalTypes.includes(type as (typeof validGoalTypes)[number])
+        const isPlanTypeValid = (type: string | null): type is AnalyticsPlanType =>
+          type !== null && validAnalyticsPlanTypes.includes(type as AnalyticsPlanType)
+        const isGoalTypeValid = (type: string | null): type is AnalyticsGoalType =>
+          type !== null && validAnalyticsGoalTypes.includes(type as AnalyticsGoalType)
 
         const planType = isPlanTypeValid(payload.plan_type) ? payload.plan_type : 'custom'
         const goalType = isGoalTypeValid(payload.goal_type) ? payload.goal_type : 'completion'

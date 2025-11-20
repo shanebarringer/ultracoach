@@ -87,12 +87,38 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
               setFlagsLoading(true)
 
               // Wait for feature flags to load
-              // Note: PostHog doesn't provide a method to enumerate all flags
-              // Individual flags are fetched on-demand when components request them
+              // PostHog doesn't provide enumeration, but we can fetch common flags eagerly
               ph.onFeatureFlags(() => {
-                // Mark flags as loaded - individual flags will be fetched when requested
-                setFlags(new Map())
-                logger.info('Feature flags system initialized and ready')
+                try {
+                  // List of common feature flags to pre-fetch (add your flags here)
+                  const commonFlags = [
+                    'new-dashboard',
+                    'premium-features',
+                    'beta-access',
+                    'enhanced-analytics',
+                  ]
+
+                  const flagsMap = new Map<string, boolean | string>()
+
+                  // Fetch each common flag and populate the Map
+                  commonFlags.forEach(flagKey => {
+                    const value = ph.getFeatureFlag(flagKey)
+                    if (value !== undefined) {
+                      flagsMap.set(flagKey, value as boolean | string)
+                      logger.debug(`Pre-fetched feature flag: ${flagKey}`, { value })
+                    }
+                  })
+
+                  // Set the flags Map in Jotai atom
+                  setFlags(flagsMap)
+                  logger.info('Feature flags system initialized', {
+                    preloadedFlagsCount: flagsMap.size,
+                  })
+                } catch (flagError) {
+                  logger.error('Failed to pre-fetch feature flags:', flagError)
+                  // Still set empty Map so system is marked as ready
+                  setFlags(new Map())
+                }
               })
             } catch (error) {
               logger.error('Failed to load feature flags:', error)

@@ -103,9 +103,10 @@ export default function StravaConnectionCard() {
       if (response.ok) {
         logger.info('Successfully disconnected from Strava')
 
-        // Track Strava disconnection (type-safe)
+        // Track Strava disconnection (type-safe) with userId for better correlation
         trackEvent(ANALYTICS_EVENTS.STRAVA_DISCONNECTED, {
           source: 'connection_card',
+          userId: user?.id,
         })
 
         toast.success('Strava account disconnected successfully')

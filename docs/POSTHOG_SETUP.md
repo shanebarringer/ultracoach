@@ -227,30 +227,64 @@ Once data starts flowing, you can:
 
 Here are some key events to add to UltraCoach:
 
+**Note:** These examples are **schematic** and show the event-specific properties only. All events tracked with `useTypedPostHogEvent` require canonical metadata fields (e.g., `userId`, `userType`, etc.) as enforced by the [`AnalyticsEventMap`](../src/lib/analytics/event-types.ts) type definition. See the complete example below for the full typed payload shape.
+
 ```typescript
+// SCHEMATIC EXAMPLES (showing event-specific properties only)
 // Training Plan Events
-trackEvent('training_plan_created', { planType, duration, raceGoal })
-trackEvent('training_plan_started', { planId, startDate })
-trackEvent('training_plan_completed', { planId, completionRate })
+trackEvent('training_plan_created', { planType, duration, raceGoal /* + metadata */ })
+trackEvent('training_plan_started', { planId, startDate /* + metadata */ })
+trackEvent('training_plan_completed', { planId, completionRate /* + metadata */ })
 
 // Workout Events
-trackEvent('workout_completed', { type, distance, duration, effort })
-trackEvent('workout_skipped', { type, reason })
-trackEvent('workout_modified', { field, oldValue, newValue })
+trackEvent('workout_completed', { type, distance, duration, effort /* + metadata */ })
+trackEvent('workout_skipped', { type, reason /* + metadata */ })
+trackEvent('workout_modified', { field, oldValue, newValue /* + metadata */ })
 
 // Strava Integration
-trackEvent('strava_connected', { userId })
-trackEvent('strava_sync_started', { activityCount })
-trackEvent('strava_sync_completed', { syncedActivities })
+trackEvent('strava_connected', { userId /* + metadata */ })
+trackEvent('strava_sync_started', { activityCount /* + metadata */ })
+trackEvent('strava_sync_completed', { syncedActivities /* + metadata */ })
 
 // Coach-Runner Relationships
-trackEvent('relationship_created', { coachId, runnerId })
-trackEvent('message_sent', { conversationId, hasWorkoutLink })
+trackEvent('relationship_created', { coachId, runnerId /* + metadata */ })
+trackEvent('message_sent', { conversationId, hasWorkoutLink /* + metadata */ })
 
 // Feature Usage
-trackEvent('race_imported', { importType: 'gpx' | 'csv', raceCount })
-trackEvent('feature_flag_evaluated', { flagKey, value })
+trackEvent('race_imported', { importType: 'gpx' | 'csv', raceCount /* + metadata */ })
+trackEvent('feature_flag_evaluated', { flagKey, value /* + metadata */ })
 ```
+
+### Complete Example with Full Type Safety
+
+Here's a complete, compilable example showing the full payload shape including required metadata:
+
+````typescript
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+
+function WorkoutComponent() {
+  const trackEvent = useTypedPostHogEvent()
+  const user = useAtomValue(userAtom)
+
+  const handleWorkoutComplete = () => {
+    // ✅ COMPLETE EXAMPLE - All required fields included
+    trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
+      // Event-specific properties
+      workoutId: 'workout-123',
+      status: 'completed',
+      workoutType: 'long_run',
+      distance: 20,
+      duration: 180,
+      effort: 7,
+      terrainType: 'trail',
+      elevationGain: 1500,
+      // Required canonical metadata (enforced by AnalyticsEventMap)
+      userId: user.id,
+      userType: user.userType,
+    })
+  }
+}
 
 ## Troubleshooting
 
@@ -269,24 +303,25 @@ trackEvent('feature_flag_evaluated', { flagKey, value })
    # NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
    # NEXT_PUBLIC_POSTHOG_PROJECT_ID=12345
    # POSTHOG_PERSONAL_API_KEY=phx_...
-   ```
+````
 
-   **Verify in browser console:**
+**Verify in browser console:**
 
-   ```javascript
-   // Open DevTools → Console and run:
-   console.log('PostHog Key:', process.env.NEXT_PUBLIC_POSTHOG_KEY)
+```javascript
+// Open DevTools → Console and run:
+console.log('PostHog Key:', process.env.NEXT_PUBLIC_POSTHOG_KEY)
 
-   // For production builds, check the network tab instead:
-   // Look for requests to posthog.com that include your project key
-   ```
+// For production builds, check the network tab instead:
+// Look for requests to posthog.com that include your project key
+```
 
-   **Verify in network requests:**
-   - Open DevTools → Network tab
-   - Look for requests to `i.posthog.com/e/` or your custom PostHog host
-   - Check request payload includes your project API key
+**Verify in network requests:**
 
-   **Note:** `NEXT_PUBLIC_` variables are injected at **build time**, not runtime. If you change these variables, you must rebuild your application with `pnpm build` or restart your dev server with `pnpm dev`.
+- Open DevTools → Network tab
+- Look for requests to `i.posthog.com/e/` or your custom PostHog host
+- Check request payload includes your project API key
+
+**Note:** `NEXT_PUBLIC_` variables are injected at **build time**, not runtime. If you change these variables, you must rebuild your application with `pnpm build` or restart your dev server with `pnpm dev`.
 
 2. **Check browser console for errors**
    - Open DevTools → Console

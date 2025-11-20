@@ -14,6 +14,10 @@
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('FeatureFlagsAtoms')
+
 // ========================================
 // Core Feature Flag Atoms
 // ========================================
@@ -51,7 +55,10 @@ export const featureFlagsLastLoadedAtom = atom<Date | null>(null)
 /**
  * Atom family for accessing individual feature flags
  * Provides granular subscriptions - components only re-render when their specific flag changes
- * Implements on-demand flag fetching with caching
+ *
+ * This is a pure read-only atom - no side effects. Flags must be populated by:
+ * 1. PostHogProvider's onFeatureFlags callback (eager population)
+ * 2. fetchFeatureFlagAtom (on-demand fetching)
  *
  * Usage:
  * ```typescript
@@ -61,41 +68,64 @@ export const featureFlagsLastLoadedAtom = atom<Date | null>(null)
 export const featureFlagFamily = atomFamily((flagKey: string) =>
   atom(get => {
     const flags = get(featureFlagsAtom)
-    const cachedValue = flags.get(flagKey)
-
-    // Return cached value if available
-    if (cachedValue !== undefined) {
-      return cachedValue
-    }
-
-    // On-demand flag fetching from PostHog (only on client-side)
-    if (typeof window !== 'undefined') {
-      try {
-        // Use window.posthog if available (initialized by provider)
-        const posthog = (
-          window as typeof window & { posthog?: typeof import('posthog-js').default }
-        ).posthog
-
-        if (posthog && posthog.has_opted_in_capturing()) {
-          const value = posthog.getFeatureFlag(flagKey)
-
-          // Note: We can't call set() in a read function, but PostHog will cache this internally
-          // The provider's onFeatureFlags callback should populate the atom when flags change
-          return value
-        }
-      } catch (error) {
-        // Silently fail - feature flags are optional enhancements
-        console.warn(`Failed to fetch feature flag "${flagKey}":`, error)
-      }
-    }
-
-    return undefined
+    return flags.get(flagKey)
   })
 )
 
 // ========================================
 // Write-Only Atoms for Flag Updates
 // ========================================
+
+/**
+ * Write-only atom to fetch a specific feature flag from PostHog
+ * This performs side-effectful PostHog API calls and updates the cache
+ *
+ * Usage:
+ * ```typescript
+ * const fetchFlag = useSetAtom(fetchFeatureFlagAtom)
+ * fetchFlag('new-dashboard') // Fetches and caches the flag
+ * ```
+ */
+export const fetchFeatureFlagAtom = atom(null, (get, set, flagKey: string) => {
+  if (typeof window === 'undefined') {
+    logger.warn('Cannot fetch feature flags on server-side', { flagKey })
+    return
+  }
+
+  try {
+    const posthog = (window as typeof window & { posthog?: typeof import('posthog-js').default })
+      .posthog
+
+    if (!posthog || !posthog.has_opted_in_capturing()) {
+      logger.debug('PostHog not available or opted out, skipping flag fetch', { flagKey })
+      return
+    }
+
+    // Fetch the flag value from PostHog
+    const value = posthog.getFeatureFlag(flagKey)
+
+    if (value !== undefined) {
+      // Update the flags Map with the fetched value
+      const currentFlags = get(featureFlagsAtom)
+      const newFlags = new Map(currentFlags)
+      newFlags.set(flagKey, value as boolean | string)
+      set(featureFlagsAtom, newFlags)
+
+      logger.debug('Feature flag fetched successfully', { flagKey, value })
+    } else {
+      logger.debug('Feature flag not found in PostHog', { flagKey })
+    }
+  } catch (error) {
+    logger.error(`Failed to fetch feature flag "${flagKey}"`, {
+      error: error instanceof Error ? error.message : String(error),
+      flagKey,
+    })
+    set(
+      featureFlagsErrorAtom,
+      error instanceof Error ? error : new Error(`Failed to fetch flag: ${flagKey}`)
+    )
+  }
+})
 
 /**
  * Action atom to update all feature flags at once

@@ -40,6 +40,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import type { TerrainType, WorkoutType } from '@/lib/analytics/event-types'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { stravaStateAtom, userAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
@@ -47,6 +48,53 @@ import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('EnhancedWorkoutLogModal')
+
+/**
+ * Normalizes user-facing workout type labels to canonical WorkoutType values
+ * Maps UI labels like "Easy Run" to analytics types like 'easy'
+ *
+ * @param label - User-facing workout type label
+ * @returns Normalized WorkoutType or undefined if unknown
+ */
+function normalizeWorkoutType(label: string | undefined | null): WorkoutType | undefined {
+  if (!label) return undefined
+
+  const normalizedLabel = label.toLowerCase().trim()
+
+  const typeMap: Record<string, WorkoutType> = {
+    'easy run': 'easy',
+    easy: 'easy',
+    'tempo run': 'tempo',
+    tempo: 'tempo',
+    'interval training': 'interval',
+    intervals: 'interval',
+    interval: 'interval',
+    'long run': 'long_run',
+    'race simulation': 'race_simulation',
+    race: 'race_simulation',
+    recovery: 'recovery',
+    'recovery run': 'recovery',
+    'speed work': 'speed_work',
+    speed: 'speed_work',
+  }
+
+  return typeMap[normalizedLabel]
+}
+
+/**
+ * Normalizes terrain type values to canonical TerrainType
+ *
+ * @param terrain - Raw terrain type value
+ * @returns Normalized TerrainType or undefined if unknown
+ */
+function normalizeTerrainType(terrain: string | undefined | null): TerrainType | undefined {
+  if (!terrain) return undefined
+
+  const validTerrains: TerrainType[] = ['road', 'trail', 'track', 'treadmill', 'mixed']
+  const normalized = terrain.toLowerCase().trim() as TerrainType
+
+  return validTerrains.includes(normalized) ? normalized : undefined
+}
 
 // Enhanced Zod schema with additional fields
 const enhancedWorkoutLogSchema = z.object({
@@ -317,31 +365,24 @@ const EnhancedWorkoutLogModal = memo(
             logger.info('Enhanced workout updated successfully')
 
             // Track workout completion event in PostHog (type-safe)
-            trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
-              workoutId: workout.id,
-              status: data.status as 'planned' | 'completed' | 'skipped',
-              workoutType: (data.actualType || workout.planned_type) as
-                | 'easy'
-                | 'tempo'
-                | 'interval'
-                | 'long_run'
-                | 'race_simulation'
-                | 'recovery'
-                | 'speed_work'
-                | undefined,
-              distance: data.actualDistance ?? undefined,
-              duration: data.actualDuration ?? undefined,
-              effort: data.intensity ?? undefined,
-              terrainType: data.terrain as
-                | 'road'
-                | 'trail'
-                | 'track'
-                | 'treadmill'
-                | 'mixed'
-                | undefined,
-              elevationGain: data.elevationGain ?? undefined,
-              userId: user?.id || '',
-            })
+            // Only emit event if user is authenticated (don't track with empty userId)
+            if (user?.id) {
+              trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
+                workoutId: workout.id,
+                status: data.status as 'planned' | 'completed' | 'skipped',
+                workoutType: normalizeWorkoutType(data.actualType || workout.planned_type),
+                distance: data.actualDistance ?? undefined,
+                duration: data.actualDuration ?? undefined,
+                // Note: Using 'intensity' field for perceived effort (1-10 scale)
+                // This tracks how hard the workout felt, not planned intensity
+                effort: data.intensity ?? undefined,
+                terrainType: normalizeTerrainType(data.terrain),
+                elevationGain: data.elevationGain ?? undefined,
+                userId: user.id,
+              })
+            } else {
+              logger.warn('Skipping WORKOUT_LOGGED event - user not authenticated')
+            }
 
             setFormState(prev => ({ ...prev, loading: false, error: '' }))
             reset()

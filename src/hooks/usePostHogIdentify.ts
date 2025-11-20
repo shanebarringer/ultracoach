@@ -143,34 +143,47 @@ export function useFeatureFlagValue(flagKey: string): boolean | string | undefin
 
 /**
  * Hook to reload feature flags from PostHog
- * Returns a function that can be called to trigger a reload
+ * Returns a Promise-based function that can be awaited
  *
  * @example
  * const reloadFlags = useReloadFeatureFlags()
+ * await reloadFlags() // Waits for flags to finish loading
+ * // or
  * <button onClick={reloadFlags}>Refresh Flags</button>
  */
 export function useReloadFeatureFlags() {
   const setLoading = useSetAtom(setFeatureFlagsLoadingAtom)
   const setError = useSetAtom(setFeatureFlagsErrorAtom)
 
-  return useCallback(() => {
+  return useCallback(async (): Promise<void> => {
     if (!posthog.has_opted_in_capturing()) {
       return
     }
 
-    setLoading(true)
+    return new Promise((resolve, reject) => {
+      setLoading(true)
 
-    try {
-      // Reload flags from PostHog
-      // The provider's global onFeatureFlags handler will update the atoms when flags finish loading
-      posthog.reloadFeatureFlags()
+      try {
+        // Create a one-time listener for when flags finish loading
+        const onFlagsLoaded = () => {
+          setLoading(false)
+          resolve()
+        }
 
-      // Clear loading state after triggering reload
-      // Individual flags will be fetched on-demand when components request them
-      setLoading(false)
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to reload feature flags'))
-    }
+        // Attach the listener before triggering reload
+        // PostHog will call this callback when flags are ready
+        posthog.onFeatureFlags(onFlagsLoaded)
+
+        // Trigger the reload
+        posthog.reloadFeatureFlags()
+      } catch (error) {
+        setLoading(false)
+        const errorObj =
+          error instanceof Error ? error : new Error('Failed to reload feature flags')
+        setError(errorObj)
+        reject(errorObj)
+      }
+    })
   }, [setLoading, setError])
 }
 
