@@ -20,6 +20,7 @@ import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
 import { useSession } from '@/hooks/useBetterSession'
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
+import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 
 export default function WeeklyPlannerRunnerPage() {
   const { data: session, status } = useSession()
@@ -143,7 +144,7 @@ function RunnerWeeklyPage({
       return {
         id: sessionUser.id,
         email: sessionUser.email,
-        full_name: sessionUser.name?.trim() || sessionUser.email,
+        full_name: sessionUser.name?.trim() || getDisplayNameFromEmail(sessionUser.email),
         userType: 'runner' as const,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -170,6 +171,9 @@ function RunnerWeeklyPage({
     )
   }
 
+  // Compute display name once for consistency
+  const displayName = selectedRunner.full_name || getDisplayNameFromEmail(selectedRunner.email)
+
   return (
     <>
       {/* Consolidated Header - Mobile Optimized with Fixed Alignment */}
@@ -187,7 +191,7 @@ function RunnerWeeklyPage({
                   <p className="text-foreground/70 text-xs lg:text-sm truncate">
                     {sessionUser?.userType === 'runner'
                       ? 'Your weekly overview'
-                      : `Planning for ${selectedRunner.full_name || selectedRunner.email}`}
+                      : `Planning for ${displayName}`}
                   </p>
                 </div>
               </div>
@@ -209,16 +213,13 @@ function RunnerWeeklyPage({
               {/* Runner Info */}
               <div className="flex items-center gap-3 min-w-0">
                 <Avatar
-                  name={selectedRunner.full_name || 'User'}
+                  name={displayName}
                   size="sm"
                   className="bg-primary text-white flex-shrink-0"
                 />
                 <div className="min-w-0">
-                  <p
-                    className="font-medium text-foreground text-sm truncate"
-                    title={selectedRunner.full_name || 'User'}
-                  >
-                    {selectedRunner.full_name || 'User'}
+                  <p className="font-medium text-foreground text-sm truncate" title={displayName}>
+                    {displayName}
                   </p>
                   {/* Status Chips - Note: connectedRunnersAtom only returns active relationships,
                       so "Active" status is accurate. "Training" is a visual indicator that could be
