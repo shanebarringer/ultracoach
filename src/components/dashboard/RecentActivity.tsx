@@ -7,6 +7,7 @@ import { useAtomValue } from 'jotai'
 import { DashboardSuspenseBoundary } from '@/components/ui/SuspenseBoundary'
 import { asyncWorkoutsAtom, completedWorkoutsAtom } from '@/lib/atoms/workouts'
 import type { Workout } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 interface RecentActivityProps {
   title?: string
@@ -63,7 +64,7 @@ function RecentActivityContent({ title, subtitle, limit }: RecentActivityContent
                     <div className="flex items-center gap-4 text-sm text-foreground-600 mt-1">
                       <div className="flex items-center gap-1">
                         <CalendarDaysIcon className="w-4 h-4" />
-                        <span>{new Date(workout.date).toLocaleDateString()}</span>
+                        <span>{formatDateConsistent(workout.date)}</span>
                       </div>
                       {workout.actual_distance && (
                         <div className="flex items-center gap-1">

@@ -153,29 +153,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    logger.info('🚨 MESSAGE POST START: Request received', {
+    logger.info('Message POST request received', {
       method: request.method,
-      url: request.url,
-      headers: Object.fromEntries(request.headers.entries()),
-    })
-
-    logger.info('🔍 MESSAGE POST DEBUG: Attempting to send message', {
-      headers: Object.fromEntries(request.headers.entries()),
-      url: request.url,
+      userAgent: request.headers.get('user-agent') || undefined,
     })
 
     const session = await auth.api.getSession({
       headers: request.headers,
     })
 
-    logger.info('🔍 MESSAGE POST DEBUG: Session check result', {
-      hasSession: !!session,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-    })
-
     if (!session) {
-      logger.error('🔍 MESSAGE POST DEBUG: No session found - returning 401')
+      logger.error('No session found - unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -183,19 +171,16 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json()
     const { content, recipientId, workoutId, workoutLinks = [] } = requestBody
 
-    logger.info('🔍 MESSAGE POST DEBUG: Request data parsed', {
-      content: content?.substring(0, 50) + '...',
-      recipientId,
-      workoutId,
-      sessionUserId: sessionUser.id,
-      fullRequestBody: requestBody,
+    logger.info('Message data validated', {
+      hasContent: !!content,
+      hasRecipient: !!recipientId,
+      hasWorkoutId: !!workoutId,
+      workoutLinksCount: workoutLinks.length,
+      senderId: sessionUser.id,
     })
 
     if (!content || !recipientId) {
-      logger.error('🔍 MESSAGE POST DEBUG: Missing content or recipientId', {
-        hasContent: !!content,
-        hasRecipientId: !!recipientId,
-      })
+      logger.error('Missing required message fields')
       return NextResponse.json(
         {
           error: 'Content and recipient ID are required',
@@ -205,11 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify that the user has an active relationship with the recipient
-    logger.info('🔍 MESSAGE POST DEBUG: Checking relationship', {
-      sessionUserId: sessionUser.id,
-      recipientId,
-      checking: 'active or pending relationship',
-    })
+    logger.info('Checking coach-runner relationship')
 
     const hasRelationship = await db
       .select()
@@ -236,16 +217,8 @@ export async function POST(request: NextRequest) {
       )
       .limit(1)
 
-    logger.info('🔍 MESSAGE POST DEBUG: Relationship check result', {
-      foundRelationships: hasRelationship.length,
-      relationships: hasRelationship,
-    })
-
     if (hasRelationship.length === 0) {
-      logger.error('🔍 MESSAGE POST DEBUG: No relationship found - returning 403', {
-        sessionUserId: sessionUser.id,
-        recipientId,
-      })
+      logger.error('No coach-runner relationship found')
       return NextResponse.json({ error: 'No relationship found with this user' }, { status: 403 })
     }
 
@@ -365,6 +338,10 @@ export async function POST(request: NextRequest) {
         message: content.length > 100 ? content.substring(0, 100) + '...' : content,
         read: false,
         created_at: new Date(),
+        data: {
+          sender_id: sessionUser.id,
+          message_id: message.id,
+        },
       })
 
       logger.info('Notification created for new message', {

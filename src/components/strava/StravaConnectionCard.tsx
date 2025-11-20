@@ -1,11 +1,16 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { format, parseISO } from 'date-fns'
+import { useAtomValue } from 'jotai'
 import { Activity, Calendar, ExternalLink, Unlink } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
 import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { userAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -34,6 +39,8 @@ export default function StravaConnectionCard() {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const user = useAtomValue(userAtom) // Read-only access
+  const trackEvent = useTypedPostHogEvent()
 
   const fetchStatus = async () => {
     try {
@@ -67,6 +74,15 @@ export default function StravaConnectionCard() {
     setConnecting(true)
     try {
       logger.info('Redirecting to Strava authorization...')
+
+      // Track Strava connection attempt (type-safe) - only if user is authenticated
+      if (user?.id) {
+        trackEvent(ANALYTICS_EVENTS.STRAVA_CONNECT_INITIATED, {
+          source: 'connection_card',
+          userId: user.id,
+        })
+      }
+
       const currentUrl = window.location.pathname
       window.location.href = `/api/strava/connect?returnUrl=${encodeURIComponent(currentUrl)}`
     } catch (error) {
@@ -86,6 +102,15 @@ export default function StravaConnectionCard() {
 
       if (response.ok) {
         logger.info('Successfully disconnected from Strava')
+
+        // Track Strava disconnection (type-safe) - only if user is authenticated
+        if (user?.id) {
+          trackEvent(ANALYTICS_EVENTS.STRAVA_DISCONNECTED, {
+            source: 'connection_card',
+            userId: user.id,
+          })
+        }
+
         toast.success('Strava account disconnected successfully')
         await fetchStatus() // Refresh status
       } else {
@@ -198,7 +223,7 @@ export default function StravaConnectionCard() {
   const athlete = status.athlete!
   const isExpired = status.is_expired
   const connectedDate = status.connected_since
-    ? new Date(status.connected_since).toLocaleDateString()
+    ? format(parseISO(status.connected_since), 'MMM d, yyyy')
     : 'Unknown'
 
   return (

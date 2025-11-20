@@ -195,3 +195,96 @@ export const getWeekRange = (
   const end = endOfWeek(referenceDate, { weekStartsOn })
   return { start, end }
 }
+
+/**
+ * Formats a date using consistent locale to prevent hydration mismatches.
+ * Uses explicit format string to ensure server and client render identically.
+ * @param date - Date to format (Date object or string)
+ * @param formatStr - Format string (defaults to 'MM/dd/yyyy')
+ * @returns Formatted date string consistent between SSR and client
+ */
+export const formatDateConsistent = (
+  date: Date | string | null | undefined,
+  formatStr: string = 'MM/dd/yyyy'
+): string => {
+  if (!date) return 'No date'
+  const parsed = parseWorkoutDate(date)
+  if (!parsed) return 'Invalid date'
+  return format(parsed, formatStr)
+}
+
+/**
+ * Formats a time using consistent locale to prevent hydration mismatches.
+ * Uses explicit format string to ensure server and client render identically.
+ * @param date - Date/time to format (Date object or string)
+ * @param formatStr - Format string (defaults to 'h:mm a')
+ * @returns Formatted time string consistent between SSR and client
+ */
+export const formatTimeConsistent = (
+  date: Date | string | null | undefined,
+  formatStr: string = 'h:mm a'
+): string => {
+  if (!date) return ''
+  const parsed = typeof date === 'string' ? parseISO(date) : date
+  if (!isValid(parsed)) return ''
+  return format(parsed, formatStr)
+}
+
+/**
+ * Formats a date with short month name for compact display.
+ * @param date - Date to format
+ * @returns Formatted string like "Jan 15, 2024"
+ */
+export const formatDateShort = (date: Date | string | null | undefined): string => {
+  return formatDateConsistent(date, 'MMM d, yyyy')
+}
+
+/**
+ * Formats a date with full details for detailed display.
+ * @param date - Date to format
+ * @returns Formatted string like "Monday, January 15, 2024"
+ */
+export const formatDateLong = (date: Date | string | null | undefined): string => {
+  return formatDateConsistent(date, 'EEEE, MMMM d, yyyy')
+}
+
+/**
+ * Formats a number using consistent locale to prevent hydration mismatches.
+ * @param value - Number to format
+ * @param options - Formatting options (decimals, thousands separator, etc.)
+ * @returns Formatted number string consistent between SSR and client
+ */
+export const formatNumberConsistent = (
+  value: number | null | undefined,
+  options: {
+    decimals?: number
+    includeCommas?: boolean
+  } = {}
+): string => {
+  if (value === null || value === undefined) return '0'
+
+  const { decimals = 0, includeCommas = true } = options
+
+  const rounded = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
+
+  if (!includeCommas) return rounded
+
+  // Add thousand separators manually to ensure consistency
+  const parts = rounded.split('.')
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return parts.join('.')
+}
+
+/**
+ * Formats a date as "Month Year" for better UX (e.g., "November 2024")
+ * Uses consistent formatting to prevent hydration mismatches
+ *
+ * @param date - Date to format (Date object or ISO string)
+ * @returns Formatted string like "November 2024" or "No date" if invalid
+ */
+export const formatMonthYear = (date: Date | string | null | undefined): string => {
+  if (!date) return 'No date'
+  const parsed = parseWorkoutDate(date)
+  if (!parsed) return 'Invalid date'
+  return format(parsed, 'MMMM yyyy')
+}

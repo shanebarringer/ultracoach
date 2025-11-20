@@ -17,6 +17,7 @@ import { chatUiStateAtom, offlineMessageQueueAtom, uiStateAtom } from '@/lib/ato
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 
 import ConnectionStatus from './ConnectionStatus'
@@ -246,8 +247,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
               onClose={() => setChatUiState(prev => ({ ...prev, filterWorkoutId: null }))}
               size="sm"
             >
-              {filterWorkout.planned_type || 'Workout'} -{' '}
-              {new Date(filterWorkout.date || '').toLocaleDateString()}
+              {filterWorkout.planned_type || 'Workout'} - {formatDateConsistent(filterWorkout.date)}
             </Chip>
           )}
 
@@ -280,8 +280,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                   ...workoutsWithMessages.map(
                     (workout: { id: string; planned_type?: string; date?: string }) => (
                       <DropdownItem key={workout.id}>
-                        {workout.planned_type || 'Workout'} -{' '}
-                        {new Date(workout.date || '').toLocaleDateString()}
+                        {workout.planned_type || 'Workout'} - {formatDateConsistent(workout.date)}
                       </DropdownItem>
                     )
                   ),
@@ -312,7 +311,6 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         onStartTyping={startTyping}
         onStopTyping={stopTyping}
         disabled={chatUiState.sending || !session?.user?.id}
-        recipientId={recipientId}
       />
 
       {/* New Message Modal */}

@@ -20,16 +20,24 @@ import { z } from 'zod'
 import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import type {
+  GoalType as AnalyticsGoalType,
+  PlanType as AnalyticsPlanType,
+} from '@/lib/analytics/event-types'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
+  userAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 import {
   GOAL_TYPES,
   GOAL_TYPE_LABELS,
@@ -73,6 +81,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const user = useAtomValue(userAtom) // Read-only access
+  const trackEvent = useTypedPostHogEvent()
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -187,6 +197,38 @@ export default function CreateTrainingPlanModal({
       })
 
       logger.info('Training plan created successfully', response.data)
+
+      // Track training plan creation in PostHog (type-safe) - only if user is authenticated
+      if (user?.id && user?.userType) {
+        // Validate plan_type and goal_type against canonical analytics types from event-types.ts
+        const validAnalyticsPlanTypes: AnalyticsPlanType[] = ['custom', 'template', 'ai_generated']
+        const validAnalyticsGoalTypes: AnalyticsGoalType[] = [
+          'completion',
+          'time',
+          'placement',
+          'training',
+        ]
+
+        const isPlanTypeValid = (type: string | null): type is AnalyticsPlanType =>
+          type !== null && validAnalyticsPlanTypes.includes(type as AnalyticsPlanType)
+        const isGoalTypeValid = (type: string | null): type is AnalyticsGoalType =>
+          type !== null && validAnalyticsGoalTypes.includes(type as AnalyticsGoalType)
+
+        const planType = isPlanTypeValid(payload.plan_type) ? payload.plan_type : 'custom'
+        const goalType = isGoalTypeValid(payload.goal_type) ? payload.goal_type : 'completion'
+
+        trackEvent(ANALYTICS_EVENTS.TRAINING_PLAN_CREATED, {
+          planType,
+          goalType,
+          duration: undefined, // Duration not captured in form, can be added later
+          raceGoal: payload.race_id ? String(payload.race_id) : undefined,
+          templateId: payload.template_id ? String(payload.template_id) : undefined,
+          userId: user.id,
+          userType:
+            user.userType === 'coach' || user.userType === 'runner' ? user.userType : 'runner',
+        })
+      }
+
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form
 
@@ -394,17 +436,12 @@ export default function CreateTrainingPlanModal({
                         )}
                         {item.date && (
                           <span className="flex items-center gap-1">
-                            📅{' '}
-                            {new Date(item.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            📅 {formatDateConsistent(item.date, 'MMM d, yyyy')}
                           </span>
                         )}
                         {item.elevation_gain_feet > 0 && (
                           <span className="flex items-center gap-1">
-                            ⛰️ {item.elevation_gain_feet.toLocaleString()}ft
+                            ⛰️ {item.elevation_gain_feet.toLocaleString('en-US')}ft
                           </span>
                         )}
                       </div>

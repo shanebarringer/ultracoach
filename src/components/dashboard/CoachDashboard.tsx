@@ -21,6 +21,7 @@ import { CoachDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { createLogger } from '@/lib/logger'
 import type { TrainingPlan, User } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 import RecentActivity from './RecentActivity'
 
@@ -438,7 +439,7 @@ function CoachDashboard() {
                         {plan.target_race_date && (
                           <div className="flex items-center gap-1">
                             <CalendarDaysIcon className="w-3 h-3" />
-                            <span>{new Date(plan.target_race_date).toLocaleDateString()}</span>
+                            <span>{formatDateConsistent(plan.target_race_date)}</span>
                           </div>
                         )}
                       </div>

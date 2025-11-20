@@ -39,6 +39,7 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
+import { formatTimeConsistent } from '@/lib/utils/date'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('StravaWorkoutPanel')
@@ -330,7 +331,7 @@ const StravaWorkoutPanel = memo(({ className = '' }: StravaWorkoutPanelProps) =>
                       <div className="text-xs text-foreground-500">
                         Last analyzed:{' '}
                         {matchingSummary.lastProcessed
-                          ? new Date(matchingSummary.lastProcessed).toLocaleTimeString()
+                          ? formatTimeConsistent(matchingSummary.lastProcessed)
                           : 'Never'}
                       </div>
                     </CardBody>
