@@ -94,8 +94,12 @@ function getTrustedOrigins(): string[] {
     origins.push(`https://${process.env.VERCEL_URL}`)
   }
 
-  // Add main production domain
-  origins.push('https://ultracoach.vercel.app')
+  // Add main production domains (production only)
+  if (process.env.NODE_ENV === 'production') {
+    origins.push('https://ultracoach.vercel.app')
+    origins.push('https://www.ultracoach.dev') // Production custom domain with www
+    origins.push('https://ultracoach.dev') // Production custom domain without www
+  }
 
   // Note: Preview URLs are automatically handled via VERCEL_URL environment variable (lines 93-95)
   // No need to hardcode branch-specific preview URLs as they become stale quickly

@@ -14,10 +14,21 @@ import classNames from 'classnames'
 import { formatDistanceToNow } from 'date-fns'
 import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
 
+import { useRouter } from 'next/navigation'
+
 import { useNotifications } from '@/hooks/useNotifications'
+import type { Notification } from '@/types/notifications'
+import {
+  isAchievementNotification,
+  isMessageNotification,
+  isRaceNotification,
+  isTrainingPlanNotification,
+  isWorkoutNotification,
+} from '@/types/notifications'
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+  const router = useRouter()
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -49,15 +60,93 @@ export default function NotificationBell() {
     }
   }
 
-  const handleNotificationClick = async (notificationId: string, isRead: boolean) => {
+  // Centralized navigation logic with type-safe guards and fallbacks for legacy notifications
+  const navigateToNotification = async (notification: Notification) => {
+    // Try type-safe navigation with data first
+    if (isMessageNotification(notification)) {
+      router.push(`/chat/${notification.data.sender_id}`)
+      return
+    }
+    if (isWorkoutNotification(notification)) {
+      router.push(`/workouts/${notification.data.workout_id}`)
+      return
+    }
+    if (isTrainingPlanNotification(notification)) {
+      router.push(`/training-plans/${notification.data.plan_id}`)
+      return
+    }
+    if (isRaceNotification(notification)) {
+      router.push(`/races/${notification.data.race_id}`)
+      return
+    }
+    if (isAchievementNotification(notification)) {
+      router.push(`/achievements/${notification.data.achievement_id}`)
+      return
+    }
+
+    // Fallback for legacy message notifications - try to extract sender from title
+    if (notification.type === 'message') {
+      // Title format: "New message from 🏃 Riley Johnson" or "New message from 🏔️ Sarah Martinez"
+      const nameMatch = notification.title.match(/New message from (?:🏃|🏔️)\s+(.+)/)
+      if (nameMatch && nameMatch[1]) {
+        const senderName = nameMatch[1].trim()
+        try {
+          // Query users API to find sender by name
+          const response = await fetch('/api/users', {
+            credentials: 'same-origin',
+          })
+          if (response.ok) {
+            const users = await response.json()
+            const sender = users.find(
+              (u: { name?: string; fullName?: string }) =>
+                u.fullName === senderName || u.name === senderName
+            )
+            if (sender?.id) {
+              router.push(`/chat/${sender.id}`)
+              return
+            }
+          }
+        } catch (error) {
+          // If lookup fails, fall through to default /chat navigation
+          console.error('Failed to lookup sender for legacy notification:', error)
+        }
+      }
+      // If we couldn't find the sender, navigate to general chat page
+      router.push('/chat')
+      return
+    }
+
+    // Fallback for other notification types without data
+    switch (notification.type) {
+      case 'workout':
+        router.push('/workouts')
+        break
+      case 'plan':
+      case 'training_plan':
+        router.push('/training-plans')
+        break
+      case 'race':
+        router.push('/races')
+        break
+      default:
+        // For other types, do nothing
+        break
+    }
+  }
+
+  const handleNotificationClick = async (
+    notificationId: string,
+    isRead: boolean,
+    notification: Notification
+  ) => {
     if (!isRead) {
       await markAsRead(notificationId)
     }
-    // TODO: Add navigation logic based on notification type
+    navigateToNotification(notification)
   }
 
-  const getNotificationActions = (notification: { type: string; id: string }) => {
-    // Return action buttons based on notification type
+  const getNotificationActions = (notification: Notification) => {
+    // Render action buttons based on type, works for both new and legacy notifications
     switch (notification.type) {
       case 'message':
         return (
@@ -67,23 +156,92 @@ export default function NotificationBell() {
             color="primary"
             startContent={<ExternalLinkIcon className="w-3 h-3" />}
             className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
           >
             Reply
           </Button>
         )
+
       case 'workout':
         return (
-          <Button size="sm" variant="flat" color="success" className="h-6">
-            View Workout
+          <Button
+            size="sm"
+            variant="flat"
+            color="success"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
           </Button>
         )
+
+      case 'plan':
       case 'training_plan':
         return (
-          <Button size="sm" variant="flat" color="primary" className="h-6">
-            View Plan
+          <Button
+            size="sm"
+            variant="flat"
+            color="primary"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
           </Button>
         )
+
+      case 'race':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="warning"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
+
+      case 'achievement':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="success"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
+
       default:
+        // No action button for system notifications
         return null
     }
   }
@@ -153,7 +311,9 @@ export default function NotificationBell() {
                     !notification.read ? 'bg-primary-50 border-l-primary' : 'border-l-transparent'
                   )}
                   textValue={notification.title}
-                  onPress={() => handleNotificationClick(notification.id, notification.read)}
+                  onPress={() =>
+                    handleNotificationClick(notification.id, notification.read, notification)
+                  }
                 >
                   <div className="flex gap-3 w-full">
                     <div className="shrink-0 text-xl">{getNotificationIcon(notification.type)}</div>
