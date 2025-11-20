@@ -60,18 +60,48 @@ export default function NotificationBell() {
     }
   }
 
-  // Centralized navigation logic with type-safe guards
+  // Centralized navigation logic with type-safe guards and fallbacks for legacy notifications
   const navigateToNotification = (notification: Notification) => {
+    // Try type-safe navigation with data first
     if (isMessageNotification(notification)) {
       router.push(`/chat/${notification.data.sender_id}`)
-    } else if (isWorkoutNotification(notification)) {
+      return
+    }
+    if (isWorkoutNotification(notification)) {
       router.push(`/workouts/${notification.data.workout_id}`)
-    } else if (isTrainingPlanNotification(notification)) {
+      return
+    }
+    if (isTrainingPlanNotification(notification)) {
       router.push(`/training-plans/${notification.data.plan_id}`)
-    } else if (isRaceNotification(notification)) {
+      return
+    }
+    if (isRaceNotification(notification)) {
       router.push(`/races/${notification.data.race_id}`)
-    } else if (isAchievementNotification(notification)) {
+      return
+    }
+    if (isAchievementNotification(notification)) {
       router.push(`/achievements/${notification.data.achievement_id}`)
+      return
+    }
+
+    // Fallback for legacy notifications without data - navigate based on type
+    switch (notification.type) {
+      case 'message':
+        router.push('/chat')
+        break
+      case 'workout':
+        router.push('/workouts')
+        break
+      case 'plan':
+      case 'training_plan':
+        router.push('/training-plans')
+        break
+      case 'race':
+        router.push('/races')
+        break
+      default:
+        // For other types, do nothing
+        break
     }
   }
 
@@ -87,105 +117,104 @@ export default function NotificationBell() {
   }
 
   const getNotificationActions = (notification: Notification) => {
-    // Check type guards first - only render buttons when notification.data exists
-    if (isMessageNotification(notification)) {
-      return (
-        <Button
-          size="sm"
-          variant="flat"
-          color="primary"
-          startContent={<ExternalLinkIcon className="w-3 h-3" />}
-          className="h-6"
-          onPress={async () => {
-            if (!notification.read) {
-              await markAsRead(notification.id)
-            }
-            navigateToNotification(notification)
-          }}
-        >
-          Reply
-        </Button>
-      )
-    }
+    // Render action buttons based on type, works for both new and legacy notifications
+    switch (notification.type) {
+      case 'message':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="primary"
+            startContent={<ExternalLinkIcon className="w-3 h-3" />}
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            Reply
+          </Button>
+        )
 
-    if (isWorkoutNotification(notification)) {
-      return (
-        <Button
-          size="sm"
-          variant="flat"
-          color="success"
-          className="h-6"
-          onPress={async () => {
-            if (!notification.read) {
-              await markAsRead(notification.id)
-            }
-            navigateToNotification(notification)
-          }}
-        >
-          View Workout
-        </Button>
-      )
-    }
+      case 'workout':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="success"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
 
-    if (isTrainingPlanNotification(notification)) {
-      return (
-        <Button
-          size="sm"
-          variant="flat"
-          color="primary"
-          className="h-6"
-          onPress={async () => {
-            if (!notification.read) {
-              await markAsRead(notification.id)
-            }
-            navigateToNotification(notification)
-          }}
-        >
-          View Plan
-        </Button>
-      )
-    }
+      case 'plan':
+      case 'training_plan':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="primary"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
 
-    if (isRaceNotification(notification)) {
-      return (
-        <Button
-          size="sm"
-          variant="flat"
-          color="warning"
-          className="h-6"
-          onPress={async () => {
-            if (!notification.read) {
-              await markAsRead(notification.id)
-            }
-            navigateToNotification(notification)
-          }}
-        >
-          View Race
-        </Button>
-      )
-    }
+      case 'race':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="warning"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
 
-    if (isAchievementNotification(notification)) {
-      return (
-        <Button
-          size="sm"
-          variant="flat"
-          color="success"
-          className="h-6"
-          onPress={async () => {
-            if (!notification.read) {
-              await markAsRead(notification.id)
-            }
-            navigateToNotification(notification)
-          }}
-        >
-          View Achievement
-        </Button>
-      )
-    }
+      case 'achievement':
+        return (
+          <Button
+            size="sm"
+            variant="flat"
+            color="success"
+            className="h-6"
+            onPress={async () => {
+              if (!notification.read) {
+                await markAsRead(notification.id)
+              }
+              navigateToNotification(notification)
+            }}
+          >
+            View
+          </Button>
+        )
 
-    // No action button for notifications without proper data
-    return null
+      default:
+        // No action button for system notifications
+        return null
+    }
   }
 
   return (
