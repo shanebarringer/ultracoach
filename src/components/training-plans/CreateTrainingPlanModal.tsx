@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { useUnitConverter } from '@/hooks/useUnitConverter'
 import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
@@ -73,6 +74,7 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const converter = useUnitConverter()
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -404,7 +406,7 @@ export default function CreateTrainingPlanModal({
                         )}
                         {item.elevation_gain_feet > 0 && (
                           <span className="flex items-center gap-1">
-                            ⛰️ {item.elevation_gain_feet.toLocaleString()}ft
+                            ⛰️ {converter.elevation(item.elevation_gain_feet, 'feet')} gain
                           </span>
                         )}
                       </div>

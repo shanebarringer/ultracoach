@@ -39,6 +39,7 @@ import { z } from 'zod'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { useUnitConverter } from '@/hooks/useUnitConverter'
 import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -169,6 +170,7 @@ const EnhancedWorkoutLogModal = memo(
     const [formState, setFormState] = useAtom(workoutLogFormAtom)
     const [stravaState] = useAtom(stravaStateAtom)
     const [activeTab, setActiveTab] = useState('basic')
+    const converter = useUnitConverter()
 
     // React Hook Form setup with enhanced schema
     const {
@@ -403,7 +405,9 @@ const EnhancedWorkoutLogModal = memo(
                   {workout.planned_distance && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-primary" />
-                      <span className="text-sm">{workout.planned_distance} miles</span>
+                      <span className="text-sm">
+                        {converter.distance(Number(workout.planned_distance), 'miles')}
+                      </span>
                     </div>
                   )}
                   {workout.planned_duration && (
@@ -526,11 +530,12 @@ const EnhancedWorkoutLogModal = memo(
                         </div>
 
                         {/* Calculated pace display */}
-                        {calculatedPace && (
+                        {calculatedPace && watchedDistance && (
                           <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg">
                             <TrendingUp className="h-4 w-4 text-success" />
                             <span className="text-sm text-success font-medium">
-                              Average Pace: {calculatedPace} /mile
+                              Average Pace:{' '}
+                              {converter.pace(Number(watchedDuration) / watchedDistance)}
                             </span>
                           </div>
                         )}

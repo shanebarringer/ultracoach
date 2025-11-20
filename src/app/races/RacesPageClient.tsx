@@ -42,6 +42,7 @@ import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { useUnitConverter } from '@/hooks/useUnitConverter'
 import {
   asyncRacesAtom,
   raceDistanceFilterAtom,
@@ -76,6 +77,7 @@ function RacesContent() {
   const [localRaces, setLocalRaces] = useAtom(racesAtom)
   const refresh = useSetAtom(refreshRacesAtom)
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
+  const converter = useUnitConverter()
   const logger = useMemo(() => createLogger('RacesContent'), [])
 
   // Search and filter state - using Jotai atoms for persistence
@@ -671,12 +673,14 @@ function RacesContent() {
                   </div>
                   <div className="flex items-center gap-2">
                     <RouteIcon className="w-4 h-4 text-foreground-600" />
-                    <span className="text-sm text-foreground-600">{race.distance_miles} miles</span>
+                    <span className="text-sm text-foreground-600">
+                      {converter.distance(race.distance_miles, 'miles')}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MountainSnowIcon className="w-4 h-4 text-foreground-600" />
                     <span className="text-sm text-foreground-600">
-                      {race.elevation_gain_feet.toLocaleString()} ft gain
+                      {converter.elevation(race.elevation_gain_feet, 'feet')} gain
                     </span>
                   </div>
                 </div>

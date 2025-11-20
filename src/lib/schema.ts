@@ -603,3 +603,68 @@ export const strava_webhook_events = pgTable(
     }),
   })
 )
+
+// ===================================
+// EMAIL NOTIFICATION SYSTEM
+// ===================================
+
+// Email notification queue - manages email delivery and digests
+export const email_queue = pgTable('email_queue', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  // Email details
+  recipient_email: text('recipient_email').notNull(),
+  subject: text('subject').notNull(),
+  template_id: text('template_id').notNull(), // 'message', 'workout', 'daily_digest', 'weekly_summary', etc.
+  template_data: json('template_data').notNull(),
+
+  // Delivery status
+  status: text('status', {
+    enum: ['pending', 'sending', 'sent', 'failed', 'cancelled'],
+  })
+    .default('pending')
+    .notNull(),
+  priority: integer('priority').default(5).notNull(), // 1-10, higher = more urgent
+
+  // Scheduling
+  scheduled_for: timestamp('scheduled_for', { withTimezone: true }),
+  sent_at: timestamp('sent_at', { withTimezone: true }),
+
+  // Error tracking
+  error_message: text('error_message'),
+  retry_count: integer('retry_count').default(0).notNull(),
+  max_retries: integer('max_retries').default(3).notNull(),
+
+  // Metadata
+  resend_email_id: text('resend_email_id'), // ID from Resend API
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// Push notification subscriptions - for future push notification support
+export const push_subscriptions = pgTable('push_subscriptions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  // Web Push API subscription data
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh_key: text('p256dh_key').notNull(),
+  auth_key: text('auth_key').notNull(),
+
+  // Device metadata
+  device_type: text('device_type'), // 'desktop', 'mobile', 'tablet'
+  browser: text('browser'),
+  user_agent: text('user_agent'),
+
+  // Status
+  active: boolean('active').default(true).notNull(),
+  last_used_at: timestamp('last_used_at', { withTimezone: true }),
+
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})

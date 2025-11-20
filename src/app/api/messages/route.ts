@@ -2,10 +2,12 @@ import { and, asc, eq, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import type { CommunicationSettings } from '@/lib/atoms/settings'
 import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
+import * as communicationUtils from '@/lib/privacy/communication-utils'
 import {
   coach_runners,
   message_workout_links,
@@ -13,6 +15,7 @@ import {
   notifications,
   training_plans,
   user,
+  user_settings,
   workouts,
 } from '@/lib/schema'
 
@@ -375,6 +378,63 @@ export async function POST(request: NextRequest) {
     } catch (notificationError) {
       logger.error('Failed to create notification for new message', notificationError)
       // Don't fail the message creation if notification fails
+    }
+
+    // Check if recipient has auto-response enabled and is in quiet hours
+    try {
+      const recipientSettings = await db
+        .select()
+        .from(user_settings)
+        .where(eq(user_settings.user_id, recipientId))
+        .limit(1)
+
+      if (recipientSettings.length > 0) {
+        const settings = recipientSettings[0]
+        const communicationSettings = settings.communication_settings as {
+          auto_responses_enabled?: boolean
+          auto_response_message?: string
+          quiet_hours_enabled?: boolean
+          quiet_hours_start?: string
+          quiet_hours_end?: string
+          weekend_quiet_mode?: boolean
+          message_sound_enabled?: boolean
+          typing_indicators_enabled?: boolean
+        } | null
+
+        // Check if auto-response is enabled and recipient is in quiet hours
+        if (communicationSettings?.auto_responses_enabled) {
+          const quietHoursResult = communicationUtils.isInQuietHours(
+            communicationSettings as CommunicationSettings
+          )
+
+          if (quietHoursResult.inQuietHours) {
+            const autoResponseMessage =
+              communicationSettings.auto_response_message ||
+              communicationUtils.getAutoResponseMessage(
+                communicationSettings as CommunicationSettings
+              ) ||
+              'I am currently unavailable. I will respond when I return.'
+
+            // Send auto-response as recipient
+            await db.insert(messages).values({
+              content: autoResponseMessage,
+              sender_id: recipientId,
+              recipient_id: sessionUser.id,
+              read: false,
+              created_at: new Date(),
+            })
+
+            logger.info('Auto-response sent', {
+              recipientId,
+              senderId: sessionUser.id,
+              reason: quietHoursResult.reason,
+            })
+          }
+        }
+      }
+    } catch (autoResponseError) {
+      logger.error('Failed to send auto-response', autoResponseError)
+      // Don't fail the message creation if auto-response fails
     }
 
     return NextResponse.json({ message }, { status: 201 })
