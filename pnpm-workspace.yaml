@@ -10,6 +10,7 @@ onlyBuiltDependencies:
   - '@prisma/engines' # Prisma database engine binaries
   - bcrypt # Password hashing with native C++ bindings
   - better-sqlite3 # SQLite database with native bindings
+  - core-js # Polyfills for modern JavaScript features
   - esbuild # JavaScript bundler with native code
   - prisma # Prisma CLI and schema management
   - sharp # Image processing with native bindings

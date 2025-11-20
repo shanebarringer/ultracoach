@@ -23,6 +23,8 @@ import {
 // Module-level flags to prevent concurrent reload operations and listener accumulation
 let isReloadingFlags = false
 let hasRegisteredReloadListener = false
+let currentReloadResolver: (() => void) | null = null
+let currentReloadRejecter: ((error: Error) => void) | null = null
 
 /**
  * Hook to identify the current user with PostHog
@@ -189,9 +191,19 @@ export function useReloadFeatureFlags() {
         if (isReloadingFlags) {
           // Handle errors from PostHog flag loading
           if (errorsLoading) {
-            setError(new Error('Failed to load feature flags from PostHog'))
+            const error = new Error('Failed to load feature flags from PostHog')
+            setError(error)
             setLoading(false)
+
+            // Reject Promise directly
+            if (currentReloadRejecter) {
+              currentReloadRejecter(error)
+            }
+
+            // Cleanup
             isReloadingFlags = false
+            currentReloadResolver = null
+            currentReloadRejecter = null
             return
           }
 
@@ -208,7 +220,16 @@ export function useReloadFeatureFlags() {
 
           setFlags(allFlags)
           setLoading(false)
+
+          // Resolve Promise directly
+          if (currentReloadResolver) {
+            currentReloadResolver()
+          }
+
+          // Cleanup
           isReloadingFlags = false
+          currentReloadResolver = null
+          currentReloadRejecter = null
         }
       }
     )
@@ -229,33 +250,47 @@ export function useReloadFeatureFlags() {
     setError(null)
 
     try {
-      // Trigger the reload - the module-level listener will handle completion
-      // The onFeatureFlags callback will update loading state and flags when done
-      posthog.reloadFeatureFlags()
-
-      // Wait for the listener to process the reload (max 5 seconds timeout)
-      // The listener will reset isReloadingFlags and setLoading(false) when done
+      // Create Promise with resolver/rejecter stored at module level
       await new Promise<void>((resolve, reject) => {
+        // 5-second timeout as fallback (prevents stuck Promises)
         const timeout = setTimeout(() => {
           if (isReloadingFlags) {
-            isReloadingFlags = false
+            const timeoutError = new Error('Feature flag reload timed out after 5 seconds')
+            setError(timeoutError)
             setLoading(false)
-            reject(new Error('Feature flag reload timed out after 5 seconds'))
+
+            // Use rejecter if still available
+            if (currentReloadRejecter) {
+              currentReloadRejecter(timeoutError)
+            }
+
+            // Cleanup
+            isReloadingFlags = false
+            currentReloadResolver = null
+            currentReloadRejecter = null
           }
         }, 5000)
 
-        // Poll for completion (listener resets isReloadingFlags)
-        const checkCompletion = setInterval(() => {
-          if (!isReloadingFlags) {
-            clearInterval(checkCompletion)
-            clearTimeout(timeout)
-            resolve()
-          }
-        }, 100)
+        // Wrap resolver/rejecter to clear timeout
+        currentReloadResolver = () => {
+          clearTimeout(timeout)
+          resolve()
+        }
+        currentReloadRejecter = (error: Error) => {
+          clearTimeout(timeout)
+          reject(error)
+        }
+
+        // Trigger reload - listener will call resolver/rejecter
+        posthog.reloadFeatureFlags()
       })
     } catch (error) {
+      // Error already handled by listener or timeout
+      // Just ensure cleanup happened
       isReloadingFlags = false
-      setLoading(false)
+      currentReloadResolver = null
+      currentReloadRejecter = null
+
       const errorObj = error instanceof Error ? error : new Error('Failed to reload feature flags')
       setError(errorObj)
       throw errorObj
