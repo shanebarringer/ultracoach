@@ -35,6 +35,7 @@ import { connectedRunnersAtom, runnersPageTabAtom } from '@/lib/atoms/index'
 import type { User as BetterAuthUser } from '@/lib/better-auth-client'
 import type { User as SupabaseUser } from '@/lib/supabase'
 import { formatDateConsistent } from '@/lib/utils/date'
+import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 
 // Extended User type with runner-specific fields that may be returned from API
 interface RunnerWithStats extends SupabaseUser {
@@ -81,96 +82,98 @@ export default function RunnersPageClient({ user }: RunnersPageClientProps) {
     router.push(`/weekly-planner/${runnerId}`)
   }
 
-  const renderRunnerCard = (runner: RunnerWithStats) => (
-    <Card key={runner.id} className="border border-divider hover:shadow-lg transition-shadow">
-      <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
-            <Avatar
-              size="lg"
-              name={runner.full_name || runner.email}
-              showFallback
-              className="bg-gradient-to-r from-primary to-secondary text-white"
-            />
-            <div>
-              <h3 className="text-xl font-semibold text-foreground">
-                {runner.full_name || runner.email}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <Chip
-                  variant="flat"
-                  color="primary"
-                  size="sm"
-                  startContent={<UsersIcon size={14} />}
-                >
-                  Runner
-                </Chip>
-                {runner.connected_at && (
-                  <Chip variant="flat" color="success" size="sm">
-                    Connected {formatDateConsistent(runner.connected_at)}
+  const renderRunnerCard = (runner: RunnerWithStats) => {
+    const displayName = runner.full_name || getDisplayNameFromEmail(runner.email)
+
+    return (
+      <Card key={runner.id} className="border border-divider hover:shadow-lg transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <Avatar
+                size="lg"
+                name={displayName}
+                showFallback
+                className="bg-gradient-to-r from-primary to-secondary text-white"
+              />
+              <div>
+                <h3 className="text-xl font-semibold text-foreground">{displayName}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <Chip
+                    variant="flat"
+                    color="primary"
+                    size="sm"
+                    startContent={<UsersIcon size={14} />}
+                  >
+                    Runner
                   </Chip>
-                )}
+                  {runner.connected_at && (
+                    <Chip variant="flat" color="success" size="sm">
+                      Connected {formatDateConsistent(runner.connected_at)}
+                    </Chip>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="flat"
-              color="primary"
-              startContent={<MessageCircleIcon size={16} />}
-              onPress={() => handleMessageRunner(runner.id)}
-            >
-              Message
-            </Button>
-            <Button
-              size="sm"
-              color="primary"
-              startContent={<RouteIcon size={16} />}
-              onPress={() => handlePlanWorkouts(runner.id)}
-            >
-              Plan Workouts
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="flat"
+                color="primary"
+                startContent={<MessageCircleIcon size={16} />}
+                onPress={() => handleMessageRunner(runner.id)}
+              >
+                Message
+              </Button>
+              <Button
+                size="sm"
+                color="primary"
+                startContent={<RouteIcon size={16} />}
+                onPress={() => handlePlanWorkouts(runner.id)}
+              >
+                Plan Workouts
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <Divider />
+        <Divider />
 
-      <CardBody>
-        {runner.stats ? (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-primary mb-1">
-                <TrendingUpIcon size={16} />
-                <span className="text-sm font-medium">Training Plans</span>
+        <CardBody>
+          {runner.stats ? (
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-primary mb-1">
+                  <TrendingUpIcon size={16} />
+                  <span className="text-sm font-medium">Training Plans</span>
+                </div>
+                <div className="text-2xl font-bold">{runner.stats.trainingPlans}</div>
               </div>
-              <div className="text-2xl font-bold">{runner.stats.trainingPlans}</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-success mb-1">
-                <FlagIcon size={16} />
-                <span className="text-sm font-medium">Completed</span>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-success mb-1">
+                  <FlagIcon size={16} />
+                  <span className="text-sm font-medium">Completed</span>
+                </div>
+                <div className="text-2xl font-bold">{runner.stats.completedWorkouts}</div>
               </div>
-              <div className="text-2xl font-bold">{runner.stats.completedWorkouts}</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-warning mb-1">
-                <MapPinIcon size={16} />
-                <span className="text-sm font-medium">Upcoming</span>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 text-warning mb-1">
+                  <MapPinIcon size={16} />
+                  <span className="text-sm font-medium">Upcoming</span>
+                </div>
+                <div className="text-2xl font-bold">{runner.stats.upcomingWorkouts}</div>
               </div>
-              <div className="text-2xl font-bold">{runner.stats.upcomingWorkouts}</div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-foreground-500">No stats available</p>
-          </div>
-        )}
-      </CardBody>
-    </Card>
-  )
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-foreground-500">No stats available</p>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    )
+  }
 
   const renderConnectedRunners = (runners: SupabaseUser[]) => {
     if (runners.length === 0) {
