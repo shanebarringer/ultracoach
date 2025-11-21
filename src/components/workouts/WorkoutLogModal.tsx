@@ -29,6 +29,7 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('WorkoutLogModal')
 
@@ -283,9 +284,7 @@ export default function WorkoutLogModal({
                 {workout.planned_distance && ` • ${workout.planned_distance} miles`}
                 {workout.planned_duration && ` • ${workout.planned_duration} min`}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {new Date(workout.date).toLocaleDateString()}
-              </p>
+              <p className="text-sm text-gray-500 mt-1">{formatDateConsistent(workout.date)}</p>
             </div>
 
             {formState.error && (

@@ -53,6 +53,7 @@ import {
   workoutsAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
+import { formatDateConsistent } from '@/lib/utils/date'
 import type { StravaActivity } from '@/types/strava'
 import {
   type WorkoutMatch,
@@ -753,7 +754,7 @@ const StravaActivityBrowser = memo(
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-default-500" />
                               <span className="text-sm">
-                                {new Date(activity.start_date).toLocaleDateString()}
+                                {formatDateConsistent(activity.start_date)}
                               </span>
                             </div>
                           </TableCell>

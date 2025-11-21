@@ -67,3 +67,6 @@ pnpm-lock.yaml
 
 # Context7 documentation (may have specific formatting)
 .context7-docs/
+
+# Claude Code settings (local configuration)
+.claude/settings.local.json
