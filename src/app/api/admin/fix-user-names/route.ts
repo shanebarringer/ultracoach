@@ -20,9 +20,7 @@ const logger = createLogger('api-admin-fix-user-names')
  *
  * @returns The authenticated coach user, or a NextResponse error
  */
-async function validateCoachAccess(
-  request: NextRequest
-): Promise<User | NextResponse> {
+async function validateCoachAccess(request: NextRequest): Promise<User | NextResponse> {
   const session = await auth.api.getSession({
     headers: request.headers,
   })
