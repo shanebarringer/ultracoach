@@ -135,11 +135,19 @@ const enhancedWorkoutLogSchema = z.object({
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
   elevationGain: z
     .number()
-    .min(0, { message: 'Elevation gain must be positive' })
+    .min(0, { message: 'Elevation gain must be non-negative' })
     .nullable()
     .optional(),
-  actualDistance: z.number().min(0, { message: 'Distance must be positive' }).nullable().optional(),
-  actualDuration: z.number().min(0, { message: 'Duration must be positive' }).nullable().optional(),
+  actualDistance: z
+    .number()
+    .min(0, { message: 'Distance must be non-negative' })
+    .nullable()
+    .optional(),
+  actualDuration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .nullable()
+    .optional(),
   avgHeartRate: z
     .number()
     .min(40, { message: 'Heart rate too low' })
