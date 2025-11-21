@@ -15,19 +15,54 @@ export interface NameUpdateResult {
 }
 
 /**
- * Extracts a display name from an email address
- * @param email - The email address to parse
- * @returns A formatted display name
+ * Extracts a display name from an email address with robust validation
+ * @param email - The email address to parse (must be a string)
+ * @returns A formatted display name, or the original email if invalid
  * @example
  * getDisplayNameFromEmail('alex.rivera@ultracoach.dev')
  * // Returns: 'Alex Rivera'
+ *
+ * getDisplayNameFromEmail('john..doe@example.com')
+ * // Returns: 'John Doe' (handles consecutive dots)
+ *
+ * getDisplayNameFromEmail('invalid-email')
+ * // Returns: 'invalid-email' (fallback for malformed email)
  */
 export function getDisplayNameFromEmail(email: string): string {
-  const emailName = email.split('@')[0]
-  return emailName
+  // Handle non-string inputs by returning empty string
+  if (typeof email !== 'string') {
+    return ''
+  }
+
+  // Trim whitespace
+  const trimmedEmail = email.trim()
+
+  // Return empty if input is empty/whitespace
+  if (!trimmedEmail) {
+    return trimmedEmail
+  }
+
+  // Validate email has at least one @ character
+  const atIndex = trimmedEmail.indexOf('@')
+  if (atIndex === -1) {
+    // No @ found - return original trimmed email as fallback
+    return trimmedEmail
+  }
+
+  // Extract name portion (before first @)
+  const emailName = trimmedEmail.substring(0, atIndex)
+
+  // Split on dots, filter out empty segments (handles consecutive dots)
+  const nameParts = emailName
     .split('.')
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+    .filter(part => part.length > 0)
+    .map(part => {
+      // Capitalize first character and keep the rest
+      return part.charAt(0).toUpperCase() + part.slice(1)
+    })
+
+  // Join with spaces, or return original trimmed email if no valid parts
+  return nameParts.length > 0 ? nameParts.join(' ') : trimmedEmail
 }
 
 /**
@@ -45,7 +80,7 @@ export function getNameUpdates(user: {
   let resolvedName = user.name || ''
   let resolvedFullName = user.fullName || ''
 
-  // Derive fullName if missing
+  // Derive fullName if missing or blank
   if (!user.fullName || user.fullName.trim() === '') {
     if (user.name && user.name.trim() !== '') {
       resolvedFullName = user.name
@@ -57,12 +92,12 @@ export function getNameUpdates(user: {
     resolvedFullName = user.fullName
   }
 
-  // Derive name if missing
+  // Derive name if missing or blank
+  // resolvedFullName already reflects any valid user.fullName from above
   if (!user.name || user.name.trim() === '') {
+    // Use resolvedFullName if it's non-blank, otherwise derive from email
     if (resolvedFullName && resolvedFullName.trim() !== '') {
       resolvedName = resolvedFullName
-    } else if (user.fullName && user.fullName.trim() !== '') {
-      resolvedName = user.fullName
     } else {
       resolvedName = getDisplayNameFromEmail(user.email)
     }

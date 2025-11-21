@@ -141,10 +141,14 @@ function RunnerWeeklyPage({
   const selectedRunner = (() => {
     if (isRunnerSelf) {
       // Runner viewing their own training - use session data
+      const trimmedName = sessionUser.name?.trim()
       return {
         id: sessionUser.id,
         email: sessionUser.email,
-        full_name: sessionUser.name?.trim() || getDisplayNameFromEmail(sessionUser.email),
+        full_name:
+          trimmedName && trimmedName !== ''
+            ? trimmedName
+            : getDisplayNameFromEmail(sessionUser.email),
         userType: 'runner' as const,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -172,7 +176,12 @@ function RunnerWeeklyPage({
   }
 
   // Compute display name once for consistency
-  const displayName = selectedRunner.full_name || getDisplayNameFromEmail(selectedRunner.email)
+  // Trim full_name before checking - whitespace-only names should fall back to email-derived name
+  const trimmedFullName = selectedRunner.full_name?.trim()
+  const displayName =
+    trimmedFullName && trimmedFullName !== ''
+      ? trimmedFullName
+      : getDisplayNameFromEmail(selectedRunner.email)
 
   return (
     <>
