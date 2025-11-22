@@ -1,12 +1,45 @@
 echo "🚀 Running pre-push checks..."
 
+# Helper function to check server health with HTTP probe
+# Returns 0 if server is healthy, 1 otherwise
+check_server_health() {
+  # First check if port is listening
+  if ! lsof -ti:3001 > /dev/null 2>&1; then
+    return 1
+  fi
+
+  # Then verify server responds with 2xx status (POSIX-friendly fallback chain)
+  if command -v curl > /dev/null 2>&1; then
+    # Prefer curl if available (-s silent, -f fail on HTTP errors, -o discard output)
+    curl -sf http://localhost:3001/api/health -o /dev/null 2>&1
+    return $?
+  elif command -v wget > /dev/null 2>&1; then
+    # Fall back to wget if curl unavailable (--spider checks without downloading, -q quiet)
+    wget --spider -q http://localhost:3001/api/health 2>&1
+    return $?
+  else
+    # Final fallback: port check only (less reliable but works without HTTP tools)
+    # Already checked port above, so just return success
+    return 0
+  fi
+}
+
 # Check if dev server is running on port 3001
 SERVER_RUNNING=false
 if lsof -ti:3001 > /dev/null 2>&1; then
-  echo "✅ Dev server already running on port 3001"
-  SERVER_RUNNING=true
-else
-  echo "🌐 Dev server not running, starting it..."
+  echo "🔍 Dev server detected on port 3001, verifying health..."
+  if check_server_health; then
+    echo "✅ Dev server already running and healthy"
+    SERVER_RUNNING=true
+  else
+    echo "⚠️  Dev server port occupied but health check failed"
+    echo "💡 This may indicate a corrupted server state"
+    # Fall through to start fresh server
+  fi
+fi
+
+if [ "$SERVER_RUNNING" = false ]; then
+  echo "🌐 Starting dev server..."
 
   # Set up cleanup trap to kill background server on script exit
   # This ensures the dev server is stopped even if tests or build fail
@@ -20,19 +53,21 @@ else
   # Wait for server to be ready (max 60 seconds)
   echo "⏳ Waiting for dev server to be ready..."
   for i in {1..60}; do
-    if lsof -ti:3001 > /dev/null 2>&1; then
-      echo "✅ Dev server is ready!"
+    if check_server_health; then
+      echo "✅ Dev server is ready and healthy!"
       # Brief stabilization delay to avoid race conditions
       sleep 1
       SERVER_RUNNING=true
       break
     fi
     sleep 1
-    echo "   Attempt $i/60..."
+    if [ $((i % 10)) -eq 0 ]; then
+      echo "   Still waiting... ($i/60 seconds)"
+    fi
   done
 
   if [ "$SERVER_RUNNING" = false ]; then
-    echo "❌ Dev server failed to start within 60 seconds"
+    echo "❌ Dev server failed to become healthy within 60 seconds"
     echo "💡 Check logs at /tmp/ultracoach-dev-server.log"
     kill $SERVER_PID 2>/dev/null || true
     exit 1
@@ -43,11 +78,32 @@ fi
 restart_dev_server() {
   echo "🔄 Restarting dev server for auto-recovery..."
 
-  # Kill any process on port 3001
+  # Gracefully shut down any process on port 3001
   if lsof -ti:3001 > /dev/null 2>&1; then
-    echo "   Killing existing server on port 3001..."
-    lsof -ti:3001 | xargs kill -9 2>/dev/null || true
-    sleep 2
+    PIDS=$(lsof -ti:3001)
+    echo "⚠️  Found existing server process(es): $PIDS"
+    echo "   Attempting graceful shutdown (SIGTERM)..."
+
+    # Try graceful shutdown first
+    echo "$PIDS" | xargs kill 2>/dev/null || true
+
+    # Wait up to 5 seconds for graceful shutdown
+    for i in {1..5}; do
+      if ! lsof -ti:3001 > /dev/null 2>&1; then
+        echo "   ✅ Server shut down gracefully"
+        break
+      fi
+      sleep 1
+    done
+
+    # Force kill if still running
+    if lsof -ti:3001 > /dev/null 2>&1; then
+      REMAINING_PIDS=$(lsof -ti:3001)
+      echo "   ⚠️  Process(es) still running: $REMAINING_PIDS"
+      echo "   Forcing shutdown (SIGKILL)..."
+      echo "$REMAINING_PIDS" | xargs kill -9 2>/dev/null || true
+      sleep 2
+    fi
   fi
 
   # Start fresh server
@@ -59,41 +115,52 @@ restart_dev_server() {
   # Set up cleanup trap for new server
   trap 'if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" 2>/dev/null || true; fi' EXIT INT TERM
 
-  # Wait for server to be ready (max 30 seconds)
+  # Wait for server to be ready and healthy (max 30 seconds)
   echo "   Waiting for server to be ready..."
   for i in {1..30}; do
-    if lsof -ti:3001 > /dev/null 2>&1; then
-      echo "   ✅ Server ready!"
+    if check_server_health; then
+      echo "   ✅ Server ready and healthy!"
       sleep 2  # Extra stabilization time for fresh server
       return 0
     fi
     sleep 1
   done
 
-  echo "   ❌ Server failed to start"
+  echo "   ❌ Server failed to become healthy"
   return 1
 }
+
+# Auto-recovery configuration (defaults to enabled, set PRE_PUSH_AUTO_RECOVER=false to disable)
+AUTO_RECOVER="${PRE_PUSH_AUTO_RECOVER:-true}"
 
 # Check if full test suite is requested via environment variable
 if [ "$PRE_PUSH_FULL_TESTS" = "true" ]; then
   echo "🧪 Running full E2E test suite..."
   if ! pnpm test; then
-    echo "⚠️  Tests failed - this might be due to corrupted dev server state"
-    echo "🔄 Attempting automatic recovery: restarting dev server..."
+    if [ "$AUTO_RECOVER" = "true" ]; then
+      echo "⚠️  Tests failed - this might be due to corrupted dev server state"
+      echo "🔄 Attempting automatic recovery: restarting dev server..."
+      echo "💡 Tip: Set PRE_PUSH_AUTO_RECOVER=false to disable auto-recovery"
 
-    # Restart server and retry tests once
-    if restart_dev_server; then
-      echo "🧪 Retrying full test suite with fresh server..."
-      if pnpm test; then
-        echo "✅ Tests passed after server restart!"
+      # Restart server and retry tests once
+      if restart_dev_server; then
+        echo "🧪 Retrying full test suite with fresh server..."
+        if pnpm test; then
+          echo "✅ Tests passed after server restart!"
+          echo "💡 If this happens often, investigate test flakiness or server stability"
+        else
+          echo "❌ Tests still failing after server restart"
+          echo "💡 This indicates a real test failure, not server corruption"
+          echo "💡 Run 'pnpm test' locally to debug"
+          exit 1
+        fi
       else
-        echo "❌ Tests still failing after server restart"
-        echo "💡 This indicates a real test failure, not server corruption"
-        echo "💡 Run 'pnpm test' locally to debug"
+        echo "❌ Failed to restart dev server"
         exit 1
       fi
     else
-      echo "❌ Failed to restart dev server"
+      echo "❌ Tests failed (auto-recovery disabled)"
+      echo "💡 Run 'pnpm test' locally to debug"
       exit 1
     fi
   fi
@@ -101,23 +168,32 @@ else
   # Run critical E2E tests (auth and race-import)
   echo "🧪 Running critical E2E tests..."
   if ! pnpm test:critical; then
-    echo "⚠️  Tests failed - this might be due to corrupted dev server state"
-    echo "🔄 Attempting automatic recovery: restarting dev server..."
+    if [ "$AUTO_RECOVER" = "true" ]; then
+      echo "⚠️  Tests failed - this might be due to corrupted dev server state"
+      echo "🔄 Attempting automatic recovery: restarting dev server..."
+      echo "💡 Tip: Set PRE_PUSH_AUTO_RECOVER=false to disable auto-recovery"
 
-    # Restart server and retry tests once
-    if restart_dev_server; then
-      echo "🧪 Retrying critical tests with fresh server..."
-      if pnpm test:critical; then
-        echo "✅ Tests passed after server restart!"
+      # Restart server and retry tests once
+      if restart_dev_server; then
+        echo "🧪 Retrying critical tests with fresh server..."
+        if pnpm test:critical; then
+          echo "✅ Tests passed after server restart!"
+          echo "💡 If this happens often, investigate test flakiness or server stability"
+        else
+          echo "❌ Tests still failing after server restart"
+          echo "💡 This indicates a real test failure, not server corruption"
+          echo "💡 Run 'pnpm test:critical' locally to debug"
+          echo "💡 Tip: Set PRE_PUSH_FULL_TESTS=true to run full test suite"
+          exit 1
+        fi
       else
-        echo "❌ Tests still failing after server restart"
-        echo "💡 This indicates a real test failure, not server corruption"
-        echo "💡 Run 'pnpm test:critical' locally to debug"
-        echo "💡 Tip: Set PRE_PUSH_FULL_TESTS=true to run full test suite"
+        echo "❌ Failed to restart dev server"
         exit 1
       fi
     else
-      echo "❌ Failed to restart dev server"
+      echo "❌ Tests failed (auto-recovery disabled)"
+      echo "💡 Run 'pnpm test:critical' locally to debug"
+      echo "💡 Tip: Set PRE_PUSH_FULL_TESTS=true to run full test suite"
       exit 1
     fi
   fi
