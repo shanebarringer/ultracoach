@@ -6,6 +6,7 @@ import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
+import { addRateLimitHeaders, formatRetryAfter, messageLimiter } from '@/lib/redis-rate-limiter'
 import {
   coach_runners,
   message_workout_links,
@@ -168,6 +169,25 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionUser = session.user as User
+
+    // Apply rate limiting to prevent message spam
+    const rateLimitResult = await messageLimiter.check(sessionUser.id)
+    if (!rateLimitResult.allowed) {
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
+      logger.warn('Message rate limit exceeded', {
+        userId: sessionUser.id,
+        retryAfter: rateLimitResult.retryAfter,
+      })
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          details: `Too many messages sent. Please try again in ${retryDisplay}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for API consistency
+        },
+        { status: 429 }
+      )
+      return addRateLimitHeaders(response, rateLimitResult)
+    }
     const requestBody = await request.json()
     const { content, recipientId, workoutId, workoutLinks = [] } = requestBody
 
@@ -354,7 +374,8 @@ export async function POST(request: NextRequest) {
       // Don't fail the message creation if notification fails
     }
 
-    return NextResponse.json({ message }, { status: 201 })
+    const response = NextResponse.json({ message }, { status: 201 })
+    return addRateLimitHeaders(response, rateLimitResult)
   } catch (error) {
     logger.error('API error in POST /messages', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

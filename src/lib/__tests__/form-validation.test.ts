@@ -6,27 +6,36 @@ import { z } from 'zod'
 
 // Replicate the signin schema from the component
 const signInSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
   password: z
     .string()
-    .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+    .min(1, { message: 'Password is required' })
+    .min(6, { message: 'Password must be at least 6 characters' }),
 })
 
 // Replicate the signup schema (inferred from typical requirements)
 const signUpSchema = z
   .object({
-    email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+    email: z
+      .string()
+      .min(1, { message: 'Email is required' })
+      .email({ message: 'Please enter a valid email address' }),
     password: z
       .string()
-      .min(1, 'Password is required')
-      .min(8, 'Password must be at least 8 characters')
+      .min(1, { message: 'Password is required' })
+      .min(8, { message: 'Password must be at least 8 characters' })
       .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-    name: z.string().min(1, 'Name is required').min(2, 'Name must be at least 2 characters'),
+    confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
+    name: z
+      .string()
+      .min(1, { message: 'Name is required' })
+      .min(2, { message: 'Name must be at least 2 characters' }),
     role: z.enum(['runner', 'coach']),
   })
   .refine(data => data.password === data.confirmPassword, {
@@ -36,21 +45,24 @@ const signUpSchema = z
 
 // Password reset schema
 const passwordResetSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
 })
 
 const newPasswordSchema = z
   .object({
     password: z
       .string()
-      .min(1, 'Password is required')
-      .min(8, 'Password must be at least 8 characters')
+      .min(1, { message: 'Password is required' })
+      .min(8, { message: 'Password must be at least 8 characters' })
       .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-    token: z.string().min(1, 'Reset token is required'),
+    confirmPassword: z.string().min(1, { message: 'Please confirm your password' }),
+    token: z.string().min(1, { message: 'Reset token is required' }),
   })
   .refine(data => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

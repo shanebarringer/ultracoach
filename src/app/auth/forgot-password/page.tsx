@@ -13,7 +13,7 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('forgot-password')
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
 })
 
 type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordData) => {
     setIsLoading(true)
-    logger.info('Password reset requested for:', { email: data.email })
+    logger.info('Password reset requested') // PII removed for compliance
 
     try {
       const { error } = await authClient.forgetPassword({
