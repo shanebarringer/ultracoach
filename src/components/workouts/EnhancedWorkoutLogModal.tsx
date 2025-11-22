@@ -163,7 +163,7 @@ const enhancedWorkoutLogSchema = z.object({
   avgPace: z.string().optional(), // Format: "MM:SS"
   temperature: z
     .number()
-    .min(-40, 'Temperature too low')
+    .min(-40, { message: 'Temperature too low' })
     .max(130, { message: 'Temperature too high' })
     .nullable()
     .optional(),
@@ -177,17 +177,14 @@ const enhancedWorkoutLogSchema = z.object({
     .enum(['none', 'light', 'moderate', 'strong', 'very_strong'])
     .nullable()
     .optional(),
-  location: z
-    .string()
-    .max(200, { message: 'Location must be less than 200 characters' })
-    .optional(),
+  location: z.string().max(200, { message: 'Location must be at most 200 characters' }).optional(),
   workoutNotes: z
     .string()
-    .max(2000, { message: 'Notes must be less than 2000 characters' })
+    .max(2000, { message: 'Notes must be at most 2000 characters' })
     .optional(),
   injuryNotes: z
     .string()
-    .max(1000, { message: 'Injury notes must be less than 1000 characters' })
+    .max(1000, { message: 'Injury notes must be at most 1000 characters' })
     .optional(),
   energyLevel: z
     .number()
@@ -203,11 +200,11 @@ const enhancedWorkoutLogSchema = z.object({
     .optional(),
   nutritionNotes: z
     .string()
-    .max(500, { message: 'Nutrition notes must be less than 500 characters' })
+    .max(500, { message: 'Nutrition notes must be at most 500 characters' })
     .optional(),
   gearNotes: z
     .string()
-    .max(500, { message: 'Gear notes must be less than 500 characters' })
+    .max(500, { message: 'Gear notes must be at most 500 characters' })
     .optional(),
 })
 
