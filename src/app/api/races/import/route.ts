@@ -255,43 +255,68 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Validate track point structure from ALL tracks (sample from each track)
+      // Validate track point structure from ALL tracks (strategic sampling for performance + security)
+      // Security note: We sample multiple representative points instead of validating every point
+      // to balance security (detect malformed data) with performance (avoid O(n) validation on large files)
+      // This catches malformed imports while allowing legitimate large GPX files (up to 50k points)
       for (let trackIndex = 0; trackIndex < importData.gpx_data.tracks.length; trackIndex++) {
         const track = importData.gpx_data.tracks[trackIndex]
         if (track.points && track.points.length > 0) {
-          // Sample one representative point from each track (middle point)
           const pointCount = track.points.length
-          const sampleIndex = Math.floor(pointCount / 2)
-          const samplePoint = track.points[sampleIndex]
 
-          if (samplePoint) {
-            // Validate lat/lon are numbers
-            if (typeof samplePoint.lat !== 'number' || typeof samplePoint.lon !== 'number') {
-              return NextResponse.json(
-                {
-                  error: 'Invalid GPX data - track points must have numeric lat/lon',
-                  details: `Invalid point in track ${trackIndex + 1} at index ${sampleIndex}`,
-                },
-                { status: 400 }
-              )
-            }
+          // Sample multiple representative points from each track for better coverage
+          // For small tracks: sample first, middle, last
+          // For large tracks: sample 5 evenly distributed points
+          const sampleCount = Math.min(5, pointCount)
+          const sampleIndices = []
+          for (let i = 0; i < sampleCount; i++) {
+            sampleIndices.push(Math.floor((i * pointCount) / sampleCount))
+          }
+          // Always include last point
+          if (!sampleIndices.includes(pointCount - 1)) {
+            sampleIndices.push(pointCount - 1)
+          }
 
-            // Validate lat/lon ranges
-            if (
-              samplePoint.lat < -90 ||
-              samplePoint.lat > 90 ||
-              samplePoint.lon < -180 ||
-              samplePoint.lon > 180
-            ) {
-              return NextResponse.json(
-                {
-                  error: 'Invalid GPX data - lat/lon out of valid range',
-                  details: `Track ${trackIndex + 1}, Point ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
-                },
-                { status: 400 }
-              )
+          // Validate each sampled point
+          for (const sampleIndex of sampleIndices) {
+            const samplePoint = track.points[sampleIndex]
+
+            if (samplePoint) {
+              // Validate lat/lon are numbers
+              if (typeof samplePoint.lat !== 'number' || typeof samplePoint.lon !== 'number') {
+                return NextResponse.json(
+                  {
+                    error: 'Invalid GPX data - track points must have numeric lat/lon',
+                    details: `Invalid point in track ${trackIndex + 1} at index ${sampleIndex}`,
+                  },
+                  { status: 400 }
+                )
+              }
+
+              // Validate lat/lon ranges
+              if (
+                samplePoint.lat < -90 ||
+                samplePoint.lat > 90 ||
+                samplePoint.lon < -180 ||
+                samplePoint.lon > 180
+              ) {
+                return NextResponse.json(
+                  {
+                    error: 'Invalid GPX data - lat/lon out of valid range',
+                    details: `Track ${trackIndex + 1}, Point ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+                  },
+                  { status: 400 }
+                )
+              }
             }
           }
+
+          logger.debug('GPX track validation passed', {
+            trackIndex,
+            pointCount,
+            sampledPoints: sampleIndices.length,
+            userId: session.user.id,
+          })
         }
       }
 
@@ -307,15 +332,19 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Validate CSV data (basic validation for required fields)
+    // Validate CSV data (validate normalized raceData to ensure import consistency)
     if (importData.source === 'csv') {
+      // IMPORTANT: Validate the normalized raceData (not importData) to ensure
+      // validation matches what we persist to database after normalization/defaults
+
       // Ensure minimum required fields are present for CSV imports
-      if (!importData.name || importData.name.trim().length === 0) {
+      if (!raceData.name || raceData.name.trim().length === 0) {
         return NextResponse.json({ error: 'CSV import requires race name' }, { status: 400 })
       }
 
-      // Validate distance for CSV imports
-      if (!importData.distance_miles || importData.distance_miles <= 0) {
+      // Validate distance for CSV imports (check normalized value)
+      const normalizedDistance = parseFloat(raceData.distance_miles)
+      if (isNaN(normalizedDistance) || normalizedDistance <= 0) {
         return NextResponse.json(
           {
             error: 'CSV import requires valid distance',
@@ -325,7 +354,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      logger.info('CSV validation passed', {
+      logger.info('CSV validation passed (normalized data)', {
         raceName: raceData.name,
         distance: raceData.distance_miles,
         userId: session.user.id,

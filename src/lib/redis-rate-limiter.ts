@@ -31,13 +31,24 @@ interface RateLimitOptions {
   keyGenerator?: (identifier: string) => string // Custom key generation
 }
 
-interface RateLimitResult {
-  allowed: boolean
-  remaining: number
-  resetTime: number
-  retryAfter: number // Always present - 0 when allowed, positive when rate limited
-  limit: number // The configured maximum requests per window
-}
+// Discriminated union for type-safe rate limit results
+// When allowed=true, retryAfter is always 0
+// When allowed=false, retryAfter is always positive
+export type RateLimitResult =
+  | {
+      allowed: true
+      remaining: number
+      resetTime: number
+      retryAfter: 0
+      limit: number
+    }
+  | {
+      allowed: false
+      remaining: 0
+      resetTime: number
+      retryAfter: number // Always positive when rate limited
+      limit: number
+    }
 
 /**
  * Redis-based rate limiter for distributed environments
@@ -70,7 +81,7 @@ export class RedisRateLimiter {
 
     // Use Redis if available
     if (redis) {
-      return this.checkRedis(key, now)
+      return await this.checkRedis(key, now)
     }
 
     // Fallback to in-memory rate limiting
@@ -91,11 +102,28 @@ export class RedisRateLimiter {
       }
 
       // Get TTL to calculate reset time
-      // Note: TTL can return -2 (key doesn't exist) or -1 (no expiration)
+      // Note: TTL can return -2 (key doesn't exist), -1 (no expiration), 0 (expired), or positive (seconds remaining)
       const ttl = await redis!.ttl(key)
 
-      // Defensive handling: If TTL is invalid, use full window duration
-      const safeTTL = ttl > 0 ? ttl : Math.ceil(this.windowMs / 1000)
+      // Normalize TTL edge cases to prevent invalid resetTime
+      let safeTTL: number
+      if (ttl > 0) {
+        // Normal case: key exists with TTL
+        safeTTL = ttl
+      } else {
+        // Edge cases: Use full window duration as fallback
+        safeTTL = Math.ceil(this.windowMs / 1000)
+
+        // Log edge cases for debugging
+        if (ttl === -2) {
+          logger.debug('Redis key does not exist during TTL check', { key, count })
+        } else if (ttl === -1) {
+          logger.warn('Redis key has no expiration set', { key, count })
+        } else if (ttl === 0) {
+          logger.debug('Redis key expired during TTL check', { key, count })
+        }
+      }
+
       const resetTime = now + safeTTL * 1000
 
       if (count > this.max) {
@@ -140,12 +168,14 @@ export class RedisRateLimiter {
 
   /**
    * In-memory rate limiting (fallback, single-instance only)
+   * Uses lazy cleanup strategy to avoid O(n) scans on every request
    */
   private checkMemory(key: string, now: number): RateLimitResult {
-    // Periodic cleanup to avoid O(n) overhead on every request
-    // Only cleanup if enough time has passed since last cleanup
+    // Lazy cleanup: Only trigger cleanup periodically (not on every request)
+    // This reduces average-case time complexity from O(n) to O(1)
     if (now - this.lastCleanup > this.cleanupInterval) {
-      this.cleanupMemory(now)
+      // Schedule cleanup asynchronously to avoid blocking current request
+      setImmediate(() => this.cleanupMemory(now))
       this.lastCleanup = now
     }
 
@@ -326,15 +356,30 @@ export function addRateLimitHeaders<T extends Response>(response: T, result: Rat
 
 /**
  * Format retry-after duration into human-readable text
- * Uses minutes for durations > 60 seconds, otherwise seconds
+ * IMPORTANT: Input must be in seconds (API standard)
+ * Converts to minutes for display when duration > 60 seconds
+ *
+ * All endpoints must use seconds for retryAfter API field (X-RateLimit-Retry-After header)
+ * This function only handles display formatting for user-facing messages
  */
-export function formatRetryAfter(retryAfterSeconds: number): string {
-  if (retryAfterSeconds > 60) {
-    const minutes = Math.ceil(retryAfterSeconds / 60)
+export function formatRetryAfter(retryAfterSeconds: number | undefined): string {
+  // Defensive guard: Handle undefined/null (should never happen with discriminated union, but be safe)
+  if (retryAfterSeconds === undefined || retryAfterSeconds === null) {
+    logger.warn('formatRetryAfter called with undefined/null retryAfter, using default 60s')
+    return '1 minute'
+  }
+
+  // Ensure positive value
+  const safeSeconds = Math.max(1, Math.ceil(retryAfterSeconds))
+
+  // Format as minutes if > 60 seconds
+  if (safeSeconds > 60) {
+    const minutes = Math.ceil(safeSeconds / 60)
     return `${minutes} minute${minutes === 1 ? '' : 's'}`
   }
-  const seconds = Math.ceil(retryAfterSeconds)
-  return `${seconds} second${seconds === 1 ? '' : 's'}`
+
+  // Format as seconds
+  return `${safeSeconds} second${safeSeconds === 1 ? '' : 's'}`
 }
 
 /**
