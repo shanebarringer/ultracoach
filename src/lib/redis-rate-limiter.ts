@@ -175,7 +175,8 @@ export class RedisRateLimiter {
     // This reduces average-case time complexity from O(n) to O(1)
     if (now - this.lastCleanup > this.cleanupInterval) {
       // Schedule cleanup asynchronously to avoid blocking current request
-      setImmediate(() => this.cleanupMemory(now))
+      // Use setTimeout(0) instead of setImmediate for Edge Runtime compatibility
+      setTimeout(() => this.cleanupMemory(now), 0)
       this.lastCleanup = now
     }
 

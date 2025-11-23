@@ -284,6 +284,13 @@ export async function POST(request: NextRequest) {
             if (samplePoint) {
               // Validate lat/lon are numbers
               if (typeof samplePoint.lat !== 'number' || typeof samplePoint.lon !== 'number') {
+                logger.warn('GPX track point has invalid lat/lon types', {
+                  userId: session.user.id,
+                  trackIndex,
+                  pointIndex: sampleIndex,
+                  latType: typeof samplePoint.lat,
+                  lonType: typeof samplePoint.lon,
+                })
                 return NextResponse.json(
                   {
                     error: 'Invalid GPX data - track points must have numeric lat/lon',
@@ -300,6 +307,13 @@ export async function POST(request: NextRequest) {
                 samplePoint.lon < -180 ||
                 samplePoint.lon > 180
               ) {
+                logger.warn('GPX track point lat/lon out of valid range', {
+                  userId: session.user.id,
+                  trackIndex,
+                  pointIndex: sampleIndex,
+                  lat: samplePoint.lat,
+                  lon: samplePoint.lon,
+                })
                 return NextResponse.json(
                   {
                     error: 'Invalid GPX data - lat/lon out of valid range',
