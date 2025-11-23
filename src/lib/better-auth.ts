@@ -215,11 +215,11 @@ try {
         
         <div class="content">
             <h2 style="color: #1e293b; margin-bottom: 20px;">Reset Your Password</h2>
-            <p>Hi \${user.name || 'there'},</p>
+            <p>Hi ${user.name || 'there'},</p>
             <p>We received a request to reset your UltraCoach password. Click the button below to set a new password:</p>
-            
+
             <div style="text-align: center; margin: 30px 0;">
-                <a href="\${url}" class="btn">Reset My Password</a>
+                <a href="${url}" class="btn">Reset My Password</a>
             </div>
             
             <div class="security-note">
@@ -233,7 +233,7 @@ try {
             
             <p style="margin-top: 30px; color: #64748b; font-size: 14px;">
                 If the button doesn't work, copy and paste this link into your browser:<br>
-                <a href="\${url}" style="color: #3b82f6; word-break: break-all;">\${url}</a>
+                <a href="${url}" style="color: #3b82f6; word-break: break-all;">${url}</a>
             </p>
         </div>
         
@@ -249,12 +249,12 @@ try {
         const textTemplate = `
 🏔️ UltraCoach - Password Reset
 
-Hi \${user.name || 'there'},
+Hi ${user.name || 'there'},
 
 We received a request to reset your UltraCoach password.
 
 Click this link to reset your password:
-\${url}
+${url}
 
 ⚠️ SECURITY NOTICE:
 - This link will expire in 1 hour
