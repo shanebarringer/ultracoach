@@ -225,12 +225,6 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     }
   }
 
-  // Calculate how many steps remain
-  const remainingSteps = onboarding
-    ? onboarding.total_steps - (currentStepData?.step_number || 0)
-    : 0
-  const completionPercentage = Math.round(progressPercentage)
-
   const goToPreviousStep = () => {
     if (!onboarding || !currentStepData || currentStepData.step_number <= 1) return
 
@@ -257,6 +251,13 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
   const progressPercentage = onboarding
     ? ((currentStepData?.step_number || 1) / onboarding.total_steps) * 100
     : 0
+
+  // Calculate how many steps remain and completion percentage
+  const remainingSteps = Math.max(
+    0,
+    onboarding ? onboarding.total_steps - (currentStepData?.step_number || 0) : 0
+  )
+  const completionPercentage = Math.round(progressPercentage)
 
   if (loading) {
     return (

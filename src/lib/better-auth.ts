@@ -184,6 +184,17 @@ try {
           })
         }
 
+        // HTML escape helper to prevent HTML injection
+        const escapeHtml = (value: string): string =>
+          value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+
+        const safeName = escapeHtml(user.name || 'there')
+
         // Generate HTML email template
         const htmlTemplate = `
 <!DOCTYPE html>
@@ -212,10 +223,10 @@ try {
             <h1>UltraCoach</h1>
             <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Mountain Training Platform</p>
         </div>
-        
+
         <div class="content">
             <h2 style="color: #1e293b; margin-bottom: 20px;">Reset Your Password</h2>
-            <p>Hi ${user.name || 'there'},</p>
+            <p>Hi ${safeName},</p>
             <p>We received a request to reset your UltraCoach password. Click the button below to set a new password:</p>
 
             <div style="text-align: center; margin: 30px 0;">
