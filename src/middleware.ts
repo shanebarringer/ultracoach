@@ -26,9 +26,10 @@ function generateCSPHeader(nonce: string): string {
     // - 'unsafe-inline': Development only for HMR
     // - 'nonce-{value}': Production <style> tags require nonce
     // - 'unsafe-hashes': Production inline style attributes (React: <div style={{...}}>)
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
+    // - Google Fonts: Allow external stylesheet from fonts.googleapis.com
+    `style-src 'self' https://fonts.googleapis.com ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
-    "font-src 'self' data:",
+    "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
     "object-src 'none'",
     "frame-ancestors 'none'",
