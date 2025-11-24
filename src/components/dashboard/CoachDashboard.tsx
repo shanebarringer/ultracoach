@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import GarminDashboardWidget from '@/components/garmin/GarminDashboardWidget'
+import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { CoachDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useDashboardData } from '@/hooks/useDashboardData'
@@ -492,10 +493,18 @@ function CoachDashboard() {
           </div>
 
           {/* Integration Widgets */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <StravaDashboardWidget />
-            <GarminDashboardWidget />
-          </div>
+          <GarminFeatureFlag
+            fallback={
+              // If Garmin is disabled, show only Strava
+              <StravaDashboardWidget />
+            }
+          >
+            {/* If Garmin is enabled, show both in grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <StravaDashboardWidget />
+              <GarminDashboardWidget />
+            </div>
+          </GarminFeatureFlag>
 
           {/* Recent Activity */}
           <RecentActivity

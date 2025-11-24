@@ -9,6 +9,7 @@ import { auth } from '@/lib/better-auth'
 import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
 import { HeroUIProvider } from '@/providers/HeroUIProvider'
 import { JotaiProvider } from '@/providers/JotaiProvider'
+import { PostHogPageview, PostHogProvider } from '@/providers/PostHogProvider'
 
 import './globals.css'
 
@@ -42,18 +43,21 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <JotaiProvider>
-          <BetterAuthProvider initialSession={session}>
-            <HeroUIProvider>
-              <ThemeWrapper>
-                <KBarProvider>
-                  {children}
-                  <Toaster />
-                </KBarProvider>
-              </ThemeWrapper>
-            </HeroUIProvider>
-          </BetterAuthProvider>
-        </JotaiProvider>
+        <PostHogProvider>
+          <PostHogPageview />
+          <JotaiProvider>
+            <BetterAuthProvider initialSession={session}>
+              <HeroUIProvider>
+                <ThemeWrapper>
+                  <KBarProvider>
+                    {children}
+                    <Toaster />
+                  </KBarProvider>
+                </ThemeWrapper>
+              </HeroUIProvider>
+            </BetterAuthProvider>
+          </JotaiProvider>
+        </PostHogProvider>
       </body>
     </html>
   )
