@@ -39,18 +39,13 @@ export function useNavigationItems(session: Session | null): NavItem[] {
   return useMemo(() => {
     if (!session) return []
 
+    // Order matches destructuring: [dashboard, calendar, workouts, messages, connections]
     const baseItems: NavItem[] = [
       {
         href: '/dashboard',
         label: 'Dashboard',
         icon: LayoutDashboard,
         description: 'Overview and metrics',
-      },
-      {
-        href: '/relationships',
-        label: 'Connections',
-        icon: Users,
-        description: 'Manage relationships',
       },
       {
         href: '/calendar',
@@ -69,6 +64,12 @@ export function useNavigationItems(session: Session | null): NavItem[] {
         label: 'Messages',
         icon: MessageCircle,
         description: 'Chat with your team',
+      },
+      {
+        href: '/relationships',
+        label: 'Connections',
+        icon: Users,
+        description: 'Manage relationships',
       },
     ]
 

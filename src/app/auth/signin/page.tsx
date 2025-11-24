@@ -105,7 +105,6 @@ export default function SignIn() {
               logger.info('Final user role determined:', {
                 userRole,
                 userId: user.id,
-                userEmail: user.email,
                 sessionPresent: Boolean(sessionData.data),
               })
 

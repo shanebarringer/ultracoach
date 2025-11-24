@@ -94,6 +94,13 @@ function getTrustedOrigins(): string[] {
     origins.push(`https://${process.env.VERCEL_URL}`)
   }
 
+  // Add VERCEL_BRANCH_URL for branch preview deployments
+  // VERCEL_URL is the deployment-specific URL (e.g., ultracoach-1p9q8bies-*.vercel.app)
+  // VERCEL_BRANCH_URL is the branch alias URL (e.g., ultracoach-git-{branch}-*.vercel.app)
+  if (process.env.VERCEL_BRANCH_URL) {
+    origins.push(`https://${process.env.VERCEL_BRANCH_URL}`)
+  }
+
   // Add main production domains (production only)
   if (process.env.NODE_ENV === 'production') {
     origins.push('https://ultracoach.vercel.app')
