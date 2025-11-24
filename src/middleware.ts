@@ -20,8 +20,9 @@ function generateCSPHeader(nonce: string): string {
     // script-src: Use nonce + strict-dynamic for optimal security
     // - 'nonce-{value}': Allow scripts with matching nonce
     // - 'strict-dynamic': Allow scripts loaded by nonce-approved scripts
+    // - 'unsafe-inline': Fallback for Next.js router navigation (ignored by modern browsers with nonce)
     // - 'unsafe-eval': Only in development for HMR (Hot Module Replacement)
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
     // style-src: Allow inline styles for React inline style attributes
     // - 'unsafe-inline': Required for React inline styles (style={{...}})
     // - Google Fonts: Allow external stylesheet from fonts.googleapis.com

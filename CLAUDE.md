@@ -237,8 +237,9 @@ const isDev = process.env.NODE_ENV === 'development'
 const cspDirectives = [
   "default-src 'self'",
   // script-src: Nonce-based protection (primary XSS defense)
+  // 'unsafe-inline' fallback for Next.js router navigation (ignored by modern browsers with nonce)
   // Development includes 'unsafe-eval' for HMR (Hot Module Replacement)
-  `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   // style-src: Allow inline styles for React inline style attributes
   // 'unsafe-inline' required for React styles (style={{...}})
   // Safe because React automatically escapes all user content
