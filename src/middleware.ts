@@ -12,22 +12,29 @@ const logger = createLogger('Middleware')
 function generateCSPHeader(nonce: string): string {
   const isDev = process.env.NODE_ENV === 'development'
 
-  // PostHog host for CSP connect-src (defaults to US region if not configured)
-  const postHogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
-
   const cspDirectives = [
     "default-src 'self'",
     // script-src: Use nonce + strict-dynamic for optimal security
     // - 'nonce-{value}': Allow scripts with matching nonce
     // - 'strict-dynamic': Allow scripts loaded by nonce-approved scripts
+    // - 'unsafe-inline': Fallback for Next.js router navigation (ignored by modern browsers with nonce)
     // - 'unsafe-eval': Only in development for HMR (Hot Module Replacement)
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // style-src: Use nonce in production, unsafe-inline in dev for HMR
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+    // style-src: Allow inline styles for React inline style attributes
+    // - 'unsafe-inline': Required for React inline styles (style={{...}})
+    // - Google Fonts: Allow external stylesheet from fonts.googleapis.com
+    // Note: 'unsafe-inline' is pragmatic for React apps as styles come from build process
+    // React automatically escapes all user content, preventing style injection attacks
+    // Main XSS protection comes from nonce-based script-src (above)
+    `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
-    "font-src 'self' data:",
-    `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
+    "font-src 'self' data: https://fonts.gstatic.com",
+    // connect-src: PostHog uses multiple subdomains (us.i.posthog.com, us-assets.i.posthog.com)
+    // so we use wildcard https://*.posthog.com to cover all of them
+    "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://*.posthog.com",
     "object-src 'none'",
+    // frame-src: Allow Vercel Live collaboration iframe on preview deployments
+    "frame-src 'self' https://vercel.live",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -137,7 +144,11 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {
-    const sessionCookie = request.cookies.get('better-auth.session_token')
+    // Check for session cookie - handle both secure (production) and non-secure (dev) names
+    // When useSecureCookies is true in Better Auth config, cookies are prefixed with __Secure-
+    const sessionCookie =
+      request.cookies.get('__Secure-better-auth.session_token') || // Production (secure cookies)
+      request.cookies.get('better-auth.session_token') // Development
 
     // Debug logging for CI to diagnose session issues
     if (process.env.CI) {
