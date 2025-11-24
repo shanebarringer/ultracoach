@@ -72,12 +72,11 @@ export function useNavigationItems(session: Session | null): NavItem[] {
       },
     ]
 
-    const [dashboardItem, connectionsItem, calendarItem, workoutsItem, messagesItem] = baseItems
+    const [dashboardItem, calendarItem, workoutsItem, messagesItem, connectionsItem] = baseItems
 
     if (session.user.userType === 'coach') {
       return [
         dashboardItem,
-        connectionsItem,
         {
           href: '/runners',
           label: 'Runners',
@@ -111,6 +110,7 @@ export function useNavigationItems(session: Session | null): NavItem[] {
         },
         workoutsItem,
         messagesItem,
+        connectionsItem,
         {
           href: '/settings',
           label: 'Settings',
@@ -122,7 +122,6 @@ export function useNavigationItems(session: Session | null): NavItem[] {
 
     return [
       dashboardItem,
-      connectionsItem,
       calendarItem,
       {
         href: '/weekly-planner',
@@ -132,6 +131,7 @@ export function useNavigationItems(session: Session | null): NavItem[] {
       },
       workoutsItem,
       messagesItem,
+      connectionsItem,
       {
         href: '/settings',
         label: 'Settings',
