@@ -144,7 +144,11 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {
-    const sessionCookie = request.cookies.get('better-auth.session_token')
+    // Check for session cookie - handle both secure (production) and non-secure (dev) names
+    // When useSecureCookies is true in Better Auth config, cookies are prefixed with __Secure-
+    const sessionCookie =
+      request.cookies.get('__Secure-better-auth.session_token') || // Production (secure cookies)
+      request.cookies.get('better-auth.session_token') // Development
 
     // Debug logging for CI to diagnose session issues
     if (process.env.CI) {

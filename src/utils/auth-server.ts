@@ -94,8 +94,12 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
     // Detect auth signal to avoid unnecessary retries for unauthenticated traffic
+    // Check for both secure (production) and non-secure (dev) cookie names
+    // When useSecureCookies is true in Better Auth config, cookies are prefixed with __Secure-
+    const cookieHeader = headersList.get('cookie') || ''
     const hasAuthSignal =
-      headersList.get('cookie')?.includes('better-auth.session_token') ||
+      cookieHeader.includes('__Secure-better-auth.session_token') || // Production (secure cookies)
+      cookieHeader.includes('better-auth.session_token') || // Development
       !!headersList.get('authorization')
 
     // Better Auth server-side session retrieval with retry logic for CI reliability
