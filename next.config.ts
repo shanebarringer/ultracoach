@@ -10,6 +10,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // Build-time validation for PostHog configuration (production only)
 // Note: Source maps are now uploaded via PostHog CLI in package.json scripts
+// Note: console.warn is acceptable here as this runs at BUILD TIME, not runtime
+// The project uses tslog for runtime logging, but console methods are standard for build-time warnings
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_ID) {
     console.warn(
@@ -100,23 +102,14 @@ const nextConfig: NextConfig = {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 
-  // Headers for security
+  // Security headers (excluding CSP which is handled in middleware with nonce-based protection)
+  // See src/middleware.ts for nonce-based Content Security Policy implementation
   async headers() {
-    // Conditionally include 'unsafe-eval' and 'unsafe-inline' only in development and test
-    // unsafe-eval: Required for HMR (Hot Module Replacement) in development
-    // unsafe-inline: Required for Next.js dev mode inline scripts
-    // In production: Remove both for maximum XSS protection
-    const isNonProduction =
-      process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
     const isProduction = process.env.NODE_ENV === 'production'
-    const scriptSrc = isNonProduction
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-      : "script-src 'self'"
 
-    // PostHog host for CSP connect-src (defaults to US region if not configured)
-    const postHogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
-
-    // Build headers array - HSTS only applied in production to avoid affecting staging/test environments
+    // Build security headers array
+    // Note: Content-Security-Policy is now set in middleware with per-request nonce generation
+    // This provides stronger security than 'unsafe-inline' by using nonce-based script approval
     const securityHeaders = [
       {
         key: 'X-Frame-Options',
@@ -133,21 +126,6 @@ const nextConfig: NextConfig = {
       {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=(self)',
-      },
-      {
-        key: 'Content-Security-Policy',
-        value: [
-          "default-src 'self'",
-          scriptSrc, // Conditionally includes 'unsafe-eval' in dev/test, excluded in production
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
-          "font-src 'self' data:",
-          `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
-          "object-src 'none'",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join('; '),
       },
     ]
 
