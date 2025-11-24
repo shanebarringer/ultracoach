@@ -268,14 +268,13 @@ export async function POST(request: NextRequest) {
           // For small tracks: sample first, middle, last
           // For large tracks: sample 5 evenly distributed points
           const sampleCount = Math.min(5, pointCount)
-          const sampleIndices = []
+          // Use Set to automatically deduplicate indices (prevents redundant validation)
+          const sampleIndices = new Set<number>()
           for (let i = 0; i < sampleCount; i++) {
-            sampleIndices.push(Math.floor((i * pointCount) / sampleCount))
+            sampleIndices.add(Math.floor((i * pointCount) / sampleCount))
           }
-          // Always include last point
-          if (!sampleIndices.includes(pointCount - 1)) {
-            sampleIndices.push(pointCount - 1)
-          }
+          // Always include last point (Set handles duplicates automatically)
+          sampleIndices.add(pointCount - 1)
 
           // Validate each sampled point
           for (const sampleIndex of sampleIndices) {
@@ -328,7 +327,7 @@ export async function POST(request: NextRequest) {
           logger.debug('GPX track validation passed', {
             trackIndex,
             pointCount,
-            sampledPoints: sampleIndices.length,
+            sampledPoints: sampleIndices.size,
             userId: session.user.id,
           })
         }

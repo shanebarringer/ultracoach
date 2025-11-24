@@ -274,7 +274,9 @@ export class RedisRateLimiter {
     if (redis) {
       try {
         const count = await redis.get<number>(key)
-        if (!count) return null
+        // Defensive check: Only return null if Redis has no key (count is null/undefined)
+        // count=0 is a valid state meaning "no requests yet in current window"
+        if (count === null || count === undefined) return null
 
         // Get TTL with defensive handling for edge cases
         const ttl = await redis.ttl(key)
