@@ -207,56 +207,120 @@ supabase db dump --linked      # Dump production data
 
 ### Content Security Policy (CSP) Configuration (CRITICAL)
 
-**IMPORTANT**: UltraCoach uses Content Security Policy headers for security, with special considerations for Next.js compatibility.
+**IMPLEMENTED**: UltraCoach uses **nonce-based Content Security Policy** for optimal security in production.
 
-#### CSP Requirements for Next.js 15
+#### 🔒 Security-First Approach: Nonce-Based CSP (Current Implementation)
 
-**The Issue**: Next.js 15 embeds critical hydration scripts using inline `<script>` tags. Without `'unsafe-inline'` in the CSP, pages will:
+**UltraCoach uses the recommended security-first approach for Next.js 15 applications:**
 
-- Load but not hydrate (white screen)
-- Show "Refused to execute inline script" errors in console
-- Block all client-side interactivity
+- ✅ **Unique nonce per request** - Cryptographically secure random nonce generated in middleware
+- ✅ **Zero `'unsafe-inline'` in production** - No broad inline script permissions in production (dev uses it only for HMR styles)
+- ✅ **`'strict-dynamic'`** - Allows scripts loaded by nonce-approved scripts
+- ✅ **Automatic nonce application** - Next.js applies nonce to all framework scripts
+- ✅ **Environment-specific policies** - Dev includes `'unsafe-eval'` for HMR scripts and `'unsafe-inline'` for HMR styles
 
-**The Solution**: Production CSP MUST include `'unsafe-inline'` for script-src:
+#### Implementation Details
+
+**Location**: `src/middleware.ts` (nonce generation and CSP header setting)
+
+The middleware generates a unique nonce for each request and builds a strict CSP header:
 
 ```typescript
-// next.config.ts
-const scriptSrc = isNonProduction
-  ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: includes HMR
-  : "script-src 'self' 'unsafe-inline'" // Prod: Next.js hydration only
+// Generate unique nonce (cryptographically secure)
+// Using btoa() instead of Buffer for Edge runtime compatibility
+const nonce = btoa(crypto.randomUUID())
+
+// Build CSP with nonce-based script approval (environment-specific)
+const isDev = process.env.NODE_ENV === 'development'
+
+const cspDirectives = [
+  "default-src 'self'",
+  // Development includes 'unsafe-eval' for HMR (Hot Module Replacement)
+  `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+  // Development uses 'unsafe-inline' for HMR, production uses nonce
+  `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+  "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  'upgrade-insecure-requests',
+]
 ```
 
-#### Why This Is Safe
+**Layout Integration**: `src/app/layout.tsx`
 
-- **Trusted Source**: Next.js inline scripts come from the build process, not user input
-- **React Protection**: React automatically escapes all user-generated content
-- **External Scripts Blocked**: CSP still blocks untrusted external scripts
-- **Industry Standard**: This is the standard approach for Next.js apps with CSP
+The root layout extracts the nonce and passes it to components that need it:
 
-#### CSP Configuration Location
+```typescript
+const headersList = await headers()
+const nonce = headersList.get('x-nonce') ?? undefined
 
-**File**: `next.config.ts` (lines 104-168)
+// Pass nonce to PostHog and other script-loading components
+<PostHogProvider nonce={nonce}>
+```
 
-The CSP is configured in the `headers()` async function with environment-specific settings:
+#### Why Nonce-Based CSP Is Superior
 
-- **Development**: Includes `'unsafe-eval'` for Hot Module Replacement (HMR)
-- **Production**: Only includes `'unsafe-inline'` for Next.js hydration scripts
+**Security Benefits:**
 
-#### Symptoms of Missing 'unsafe-inline'
+- 🛡️ **Blocks all unauthorized inline scripts** - Only scripts with matching nonce execute
+- 🔐 **Per-request randomization** - Attackers can't guess nonce values
+- ✅ **Industry best practice** - Recommended by Next.js, Google, and security experts
+- 🚫 **Eliminates XSS attack surface** - No `'unsafe-inline'` weakness
 
-- White screen on landing page and all routes
-- Console errors: "Refused to execute inline script because it violates the following Content Security Policy directive"
-- SHA-256 hash violations for Next.js's own inline scripts
-- Pages render server-side but fail to hydrate on client
+**Official Documentation:**
 
-#### Alternative Approaches (Future Enhancement)
+- [Next.js CSP Guide](https://nextjs.org/docs/app/guides/content-security-policy) - Official implementation guide
+- [MDN CSP Nonces](https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy/script-src) - Authoritative CSP reference
 
-For stricter security, consider implementing nonce-based CSP:
+#### Trade-offs & Requirements
 
-- Generate cryptographic nonce for each request in middleware
-- Pass nonce to Next.js via custom headers
-- More complex but eliminates need for `'unsafe-inline'`
-- Requires Next.js middleware integration and careful testing
+**Forces Dynamic Rendering:**
+
+- ⚠️ All pages must be dynamically rendered (no static optimization)
+- ⚠️ Disables Incremental Static Regeneration (ISR)
+- ⚠️ CDN caching requires additional configuration
+
+**For UltraCoach, This Is Ideal:**
+
+- ✅ Most pages already require dynamic rendering (authentication)
+- ✅ Server/Client Component pattern aligns perfectly
+- ✅ Security > static optimization for coaching platform
+- ✅ Middleware already in place for authentication
+
+#### Troubleshooting
+
+**Symptoms of CSP Issues:**
+
+- White screen on landing page
+- Console errors: "Refused to execute inline script"
+- SHA-256 hash violations for scripts
+- Pages render but don't hydrate
+
+**Solutions:**
+
+1. Verify middleware is generating nonce
+2. Check layout extracts nonce from `x-nonce` header
+3. Ensure Script components use `nonce` prop
+4. Confirm CSP header is set in response
+
+#### Legacy: unsafe-inline Approach (Not Recommended)
+
+**Historical Note**: Previous implementations used `'unsafe-inline'` as a compatibility measure. This approach:
+
+- ⚠️ **Weakens CSP protection** - Allows ALL inline scripts
+- 🔴 **Security trade-off** - Increases XSS attack surface
+- ⚠️ **Not recommended** - Use only if nonce-based CSP is not feasible
+
+If you need to temporarily use `'unsafe-inline'` for debugging, add to middleware CSP:
+
+```typescript
+// TEMPORARY ONLY - Remove in production
+script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'
+```
 
 ## Git Commit Strategy:
 

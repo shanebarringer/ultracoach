@@ -21,10 +21,21 @@ const logger = createLogger('PostHogProvider')
 // This prevents re-initialization during hot module reloading or strict mode double-mounting
 let posthogInitialized = false
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+export function PostHogProvider({
+  children,
+  nonce: _nonce,
+}: {
+  children: React.ReactNode
+  nonce?: string
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isInitialized, setIsInitialized] = useState(false)
+
+  // Note: nonce parameter (_nonce) is reserved for future use if PostHog needs to load external scripts
+  // Currently, PostHog SDK loads scripts dynamically via JavaScript, which Next.js
+  // handles automatically when nonce is set in middleware request headers
+  // The underscore prefix indicates this is an intentionally unused parameter for future CSP compliance
 
   // Jotai setters for feature flags
   const setFlags = useSetAtom(setFeatureFlagsAtom)

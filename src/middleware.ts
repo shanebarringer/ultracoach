@@ -5,7 +5,46 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Middleware')
 
+/**
+ * Generate Content Security Policy with nonce-based script/style protection
+ * This is the security-first approach recommended by Next.js for production applications
+ */
+function generateCSPHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV === 'development'
+
+  // PostHog host for CSP connect-src (defaults to US region if not configured)
+  const postHogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+
+  const cspDirectives = [
+    "default-src 'self'",
+    // script-src: Use nonce + strict-dynamic for optimal security
+    // - 'nonce-{value}': Allow scripts with matching nonce
+    // - 'strict-dynamic': Allow scripts loaded by nonce-approved scripts
+    // - 'unsafe-eval': Only in development for HMR (Hot Module Replacement)
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    // style-src: Use nonce in production, unsafe-inline in dev for HMR
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
+    "font-src 'self' data:",
+    `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    'upgrade-insecure-requests',
+  ]
+
+  return cspDirectives.join('; ')
+}
+
 export async function middleware(request: NextRequest) {
+  // Generate unique nonce for this request (cryptographically secure)
+  // Using btoa() instead of Buffer for Edge runtime compatibility
+  const nonce = btoa(crypto.randomUUID())
+
+  // Build Content Security Policy with nonce
+  const cspHeader = generateCSPHeader(nonce)
+
   // Handle OPTIONS requests (CORS preflight)
   if (request.method === 'OPTIONS') {
     return new NextResponse(null, {
@@ -33,22 +72,52 @@ export async function middleware(request: NextRequest) {
     '/coaches',
   ]
 
-  const isPublicRoute = publicRoutes.some(
-    route => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route)
-  )
+  const isPublicRoute = publicRoutes.some(route => {
+    // Special case: only exact match for root path to prevent matching all routes
+    if (route === '/') {
+      return request.nextUrl.pathname === '/'
+    }
+
+    // For other routes: exact match OR prefix with trailing slash to prevent collisions
+    // Example: '/about' matches '/about' and '/about/...' but NOT '/aboutus'
+    return request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  })
+
+  // Create request headers with nonce for Next.js to use
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
+  requestHeaders.set('Content-Security-Policy', cspHeader)
 
   if (isPublicRoute) {
-    return NextResponse.next()
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.headers.set('Content-Security-Policy', cspHeader)
+    return response
   }
 
   // Allow static files
   if (request.nextUrl.pathname.startsWith('/_next') || request.nextUrl.pathname.includes('.')) {
-    return NextResponse.next()
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.headers.set('Content-Security-Policy', cspHeader)
+    return response
   }
 
   // For API routes (except auth), let the API routes handle their own authentication
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.next()
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.headers.set('Content-Security-Policy', cspHeader)
+    return response
   }
 
   // Protected routes that require authentication
@@ -98,7 +167,9 @@ export async function middleware(request: NextRequest) {
         path: request.nextUrl.pathname,
         hasAnyCookies: request.cookies.getAll().length > 0,
       })
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+      const response = NextResponse.redirect(new URL('/auth/signin', request.url))
+      response.headers.set('Content-Security-Policy', cspHeader)
+      return response
     }
 
     // Validate session token format (basic sanity check)
@@ -107,14 +178,28 @@ export async function middleware(request: NextRequest) {
         path: request.nextUrl.pathname,
         tokenLength: sessionCookie.value?.length || 0,
       })
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+      const response = NextResponse.redirect(new URL('/auth/signin', request.url))
+      response.headers.set('Content-Security-Policy', cspHeader)
+      return response
     }
 
-    return NextResponse.next()
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.headers.set('Content-Security-Policy', cspHeader)
+    return response
   }
 
   // Default: allow other routes
-  return NextResponse.next()
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+  response.headers.set('Content-Security-Policy', cspHeader)
+  return response
 }
 
 export const config = {

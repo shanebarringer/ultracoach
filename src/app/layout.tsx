@@ -26,17 +26,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Extract nonce from middleware for CSP compliance
+  // The nonce is generated per-request in middleware and passed via x-nonce header
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') ?? undefined
+
   // Fetch session on server-side to prevent race conditions with client-side loading
   // This implements the Better Auth SSR optimization pattern
   // Note: server-side API returns session directly, not wrapped in { data, error }
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: headersList,
   })
 
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <PostHogProvider>
+        <PostHogProvider nonce={nonce}>
           <PostHogErrorBoundary>
             <JotaiProvider>
               <BetterAuthProvider initialSession={session}>
