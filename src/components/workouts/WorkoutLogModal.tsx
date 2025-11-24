@@ -53,16 +53,34 @@ const workoutLogSchema = z.object({
     .optional(),
   intensity: z
     .number()
-    .min(1, 'Intensity must be at least 1')
-    .max(10, 'Intensity must be at most 10')
+    .min(1, { message: 'Intensity must be at least 1' })
+    .max(10, { message: 'Intensity must be at most 10' })
     .nullable()
     .optional(),
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
-  elevationGain: z.number().min(0, 'Elevation gain must be positive').nullable().optional(),
-  actualDistance: z.number().min(0, 'Distance must be positive').nullable().optional(),
-  actualDuration: z.number().min(0, 'Duration must be positive').nullable().optional(),
-  workoutNotes: z.string().max(1000, 'Notes must be less than 1000 characters').optional(),
-  injuryNotes: z.string().max(500, 'Injury notes must be less than 500 characters').optional(),
+  elevationGain: z
+    .number()
+    .min(0, { message: 'Elevation gain must be non-negative' })
+    .nullable()
+    .optional(),
+  actualDistance: z
+    .number()
+    .min(0, { message: 'Distance must be non-negative' })
+    .nullable()
+    .optional(),
+  actualDuration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .nullable()
+    .optional(),
+  workoutNotes: z
+    .string()
+    .max(1000, { message: 'Notes must be less than 1000 characters' })
+    .optional(),
+  injuryNotes: z
+    .string()
+    .max(500, { message: 'Injury notes must be less than 500 characters' })
+    .optional(),
 })
 
 type WorkoutLogForm = z.infer<typeof workoutLogSchema>
@@ -177,6 +195,7 @@ export default function WorkoutLogModal({
       } else {
         // For 'planned' status, use optimistic update pattern
         const previousWorkout = { ...workout }
+        let rolledBack = false
 
         // Optimistically update the workouts atom immediately
         setWorkouts(prev =>
@@ -210,6 +229,7 @@ export default function WorkoutLogModal({
           if (!response.ok) {
             // Rollback on error
             setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
+            rolledBack = true
             throw new Error('Failed to update workout')
           }
 
@@ -219,7 +239,10 @@ export default function WorkoutLogModal({
             prev.map(w => (w.id === workout.id ? updatedWorkout.workout || updatedWorkout : w))
           )
         } catch (error) {
-          // Rollback already happened in the if (!response.ok) block
+          // Rollback if not already done (e.g., network/JSON errors)
+          if (!rolledBack) {
+            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
+          }
           throw error
         }
       }

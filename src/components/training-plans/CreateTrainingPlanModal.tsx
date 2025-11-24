@@ -53,10 +53,13 @@ const logger = createLogger('CreateTrainingPlanModal')
 const createTrainingPlanSchema = z.object({
   title: z
     .string()
-    .min(1, 'Plan title is required')
-    .max(100, 'Title must be at most 100 characters'),
-  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
-  runnerId: z.string().min(1, 'Please select a runner'),
+    .min(1, { message: 'Plan title is required' })
+    .max(100, { message: 'Title must be at most 100 characters' }),
+  description: z
+    .string()
+    .max(500, { message: 'Description must be at most 500 characters' })
+    .optional(),
+  runnerId: z.string().min(1, { message: 'Please select a runner' }),
   race_id: z.string().nullable(),
   goal_type: z.enum(GOAL_TYPES).nullable(),
   plan_type: z.enum(PLAN_TYPES).nullable(),
@@ -81,6 +84,8 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
+  const hasRunners = connectedRunners.length > 0
   const user = useAtomValue(userAtom) // Read-only access
   const trackEvent = useTypedPostHogEvent()
   // Suspense handles loading of connected runners within a child field component;
@@ -176,6 +181,12 @@ export default function CreateTrainingPlanModal({
   }, [isOpen, races, planTemplates, setRaces, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
+    // Short-circuit if no runners connected
+    if (!hasRunners) {
+      logger.warn('Attempted to create training plan without connected runners')
+      return
+    }
+
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
@@ -355,7 +366,12 @@ export default function CreateTrainingPlanModal({
                     </Select>
                   }
                 >
-                  <RunnerSelectField field={field} fieldState={fieldState} />
+                  <RunnerSelectField
+                    field={field}
+                    fieldState={fieldState}
+                    connectedRunners={connectedRunners}
+                    hasRunners={hasRunners}
+                  />
                 </Suspense>
               )}
             />
@@ -484,13 +500,24 @@ export default function CreateTrainingPlanModal({
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
-              {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
-            </Button>
+          <ModalFooter className="flex-col items-stretch gap-2">
+            {!hasRunners && (
+              <div className="text-sm text-warning bg-warning/10 px-3 py-2 rounded-md">
+                You must have at least one connected runner before creating a training plan
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="light" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="primary"
+                disabled={!hasRunners || isSubmitting || formState.loading}
+              >
+                {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
+              </Button>
+            </div>
           </ModalFooter>
         </form>
       </ModalContent>
@@ -501,13 +528,14 @@ export default function CreateTrainingPlanModal({
 function RunnerSelectField({
   field,
   fieldState,
+  connectedRunners,
+  hasRunners,
 }: {
   field: { value: string; onChange: (v: string) => void }
   fieldState: { error?: { message?: string } }
+  connectedRunners: User[]
+  hasRunners: boolean
 }) {
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
-  const hasRunners = connectedRunners.length > 0
-
   return (
     <Select
       label="Select Runner"

@@ -19,7 +19,10 @@ const logger = createLogger('NewMessageModal')
 
 // Zod schema for search form validation
 const searchSchema = z.object({
-  searchTerm: z.string().max(100, 'Search term must be less than 100 characters').optional(),
+  searchTerm: z
+    .string()
+    .max(100, { message: 'Search term must be at most 100 characters' })
+    .optional(),
 })
 
 type SearchForm = z.infer<typeof searchSchema>
