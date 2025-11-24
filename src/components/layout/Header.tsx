@@ -127,7 +127,9 @@ function Header() {
           </NavbarBrand>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* suppressHydrationWarning: Auth state differs server vs client (expected behavior)
+            Server renders Sign In/Sign Up buttons, client may render user avatar after hydration */}
+        <div className="flex items-center gap-2 flex-shrink-0" suppressHydrationWarning>
           {!session && status !== 'loading' && (
             <>
               <Button as={Link} href="/auth/signin" variant="light" size="sm">
