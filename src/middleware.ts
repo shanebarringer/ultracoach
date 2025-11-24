@@ -34,6 +34,8 @@ function generateCSPHeader(nonce: string): string {
     "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
     "object-src 'none'",
+    // frame-src: Allow Vercel Live collaboration iframe on preview deployments
+    "frame-src 'self' https://vercel.live",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
