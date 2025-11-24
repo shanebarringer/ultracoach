@@ -4,8 +4,8 @@ import { Card, CardBody, CardHeader } from '@heroui/react'
 import { Activity } from 'lucide-react'
 
 import GarminActivityList from '@/components/garmin/GarminActivityList'
-import GarminConnectionCard from '@/components/settings/GarminConnectionCard'
 import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
+import GarminConnectionCard from '@/components/settings/GarminConnectionCard'
 import StravaActivityList from '@/components/strava/StravaActivityList'
 import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
 

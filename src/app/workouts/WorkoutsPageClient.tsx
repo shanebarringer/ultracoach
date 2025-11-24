@@ -8,10 +8,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import dynamic from 'next/dynamic'
 
-import Layout from '@/components/layout/Layout'
-import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
 import GarminWorkoutPanel from '@/components/garmin/GarminWorkoutPanel'
+import Layout from '@/components/layout/Layout'
+import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import StravaWorkoutPanel from '@/components/strava/StravaWorkoutPanel'
 import { WorkoutsPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import EnhancedWorkoutsList from '@/components/workouts/EnhancedWorkoutsList'

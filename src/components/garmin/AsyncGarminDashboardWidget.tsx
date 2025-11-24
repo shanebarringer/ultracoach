@@ -1,20 +1,42 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Chip, Progress, Spinner } from '@heroui/react'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  Progress,
+  Spinner,
+  useDisclosure,
+} from '@heroui/react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { Activity, AlertCircle, CheckCircle2, ExternalLink, RefreshCw, Watch } from 'lucide-react'
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+  RefreshCw,
+  Upload,
+  Watch,
+} from 'lucide-react'
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   garminActionsAtom,
-  garminActivitiesRefreshableAtom,
   garminConnectionStatusAtom,
   garminStateAtom,
   garminSyncStatsAtom,
 } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
+
+import GarminSyncProgress, { type SyncProgressItem } from './GarminSyncProgress'
 
 const logger = createLogger('AsyncGarminDashboardWidget')
 
@@ -31,6 +53,16 @@ interface ProcessedWorkout {
   syncStatus: 'synced' | 'pending' | 'failed'
 }
 
+interface ApiWorkout {
+  id: string
+  date: string
+  planned_type?: string
+  planned_distance?: number
+  planned_distance_unit?: string
+  planned_duration?: number
+  garmin_workout_id?: string
+}
+
 /**
  * Async Garmin integration widget that uses Suspense
  * This component reads from async atoms directly and throws promises
@@ -41,18 +73,25 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
   const connectionStatus = useAtomValue(garminConnectionStatusAtom)
   const syncStats = useAtomValue(garminSyncStatsAtom)
 
-  const refreshWorkouts = useSetAtom(garminActivitiesRefreshableAtom)
   const dispatchGarminAction = useSetAtom(garminActionsAtom)
 
   const [isSyncing, setIsSyncing] = useState(false)
   const [upcomingWorkouts, setUpcomingWorkouts] = useState<ProcessedWorkout[]>([])
+  const [syncItems, setSyncItems] = useState<SyncProgressItem[]>([])
+
+  // Modal for sync progress
+  const {
+    isOpen: isSyncModalOpen,
+    onOpen: onSyncModalOpen,
+    onClose: onSyncModalClose,
+  } = useDisclosure()
 
   // Fetch upcoming workouts on mount and when connection changes
   useEffect(() => {
     if (connectionStatus?.connected || garminState.isConnected) {
       fetchUpcomingWorkouts()
     }
-  }, [connectionStatus?.connected, garminState.isConnected])
+  }, [connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
 
   // Fetch upcoming workouts (next 7 days)
   const fetchUpcomingWorkouts = useCallback(async () => {
@@ -76,7 +115,7 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
       }
 
       const data = await response.json()
-      const workouts = (data.workouts || []).map((workout: any) => ({
+      const workouts = (data.workouts || []).map((workout: ApiWorkout) => ({
         id: workout.id,
         name: workout.planned_type || 'Workout',
         date: new Date(workout.date).toLocaleDateString(),
@@ -130,21 +169,63 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
     try {
       // Sync upcoming workouts to Garmin
       if (upcomingWorkouts.length > 0) {
-        const workoutIds = upcomingWorkouts
-          .filter(w => w.syncStatus !== 'synced')
-          .map(w => w.id)
+        const workoutsToSync = upcomingWorkouts.filter(w => w.syncStatus !== 'synced')
 
-        if (workoutIds.length > 0) {
-          logger.debug('Syncing workouts to Garmin', { count: workoutIds.length })
+        if (workoutsToSync.length > 0) {
+          logger.debug('Syncing workouts to Garmin', { count: workoutsToSync.length })
 
-          dispatchGarminAction({
-            type: 'SYNC_BULK',
-            payload: {
-              workouts: workoutIds,
-            },
-          })
+          // Initialize sync items with pending status
+          const initialSyncItems: SyncProgressItem[] = workoutsToSync.map(workout => ({
+            id: workout.id,
+            name: workout.name,
+            status: 'pending' as const,
+          }))
+          setSyncItems(initialSyncItems)
+          onSyncModalOpen()
 
-          toast.success(`Syncing ${workoutIds.length} workouts to Garmin`)
+          // Sync workouts one by one with progress updates
+          for (let i = 0; i < workoutsToSync.length; i++) {
+            const workout = workoutsToSync[i]
+
+            // Update to syncing status
+            setSyncItems(prev =>
+              prev.map(item =>
+                item.id === workout.id ? { ...item, status: 'syncing' as const } : item
+              )
+            )
+
+            try {
+              // Dispatch individual sync action
+              dispatchGarminAction({
+                type: 'SYNC_BULK',
+                payload: {
+                  workouts: [workout.id],
+                },
+              })
+
+              // Small delay to allow sync to process
+              await new Promise(resolve => setTimeout(resolve, 500))
+
+              // Update to success status
+              setSyncItems(prev =>
+                prev.map(item =>
+                  item.id === workout.id ? { ...item, status: 'success' as const } : item
+                )
+              )
+            } catch (error) {
+              // Update to error status
+              setSyncItems(prev =>
+                prev.map(item =>
+                  item.id === workout.id
+                    ? { ...item, status: 'error' as const, error: 'Sync failed' }
+                    : item
+                )
+              )
+              logger.error('Failed to sync workout:', { workoutId: workout.id, error })
+            }
+          }
+
+          toast.success(`Synced ${workoutsToSync.length} workouts to Garmin`)
         } else {
           toast.info('All workouts are already synced')
         }
@@ -160,7 +241,7 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
     } finally {
       setIsSyncing(false)
     }
-  }, [upcomingWorkouts, dispatchGarminAction, fetchUpcomingWorkouts])
+  }, [upcomingWorkouts, dispatchGarminAction, fetchUpcomingWorkouts, onSyncModalOpen])
 
   const handleViewSettings = useCallback(() => {
     logger.debug('Opening Garmin settings from dashboard widget')
@@ -315,6 +396,25 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
           </>
         )}
       </CardBody>
+
+      {/* Sync Progress Modal */}
+      <Modal
+        isOpen={isSyncModalOpen}
+        onClose={onSyncModalClose}
+        size="2xl"
+        scrollBehavior="inside"
+        backdrop="blur"
+      >
+        <ModalContent>
+          <ModalHeader className="flex items-center gap-2">
+            <Upload className="h-5 w-5 text-primary" />
+            <span>Syncing Workouts to Garmin</span>
+          </ModalHeader>
+          <ModalBody className="pb-6">
+            <GarminSyncProgress items={syncItems} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Card>
   )
 })

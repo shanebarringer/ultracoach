@@ -2,15 +2,16 @@
 // Runs daily to sync upcoming workouts for all connected users
 // Created: 2025-01-12
 // Epic: ULT-16
+import { addDays, startOfDay } from 'date-fns'
+import { and, eq, gte, lte } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
-import { garmin_connections, workouts } from '@/lib/schema'
-import { eq, and, gte, lte } from 'drizzle-orm'
-import { createLogger } from '@/lib/logger'
 import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
+import { createLogger } from '@/lib/logger'
+import { garmin_connections, workouts } from '@/lib/schema'
 import { convertWorkoutToGarmin, validateGarminWorkout } from '@/utils/garmin-workout-converter'
-import { addDays, startOfDay } from 'date-fns'
 
 const logger = createLogger('garmin-cron-sync')
 
@@ -28,10 +29,7 @@ export async function GET(request: Request) {
 
     if (!cronSecret) {
       logger.error('CRON_SECRET not configured')
-      return NextResponse.json(
-        { error: 'Cron job not properly configured' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Cron job not properly configured' }, { status: 500 })
     }
 
     if (authHeader !== `Bearer ${cronSecret}`) {

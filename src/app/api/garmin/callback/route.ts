@@ -2,15 +2,16 @@
 // Handles OAuth redirect and stores encrypted tokens
 // Created: 2025-01-12
 // Epic: ULT-16
-
-import { NextResponse } from 'next/server'
-import { redirect } from 'next/navigation'
-import { db } from '@/lib/database'
-import { garmin_connections } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
+
+import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
+
+import { db } from '@/lib/database'
 import { GarminAPIClient, calculateTokenExpiry } from '@/lib/garmin-client'
+import { createLogger } from '@/lib/logger'
+import { garmin_connections } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-callback-api')
 
@@ -46,9 +47,7 @@ export async function GET(request: Request) {
     try {
       if (!state) throw new Error('Missing state parameter')
 
-      const stateData = JSON.parse(
-        Buffer.from(state, 'base64url').toString('utf-8')
-      )
+      const stateData = JSON.parse(Buffer.from(state, 'base64url').toString('utf-8'))
       userId = stateData.userId
 
       // Verify state timestamp is recent (within 10 minutes)

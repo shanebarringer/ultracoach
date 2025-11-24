@@ -2,13 +2,14 @@
 // Removes Garmin connection and deletes tokens
 // Created: 2025-01-12
 // Epic: ULT-16
+import { eq } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
-import { garmin_connections } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
-import { getServerSession } from '@/utils/auth-server'
 import { createLogger } from '@/lib/logger'
+import { garmin_connections } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-disconnect-api')
 
@@ -39,10 +40,7 @@ export async function DELETE(request: Request) {
       logger.warn('No Garmin connection found to disconnect', {
         userId: session.user.id,
       })
-      return NextResponse.json(
-        { error: 'No Garmin connection found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No Garmin connection found' }, { status: 404 })
     }
 
     logger.info('Garmin account disconnected successfully', {
@@ -60,9 +58,6 @@ export async function DELETE(request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return NextResponse.json(
-      { error: 'Failed to disconnect Garmin account' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to disconnect Garmin account' }, { status: 500 })
   }
 }

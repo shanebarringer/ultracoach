@@ -345,12 +345,7 @@ export class GarminIntegrationError extends Error {
  * Check if error is a Garmin API error
  */
 export function isGarminAPIError(error: unknown): error is GarminAPIError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'statusCode' in error &&
-    'message' in error
-  )
+  return typeof error === 'object' && error !== null && 'statusCode' in error && 'message' in error
 }
 
 /**
@@ -361,8 +356,5 @@ export function isValidForSync(workout: {
   planned_duration?: number | null
   planned_type?: string | null
 }): boolean {
-  return !!(
-    (workout.planned_distance || workout.planned_duration) &&
-    workout.planned_type
-  )
+  return !!((workout.planned_distance || workout.planned_duration) && workout.planned_type)
 }

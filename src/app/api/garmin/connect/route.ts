@@ -2,11 +2,11 @@
 // Initiates OAuth flow to connect Garmin account
 // Created: 2025-01-12
 // Epic: ULT-16
-
 import { NextResponse } from 'next/server'
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
+
 import { getGarminAuthUrl } from '@/lib/garmin-client'
+import { createLogger } from '@/lib/logger'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-connect-api')
 
@@ -32,10 +32,7 @@ export async function GET(request: Request) {
     const redirectUri = process.env.GARMIN_REDIRECT_URI
     if (!redirectUri) {
       logger.error('GARMIN_REDIRECT_URI not configured')
-      return NextResponse.json(
-        { error: 'Garmin OAuth not properly configured' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Garmin OAuth not properly configured' }, { status: 500 })
     }
 
     // Generate state parameter for CSRF protection
@@ -63,9 +60,6 @@ export async function GET(request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return NextResponse.json(
-      { error: 'Failed to initiate Garmin connection' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to initiate Garmin connection' }, { status: 500 })
   }
 }

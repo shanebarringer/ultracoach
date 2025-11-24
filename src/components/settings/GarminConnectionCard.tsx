@@ -5,10 +5,17 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardBody, CardHeader, Button, Divider, Chip } from '@heroui/react'
+import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+
+import { useEffect, useState } from 'react'
+
 import { createLogger } from '@/lib/logger'
 import { showToast } from '@/lib/toast'
+
+// Garmin Connection Card - Settings UI Component
+// Manages Garmin OAuth connection in Settings page
+// Created: 2025-01-12
+// Epic: ULT-16
 
 const logger = createLogger('garmin-connection-card')
 
@@ -74,7 +81,11 @@ export default function GarminConnectionCard() {
   }
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect your Garmin account? This will remove all sync settings.')) {
+    if (
+      !confirm(
+        'Are you sure you want to disconnect your Garmin account? This will remove all sync settings.'
+      )
+    ) {
       return
     }
 
@@ -164,16 +175,10 @@ export default function GarminConnectionCard() {
       <CardHeader className="flex gap-3">
         <div className="flex flex-col flex-1">
           <p className="text-md font-semibold">🏔️ Garmin Connect Integration</p>
-          <p className="text-small text-default-500">
-            Sync workouts to your Garmin device
-          </p>
+          <p className="text-small text-default-500">Sync workouts to your Garmin device</p>
         </div>
         {status?.connected && (
-          <Chip
-            color={status.tokenExpired ? 'warning' : 'success'}
-            variant="flat"
-            size="sm"
-          >
+          <Chip color={status.tokenExpired ? 'warning' : 'success'} variant="flat" size="sm">
             {status.tokenExpired ? 'Token Expired' : 'Connected'}
           </Chip>
         )}
@@ -254,9 +259,7 @@ export default function GarminConnectionCard() {
             {/* Token Expiration Warning */}
             {status.tokenExpired && (
               <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">
-                <p className="text-small text-warning-800 font-semibold">
-                  ⚠️ Token Expired
-                </p>
+                <p className="text-small text-warning-800 font-semibold">⚠️ Token Expired</p>
                 <p className="text-small text-warning-700 mt-1">
                   Your Garmin connection token has expired. Please reconnect to continue syncing.
                 </p>
@@ -277,8 +280,8 @@ export default function GarminConnectionCard() {
             {/* Not Connected State */}
             <div className="flex flex-col gap-4">
               <p className="text-small text-default-600">
-                Connect your Garmin account to automatically sync your UltraCoach workouts
-                to your Garmin device and import completed activities.
+                Connect your Garmin account to automatically sync your UltraCoach workouts to your
+                Garmin device and import completed activities.
               </p>
 
               <div className="bg-default-100 rounded-lg p-4">

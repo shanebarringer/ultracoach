@@ -10,6 +10,7 @@ Develop UltraCoach companion app for Garmin devices using Connect IQ SDK and Tra
 **Goal**: Enable seamless workout sync between UltraCoach training plans and Garmin devices.
 
 **Scope**:
+
 - Phase 1: Garmin Training API integration (calendar sync)
 - OAuth connection management
 - Workout format conversion
@@ -32,12 +33,14 @@ Develop UltraCoach companion app for Garmin devices using Connect IQ SDK and Tra
 Enroll in Garmin Developer Program and configure OAuth application credentials.
 
 **Acceptance Criteria**:
+
 - [ ] Garmin Developer account created
 - [ ] OAuth application registered
 - [ ] Environment variables configured (.env.local and Vercel)
 - [ ] API credentials tested
 
 **Environment Variables**:
+
 ```
 GARMIN_CLIENT_ID
 GARMIN_CLIENT_SECRET
@@ -63,6 +66,7 @@ Create database migration for Garmin connection tracking and sync status.
 **Status**: ✅ Migration file already created
 
 **Acceptance Criteria**:
+
 - [x] Migration file created: 20250112_add_garmin_integration.sql
 - [x] Tables created: garmin_connections, garmin_workout_syncs, garmin_devices
 - [ ] Foreign key constraints to better_auth_users and workouts
@@ -86,6 +90,7 @@ Create database migration for Garmin connection tracking and sync status.
 Implement Garmin OAuth 2.0 authentication with secure token storage.
 
 **Acceptance Criteria**:
+
 - [ ] OAuth connect endpoint: POST /api/garmin/connect
 - [ ] OAuth callback handler: GET /api/garmin/callback
 - [ ] Disconnect endpoint: DELETE /api/garmin/disconnect
@@ -114,6 +119,7 @@ Create utility to convert UltraCoach workout format to Garmin Training API JSON.
 **Status**: ✅ Type definitions already created
 
 **Acceptance Criteria**:
+
 - [ ] Converter utility created: src/utils/garmin-workout-converter.ts
 - [ ] Maps workout types to Garmin sport types
 - [ ] Converts categories to Garmin step types
@@ -138,6 +144,7 @@ Create utility to convert UltraCoach workout format to Garmin Training API JSON.
 Create API endpoint to manually sync workouts to Garmin Connect calendar.
 
 **Acceptance Criteria**:
+
 - [ ] Sync endpoint: POST /api/garmin/sync
 - [ ] Supports single and bulk workout sync
 - [ ] Creates sync tracking records
@@ -164,6 +171,7 @@ Create API endpoint to manually sync workouts to Garmin Connect calendar.
 Import completed activities from Garmin Connect to UltraCoach workouts.
 
 **Acceptance Criteria**:
+
 - [ ] Activities endpoint: GET /api/garmin/activities
 - [ ] Import endpoint: POST /api/garmin/import
 - [ ] Fetches activities from Garmin Training API
@@ -192,6 +200,7 @@ Import completed activities from Garmin Connect to UltraCoach workouts.
 Set up Vercel cron job to automatically sync workouts daily.
 
 **Acceptance Criteria**:
+
 - [ ] Cron configuration added to vercel.json
 - [ ] Cron endpoint: GET /api/cron/garmin-sync
 - [ ] Runs daily at midnight UTC
@@ -220,6 +229,7 @@ Set up Vercel cron job to automatically sync workouts daily.
 Create UI component in Settings for Garmin connection management.
 
 **Acceptance Criteria**:
+
 - [ ] Component: src/components/settings/GarminConnectionCard.tsx
 - [ ] Displays connection status (connected/disconnected)
 - [ ] Shows connected Garmin user email
@@ -250,6 +260,7 @@ Create UI component in Settings for Garmin connection management.
 Add Garmin sync status and actions to workout list views.
 
 **Acceptance Criteria**:
+
 - [ ] Sync status badge added to workout cards
 - [ ] Sync to Garmin action button in workout detail
 - [ ] Bulk sync action for weekly planner
@@ -277,6 +288,7 @@ Add Garmin sync status and actions to workout list views.
 Create dashboard widget showing recent Garmin activities.
 
 **Acceptance Criteria**:
+
 - [ ] Widget: src/components/dashboard/GarminActivityWidget.tsx
 - [ ] Displays 5 most recent activities from Garmin
 - [ ] Shows activity details (date, type, distance, pace)
@@ -303,6 +315,7 @@ Create dashboard widget showing recent Garmin activities.
 Write Playwright E2E tests for complete OAuth workflow.
 
 **Acceptance Criteria**:
+
 - [ ] Test file: tests/garmin-oauth.spec.ts
 - [ ] Test cases: OAuth connection, cancellation, token refresh, disconnect, reconnection
 - [ ] Tests pass in CI/CD pipeline
@@ -327,6 +340,7 @@ Write Playwright E2E tests for complete OAuth workflow.
 Write Playwright E2E tests for workout synchronization.
 
 **Acceptance Criteria**:
+
 - [ ] Test file: tests/garmin-sync.spec.ts
 - [ ] Test cases: Single sync, bulk sync, status updates, failed syncs, re-sync
 - [ ] Tests pass in CI/CD pipeline
@@ -349,6 +363,7 @@ Write Playwright E2E tests for workout synchronization.
 Write Playwright E2E tests for importing Garmin activities.
 
 **Acceptance Criteria**:
+
 - [ ] Test file: tests/garmin-import.spec.ts
 - [ ] Test cases: Fetch activities, activity matching, import updates, duplicate prevention, unmatched handling
 - [ ] Tests pass in CI/CD pipeline
@@ -373,6 +388,7 @@ Create comprehensive documentation for Garmin integration.
 **Status**: ✅ Planning docs already created
 
 **Acceptance Criteria**:
+
 - [x] Developer documentation in .context7-docs/garmin-connect-iq/
 - [ ] API documentation with examples
 - [ ] User guide for connecting Garmin account
@@ -396,6 +412,7 @@ Create comprehensive documentation for Garmin integration.
 Deploy Garmin integration to production with monitoring.
 
 **Acceptance Criteria**:
+
 - [ ] Environment variables configured in Vercel production
 - [ ] Database migration applied to production
 - [ ] Vercel cron job enabled and tested

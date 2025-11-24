@@ -1,16 +1,16 @@
 // Garmin API Client - Core HTTP wrapper for Garmin Connect API
 // Created: 2025-01-12
 // Epic: ULT-16
-
-import { createLogger } from './logger'
 import type {
-  GarminOAuthTokens,
-  GarminUserProfile,
-  GarminWorkout,
   GarminActivity,
   GarminActivitySummary,
   GarminIntegrationError,
+  GarminOAuthTokens,
+  GarminUserProfile,
+  GarminWorkout,
 } from '@/types/garmin'
+
+import { createLogger } from './logger'
 
 const logger = createLogger('garmin-api-client')
 
@@ -38,14 +38,11 @@ export class GarminAPIClient {
   /**
    * Make authenticated request to Garmin API
    */
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
     const headers = {
-      'Authorization': this.accessToken, // Garmin uses direct token, not Bearer
+      Authorization: this.accessToken, // Garmin uses direct token, not Bearer
       'Content-Type': 'application/json',
       ...options.headers,
     }
@@ -114,10 +111,7 @@ export class GarminAPIClient {
   /**
    * Exchange OAuth code for access tokens
    */
-  static async exchangeCodeForTokens(
-    code: string,
-    verifier: string
-  ): Promise<GarminOAuthTokens> {
+  static async exchangeCodeForTokens(code: string, verifier: string): Promise<GarminOAuthTokens> {
     logger.info('Exchanging OAuth code for tokens')
 
     const params = new URLSearchParams({
@@ -233,13 +227,10 @@ export class GarminAPIClient {
       workoutName: workout.workoutName,
     })
 
-    return this.request<{ workoutId: number }>(
-      '/workout-service/workout',
-      {
-        method: 'POST',
-        body: JSON.stringify(workout),
-      }
-    )
+    return this.request<{ workoutId: number }>('/workout-service/workout', {
+      method: 'POST',
+      body: JSON.stringify(workout),
+    })
   }
 
   /**
@@ -248,13 +239,10 @@ export class GarminAPIClient {
   async updateWorkout(workoutId: number, workout: GarminWorkout): Promise<void> {
     logger.info('Updating Garmin workout', { workoutId })
 
-    await this.request<void>(
-      `/workout-service/workout/${workoutId}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify(workout),
-      }
-    )
+    await this.request<void>(`/workout-service/workout/${workoutId}`, {
+      method: 'PUT',
+      body: JSON.stringify(workout),
+    })
   }
 
   /**
@@ -263,12 +251,9 @@ export class GarminAPIClient {
   async deleteWorkout(workoutId: number): Promise<void> {
     logger.info('Deleting Garmin workout', { workoutId })
 
-    await this.request<void>(
-      `/workout-service/workout/${workoutId}`,
-      {
-        method: 'DELETE',
-      }
-    )
+    await this.request<void>(`/workout-service/workout/${workoutId}`, {
+      method: 'DELETE',
+    })
   }
 
   // ============================================
@@ -278,10 +263,7 @@ export class GarminAPIClient {
   /**
    * Get user's activities with pagination
    */
-  async getActivities(
-    start: number = 0,
-    limit: number = 20
-  ): Promise<GarminActivitySummary[]> {
+  async getActivities(start: number = 0, limit: number = 20): Promise<GarminActivitySummary[]> {
     logger.info('Fetching activities', { start, limit })
 
     return this.request<GarminActivitySummary[]>(
@@ -295,9 +277,7 @@ export class GarminAPIClient {
   async getActivity(activityId: number): Promise<GarminActivity> {
     logger.info('Fetching activity details', { activityId })
 
-    return this.request<GarminActivity>(
-      `/activity-service/activity/${activityId}`
-    )
+    return this.request<GarminActivity>(`/activity-service/activity/${activityId}`)
   }
 
   /**
@@ -310,7 +290,7 @@ export class GarminAPIClient {
       `${this.baseUrl}/download-service/export/gpx/activity/${activityId}`,
       {
         headers: {
-          'Authorization': this.accessToken,
+          Authorization: this.accessToken,
         },
       }
     )

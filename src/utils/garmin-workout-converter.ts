@@ -2,18 +2,17 @@
 // Converts UltraCoach workouts to Garmin Training API JSON format
 // Created: 2025-01-12
 // Epic: ULT-16
-
+import { createLogger } from '@/lib/logger'
 import type {
+  GARMIN_DURATION_TYPES,
+  GARMIN_SPORT_TYPES,
+  GARMIN_STEP_TYPES,
+  GARMIN_TARGET_TYPES,
   GarminWorkout,
   GarminWorkoutSegment,
   GarminWorkoutStep,
   WorkoutConversionOptions,
-  GARMIN_SPORT_TYPES,
-  GARMIN_STEP_TYPES,
-  GARMIN_DURATION_TYPES,
-  GARMIN_TARGET_TYPES,
 } from '@/types/garmin'
-import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('garmin-workout-converter')
 
@@ -273,15 +272,12 @@ function createTempoSteps(
 /**
  * Create steady-state workout step (easy, long run)
  */
-function createSteadyStateStep(
-  workout: UltraCoachWorkout,
-  stepOrder: number
-): GarminWorkoutStep {
+function createSteadyStateStep(workout: UltraCoachWorkout, stepOrder: number): GarminWorkoutStep {
   // Determine duration or distance
   const useDuration = !!workout.planned_duration
   const durationType = useDuration ? DURATION_TYPES.TIME : DURATION_TYPES.DISTANCE
   const durationValue = useDuration
-    ? (workout.planned_duration || 3600) // Default 1 hour
+    ? workout.planned_duration || 3600 // Default 1 hour
     : Math.round((workout.planned_distance || 5) * 1609.34) // Miles to meters
 
   // Determine intensity zone based on category and intensity

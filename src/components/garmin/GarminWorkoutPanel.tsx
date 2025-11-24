@@ -7,8 +7,13 @@ import {
   CardHeader,
   Chip,
   Divider,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
   Progress,
   Spinner,
+  useDisclosure,
 } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Upload, Watch } from 'lucide-react'
@@ -25,10 +30,22 @@ import {
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
+import GarminSyncProgress, { type SyncProgressItem } from './GarminSyncProgress'
+
 const logger = createLogger('GarminWorkoutPanel')
 
 interface GarminWorkoutPanelProps {
   className?: string
+}
+
+interface ApiWorkout {
+  id: string
+  date: string
+  planned_type?: string
+  planned_distance?: number
+  planned_distance_unit?: string
+  planned_duration?: number
+  garmin_workout_id?: string
 }
 
 /**
@@ -43,7 +60,15 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
   const dispatchGarminAction = useSetAtom(garminActionsAtom)
 
   const [isSyncing, setIsSyncing] = useState(false)
-  const [upcomingWorkouts, setUpcomingWorkouts] = useState<any[]>([])
+  const [upcomingWorkouts, setUpcomingWorkouts] = useState<ApiWorkout[]>([])
+  const [syncItems, setSyncItems] = useState<SyncProgressItem[]>([])
+
+  // Modal for sync progress
+  const {
+    isOpen: isSyncModalOpen,
+    onOpen: onSyncModalOpen,
+    onClose: onSyncModalClose,
+  } = useDisclosure()
 
   // Fetch upcoming workouts when panel opens
   useEffect(() => {
@@ -51,7 +76,7 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
       logger.debug('Panel opened - fetching upcoming workouts')
       fetchUpcomingWorkouts()
     }
-  }, [showPanel, connectionStatus?.connected, garminState.isConnected])
+  }, [showPanel, connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
 
   const fetchUpcomingWorkouts = useCallback(async () => {
     try {
@@ -108,22 +133,66 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
     logger.info('Syncing all upcoming workouts to Garmin')
     setIsSyncing(true)
     try {
-      const unsyncedWorkouts = upcomingWorkouts
-        .filter(w => !w.garmin_workout_id)
-        .map(w => w.id)
+      const workoutsToSync = upcomingWorkouts.filter(w => !w.garmin_workout_id)
 
-      if (unsyncedWorkouts.length === 0) {
+      if (workoutsToSync.length === 0) {
         toast.info('All workouts are already synced')
         setIsSyncing(false)
         return
       }
 
-      dispatchGarminAction({
-        type: 'SYNC_BULK',
-        payload: { workouts: unsyncedWorkouts },
-      })
+      logger.debug('Syncing workouts to Garmin', { count: workoutsToSync.length })
 
-      toast.success(`Syncing ${unsyncedWorkouts.length} workouts to Garmin`)
+      // Initialize sync items with pending status
+      const initialSyncItems: SyncProgressItem[] = workoutsToSync.map(workout => ({
+        id: workout.id,
+        name: workout.planned_type || 'Workout',
+        status: 'pending' as const,
+      }))
+      setSyncItems(initialSyncItems)
+      onSyncModalOpen()
+
+      // Sync workouts one by one with progress updates
+      for (let i = 0; i < workoutsToSync.length; i++) {
+        const workout = workoutsToSync[i]
+
+        // Update to syncing status
+        setSyncItems(prev =>
+          prev.map(item =>
+            item.id === workout.id ? { ...item, status: 'syncing' as const } : item
+          )
+        )
+
+        try {
+          // Dispatch individual sync action
+          dispatchGarminAction({
+            type: 'SYNC_BULK',
+            payload: { workouts: [workout.id] },
+          })
+
+          // Small delay to allow sync to process
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // Update to success status
+          setSyncItems(prev =>
+            prev.map(item =>
+              item.id === workout.id ? { ...item, status: 'success' as const } : item
+            )
+          )
+        } catch (error) {
+          // Update to error status
+          setSyncItems(prev =>
+            prev.map(item =>
+              item.id === workout.id
+                ? { ...item, status: 'error' as const, error: 'Sync failed' }
+                : item
+            )
+          )
+          logger.error('Failed to sync workout:', { workoutId: workout.id, error })
+        }
+      }
+
+      toast.success(`Synced ${workoutsToSync.length} workouts to Garmin`)
       await fetchUpcomingWorkouts() // Refresh to show sync status
     } catch (error) {
       logger.error('Failed to sync workouts:', error)
@@ -131,7 +200,7 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
     } finally {
       setIsSyncing(false)
     }
-  }, [upcomingWorkouts, dispatchGarminAction, fetchUpcomingWorkouts])
+  }, [upcomingWorkouts, dispatchGarminAction, fetchUpcomingWorkouts, onSyncModalOpen])
 
   const handleConnectGarmin = useCallback(() => {
     logger.info('Redirecting to Garmin connection')
@@ -247,7 +316,7 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {upcomingWorkouts.map((workout: any) => (
+                      {upcomingWorkouts.map((workout: ApiWorkout) => (
                         <div
                           key={workout.id}
                           className="flex items-center justify-between p-2 rounded-lg bg-content2 hover:bg-content3 transition-colors"
@@ -268,7 +337,12 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
                           </div>
                           <div className="flex items-center gap-2">
                             {workout.garmin_workout_id ? (
-                              <Chip size="sm" color="success" variant="flat" startContent={<CheckCircle2 className="h-3 w-3" />}>
+                              <Chip
+                                size="sm"
+                                color="success"
+                                variant="flat"
+                                startContent={<CheckCircle2 className="h-3 w-3" />}
+                              >
                                 Synced
                               </Chip>
                             ) : (
@@ -295,6 +369,25 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
           </CardBody>
         </Card>
       )}
+
+      {/* Sync Progress Modal */}
+      <Modal
+        isOpen={isSyncModalOpen}
+        onClose={onSyncModalClose}
+        size="2xl"
+        scrollBehavior="inside"
+        backdrop="blur"
+      >
+        <ModalContent>
+          <ModalHeader className="flex items-center gap-2">
+            <Upload className="h-5 w-5 text-primary" />
+            <span>Syncing Workouts to Garmin</span>
+          </ModalHeader>
+          <ModalBody className="pb-6">
+            <GarminSyncProgress items={syncItems} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </div>
   )
 })

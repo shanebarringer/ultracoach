@@ -2,16 +2,17 @@
 // Syncs UltraCoach workouts to Garmin Connect calendar
 // Created: 2025-01-12
 // Epic: ULT-16
+import { and, eq, gte, inArray } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
-import { garmin_connections, garmin_workout_syncs, workouts } from '@/lib/schema'
-import { eq, and, gte, inArray } from 'drizzle-orm'
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
 import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
+import { createLogger } from '@/lib/logger'
+import { garmin_connections, garmin_workout_syncs, workouts } from '@/lib/schema'
+import type { SyncResult, SyncWorkoutsRequest, SyncWorkoutsResponse } from '@/types/garmin'
+import { getServerSession } from '@/utils/auth-server'
 import { convertWorkoutToGarmin, validateGarminWorkout } from '@/utils/garmin-workout-converter'
-import type { SyncWorkoutsRequest, SyncWorkoutsResponse, SyncResult } from '@/types/garmin'
 
 const logger = createLogger('garmin-sync-api')
 
@@ -38,10 +39,7 @@ export async function POST(request: Request) {
     const { workout_ids, sync_mode = 'manual' } = body
 
     if (!workout_ids || !Array.isArray(workout_ids) || workout_ids.length === 0) {
-      return NextResponse.json(
-        { error: 'workout_ids array is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'workout_ids array is required' }, { status: 400 })
     }
 
     logger.info('Starting workout sync', {
@@ -86,18 +84,10 @@ export async function POST(request: Request) {
     const workoutsToSync = await db
       .select()
       .from(workouts)
-      .where(
-        and(
-          inArray(workouts.id, workout_ids),
-          eq(workouts.user_id, session.user.id)
-        )
-      )
+      .where(and(inArray(workouts.id, workout_ids), eq(workouts.user_id, session.user.id)))
 
     if (workoutsToSync.length === 0) {
-      return NextResponse.json(
-        { error: 'No workouts found with provided IDs' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No workouts found with provided IDs' }, { status: 404 })
     }
 
     logger.debug('Workouts fetched for sync', {
@@ -260,9 +250,6 @@ export async function POST(request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return NextResponse.json(
-      { error: 'Failed to sync workouts to Garmin' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to sync workouts to Garmin' }, { status: 500 })
   }
 }

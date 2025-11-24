@@ -2,14 +2,15 @@
 // Fetches recent activities from Garmin Connect
 // Created: 2025-01-12
 // Epic: ULT-16
+import { eq } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
-import { garmin_connections } from '@/lib/schema'
-import { eq } from 'drizzle-orm'
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
 import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
+import { createLogger } from '@/lib/logger'
+import { garmin_connections } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-activities-api')
 
@@ -45,10 +46,7 @@ export async function GET(request: Request) {
       .limit(1)
 
     if (connection.length === 0) {
-      return NextResponse.json(
-        { error: 'No Garmin connection found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No Garmin connection found' }, { status: 404 })
     }
 
     const conn = connection[0]
@@ -85,9 +83,6 @@ export async function GET(request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return NextResponse.json(
-      { error: 'Failed to fetch Garmin activities' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch Garmin activities' }, { status: 500 })
   }
 }

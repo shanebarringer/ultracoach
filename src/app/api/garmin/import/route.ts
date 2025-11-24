@@ -2,16 +2,17 @@
 // Imports completed Garmin activity to UltraCoach workout
 // Created: 2025-01-12
 // Epic: ULT-16
+import { addDays, parseISO, subDays } from 'date-fns'
+import { and, eq, gte, lte } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
+
 import { db } from '@/lib/database'
-import { garmin_connections, garmin_workout_syncs, workouts } from '@/lib/schema'
-import { eq, and, gte, lte } from 'drizzle-orm'
-import { getServerSession } from '@/utils/auth-server'
-import { createLogger } from '@/lib/logger'
 import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
-import { addDays, subDays, parseISO } from 'date-fns'
+import { createLogger } from '@/lib/logger'
+import { garmin_connections, garmin_workout_syncs, workouts } from '@/lib/schema'
 import type { ImportActivityRequest, ImportActivityResponse } from '@/types/garmin'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-import-api')
 
@@ -38,10 +39,7 @@ export async function POST(request: Request) {
     const { activity_id, workout_id } = body
 
     if (!activity_id) {
-      return NextResponse.json(
-        { error: 'activity_id is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'activity_id is required' }, { status: 400 })
     }
 
     logger.info('Importing Garmin activity', {
@@ -58,10 +56,7 @@ export async function POST(request: Request) {
       .limit(1)
 
     if (connection.length === 0) {
-      return NextResponse.json(
-        { error: 'No Garmin connection found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'No Garmin connection found' }, { status: 404 })
     }
 
     const conn = connection[0]
@@ -95,12 +90,7 @@ export async function POST(request: Request) {
       const result = await db
         .select()
         .from(workouts)
-        .where(
-          and(
-            eq(workouts.id, workout_id),
-            eq(workouts.user_id, session.user.id)
-          )
-        )
+        .where(and(eq(workouts.id, workout_id), eq(workouts.user_id, session.user.id)))
         .limit(1)
 
       targetWorkout = result[0]
@@ -124,21 +114,16 @@ export async function POST(request: Request) {
       // Simple matching: closest by date
       if (candidateWorkouts.length > 0) {
         targetWorkout = candidateWorkouts.reduce((closest, current) => {
-          const closestDiff = Math.abs(
-            new Date(closest.date).getTime() - activityDate.getTime()
-          )
-          const currentDiff = Math.abs(
-            new Date(current.date).getTime() - activityDate.getTime()
-          )
+          const closestDiff = Math.abs(new Date(closest.date).getTime() - activityDate.getTime())
+          const currentDiff = Math.abs(new Date(current.date).getTime() - activityDate.getTime())
           return currentDiff < closestDiff ? current : closest
         })
 
         logger.debug('Auto-matched workout', {
           activityId: activity_id,
           workoutId: targetWorkout.id,
-          dateDiff: Math.abs(
-            new Date(targetWorkout.date).getTime() - activityDate.getTime()
-          ) / 1000 / 60, // minutes
+          dateDiff:
+            Math.abs(new Date(targetWorkout.date).getTime() - activityDate.getTime()) / 1000 / 60, // minutes
         })
       }
     }
@@ -225,9 +210,6 @@ export async function POST(request: Request) {
       stack: error instanceof Error ? error.stack : undefined,
     })
 
-    return NextResponse.json(
-      { error: 'Failed to import Garmin activity' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to import Garmin activity' }, { status: 500 })
   }
 }

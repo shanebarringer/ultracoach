@@ -143,6 +143,7 @@ supabase db push --linked
 ```
 
 This creates three tables:
+
 - `garmin_connections` - OAuth tokens
 - `garmin_workout_syncs` - Sync status tracking
 - `garmin_devices` - User devices
@@ -162,6 +163,7 @@ This creates three tables:
 ### 6.2 Test Locally
 
 With feature flag enabled:
+
 1. Start dev server: `pnpm dev`
 2. Go to **Settings** → **Integrations**
 3. Click **"Connect Garmin Account"**
@@ -201,14 +203,17 @@ With feature flag enabled:
 ### OAuth Errors
 
 **Error**: "Invalid redirect URI"
+
 - **Fix**: Ensure `GARMIN_REDIRECT_URI` matches exactly what you registered
 
 **Error**: "Invalid credentials"
+
 - **Fix**: Double-check `GARMIN_CLIENT_ID` and `GARMIN_CLIENT_SECRET`
 
 ### Feature Flag Not Working
 
 **Issue**: Garmin components not showing
+
 - **Fix**: Check PostHog API key is correct
 - **Fix**: Verify feature flag is enabled in PostHog dashboard
 - **Fix**: Clear browser cache and refresh
@@ -216,14 +221,17 @@ With feature flag enabled:
 ### Database Errors
 
 **Error**: "Table does not exist"
+
 - **Fix**: Run `pnpm db:migrate` to apply schema
 
 **Error**: "Column not found"
+
 - **Fix**: Check migration applied successfully: `pnpm db:studio`
 
 ### Encryption Errors
 
 **Error**: "Encryption key not found"
+
 - **Fix**: Generate key with `openssl rand -hex 32`
 - **Fix**: Add to `.env.local` as `GARMIN_ENCRYPTION_KEY`
 
@@ -232,21 +240,25 @@ With feature flag enabled:
 ## Gradual Rollout Strategy
 
 ### Phase 1: Internal Testing (Week 1)
+
 - Enable for your own account only
 - Test all features thoroughly
 - Fix any issues before wider release
 
 ### Phase 2: Beta Testing (Week 2-3)
+
 - Release to 5-10% of users
 - Monitor for errors in PostHog
 - Gather user feedback
 
 ### Phase 3: Gradual Rollout (Week 4-6)
+
 - 25% → 50% → 75% → 100%
 - Monitor performance and errors
 - Ready to disable quickly if needed
 
 ### Phase 4: Full Release
+
 - 100% rollout
 - Monitor cron job performance
 - Consider rate limiting for scale
@@ -279,28 +291,28 @@ With feature flag enabled:
 
 ### Environment Variables
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `NEXT_PUBLIC_POSTHOG_KEY` | Yes | PostHog API key for feature flags |
-| `NEXT_PUBLIC_POSTHOG_HOST` | Yes | PostHog API host URL |
-| `GARMIN_CLIENT_ID` | Yes | Garmin OAuth consumer key |
-| `GARMIN_CLIENT_SECRET` | Yes | Garmin OAuth consumer secret |
-| `GARMIN_REDIRECT_URI` | Yes | OAuth callback URL |
-| `GARMIN_ENCRYPTION_KEY` | Yes | 32-char hex string for token encryption |
-| `CRON_SECRET` | Yes | Secret for cron job authentication |
+| Variable                   | Required | Purpose                                 |
+| -------------------------- | -------- | --------------------------------------- |
+| `NEXT_PUBLIC_POSTHOG_KEY`  | Yes      | PostHog API key for feature flags       |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Yes      | PostHog API host URL                    |
+| `GARMIN_CLIENT_ID`         | Yes      | Garmin OAuth consumer key               |
+| `GARMIN_CLIENT_SECRET`     | Yes      | Garmin OAuth consumer secret            |
+| `GARMIN_REDIRECT_URI`      | Yes      | OAuth callback URL                      |
+| `GARMIN_ENCRYPTION_KEY`    | Yes      | 32-char hex string for token encryption |
+| `CRON_SECRET`              | Yes      | Secret for cron job authentication      |
 
 ### API Endpoints
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/garmin/connect` | GET | Initiate OAuth flow |
-| `/api/garmin/callback` | GET | OAuth callback handler |
-| `/api/garmin/disconnect` | DELETE | Remove connection |
-| `/api/garmin/status` | GET | Check connection status |
-| `/api/garmin/sync` | POST | Manual workout sync |
-| `/api/garmin/activities` | GET | Fetch activities |
-| `/api/garmin/import` | POST | Import activity |
-| `/api/cron/garmin-sync` | GET | Automatic daily sync |
+| Endpoint                 | Method | Purpose                 |
+| ------------------------ | ------ | ----------------------- |
+| `/api/garmin/connect`    | GET    | Initiate OAuth flow     |
+| `/api/garmin/callback`   | GET    | OAuth callback handler  |
+| `/api/garmin/disconnect` | DELETE | Remove connection       |
+| `/api/garmin/status`     | GET    | Check connection status |
+| `/api/garmin/sync`       | POST   | Manual workout sync     |
+| `/api/garmin/activities` | GET    | Fetch activities        |
+| `/api/garmin/import`     | POST   | Import activity         |
+| `/api/cron/garmin-sync`  | GET    | Automatic daily sync    |
 
 ### Feature Flag
 
