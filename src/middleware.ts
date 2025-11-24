@@ -22,8 +22,11 @@ function generateCSPHeader(nonce: string): string {
     // - 'strict-dynamic': Allow scripts loaded by nonce-approved scripts
     // - 'unsafe-eval': Only in development for HMR (Hot Module Replacement)
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // style-src: Use nonce in production, unsafe-inline in dev for HMR
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    // style-src: Nonce for <style> tags, unsafe-hashes for React inline style attributes
+    // - 'unsafe-inline': Development only for HMR
+    // - 'nonce-{value}': Production <style> tags require nonce
+    // - 'unsafe-hashes': Production inline style attributes (React: <div style={{...}}>)
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
     "font-src 'self' data:",
     `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,

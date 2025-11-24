@@ -237,8 +237,9 @@ const cspDirectives = [
   "default-src 'self'",
   // Development includes 'unsafe-eval' for HMR (Hot Module Replacement)
   `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-  // Development uses 'unsafe-inline' for HMR, production uses nonce
-  `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+  // Development uses 'unsafe-inline' for HMR, production uses nonce + unsafe-hashes
+  // unsafe-hashes required for React inline style attributes: <div style={{...}}>
+  `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
   "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
   "font-src 'self' data:",
   "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com",
