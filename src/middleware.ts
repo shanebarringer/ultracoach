@@ -12,9 +12,6 @@ const logger = createLogger('Middleware')
 function generateCSPHeader(nonce: string): string {
   const isDev = process.env.NODE_ENV === 'development'
 
-  // PostHog host for CSP connect-src (defaults to US region if not configured)
-  const postHogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
-
   const cspDirectives = [
     "default-src 'self'",
     // script-src: Use nonce + strict-dynamic for optimal security
@@ -32,7 +29,9 @@ function generateCSPHeader(nonce: string): string {
     `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
+    // connect-src: PostHog uses multiple subdomains (us.i.posthog.com, us-assets.i.posthog.com)
+    // so we use wildcard https://*.posthog.com to cover all of them
+    "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://*.posthog.com",
     "object-src 'none'",
     // frame-src: Allow Vercel Live collaboration iframe on preview deployments
     "frame-src 'self' https://vercel.live",
