@@ -214,10 +214,11 @@ supabase db dump --linked      # Dump production data
 **UltraCoach uses the recommended security-first approach for Next.js 15 applications:**
 
 - ✅ **Unique nonce per request** - Cryptographically secure random nonce generated in middleware
-- ✅ **Zero `'unsafe-inline'` in production** - No broad inline script permissions in production (dev uses it only for HMR styles)
+- ✅ **Zero `'unsafe-inline'` for scripts** - No broad inline script permissions (main XSS protection)
 - ✅ **`'strict-dynamic'`** - Allows scripts loaded by nonce-approved scripts
 - ✅ **Automatic nonce application** - Next.js applies nonce to all framework scripts
-- ✅ **Environment-specific policies** - Dev includes `'unsafe-eval'` for HMR scripts and `'unsafe-inline'` for HMR styles
+- ✅ **Pragmatic style handling** - Uses `'unsafe-inline'` for styles (safe with React's automatic escaping)
+- ✅ **Environment-specific policies** - Dev includes `'unsafe-eval'` for HMR
 
 #### Implementation Details
 
@@ -235,13 +236,16 @@ const isDev = process.env.NODE_ENV === 'development'
 
 const cspDirectives = [
   "default-src 'self'",
+  // script-src: Nonce-based protection (primary XSS defense)
   // Development includes 'unsafe-eval' for HMR (Hot Module Replacement)
   `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-  // Development uses 'unsafe-inline' for HMR, production uses nonce + unsafe-hashes
-  // unsafe-hashes required for React inline style attributes: <div style={{...}}>
-  `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
+  // style-src: Allow inline styles for React inline style attributes
+  // 'unsafe-inline' required for React styles (style={{...}})
+  // Safe because React automatically escapes all user content
+  // Google Fonts: External stylesheet and font files
+  `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
   "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
-  "font-src 'self' data:",
+  "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com",
   "object-src 'none'",
   "frame-ancestors 'none'",

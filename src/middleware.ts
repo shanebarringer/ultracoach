@@ -22,12 +22,13 @@ function generateCSPHeader(nonce: string): string {
     // - 'strict-dynamic': Allow scripts loaded by nonce-approved scripts
     // - 'unsafe-eval': Only in development for HMR (Hot Module Replacement)
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // style-src: Nonce for <style> tags, unsafe-hashes for React inline style attributes
-    // - 'unsafe-inline': Development only for HMR
-    // - 'nonce-{value}': Production <style> tags require nonce
-    // - 'unsafe-hashes': Production inline style attributes (React: <div style={{...}}>)
+    // style-src: Allow inline styles for React inline style attributes
+    // - 'unsafe-inline': Required for React inline styles (style={{...}})
     // - Google Fonts: Allow external stylesheet from fonts.googleapis.com
-    `style-src 'self' https://fonts.googleapis.com ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-hashes'`}`,
+    // Note: 'unsafe-inline' is pragmatic for React apps as styles come from build process
+    // React automatically escapes all user content, preventing style injection attacks
+    // Main XSS protection comes from nonce-based script-src (above)
+    `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co ${postHogHost}`,
