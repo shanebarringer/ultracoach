@@ -205,6 +205,59 @@ supabase db dump --linked      # Dump production data
 
 **When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
 
+### Content Security Policy (CSP) Configuration (CRITICAL)
+
+**IMPORTANT**: UltraCoach uses Content Security Policy headers for security, with special considerations for Next.js compatibility.
+
+#### CSP Requirements for Next.js 15
+
+**The Issue**: Next.js 15 embeds critical hydration scripts using inline `<script>` tags. Without `'unsafe-inline'` in the CSP, pages will:
+
+- Load but not hydrate (white screen)
+- Show "Refused to execute inline script" errors in console
+- Block all client-side interactivity
+
+**The Solution**: Production CSP MUST include `'unsafe-inline'` for script-src:
+
+```typescript
+// next.config.ts
+const scriptSrc = isNonProduction
+  ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'" // Dev: includes HMR
+  : "script-src 'self' 'unsafe-inline'" // Prod: Next.js hydration only
+```
+
+#### Why This Is Safe
+
+- **Trusted Source**: Next.js inline scripts come from the build process, not user input
+- **React Protection**: React automatically escapes all user-generated content
+- **External Scripts Blocked**: CSP still blocks untrusted external scripts
+- **Industry Standard**: This is the standard approach for Next.js apps with CSP
+
+#### CSP Configuration Location
+
+**File**: `next.config.ts` (lines 104-168)
+
+The CSP is configured in the `headers()` async function with environment-specific settings:
+
+- **Development**: Includes `'unsafe-eval'` for Hot Module Replacement (HMR)
+- **Production**: Only includes `'unsafe-inline'` for Next.js hydration scripts
+
+#### Symptoms of Missing 'unsafe-inline'
+
+- White screen on landing page and all routes
+- Console errors: "Refused to execute inline script because it violates the following Content Security Policy directive"
+- SHA-256 hash violations for Next.js's own inline scripts
+- Pages render server-side but fail to hydrate on client
+
+#### Alternative Approaches (Future Enhancement)
+
+For stricter security, consider implementing nonce-based CSP:
+
+- Generate cryptographic nonce for each request in middleware
+- Pass nonce to Next.js via custom headers
+- More complex but eliminates need for `'unsafe-inline'`
+- Requires Next.js middleware integration and careful testing
+
 ## Git Commit Strategy:
 
 - Commit early and commit often

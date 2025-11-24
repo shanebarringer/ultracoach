@@ -102,16 +102,19 @@ const nextConfig: NextConfig = {
 
   // Headers for security
   async headers() {
-    // Conditionally include 'unsafe-eval' and 'unsafe-inline' only in development and test
-    // unsafe-eval: Required for HMR (Hot Module Replacement) in development
-    // unsafe-inline: Required for Next.js dev mode inline scripts
-    // In production: Remove both for maximum XSS protection
+    // Conditionally include 'unsafe-eval' and 'unsafe-inline' based on environment
+    // unsafe-eval: Required for HMR (Hot Module Replacement) in development only
+    // unsafe-inline: Required for Next.js inline scripts in ALL environments (dev, test, prod)
+    //   - Next.js 15 embeds critical hydration scripts using inline <script> tags
+    //   - These scripts are from trusted build process, not user-controlled
+    //   - React's automatic escaping provides XSS protection for user content
+    // In production: Remove 'unsafe-eval' but keep 'unsafe-inline' for Next.js compatibility
     const isNonProduction =
       process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
     const isProduction = process.env.NODE_ENV === 'production'
     const scriptSrc = isNonProduction
       ? "script-src 'self' 'unsafe-eval' 'unsafe-inline'"
-      : "script-src 'self'"
+      : "script-src 'self' 'unsafe-inline'"
 
     // PostHog host for CSP connect-src (defaults to US region if not configured)
     const postHogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
