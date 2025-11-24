@@ -137,9 +137,15 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       const result = await response.json()
 
       if (moveToNext) {
-        // Move to next step
-        const nextStepNumber = Math.min(currentStepData.step_number + 1, onboarding.total_steps)
+        // Check if we're on the last step - if so, complete onboarding
+        const isLastStep = currentStepData.step_number >= onboarding.total_steps
+        if (isLastStep) {
+          await completeOnboarding()
+          return
+        }
 
+        // Move to next step
+        const nextStepNumber = currentStepData.step_number + 1
         const nextStep = steps.find(s => s.step_number === nextStepNumber)
 
         if (nextStep) {
@@ -147,7 +153,8 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
           setStepAnswers({}) // Reset answers for next step
           setOnboarding(result.onboarding)
         } else {
-          // Completed all steps
+          // Edge case: step not found but not on last step
+          logger.warn('Next step not found, completing onboarding', { nextStepNumber })
           await completeOnboarding()
         }
       } else {
