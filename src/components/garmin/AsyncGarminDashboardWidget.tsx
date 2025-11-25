@@ -86,13 +86,6 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
     onClose: onSyncModalClose,
   } = useDisclosure()
 
-  // Fetch upcoming workouts on mount and when connection changes
-  useEffect(() => {
-    if (connectionStatus?.connected || garminState.isConnected) {
-      fetchUpcomingWorkouts()
-    }
-  }, [connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
-
   // Fetch upcoming workouts (next 7 days)
   const fetchUpcomingWorkouts = useCallback(async () => {
     try {
@@ -131,6 +124,13 @@ const AsyncGarminDashboardWidget = memo(({ className = '' }: AsyncGarminDashboar
       logger.error('Failed to fetch upcoming workouts:', error)
     }
   }, [])
+
+  // Fetch upcoming workouts on mount and when connection changes
+  useEffect(() => {
+    if (connectionStatus?.connected || garminState.isConnected) {
+      fetchUpcomingWorkouts()
+    }
+  }, [connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
 
   // Connection status indicator
   const connectionInfo = useMemo(() => {

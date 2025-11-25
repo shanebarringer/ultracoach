@@ -38,13 +38,13 @@ export default function GarminFeatureFlag({ children, fallback = null }: GarminF
 
   // Return null on server-side to prevent hydration issues
   if (!mounted) {
-    return fallback as JSX.Element
+    return fallback as React.ReactElement | null
   }
 
   // Check feature flag on client-side
   if (!isGarminEnabled) {
     logger.debug('Garmin integration feature flag is disabled')
-    return fallback as JSX.Element
+    return fallback as React.ReactElement | null
   }
 
   logger.debug('Garmin integration feature flag is enabled')

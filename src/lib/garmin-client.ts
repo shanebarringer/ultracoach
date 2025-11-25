@@ -4,11 +4,11 @@
 import type {
   GarminActivity,
   GarminActivitySummary,
-  GarminIntegrationError,
   GarminOAuthTokens,
   GarminUserProfile,
   GarminWorkout,
 } from '@/types/garmin'
+import { GarminIntegrationError } from '@/types/garmin'
 
 import { createLogger } from './logger'
 

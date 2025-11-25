@@ -200,7 +200,7 @@ export default function GarminActivityList() {
                   <h4 className="text-medium font-semibold">{activity.activityName}</h4>
                   <div className="flex items-center gap-2 mt-1">
                     <Chip size="sm" color="primary" variant="flat">
-                      {activity.activityType?.typeKey || 'Running'}
+                      {activity.activityType || 'Running'}
                     </Chip>
                     {activity.locationName && (
                       <div className="flex items-center gap-1 text-small text-default-500">
@@ -259,20 +259,20 @@ export default function GarminActivityList() {
                 </div>
               </div>
 
-              {(activity.averageHeartRate || activity.maxHeartRate || activity.calories) && (
+              {(activity.averageHR || activity.maxHR || activity.calories) && (
                 <div className="flex items-center gap-4 mb-4 text-small">
-                  {activity.averageHeartRate && (
+                  {activity.averageHR && (
                     <span>
                       Avg HR:{' '}
                       <span className="font-medium">
-                        {Math.round(activity.averageHeartRate)} bpm
+                        {Math.round(activity.averageHR)} bpm
                       </span>
                     </span>
                   )}
-                  {activity.maxHeartRate && (
+                  {activity.maxHR && (
                     <span>
                       Max HR:{' '}
-                      <span className="font-medium">{Math.round(activity.maxHeartRate)} bpm</span>
+                      <span className="font-medium">{Math.round(activity.maxHR)} bpm</span>
                     </span>
                   )}
                   {activity.calories && (

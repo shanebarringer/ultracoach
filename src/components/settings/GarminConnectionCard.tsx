@@ -10,7 +10,7 @@ import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react
 import { useEffect, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
-import { showToast } from '@/lib/toast'
+import { toast } from '@/lib/toast'
 
 // Garmin Connection Card - Settings UI Component
 // Manages Garmin OAuth connection in Settings page
@@ -60,7 +60,7 @@ export default function GarminConnectionCard() {
       logger.error('Failed to fetch Garmin status', {
         error: error instanceof Error ? error.message : 'Unknown',
       })
-      showToast.error('Failed to load Garmin connection status')
+      toast.error('Failed to load Garmin connection status')
     } finally {
       setLoading(false)
     }
@@ -76,7 +76,7 @@ export default function GarminConnectionCard() {
       logger.error('Failed to initiate Garmin connection', {
         error: error instanceof Error ? error.message : 'Unknown',
       })
-      showToast.error('Failed to connect Garmin account')
+      toast.error('Failed to connect Garmin account')
     }
   }
 
@@ -102,7 +102,7 @@ export default function GarminConnectionCard() {
         throw new Error('Failed to disconnect Garmin')
       }
 
-      showToast.success('Garmin account disconnected successfully')
+      toast.success('Garmin account disconnected successfully')
 
       // Refresh status
       await fetchStatus()
@@ -110,7 +110,7 @@ export default function GarminConnectionCard() {
       logger.error('Failed to disconnect Garmin', {
         error: error instanceof Error ? error.message : 'Unknown',
       })
-      showToast.error('Failed to disconnect Garmin account')
+      toast.error('Failed to disconnect Garmin account')
     } finally {
       setActionLoading(false)
     }
@@ -122,12 +122,12 @@ export default function GarminConnectionCard() {
       logger.info('Manual Garmin sync initiated')
 
       // TODO: Implement manual sync endpoint
-      showToast.info('Manual sync coming soon!')
+      toast.info('Manual sync coming soon!')
     } catch (error) {
       logger.error('Manual sync failed', {
         error: error instanceof Error ? error.message : 'Unknown',
       })
-      showToast.error('Failed to sync workouts')
+      toast.error('Failed to sync workouts')
     } finally {
       setActionLoading(false)
     }

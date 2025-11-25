@@ -45,7 +45,7 @@ interface UltraCoachWorkout {
   id: string
   title: string
   date: string | Date
-  planned_distance?: number | null // miles
+  planned_distance?: number | string | null // miles (can be string from database)
   planned_duration?: number | null // seconds
   planned_type?: string | null
   category?: string | null // 'easy', 'tempo', 'interval', 'long_run', 'race_simulation'
@@ -128,7 +128,7 @@ export function convertWorkoutToGarmin(
 function mapSportType(
   plannedType?: string | null,
   terrain?: string | null
-): typeof SPORT_TYPES.RUNNING {
+): (typeof SPORT_TYPES)[keyof typeof SPORT_TYPES] {
   // Default to running
   if (!plannedType) return SPORT_TYPES.RUNNING
 
@@ -272,9 +272,15 @@ function createSteadyStateStep(workout: UltraCoachWorkout, stepOrder: number): G
   // Determine duration or distance
   const useDuration = !!workout.planned_duration
   const durationType = useDuration ? DURATION_TYPES.TIME : DURATION_TYPES.DISTANCE
+
+  // Parse distance (handle string or number from database)
+  const distance = typeof workout.planned_distance === 'string'
+    ? parseFloat(workout.planned_distance) || 5
+    : workout.planned_distance || 5
+
   const durationValue = useDuration
     ? workout.planned_duration || 3600 // Default 1 hour
-    : Math.round((workout.planned_distance || 5) * 1609.34) // Miles to meters
+    : Math.round(distance * 1609.34) // Miles to meters
 
   // Determine intensity zone based on category and intensity
   const { targetValueOne, targetValueTwo } = determineTargetZone(

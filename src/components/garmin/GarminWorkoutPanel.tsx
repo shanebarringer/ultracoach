@@ -70,14 +70,6 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
     onClose: onSyncModalClose,
   } = useDisclosure()
 
-  // Fetch upcoming workouts when panel opens
-  useEffect(() => {
-    if (showPanel && (connectionStatus?.connected || garminState.isConnected)) {
-      logger.debug('Panel opened - fetching upcoming workouts')
-      fetchUpcomingWorkouts()
-    }
-  }, [showPanel, connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
-
   const fetchUpcomingWorkouts = useCallback(async () => {
     try {
       const today = new Date().toISOString().split('T')[0]
@@ -101,6 +93,14 @@ const GarminWorkoutPanel = memo(({ className = '' }: GarminWorkoutPanelProps) =>
       logger.error('Failed to fetch upcoming workouts:', error)
     }
   }, [])
+
+  // Fetch upcoming workouts when panel opens
+  useEffect(() => {
+    if (showPanel && (connectionStatus?.connected || garminState.isConnected)) {
+      logger.debug('Panel opened - fetching upcoming workouts')
+      fetchUpcomingWorkouts()
+    }
+  }, [showPanel, connectionStatus?.connected, garminState.isConnected, fetchUpcomingWorkouts])
 
   const handleTogglePanel = useCallback(() => {
     logger.debug('Toggling Garmin panel', { currentState: showPanel })
