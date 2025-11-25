@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 
 import { redirect } from 'next/navigation'
 
+import { encrypt, verifySignedState } from '@/lib/crypto'
 import { db } from '@/lib/database'
 import { GarminAPIClient, calculateTokenExpiry } from '@/lib/garmin-client'
 import { createLogger } from '@/lib/logger'
@@ -41,25 +42,18 @@ export async function GET(request: Request) {
       return redirect('/settings?garmin_error=invalid_request')
     }
 
-    // Verify CSRF state parameter
-    let userId: string
-    try {
-      if (!state) throw new Error('Missing state parameter')
-
-      const stateData = JSON.parse(Buffer.from(state, 'base64url').toString('utf-8'))
-      userId = stateData.userId
-
-      // Verify state timestamp is recent (within 10 minutes)
-      const stateAge = Date.now() - stateData.timestamp
-      if (stateAge > 10 * 60 * 1000) {
-        throw new Error('State parameter expired')
-      }
-    } catch (stateError) {
-      logger.error('Invalid state parameter', {
-        error: stateError instanceof Error ? stateError.message : 'Unknown',
-      })
+    // Verify CSRF state parameter with HMAC signature
+    if (!state) {
+      logger.error('Missing state parameter')
       return redirect('/settings?garmin_error=invalid_state')
     }
+
+    const verifiedState = verifySignedState(state)
+    if (!verifiedState) {
+      logger.error('Invalid or expired state parameter')
+      return redirect('/settings?garmin_error=invalid_state')
+    }
+    const userId = verifiedState.userId
 
     // Verify user is still authenticated
     const session = await getServerSession()
@@ -101,10 +95,14 @@ export async function GET(request: Request) {
       garminProfile = { userId: 0, displayName: 'Unknown', emailAddress: '' }
     }
 
-    // Encrypt tokens before storage
-    const encryptionKey = process.env.GARMIN_ENCRYPTION_KEY
-    if (!encryptionKey) {
-      logger.error('GARMIN_ENCRYPTION_KEY not configured')
+    // Encrypt tokens before storage using AES-256-GCM
+    let encryptedAccessToken: string
+    let encryptedRefreshToken: string
+    try {
+      encryptedAccessToken = encrypt(tokens.access_token)
+      encryptedRefreshToken = encrypt(tokens.refresh_token)
+    } catch {
+      logger.error('Failed to encrypt tokens - GARMIN_ENCRYPTION_KEY may not be configured')
       return redirect('/settings?garmin_error=server_error')
     }
 
@@ -126,10 +124,8 @@ export async function GET(request: Request) {
           .update(garmin_connections)
           .set({
             garmin_user_id: garminProfile.userId.toString(),
-            // Note: In production, use pgcrypto encrypt function
-            // For now, store base64 encoded (NOT SECURE - update in migration)
-            access_token: Buffer.from(tokens.access_token).toString('base64'),
-            refresh_token: Buffer.from(tokens.refresh_token).toString('base64'),
+            access_token: encryptedAccessToken,
+            refresh_token: encryptedRefreshToken,
             token_expires_at: tokenExpiresAt,
             scope: tokens.scope,
             sync_status: 'active',
@@ -146,9 +142,8 @@ export async function GET(request: Request) {
         await db.insert(garmin_connections).values({
           user_id: session.user.id,
           garmin_user_id: garminProfile.userId.toString(),
-          // Note: In production, use pgcrypto encrypt function
-          access_token: Buffer.from(tokens.access_token).toString('base64'),
-          refresh_token: Buffer.from(tokens.refresh_token).toString('base64'),
+          access_token: encryptedAccessToken,
+          refresh_token: encryptedRefreshToken,
           token_expires_at: tokenExpiresAt,
           scope: tokens.scope,
           sync_status: 'active',

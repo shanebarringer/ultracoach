@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
 
+import { decrypt, isEncrypted } from '@/lib/crypto'
 import { db } from '@/lib/database'
 import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
 import { createLogger } from '@/lib/logger'
@@ -59,8 +60,10 @@ export async function GET(request: Request) {
       )
     }
 
-    // Decrypt access token
-    const accessToken = Buffer.from(conn.access_token, 'base64').toString('utf-8')
+    // Decrypt access token (supports both encrypted and legacy base64 format)
+    const accessToken = isEncrypted(conn.access_token)
+      ? decrypt(conn.access_token)
+      : Buffer.from(conn.access_token, 'base64').toString('utf-8')
 
     // Fetch activities from Garmin
     const garminClient = new GarminAPIClient(accessToken)

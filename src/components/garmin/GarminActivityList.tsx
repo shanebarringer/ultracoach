@@ -3,8 +3,9 @@
 import { Button, Card, CardBody, CardHeader, Chip, Divider, Spinner } from '@heroui/react'
 import { Calendar, MapPin, Timer, TrendingUp, Watch } from 'lucide-react'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
+import { FEET_PER_METER, METERS_PER_MILE } from '@/lib/constants/units'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import type { GarminActivity } from '@/types/garmin'
@@ -35,7 +36,7 @@ export default function GarminActivityList() {
   const [importedActivities, setImportedActivities] = useState<ImportedActivity>({})
   const [error, setError] = useState<string | null>(null)
 
-  const fetchActivities = async () => {
+  const fetchActivities = useCallback(async () => {
     try {
       const response = await fetch('/api/garmin/activities', {
         credentials: 'same-origin',
@@ -58,7 +59,7 @@ export default function GarminActivityList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const importActivity = async (activity: GarminActivity) => {
     const activityKey = activity.activityId.toString()
@@ -126,7 +127,7 @@ export default function GarminActivityList() {
 
   useEffect(() => {
     fetchActivities()
-  }, [])
+  }, [fetchActivities])
 
   if (loading) {
     return (
@@ -175,21 +176,23 @@ export default function GarminActivityList() {
       {data.activities.map(activity => {
         const activityKey = activity.activityId.toString()
         const importState = importedActivities[activityKey]
-        const distanceMiles = activity.distance ? (activity.distance / 1609.34).toFixed(2) : '0.00'
+        const distanceMiles = activity.distance
+          ? (activity.distance / METERS_PER_MILE).toFixed(2)
+          : '0.00'
         const durationSeconds = activity.duration || 0
         const movingTimeHours = Math.floor(durationSeconds / 3600)
         const movingTimeMinutes = Math.floor((durationSeconds % 3600) / 60)
         const movingTimeSecondsRem = durationSeconds % 60
         const avgPaceMinutes =
           activity.distance && activity.distance > 0
-            ? Math.floor(durationSeconds / (activity.distance / 1609.34) / 60)
+            ? Math.floor(durationSeconds / (activity.distance / METERS_PER_MILE) / 60)
             : 0
         const avgPaceSeconds =
           activity.distance && activity.distance > 0
-            ? Math.round((durationSeconds / (activity.distance / 1609.34)) % 60)
+            ? Math.round((durationSeconds / (activity.distance / METERS_PER_MILE)) % 60)
             : 0
         const elevationFeet = activity.elevationGain
-          ? Math.round(activity.elevationGain * 3.28084)
+          ? Math.round(activity.elevationGain * FEET_PER_METER)
           : 0
 
         return (

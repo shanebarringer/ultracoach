@@ -18,7 +18,6 @@ import {
   TEST_RUNNER_EMAIL,
   TEST_RUNNER_PASSWORD,
   TEST_TIMEOUTS,
-  navigateToDashboard,
 } from '../utils/test-helpers'
 
 test.describe('Garmin Integration - Feature Flag', () => {

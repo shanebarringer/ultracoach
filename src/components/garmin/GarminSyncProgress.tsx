@@ -64,7 +64,7 @@ const GarminSyncProgress = memo(({ items, className = '' }: GarminSyncProgressPr
 
   return (
     <Card className={className}>
-      <CardBody className="space-y-4">
+      <CardBody className="space-y-4" aria-live="polite" aria-label="Sync progress">
         {/* Overall Progress */}
         <div>
           <div className="flex justify-between items-center mb-2">

@@ -129,11 +129,18 @@ export const authClient = {
   get changePassword() {
     return getAuthClient().changePassword
   },
-  get forgetPassword() {
-    return getAuthClient().forgetPassword
-  },
   get resetPassword() {
     return getAuthClient().resetPassword
+  },
+  /**
+   * Initiate password reset flow (sends email with reset link)
+   * Alias for signIn.forgetPassword in newer Better Auth versions
+   */
+  get forgetPassword() {
+    const client = getAuthClient()
+    // Better Auth uses signIn.forgetPassword for password reset initiation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (client.signIn as any).forgetPassword || (client as any).forgetPassword
   },
 
   /**

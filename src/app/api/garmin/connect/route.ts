@@ -4,6 +4,7 @@
 // Epic: ULT-16
 import { NextResponse } from 'next/server'
 
+import { createSignedState } from '@/lib/crypto'
 import { getGarminAuthUrl } from '@/lib/garmin-client'
 import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/utils/auth-server'
@@ -25,7 +26,7 @@ export async function GET(_request: Request) {
 
     logger.info('Initiating Garmin OAuth flow', {
       userId: session.user.id,
-      userEmail: session.user.email,
+      // Note: Removed userEmail to avoid logging PII
     })
 
     // Get redirect URI from environment
@@ -35,13 +36,8 @@ export async function GET(_request: Request) {
       return NextResponse.json({ error: 'Garmin OAuth not properly configured' }, { status: 500 })
     }
 
-    // Generate state parameter for CSRF protection
-    const state = Buffer.from(
-      JSON.stringify({
-        userId: session.user.id,
-        timestamp: Date.now(),
-      })
-    ).toString('base64url')
+    // Generate HMAC-signed state parameter for CSRF protection
+    const state = createSignedState(session.user.id)
 
     // Generate Garmin OAuth URL
     const authUrl = getGarminAuthUrl(redirectUri, state)

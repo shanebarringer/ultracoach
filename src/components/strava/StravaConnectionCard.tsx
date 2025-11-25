@@ -128,7 +128,7 @@ export default function StravaConnectionCard() {
 
   if (loading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full" data-testid="strava-connection-card">
         <CardBody>
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-orange-100 rounded-lg animate-pulse" />
@@ -144,7 +144,7 @@ export default function StravaConnectionCard() {
 
   if (!status?.enabled) {
     return (
-      <Card className="w-full">
+      <Card className="w-full" data-testid="strava-connection-card">
         <CardBody>
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -164,7 +164,7 @@ export default function StravaConnectionCard() {
 
   if (!status.connected) {
     return (
-      <Card className="w-full">
+      <Card className="w-full" data-testid="strava-connection-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center space-x-3">
@@ -227,7 +227,7 @@ export default function StravaConnectionCard() {
     : 'Unknown'
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="strava-connection-card">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
