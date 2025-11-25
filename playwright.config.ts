@@ -343,6 +343,28 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
 
+    // Workout atoms tests (runner authenticated)
+    {
+      name: 'chromium-workout-atoms',
+      testMatch: /workout-atoms\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'],
+    },
+
+    // Single route tests (runner authenticated)
+    {
+      name: 'chromium-single-route',
+      testMatch: /single-route-test\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'],
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
@@ -352,6 +374,8 @@ export default defineConfig({
         '**/coach-runner-relationships.spec.ts',
         '**/workout-management.spec.ts',
         '**/garmin-integration.spec.ts',
+        '**/workout-atoms.spec.ts',
+        '**/single-route-test.spec.ts',
       ],
       grepInvert:
         /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships|workout-management|garmin-integration/,

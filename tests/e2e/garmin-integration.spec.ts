@@ -151,7 +151,7 @@ test.describe('Garmin Integration - UI Components', () => {
     await expect(garminCard).toBeVisible({ timeout: TEST_TIMEOUTS.medium })
 
     // Check for connection button (should be "Connect Garmin Account" when not connected)
-    const connectButton = page.locator('text=Connect Garmin, text=Connect to Garmin').first()
+    const connectButton = page.getByRole('button', { name: 'Connect Garmin Account' })
     await expect(connectButton).toBeVisible()
   })
 

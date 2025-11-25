@@ -1,6 +1,9 @@
 # pnpm workspace configuration
 # See: https://pnpm.io/pnpm-workspace_yaml
 
+# Empty packages array - not a monorepo, but need this file for onlyBuiltDependencies
+packages: []
+
 # Packages allowed to run lifecycle scripts (pnpm v10+ security feature)
 # Only these dependencies can execute preinstall/install/postinstall scripts
 onlyBuiltDependencies:
