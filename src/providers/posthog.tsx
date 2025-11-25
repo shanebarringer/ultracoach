@@ -71,8 +71,11 @@ export function PostHogProvider({
 
       try {
         // Initialize PostHog
+        // Use reverse proxy (/ingest) to bypass ad-blockers that block posthog.com
+        // See next.config.ts rewrites for the proxy configuration
         posthog.init(apiKey, {
-          api_host: apiHost || 'https://us.i.posthog.com',
+          api_host: apiHost || '/ingest',
+          ui_host: 'https://us.i.posthog.com', // Keep UI host for PostHog dashboard links
           defaults: '2025-05-24', // Use PostHog's latest defaults for best compatibility
           person_profiles: 'identified_only', // Only create profiles for identified users
           capture_pageview: false, // We'll manually capture pageviews

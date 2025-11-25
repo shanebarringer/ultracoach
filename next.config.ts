@@ -157,6 +157,22 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+
+  // PostHog reverse proxy rewrites
+  // This routes PostHog requests through our domain to bypass ad-blockers
+  // Official PostHog recommendation for Next.js: https://posthog.com/docs/advanced/proxy/nextjs
+  async rewrites() {
+    return [
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+    ]
+  },
 }
 
 // Export the config directly
