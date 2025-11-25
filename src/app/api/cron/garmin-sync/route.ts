@@ -68,7 +68,6 @@ export async function GET(request: Request) {
 
     let totalSynced = 0
     let totalFailed = 0
-    const userResults: Record<string, { synced: number; failed: number }> = {}
 
     // Process each connection
     for (const conn of connections) {
@@ -153,8 +152,6 @@ export async function GET(request: Request) {
           })
           .where(eq(garmin_connections.id, conn.id))
 
-        userResults[conn.user_id] = { synced: userSynced, failed: userFailed }
-
         logger.debug('User sync completed', {
           userId: conn.user_id,
           synced: userSynced,
@@ -165,8 +162,6 @@ export async function GET(request: Request) {
           userId: conn.user_id,
           error: userError instanceof Error ? userError.message : 'Unknown',
         })
-
-        userResults[conn.user_id] = { synced: 0, failed: 0 }
       }
     }
 
@@ -185,7 +180,6 @@ export async function GET(request: Request) {
       synced: totalSynced,
       failed: totalFailed,
       duration,
-      userResults,
     })
   } catch (error) {
     logger.error('Cron sync error', {

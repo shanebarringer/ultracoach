@@ -1,10 +1,6 @@
 # pnpm workspace configuration
 # See: https://pnpm.io/pnpm-workspace_yaml
 
-# Single package workspace (not a monorepo)
-packages:
-  - '.'
-
 # Packages allowed to run lifecycle scripts (pnpm v10+ security feature)
 # Only these dependencies can execute preinstall/install/postinstall scripts
 onlyBuiltDependencies:
