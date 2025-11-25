@@ -4,10 +4,6 @@
 // Epic: ULT-16
 import { createLogger } from '@/lib/logger'
 import type {
-  GARMIN_DURATION_TYPES,
-  GARMIN_SPORT_TYPES,
-  GARMIN_STEP_TYPES,
-  GARMIN_TARGET_TYPES,
   GarminWorkout,
   GarminWorkoutSegment,
   GarminWorkoutStep,
