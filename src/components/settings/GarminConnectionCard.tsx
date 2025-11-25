@@ -17,6 +17,11 @@ import { toast } from '@/lib/toast'
 // Created: 2025-01-12
 // Epic: ULT-16
 
+// Garmin Connection Card - Settings UI Component
+// Manages Garmin OAuth connection in Settings page
+// Created: 2025-01-12
+// Epic: ULT-16
+
 const logger = createLogger('garmin-connection-card')
 
 interface GarminConnectionStatus {

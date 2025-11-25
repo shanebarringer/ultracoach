@@ -48,6 +48,19 @@ export function PostHogProvider({
     // Check both component state and module-level initialization flag to prevent re-initialization
     // during hot module reloading or strict mode double-mounting
     if (typeof window !== 'undefined' && !isInitialized && !posthogInitialized) {
+      // Allow tests to override PostHog with a mock via window.__POSTHOG_TEST_MODE__
+      // This must be checked BEFORE initialization to respect E2E test mocks
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__POSTHOG_TEST_MODE__) {
+        logger.info('PostHog test mode detected - skipping initialization')
+        setIsInitialized(true)
+        posthogInitialized = true
+        // Initialize feature flags with test values
+        setFlagsLoading(false)
+        setFlags(new Map())
+        return
+      }
+
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
       const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 

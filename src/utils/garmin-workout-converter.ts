@@ -274,9 +274,10 @@ function createSteadyStateStep(workout: UltraCoachWorkout, stepOrder: number): G
   const durationType = useDuration ? DURATION_TYPES.TIME : DURATION_TYPES.DISTANCE
 
   // Parse distance (handle string or number from database)
-  const distance = typeof workout.planned_distance === 'string'
-    ? parseFloat(workout.planned_distance) || 5
-    : workout.planned_distance || 5
+  const distance =
+    typeof workout.planned_distance === 'string'
+      ? parseFloat(workout.planned_distance) || 5
+      : workout.planned_distance || 5
 
   const durationValue = useDuration
     ? workout.planned_duration || 3600 // Default 1 hour

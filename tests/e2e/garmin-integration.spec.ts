@@ -25,11 +25,14 @@ test.describe('Garmin Integration - Feature Flag', () => {
   test('should hide Garmin widgets when feature flag is disabled', async ({ page, context }) => {
     // Set PostHog feature flag to disabled via context storage
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       // Mock PostHog to return false for garmin-integration flag
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? false : false),
-        getFeatureFlag: () => false,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? false : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 
@@ -58,21 +61,26 @@ test.describe('Garmin Integration - Feature Flag', () => {
     await page.click('text=Integrations')
     await page.waitForTimeout(1000)
 
-    // Verify Strava connection card is visible
-    await expect(page.locator('text=Connect to Strava, text=Strava').first()).toBeVisible()
+    // Verify Strava connection card is visible using data-testid
+    await expect(page.locator('[data-testid="strava-connection-card"]').first()).toBeVisible({
+      timeout: TEST_TIMEOUTS.medium,
+    })
 
     // Verify Garmin connection card is NOT visible
-    await expect(page.locator('text=Connect to Garmin, text=Garmin')).not.toBeVisible()
+    await expect(page.locator('[data-testid="garmin-connection-card"]')).not.toBeVisible()
   })
 
   test('should show Garmin widgets when feature flag is enabled', async ({ page, context }) => {
     // Set PostHog feature flag to enabled via context storage
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       // Mock PostHog to return true for garmin-integration flag
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? true : false),
-        getFeatureFlag: () => true,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? true : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 
@@ -101,9 +109,13 @@ test.describe('Garmin Integration - Feature Flag', () => {
     await page.click('text=Integrations')
     await page.waitForTimeout(1000)
 
-    // Verify both connection cards are visible
-    await expect(page.locator('text=Connect to Strava').first()).toBeVisible()
-    await expect(page.locator('text=Connect to Garmin, text=Connect Garmin').first()).toBeVisible()
+    // Verify both connection cards are visible using data-testid
+    await expect(page.locator('[data-testid="strava-connection-card"]').first()).toBeVisible({
+      timeout: TEST_TIMEOUTS.medium,
+    })
+    await expect(page.locator('[data-testid="garmin-connection-card"]').first()).toBeVisible({
+      timeout: TEST_TIMEOUTS.medium,
+    })
   })
 })
 
@@ -111,10 +123,13 @@ test.describe('Garmin Integration - UI Components', () => {
   test.beforeEach(async ({ page, context }) => {
     // Enable Garmin feature flag for these tests
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? true : false),
-        getFeatureFlag: () => true,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? true : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 
@@ -180,10 +195,13 @@ test.describe('Garmin Integration - Coach Dashboard', () => {
   test('should show Garmin widget on coach dashboard when enabled', async ({ page, context }) => {
     // Enable Garmin feature flag
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? true : false),
-        getFeatureFlag: () => true,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? true : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 
@@ -210,10 +228,13 @@ test.describe('Garmin Integration - Connection Flow (Mocked)', () => {
   test.beforeEach(async ({ page, context }) => {
     // Enable Garmin feature flag
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? true : false),
-        getFeatureFlag: () => true,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? true : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 
@@ -278,10 +299,13 @@ test.describe('Garmin Integration - Accessibility', () => {
   test('Garmin components should be keyboard accessible', async ({ page, context }) => {
     // Enable Garmin feature flag
     await context.addInitScript(() => {
+      // Enable test mode to prevent real PostHog initialization
+      ;(window as any).__POSTHOG_TEST_MODE__ = true
       ;(window as any).posthog = {
         isFeatureEnabled: (flag: string) => (flag === 'garmin-integration' ? true : false),
-        getFeatureFlag: () => true,
+        getFeatureFlag: (flag: string) => (flag === 'garmin-integration' ? true : false),
         onFeatureFlags: (callback: () => void) => callback(),
+        has_opted_in_capturing: () => false,
       }
     })
 

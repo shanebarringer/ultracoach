@@ -317,14 +317,44 @@ export default defineConfig({
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
 
+    // Garmin integration tests - Runner tests
+    {
+      name: 'chromium-garmin-runner',
+      testMatch: /garmin-integration\.spec\.ts/,
+      grep: /Feature Flag|UI Components|Connection Flow|Accessibility/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state for Garmin tests
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
+    // Garmin integration tests - Coach tests
+    {
+      name: 'chromium-garmin-coach',
+      testMatch: /garmin-integration\.spec\.ts/,
+      grep: /Coach Dashboard/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved coach authentication state for coach tests
+        storageState: './playwright/.auth/coach.json',
+      },
+      dependencies: ['setup-coach'], // Wait for coach auth setup to complete
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
       // Ensure these specs never run in this catch-all project
-      testIgnore: ['**/coach-runner-relationships.spec.ts', '**/workout-management.spec.ts'],
+      testIgnore: [
+        '**/coach-runner-relationships.spec.ts',
+        '**/workout-management.spec.ts',
+        '**/garmin-integration.spec.ts',
+      ],
       grepInvert:
-        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships|workout-management/,
+        /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships|workout-management|garmin-integration/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

@@ -264,15 +264,12 @@ export default function GarminActivityList() {
                   {activity.averageHR && (
                     <span>
                       Avg HR:{' '}
-                      <span className="font-medium">
-                        {Math.round(activity.averageHR)} bpm
-                      </span>
+                      <span className="font-medium">{Math.round(activity.averageHR)} bpm</span>
                     </span>
                   )}
                   {activity.maxHR && (
                     <span>
-                      Max HR:{' '}
-                      <span className="font-medium">{Math.round(activity.maxHR)} bpm</span>
+                      Max HR: <span className="font-medium">{Math.round(activity.maxHR)} bpm</span>
                     </span>
                   )}
                   {activity.calories && (
