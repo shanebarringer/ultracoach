@@ -159,16 +159,17 @@ const nextConfig: NextConfig = {
   },
 
   // PostHog reverse proxy rewrites
-  // This routes PostHog requests through our domain to bypass ad-blockers
-  // Official PostHog recommendation for Next.js: https://posthog.com/docs/advanced/proxy/nextjs
+  // Routes PostHog requests through /api/telemetry to bypass ad-blockers (including uBlock Origin)
+  // Using /api/telemetry instead of /ingest because /ingest is on EasyPrivacy blocklists
+  // The path matches our API route pattern making it look like first-party traffic
   async rewrites() {
     return [
       {
-        source: '/ingest/static/:path*',
+        source: '/api/telemetry/static/:path*',
         destination: 'https://us-assets.i.posthog.com/static/:path*',
       },
       {
-        source: '/ingest/:path*',
+        source: '/api/telemetry/:path*',
         destination: 'https://us.i.posthog.com/:path*',
       },
     ]
