@@ -1,7 +1,6 @@
 // User settings management atoms
 import { atom } from 'jotai'
 
-import { userAtom } from '@/lib/atoms/auth'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -111,20 +110,6 @@ export const userSettingsRefreshTriggerAtom = atom(0)
 export const asyncUserSettingsAtom = atom(
   async get => {
     get(userSettingsRefreshTriggerAtom) // Subscribe to refresh trigger
-
-    // Check if user is authenticated before attempting fetch
-    // This prevents 401 errors during app initialization for unauthenticated users
-    try {
-      const user = get(userAtom)
-      if (!user) {
-        logger.debug('No authenticated user, skipping settings fetch')
-        return null
-      }
-    } catch (error) {
-      // If we can't read userAtom (e.g., during SSR initialization), return null
-      logger.debug('Unable to read userAtom, skipping settings fetch', error)
-      return null
-    }
 
     try {
       logger.debug('Fetching user settings...')
