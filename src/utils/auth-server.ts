@@ -12,6 +12,10 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AuthServer')
 
+// Stable sentinel fallback for missing createdAt timestamps
+// Using epoch instead of current time ensures deterministic behavior
+const SENTINEL_CREATED_AT = '1970-01-01T00:00:00.000Z'
+
 // Type definitions for Better Auth session data
 interface BetterAuthUser {
   id: string
@@ -20,6 +24,7 @@ interface BetterAuthUser {
   role?: 'coach' | 'runner'
   userType?: string
   fullName?: string | null
+  createdAt?: string | Date
 }
 
 interface BetterAuthSession {
@@ -40,6 +45,7 @@ export interface ServerSession {
     name: string | null
     role: 'coach' | 'runner'
     userType: 'coach' | 'runner'
+    createdAt: string
   }
 }
 
@@ -88,8 +94,12 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
     // Detect auth signal to avoid unnecessary retries for unauthenticated traffic
+    // Check for both secure (production) and non-secure (dev) cookie names
+    // When useSecureCookies is true in Better Auth config, cookies are prefixed with __Secure-
+    const cookieHeader = headersList.get('cookie') || ''
     const hasAuthSignal =
-      headersList.get('cookie')?.includes('better-auth.session_token') ||
+      cookieHeader.includes('__Secure-better-auth.session_token') || // Production (secure cookies)
+      cookieHeader.includes('better-auth.session_token') || // Development
       !!headersList.get('authorization')
 
     // Better Auth server-side session retrieval with retry logic for CI reliability
@@ -177,6 +187,24 @@ export async function getServerSession(): Promise<ServerSession | null> {
       })
     }
 
+    // Determine stable createdAt timestamp with proper fallback chain
+    // Priority: user.createdAt > session.createdAt > sentinel epoch
+    const sessionCreatedAt = rawSession.session?.createdAt
+    const rawCreatedAt = user.createdAt ?? sessionCreatedAt ?? SENTINEL_CREATED_AT
+
+    // Normalize createdAt to always be an ISO string for consistency
+    const createdAt = typeof rawCreatedAt === 'string' ? rawCreatedAt : rawCreatedAt.toISOString()
+
+    // Log warning if we had to use the sentinel fallback (indicates data integrity issue)
+    if (!user.createdAt && !sessionCreatedAt) {
+      logger.warn('User createdAt timestamp missing - using sentinel fallback', {
+        userId: user.id,
+        email: user.email?.replace(/(^..).+(@.*$)/, '$1***$2'),
+        fallbackValue: createdAt,
+        context: 'This may indicate incomplete user data or migration issues',
+      })
+    }
+
     const serverSession: ServerSession = {
       user: {
         id: user.id,
@@ -184,6 +212,7 @@ export async function getServerSession(): Promise<ServerSession | null> {
         name: user.name || null,
         role: userRole,
         userType: userRole,
+        createdAt,
       },
     }
 

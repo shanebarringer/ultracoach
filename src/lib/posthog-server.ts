@@ -1,89 +1,91 @@
-/**
- * PostHog Server-Side Utilities
- *
- * Provides server-side feature flag checking for Next.js server components and API routes.
- */
 import { PostHog } from 'posthog-node'
 
-import * as logger from './logger'
+import logger from '@/lib/logger'
 
-// Initialize PostHog client (singleton pattern)
-let posthogClient: PostHog | null = null
+let posthogServerInstance: PostHog | null = null
 
-function getPostHogClient(): PostHog | null {
+/**
+ * Get PostHog server-side client instance
+ * Used for server-side event tracking and feature flags
+ */
+export function getPostHogServer(): PostHog | null {
+  // Return null if no API key configured
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    logger.warn('PostHog API key not configured')
     return null
   }
 
-  if (!posthogClient) {
-    posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+  // Create singleton instance
+  if (!posthogServerInstance) {
+    posthogServerInstance = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+      // Disable in development
+      disabled: process.env.NODE_ENV === 'development',
+      // Next.js serverless functions are short-lived, so flush immediately
+      flushAt: 1,
+      flushInterval: 0,
     })
   }
 
-  return posthogClient
+  return posthogServerInstance
 }
 
 /**
- * Check if a feature flag is enabled for a user (server-side)
- *
- * @param flagKey - The feature flag key
- * @param userId - The user ID to check the flag for
- * @param defaultValue - Default value if flag check fails
- * @returns Promise<boolean> - Whether the flag is enabled
+ * Identify a user on the server-side
+ * @param userId - The user's unique identifier
+ * @param properties - Additional user properties
  */
-export async function isFeatureEnabled(
-  flagKey: string,
+export async function identifyUser(userId: string, properties?: Record<string, unknown>) {
+  const posthog = getPostHogServer()
+  if (!posthog) return
+
+  try {
+    posthog.identify({
+      distinctId: userId,
+      properties,
+    })
+    // Flush immediately to ensure event is sent before serverless function terminates
+    await posthog.flush()
+  } catch (error) {
+    // Fire-and-forget: log error but don't throw to avoid forcing callers to handle PostHog failures
+    logger.error('Failed to identify user in PostHog:', error)
+  }
+}
+
+/**
+ * Track a server-side event
+ * @param userId - The user's unique identifier
+ * @param event - Event name
+ * @param properties - Event properties
+ */
+export async function trackServerEvent(
   userId: string,
-  defaultValue = false
-): Promise<boolean> {
-  const client = getPostHogClient()
-
-  if (!client) {
-    logger.warn(`PostHog not configured, returning default value for flag: ${flagKey}`)
-    return defaultValue
-  }
+  event: string,
+  properties?: Record<string, unknown>
+) {
+  const posthog = getPostHogServer()
+  if (!posthog) return
 
   try {
-    const isEnabled = await client.isFeatureEnabled(flagKey, userId)
-    return isEnabled ?? defaultValue
+    posthog.capture({
+      distinctId: userId,
+      event,
+      properties,
+    })
+    // Flush immediately to ensure event is sent before serverless function terminates
+    await posthog.flush()
   } catch (error) {
-    logger.error(`Error checking feature flag ${flagKey}:`, error)
-    return defaultValue
-  }
-}
-
-/**
- * Get feature flag payload (for flags with custom payloads)
- *
- * @param flagKey - The feature flag key
- * @param userId - The user ID
- * @returns Promise<unknown> - The flag payload or null
- */
-export async function getFeatureFlagPayload(flagKey: string, userId: string): Promise<unknown> {
-  const client = getPostHogClient()
-
-  if (!client) {
-    return null
-  }
-
-  try {
-    const payload = await client.getFeatureFlagPayload(flagKey, userId)
-    return payload
-  } catch (error) {
-    logger.error(`Error getting feature flag payload for ${flagKey}:`, error)
-    return null
+    // Fire-and-forget: log error but don't throw to avoid forcing callers to handle PostHog failures
+    logger.error('Failed to track event in PostHog:', error)
   }
 }
 
 /**
  * Shutdown PostHog client gracefully
- * Call this when shutting down the server
+ * Call this when your app is shutting down
  */
-export async function shutdownPostHog(): Promise<void> {
-  if (posthogClient) {
-    await posthogClient.shutdown()
-    posthogClient = null
+export async function shutdownPostHog() {
+  if (posthogServerInstance) {
+    await posthogServerInstance.shutdown()
+    posthogServerInstance = null
   }
 }

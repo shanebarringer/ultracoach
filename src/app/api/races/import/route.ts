@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
-import { addRateLimitHeaders, raceImportLimiter } from '@/lib/rate-limiter'
+import { addRateLimitHeaders, formatRetryAfter, raceImportLimiter } from '@/lib/redis-rate-limiter'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'
 
@@ -31,7 +31,7 @@ interface ImportRaceData {
         time?: string
       }>
     }>
-    waypoints: Array<{
+    waypoints?: Array<{
       name?: string
       lat: number
       lon: number
@@ -50,13 +50,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Apply rate limiting
-    const rateLimitResult = raceImportLimiter.check(session.user.id)
+    const rateLimitResult = await raceImportLimiter.check(session.user.id)
     if (!rateLimitResult.allowed) {
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
       const response = NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          details: `Too many race imports. Please try again in ${rateLimitResult.retryAfter} seconds.`,
-          retryAfter: rateLimitResult.retryAfter,
+          details: `Too many race imports. Please try again in ${retryDisplay}.`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds for API consistency
         },
         { status: 429 }
       )
@@ -114,6 +115,263 @@ export async function POST(request: NextRequest) {
     const validDistanceTypes = ['50K', '50M', '100K', '100M', 'Marathon', 'Custom']
     if (!validDistanceTypes.includes(raceData.distance_type)) {
       raceData.distance_type = 'Custom'
+    }
+
+    // Validate source type
+    if (!importData.source || !['gpx', 'csv'].includes(importData.source)) {
+      return NextResponse.json(
+        { error: 'Invalid source type - must be "gpx" or "csv"' },
+        { status: 400 }
+      )
+    }
+
+    // Validate GPX data structure when source is 'gpx'
+    if (importData.source === 'gpx') {
+      // Ensure gpx_data exists
+      if (!importData.gpx_data) {
+        logger.warn('GPX import missing gpx_data', { userId: session.user.id })
+        return NextResponse.json(
+          { error: 'GPX data is required when source is "gpx"' },
+          { status: 400 }
+        )
+      }
+
+      // Validate tracks array exists and is valid
+      if (!Array.isArray(importData.gpx_data.tracks)) {
+        logger.warn('GPX import has invalid tracks structure', { userId: session.user.id })
+        return NextResponse.json(
+          { error: 'Invalid GPX data - tracks must be an array' },
+          { status: 400 }
+        )
+      }
+
+      // Ensure at least one track contains points
+      const hasValidTrack = importData.gpx_data.tracks.some(
+        track => track.points && Array.isArray(track.points) && track.points.length > 0
+      )
+      if (!hasValidTrack) {
+        logger.warn('GPX import has no valid tracks with points', { userId: session.user.id })
+        return NextResponse.json(
+          { error: 'GPX data must contain at least one track with points' },
+          { status: 400 }
+        )
+      }
+
+      // Validate waypoints array if provided
+      if (importData.gpx_data.waypoints && !Array.isArray(importData.gpx_data.waypoints)) {
+        return NextResponse.json(
+          { error: 'Invalid GPX data - waypoints must be an array' },
+          { status: 400 }
+        )
+      }
+
+      // If waypoints exist, validate multiple waypoint structures for better data integrity
+      if (
+        importData.gpx_data.waypoints &&
+        Array.isArray(importData.gpx_data.waypoints) &&
+        importData.gpx_data.waypoints.length > 0
+      ) {
+        const waypointCount = importData.gpx_data.waypoints.length
+
+        // Sample multiple points: first, middle, and last (if different)
+        const sampleIndices = [
+          0, // First waypoint
+          Math.floor(waypointCount / 2), // Middle waypoint
+          waypointCount - 1, // Last waypoint
+        ].filter((index, pos, arr) => arr.indexOf(index) === pos) // Remove duplicates for small arrays
+
+        // Validate each sampled waypoint
+        for (const sampleIndex of sampleIndices) {
+          const sampleWaypoint = importData.gpx_data.waypoints[sampleIndex]
+
+          if (sampleWaypoint) {
+            // Validate lat/lon are numbers
+            if (typeof sampleWaypoint.lat !== 'number' || typeof sampleWaypoint.lon !== 'number') {
+              logger.warn('GPX waypoint has invalid lat/lon types', {
+                userId: session.user.id,
+                waypointIndex: sampleIndex,
+              })
+              return NextResponse.json(
+                {
+                  error: 'Invalid GPX data - waypoints must have numeric lat/lon',
+                  details: `Invalid waypoint at index ${sampleIndex}`,
+                },
+                { status: 400 }
+              )
+            }
+
+            // Validate lat/lon ranges
+            if (
+              sampleWaypoint.lat < -90 ||
+              sampleWaypoint.lat > 90 ||
+              sampleWaypoint.lon < -180 ||
+              sampleWaypoint.lon > 180
+            ) {
+              logger.warn('GPX waypoint lat/lon out of valid range', {
+                userId: session.user.id,
+                waypointIndex: sampleIndex,
+                lat: sampleWaypoint.lat,
+                lon: sampleWaypoint.lon,
+              })
+              return NextResponse.json(
+                {
+                  error: 'Invalid GPX data - waypoint lat/lon out of valid range',
+                  details: `Waypoint ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+                },
+                { status: 400 }
+              )
+            }
+          }
+        }
+
+        logger.debug('GPX waypoint validation passed', {
+          userId: session.user.id,
+          waypointCount,
+          sampledIndices: sampleIndices,
+        })
+      }
+
+      // Count total track points and enforce limits
+      const totalPoints = importData.gpx_data.tracks.reduce((sum, track) => {
+        if (!track.points || !Array.isArray(track.points)) {
+          return sum
+        }
+        return sum + track.points.length
+      }, 0)
+
+      // Limit to 50,000 points to prevent memory exhaustion
+      if (totalPoints > 50000) {
+        logger.warn('GPX file too large', {
+          totalPoints,
+          userId: session.user.id,
+          raceName: raceData.name,
+        })
+        return NextResponse.json(
+          {
+            error: 'GPX file too large',
+            details: `GPX file contains ${totalPoints} points. Maximum allowed is 50,000 points.`,
+          },
+          { status: 413 }
+        )
+      }
+
+      // Validate track point structure from ALL tracks (strategic sampling for performance + security)
+      // Security note: We sample multiple representative points instead of validating every point
+      // to balance security (detect malformed data) with performance (avoid O(n) validation on large files)
+      // This catches malformed imports while allowing legitimate large GPX files (up to 50k points)
+      for (let trackIndex = 0; trackIndex < importData.gpx_data.tracks.length; trackIndex++) {
+        const track = importData.gpx_data.tracks[trackIndex]
+        if (track.points && track.points.length > 0) {
+          const pointCount = track.points.length
+
+          // Sample multiple representative points from each track for better coverage
+          // For small tracks: sample first, middle, last
+          // For large tracks: sample 5 evenly distributed points
+          const sampleCount = Math.min(5, pointCount)
+          // Use Set to automatically deduplicate indices (prevents redundant validation)
+          const sampleIndices = new Set<number>()
+          for (let i = 0; i < sampleCount; i++) {
+            sampleIndices.add(Math.floor((i * pointCount) / sampleCount))
+          }
+          // Always include last point (Set handles duplicates automatically)
+          sampleIndices.add(pointCount - 1)
+
+          // Validate each sampled point
+          for (const sampleIndex of sampleIndices) {
+            const samplePoint = track.points[sampleIndex]
+
+            if (samplePoint) {
+              // Validate lat/lon are numbers
+              if (typeof samplePoint.lat !== 'number' || typeof samplePoint.lon !== 'number') {
+                logger.warn('GPX track point has invalid lat/lon types', {
+                  userId: session.user.id,
+                  trackIndex,
+                  pointIndex: sampleIndex,
+                  latType: typeof samplePoint.lat,
+                  lonType: typeof samplePoint.lon,
+                })
+                return NextResponse.json(
+                  {
+                    error: 'Invalid GPX data - track points must have numeric lat/lon',
+                    details: `Invalid point in track ${trackIndex + 1} at index ${sampleIndex}`,
+                  },
+                  { status: 400 }
+                )
+              }
+
+              // Validate lat/lon ranges
+              if (
+                samplePoint.lat < -90 ||
+                samplePoint.lat > 90 ||
+                samplePoint.lon < -180 ||
+                samplePoint.lon > 180
+              ) {
+                logger.warn('GPX track point lat/lon out of valid range', {
+                  userId: session.user.id,
+                  trackIndex,
+                  pointIndex: sampleIndex,
+                  lat: samplePoint.lat,
+                  lon: samplePoint.lon,
+                })
+                return NextResponse.json(
+                  {
+                    error: 'Invalid GPX data - lat/lon out of valid range',
+                    details: `Track ${trackIndex + 1}, Point ${sampleIndex}: Latitude must be between -90 and 90, longitude between -180 and 180`,
+                  },
+                  { status: 400 }
+                )
+              }
+            }
+          }
+
+          logger.debug('GPX track validation passed', {
+            trackIndex,
+            pointCount,
+            sampledPoints: sampleIndices.size,
+            userId: session.user.id,
+          })
+        }
+      }
+
+      // Log GPX validation success with metrics for audit purposes
+      const trackCounts = importData.gpx_data.tracks.map(track => track.points?.length || 0)
+      const waypointCount = importData.gpx_data.waypoints?.length || 0
+      logger.info('GPX validation passed', {
+        userId: session.user.id,
+        totalPoints,
+        trackCount: importData.gpx_data.tracks.length,
+        trackCounts,
+        waypointCount,
+      })
+    }
+
+    // Validate CSV data (validate normalized raceData to ensure import consistency)
+    if (importData.source === 'csv') {
+      // IMPORTANT: Validate the normalized raceData (not importData) to ensure
+      // validation matches what we persist to database after normalization/defaults
+
+      // Ensure minimum required fields are present for CSV imports
+      if (!raceData.name || raceData.name.trim().length === 0) {
+        return NextResponse.json({ error: 'CSV import requires race name' }, { status: 400 })
+      }
+
+      // Validate distance for CSV imports (check normalized value)
+      const normalizedDistance = parseFloat(raceData.distance_miles)
+      if (isNaN(normalizedDistance) || normalizedDistance <= 0) {
+        return NextResponse.json(
+          {
+            error: 'CSV import requires valid distance',
+            details: 'Distance must be greater than 0',
+          },
+          { status: 400 }
+        )
+      }
+
+      logger.info('CSV validation passed (normalized data)', {
+        raceName: raceData.name,
+        distance: raceData.distance_miles,
+        userId: session.user.id,
+      })
     }
 
     // Check for duplicate races to prevent importing the same race multiple times

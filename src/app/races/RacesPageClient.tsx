@@ -42,7 +42,6 @@ import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
-import { useUnitConverter } from '@/hooks/useUnitConverter'
 import {
   asyncRacesAtom,
   raceDistanceFilterAtom,
@@ -54,6 +53,7 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
+import { formatDateConsistent, formatNumberConsistent } from '@/lib/utils/date'
 
 const DISTANCE_TYPES = [
   { key: '50K', label: '50K (31.07 miles)' },
@@ -77,7 +77,6 @@ function RacesContent() {
   const [localRaces, setLocalRaces] = useAtom(racesAtom)
   const refresh = useSetAtom(refreshRacesAtom)
   const [selectedRace, setSelectedRace] = useAtom(selectedRaceAtom)
-  const converter = useUnitConverter()
   const logger = useMemo(() => createLogger('RacesContent'), [])
 
   // Search and filter state - using Jotai atoms for persistence
@@ -664,7 +663,7 @@ function RacesContent() {
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-foreground-600" />
                     <span className="text-sm text-foreground-600">
-                      {new Date(race.date).toLocaleDateString()}
+                      {formatDateConsistent(race.date)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -673,14 +672,13 @@ function RacesContent() {
                   </div>
                   <div className="flex items-center gap-2">
                     <RouteIcon className="w-4 h-4 text-foreground-600" />
-                    <span className="text-sm text-foreground-600">
-                      {converter.distance(race.distance_miles, 'miles')}
-                    </span>
+                    <span className="text-sm text-foreground-600">{race.distance_miles} miles</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MountainSnowIcon className="w-4 h-4 text-foreground-600" />
                     <span className="text-sm text-foreground-600">
-                      {converter.elevation(race.elevation_gain_feet, 'feet')} gain
+                      {formatNumberConsistent(race.elevation_gain_feet, { includeCommas: true })} ft
+                      gain
                     </span>
                   </div>
                 </div>

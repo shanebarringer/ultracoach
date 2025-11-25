@@ -183,6 +183,52 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const sessionWithRole = session as SessionWithRole
+    const userRole = sessionWithRole.user?.role || 'runner'
+
+    // Get user's current onboarding progress
+    const [userOnboarding] = await db
+      .select()
+      .from(user_onboarding)
+      .where(eq(user_onboarding.user_id, session.user.id))
+
+    if (!userOnboarding) {
+      return NextResponse.json({ error: 'Onboarding record not found' }, { status: 404 })
+    }
+
+    // Check if there are any incomplete required steps
+    const requiredSteps = await db
+      .select()
+      .from(onboarding_steps)
+      .where(
+        and(
+          eq(onboarding_steps.is_active, true),
+          eq(onboarding_steps.is_required, true),
+          or(eq(onboarding_steps.role, userRole), eq(onboarding_steps.role, 'both'))
+        )
+      )
+      .orderBy(onboarding_steps.step_number)
+
+    // Check which required steps have been completed
+    const stepData = (userOnboarding.step_data as Record<string, unknown>) || {}
+    const incompleteRequiredSteps = requiredSteps.filter(step => {
+      const stepKey = `step_${step.step_number}`
+      return (
+        !stepData[stepKey] || Object.keys(stepData[stepKey] as Record<string, unknown>).length === 0
+      )
+    })
+
+    // Track incomplete required steps for logging and return info
+    let hasIncompleteRequired = false
+    if (incompleteRequiredSteps.length > 0) {
+      hasIncompleteRequired = true
+      const incompleteStepTitles = incompleteRequiredSteps.map(s => s.title).join(', ')
+      logger.info(
+        `User ${session.user.id} skipping onboarding with ${incompleteRequiredSteps.length} incomplete required steps: ${incompleteStepTitles}`
+      )
+    }
+
+    // Allow skipping regardless of completion status
     const [updatedOnboarding] = await db
       .update(user_onboarding)
       .set({
@@ -193,7 +239,9 @@ export async function PATCH(request: NextRequest) {
       .where(eq(user_onboarding.user_id, session.user.id))
       .returning()
 
-    logger.info(`User ${session.user.id} skipped onboarding`)
+    logger.info(
+      `User ${session.user.id} skipped onboarding ${hasIncompleteRequired ? '(with incomplete required steps)' : '(all required steps completed)'}`
+    )
 
     return NextResponse.json({
       success: true,

@@ -20,17 +20,24 @@ import { z } from 'zod'
 import { Suspense, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { useUnitConverter } from '@/hooks/useUnitConverter'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import type {
+  GoalType as AnalyticsGoalType,
+  PlanType as AnalyticsPlanType,
+} from '@/lib/analytics/event-types'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { api } from '@/lib/api-client'
 import {
   connectedRunnersAtom,
   createTrainingPlanFormAtom,
   planTemplatesAtom,
   racesAtom,
+  userAtom,
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { PlanTemplate, Race, User } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
 import {
   GOAL_TYPES,
   GOAL_TYPE_LABELS,
@@ -46,10 +53,13 @@ const logger = createLogger('CreateTrainingPlanModal')
 const createTrainingPlanSchema = z.object({
   title: z
     .string()
-    .min(1, 'Plan title is required')
-    .max(100, 'Title must be at most 100 characters'),
-  description: z.string().max(500, 'Description must be at most 500 characters').optional(),
-  runnerId: z.string().min(1, 'Please select a runner'),
+    .min(1, { message: 'Plan title is required' })
+    .max(100, { message: 'Title must be at most 100 characters' }),
+  description: z
+    .string()
+    .max(500, { message: 'Description must be at most 500 characters' })
+    .optional(),
+  runnerId: z.string().min(1, { message: 'Please select a runner' }),
   race_id: z.string().nullable(),
   goal_type: z.enum(GOAL_TYPES).nullable(),
   plan_type: z.enum(PLAN_TYPES).nullable(),
@@ -74,7 +84,10 @@ export default function CreateTrainingPlanModal({
   const [formState, setFormState] = useAtom(createTrainingPlanFormAtom)
   const [races, setRaces] = useAtom(racesAtom)
   const [planTemplates, setPlanTemplates] = useAtom(planTemplatesAtom)
-  const converter = useUnitConverter()
+  const connectedRunners = useAtomValue(connectedRunnersAtom)
+  const hasRunners = connectedRunners.length > 0
+  const user = useAtomValue(userAtom) // Read-only access
+  const trackEvent = useTypedPostHogEvent()
   // Suspense handles loading of connected runners within a child field component;
   // no explicit loading flag is needed here.
 
@@ -168,6 +181,12 @@ export default function CreateTrainingPlanModal({
   }, [isOpen, races, planTemplates, setRaces, setPlanTemplates])
 
   const onSubmit = async (data: CreateTrainingPlanForm) => {
+    // Short-circuit if no runners connected
+    if (!hasRunners) {
+      logger.warn('Attempted to create training plan without connected runners')
+      return
+    }
+
     setFormState(prev => ({ ...prev, loading: true, error: '' }))
 
     try {
@@ -189,6 +208,38 @@ export default function CreateTrainingPlanModal({
       })
 
       logger.info('Training plan created successfully', response.data)
+
+      // Track training plan creation in PostHog (type-safe) - only if user is authenticated
+      if (user?.id && user?.userType) {
+        // Validate plan_type and goal_type against canonical analytics types from event-types.ts
+        const validAnalyticsPlanTypes: AnalyticsPlanType[] = ['custom', 'template', 'ai_generated']
+        const validAnalyticsGoalTypes: AnalyticsGoalType[] = [
+          'completion',
+          'time',
+          'placement',
+          'training',
+        ]
+
+        const isPlanTypeValid = (type: string | null): type is AnalyticsPlanType =>
+          type !== null && validAnalyticsPlanTypes.includes(type as AnalyticsPlanType)
+        const isGoalTypeValid = (type: string | null): type is AnalyticsGoalType =>
+          type !== null && validAnalyticsGoalTypes.includes(type as AnalyticsGoalType)
+
+        const planType = isPlanTypeValid(payload.plan_type) ? payload.plan_type : 'custom'
+        const goalType = isGoalTypeValid(payload.goal_type) ? payload.goal_type : 'completion'
+
+        trackEvent(ANALYTICS_EVENTS.TRAINING_PLAN_CREATED, {
+          planType,
+          goalType,
+          duration: undefined, // Duration not captured in form, can be added later
+          raceGoal: payload.race_id ? String(payload.race_id) : undefined,
+          templateId: payload.template_id ? String(payload.template_id) : undefined,
+          userId: user.id,
+          userType:
+            user.userType === 'coach' || user.userType === 'runner' ? user.userType : 'runner',
+        })
+      }
+
       setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form
 
@@ -315,7 +366,12 @@ export default function CreateTrainingPlanModal({
                     </Select>
                   }
                 >
-                  <RunnerSelectField field={field} fieldState={fieldState} />
+                  <RunnerSelectField
+                    field={field}
+                    fieldState={fieldState}
+                    connectedRunners={connectedRunners}
+                    hasRunners={hasRunners}
+                  />
                 </Suspense>
               )}
             />
@@ -396,17 +452,12 @@ export default function CreateTrainingPlanModal({
                         )}
                         {item.date && (
                           <span className="flex items-center gap-1">
-                            📅{' '}
-                            {new Date(item.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            📅 {formatDateConsistent(item.date, 'MMM d, yyyy')}
                           </span>
                         )}
                         {item.elevation_gain_feet > 0 && (
                           <span className="flex items-center gap-1">
-                            ⛰️ {converter.elevation(item.elevation_gain_feet, 'feet')} gain
+                            ⛰️ {item.elevation_gain_feet.toLocaleString('en-US')}ft
                           </span>
                         )}
                       </div>
@@ -449,13 +500,24 @@ export default function CreateTrainingPlanModal({
               </div>
             )}
           </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
-              {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
-            </Button>
+          <ModalFooter className="flex-col items-stretch gap-2">
+            {!hasRunners && (
+              <div className="text-sm text-warning bg-warning/10 px-3 py-2 rounded-md">
+                You must have at least one connected runner before creating a training plan
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="light" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                color="primary"
+                disabled={!hasRunners || isSubmitting || formState.loading}
+              >
+                {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
+              </Button>
+            </div>
           </ModalFooter>
         </form>
       </ModalContent>
@@ -466,13 +528,14 @@ export default function CreateTrainingPlanModal({
 function RunnerSelectField({
   field,
   fieldState,
+  connectedRunners,
+  hasRunners,
 }: {
   field: { value: string; onChange: (v: string) => void }
   fieldState: { error?: { message?: string } }
+  connectedRunners: User[]
+  hasRunners: boolean
 }) {
-  const connectedRunners = useAtomValue(connectedRunnersAtom)
-  const hasRunners = connectedRunners.length > 0
-
   return (
     <Select
       label="Select Runner"

@@ -347,7 +347,6 @@ test.describe('Workout Management', () => {
         })
         .catch(() => {
           // No runner cards found - coach may not have connected runners
-          console.log('No runner cards found, checking count for graceful skip...')
         })
 
       // Get all available runner cards and check count IMMEDIATELY for early skip
@@ -358,9 +357,6 @@ test.describe('Workout Management', () => {
       // Skip if coach has fewer than 2 connected runners (can't test multi-runner scenario)
       // Check as early as possible to avoid wasted navigation/setup before skip
       if (runnerCount < 2) {
-        console.log(
-          `Skipping multi-runner test: coach has ${runnerCount} connected runners (need at least 2)`
-        )
         test.skip()
         return
       }
@@ -466,7 +462,7 @@ test.describe('Workout Management', () => {
           timeout: CI_TIMEOUT,
         })
         .catch(() => {
-          console.log('Runner cards not found after navigation back')
+          // Runner cards not found after navigation back
         })
 
       // Re-acquire runner card locators to reference current DOM nodes (not stale pre-navigation nodes)

@@ -2,9 +2,9 @@
 
 import { Button, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
 import { useAtom, useAtomValue } from 'jotai'
-import { Filter, X } from 'lucide-react'
+import { Filter, MessageCirclePlus, X } from 'lucide-react'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -18,9 +18,12 @@ import { chatUiStateAtom, offlineMessageQueueAtom, uiStateAtom } from '@/lib/ato
 import { createLogger } from '@/lib/logger'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+import { formatDateConsistent } from '@/lib/utils/date'
+import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 
 import ConnectionStatus from './ConnectionStatus'
 import MessageInput from './MessageInput'
+import NewMessageModal from './NewMessageModal'
 import PerformantMessageList from './PerformantMessageList'
 import TypingIndicator from './TypingIndicator'
 
@@ -46,6 +49,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
   const uiState = useAtomValue(uiStateAtom)
   const [offlineQueue, setOfflineQueue] = useAtom(offlineMessageQueueAtom)
+  const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false)
 
   // Use Jotai hooks for state management
   const { messages, loading, sendMessage } = useMessages(recipientId)
@@ -55,6 +59,9 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
   // Prevent race conditions in modal and async operations
   const operationInProgress = useRef(false)
+
+  // Get display name with proper fallback
+  const displayName = recipient.full_name || getDisplayNameFromEmail(recipient.email)
 
   const handleWorkoutLogSuccess = useCallback(async () => {
     // Prevent race conditions
@@ -225,18 +232,27 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
       <div className="flex items-center justify-between px-6 py-4 border-b border-divider bg-content1">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-medium">
-            {(recipient.full_name || 'U').charAt(0).toUpperCase()}
+            {displayName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {recipient.full_name || 'User'}
-            </h1>
+            <h1 className="text-lg font-semibold text-foreground">{displayName}</h1>
             <p className="text-sm text-foreground-600 capitalize">{recipient.userType}</p>
           </div>
         </div>
 
-        {/* Filter Controls */}
+        {/* Action Buttons & Filter Controls */}
         <div className="flex items-center gap-2">
+          {/* New Message Button */}
+          <Button
+            variant="flat"
+            color="primary"
+            size="sm"
+            startContent={<MessageCirclePlus className="h-4 w-4" />}
+            onPress={() => setIsNewMessageModalOpen(true)}
+            data-testid="new-message-button"
+          >
+            <span className="hidden sm:inline">New Message</span>
+          </Button>
           {/* Active Filter Display */}
           {filterWorkout && (
             <Chip
@@ -245,8 +261,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
               onClose={() => setChatUiState(prev => ({ ...prev, filterWorkoutId: null }))}
               size="sm"
             >
-              {filterWorkout.planned_type || 'Workout'} -{' '}
-              {new Date(filterWorkout.date || '').toLocaleDateString()}
+              {filterWorkout.planned_type || 'Workout'} - {formatDateConsistent(filterWorkout.date)}
             </Chip>
           )}
 
@@ -279,8 +294,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
                   ...workoutsWithMessages.map(
                     (workout: { id: string; planned_type?: string; date?: string }) => (
                       <DropdownItem key={workout.id}>
-                        {workout.planned_type || 'Workout'} -{' '}
-                        {new Date(workout.date || '').toLocaleDateString()}
+                        {workout.planned_type || 'Workout'} - {formatDateConsistent(workout.date)}
                       </DropdownItem>
                     )
                   ),
@@ -301,7 +315,7 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
 
         {/* Typing Indicator */}
         <div className="px-4">
-          <TypingIndicator isTyping={isRecipientTyping} userName={recipient.full_name || 'User'} />
+          <TypingIndicator isTyping={isRecipientTyping} userName={displayName} />
         </div>
       </div>
 
@@ -311,7 +325,12 @@ export default function ChatWindow({ recipientId, recipient }: ChatWindowProps) 
         onStartTyping={startTyping}
         onStopTyping={stopTyping}
         disabled={chatUiState.sending || !session?.user?.id}
-        recipientId={recipientId}
+      />
+
+      {/* New Message Modal */}
+      <NewMessageModal
+        isOpen={isNewMessageModalOpen}
+        onClose={() => setIsNewMessageModalOpen(false)}
       />
 
       {/* Workout Log Modal */}

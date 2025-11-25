@@ -464,7 +464,7 @@ export const logWorkoutDetailsAtom = atom(
       }
 
       const response = await fetch(`/api/workouts/${workoutId}/log`, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify(data),

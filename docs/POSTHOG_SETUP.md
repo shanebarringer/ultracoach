@@ -1,322 +1,372 @@
-# PostHog Setup Guide
+# PostHog Analytics & Error Tracking Setup Guide
 
-This guide explains how to set up PostHog analytics and feature flags for UltraCoach.
+This guide will help you complete the PostHog setup for UltraCoach.
 
-## Table of Contents
+## What is PostHog?
 
-- [Overview](#overview)
-- [Environment Setup](#environment-setup)
-- [Creating Feature Flags](#creating-feature-flags)
-- [Using Feature Flags](#using-feature-flags)
-- [Analytics Events](#analytics-events)
-- [Testing](#testing)
+PostHog is an all-in-one product analytics platform that provides:
 
-## Overview
+- **Product Analytics**: Track user behavior, feature usage, and conversion funnels
+- **Session Replay**: Watch recordings of user sessions to understand behavior
+- **Feature Flags**: Gradual rollouts and A/B testing
+- **Error Tracking**: Capture and analyze application errors
+- **Surveys**: Collect user feedback directly in your app
 
-UltraCoach uses PostHog for:
+## Why PostHog over Sentry?
 
-- **Feature Flags**: Gradually roll out new features to users
-- **Analytics**: Track user behavior and application usage
-- **A/B Testing**: Test different features with user segments
+PostHog was chosen for UltraCoach because:
 
-## Environment Setup
+- **100x more generous free tier**: 1M events vs Sentry's 5K errors
+- **Product analytics included**: Track user engagement alongside errors
+- **Session replays**: 5K recordings vs Sentry's 50 replays
+- **All features on free plan**: No feature restrictions
+- **Better for growth**: Proactive product improvement vs reactive error fixing
 
-### 1. Get PostHog Credentials
+## Free Tier Limits (More Than Enough!)
 
-1. Sign up for PostHog at [https://posthog.com](https://posthog.com) (or use self-hosted instance)
-2. Create a new project or use an existing one
-3. Copy your **Project API Key** from Project Settings
+- ✅ 1,000,000 events/month (product analytics)
+- ✅ 5,000 session recordings
+- ✅ 100,000 error events
+- ✅ 1,000,000 feature flag requests
+- ✅ 1,500 survey responses
+- ✅ No credit card required
+- ✅ 1-year data retention
 
-### 2. Configure Environment Variables
+## Setup Steps
 
-Add the following to your `.env.local` file:
+### 1. Create PostHog Account
+
+1. Go to [https://posthog.com](https://posthog.com)
+2. Click "Get started - free" (no credit card required)
+3. Choose **US Cloud** hosting (recommended for UltraCoach)
+4. Complete the signup flow
+
+### 2. Get Your API Keys
+
+After signup, PostHog will show you your project details:
+
+1. Go to **Project Settings** (gear icon in left sidebar)
+2. Find your **Project API Key** (starts with `phc_`)
+3. Note the **Host** URL (should be `https://us.i.posthog.com` for US Cloud)
+4. Note your **Project ID** (shown in Project Settings)
+
+### 3. Get Personal API Key (for Source Maps)
+
+To enable readable error stack traces in production, you'll need a Personal API Key:
+
+1. Go to **Personal Settings** → **Personal API Keys**
+2. Click **Create Personal API Key**
+3. Name it "UltraCoach Source Maps"
+4. Select **Write-only** permissions (safer than full access)
+5. Copy the generated key (starts with `phx_`)
+
+**What are source maps?**
+
+- Production code is minified (e.g., `a.b.c()` instead of actual function names)
+- Source maps translate minified code back to original source
+- Makes debugging production errors **much easier**
+- Stack traces show real file names and line numbers
+
+### 4. Add Environment Variables
+
+Create or update your `.env.local` file:
 
 ```bash
-# PostHog Analytics & Feature Flags
-NEXT_PUBLIC_POSTHOG_KEY="phc_your_project_api_key_here"
-NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
+# PostHog Analytics & Error Tracking
+NEXT_PUBLIC_POSTHOG_KEY="phc_your_actual_key_here"
+NEXT_PUBLIC_POSTHOG_HOST="https://us.i.posthog.com"
+NEXT_PUBLIC_POSTHOG_PROJECT_ID="your-project-id"
+# Personal API Key for source map upload
+POSTHOG_PERSONAL_API_KEY="phx_your_personal_key_here"
 ```
 
-**Note**: For self-hosted PostHog, use your instance URL for `NEXT_PUBLIC_POSTHOG_HOST`.
+**Important Notes:**
 
-### 3. Verify Setup
+- Replace `phc_your_actual_key_here` with your actual PostHog Project API Key
+- Replace `phx_your_personal_key_here` with your Personal API Key
+- Replace `your-project-id` with your Project ID from settings
+- The `NEXT_PUBLIC_` prefix is required for Next.js client-side access
+- The Personal API Key is only used during builds, not at runtime
+- Never commit `.env.local` to version control (it's already in `.gitignore`)
 
-PostHog will automatically initialize when the app starts. User identification happens automatically when users log in via the `PostHogProvider`.
+### 5. Add to Vercel (Production)
 
-## Creating Feature Flags
+For production deployment on Vercel:
 
-### In PostHog Dashboard
+1. Go to your Vercel project dashboard
+2. Navigate to **Settings** → **Environment Variables**
+3. Add these variables:
+   - `NEXT_PUBLIC_POSTHOG_KEY` = your PostHog Project API key
+   - `NEXT_PUBLIC_POSTHOG_HOST` = `https://us.i.posthog.com`
+   - `NEXT_PUBLIC_POSTHOG_PROJECT_ID` = your Project ID
+   - `POSTHOG_PERSONAL_API_KEY` = your Personal API key (for source maps)
+4. Set them for **Production**, **Preview**, and **Development** environments
 
-1. Navigate to **Feature Flags** in PostHog dashboard
-2. Click **New Feature Flag**
-3. Configure the flag:
-   - **Key**: `settings-functionality` (use kebab-case)
-   - **Name**: Settings Functionality (human-readable)
-   - **Description**: Advanced settings including notifications, units, privacy, etc.
-   - **Release Conditions**: Configure rollout percentage or user segments
+**Important:** The Personal API Key enables automatic source map upload during builds, making production errors much easier to debug!
 
-### Example Feature Flags
+### 6. Verify Installation
 
-#### Settings Functionality (Current)
+Start your development server:
 
-```
-Key: settings-functionality
-Description: Advanced settings panels for notifications, units, privacy, communication, and training preferences
-Rollout: 0% → 100% gradual rollout
-```
-
-#### Future Flags
-
-```
-Key: garmin-integration
-Description: Garmin Connect IQ integration features
-
-Key: ai-training-recommendations
-Description: AI-powered training plan recommendations
-
-Key: mobile-app-features
-Description: Progressive Web App capabilities
+```bash
+pnpm dev
 ```
 
-## Using Feature Flags
+**Check the browser console:**
 
-### Client-Side Components
+- **If API keys are not configured**: You'll see "PostHog API key not found. Analytics disabled."
+- **If API keys are configured**: You'll see "PostHog initialized successfully" (with capturing opted-out in development)
+- Both behaviors are expected - PostHog automatically opts-out in development mode even when keys are present
 
-Use the `useFeatureFlag` hook for client components:
+**To test in development:**
 
-```tsx
-'use client'
+1. Open `src/providers/posthog.tsx`
+2. Search for and comment out the `ph.opt_out_capturing()` call
+3. Visit <http://localhost:3001>
+4. Check PostHog dashboard for events
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag'
+## What's Already Configured
 
-export function MyComponent() {
-  const isEnabled = useFeatureFlag('settings-functionality', false)
+✅ **Automatic Pageview Tracking**: Every route change is tracked
+✅ **User Identification**: Authenticated users are automatically identified with email, name, and userType
+✅ **Error Tracking**: Unhandled errors and promise rejections are captured
+✅ **Session Recording**: With privacy controls (all inputs masked)
+✅ **Error Boundary**: React errors are caught and sent to PostHog
+✅ **Development Safety**: Analytics disabled in development (opt-in if needed)
 
-  if (!isEnabled) {
-    return <div>Feature coming soon!</div>
-  }
+## How to Use PostHog in Your Code
 
-  return <div>Feature content here</div>
-}
-```
+### Track Custom Events (Type-Safe)
 
-### With Feature Flag Guard
+```typescript
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
 
-Use `FeatureFlagGuard` component for declarative feature gating:
+function MyComponent() {
+  const trackEvent = useTypedPostHogEvent()
 
-```tsx
-import { FeatureFlagGuard } from '@/components/feature-flags/FeatureFlagGuard'
-
-export function MyPage() {
-  return (
-    <FeatureFlagGuard
-      flagKey="settings-functionality"
-      defaultValue={false}
-      fallback={<div>Coming soon!</div>}
-    >
-      <SettingsPage />
-    </FeatureFlagGuard>
-  )
-}
-```
-
-### Inline Feature Flags
-
-For smaller UI elements:
-
-```tsx
-import { InlineFeatureFlag } from '@/components/feature-flags/FeatureFlagGuard'
-
-export function Header() {
-  return (
-    <nav>
-      <InlineFeatureFlag flagKey="notifications-v2">
-        <NotificationBellV2 />
-      </InlineFeatureFlag>
-    </nav>
-  )
-}
-```
-
-### Server-Side Components
-
-Use the server-side utility in API routes or server components:
-
-```tsx
-import { isFeatureEnabled } from '@/lib/posthog-server'
-
-export async function GET(request: Request) {
-  const userId = await getCurrentUserId()
-  const isEnabled = await isFeatureEnabled('settings-functionality', userId, false)
-
-  if (!isEnabled) {
-    return NextResponse.json({ error: 'Feature not available' }, { status: 403 })
-  }
-
-  // Feature logic here
-}
-```
-
-### With Feature Flag Payload
-
-For flags with custom configuration:
-
-```tsx
-import { useFeatureFlagPayload } from '@/hooks/useFeatureFlag'
-
-export function ConfigurableFeature() {
-  const config = useFeatureFlagPayload('feature-config') as {
-    maxItems?: number
-    theme?: string
-  }
-
-  return <div>Max items: {config?.maxItems ?? 10}</div>
-}
-```
-
-## Analytics Events
-
-### Capture Custom Events
-
-```tsx
-import { usePostHogCapture } from '@/hooks/useFeatureFlag'
-
-export function SettingsPage() {
-  const captureEvent = usePostHogCapture()
-
-  const handleSave = () => {
-    captureEvent('settings_saved', {
-      section: 'notifications',
+  const handleWorkoutComplete = () => {
+    // Type-safe event tracking with autocomplete support
+    trackEvent(ANALYTICS_EVENTS.WORKOUT_COMPLETED, {
+      workoutId: '123',
+      workoutType: 'long_run',
+      distance: 20,
+      duration: 180, // minutes
+      pace: 9, // min/mile
+      elevationGain: 500,
+      effortLevel: 7,
       userId: user.id,
     })
   }
 
-  return <button onClick={handleSave}>Save</button>
+  return <button onClick={handleWorkoutComplete}>Complete Workout</button>
 }
 ```
 
-### Automatic Events
+### Feature Flags (A/B Testing)
 
-PostHog automatically captures:
+```typescript
+import { usePostHogFeatureFlag } from '@/hooks/usePostHogIdentify'
 
-- Page views (configured in `PostHogProvider`)
-- User identification (when logged in)
-- Session data
+function Dashboard() {
+  const useNewDashboard = usePostHogFeatureFlag('new-dashboard-ui')
 
-## Testing
+  if (useNewDashboard) {
+    return <NewDashboard />
+  }
 
-### Local Development
-
-By default, PostHog is **disabled in development mode** to avoid polluting analytics data.
-
-To enable PostHog in development:
-
-```tsx
-// In PostHogProvider.tsx, comment out the opt_out_capturing call
-// or set an environment variable to enable it
+  return <OldDashboard />
+}
 ```
 
-### Feature Flag Testing
+### Server-Side Tracking
 
-#### Test with User Overrides
+```typescript
+import { trackServerEvent } from '@/lib/posthog-server'
 
-1. Go to PostHog dashboard
-2. Navigate to Feature Flags → Your Flag
-3. Add user override: Enter user email or ID
-4. Set override to `true` or `false`
+export async function POST(req: Request) {
+  const userId = await getUserId(req)
 
-#### Test with Percentage Rollout
+  // Track server-side event
+  await trackServerEvent(userId, 'training_plan_created', {
+    planType: 'ultramarathon',
+    duration: 16, // weeks
+  })
 
-1. Set rollout to 50%
-2. Test with multiple user accounts
-3. Verify approximately half see the feature
-
-### CI/CD Testing
-
-Feature flags gracefully handle missing PostHog configuration:
-
-```tsx
-// Returns defaultValue when PostHog is not configured
-const isEnabled = useFeatureFlag('my-flag', true) // Returns true if PostHog unavailable
+  return Response.json({ success: true })
+}
 ```
 
-## Best Practices
+## Privacy & GDPR Compliance
 
-### 1. Use Descriptive Flag Names
+PostHog is configured with privacy-first settings:
 
-❌ Bad: `new-feature`, `test1`, `settings`
-✅ Good: `settings-functionality`, `garmin-integration`, `ai-recommendations`
+- ✅ All input fields are masked in session recordings
+- ✅ Elements with `data-private` attribute are masked
+- ✅ Respects "Do Not Track" browser setting
+- ✅ Only creates user profiles for identified users
+- ✅ No cross-domain tracking
 
-### 2. Always Provide Default Values
-
-```tsx
-// Always specify what happens when flag check fails
-const isEnabled = useFeatureFlag('my-flag', false) // ✅ Explicit default
-```
-
-### 3. Clean Up Old Flags
-
-- Archive flags after full rollout (100% for 30+ days)
-- Remove flag code after archival
-- Document flag lifecycle in pull requests
-
-### 4. Test Both States
+### Mark sensitive data as private:
 
 ```tsx
-// Ensure both enabled and disabled states work correctly
-<FeatureFlagGuard flagKey="feature" fallback={<GracefulFallback />}>
-  <NewFeature />
-</FeatureFlagGuard>
+<div data-private>Sensitive information here</div>
 ```
 
-### 5. Gradual Rollout Strategy
+## Dashboard Features
 
-1. **0%**: Feature flag created, code deployed, flag disabled
-2. **10%**: Internal team testing
-3. **25%**: Beta testers
-4. **50%**: Half of users
-5. **100%**: Full rollout
-6. **Archive**: After 30 days at 100%
+Once data starts flowing, you can:
+
+1. **View Session Replays**: Watch user sessions to understand behavior
+2. **Create Funnels**: Analyze conversion paths (signup → workout created → plan active)
+3. **Track Retention**: See how many users return week-over-week
+4. **Analyze Errors**: Group errors by type, view stack traces, see affected users
+5. **Set Up Alerts**: Get notified when errors spike or metrics change
+
+## Recommended Events to Track
+
+Here are some key events to add to UltraCoach:
+
+**Note:** These examples are **schematic** and show the event-specific properties only. All events tracked with `useTypedPostHogEvent` require canonical metadata fields (e.g., `userId`, `userType`, etc.) as enforced by the [`AnalyticsEventMap`](../src/lib/analytics/event-types.ts) type definition. See the complete example below for the full typed payload shape.
+
+```typescript
+// SCHEMATIC EXAMPLES (showing event-specific properties only)
+// Training Plan Events
+trackEvent('training_plan_created', { planType, duration, raceGoal /* + metadata */ })
+trackEvent('training_plan_started', { planId, startDate /* + metadata */ })
+trackEvent('training_plan_completed', { planId, completionRate /* + metadata */ })
+
+// Workout Events
+trackEvent('workout_completed', { type, distance, duration, effort /* + metadata */ })
+trackEvent('workout_skipped', { type, reason /* + metadata */ })
+trackEvent('workout_modified', { field, oldValue, newValue /* + metadata */ })
+
+// Strava Integration
+trackEvent('strava_connected', { userId /* + metadata */ })
+trackEvent('strava_sync_started', { activityCount /* + metadata */ })
+trackEvent('strava_sync_completed', { syncedActivities /* + metadata */ })
+
+// Coach-Runner Relationships
+trackEvent('relationship_created', { coachId, runnerId /* + metadata */ })
+trackEvent('message_sent', { conversationId, hasWorkoutLink /* + metadata */ })
+
+// Feature Usage
+trackEvent('race_imported', { importType: 'gpx' | 'csv', raceCount /* + metadata */ })
+trackEvent('feature_flag_evaluated', { flagKey, value /* + metadata */ })
+```
+
+### Complete Example with Full Type Safety
+
+Here's a complete, compilable example showing the full payload shape including required metadata:
+
+````typescript
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+
+function WorkoutComponent() {
+  const trackEvent = useTypedPostHogEvent()
+  const user = useAtomValue(userAtom)
+
+  const handleWorkoutComplete = () => {
+    // ✅ COMPLETE EXAMPLE - All required fields included
+    trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
+      // Event-specific properties
+      workoutId: 'workout-123',
+      status: 'completed',
+      workoutType: 'long_run',
+      distance: 20,
+      duration: 180,
+      effort: 7,
+      terrainType: 'trail',
+      elevationGain: 1500,
+      // Required canonical metadata (enforced by AnalyticsEventMap)
+      userId: user.id,
+      userType: user.userType,
+    })
+  }
+}
 
 ## Troubleshooting
 
-### PostHog Not Initializing
+### No Data Appearing in PostHog?
 
-**Problem**: Feature flags always return default value
+1. **Check environment variables are set correctly**
 
-**Solution**:
+   **Verify in your .env.local file:**
 
-- Verify `NEXT_PUBLIC_POSTHOG_KEY` is set correctly
-- Check browser console for PostHog errors
-- Ensure you're not opted out in development mode
+   ```bash
+   # Check that all required variables are set in .env.local
+   cat .env.local | grep POSTHOG
 
-### Feature Flag Not Updating
+   # Should show:
+   # NEXT_PUBLIC_POSTHOG_KEY=phc_...
+   # NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+   # NEXT_PUBLIC_POSTHOG_PROJECT_ID=12345
+   # POSTHOG_PERSONAL_API_KEY=phx_...
+````
 
-**Problem**: Flag changes in dashboard don't reflect in app
+**Verify in browser console:**
 
-**Solution**:
+```javascript
+// Open DevTools → Console and run:
+console.log('PostHog Key:', process.env.NEXT_PUBLIC_POSTHOG_KEY)
 
-- PostHog caches flags for ~30 seconds
-- Hard refresh browser (Cmd+Shift+R / Ctrl+Shift+R)
-- Check flag key matches exactly (case-sensitive)
+// For production builds, check the network tab instead:
+// Look for requests to posthog.com that include your project key
+```
 
-### Server-Side Flags Not Working
+**Verify in network requests:**
 
-**Problem**: `isFeatureEnabled` always returns default
+- Open DevTools → Network tab
+- Look for requests to `i.posthog.com/e/` or your custom PostHog host
+- Check request payload includes your project API key
 
-**Solution**:
+**Note:** `NEXT_PUBLIC_` variables are injected at **build time**, not runtime. If you change these variables, you must rebuild your application with `pnpm build` or restart your dev server with `pnpm dev`.
 
-- Server-side flags require user ID for evaluation
-- Ensure user is authenticated before checking flag
-- Verify PostHog API key has proper permissions
+1. **Check browser console for errors**
+   - Open DevTools → Console
+   - Look for PostHog initialization messages
+   - Should see: "PostHog initialized successfully"
+
+1. **Verify opt-out is disabled**
+   - PostHog is disabled in development by default
+   - Check `src/providers/posthog.tsx` for the `ph.opt_out_capturing()` call in the loaded callback
+
+1. **Check PostHog dashboard settings**
+   - Ensure your project is active
+   - Check if API key is correct
+
+### Session Replays Not Recording?
+
+Session recording has strict privacy controls:
+
+- All inputs are masked by default
+- Check `session_recording` config in `src/providers/posthog.tsx`
+- Ensure you have available recording credits
+
+### Feature Flags Not Working?
+
+1. Create the feature flag in PostHog dashboard first
+2. Wait a few seconds for flag to propagate
+3. Call `posthog.reloadFeatureFlags()` if needed
 
 ## Resources
 
-- [PostHog Documentation](https://posthog.com/docs)
-- [PostHog Feature Flags Guide](https://posthog.com/docs/feature-flags)
-- [PostHog React SDK](https://posthog.com/docs/libraries/react)
-- [PostHog Node SDK](https://posthog.com/docs/libraries/node)
+- **PostHog Dashboard**: [https://app.posthog.com](https://app.posthog.com)
+- **Documentation**: [https://posthog.com/docs](https://posthog.com/docs)
+- **Next.js Guide**: [https://posthog.com/docs/libraries/next-js](https://posthog.com/docs/libraries/next-js)
+- **Support**: [https://posthog.com/questions](https://posthog.com/questions)
 
-## Support
+## Next Steps
 
-For UltraCoach-specific PostHog questions, contact the development team or create an issue in the repository.
+1. ✅ Sign up for PostHog (free, no credit card)
+2. ✅ Add API keys to `.env.local` and Vercel
+3. ✅ Deploy to production
+4. ✅ Watch data flow in PostHog dashboard
+5. 🎯 Add custom event tracking for key user actions
+6. 🎯 Set up funnels and retention analysis
+7. 🎯 Create feature flags for gradual rollouts
+
+---
+
+**Need Help?** The UltraCoach PostHog integration is production-ready and follows all best practices. Just add your API keys and you're good to go!

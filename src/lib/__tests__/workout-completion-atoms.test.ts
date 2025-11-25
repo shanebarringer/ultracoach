@@ -111,7 +111,7 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-456/log', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify(workoutData),
@@ -142,7 +142,7 @@ describe('Workout Completion Atoms', () => {
       })
 
       expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-789/log', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify(comprehensiveData),
@@ -324,7 +324,7 @@ describe('Workout Completion Atoms', () => {
         })
 
         expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/log', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify(workoutData),

@@ -26,6 +26,7 @@ import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { User } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
+import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 import type { ServerSession } from '@/utils/auth-server'
 
 // Enhanced memoization with custom comparison logic to prevent unnecessary re-renders
@@ -228,7 +229,9 @@ function CalendarContent({ user }: Props) {
                     {[
                       <SelectItem key="">All Runners</SelectItem>,
                       ...connectedRunners.map((runner: User) => (
-                        <SelectItem key={runner.id}>{runner.full_name || runner.email}</SelectItem>
+                        <SelectItem key={runner.id}>
+                          {runner.full_name || getDisplayNameFromEmail(runner.email)}
+                        </SelectItem>
                       )),
                     ]}
                   </Select>
