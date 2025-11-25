@@ -17,7 +17,7 @@ const logger = createLogger('garmin-disconnect-api')
  * DELETE /api/garmin/disconnect
  * Disconnects Garmin account and removes all stored data
  */
-export async function DELETE(request: Request) {
+export async function DELETE(_request: Request) {
   try {
     // Verify user is authenticated
     const session = await getServerSession()

@@ -53,6 +53,7 @@ import {
 } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
+import { formatDateConsistent, formatNumberConsistent } from '@/lib/utils/date'
 
 const DISTANCE_TYPES = [
   { key: '50K', label: '50K (31.07 miles)' },
@@ -662,7 +663,7 @@ function RacesContent() {
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4 text-foreground-600" />
                     <span className="text-sm text-foreground-600">
-                      {new Date(race.date).toLocaleDateString()}
+                      {formatDateConsistent(race.date)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -676,7 +677,8 @@ function RacesContent() {
                   <div className="flex items-center gap-2">
                     <MountainSnowIcon className="w-4 h-4 text-foreground-600" />
                     <span className="text-sm text-foreground-600">
-                      {race.elevation_gain_feet.toLocaleString()} ft gain
+                      {formatNumberConsistent(race.elevation_gain_feet, { includeCommas: true })} ft
+                      gain
                     </span>
                   </div>
                 </div>

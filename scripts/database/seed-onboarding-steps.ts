@@ -1,6 +1,6 @@
-import { db } from '../src/lib/database'
-import { createLogger } from '../src/lib/logger'
-import { onboarding_steps } from '../src/lib/schema'
+import { db } from '../../src/lib/database'
+import { createLogger } from '../../src/lib/logger'
+import { onboarding_steps } from '../../src/lib/schema'
 
 const logger = createLogger('seed-onboarding-steps')
 

@@ -19,7 +19,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import {
   Activity,
   AlertCircle,
@@ -39,12 +39,62 @@ import { z } from 'zod'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
-import { stravaStateAtom, workoutLogFormAtom } from '@/lib/atoms/index'
+import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
+import type { TerrainType, WorkoutType } from '@/lib/analytics/event-types'
+import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { stravaStateAtom, userAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity } from '@/types/strava'
 
 const logger = createLogger('EnhancedWorkoutLogModal')
+
+/**
+ * Normalizes user-facing workout type labels to canonical WorkoutType values
+ * Maps UI labels like "Easy Run" to analytics types like 'easy'
+ *
+ * @param label - User-facing workout type label
+ * @returns Normalized WorkoutType or undefined if unknown
+ */
+function normalizeWorkoutType(label: string | undefined | null): WorkoutType | undefined {
+  if (!label) return undefined
+
+  const normalizedLabel = label.toLowerCase().trim()
+
+  const typeMap: Record<string, WorkoutType> = {
+    'easy run': 'easy',
+    easy: 'easy',
+    'tempo run': 'tempo',
+    tempo: 'tempo',
+    'interval training': 'interval',
+    intervals: 'interval',
+    interval: 'interval',
+    'long run': 'long_run',
+    'race simulation': 'race_simulation',
+    race: 'race_simulation',
+    recovery: 'recovery',
+    'recovery run': 'recovery',
+    'speed work': 'speed_work',
+    speed: 'speed_work',
+  }
+
+  return typeMap[normalizedLabel]
+}
+
+/**
+ * Normalizes terrain type values to canonical TerrainType
+ *
+ * @param terrain - Raw terrain type value
+ * @returns Normalized TerrainType or undefined if unknown
+ */
+function normalizeTerrainType(terrain: string | undefined | null): TerrainType | undefined {
+  if (!terrain) return undefined
+
+  const validTerrains: TerrainType[] = ['road', 'trail', 'track', 'treadmill', 'mixed']
+  const normalized = terrain.toLowerCase().trim() as TerrainType
+
+  return validTerrains.includes(normalized) ? normalized : undefined
+}
 
 // Enhanced Zod schema with additional fields
 const enhancedWorkoutLogSchema = z.object({
@@ -66,75 +116,96 @@ const enhancedWorkoutLogSchema = z.object({
     .optional(),
   intensity: z
     .number()
-    .min(1, 'Intensity must be at least 1')
-    .max(10, 'Intensity must be at most 10')
+    .min(1, { message: 'Intensity must be at least 1' })
+    .max(10, { message: 'Intensity must be at most 10' })
     .nullable()
     .optional(),
   effort: z
     .number()
-    .min(1, 'Effort must be at least 1')
-    .max(10, 'Effort must be at most 10')
+    .min(1, { message: 'Effort must be at least 1' })
+    .max(10, { message: 'Effort must be at most 10' })
     .nullable()
     .optional(),
   enjoyment: z
     .number()
-    .min(1, 'Enjoyment must be at least 1')
-    .max(10, 'Enjoyment must be at most 10')
+    .min(1, { message: 'Enjoyment must be at least 1' })
+    .max(10, { message: 'Enjoyment must be at most 10' })
     .nullable()
     .optional(),
   terrain: z.enum(['road', 'trail', 'track', 'treadmill']).nullable().optional(),
-  elevationGain: z.number().min(0, 'Elevation gain must be positive').nullable().optional(),
-  actualDistance: z.number().min(0, 'Distance must be positive').nullable().optional(),
-  actualDuration: z.number().min(0, 'Duration must be positive').nullable().optional(),
+  elevationGain: z
+    .number()
+    .min(0, { message: 'Elevation gain must be non-negative' })
+    .nullable()
+    .optional(),
+  actualDistance: z
+    .number()
+    .min(0, { message: 'Distance must be non-negative' })
+    .nullable()
+    .optional(),
+  actualDuration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .nullable()
+    .optional(),
   avgHeartRate: z
     .number()
-    .min(40, 'Heart rate too low')
-    .max(220, 'Heart rate too high')
+    .min(40, { message: 'Heart rate too low' })
+    .max(220, { message: 'Heart rate too high' })
     .nullable()
     .optional(),
   maxHeartRate: z
     .number()
-    .min(40, 'Heart rate too low')
-    .max(220, 'Heart rate too high')
+    .min(40, { message: 'Heart rate too low' })
+    .max(220, { message: 'Heart rate too high' })
     .nullable()
     .optional(),
   avgPace: z.string().optional(), // Format: "MM:SS"
   temperature: z
     .number()
-    .min(-40, 'Temperature too low')
-    .max(130, 'Temperature too high')
+    .min(-40, { message: 'Temperature too low' })
+    .max(130, { message: 'Temperature too high' })
     .nullable()
     .optional(),
   humidity: z
     .number()
-    .min(0, 'Humidity must be at least 0')
-    .max(100, 'Humidity must be at most 100')
+    .min(0, { message: 'Humidity must be at least 0' })
+    .max(100, { message: 'Humidity must be at most 100' })
     .nullable()
     .optional(),
   windConditions: z
     .enum(['none', 'light', 'moderate', 'strong', 'very_strong'])
     .nullable()
     .optional(),
-  location: z.string().max(200, 'Location must be less than 200 characters').optional(),
-  workoutNotes: z.string().max(2000, 'Notes must be less than 2000 characters').optional(),
-  injuryNotes: z.string().max(1000, 'Injury notes must be less than 1000 characters').optional(),
+  location: z.string().max(200, { message: 'Location must be at most 200 characters' }).optional(),
+  workoutNotes: z
+    .string()
+    .max(2000, { message: 'Notes must be at most 2000 characters' })
+    .optional(),
+  injuryNotes: z
+    .string()
+    .max(1000, { message: 'Injury notes must be at most 1000 characters' })
+    .optional(),
   energyLevel: z
     .number()
-    .min(1, 'Energy level must be at least 1')
-    .max(10, 'Energy level must be at most 10')
+    .min(1, { message: 'Energy level must be at least 1' })
+    .max(10, { message: 'Energy level must be at most 10' })
     .nullable()
     .optional(),
   sleepQuality: z
     .number()
-    .min(1, 'Sleep quality must be at least 1')
-    .max(10, 'Sleep quality must be at most 10')
+    .min(1, { message: 'Sleep quality must be at least 1' })
+    .max(10, { message: 'Sleep quality must be at most 10' })
     .nullable()
     .optional(),
   nutritionNotes: z
     .string()
-    .max(500, 'Nutrition notes must be less than 500 characters')
+    .max(500, { message: 'Nutrition notes must be at most 500 characters' })
     .optional(),
-  gearNotes: z.string().max(500, 'Gear notes must be less than 500 characters').optional(),
+  gearNotes: z
+    .string()
+    .max(500, { message: 'Gear notes must be at most 500 characters' })
+    .optional(),
 })
 
 type EnhancedWorkoutLogForm = z.infer<typeof enhancedWorkoutLogSchema>
@@ -168,7 +239,9 @@ const EnhancedWorkoutLogModal = memo(
   }: EnhancedWorkoutLogModalProps) => {
     const [formState, setFormState] = useAtom(workoutLogFormAtom)
     const [stravaState] = useAtom(stravaStateAtom)
+    const user = useAtomValue(userAtom) // Read-only, no setter needed
     const [activeTab, setActiveTab] = useState('basic')
+    const trackEvent = useTypedPostHogEvent()
 
     // React Hook Form setup with enhanced schema
     const {
@@ -305,11 +378,32 @@ const EnhancedWorkoutLogModal = memo(
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'same-origin',
             body: JSON.stringify(payload),
           })
 
           if (response.ok) {
             logger.info('Enhanced workout updated successfully')
+
+            // Track workout completion event in PostHog (type-safe)
+            // Only emit event if user is authenticated (don't track with empty userId)
+            if (user?.id) {
+              trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
+                workoutId: workout.id,
+                status: data.status as 'planned' | 'completed' | 'skipped',
+                workoutType: normalizeWorkoutType(data.actualType || workout.planned_type),
+                distance: data.actualDistance ?? undefined,
+                duration: data.actualDuration ?? undefined,
+                // Perceived effort from the dedicated slider (1-10 scale)
+                effort: data.effort ?? undefined,
+                terrainType: normalizeTerrainType(data.terrain),
+                elevationGain: data.elevationGain ?? undefined,
+                userId: user.id,
+              })
+            } else {
+              logger.warn('Skipping WORKOUT_LOGGED event - user not authenticated')
+            }
+
             setFormState(prev => ({ ...prev, loading: false, error: '' }))
             reset()
             onSuccess()
@@ -332,7 +426,16 @@ const EnhancedWorkoutLogModal = memo(
           }))
         }
       },
-      [workout.id, setFormState, reset, onSuccess, onClose]
+      [
+        workout.id,
+        workout.planned_type,
+        setFormState,
+        reset,
+        onSuccess,
+        onClose,
+        trackEvent,
+        user?.id, // Required for analytics tracking
+      ]
     )
 
     // Handle Strava data import

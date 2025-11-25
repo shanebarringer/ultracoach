@@ -137,9 +137,15 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       const result = await response.json()
 
       if (moveToNext) {
-        // Move to next step
-        const nextStepNumber = Math.min(currentStepData.step_number + 1, onboarding.total_steps)
+        // Check if we're on the last step - if so, complete onboarding
+        const isLastStep = currentStepData.step_number >= onboarding.total_steps
+        if (isLastStep) {
+          await completeOnboarding()
+          return
+        }
 
+        // Move to next step
+        const nextStepNumber = currentStepData.step_number + 1
         const nextStep = steps.find(s => s.step_number === nextStepNumber)
 
         if (nextStep) {
@@ -147,7 +153,8 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
           setStepAnswers({}) // Reset answers for next step
           setOnboarding(result.onboarding)
         } else {
-          // Completed all steps
+          // Edge case: step not found but not on last step
+          logger.warn('Next step not found, completing onboarding', { nextStepNumber })
           await completeOnboarding()
         }
       } else {
@@ -251,6 +258,13 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
   const progressPercentage = onboarding
     ? ((currentStepData?.step_number || 1) / onboarding.total_steps) * 100
     : 0
+
+  // Calculate how many steps remain and completion percentage
+  const remainingSteps = Math.max(
+    0,
+    onboarding ? onboarding.total_steps - (currentStepData?.step_number || 0) : 0
+  )
+  const completionPercentage = Math.round(progressPercentage)
 
   if (loading) {
     return (
@@ -391,10 +405,22 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
           </ModalHeader>
 
           <ModalBody>
-            <p className="text-foreground-700">
-              Are you sure you want to skip the setup process? You can always complete it later in
-              your profile settings, but it helps us provide you with a better experience.
-            </p>
+            <div className="space-y-3">
+              <p className="text-foreground-700">
+                You&apos;re currently {completionPercentage}% complete with {remainingSteps} step
+                {remainingSteps !== 1 ? 's' : ''} remaining.
+              </p>
+              <p className="text-foreground-700">
+                Completing the onboarding helps us provide you with a better personalized
+                experience. You can always finish setup later in your profile settings.
+              </p>
+              <div className="bg-warning-50 dark:bg-warning-100/10 border border-warning-200 dark:border-warning-200/20 rounded-lg p-3">
+                <p className="text-sm text-warning-700 dark:text-warning-600">
+                  <strong>⚠️ Note:</strong> Skipping may limit some personalized features until you
+                  complete your profile.
+                </p>
+              </div>
+            </div>
           </ModalBody>
 
           <ModalFooter>

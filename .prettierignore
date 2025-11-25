@@ -58,6 +58,7 @@ next-env.d.ts
 # Package manager lock files
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 # Database files
 *.db
@@ -66,3 +67,6 @@ yarn.lock
 
 # Context7 documentation (may have specific formatting)
 .context7-docs/
+
+# Claude Code settings (local configuration)
+.claude/settings.local.json

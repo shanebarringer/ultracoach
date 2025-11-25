@@ -68,92 +68,88 @@ export default function SignIn() {
     try {
       logger.info('Attempting sign in:', { email: data.email })
 
-      const { data: authData, error } = await authClient.signIn.email({
+      // Use Better Auth recommended fetchOptions pattern for reliable navigation
+      // The onSuccess callback only fires after the auth request fully completes
+      // and cookies are properly set, preventing timing issues with router.push()
+      await authClient.signIn.email({
         email: data.email,
         password: data.password,
+        fetchOptions: {
+          onSuccess: async () => {
+            logger.info('Sign in successful, fetching complete session data')
+
+            // Get the complete session data which includes the role
+            const sessionData = await authClient.getSession()
+
+            if (sessionData?.data) {
+              // Defensive check: ensure user data exists in session
+              const user = sessionData.data.user as User | undefined
+
+              if (!user) {
+                logger.error('Session exists but user data is missing', {
+                  hasSession: !!sessionData.data,
+                  sessionKeys: Object.keys(sessionData.data),
+                })
+                setFormState(prev => ({ ...prev, loading: false }))
+                setError('email', { message: 'Session error. Please try signing in again.' })
+                return
+              }
+
+              // Update Jotai atoms with complete session data
+              setSession(sessionData.data)
+              setUser(user)
+
+              // Extract role from session - customSession handles userType mapping
+              const userRole = user.userType || 'runner'
+
+              logger.info('Final user role determined:', {
+                userRole,
+                userId: user.id,
+                sessionPresent: Boolean(sessionData.data),
+              })
+
+              // Set redirecting state for smooth transition
+              setIsRedirecting(true)
+
+              // Determine the dashboard URL based on user role
+              const dashboardUrl = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+
+              logger.info('✅ Redirecting authenticated user to dashboard', {
+                userRole,
+                userId: user.id,
+                dashboardUrl,
+              })
+
+              // Use Next.js router for client-side navigation (best practice)
+              // This now runs after onSuccess, ensuring cookies are properly set
+              router.push(dashboardUrl)
+            } else {
+              logger.error('Failed to get session data after sign in')
+              setFormState(prev => ({ ...prev, loading: false }))
+              setError('email', { message: 'Login failed. Please try again.' })
+            }
+          },
+          onError: ctx => {
+            logger.error('SignIn error:', ctx.error)
+            // Sanitize error message for security - don't expose internal details
+            const errorMessage = ctx.error?.message?.toLowerCase() || ''
+            const sanitizedMessage =
+              errorMessage.includes('invalid') ||
+              errorMessage.includes('incorrect') ||
+              errorMessage.includes('not found')
+                ? 'Invalid email or password'
+                : 'Invalid credentials'
+            setFormState(prev => ({ ...prev, loading: false }))
+            setError('email', { message: sanitizedMessage })
+          },
+        },
       })
-
-      if (error) {
-        logger.error('SignIn error:', error)
-        // Sanitize error message for security - don't expose internal details
-        const sanitizedMessage =
-          error.message?.toLowerCase().includes('invalid') ||
-          error.message?.toLowerCase().includes('incorrect') ||
-          error.message?.toLowerCase().includes('not found')
-            ? 'Invalid email or password'
-            : 'Invalid credentials'
-        setError('email', { message: sanitizedMessage })
-        return
-      }
-
-      if (authData) {
-        logger.info('Sign in successful, fetching complete session data')
-
-        // Add delay to ensure database consistency
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // Get the complete session data which includes the role
-        const sessionData = await authClient.getSession()
-
-        if (sessionData?.data) {
-          // Defensive check: ensure user data exists in session
-          const user = sessionData.data.user as User | undefined
-
-          if (!user) {
-            logger.error('Session exists but user data is missing', {
-              hasSession: !!sessionData.data,
-              sessionKeys: Object.keys(sessionData.data),
-            })
-            setIsRedirecting(false)
-            setError('email', { message: 'Session error. Please try signing in again.' })
-            return
-          }
-
-          // Update Jotai atoms with complete session data
-          setSession(sessionData.data)
-          setUser(user)
-
-          // Extract role from session - customSession handles userType mapping
-          const userRole = user.userType || 'runner'
-
-          logger.info('Final user role determined:', {
-            userRole,
-            userId: user.id,
-            userEmail: user.email,
-            sessionPresent: Boolean(sessionData.data),
-          })
-
-          // Set redirecting state for smooth transition
-          setIsRedirecting(true)
-
-          // Determine the dashboard URL based on user role
-          const dashboardUrl = userRole === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
-
-          logger.info('✅ Redirecting authenticated user to dashboard', {
-            userRole,
-            userId: user.id,
-            dashboardUrl,
-          })
-
-          // Use Next.js router for client-side navigation (best practice)
-          router.push(dashboardUrl)
-        } else {
-          logger.error('Failed to get session data after sign in')
-          setIsRedirecting(false)
-          setError('email', { message: 'Login failed. Please try again.' })
-        }
-      } else {
-        logger.info('No authData received')
-        setIsRedirecting(false)
-        setError('email', { message: 'Login failed. Please try again.' })
-      }
     } catch (error) {
       logger.error('SignIn exception:', error)
       // Sanitize error message for security
       setIsRedirecting(false)
-      setError('email', { message: 'Login failed. Please try again.' })
-    } finally {
       setFormState(prev => ({ ...prev, loading: false }))
+      setError('email', { message: 'Login failed. Please try again.' })
     }
   }
 

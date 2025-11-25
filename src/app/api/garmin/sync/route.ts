@@ -2,7 +2,7 @@
 // Syncs UltraCoach workouts to Garmin Connect calendar
 // Created: 2025-01-12
 // Epic: ULT-16
-import { and, eq, gte, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import { NextResponse } from 'next/server'
 

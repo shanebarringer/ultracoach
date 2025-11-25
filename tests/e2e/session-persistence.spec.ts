@@ -23,8 +23,6 @@ import {
 
 test.describe('Session Persistence', () => {
   test.describe('Page Refresh Scenarios', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test('should maintain session on dashboard refresh', async ({ page }) => {
       // Navigate to dashboard
       await navigateToDashboard(page, 'runner')
@@ -93,8 +91,6 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Cross-Route Navigation', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test('should maintain session across all protected routes', async ({ page }, testInfo) => {
       // Increase timeout for comprehensive 6-route navigation test
       // (Next.js compilation can take 20-30s for some routes on first visit)
@@ -191,8 +187,6 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Browser Navigation', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test('should maintain session with browser back/forward', async ({ page }) => {
       // Start on dashboard
       await navigateToDashboard(page, 'runner')
@@ -216,8 +210,11 @@ test.describe('Session Persistence', () => {
       await expect(page).toHaveURL(/\/training-plans(?:\?.*)?$/)
       await expect(page).not.toHaveURL(/\/auth\/signin(?:\?.*)?$/)
 
-      // Go back to dashboard
+      // Go back to dashboard (two steps)
       await page.goBack()
+      await page.waitForLoadState('domcontentloaded')
+      await expect(page).toHaveURL(/\/workouts(?:\?.*)?$/)
+
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
       await expect(page).toHaveURL(/\/dashboard\/runner(?:\?.*)?$/)
@@ -226,8 +223,6 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Session Validation', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test('should redirect unauthenticated users to signin', async ({ page }) => {
       // Clear all cookies and storage
       await page.context().clearCookies()
@@ -287,8 +282,6 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Authentication Flow Integration', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test.skip('should establish session after successful signin', async ({ page }) => {
       // SKIPPED: This test is redundant with auth.setup.ts (validates API signin)
       // and auth-flows.spec.ts (validates form signin flow).
@@ -373,8 +366,6 @@ test.describe('Session Persistence', () => {
   })
 
   test.describe('Long-Running Session', () => {
-    test.use({ storageState: './playwright/.auth/runner.json' })
-
     test.skip('should maintain session across multiple operations', async ({ page }) => {
       // SKIPPED: Redundant with other session persistence tests and auth.setup.ts.
       // This test also uses UI form submission which is failing intermittently.

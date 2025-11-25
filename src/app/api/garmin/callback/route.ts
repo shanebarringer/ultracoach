@@ -5,7 +5,6 @@
 import { eq } from 'drizzle-orm'
 
 import { redirect } from 'next/navigation'
-import { NextResponse } from 'next/server'
 
 import { db } from '@/lib/database'
 import { GarminAPIClient, calculateTokenExpiry } from '@/lib/garmin-client'

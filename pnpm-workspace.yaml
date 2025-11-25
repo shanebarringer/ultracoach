@@ -1,0 +1,17 @@
+# pnpm workspace configuration
+# See: https://pnpm.io/pnpm-workspace_yaml
+
+# Packages allowed to run lifecycle scripts (pnpm v10+ security feature)
+# Only these dependencies can execute preinstall/install/postinstall scripts
+onlyBuiltDependencies:
+  - '@heroui/shared-utils' # HeroUI component utilities with build steps
+  - '@posthog/cli' # PostHog CLI for source map uploads
+  - '@prisma/client' # Prisma ORM client generation
+  - '@prisma/engines' # Prisma database engine binaries
+  - bcrypt # Password hashing with native C++ bindings
+  - better-sqlite3 # SQLite database with native bindings
+  - core-js # Polyfills for modern JavaScript features
+  - esbuild # JavaScript bundler with native code
+  - prisma # Prisma CLI and schema management
+  - sharp # Image processing with native bindings
+  - unrs-resolver # Build tooling dependency

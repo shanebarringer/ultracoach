@@ -14,7 +14,7 @@ const logger = createLogger('garmin-connect-api')
  * GET /api/garmin/connect
  * Initiates Garmin OAuth flow
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     // Verify user is authenticated
     const session = await getServerSession()

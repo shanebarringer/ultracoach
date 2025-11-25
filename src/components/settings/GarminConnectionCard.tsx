@@ -304,7 +304,7 @@ export default function GarminConnectionCard() {
               </Button>
 
               <p className="text-tiny text-default-400 text-center">
-                You'll be redirected to Garmin to authorize UltraCoach
+                You&apos;ll be redirected to Garmin to authorize UltraCoach
               </p>
             </div>
           </>

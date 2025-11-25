@@ -429,7 +429,7 @@ describe('Workouts Atoms', () => {
         })
 
         expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/log', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify(workoutData),

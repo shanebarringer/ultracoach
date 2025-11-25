@@ -18,7 +18,7 @@ const logger = createLogger('garmin-status-api')
  * GET /api/garmin/status
  * Returns Garmin connection status for authenticated user
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     // Verify user is authenticated
     const session = await getServerSession()
