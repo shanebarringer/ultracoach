@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { db } from '@/lib/db'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { workouts } from '@/lib/schema'
 import type { WorkoutUpdateData } from '@/types/common'

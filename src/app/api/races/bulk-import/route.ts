@@ -2,7 +2,7 @@ import { and, ilike, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { db } from '@/lib/db'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import {
   addRateLimitHeaders,
