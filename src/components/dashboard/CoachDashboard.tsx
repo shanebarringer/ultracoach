@@ -227,7 +227,7 @@ function CoachDashboard() {
   }
 
   return (
-    <div className="space-y-6" data-testid="coach-dashboard-content">
+    <div className="space-y-6" data-testid="coach-dashboard-content" key="coach-dashboard">
       {/* Page Header with Quick Stats */}
       <div className="flex flex-col lg:flex-row justify-between gap-6">
         <div>
@@ -259,7 +259,7 @@ function CoachDashboard() {
         {/* Primary Column - Athletes (Most Important) */}
         <div className="xl:col-span-2 space-y-6">
           {/* Your Athletes - Moved to top for priority */}
-          <Card shadow="sm" data-testid="runners-section">
+          <Card shadow="sm" data-testid="coach-runners-section">
             <CardHeader className="flex justify-between items-center pb-4">
               <div>
                 <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>

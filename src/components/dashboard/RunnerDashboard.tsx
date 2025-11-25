@@ -240,7 +240,7 @@ function RunnerDashboard() {
   const userLocale = getUserLocale()
 
   return (
-    <div className="space-y-8" data-testid="runner-dashboard-content">
+    <div className="space-y-8" data-testid="runner-dashboard-content" key="runner-dashboard">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Base Camp Dashboard</h1>
