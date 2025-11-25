@@ -114,9 +114,15 @@ export const asyncUserSettingsAtom = atom(
 
     // Check if user is authenticated before attempting fetch
     // This prevents 401 errors during app initialization for unauthenticated users
-    const user = get(userAtom)
-    if (!user) {
-      logger.debug('No authenticated user, skipping settings fetch')
+    try {
+      const user = get(userAtom)
+      if (!user) {
+        logger.debug('No authenticated user, skipping settings fetch')
+        return null
+      }
+    } catch (error) {
+      // If we can't read userAtom (e.g., during SSR initialization), return null
+      logger.debug('Unable to read userAtom, skipping settings fetch', error)
       return null
     }
 
