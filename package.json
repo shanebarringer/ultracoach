@@ -4,6 +4,21 @@
   "description": "Ultra-marathon training management platform for coaches and runners",
   "private": true,
   "packageManager": "pnpm@10.13.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@heroui/shared-utils",
+      "@posthog/cli",
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "better-sqlite3",
+      "core-js",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
   "scripts": {
     "db:validate:schema": "bash supabase/scripts/validate_schema.sh --verbose",
     "db:validate:schema:fix": "bash supabase/scripts/validate_schema.sh --verbose --fix",
