@@ -8,9 +8,9 @@ import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 import path from 'path'
 
-import { db } from '@/lib/db'
-import { user } from '@/lib/db/schema'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
+import { user } from '@/lib/schema'
 
 // Load environment variables
 config({ path: path.resolve(process.cwd(), '.env.local') })

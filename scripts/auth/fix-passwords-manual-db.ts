@@ -7,7 +7,7 @@ import { config } from 'dotenv'
 import { eq } from 'drizzle-orm'
 
 import { auth } from '../src/lib/better-auth'
-import { db } from '../src/lib/db'
+import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
 import { account } from '../src/lib/schema'
 
