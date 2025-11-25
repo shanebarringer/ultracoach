@@ -146,6 +146,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         // No storage state - test authentication flows from scratch
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       // No dependencies - unauth flows should start fresh without pre-auth state
     },
@@ -158,6 +161,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
     },
@@ -171,6 +177,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Ensure runner auth setup completes first
     },
@@ -184,6 +193,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for auth setup to complete
     },
@@ -197,6 +209,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -209,6 +224,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state for training plans
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -222,6 +240,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state for coach tests
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -235,6 +256,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state for runner tests
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -248,6 +272,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state by default
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -261,6 +288,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state for coach tests
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -274,6 +304,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state for runner tests
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -287,6 +320,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state by default
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -300,6 +336,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state for coach workout tests
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -313,6 +352,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state for runner workout tests
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -326,6 +368,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state for Garmin tests
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
@@ -339,6 +384,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state for coach tests
         storageState: './playwright/.auth/coach.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup-coach'], // Wait for coach auth setup to complete
     },
@@ -350,6 +398,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'],
     },
@@ -361,6 +412,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'],
     },
@@ -383,6 +437,9 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
         storageState: './playwright/.auth/runner.json',
+        launchOptions: {
+          args: ['--disable-extensions'],
+        },
       },
       dependencies: ['setup'], // Wait for auth setup to complete
     },

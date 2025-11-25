@@ -52,8 +52,15 @@ const nextConfig: NextConfig = {
   ),
 
   webpack: (config, { dev, isServer }) => {
-    // Add the code-inspector-plugin (disabled in test environment to prevent hydration issues)
-    if (dev && !isServer && process.env.NODE_ENV !== 'test' && codeInspectorFactory) {
+    // Detect CI/test environment more reliably than NODE_ENV check
+    // Playwright tests run with NODE_ENV=development but should not load code inspector
+    const isTestEnvironment =
+      process.env.CI === 'true' ||
+      process.env.PLAYWRIGHT_TEST_BASE_URL !== undefined ||
+      process.env.E2E_BASE_URL !== undefined
+
+    // Add the code-inspector-plugin (disabled in test environment to prevent React bundle mismatch)
+    if (dev && !isServer && !isTestEnvironment && codeInspectorFactory) {
       config.plugins.push(codeInspectorFactory({ bundler: 'webpack' }))
     }
 
@@ -73,20 +80,26 @@ const nextConfig: NextConfig = {
   },
   // Turbopack configuration (Next.js 15.2+)
   // Performance optimizations for faster builds and better developer experience
-  ...(process.env.NODE_ENV !== 'test' &&
-  process.env.NODE_ENV !== 'production' &&
-  codeInspectorFactory
-    ? {
-        turbopack: {
-          // Optimize module resolution by specifying extensions explicitly
-          // This helps Turbopack resolve modules faster by reducing filesystem lookups
-          resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+  // Detect CI/test environment to disable code inspector
+  ...(() => {
+    const isTestEnvironment =
+      process.env.CI === 'true' ||
+      process.env.PLAYWRIGHT_TEST_BASE_URL !== undefined ||
+      process.env.E2E_BASE_URL !== undefined
 
-          // Code inspector plugin integration for development debugging
-          rules: codeInspectorFactory({ bundler: 'turbopack' }),
-        },
-      }
-    : {}),
+    return !isTestEnvironment && process.env.NODE_ENV !== 'production' && codeInspectorFactory
+      ? {
+          turbopack: {
+            // Optimize module resolution by specifying extensions explicitly
+            // This helps Turbopack resolve modules faster by reducing filesystem lookups
+            resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+
+            // Code inspector plugin integration for development debugging
+            rules: codeInspectorFactory({ bundler: 'turbopack' }),
+          },
+        }
+      : {}
+  })(),
   // Production optimizations (swcMinify is enabled by default in Next.js 15)
   compress: true,
   poweredByHeader: false,
