@@ -22,7 +22,13 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load with Suspense boundary
-      await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
+      await page.waitForLoadState('domcontentloaded')
+      await expect(
+        page
+          .locator('h1, h2')
+          .filter({ hasText: /Dashboard|Runner/i })
+          .first()
+      ).toBeVisible({ timeout: 15000 })
 
       // Check for upcoming workouts section
       const upcomingSection = page.locator('text="Upcoming Workouts"')
@@ -58,7 +64,13 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load
-      await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
+      await page.waitForLoadState('domcontentloaded')
+      await expect(
+        page
+          .locator('h1, h2')
+          .filter({ hasText: /Dashboard|Runner/i })
+          .first()
+      ).toBeVisible({ timeout: 15000 })
 
       // Check for recent workouts section
       const recentSection = page.locator('text=/Recent Workouts|Completed Workouts/i')

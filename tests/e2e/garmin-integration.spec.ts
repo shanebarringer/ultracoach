@@ -164,7 +164,8 @@ test.describe('Garmin Integration - UI Components', () => {
     await expect(page.locator('text=Garmin Sync')).toBeVisible()
 
     // Check for connection status (should show "Not Connected" initially)
-    await expect(page.locator('text=Not Connected')).toBeVisible()
+    // Scope to garminWidget to avoid strict mode violation (Strava widget also has "Not Connected")
+    await expect(garminWidget.locator('text=Not Connected')).toBeVisible()
   })
 
   test('should display Garmin panel on workouts page', async ({ page }) => {
