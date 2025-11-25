@@ -9,19 +9,34 @@
  * - Animations and reduced motion
  */
 import { useAtom, useAtomValue } from 'jotai'
+import { loadable } from 'jotai/utils'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
+import { userAtom } from '@/lib/atoms/auth'
 import { themeModeAtom } from '@/lib/atoms/index'
 import { asyncUserSettingsAtom } from '@/lib/atoms/settings'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('ThemeWrapper')
 
+// Create a loadable version of the settings atom to handle loading/error states
+const loadableUserSettingsAtom = loadable(asyncUserSettingsAtom)
+
 export function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const [themeMode] = useAtom(themeModeAtom) // Legacy atom for backward compatibility
-  const userSettings = useAtomValue(asyncUserSettingsAtom)
-  const displayPrefs = userSettings?.display_preferences
+  const user = useAtomValue(userAtom)
+
+  // Always subscribe to settings atom (hooks must be called unconditionally)
+  // The atom itself handles unauthenticated state by returning null on 401
+  const loadableSettings = useAtomValue(loadableUserSettingsAtom)
+
+  // Only use settings if user is authenticated and settings loaded successfully
+  const displayPrefs = useMemo(() => {
+    if (!user) return null
+    if (loadableSettings.state !== 'hasData') return null
+    return loadableSettings.data?.display_preferences
+  }, [user, loadableSettings])
 
   useEffect(() => {
     // Prefer user settings over legacy themeModeAtom
