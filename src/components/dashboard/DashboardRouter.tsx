@@ -1,12 +1,9 @@
 'use client'
 
-import { Suspense } from 'react'
-
 import CoachDashboard from '@/components/dashboard/CoachDashboard'
 import RunnerDashboard from '@/components/dashboard/RunnerDashboard'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import { CoachDashboardSkeleton, RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { createLogger } from '@/lib/logger'
 import type { ServerSession } from '@/utils/auth-server'
@@ -22,17 +19,15 @@ interface Props {
  *
  * Receives authenticated user data from Server Component parents.
  * No authentication logic needed - user is guaranteed to exist and have correct role.
+ * Suspense boundaries are handled by parent page components.
  */
-// Internal component to handle workout hydration inside Suspense boundary
-function WorkoutsHydrator() {
-  useHydrateWorkouts()
-  return null // Invisible component that just handles hydration
-}
-
 export default function DashboardRouter({ user }: Props) {
   logger.info('🔍 DashboardRouter DEBUG - Rendering dashboard for user', {
     userType: user.userType,
   })
+
+  // Hydrate workouts for the dashboard
+  useHydrateWorkouts()
 
   // Handle invalid userType gracefully (should not happen with server-side validation)
   if (!user.userType || (user.userType !== 'coach' && user.userType !== 'runner')) {
@@ -47,10 +42,7 @@ export default function DashboardRouter({ user }: Props) {
                 persists. Showing runner dashboard as default.
               </p>
             </div>
-            <Suspense fallback={<RunnerDashboardSkeleton />}>
-              <WorkoutsHydrator />
-              <RunnerDashboard />
-            </Suspense>
+            <RunnerDashboard />
           </div>
         </ModernErrorBoundary>
       </Layout>
@@ -62,14 +54,7 @@ export default function DashboardRouter({ user }: Props) {
     <Layout>
       <ModernErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Suspense
-            fallback={
-              user.userType === 'coach' ? <CoachDashboardSkeleton /> : <RunnerDashboardSkeleton />
-            }
-          >
-            <WorkoutsHydrator />
-            {user.userType === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
-          </Suspense>
+          {user.userType === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
         </div>
       </ModernErrorBoundary>
     </Layout>
