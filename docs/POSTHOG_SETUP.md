@@ -194,6 +194,7 @@ posthog.init(apiKey, {
 ### Critical Configuration: Disable External Script Loading
 
 **IMPORTANT**: PostHog's SDK tries to lazy-load external JavaScript files that bypass the proxy:
+
 - `lazy-recorder.js` - Session recording functionality
 - `exception-autocapture.js` - Error tracking features
 - `config.js` - Feature flags configuration
@@ -203,6 +204,7 @@ These scripts are loaded directly from `us-assets.i.posthog.com`, which ad block
 **Solution**: Set `disable_external_dependency_loading: true` to force PostHog to use only the bundled SDK functionality. This ensures **all** requests go through your `/api/telemetry` proxy.
 
 **Trade-offs**:
+
 - ✅ Session recording still works (with limited functionality from bundled SDK)
 - ✅ Error tracking still works (basic exception capture)
 - ✅ Feature flags still work (via API calls through proxy)
