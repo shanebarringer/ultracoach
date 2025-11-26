@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
       // Still return success - invitation was created, email can be resent
     }
 
+    // Return consistent response shape matching GET endpoint format
     return NextResponse.json(
       {
         success: true,
@@ -195,9 +196,22 @@ export async function POST(request: NextRequest) {
           id: newInvitation.id,
           inviteeEmail: newInvitation.invitee_email,
           invitedRole: newInvitation.invited_role,
+          personalMessage: newInvitation.personal_message,
           status: newInvitation.status,
-          expiresAt: newInvitation.expires_at,
           createdAt: newInvitation.created_at,
+          expiresAt: newInvitation.expires_at,
+          acceptedAt: null,
+          declinedAt: null,
+          resendCount: newInvitation.resend_count,
+          lastResentAt: newInvitation.last_resent_at,
+          isSent: true,
+          isReceived: false,
+          inviter: {
+            id: sessionUser.id,
+            name: sessionUser.name,
+            email: sessionUser.email,
+          },
+          isExpired: false,
         },
         emailSent: emailResult.success,
       },

@@ -183,9 +183,6 @@ const response = await fetch('/api/workouts', {
 # Local database operations
 pnpm db:connect
 pnpm db:query "SELECT * FROM coach_runners LIMIT 5;"
-pnpm db:generate    # Generate migrations
-pnpm db:push        # Push schema changes (uses --force)
-pnpm db:migrate     # Apply migrations
 pnpm db:studio      # Open Drizzle Studio
 pnpm db:seed        # Seed database with test data
 pnpm db:fresh       # Reset and seed database
@@ -198,6 +195,52 @@ supabase db reset --linked     # Reset production database
 supabase db push --linked      # Push migrations to production
 supabase db dump --linked      # Dump production data
 ```
+
+### Schema Change Workflow (IMPORTANT)
+
+**Two workflows exist for database changes:**
+
+1. **For Schema Changes (New Tables/Columns)** - Use Drizzle to generate, Supabase to apply:
+
+```bash
+# 1. Edit src/lib/schema.ts with your changes
+
+# 2. Generate migration SQL from schema changes
+pnpm db:generate
+
+# 3. Review generated SQL in supabase/migrations/
+
+# 4. Apply to local database
+pnpm db:migrate:local    # Uses: supabase migration up --local
+
+# 5. Test your changes locally
+
+# 6. Apply to production (after PR merge)
+pnpm prod:db:migrate     # Uses: supabase db push --linked
+```
+
+2. **For Rapid Prototyping Only** (bypasses migration files):
+
+```bash
+# Push schema directly to database (no migration file created)
+pnpm db:push             # Uses: drizzle-kit push --force
+```
+
+### Migration File Management
+
+- **Drizzle generates migrations** to `supabase/migrations/` folder
+- **Supabase CLI applies migrations** for proper tracking and rollback support
+- **Journal tracking**: All migrations tracked in `supabase/migrations/meta/_journal.json`
+- **Never manually edit** migration SQL files after they've been applied
+
+### Why This Workflow?
+
+Per Drizzle documentation: "To apply migrations using the Supabase CLI, you first generate migrations with `npx drizzle-kit generate`. After this, use `supabase db push` to apply."
+
+- ✅ **Migration history preserved** for team collaboration
+- ✅ **Rollback support** via Supabase CLI
+- ✅ **Production safety** with proper migration tracking
+- ✅ **Clear audit trail** of all schema changes
 
 ### Production Database Password
 
@@ -349,11 +392,14 @@ script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'
 
 ### Database Philosophy:
 
-- **Use Drizzle for ALL database operations** (migrations, queries, schema changes)
+- **Drizzle for schema definitions and migration generation** (`src/lib/schema.ts`)
+- **Supabase CLI for applying migrations** (proper tracking and rollback support)
+- **Drizzle for queries** via `db.query.*` and `db.select().*` patterns
 - Environment variables are properly loaded from `.env.local` for local dev
   - env vars for production can be found in vercel and `.env.production`
 - Scripts handle Supabase connection string correctly
 - NEVER use direct psql commands without proper environment loading
+- See "Schema Change Workflow" section above for detailed migration process
 
 ## 🔐 Better Auth Configuration (CRITICAL)
 
