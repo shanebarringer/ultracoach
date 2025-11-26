@@ -62,7 +62,6 @@ export function PostHogProvider({
       }
 
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
-      const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
       if (!apiKey) {
         logger.warn('PostHog API key not found. Analytics disabled.')
@@ -71,11 +70,12 @@ export function PostHogProvider({
 
       try {
         // Initialize PostHog
-        // Use reverse proxy (/api/telemetry) to bypass ad-blockers including uBlock Origin
+        // CRITICAL: Always use reverse proxy (/api/telemetry) to bypass ad-blockers
+        // NEVER use NEXT_PUBLIC_POSTHOG_HOST for api_host - that would bypass the proxy!
         // /ingest is on EasyPrivacy blocklists, so we use a generic API path instead
         // See next.config.ts rewrites for the proxy configuration
         posthog.init(apiKey, {
-          api_host: apiHost || '/api/telemetry',
+          api_host: '/api/telemetry', // ALWAYS use proxy - never use env var for api_host
           ui_host: 'https://us.i.posthog.com', // Keep UI host for PostHog dashboard links
           defaults: '2025-05-24', // Use PostHog's latest defaults for best compatibility
           person_profiles: 'identified_only', // Only create profiles for identified users
