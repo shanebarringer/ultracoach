@@ -427,6 +427,7 @@ export default defineConfig({
       testIgnore: [
         '**/coach-runner-relationships.spec.ts',
         '**/workout-management.spec.ts',
+        '**/workout-atoms.spec.ts',
         '**/garmin-integration.spec.ts',
         '**/workout-atoms.spec.ts',
         '**/single-route-test.spec.ts',
