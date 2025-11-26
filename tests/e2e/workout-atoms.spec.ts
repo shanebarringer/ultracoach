@@ -47,8 +47,9 @@ test.describe('Workout Atoms Functionality', () => {
         const firstWorkout = workoutCards.first()
         await expect(firstWorkout).toBeVisible()
       } else {
-        // Check for empty state
-        const emptyState = page.locator('text=/No workouts scheduled|Check your training plan/i')
+        // Check for empty state - use .first() to avoid strict mode violation
+        // (both heading and paragraph contain matching text)
+        const emptyState = page.getByRole('heading', { name: 'No workouts scheduled' })
         await expect(emptyState).toBeVisible()
       }
     })
@@ -82,8 +83,8 @@ test.describe('Workout Atoms Functionality', () => {
         const firstWorkout = workoutCards.first()
         await expect(firstWorkout).toBeVisible()
       } else {
-        // Check for empty state
-        const emptyState = page.locator('text=/No workouts scheduled|Check your training plan/i')
+        // Check for empty state - use getByRole to avoid strict mode violation
+        const emptyState = page.getByRole('heading', { name: 'No workouts scheduled' })
         await expect(emptyState).toBeVisible()
       }
     })
