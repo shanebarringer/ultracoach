@@ -48,8 +48,20 @@ export function PostHogProvider({
     // Check both component state and module-level initialization flag to prevent re-initialization
     // during hot module reloading or strict mode double-mounting
     if (typeof window !== 'undefined' && !isInitialized && !posthogInitialized) {
+      // Allow tests to override PostHog with a mock via window.__POSTHOG_TEST_MODE__
+      // This must be checked BEFORE initialization to respect E2E test mocks
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__POSTHOG_TEST_MODE__) {
+        logger.info('PostHog test mode detected - skipping initialization')
+        setIsInitialized(true)
+        posthogInitialized = true
+        // Initialize feature flags with test values
+        setFlagsLoading(false)
+        setFlags(new Map())
+        return
+      }
+
       const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
-      const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
 
       if (!apiKey) {
         logger.warn('PostHog API key not found. Analytics disabled.')
@@ -58,25 +70,35 @@ export function PostHogProvider({
 
       try {
         // Initialize PostHog
+        // CRITICAL: Always use reverse proxy (/api/telemetry) to bypass ad-blockers
+        // NEVER use NEXT_PUBLIC_POSTHOG_HOST for api_host - that would bypass the proxy!
+        // /ingest is on EasyPrivacy blocklists, so we use a generic API path instead
+        // See next.config.ts rewrites for the proxy configuration
         posthog.init(apiKey, {
-          api_host: apiHost || 'https://us.i.posthog.com',
+          api_host: '/api/telemetry', // ALWAYS use proxy - never use env var for api_host
+          ui_host: 'https://us.i.posthog.com', // Keep UI host for PostHog dashboard links
           defaults: '2025-05-24', // Use PostHog's latest defaults for best compatibility
           person_profiles: 'identified_only', // Only create profiles for identified users
           capture_pageview: false, // We'll manually capture pageviews
           capture_pageleave: true, // Automatically capture when users leave pages
+          // CRITICAL: Disable external script loading to prevent ad-blocker detection
+          // PostHog tries to lazy-load scripts from us-assets.i.posthog.com which bypasses our proxy
+          // This forces all functionality to use the bundled SDK only
+          disable_session_recording: false, // Keep session recording enabled
+          disable_external_dependency_loading: true, // Prevent loading external scripts
           autocapture: {
             // Capture clicks, form submissions, and other interactions
             dom_event_allowlist: ['click', 'change', 'submit'],
             // Don't capture sensitive data
             capture_copied_text: false,
           },
-          // Enable session recording with privacy controls
+          // Session recording config (functionality will be limited without external scripts)
           session_recording: {
             maskAllInputs: true, // Mask all input fields by default
             maskTextSelector: '[data-private]', // Mask elements with data-private attribute
             recordCrossOriginIframes: false,
           },
-          // Enable error tracking
+          // Error tracking config (functionality will be limited without external scripts)
           capture_exceptions: {
             capture_unhandled_rejections: true,
             capture_unhandled_errors: true,

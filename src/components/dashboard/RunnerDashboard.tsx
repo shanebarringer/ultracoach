@@ -19,6 +19,8 @@ import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
 
+import GarminDashboardWidget from '@/components/garmin/GarminDashboardWidget'
+import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
@@ -499,7 +501,7 @@ function RunnerDashboard() {
           </CardBody>
         </Card>
 
-        {/* Right Column - Coach & Strava */}
+        {/* Right Column - Coach & Integrations */}
         <div className="space-y-8">
           {/* My Coach */}
           <Card className="h-fit" data-testid="coaches-section">
@@ -575,8 +577,19 @@ function RunnerDashboard() {
             </CardBody>
           </Card>
 
-          {/* Strava Integration Widget */}
-          <StravaDashboardWidget />
+          {/* Integration Widgets */}
+          <GarminFeatureFlag
+            fallback={
+              // If Garmin is disabled, show only Strava
+              <StravaDashboardWidget />
+            }
+          >
+            {/* If Garmin is enabled, show both in grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <StravaDashboardWidget />
+              <GarminDashboardWidget />
+            </div>
+          </GarminFeatureFlag>
         </div>
       </div>
 

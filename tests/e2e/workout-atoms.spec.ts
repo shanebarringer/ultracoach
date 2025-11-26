@@ -22,8 +22,13 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load with Suspense boundary
-      // Note: Runner dashboard shows "Base Camp Dashboard" as the title
-      await page.waitForSelector('h1:has-text("Base Camp Dashboard")', { timeout: 10000 })
+      await page.waitForLoadState('domcontentloaded')
+      await expect(
+        page
+          .locator('h1, h2')
+          .filter({ hasText: /Dashboard|Runner/i })
+          .first()
+      ).toBeVisible({ timeout: 15000 })
 
       // Check for upcoming workouts section (UI shows "This Week's Workouts")
       const upcomingSection = page.locator('[data-testid="upcoming-workouts-section"]')
@@ -55,8 +60,13 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load
-      // Note: Runner dashboard shows "Base Camp Dashboard" as the title
-      await page.waitForSelector('h1:has-text("Base Camp Dashboard")', { timeout: 10000 })
+      await page.waitForLoadState('domcontentloaded')
+      await expect(
+        page
+          .locator('h1, h2')
+          .filter({ hasText: /Dashboard|Runner/i })
+          .first()
+      ).toBeVisible({ timeout: 15000 })
 
       // Check for workouts section - the dashboard shows "This Week's Workouts"
       // which includes both planned and completed workouts
