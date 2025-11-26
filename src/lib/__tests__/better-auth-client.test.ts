@@ -6,9 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authClient } from '../better-auth-client'
 
 // Mock Better Auth client
+const mockForgetPassword = vi.fn()
 const mockAuthClient = {
   signIn: {
     email: vi.fn(),
+    forgetPassword: mockForgetPassword,
   },
   signUp: {
     email: vi.fn(),
@@ -18,7 +20,6 @@ const mockAuthClient = {
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
-  forgetPassword: vi.fn(),
   resetPassword: vi.fn(),
   verifyEmail: vi.fn(),
   linkAccount: vi.fn(),

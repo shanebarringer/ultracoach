@@ -30,8 +30,8 @@ function generateCSPHeader(nonce: string): string {
     "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
     // connect-src: PostHog uses multiple subdomains (us.i.posthog.com, us-assets.i.posthog.com)
-    // so we use wildcard https://*.posthog.com to cover all of them
-    "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://*.posthog.com",
+    // We need both https://*.posthog.com AND https://*.i.posthog.com to cover all PostHog domains
+    "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://*.posthog.com https://*.i.posthog.com",
     "object-src 'none'",
     // frame-src: Allow Vercel Live collaboration iframe on preview deployments
     "frame-src 'self' https://vercel.live",

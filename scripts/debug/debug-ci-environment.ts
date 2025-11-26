@@ -26,7 +26,7 @@ async function debugCIEnvironment() {
     // 2. Test database connection
     logger.info('🗄️  Testing database connection...')
     try {
-      const { db } = await import('../../src/lib/db')
+      const { db } = await import('../../src/lib/database')
       const result = await db.execute('SELECT 1 as test')
       logger.info('✅ Database connection successful')
     } catch (error) {

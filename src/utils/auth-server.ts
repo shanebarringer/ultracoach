@@ -362,7 +362,7 @@ export async function verifyConversationPermission(recipientId: string): Promise
 
     // Direct database query to check for active coach-runner relationship
     // This eliminates cookie forwarding issues that occur with server-side fetch
-    const { db } = await import('@/lib/db')
+    const { db } = await import('@/lib/database')
     const { coach_runners } = await import('@/lib/schema')
     const { and, or, eq } = await import('drizzle-orm')
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { db } from '@/lib/db'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { races } from '@/lib/schema'
 import { getServerSession } from '@/utils/auth-server'

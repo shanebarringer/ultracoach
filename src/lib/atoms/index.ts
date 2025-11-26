@@ -17,6 +17,7 @@
 export * from './auth' // Authentication, session, and auth state atoms
 export * from './chat' // Messaging and conversation atoms
 export * from './forms' // Form state management atoms
+export * from './garmin' // Garmin integration atoms
 export * from './notifications' // Notification system atoms
 export * from './races' // Race management atoms
 export * from './relationships' // Coach-runner relationship and runners atoms

@@ -3,6 +3,9 @@
 import { Card, CardBody, CardHeader } from '@heroui/react'
 import { Activity } from 'lucide-react'
 
+import GarminActivityList from '@/components/garmin/GarminActivityList'
+import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
+import GarminConnectionCard from '@/components/settings/GarminConnectionCard'
 import StravaActivityList from '@/components/strava/StravaActivityList'
 import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
 
@@ -23,18 +26,34 @@ export default function IntegrationsSettingsPanel() {
       <CardBody className="space-y-6">
         <div>
           <h3 className="text-lg font-medium mb-4">Activity Tracking</h3>
-          <StravaConnectionCard />
+          <div className="space-y-4">
+            <StravaConnectionCard />
+            <GarminFeatureFlag>
+              <GarminConnectionCard />
+            </GarminFeatureFlag>
+          </div>
         </div>
 
         <div>
           <h3 className="text-lg font-medium mb-4">Activity Sync</h3>
-          <StravaActivityList />
+          <div className="space-y-8">
+            <div>
+              <h4 className="text-md font-medium mb-3 text-default-600">Strava Activities</h4>
+              <StravaActivityList />
+            </div>
+            <GarminFeatureFlag>
+              <div>
+                <h4 className="text-md font-medium mb-3 text-default-600">Garmin Activities</h4>
+                <GarminActivityList />
+              </div>
+            </GarminFeatureFlag>
+          </div>
         </div>
 
         {/* Future integrations */}
         <div className="text-center py-8 text-default-400">
           <p>More integrations coming soon...</p>
-          <p className="text-sm mt-1">Garmin Connect, Polar Flow, and more</p>
+          <p className="text-sm mt-1">Polar Flow, Coros, and more</p>
         </div>
       </CardBody>
     </Card>
