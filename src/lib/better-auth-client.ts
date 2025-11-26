@@ -75,7 +75,6 @@ function getAuthClient() {
  * - `getSession` - Current session retrieval
  * - `updateUser` - User profile updates
  * - `changePassword` - Password management
- * - `forgetPassword` - Password reset initiation
  * - `resetPassword` - Password reset completion
  * - `deleteUser` - Account deletion
  *

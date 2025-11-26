@@ -60,8 +60,8 @@ describe('authClient', () => {
 
     it('should expose password management methods', () => {
       expect(authClient.changePassword).toBeDefined()
-      expect(authClient.forgetPassword).toBeDefined()
       expect(authClient.resetPassword).toBeDefined()
+      // Note: forgetPassword is handled server-side, not exposed on client
     })
 
     it('should not expose unavailable methods', () => {

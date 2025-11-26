@@ -380,11 +380,10 @@ export const coach_invitations = pgTable(
     // Optional decline reason
     decline_reason: text('decline_reason'),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-  },
-  table => ({
-    // Prevent duplicate pending invitations to same email from same coach
-    unique_pending_invitation: unique().on(table.inviter_user_id, table.invitee_email),
-  })
+  }
+  // Note: Unique constraint for pending invitations is handled in API logic
+  // since PostgreSQL unique constraints cannot be conditional on status.
+  // This allows re-inviting users after revocation or expiration.
 )
 
 // User Onboarding
