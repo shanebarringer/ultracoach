@@ -1,5 +1,10 @@
 /**
  * Email sending utility using Resend
+ *
+ * NOTE: Resend client is initialized lazily inside functions to ensure
+ * environment variables are read at request time (not module load time).
+ * This is critical for serverless environments like Vercel where modules
+ * can be cached with stale environment values.
  */
 import { Resend } from 'resend'
 
@@ -7,17 +12,24 @@ import { createLogger } from '../logger'
 
 const logger = createLogger('email-service')
 
-// Initialize Resend client
-let resend: Resend | null = null
-if (process.env.RESEND_API_KEY) {
-  resend = new Resend(process.env.RESEND_API_KEY)
-  logger.info('Resend email service initialized')
-} else {
-  logger.warn('RESEND_API_KEY not found - email sending will be disabled')
+/**
+ * Get or create Resend client (lazy initialization for serverless compatibility)
+ */
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    logger.warn('RESEND_API_KEY not found - email sending will be disabled')
+    return null
+  }
+  return new Resend(apiKey)
 }
 
-// Get the from address
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'UltraCoach <onboarding@resend.dev>'
+/**
+ * Get the from address (read at request time for serverless compatibility)
+ */
+function getFromEmail(): string {
+  return process.env.RESEND_FROM_EMAIL || 'UltraCoach <onboarding@resend.dev>'
+}
 
 export interface SendEmailOptions {
   to: string | string[]
@@ -37,6 +49,10 @@ export interface SendEmailResult {
  * Send an email using Resend
  */
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
+  // Lazy initialization for serverless compatibility
+  const resend = getResendClient()
+  const fromEmail = getFromEmail()
+
   if (!resend) {
     logger.warn('Email sending skipped - Resend not configured', {
       to: options.to,
@@ -62,7 +78,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: fromEmail,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -110,5 +126,5 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
  * Check if email service is available
  */
 export function isEmailServiceAvailable(): boolean {
-  return resend !== null
+  return !!process.env.RESEND_API_KEY
 }
