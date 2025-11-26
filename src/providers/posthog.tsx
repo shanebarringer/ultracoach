@@ -81,19 +81,24 @@ export function PostHogProvider({
           person_profiles: 'identified_only', // Only create profiles for identified users
           capture_pageview: false, // We'll manually capture pageviews
           capture_pageleave: true, // Automatically capture when users leave pages
+          // CRITICAL: Disable external script loading to prevent ad-blocker detection
+          // PostHog tries to lazy-load scripts from us-assets.i.posthog.com which bypasses our proxy
+          // This forces all functionality to use the bundled SDK only
+          disable_session_recording: false, // Keep session recording enabled
+          disable_external_dependency_loading: true, // Prevent loading external scripts
           autocapture: {
             // Capture clicks, form submissions, and other interactions
             dom_event_allowlist: ['click', 'change', 'submit'],
             // Don't capture sensitive data
             capture_copied_text: false,
           },
-          // Enable session recording with privacy controls
+          // Session recording config (functionality will be limited without external scripts)
           session_recording: {
             maskAllInputs: true, // Mask all input fields by default
             maskTextSelector: '[data-private]', // Mask elements with data-private attribute
             recordCrossOriginIframes: false,
           },
-          // Enable error tracking
+          // Error tracking config (functionality will be limited without external scripts)
           capture_exceptions: {
             capture_unhandled_rejections: true,
             capture_unhandled_errors: true,
