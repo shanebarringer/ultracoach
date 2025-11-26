@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardBody } from '@heroui/react'
-import { useAtom } from 'jotai'
+import { useSetAtom } from 'jotai'
 
 import { useCallback } from 'react'
 
@@ -12,24 +12,36 @@ import { RelationshipsList } from '@/components/relationships/RelationshipsList'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
 import { relationshipsAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth-client'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('RelationshipsPageContent')
 
 interface RelationshipsPageContentProps {
   user: User
 }
 
+/**
+ * Main content component for the relationships page.
+ * Displays coach-runner relationships and connection management UI.
+ */
 export function RelationshipsPageContent({ user }: RelationshipsPageContentProps) {
-  const [, setRelationships] = useAtom(relationshipsAtom)
+  const setRelationships = useSetAtom(relationshipsAtom)
 
+  /**
+   * Refreshes the relationships atom with fresh data from the API.
+   * Called after relationship updates to keep the UI in sync.
+   */
   const handleRelationshipChange = useCallback(async () => {
-    // Refresh relationships atom to get updated data
     try {
-      const response = await fetch('/api/coach-runners')
+      const response = await fetch('/api/coach-runners', {
+        credentials: 'same-origin',
+      })
       if (response.ok) {
         const data = await response.json()
         setRelationships(data.relationships || [])
       }
     } catch (error) {
-      console.error('Failed to refresh relationships:', error)
+      logger.error('Failed to refresh relationships:', error)
     }
   }, [setRelationships])
 

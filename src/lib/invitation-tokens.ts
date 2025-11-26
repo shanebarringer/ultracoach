@@ -3,6 +3,10 @@ import { createHash, randomBytes, timingSafeEqual } from 'crypto'
 const TOKEN_LENGTH = 32 // 256 bits of entropy
 const DEFAULT_EXPIRATION_DAYS = 14
 const MAX_EXPIRATION_DAYS = 30
+/** Maximum number of times an invitation can be resent */
+const MAX_RESENDS = 3
+/** Default fallback URL for development */
+const DEFAULT_BASE_URL = 'http://localhost:3001'
 
 export interface TokenData {
   /** URL-safe token for email link */
@@ -74,26 +78,39 @@ export function isTokenExpired(expiresAt: Date): boolean {
 }
 
 /**
+ * Gets the application base URL from environment or falls back to localhost
+ * @returns The base URL for building invitation links
+ */
+export function getBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || DEFAULT_BASE_URL
+}
+
+/**
  * Builds the full invitation acceptance URL
+ * @param token - The invitation token to include in the URL
+ * @returns The complete acceptance URL
  */
 export function buildInvitationUrl(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-  return `${baseUrl}/invitations/accept/${token}`
+  return `${getBaseUrl()}/invitations/accept/${token}`
 }
 
 /**
  * Builds the invitation decline URL
+ * @param token - The invitation token to include in the URL
+ * @returns The complete decline URL
  */
 export function buildDeclineUrl(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-  return `${baseUrl}/invitations/decline/${token}`
+  return `${getBaseUrl()}/invitations/decline/${token}`
 }
 
 /**
- * Configuration constants exposed for use elsewhere
+ * Configuration constants exposed for use elsewhere.
+ * Use these constants to ensure consistency between client and server.
  */
 export const INVITATION_CONFIG = {
   DEFAULT_EXPIRATION_DAYS,
   MAX_EXPIRATION_DAYS,
   TOKEN_LENGTH,
+  MAX_RESENDS,
+  DEFAULT_BASE_URL,
 } as const

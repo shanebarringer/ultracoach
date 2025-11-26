@@ -15,7 +15,7 @@ import {
   generateInvitationAcceptedEmailText,
 } from '@/lib/email/invitation-template'
 import { sendEmail } from '@/lib/email/send-email'
-import { hashToken, isTokenExpired } from '@/lib/invitation-tokens'
+import { getBaseUrl, hashToken, isTokenExpired } from '@/lib/invitation-tokens'
 import { createLogger } from '@/lib/logger'
 import { coach_connections, coach_invitations, coach_runners, user } from '@/lib/schema'
 
@@ -98,14 +98,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Check if expired
-    if (isTokenExpired(invitation.expiresAt!)) {
-      // Update status to expired
-      await db
-        .update(coach_invitations)
-        .set({ status: 'expired' })
-        .where(eq(coach_invitations.id, invitation.id))
-
+    // Check if expired - note: expiration status update is deferred to POST handler
+    // to maintain GET idempotency (HTTP semantics)
+    if (invitation.expiresAt && isTokenExpired(invitation.expiresAt)) {
       return NextResponse.json(
         { valid: false, error: 'TOKEN_EXPIRED', message: 'This invitation has expired' },
         { status: 400 }
@@ -224,11 +219,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Check if expired
-    if (isTokenExpired(invitation.expires_at!)) {
+    // Check if expired - POST handler updates the status for proper state management
+    if (invitation.expires_at && isTokenExpired(invitation.expires_at)) {
       await db
         .update(coach_invitations)
-        .set({ status: 'expired' })
+        .set({ status: 'expired', updated_at: new Date() })
         .where(eq(coach_invitations.id, invitation.id))
 
       return NextResponse.json(
@@ -379,7 +374,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // If email fails, the acceptance still succeeded
     if (inviter) {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+        const baseUrl = getBaseUrl()
         const acceptorName = sessionUser.name || sessionUser.email
         const inviterName = inviter.name || inviter.email
 
@@ -408,8 +403,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Determine redirect URL based on the user's role
-    const redirectUrl = sessionUser.userType === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+    // Determine redirect URL based on the invitation's invited_role
+    // This ensures the user is redirected to the appropriate dashboard for their new role
+    const redirectUrl =
+      invitation.invited_role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
 
     return NextResponse.json({
       success: true,

@@ -19,7 +19,7 @@ import {
   DropdownTrigger,
   Tooltip,
 } from '@heroui/react'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
 
 import { useCallback, useMemo } from 'react'
@@ -33,6 +33,7 @@ import {
   revokingInvitationIdsAtom,
   sentInvitationsAsyncAtom,
 } from '@/lib/atoms/invitations'
+import { INVITATION_CONFIG } from '@/lib/invitation-tokens'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncInvitationsList')
@@ -64,8 +65,8 @@ const statusLabels: Record<Invitation['status'], string> = {
 export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsListProps) {
   const invitations = useAtomValue(sentInvitationsAsyncAtom)
   const setIsModalOpen = useSetAtom(isInviteModalOpenAtom)
-  const [resendingIds] = useAtom(resendingInvitationIdsAtom)
-  const [revokingIds] = useAtom(revokingInvitationIdsAtom)
+  const resendingIds = useAtomValue(resendingInvitationIdsAtom)
+  const revokingIds = useAtomValue(revokingInvitationIdsAtom)
   const resendInvitation = useSetAtom(resendInvitationAtom)
   const revokeInvitation = useSetAtom(revokeInvitationAtom)
 
@@ -162,7 +163,8 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                 const isResending = resendingIds.has(invitation.id)
                 const isRevoking = revokingIds.has(invitation.id)
                 const isPending = invitation.status === 'pending'
-                const canResend = isPending && invitation.resendCount < 3
+                const canResend =
+                  isPending && invitation.resendCount < INVITATION_CONFIG.MAX_RESENDS
 
                 return (
                   <div
@@ -222,12 +224,14 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                               size="sm"
                               variant="light"
                               disabled={isResending || isRevoking}
+                              aria-label="Invitation actions menu"
                             >
                               <svg
                                 className="h-4 w-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                aria-hidden="true"
                               >
                                 <path
                                   strokeLinecap="round"
@@ -273,8 +277,13 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
 
                       {invitation.status === 'accepted' && (
                         <Tooltip content="This user has joined">
-                          <span className="text-success">
-                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <span className="text-success" role="img" aria-label="Accepted">
+                            <svg
+                              className="h-5 w-5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                              aria-hidden="true"
+                            >
                               <path
                                 fillRule="evenodd"
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"

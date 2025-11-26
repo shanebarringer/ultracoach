@@ -14,6 +14,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { Flag, Lock, Mail, MountainSnow, User, UserPlus } from 'lucide-react'
+import { toast } from 'sonner'
 
 import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -138,16 +139,26 @@ export default function SignUp() {
 
             if (acceptData.success) {
               logger.info('Invitation accepted successfully')
+              toast.success('Welcome! You have been connected successfully.')
               // Redirect to appropriate dashboard
               router.push(acceptData.redirectUrl || '/dashboard')
               return
             } else {
               logger.warn('Failed to accept invitation after signup:', acceptData.message)
-              // Continue with normal flow if invitation acceptance fails
+              // Surface error to user but allow them to continue
+              toast.warning(
+                acceptData.message ||
+                  'Could not auto-accept invitation. You can accept it from your dashboard.',
+                { duration: 5000 }
+              )
             }
           } catch (acceptError) {
             logger.error('Error accepting invitation after signup:', acceptError)
-            // Continue with normal flow
+            // Surface error to user but allow them to continue
+            toast.warning(
+              'Could not auto-accept invitation. You can accept it from your dashboard.',
+              { duration: 5000 }
+            )
           }
         }
 

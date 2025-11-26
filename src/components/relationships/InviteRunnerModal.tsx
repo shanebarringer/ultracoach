@@ -13,8 +13,9 @@ import {
   RadioGroup,
   Textarea,
 } from '@heroui/react'
-import { useAtom, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { toast } from 'sonner'
+import { z } from 'zod'
 
 import { useCallback, useState } from 'react'
 
@@ -26,6 +27,9 @@ import {
 } from '@/lib/atoms/invitations'
 import { createLogger } from '@/lib/logger'
 
+/** Email validation schema - matches server-side Zod validation */
+const emailSchema = z.string().email('Please enter a valid email address')
+
 const logger = createLogger('InviteRunnerModal')
 
 /**
@@ -34,7 +38,7 @@ const logger = createLogger('InviteRunnerModal')
 export function InviteRunnerModal() {
   const [isOpen, setIsOpen] = useAtom(isInviteModalOpenAtom)
   const [form, setForm] = useAtom(inviteFormAtom)
-  const [isCreating] = useAtom(isCreatingInvitationAtom)
+  const isCreating = useAtomValue(isCreatingInvitationAtom)
   const createInvitation = useSetAtom(createInvitationAtom)
 
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -54,6 +58,7 @@ export function InviteRunnerModal() {
     [setForm]
   )
 
+  // Note: HeroUI Textarea uses HTMLInputElement in its onChange type signature
   const handleMessageChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm(prev => ({ ...prev, message: e.target.value }))
@@ -72,9 +77,14 @@ export function InviteRunnerModal() {
     })
   }, [setIsOpen, setForm])
 
+  /**
+   * Validates email using Zod schema to match server-side validation
+   * @param email - Email address to validate
+   * @returns True if valid, false otherwise
+   */
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
+    const result = emailSchema.safeParse(email)
+    return result.success
   }
 
   const handleSubmit = useCallback(async () => {
