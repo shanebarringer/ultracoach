@@ -29,7 +29,12 @@ interface WorkoutLogData {
   wind_speed?: number
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// Shared handler to support both POST and PUT semantics for logging details.
+// Accepts the same JSON body and marks the workout as completed with any provided fields.
+async function upsertWorkoutLog(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getServerSession()
     if (!session?.user) {
@@ -37,9 +42,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id: workoutId } = await params
-    const body: WorkoutLogData = await request.json()
 
-    // Get the workout to ensure it belongs to the user
+    let body: WorkoutLogData
+    try {
+      body = (await request.json()) as WorkoutLogData
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    // Ensure the workout belongs to the authenticated user
     const [workout] = await db
       .select()
       .from(workouts)
@@ -50,13 +61,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Workout not found' }, { status: 404 })
     }
 
-    // Build update data object with all provided fields
+    // Build update payload with provided fields only
     const updateData: Record<string, unknown> = {
       status: 'completed',
       updated_at: new Date(),
     }
 
-    // Add all provided fields to update
     const allowedFields = [
       'actual_distance',
       'actual_duration',
@@ -66,15 +76,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       'intensity',
       'terrain',
       'elevation_gain',
-    ]
+    ] as const
+
+    // Treat only non-null/undefined values as provided
+    const isProvided = (v: unknown) => v !== undefined && v !== null
+
+    // Check if any primary fields are provided
+    const hasAllowedField = allowedFields.some(k => isProvided(body[k]))
 
     for (const field of allowedFields) {
-      if (body[field as keyof WorkoutLogData] !== undefined) {
-        updateData[field] = body[field as keyof WorkoutLogData]
+      const v = body[field]
+      if (isProvided(v)) {
+        updateData[field] = v
       }
     }
 
-    // Store additional metrics in workout_notes as JSON if they're provided
+    // Capture optional metrics inside notes as structured data tags
     const additionalMetrics: Record<string, unknown> = {}
     const metricFields = [
       'average_pace',
@@ -84,17 +101,24 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       'temperature',
       'weather_conditions',
       'wind_speed',
-    ]
+    ] as const
+
+    // Require at least one valid field (primary or metric) to avoid empty updates
+    const hasMetricField = metricFields.some(k => isProvided(body[k]))
+    if (!hasAllowedField && !hasMetricField) {
+      return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
+    }
 
     for (const field of metricFields) {
-      if (body[field as keyof WorkoutLogData] !== undefined) {
-        additionalMetrics[field] = body[field as keyof WorkoutLogData]
+      const v = body[field]
+      if (isProvided(v)) {
+        additionalMetrics[field] = v
       }
     }
 
-    // If we have additional metrics, append them to workout_notes as structured data
     if (Object.keys(additionalMetrics).length > 0) {
-      const existingNotes = updateData.workout_notes || workout.workout_notes || ''
+      const existingNotes =
+        (updateData.workout_notes as string | undefined) || workout.workout_notes || ''
       const metricsJson = JSON.stringify(additionalMetrics)
       updateData.workout_notes = existingNotes
         ? `${existingNotes}\n\n[METRICS]${metricsJson}[/METRICS]`
@@ -110,7 +134,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     logger.info('Workout details logged', {
       workoutId,
       userId: session.user.id,
-      fieldsUpdated: Object.keys(updateData).length - 2, // minus status and updated_at
+      fieldsUpdated: Math.max(0, Object.keys(updateData).length - 2), // minus status and updated_at
       hasMetrics: Object.keys(additionalMetrics).length > 0,
     })
 
@@ -121,8 +145,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  return upsertWorkoutLog(request, ctx)
+}
+
+export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  return upsertWorkoutLog(request, ctx)
+}
+
 // Get workout details including parsed metrics
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { params } = ctx
   try {
     const session = await getServerSession()
     if (!session?.user) {
