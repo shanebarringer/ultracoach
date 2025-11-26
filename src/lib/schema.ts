@@ -606,3 +606,51 @@ export const strava_webhook_events = pgTable(
     }),
   })
 )
+
+// ===================================
+// COACH INVITATIONS
+// ===================================
+
+// Coach invitations - allows coaches to invite runners via email
+export const coach_invitations = pgTable(
+  'coach_invitations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    inviter_user_id: text('inviter_user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    invitee_email: text('invitee_email').notNull(),
+    invited_role: text('invited_role', { enum: ['runner', 'coach'] })
+      .default('runner')
+      .notNull(),
+    personal_message: text('personal_message'),
+    // Token is nullable - only hash is stored for security, raw token sent via email
+    token: text('token'),
+    token_hash: text('token_hash').notNull(),
+    status: text('status', {
+      enum: ['pending', 'accepted', 'declined', 'expired', 'revoked'],
+    })
+      .default('pending')
+      .notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+    accepted_at: timestamp('accepted_at', { withTimezone: true }),
+    declined_at: timestamp('declined_at', { withTimezone: true }),
+    invitee_user_id: text('invitee_user_id').references(() => user.id, { onDelete: 'set null' }),
+    coach_runner_relationship_id: uuid('coach_runner_relationship_id').references(
+      () => coach_runners.id,
+      { onDelete: 'set null' }
+    ),
+    resend_count: integer('resend_count').default(0).notNull(),
+    last_resent_at: timestamp('last_resent_at', { withTimezone: true }),
+    decline_reason: text('decline_reason'),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  table => ({
+    tokenUnique: unique('coach_invitations_token_unique').on(table.token),
+    inviterInviteeUnique: unique('coach_invitations_inviter_invitee_unique').on(
+      table.inviter_user_id,
+      table.invitee_email
+    ),
+  })
+)
