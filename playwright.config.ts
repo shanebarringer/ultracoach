@@ -317,12 +317,28 @@ export default defineConfig({
       dependencies: ['setup'], // Wait for runner auth setup to complete
     },
 
+    // Workout atoms tests (runner-authenticated)
+    {
+      name: 'chromium-workout-atoms',
+      testMatch: /workout-atoms\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state for workout atom tests
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Wait for runner auth setup to complete
+    },
+
     // Other authenticated tests (use runner by default)
     {
       name: 'chromium-other',
       testMatch: '**/*.spec.ts',
       // Ensure these specs never run in this catch-all project
-      testIgnore: ['**/coach-runner-relationships.spec.ts', '**/workout-management.spec.ts'],
+      testIgnore: [
+        '**/coach-runner-relationships.spec.ts',
+        '**/workout-management.spec.ts',
+        '**/workout-atoms.spec.ts',
+      ],
       grepInvert:
         /auth|dashboard|race-import|training-plan-management|chat-messaging|coach-runner-relationships|workout-management/,
       use: {

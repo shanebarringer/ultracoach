@@ -22,31 +22,28 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load with Suspense boundary
-      await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
+      // Note: Runner dashboard shows "Base Camp Dashboard" as the title
+      await page.waitForSelector('h1:has-text("Base Camp Dashboard")', { timeout: 10000 })
 
-      // Check for upcoming workouts section
-      const upcomingSection = page.locator('text="Upcoming Workouts"')
+      // Check for upcoming workouts section (UI shows "This Week's Workouts")
+      const upcomingSection = page.locator('[data-testid="upcoming-workouts-section"]')
       await expect(upcomingSection).toBeVisible()
 
-      // Verify upcoming workouts are displayed (may be empty)
-      const upcomingWorkouts = page.locator('[data-testid="upcoming-workout-card"]')
-      const upcomingCount = await upcomingWorkouts.count()
+      // Verify workouts section title
+      const sectionTitle = upcomingSection.locator('text="This Week\'s Workouts"')
+      await expect(sectionTitle).toBeVisible()
 
-      if (upcomingCount > 0) {
-        // Verify first upcoming workout has expected data
-        const firstWorkout = upcomingWorkouts.first()
+      // Check for workouts or empty state
+      const workoutCards = upcomingSection.locator('.border.border-divider')
+      const workoutCount = await workoutCards.count()
+
+      if (workoutCount > 0) {
+        // Verify first workout card has expected structure
+        const firstWorkout = workoutCards.first()
         await expect(firstWorkout).toBeVisible()
-
-        // Check workout has date
-        const dateElement = firstWorkout.locator('[data-testid="workout-date"]')
-        if ((await dateElement.count()) > 0) {
-          await expect(dateElement).toBeVisible()
-        }
       } else {
         // Check for empty state
-        const emptyState = page.locator(
-          'text=/No upcoming workouts|You have no scheduled workouts/i'
-        )
+        const emptyState = page.locator('text=/No workouts scheduled|Check your training plan/i')
         await expect(emptyState).toBeVisible()
       }
     })
@@ -58,24 +55,25 @@ test.describe('Workout Atoms Functionality', () => {
       await expect(page).toHaveURL('/dashboard/runner')
 
       // Wait for dashboard to load
-      await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
+      // Note: Runner dashboard shows "Base Camp Dashboard" as the title
+      await page.waitForSelector('h1:has-text("Base Camp Dashboard")', { timeout: 10000 })
 
-      // Check for recent workouts section
-      const recentSection = page.locator('text=/Recent Workouts|Completed Workouts/i')
-      await expect(recentSection).toBeVisible()
+      // Check for workouts section - the dashboard shows "This Week's Workouts"
+      // which includes both planned and completed workouts
+      const workoutsSection = page.locator('[data-testid="upcoming-workouts-section"]')
+      await expect(workoutsSection).toBeVisible()
 
-      // Verify completed workouts display
-      const completedWorkouts = page.locator(
-        '[data-testid="completed-workout-card"], [data-testid="recent-workout-card"]'
-      )
-      const completedCount = await completedWorkouts.count()
+      // The dashboard shows workouts with status chips (Done/Planned)
+      // Check if any workouts are displayed
+      const workoutCards = workoutsSection.locator('.border.border-divider')
+      const workoutCount = await workoutCards.count()
 
-      if (completedCount > 0) {
-        const firstCompleted = completedWorkouts.first()
-        await expect(firstCompleted).toBeVisible()
+      if (workoutCount > 0) {
+        const firstWorkout = workoutCards.first()
+        await expect(firstWorkout).toBeVisible()
       } else {
         // Check for empty state
-        const emptyState = page.locator('text=/No completed workouts|No recent activity/i')
+        const emptyState = page.locator('text=/No workouts scheduled|Check your training plan/i')
         await expect(emptyState).toBeVisible()
       }
     })
