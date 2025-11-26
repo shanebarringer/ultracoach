@@ -2,8 +2,11 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import type { GarminActivity, GarminDevice, GarminUserProfile } from '@/types/garmin'
+
+const logger = createLogger('garmin-atoms')
 
 // Core Garmin atoms
 export const garminActivitiesAtom = atom<GarminActivity[]>([])
@@ -292,7 +295,7 @@ export const garminActionsAtom = atom(
       }
 
       default:
-        console.warn(`Unknown Garmin action type: ${action.type}`)
+        logger.warn('Unknown Garmin action type', { actionType: action.type })
     }
   }
 )

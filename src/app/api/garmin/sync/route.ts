@@ -76,7 +76,16 @@ export async function POST(request: Request) {
     }
 
     // Decrypt access token (supports both encrypted and legacy base64 format)
-    const accessToken = isEncrypted(conn.access_token)
+    const tokenIsEncrypted = isEncrypted(conn.access_token)
+    if (!tokenIsEncrypted) {
+      logger.warn(
+        'Legacy base64-encoded token detected - consider re-authenticating to use encrypted storage',
+        {
+          userId: session.user.id,
+        }
+      )
+    }
+    const accessToken = tokenIsEncrypted
       ? decrypt(conn.access_token)
       : Buffer.from(conn.access_token, 'base64').toString('utf-8')
 
