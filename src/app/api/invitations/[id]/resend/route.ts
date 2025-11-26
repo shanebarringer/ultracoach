@@ -29,8 +29,6 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-const MAX_RESENDS = 3
-
 /**
  * POST /api/invitations/[id]/resend - Resend an invitation email
  */
@@ -94,12 +92,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check resend limit
-    if (invitation.resend_count >= MAX_RESENDS) {
+    if (invitation.resend_count >= INVITATION_CONFIG.MAX_RESENDS) {
       return NextResponse.json(
         {
           success: false,
           error: 'RESEND_LIMIT',
-          message: `Maximum resend limit (${MAX_RESENDS}) reached`,
+          message: `Maximum resend limit (${INVITATION_CONFIG.MAX_RESENDS}) reached`,
         },
         { status: 429 }
       )
