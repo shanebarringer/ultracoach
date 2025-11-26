@@ -334,6 +334,39 @@ export const coach_runners = pgTable(
 )
 
 // ===================================
+// COACH CONNECTIONS (Coach-to-Coach Relationships)
+// ===================================
+
+// Coach Connections - for coach-to-coach professional relationships
+export const coach_connections = pgTable(
+  'coach_connections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // First coach in the connection (alphabetically by ID or the inviter)
+    coach_a_id: text('coach_a_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Second coach in the connection (the invited coach)
+    coach_b_id: text('coach_b_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Connection status
+    status: text('status', { enum: ['pending', 'active', 'inactive'] })
+      .default('active')
+      .notNull(),
+    // When the connection was established
+    connection_started_at: timestamp('connection_started_at', { withTimezone: true }).defaultNow(),
+    // Timestamps
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  table => ({
+    // Ensure unique bidirectional connections (A-B is same as B-A)
+    unique_coach_connection: unique().on(table.coach_a_id, table.coach_b_id),
+  })
+)
+
+// ===================================
 // COACH INVITATIONS
 // ===================================
 
@@ -354,9 +387,8 @@ export const coach_invitations = pgTable(
       .notNull(),
     // Optional personal message from coach
     personal_message: text('personal_message'),
-    // Secure token for invitation link (URL-safe, not stored - only hash)
-    token: text('token').notNull().unique(),
     // SHA-256 hash of token (for secure validation)
+    // SECURITY: Raw token is NOT stored - only the hash for validation
     token_hash: text('token_hash').notNull(),
     // Invitation status
     status: text('status', { enum: ['pending', 'accepted', 'declined', 'expired', 'revoked'] })
@@ -369,11 +401,15 @@ export const coach_invitations = pgTable(
     declined_at: timestamp('declined_at', { withTimezone: true }),
     // When accepted, link to the user who accepted
     invitee_user_id: text('invitee_user_id').references(() => user.id, { onDelete: 'set null' }),
-    // When accepted, link to the created relationship
+    // When accepted, link to the created relationship (coach_runners or coach_connections)
     coach_runner_relationship_id: uuid('coach_runner_relationship_id').references(
       () => coach_runners.id,
       { onDelete: 'set null' }
     ),
+    // For coach-to-coach invitations, link to coach_connections
+    coach_connection_id: uuid('coach_connection_id').references(() => coach_connections.id, {
+      onDelete: 'set null',
+    }),
     // Resend tracking
     resend_count: integer('resend_count').default(0).notNull(),
     last_resent_at: timestamp('last_resent_at', { withTimezone: true }),

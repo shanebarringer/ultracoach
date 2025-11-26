@@ -1,8 +1,7 @@
 'use client'
 
-import { CheckCircleIcon, UserPlusIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { Button, Card, CardBody, CardHeader, Divider, Spinner } from '@heroui/react'
-import { MountainSnowIcon } from 'lucide-react'
+import { CheckCircle, MountainSnow, UserPlus, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { use, useCallback, useEffect, useState } from 'react'
@@ -64,7 +63,9 @@ export default function InvitationAcceptPage({ params }: PageProps) {
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const response = await fetch(`/api/invitations/accept/${token}`)
+        const response = await fetch(`/api/invitations/accept/${token}`, {
+          credentials: 'same-origin',
+        })
         const data: ValidateResponse = await response.json()
 
         if (data.valid && data.invitation) {
@@ -153,7 +154,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
           <CardBody className="text-center py-12">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-danger/10 p-4">
-                <XCircleIcon className="h-12 w-12 text-danger" />
+                <XCircle className="h-12 w-12 text-danger" aria-hidden="true" />
               </div>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Invalid Invitation</h2>
@@ -180,7 +181,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
           <CardBody className="text-center py-12">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-success/10 p-4">
-                <CheckCircleIcon className="h-12 w-12 text-success" />
+                <CheckCircle className="h-12 w-12 text-success" aria-hidden="true" />
               </div>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Welcome to UltraCoach!</h2>
@@ -204,7 +205,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
       <Card className="max-w-md w-full border-t-4 border-t-secondary shadow-2xl">
         <CardHeader className="text-center pb-4">
           <div className="flex flex-col items-center space-y-3 w-full">
-            <MountainSnowIcon className="h-12 w-12 text-secondary" />
+            <MountainSnow className="h-12 w-12 text-secondary" aria-hidden="true" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">You&apos;ve Been Invited!</h1>
               <p className="text-default-600 mt-1">Join the UltraCoach expedition</p>
@@ -217,7 +218,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
           <div className="bg-default-50 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-secondary/10 p-2">
-                <UserPlusIcon className="h-5 w-5 text-secondary" />
+                <UserPlus className="h-5 w-5 text-secondary" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-sm text-default-500">Invited by</p>
@@ -239,9 +240,11 @@ export default function InvitationAcceptPage({ params }: PageProps) {
               </div>
             )}
 
-            <div className="text-xs text-default-400">
-              Expires {formatDate(invitation?.expiresAt || '')}
-            </div>
+            {invitation?.expiresAt && (
+              <div className="text-xs text-default-400">
+                Expires {formatDate(invitation.expiresAt)}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

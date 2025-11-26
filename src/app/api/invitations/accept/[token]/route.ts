@@ -17,7 +17,7 @@ import {
 import { sendEmail } from '@/lib/email/send-email'
 import { hashToken, isTokenExpired } from '@/lib/invitation-tokens'
 import { createLogger } from '@/lib/logger'
-import { coach_invitations, coach_runners, user } from '@/lib/schema'
+import { coach_connections, coach_invitations, coach_runners, user } from '@/lib/schema'
 
 const logger = createLogger('api-invitations-accept')
 
@@ -244,87 +244,168 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .where(eq(user.id, invitation.inviter_user_id))
       .limit(1)
 
-    // Create the coach-runner relationship
-    // Determine who is coach and who is runner based on the invitation
-    const coachId = invitation.inviter_user_id
-    const runnerId = sessionUser.id
-
-    // Check if relationship already exists
-    const existingRelationship = await db
-      .select()
-      .from(coach_runners)
-      .where(and(eq(coach_runners.coach_id, coachId), eq(coach_runners.runner_id, runnerId)))
-      .limit(1)
-
+    // Create the appropriate relationship based on invited_role
     let relationshipId: string
+    let relationshipType: 'coach_runner' | 'coach_connection'
 
-    if (existingRelationship.length > 0) {
-      // Relationship exists - update it to active
+    if (invitation.invited_role === 'runner') {
+      // Runner invitation: Create coach-runner relationship
+      // Inviter is the coach, acceptor is the runner
+      const coachId = invitation.inviter_user_id
+      const runnerId = sessionUser.id
+
+      // Check if relationship already exists
+      const existingRelationship = await db
+        .select()
+        .from(coach_runners)
+        .where(and(eq(coach_runners.coach_id, coachId), eq(coach_runners.runner_id, runnerId)))
+        .limit(1)
+
+      if (existingRelationship.length > 0) {
+        // Relationship exists - update it to active
+        await db
+          .update(coach_runners)
+          .set({
+            status: 'active',
+            relationship_type: 'invited',
+            updated_at: new Date(),
+          })
+          .where(eq(coach_runners.id, existingRelationship[0].id))
+
+        relationshipId = existingRelationship[0].id
+      } else {
+        // Create new coach-runner relationship
+        const [newRelationship] = await db
+          .insert(coach_runners)
+          .values({
+            coach_id: coachId,
+            runner_id: runnerId,
+            status: 'active',
+            relationship_type: 'invited',
+            invited_by: 'coach',
+            relationship_started_at: new Date(),
+          })
+          .returning()
+
+        relationshipId = newRelationship.id
+      }
+      relationshipType = 'coach_runner'
+
+      // Update invitation status with coach_runner relationship
       await db
-        .update(coach_runners)
+        .update(coach_invitations)
         .set({
-          status: 'active',
-          relationship_type: 'invited',
+          status: 'accepted',
+          accepted_at: new Date(),
+          invitee_user_id: sessionUser.id,
+          coach_runner_relationship_id: relationshipId,
           updated_at: new Date(),
         })
-        .where(eq(coach_runners.id, existingRelationship[0].id))
-
-      relationshipId = existingRelationship[0].id
+        .where(eq(coach_invitations.id, invitation.id))
     } else {
-      // Create new relationship
-      const [newRelationship] = await db
-        .insert(coach_runners)
-        .values({
-          coach_id: coachId,
-          runner_id: runnerId,
-          status: 'active',
-          relationship_type: 'invited',
-          invited_by: 'coach',
-          relationship_started_at: new Date(),
+      // Coach invitation: Create coach-to-coach connection
+      // Inviter is coach A, acceptor is coach B
+      const coachAId = invitation.inviter_user_id
+      const coachBId = sessionUser.id
+
+      // Check if connection already exists (in either direction)
+      const existingConnection = await db
+        .select()
+        .from(coach_connections)
+        .where(
+          and(
+            eq(coach_connections.coach_a_id, coachAId),
+            eq(coach_connections.coach_b_id, coachBId)
+          )
+        )
+        .limit(1)
+
+      if (existingConnection.length > 0) {
+        // Connection exists - update it to active
+        await db
+          .update(coach_connections)
+          .set({
+            status: 'active',
+            updated_at: new Date(),
+          })
+          .where(eq(coach_connections.id, existingConnection[0].id))
+
+        relationshipId = existingConnection[0].id
+      } else {
+        // Create new coach-to-coach connection
+        const [newConnection] = await db
+          .insert(coach_connections)
+          .values({
+            coach_a_id: coachAId,
+            coach_b_id: coachBId,
+            status: 'active',
+            connection_started_at: new Date(),
+          })
+          .returning()
+
+        relationshipId = newConnection.id
+      }
+      relationshipType = 'coach_connection'
+
+      // Update invitation status with coach_connection relationship
+      await db
+        .update(coach_invitations)
+        .set({
+          status: 'accepted',
+          accepted_at: new Date(),
+          invitee_user_id: sessionUser.id,
+          coach_connection_id: relationshipId,
+          updated_at: new Date(),
         })
-        .returning()
+        .where(eq(coach_invitations.id, invitation.id))
 
-      relationshipId = newRelationship.id
-    }
-
-    // Update invitation status
-    await db
-      .update(coach_invitations)
-      .set({
-        status: 'accepted',
-        accepted_at: new Date(),
-        invitee_user_id: sessionUser.id,
-        coach_runner_relationship_id: relationshipId,
-        updated_at: new Date(),
+      logger.info('Coach-to-coach connection created', {
+        invitationId: invitation.id,
+        coachAId,
+        coachBId,
+        connectionId: relationshipId,
       })
-      .where(eq(coach_invitations.id, invitation.id))
+    }
 
     logger.info('Invitation accepted', {
       invitationId: invitation.id,
       inviterUserId: invitation.inviter_user_id,
       inviteeUserId: sessionUser.id,
       relationshipId,
+      relationshipType,
     })
 
-    // Send confirmation email to the coach
+    // Send confirmation email to the inviter (non-blocking - wrapped in try-catch)
+    // If email fails, the acceptance still succeeded
     if (inviter) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
-      await sendEmail({
-        to: inviter.email,
-        subject: `${sessionUser.name || sessionUser.email} has accepted your invitation!`,
-        html: generateInvitationAcceptedEmailHTML({
-          coachName: inviter.name || inviter.email,
-          runnerName: sessionUser.name || sessionUser.email,
-          runnerEmail: sessionUser.email,
-          dashboardUrl: `${baseUrl}/dashboard/coach`,
-        }),
-        text: generateInvitationAcceptedEmailText({
-          coachName: inviter.name || inviter.email,
-          runnerName: sessionUser.name || sessionUser.email,
-          runnerEmail: sessionUser.email,
-          dashboardUrl: `${baseUrl}/dashboard/coach`,
-        }),
-      })
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+        const acceptorName = sessionUser.name || sessionUser.email
+        const inviterName = inviter.name || inviter.email
+
+        await sendEmail({
+          to: inviter.email,
+          subject: `${acceptorName} has accepted your invitation!`,
+          html: generateInvitationAcceptedEmailHTML({
+            coachName: inviterName,
+            runnerName: acceptorName,
+            runnerEmail: sessionUser.email,
+            dashboardUrl: `${baseUrl}/dashboard/coach`,
+          }),
+          text: generateInvitationAcceptedEmailText({
+            coachName: inviterName,
+            runnerName: acceptorName,
+            runnerEmail: sessionUser.email,
+            dashboardUrl: `${baseUrl}/dashboard/coach`,
+          }),
+        })
+      } catch (emailError) {
+        // Log error but don't fail the request - email is non-critical
+        logger.error('Failed to send acceptance confirmation email', {
+          error: emailError instanceof Error ? emailError.message : 'Unknown error',
+          invitationId: invitation.id,
+        })
+      }
     }
 
     // Determine redirect URL based on the user's role
@@ -334,8 +415,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       success: true,
       relationship: {
         id: relationshipId,
-        coachId,
-        runnerId,
+        type: relationshipType,
+        inviterId: invitation.inviter_user_id,
+        inviteeId: sessionUser.id,
         status: 'active',
       },
       redirectUrl,

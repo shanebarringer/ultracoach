@@ -1,6 +1,5 @@
 'use client'
 
-import { UserPlusIcon } from '@heroicons/react/24/outline'
 import {
   Button,
   Card,
@@ -14,7 +13,7 @@ import {
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
-import { FlagIcon, LockIcon, MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
+import { Flag, Lock, Mail, MountainSnow, User, UserPlus } from 'lucide-react'
 
 import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -57,7 +56,9 @@ export default function SignUp() {
       if (!invitationToken) return
 
       try {
-        const response = await fetch(`/api/invitations/accept/${invitationToken}`)
+        const response = await fetch(`/api/invitations/accept/${invitationToken}`, {
+          credentials: 'same-origin',
+        })
         const data = await response.json()
 
         if (data.valid && data.invitation) {
@@ -211,7 +212,7 @@ export default function SignUp() {
         <Card className="border-t-4 border-t-secondary shadow-2xl">
           <CardHeader className="text-center pb-4">
             <div className="flex flex-col items-center space-y-3 w-full">
-              <MountainSnowIcon className="h-12 w-12 text-secondary" />
+              <MountainSnow className="h-12 w-12 text-secondary" aria-hidden="true" />
               <div>
                 <h1 className="text-3xl font-bold text-foreground">🏔️ UltraCoach</h1>
                 <p className="text-lg text-foreground-600 mt-1">
@@ -227,7 +228,7 @@ export default function SignUp() {
               <div className="mb-6 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
                 <div className="flex items-start gap-3">
                   <div className="rounded-full bg-secondary/20 p-2 flex-shrink-0">
-                    <UserPlusIcon className="h-5 w-5 text-secondary" />
+                    <UserPlus className="h-5 w-5 text-secondary" aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">
@@ -270,7 +271,9 @@ export default function SignUp() {
                       placeholder="Enter your expedition name"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
-                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                      startContent={
+                        <User className="w-4 h-4 text-foreground-400" aria-hidden="true" />
+                      }
                       variant="bordered"
                       size="lg"
                       classNames={{
@@ -294,7 +297,9 @@ export default function SignUp() {
                       placeholder="Enter your base camp email"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
-                      startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                      startContent={
+                        <Mail className="w-4 h-4 text-foreground-400" aria-hidden="true" />
+                      }
                       variant="bordered"
                       size="lg"
                       classNames={{
@@ -318,7 +323,9 @@ export default function SignUp() {
                       placeholder="Create your summit key"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
-                      startContent={<LockIcon className="w-4 h-4 text-foreground-400" />}
+                      startContent={
+                        <Lock className="w-4 h-4 text-foreground-400" aria-hidden="true" />
+                      }
                       variant="bordered"
                       size="lg"
                       classNames={{
@@ -345,7 +352,9 @@ export default function SignUp() {
                       label="Choose your path"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
-                      startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
+                      startContent={
+                        <Flag className="w-4 h-4 text-foreground-400" aria-hidden="true" />
+                      }
                       variant="bordered"
                       size="lg"
                       isDisabled={!!invitation}
@@ -384,7 +393,7 @@ export default function SignUp() {
                 isLoading={isSubmitting || formState.loading}
                 startContent={
                   !(isSubmitting || formState.loading) ? (
-                    <MountainSnowIcon className="w-5 h-5" />
+                    <MountainSnow className="w-5 h-5" aria-hidden="true" />
                   ) : null
                 }
               >

@@ -1,8 +1,7 @@
 'use client'
 
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { Button, Card, CardBody, CardHeader, Divider, Textarea } from '@heroui/react'
-import { MountainSnowIcon } from 'lucide-react'
+import { CheckCircle, MountainSnow, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { use, useCallback, useState } from 'react'
@@ -32,6 +31,7 @@ export default function InvitationDeclinePage({ params }: PageProps) {
     try {
       const response = await fetch(`/api/invitations/decline/${token}`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -62,7 +62,7 @@ export default function InvitationDeclinePage({ params }: PageProps) {
           <CardBody className="text-center py-12">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-danger/10 p-4">
-                <XCircleIcon className="h-12 w-12 text-danger" />
+                <XCircle className="h-12 w-12 text-danger" aria-hidden="true" />
               </div>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Something Went Wrong</h2>
@@ -84,7 +84,7 @@ export default function InvitationDeclinePage({ params }: PageProps) {
           <CardBody className="text-center py-12">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-default-100 p-4">
-                <CheckCircleIcon className="h-12 w-12 text-default-500" />
+                <CheckCircle className="h-12 w-12 text-default-500" aria-hidden="true" />
               </div>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">Invitation Declined</h2>
@@ -111,7 +111,7 @@ export default function InvitationDeclinePage({ params }: PageProps) {
       <Card className="max-w-md w-full border-t-4 border-t-warning shadow-2xl">
         <CardHeader className="text-center pb-4">
           <div className="flex flex-col items-center space-y-3 w-full">
-            <MountainSnowIcon className="h-12 w-12 text-warning" />
+            <MountainSnow className="h-12 w-12 text-warning" aria-hidden="true" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Decline Invitation?</h1>
               <p className="text-default-600 mt-1">We&apos;re sorry to see you go</p>

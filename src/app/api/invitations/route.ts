@@ -129,6 +129,8 @@ export async function POST(request: NextRequest) {
     const { token, tokenHash, expiresAt } = generateInvitationToken(expirationDays)
 
     // Create invitation record
+    // SECURITY: Only store the token hash, not the raw token
+    // The raw token is sent in the email but never persisted to the database
     const [newInvitation] = await db
       .insert(coach_invitations)
       .values({
@@ -136,7 +138,6 @@ export async function POST(request: NextRequest) {
         invitee_email: email.toLowerCase(),
         invited_role: role,
         personal_message: message || null,
-        token,
         token_hash: tokenHash,
         status: 'pending',
         expires_at: expiresAt,
@@ -223,8 +224,26 @@ export async function GET(request: NextRequest) {
 
     const sessionUser = session.user as User
     const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
+    const statusParam = searchParams.get('status')
     const type = searchParams.get('type') // 'sent' or 'received'
+
+    // Validate status parameter if provided
+    const validStatuses = ['pending', 'accepted', 'declined', 'expired', 'revoked'] as const
+    type InvitationStatus = (typeof validStatuses)[number]
+    let status: InvitationStatus | null = null
+
+    if (statusParam) {
+      if (!validStatuses.includes(statusParam as InvitationStatus)) {
+        return NextResponse.json(
+          {
+            error: 'INVALID_STATUS',
+            message: `Invalid status filter. Must be one of: ${validStatuses.join(', ')}`,
+          },
+          { status: 400 }
+        )
+      }
+      status = statusParam as InvitationStatus
+    }
 
     logger.debug('Fetching invitations', {
       userId: sessionUser.id,
@@ -240,10 +259,7 @@ export async function GET(request: NextRequest) {
       conditions = status
         ? and(
             eq(coach_invitations.inviter_user_id, sessionUser.id),
-            eq(
-              coach_invitations.status,
-              status as 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked'
-            )
+            eq(coach_invitations.status, status)
           )
         : eq(coach_invitations.inviter_user_id, sessionUser.id)
     } else if (type === 'received') {
@@ -251,10 +267,7 @@ export async function GET(request: NextRequest) {
       conditions = status
         ? and(
             eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase()),
-            eq(
-              coach_invitations.status,
-              status as 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked'
-            )
+            eq(coach_invitations.status, status)
           )
         : eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
     } else {
@@ -263,15 +276,7 @@ export async function GET(request: NextRequest) {
       const receivedCondition = eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
       const baseCondition = or(sentCondition, receivedCondition)
 
-      conditions = status
-        ? and(
-            baseCondition,
-            eq(
-              coach_invitations.status,
-              status as 'pending' | 'accepted' | 'declined' | 'expired' | 'revoked'
-            )
-          )
-        : baseCondition
+      conditions = status ? and(baseCondition, eq(coach_invitations.status, status)) : baseCondition
     }
 
     // Fetch invitations with inviter info

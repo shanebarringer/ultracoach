@@ -105,16 +105,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Generate new token (extends expiration)
+    // Generate a new token for the resend
+    // SECURITY: Only the hash is stored - the raw token is sent in email only
+    // NOTE: This invalidates any previous invitation links (new hash replaces old)
     const { token, tokenHash, expiresAt } = generateInvitationToken(
       INVITATION_CONFIG.DEFAULT_EXPIRATION_DAYS
     )
 
-    // Update invitation with new token
+    // Update invitation with new token hash (invalidates old links)
     await db
       .update(coach_invitations)
       .set({
-        token,
         token_hash: tokenHash,
         expires_at: expiresAt,
         resend_count: invitation.resend_count + 1,
@@ -123,17 +124,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
       .where(eq(coach_invitations.id, invitation.id))
 
-    logger.info('Invitation token refreshed for resend', {
+    logger.info('Invitation token regenerated for resend', {
       invitationId: invitation.id,
       resendCount: invitation.resend_count + 1,
       newExpiresAt: expiresAt.toISOString(),
     })
 
-    // Build URLs
+    // Build URLs with the new token
     const acceptUrl = buildInvitationUrl(token)
     const declineUrl = buildDeclineUrl(token)
 
-    // Send email
+    // Send email with the new invitation link
     const emailResult = await sendEmail({
       to: invitation.invitee_email,
       subject: `Reminder: ${sessionUser.name || sessionUser.email} invites you to UltraCoach`,
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       success: true,
-      message: 'Invitation resent successfully',
+      message: 'Invitation resent successfully with new link',
       invitation: {
         id: invitation.id,
         expiresAt,

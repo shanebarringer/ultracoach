@@ -12,16 +12,32 @@ import { createLogger } from '../logger'
 
 const logger = createLogger('email-service')
 
+// Cached Resend client instance for performance
+let cachedResendClient: Resend | null = null
+let cachedApiKey: string | undefined
+
 /**
- * Get or create Resend client (lazy initialization for serverless compatibility)
+ * Get or create Resend client (lazy initialization with caching for serverless compatibility)
+ * The client is cached but we validate the API key hasn't changed (for hot-reload scenarios)
  */
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     logger.warn('RESEND_API_KEY not found - email sending will be disabled')
+    cachedResendClient = null
+    cachedApiKey = undefined
     return null
   }
-  return new Resend(apiKey)
+
+  // Return cached client if API key hasn't changed
+  if (cachedResendClient && cachedApiKey === apiKey) {
+    return cachedResendClient
+  }
+
+  // Create new client and cache it
+  cachedResendClient = new Resend(apiKey)
+  cachedApiKey = apiKey
+  return cachedResendClient
 }
 
 /**
@@ -54,20 +70,21 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
   const fromEmail = getFromEmail()
 
   if (!resend) {
+    // GDPR/CCPA: Don't log email addresses (PII)
     logger.warn('Email sending skipped - Resend not configured', {
-      to: options.to,
       subject: options.subject,
     })
 
     // In development without Resend, log the email details for testing
+    // NOTE: Still avoid logging PII even in dev mode for consistency
     if (process.env.NODE_ENV === 'development') {
       logger.info('📧 Email would be sent (dev mode):', {
-        to: options.to,
         subject: options.subject,
         // Truncate HTML for logging
         htmlPreview: options.html.substring(0, 200) + '...',
       })
-      return { success: true, messageId: 'dev-mode-skipped' }
+      // Return success: false in dev mode to make test failures more visible
+      return { success: false, error: 'dev-mode-skipped', messageId: 'dev-mode-skipped' }
     }
 
     return {
@@ -87,9 +104,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     })
 
     if (error) {
+      // GDPR/CCPA: Don't log email addresses (PII)
       logger.error('Failed to send email', {
         error,
-        to: options.to,
         subject: options.subject,
       })
       return {
@@ -98,9 +115,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       }
     }
 
+    // GDPR/CCPA: Don't log email addresses (PII)
     logger.info('Email sent successfully', {
       messageId: data?.id,
-      to: options.to,
       subject: options.subject,
     })
 
@@ -110,9 +127,9 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // GDPR/CCPA: Don't log email addresses (PII)
     logger.error('Exception while sending email', {
       error: errorMessage,
-      to: options.to,
       subject: options.subject,
     })
     return {
