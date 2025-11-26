@@ -129,9 +129,6 @@ export const authClient = {
   get changePassword() {
     return getAuthClient().changePassword
   },
-  get forgetPassword() {
-    return getAuthClient().forgetPassword
-  },
   get resetPassword() {
     return getAuthClient().resetPassword
   },

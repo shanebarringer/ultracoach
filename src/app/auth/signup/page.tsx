@@ -1,5 +1,6 @@
 'use client'
 
+import { UserPlusIcon } from '@heroicons/react/24/outline'
 import {
   Button,
   Card,
@@ -9,16 +10,17 @@ import {
   Input,
   Select,
   SelectItem,
+  Spinner,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { FlagIcon, LockIcon, MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
@@ -28,11 +30,50 @@ import { type SignUpForm, signUpSchema } from '@/types/forms'
 
 const logger = createLogger('SignUp')
 
+interface InvitationDetails {
+  inviterName: string | null
+  inviterEmail: string
+  invitedRole: 'runner' | 'coach'
+  personalMessage: string | null
+  expiresAt: string
+}
+
 export default function SignUp() {
   const [formState, setFormState] = useAtom(signUpFormAtom)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signUp } = useBetterAuth()
+
+  // Invitation context
+  const invitationToken = searchParams.get('invitation')
+  const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
+  const [invitationLoading, setInvitationLoading] = useState(!!invitationToken)
+  const [invitationError, setInvitationError] = useState<string | null>(null)
+
+  // Fetch invitation details if token is present
+  useEffect(() => {
+    const fetchInvitation = async () => {
+      if (!invitationToken) return
+
+      try {
+        const response = await fetch(`/api/invitations/accept/${invitationToken}`)
+        const data = await response.json()
+
+        if (data.valid && data.invitation) {
+          setInvitation(data.invitation)
+        } else {
+          setInvitationError(data.message || 'Invalid invitation')
+        }
+      } catch {
+        setInvitationError('Failed to load invitation details')
+      } finally {
+        setInvitationLoading(false)
+      }
+    }
+
+    fetchInvitation()
+  }, [invitationToken])
 
   // React Hook Form setup
   const {
@@ -40,6 +81,7 @@ export default function SignUp() {
     handleSubmit,
     formState: { isSubmitting },
     setError,
+    setValue,
   } = useForm<SignUpForm>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -50,6 +92,13 @@ export default function SignUp() {
     },
   })
 
+  // Set form values from invitation when loaded
+  useEffect(() => {
+    if (invitation) {
+      setValue('role', invitation.invitedRole)
+    }
+  }, [invitation, setValue])
+
   const onSubmit = async (data: SignUpForm) => {
     setFormState(prev => ({ ...prev, loading: true }))
 
@@ -58,6 +107,7 @@ export default function SignUp() {
         email: data.email,
         fullName: data.fullName,
         role: data.role,
+        hasInvitation: !!invitationToken,
       })
 
       const result = await signUp(data.email, data.password, data.fullName, data.role)
@@ -74,6 +124,31 @@ export default function SignUp() {
       } else {
         logger.info('Sign up successful:', { userRole: data.role })
         setFormState(prev => ({ ...prev, loading: false }))
+
+        // If there's an invitation, accept it automatically
+        if (invitationToken) {
+          try {
+            logger.info('Accepting invitation after signup')
+            const acceptResponse = await fetch(`/api/invitations/accept/${invitationToken}`, {
+              method: 'POST',
+              credentials: 'same-origin',
+            })
+            const acceptData = await acceptResponse.json()
+
+            if (acceptData.success) {
+              logger.info('Invitation accepted successfully')
+              // Redirect to appropriate dashboard
+              router.push(acceptData.redirectUrl || '/dashboard')
+              return
+            } else {
+              logger.warn('Failed to accept invitation after signup:', acceptData.message)
+              // Continue with normal flow if invitation acceptance fails
+            }
+          } catch (acceptError) {
+            logger.error('Error accepting invitation after signup:', acceptError)
+            // Continue with normal flow
+          }
+        }
 
         // Determine dashboard URL based on role
         const dashboardUrl = data.role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
@@ -116,21 +191,70 @@ export default function SignUp() {
     handleOnboardingComplete()
   }
 
+  // Show loading state when fetching invitation
+  if (invitationLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4">
+        <Card className="max-w-md w-full">
+          <CardBody className="text-center py-12">
+            <Spinner size="lg" color="secondary" />
+            <p className="mt-4 text-default-600">Loading invitation details...</p>
+          </CardBody>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <Card className="border-t-4 border-t-secondary shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <div className="flex flex-col items-center space-y-3">
+            <div className="flex flex-col items-center space-y-3 w-full">
               <MountainSnowIcon className="h-12 w-12 text-secondary" />
               <div>
                 <h1 className="text-3xl font-bold text-foreground">🏔️ UltraCoach</h1>
-                <p className="text-lg text-foreground-600 mt-1">Join the Expedition</p>
+                <p className="text-lg text-foreground-600 mt-1">
+                  {invitation ? 'Accept Your Invitation' : 'Join the Expedition'}
+                </p>
               </div>
             </div>
           </CardHeader>
           <Divider />
           <CardBody className="pt-6">
+            {/* Invitation Banner */}
+            {invitation && (
+              <div className="mb-6 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-secondary/20 p-2 flex-shrink-0">
+                    <UserPlusIcon className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {invitation.inviterName || invitation.inviterEmail} invited you
+                    </p>
+                    <p className="text-xs text-default-500 mt-1">
+                      You&apos;ll be connected as their {invitation.invitedRole} after signing up
+                    </p>
+                    {invitation.personalMessage && (
+                      <p className="text-sm text-default-600 mt-2 italic">
+                        &quot;{invitation.personalMessage}&quot;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Invitation Error */}
+            {invitationError && (
+              <div className="mb-6 bg-warning/10 rounded-lg p-4 border border-warning/20">
+                <p className="text-sm text-warning-600">{invitationError}</p>
+                <p className="text-xs text-default-500 mt-1">
+                  You can still sign up, but the invitation may be expired or invalid.
+                </p>
+              </div>
+            )}
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-4">
                 <Controller
@@ -212,8 +336,11 @@ export default function SignUp() {
                     <Select
                       selectedKeys={field.value ? [field.value] : []}
                       onSelectionChange={keys => {
-                        const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
-                        field.onChange(selectedRole)
+                        // Only allow change if not from invitation
+                        if (!invitation) {
+                          const selectedRole = Array.from(keys).join('') as 'runner' | 'coach'
+                          field.onChange(selectedRole)
+                        }
                       }}
                       label="Choose your path"
                       isInvalid={!!fieldState.error}
@@ -221,6 +348,12 @@ export default function SignUp() {
                       startContent={<FlagIcon className="w-4 h-4 text-foreground-400" />}
                       variant="bordered"
                       size="lg"
+                      isDisabled={!!invitation}
+                      description={
+                        invitation
+                          ? `Role set by invitation from ${invitation.inviterName || invitation.inviterEmail}`
+                          : undefined
+                      }
                       classNames={{
                         label: 'text-foreground-600',
                         value: 'text-foreground',
