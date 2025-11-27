@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Spinner } from '@heroui/react'
 import { CheckCircle, MountainSnow, UserPlus, XCircle } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { use, useCallback, useEffect, useState } from 'react'
 

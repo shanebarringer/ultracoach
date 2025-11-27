@@ -96,10 +96,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (isTokenExpired(invitation.expires_at!)) {
       await db
         .update(coach_invitations)
-        .set({ status: 'expired' })
+        .set({ status: 'expired', updated_at: new Date() })
         .where(eq(coach_invitations.id, invitation.id))
 
-      return NextResponse.json({ success: true, message: 'This invitation had already expired' })
+      return NextResponse.json({ success: true, message: 'This invitation has expired' })
     }
 
     // Update invitation status to declined

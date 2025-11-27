@@ -14,7 +14,7 @@ import {
 } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { Mail, UserPlus } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { z } from 'zod'
 
 import { useCallback, useState } from 'react'
@@ -82,10 +82,10 @@ export function InviteRunnerModal() {
    * @param email - Email address to validate
    * @returns True if valid, false otherwise
    */
-  const validateEmail = (email: string): boolean => {
+  const validateEmail = useCallback((email: string): boolean => {
     const result = emailSchema.safeParse(email)
     return result.success
-  }
+  }, [])
 
   const handleSubmit = useCallback(async () => {
     // Validate email

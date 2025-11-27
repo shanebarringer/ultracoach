@@ -165,7 +165,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       success: true,
-      message: 'Invitation resent successfully with new link',
+      message: emailResult.success 
+        ? 'Invitation resent successfully with new link'
+        : 'Invitation updated but email delivery failed - please try again',
       invitation: {
         id: invitation.id,
         expiresAt,

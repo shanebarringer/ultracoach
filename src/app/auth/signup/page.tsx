@@ -14,7 +14,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { Flag, Lock, Mail, MountainSnow, User, UserPlus } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
