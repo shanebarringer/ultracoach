@@ -67,7 +67,8 @@ export default function SignUp() {
         } else {
           setInvitationError(data.message || 'Invalid invitation')
         }
-      } catch {
+      } catch (error) {
+        logger.error('Failed to load invitation details:', error)
         setInvitationError('Failed to load invitation details')
       } finally {
         setInvitationLoading(false)

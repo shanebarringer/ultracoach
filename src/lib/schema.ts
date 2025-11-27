@@ -361,7 +361,9 @@ export const coach_connections = pgTable(
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
   table => ({
-    // Ensure unique bidirectional connections (A-B is same as B-A)
+    // Note: Bidirectional uniqueness enforced at DB level via:
+    // idx_coach_connections_bidirectional_unique using LEAST/GREATEST
+    // This additional constraint helps Drizzle tooling
     unique_coach_connection: unique().on(table.coach_a_id, table.coach_b_id),
   })
 )

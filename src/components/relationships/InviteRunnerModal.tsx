@@ -1,6 +1,5 @@
 'use client'
 
-import { EnvelopeIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 import {
   Button,
   Input,
@@ -14,6 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { Mail, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -146,7 +146,7 @@ export function InviteRunnerModal() {
       <ModalContent>
         <ModalHeader className="flex items-center gap-3 border-b border-default-200 pb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
-            <UserPlusIcon className="h-5 w-5 text-secondary" />
+            <UserPlus className="h-5 w-5 text-secondary" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">Invite to UltraCoach</h2>
@@ -165,7 +165,7 @@ export function InviteRunnerModal() {
               onChange={handleEmailChange}
               isInvalid={!!emailError}
               errorMessage={emailError}
-              startContent={<EnvelopeIcon className="h-4 w-4 text-default-400" />}
+              startContent={<Mail className="h-4 w-4 text-default-400" />}
               variant="bordered"
               isRequired
               autoFocus

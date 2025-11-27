@@ -265,8 +265,8 @@ export async function GET(request: NextRequest) {
       typeFilter: type,
     })
 
-    // Build conditions
-    let conditions
+    // Build conditions based on type filter
+    let conditions: ReturnType<typeof eq> | ReturnType<typeof and> | undefined
 
     if (type === 'sent') {
       // Invitations sent by this user (as coach)

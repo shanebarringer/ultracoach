@@ -3,7 +3,7 @@
  * GET /api/invitations/accept/[token] - Validate token and get invitation details
  * POST /api/invitations/accept/[token] - Accept the invitation
  */
-import { and, eq } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -308,9 +308,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         .select()
         .from(coach_connections)
         .where(
-          and(
-            eq(coach_connections.coach_a_id, coachAId),
-            eq(coach_connections.coach_b_id, coachBId)
+          or(
+            and(
+              eq(coach_connections.coach_a_id, coachAId),
+              eq(coach_connections.coach_b_id, coachBId)
+            ),
+            and(
+              eq(coach_connections.coach_a_id, coachBId),
+              eq(coach_connections.coach_b_id, coachAId)
+            )
           )
         )
         .limit(1)

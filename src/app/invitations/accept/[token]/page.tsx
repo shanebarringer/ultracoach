@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
+import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('InvitationAcceptPage')
 
@@ -124,12 +125,9 @@ export default function InvitationAcceptPage({ params }: PageProps) {
     }
   }, [isLoggedIn, token, router])
 
+  /** Format date using date-fns for consistent display */
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    })
+    return formatDateConsistent(dateString, 'MMMM d, yyyy')
   }
 
   // Loading state

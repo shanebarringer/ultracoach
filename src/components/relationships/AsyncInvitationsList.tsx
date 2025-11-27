@@ -1,13 +1,6 @@
 'use client'
 
 import {
-  ArrowPathIcon,
-  EnvelopeIcon,
-  PaperAirplaneIcon,
-  UserPlusIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
-import {
   Avatar,
   Button,
   Card,
@@ -20,6 +13,7 @@ import {
   Tooltip,
 } from '@heroui/react'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { Mail, RefreshCw, Send, UserPlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useCallback, useMemo } from 'react'
@@ -35,6 +29,7 @@ import {
 } from '@/lib/atoms/invitations'
 import { INVITATION_CONFIG } from '@/lib/invitation-tokens'
 import { createLogger } from '@/lib/logger'
+import { formatDateShort } from '@/lib/utils/date'
 
 const logger = createLogger('AsyncInvitationsList')
 
@@ -111,13 +106,8 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
     [revokeInvitation, onInvitationUpdated]
   )
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+  /** Format date using date-fns for consistent display */
+  const formatDate = (dateString: string) => formatDateShort(dateString)
 
   return (
     <Card className="w-full">
@@ -126,13 +116,13 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <EnvelopeIcon className="h-6 w-6 text-secondary" />
+              <Mail className="h-6 w-6 text-secondary" />
               <h3 className="text-xl font-semibold">Sent Invitations</h3>
             </div>
             <Button
               color="secondary"
               size="sm"
-              startContent={<UserPlusIcon className="h-4 w-4" />}
+              startContent={<UserPlus className="h-4 w-4" />}
               onPress={() => setIsModalOpen(true)}
             >
               Invite
@@ -144,14 +134,14 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
             <div className="text-center py-8">
               <div className="flex justify-center mb-3">
                 <div className="rounded-full bg-default-100 p-4">
-                  <PaperAirplaneIcon className="h-8 w-8 text-default-400" />
+                  <Send className="h-8 w-8 text-default-400" />
                 </div>
               </div>
               <p className="text-default-500 mb-4">No invitations sent yet</p>
               <Button
                 color="secondary"
                 variant="flat"
-                startContent={<UserPlusIcon className="h-4 w-4" />}
+                startContent={<UserPlus className="h-4 w-4" />}
                 onPress={() => setIsModalOpen(true)}
               >
                 Send Your First Invitation
@@ -246,7 +236,7 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                             {canResend ? (
                               <DropdownItem
                                 key="resend"
-                                startContent={<ArrowPathIcon className="h-4 w-4" />}
+                                startContent={<RefreshCw className="h-4 w-4" />}
                                 onPress={() => handleResend(invitation)}
                                 isDisabled={isResending}
                               >
@@ -255,7 +245,7 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                             ) : (
                               <DropdownItem
                                 key="resend-disabled"
-                                startContent={<ArrowPathIcon className="h-4 w-4" />}
+                                startContent={<RefreshCw className="h-4 w-4" />}
                                 isDisabled
                               >
                                 Resend limit reached
@@ -265,7 +255,7 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                               key="revoke"
                               className="text-danger"
                               color="danger"
-                              startContent={<XMarkIcon className="h-4 w-4" />}
+                              startContent={<X className="h-4 w-4" />}
                               onPress={() => handleRevoke(invitation)}
                               isDisabled={isRevoking}
                             >
