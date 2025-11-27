@@ -3,6 +3,33 @@
  * Uses Mountain Peak design system colors and branding
  */
 
+interface SanitizeOptions {
+  maxLength?: number
+  allowNewlines?: boolean
+}
+
+/**
+ * Sanitizes user-provided text for use in plain-text email templates.
+ * Removes control characters, normalizes line endings, and enforces length limits.
+ */
+function sanitizePlainText(value: string, options: SanitizeOptions = {}): string {
+  const { maxLength = 500, allowNewlines = false } = options
+
+  let sanitized = value
+    // Remove control characters (except tabs, newlines, and carriage returns)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Normalize CRLF and CR to LF
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+
+  if (!allowNewlines) {
+    // Replace newlines with spaces for single-line fields
+    sanitized = sanitized.replace(/\n+/g, ' ')
+  }
+
+  return sanitized.trim().slice(0, maxLength)
+}
+
 /**
  * HTML escaping utility to prevent XSS in email templates
  */
@@ -324,6 +351,12 @@ export function generateInvitationEmailHTML(props: InvitationEmailProps): string
 }
 
 export function generateInvitationEmailText(props: InvitationEmailProps): string {
+  // Sanitize user-provided fields for plain text email
+  const safeName = sanitizePlainText(props.inviterName, { maxLength: 100 })
+  const safeEmail = sanitizePlainText(props.inviterEmail, { maxLength: 254 })
+  const safeMessage = props.personalMessage
+    ? sanitizePlainText(props.personalMessage, { maxLength: 1000, allowNewlines: true })
+    : null
   const roleText = props.invitedRole === 'coach' ? 'fellow coach' : 'athlete'
   const expirationText = formatExpirationTime(props.expiresAt)
 
@@ -331,14 +364,14 @@ export function generateInvitationEmailText(props: InvitationEmailProps): string
 YOU'RE INVITED TO ULTRACOACH
 ${'='.repeat(50)}
 
-${props.inviterName} (${props.inviterEmail}) has invited you to join UltraCoach as their ${roleText}.
+${safeName} (${safeEmail}) has invited you to join UltraCoach as their ${roleText}.
 
 ${
-  props.personalMessage
+  safeMessage
     ? `
 PERSONAL MESSAGE
 ${'-'.repeat(50)}
-"${props.personalMessage}"
+"${safeMessage}"
 
 `
     : ''
@@ -376,20 +409,24 @@ UltraCoach - Elevate Your Ultramarathon Journey
 }
 
 // =====================================================
-// INVITATION ACCEPTED EMAIL (sent to coach)
+// INVITATION ACCEPTED EMAIL (sent to inviter)
 // =====================================================
 
 export interface InvitationAcceptedEmailProps {
-  coachName: string
-  runnerName: string
-  runnerEmail: string
+  /** Name of the person who sent the invitation */
+  inviterName: string
+  /** Name of the person who accepted the invitation */
+  acceptorName: string
+  /** Email of the person who accepted the invitation */
+  acceptorEmail: string
+  /** URL to the inviter's dashboard */
   dashboardUrl: string
 }
 
 export function generateInvitationAcceptedEmailHTML(props: InvitationAcceptedEmailProps): string {
-  const safeCoachName = escapeHtml(props.coachName)
-  const safeRunnerName = escapeHtml(props.runnerName)
-  const safeRunnerEmail = escapeHtml(props.runnerEmail)
+  const safeInviterName = escapeHtml(props.inviterName)
+  const safeAcceptorName = escapeHtml(props.acceptorName)
+  const safeAcceptorEmail = escapeHtml(props.acceptorEmail)
   const safeDashboardUrl = escapeHtml(props.dashboardUrl)
 
   return `
@@ -505,16 +542,16 @@ export function generateInvitationAcceptedEmailHTML(props: InvitationAcceptedEma
       </div>
 
       <div class="content">
-        <p class="greeting">Hi ${safeCoachName},</p>
+        <p class="greeting">Hi ${safeInviterName},</p>
 
         <p class="main-text">
-          <span class="runner-name">${safeRunnerName}</span> (${safeRunnerEmail}) has accepted your invitation to join UltraCoach! They are now connected to your coaching account.
+          <span class="runner-name">${safeAcceptorName}</span> (${safeAcceptorEmail}) has accepted your invitation to join UltraCoach! They are now connected to your account.
         </p>
 
         <div class="next-steps">
           <p class="next-steps-title">You can now:</p>
           <ul class="steps-list">
-            <li>Assign training plans to ${safeRunnerName}</li>
+            <li>Assign training plans to ${safeAcceptorName}</li>
             <li>Track their workouts and progress</li>
             <li>Communicate through the messaging system</li>
             <li>View their Strava activity sync</li>
@@ -537,17 +574,22 @@ export function generateInvitationAcceptedEmailHTML(props: InvitationAcceptedEma
 }
 
 export function generateInvitationAcceptedEmailText(props: InvitationAcceptedEmailProps): string {
+  // Sanitize user-provided fields for plain text email
+  const safeInviterName = sanitizePlainText(props.inviterName, { maxLength: 100 })
+  const safeAcceptorName = sanitizePlainText(props.acceptorName, { maxLength: 100 })
+  const safeAcceptorEmail = sanitizePlainText(props.acceptorEmail, { maxLength: 254 })
+
   return `
 INVITATION ACCEPTED - ULTRACOACH
 ${'='.repeat(50)}
 
-Hi ${props.coachName},
+Hi ${safeInviterName},
 
-Great news! ${props.runnerName} (${props.runnerEmail}) has accepted your invitation to join UltraCoach! They are now connected to your coaching account.
+Great news! ${safeAcceptorName} (${safeAcceptorEmail}) has accepted your invitation to join UltraCoach! They are now connected to your account.
 
 YOU CAN NOW
 ${'-'.repeat(50)}
-• Assign training plans to ${props.runnerName}
+• Assign training plans to ${safeAcceptorName}
 • Track their workouts and progress
 • Communicate through the messaging system
 • View their Strava activity sync

@@ -218,6 +218,7 @@ async function checkServerHealth(): Promise<boolean> {
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
     const response = await fetch(`${BASE_URL}/api/health`, {
+      credentials: 'same-origin',
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
@@ -240,6 +241,7 @@ async function createUserViaAPI(userData: (typeof TEST_USERS)[0]): Promise<boole
     const response = await fetch(`${BASE_URL}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       signal: controller.signal,
       body: JSON.stringify({
         email: userData.email,
@@ -639,23 +641,15 @@ async function main(): Promise<void> {
   await seedTrainingPlansAndWorkouts()
   logger.info('')
 
-  // Summary
-  const userCount = await db
-    .select()
-    .from(schema.user)
-    .then(r => r.length)
-  const planCount = await db
-    .select()
-    .from(schema.training_plans)
-    .then(r => r.length)
-  const workoutCount = await db
-    .select()
-    .from(schema.workouts)
-    .then(r => r.length)
-  const relationshipCount = await db
-    .select()
-    .from(schema.coach_runners)
-    .then(r => r.length)
+  // Summary - use async/await instead of .then() chains
+  const users = await db.select().from(schema.user)
+  const userCount = users.length
+  const plans = await db.select().from(schema.training_plans)
+  const planCount = plans.length
+  const workouts = await db.select().from(schema.workouts)
+  const workoutCount = workouts.length
+  const relationships = await db.select().from(schema.coach_runners)
+  const relationshipCount = relationships.length
 
   const duration = Date.now() - startTime
 
@@ -668,13 +662,16 @@ async function main(): Promise<void> {
   logger.info(`✅ Database seeding completed in ${duration}ms`)
   logger.info('')
   logger.info('🎯 Primary Test Users:')
-  logger.info('   Coach: emma@ultracoach.dev / UltraCoach2025!')
-  logger.info('   Runner: alex.rivera@ultracoach.dev / RunnerPass2025!')
+  logger.info(`   Coach: emma@ultracoach.dev / ${COACH_PASSWORD}`)
+  logger.info(`   Runner: alex.rivera@ultracoach.dev / ${RUNNER_PASSWORD}`)
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch(error => {
+;(async () => {
+  try {
+    await main()
+    process.exit(0)
+  } catch (error) {
     logger.error('❌ Database seeding failed:', error)
     process.exit(1)
-  })
+  }
+})()

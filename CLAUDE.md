@@ -7,27 +7,23 @@ This file provides guidance to Claude Code when working with the UltraCoach proj
 ### At the start of EVERY new conversation
 
 1. **Read PLANNING.md** to understand project vision, architecture, and technical context
-2. **Check Linear workspace** using Linear MCP to see current milestone, pending tasks, and priorities
+1. **Check Linear workspace** using Linear MCP to see current milestone, pending tasks, and priorities
    - Use `mcp__linear-server__list_issues` with team="Ultracoach" and state filters
    - Read issue details with `mcp__linear-server__get_issue` for context
    - Update issue status with `mcp__linear-server__update_issue` when completing work
-3. **Review this file** for project-specific guidance and context
-4. **Update task status in Linear** immediately when starting or completing work
+1. **Review this file** for project-specific guidance and context
+1. **Update task status in Linear** immediately when starting or completing work
    - Move issues to "In Progress" when starting
    - Move to "In Review" when creating PR
    - Move to "Done" when PR is merged
-5. **Create new issues in Linear** when discovering additional tasks during development
+1. **Create new issues in Linear** when discovering additional tasks during development
    - Use `mcp__linear-server__create_issue` with appropriate labels and project
-6. **Always use tslog library and utilities for logging (no console.log)**
-7. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
+1. **Always use tslog library and utilities for logging (no console.log)**
+1. **Follow Next.js 15 Rendering Patterns** - Use Server/Client Component hybrid pattern for all authenticated routes (see `.context7-docs/nextjs/`)
 
 ### 📋 Linear Workspace Organization
 
 **Projects**:
-
-- **Testing & Quality Assurance** - Current focus (Milestone 9)
-- **Production Hardening & Security** - Next phase (Milestone 10)
-- **Advanced Features & Integrations** - Future roadmap (Milestone 11)
 
 **Key Labels**: `testing`, `ci-cd`, `security`, `ui-ux`, `infrastructure`, `integration`, `high-priority`, `blocked`
 
@@ -45,7 +41,7 @@ When GitHub MCP is not available (authentication errors), use GitHub CLI (`gh`) 
 
 ### Use Playwright MCP to investigate test failures and UI issues
 
-Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors.
+Playwright's MCP tooling is the fastest path to real root causes. Use it to inspect DOM, network, and console output when a test flakes. Prefer concrete data-testids over text selectors. Take screenshots when applicable to diagnose issues.
 
 #### Concrete selector example
 
@@ -233,24 +229,11 @@ pnpm db:push             # Uses: drizzle-kit push --force
 - **Journal tracking**: All migrations tracked in `supabase/migrations/meta/_journal.json`
 - **Never manually edit** migration SQL files after they've been applied
 
-### Why This Workflow?
-
-Per Drizzle documentation: "To apply migrations using the Supabase CLI, you first generate migrations with `npx drizzle-kit generate`. After this, use `supabase db push` to apply."
-
-- ✅ **Migration history preserved** for team collaboration
-- ✅ **Rollback support** via Supabase CLI
-- ✅ **Production safety** with proper migration tracking
-- ✅ **Clear audit trail** of all schema changes
-
 ### Production Database Password
 
 **CRITICAL**: Production database password is stored in `.env.production`:
 
 **When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
-
-### Content Security Policy (CSP) Configuration (CRITICAL)
-
-**IMPLEMENTED**: UltraCoach uses **nonce-based Content Security Policy** for optimal security in production.
 
 #### 🔒 Security-First Approach: Nonce-Based CSP (Current Implementation)
 
@@ -352,9 +335,9 @@ const nonce = headersList.get('x-nonce') ?? undefined
 **Solutions:**
 
 1. Verify middleware is generating nonce
-2. Check layout extracts nonce from `x-nonce` header
-3. Ensure Script components use `nonce` prop
-4. Confirm CSP header is set in response
+1. Check layout extracts nonce from `x-nonce` header
+1. Ensure Script components use `nonce` prop
+1. Confirm CSP header is set in response
 
 #### Legacy: unsafe-inline Approach (Not Recommended)
 
@@ -454,8 +437,8 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 ### Correct Approaches:
 
 1. **For test users**: Use the automated creation script: `pnpm tsx scripts/create-test-users-automated.ts`
-2. **For production**: Always use Better Auth's sign-up API or web interface
-3. **For migrations**: If users exist with wrong hash format, delete and recreate through Better Auth
+1. **For production**: Always use Better Auth's sign-up API or web interface
+1. **For migrations**: If users exist with wrong hash format, delete and recreate through Better Auth
 
 ### Scripts Available:
 
@@ -487,10 +470,6 @@ UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
 - API returning empty results when filtering by wrong field
 - **500 errors with "Bad escaped character in JSON"** - caused by improper JSON escaping in API calls
 
-### Critical Fix (2025-08-17):
-
-**✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
-
 **Always** use proper JSON formatting when testing APIs:
 
 ```bash
@@ -499,36 +478,6 @@ curl http://localhost:3001/api/auth/sign-up/email -d @signup.json -H "Content-Ty
 
 # ❌ WRONG - Escaped quotes cause JSON parsing errors
 curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com"}'
-```
-
-### Additional Fixes (2025-08-17):
-
-**✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
-
-- **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
-- **Solution**: Created proper API endpoint with authentication and database integration
-- **Result**: 19 public templates now load correctly in training plan creation modal
-
-**✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
-
-- **Issue**: Better Auth additionalFields not included in TypeScript signatures
-- **Solution**: Extended interfaces instead of using `any` types
-- **Implementation**: Created `SignUpEmailBody` interface for type safety
-
-```typescript
-// ✅ CORRECT - Extend types properly
-interface SignUpEmailBody {
-  email: string
-  password: string
-  name: string
-  userType?: string
-  callbackURL?: string
-}
-
-// Use with proper casting
-const result = await auth.api.signUpEmail({
-  body: userData as SignUpEmailBody,
-})
 ```
 
 ## 📊 Project Overview
@@ -558,83 +507,13 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **Icons**: Lucide React icons for enhanced visual design
 - **State**: Advanced Jotai atomic state management with performance optimizations (atomFamily, loadable, unwrap, splitAtom patterns)
 - **Database**: Supabase PostgreSQL with enhanced training schema
-- **Auth**: Better Auth (migrated from NextAuth.js for improved stability)
-- **Package Manager**: pnpm (better performance than npm)
+- **Auth**: Better Auth
+- **Package Manager**: pnpm
 - **HTTP Client**: Axios for better request handling and error management
 - **Code Quality**: Husky v10 pre-commit hooks with TypeScript, ESLint, and Prettier validation
 - **Pre-commit Automation**: Automated quality checks prevent failed builds and maintain code standards
 - **React Suspense**: Modern async data loading with enhanced error boundaries and loading states
 - **Loading Components**: Comprehensive skeleton components for consistent UX across all data loading
-
-## 📝 Recent Project Notes
-
-- **CodeRabbit AI Improvements (2025-09-15)**: ✅ **COMPLETED** - Addressed 15 nitpick comments for enhanced code robustness
-  - **Issue**: CodeRabbit AI identified edge cases, type safety gaps, and potential bugs in date utilities and workout atoms
-  - **Critical Fixes Applied**:
-    - **Edge-time drift prevention**: Added `startOfDay()` normalization to `toLocalYMD()` to prevent timezone conversion issues
-    - **Hydration bug fix**: Fixed empty array hydration bug that caused stale UI when backend returns empty results
-    - **Response shape type safety**: Created `unwrapWorkout()` helper to handle inconsistent API response shapes (`{ workout }` vs bare object)
-    - **Test stabilization**: Added `vi.setSystemTime()` to prevent flaky time-dependent tests
-    - **Function naming clarity**: Renamed `getCurrentWeekRange()` to `getRollingWeekRange()` with accurate documentation
-  - **Enhanced Test Coverage**: Added ISO string test for `normalizeToEndOfDay` and boundary test for `isWorkoutWithinDays`
-  - **Code Quality**: Removed unused `workoutsLoadingAtom` and `workoutsErrorAtom` (replaced by Suspense pattern)
-  - **Documentation**: Updated `.context7-docs/date-fns/best-practices.md` with CodeRabbit AI learnings and patterns
-  - **Result**: Eliminated edge cases, enhanced type safety, and improved test reliability across date utility system
-
-- **CodeRabbit AI Improvements Phase 2 (2025-09-15)**: ✅ **COMPLETED** - Advanced date parsing and hydration architecture fixes
-  - **Issue**: Additional CodeRabbit AI review identified UTC vs Local timezone drift and forced Suspense issues
-  - **Critical Fixes Applied**:
-    - **Smart Date Parsing**: Created `parseInput()` helper that detects date format and uses appropriate parser
-    - **UTC Drift Prevention**: Date-only strings ("2024-03-15") now parse in local timezone instead of UTC
-    - **Hydration Architecture**: Moved `useHydrateWorkouts()` from generic hook to top-level entry points
-    - **Component Architecture**: Prevents unexpected Suspense boundaries in workout-consuming components
-    - **Testing Enhancement**: Added 7 new test cases for mixed date format scenarios (38/38 tests passing)
-    - **Format Detection**: ISO strings with time use `parseISO()`, date-only strings use `parse()` with format
-  - **Entry Points Updated**: DashboardRouter, WorkoutsPageClient, CalendarPageClient now handle hydration
-  - **Result**: Bulletproof timezone handling and cleaner component architecture with backward compatibility
-
-- **Messaging System Refactor (2025-09-14)**: ✅ **COMPLETED** - Fixed critical messaging display issue
-  - **Issue**: Messages were sending successfully but not displaying in UI due to atom family disconnect
-  - **Root Cause**: Duplicate state management - messages stored in global `messagesAtom` but read from conversation-specific atom families
-  - **Solution**: Applied Jotai best practice "derive state, don't duplicate it"
-  - **Changes Made**:
-    - Refactored `PerformantMessageList` to use derived atom pattern with `splitAtom` for granular updates
-    - Simplified `useMessages` hook to filter from global `messagesAtom` instead of using atom families
-    - Removed unused `conversationMessagesAtomsFamily` and `fetchConversationMessagesFamily`
-    - Fixed TypeScript errors with proper `PrimitiveAtom` type assertions
-  - **Best Practices Applied**: See `.context7-docs/jotai/best-practices.md` for complete Jotai patterns
-  - **Result**: Messaging now works correctly with simpler, more maintainable code following Jotai best practices
-
-- **CI/CD Pipeline Stabilization (2025-09-01)**: ✅ **COMPLETED** - Critical testing infrastructure improvements
-  - **Major Fix**: Resolved persistent CI failures by simplifying test suite from 56 to 20 stable core tests
-  - **Key Issues Fixed**:
-    - Removed invalid `--list-projects` command that caused immediate CI failures
-    - Eliminated problematic `waitForLoadState('networkidle')` calls that hung with real-time features
-    - Fixed duplicate app startup issues in CI environment
-    - Temporarily disabled sharded tests that were failing on test user creation
-  - **Lessons Learned**:
-    - Context7 docs correctly warn against `networkidle` with real-time apps
-    - Start with minimal stable test suite then gradually expand
-    - Complex test setups often fail in CI - simplicity wins
-  - **Next Steps**: Gradually re-enable temporarily disabled tests one by one
-
-- **Production Platform Achievement (2025-08-21)**: ✅ **COMPLETED** - Feature-complete platform with comprehensive integrations
-  - **Comprehensive Strava Integration**: OAuth flow, bi-directional sync, performance metrics import, real-time updates
-  - **13+ Major Milestones**: 222+ core tasks completed across authentication, state management, UI/UX, and integrations
-  - **Advanced State Management**: Complete Jotai atomic patterns with performance optimization and error resilience
-  - **Mountain Peak Design System**: Professional alpine-themed UI with HeroUI integration and responsive design
-- **Technical Excellence Achieved (2025-08-19)**: ✅ **COMPLETED** - Production-ready codebase standards
-  - **Zero TypeScript Errors**: Full type safety with strict mode enforcement across entire codebase
-  - **Zero ESLint Warnings**: Clean, maintainable code following modern React patterns
-  - **Advanced Architecture**: Server/Client Component hybrid pattern for optimal rendering performance
-  - **Real-time Communication**: Coach-runner chat with typing indicators, message synchronization, and optimized loading states
-- **Current Status**: Platform transitioned from active feature development to production hardening and testing infrastructure
-
-**Next Phase Focus:**
-
-- CI/CD pipeline stabilization and comprehensive testing coverage
-- Production monitoring, error tracking, and security hardening
-- Advanced features roadmap (Garmin integration, AI training recommendations)
 
 ### ⚠️ Minor Areas for Future Enhancement
 
@@ -646,7 +525,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
    // Suggestion: Implement exponential backoff with jitter
    ```
 
-2. **Caching Strategy**
+1. **Caching Strategy**
 
    ```typescript
    // Consider implementing Redis caching for frequently accessed Strava data
@@ -654,7 +533,7 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
    // Future: Persistent caching for better UX
    ```
 
-3. **Monitoring Enhancement**
+1. **Monitoring Enhancement**
    ```typescript
    // Consider adding metrics collection for sync operations
    // Current: Excellent logging
@@ -806,11 +685,6 @@ useHydrateAtoms([
 ])
 ```
 
-**Results:**
-
-- Before: 50-80% pass rate with flakes on first attempt, needed retries
-- After: 100% pass rate (3/3 consecutive runs), zero flakes, no retries needed
-
 **See**: `.context7-docs/jotai/session-persistence-patterns.md` for complete implementation details
 
 ### 🔍 Investigation Process (REQUIRED)
@@ -828,14 +702,6 @@ useHydrateAtoms([
    - **Perceived Issue**: "UI hanging on GPX upload"
    - **Real Issue**: Test selector conflict (`getByText()` finding multiple elements)
    - **Solution**: Use specific `data-testid` selectors instead of ambiguous text selectors
-
-### ✅ Success Pattern: GPX Upload Debug (2025-09-20)
-
-**Problem**: Test failure with GPX upload appearing to "hang"
-**Investigation**: Used Playwright MCP to test upload functionality directly
-**Finding**: NO hang - upload processed immediately with proper error handling
-**Root Cause**: Test selector `getByText('Test Ultra Race')` resolved to 2 elements (strict mode violation)
-**Fix**: Changed to specific `getByTestId('race-name-0')` selector
 
 ### 🎯 Best Practices
 

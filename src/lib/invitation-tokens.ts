@@ -72,9 +72,11 @@ export function validateTokenHash(token: string, storedHash: string): boolean {
 
 /**
  * Checks if an invitation token has expired
+ * Accepts both Date objects and ISO strings for defensive handling
  */
-export function isTokenExpired(expiresAt: Date): boolean {
-  return new Date() > new Date(expiresAt)
+export function isTokenExpired(expiresAt: Date | string): boolean {
+  const expiry = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt
+  return new Date() > expiry
 }
 
 /**

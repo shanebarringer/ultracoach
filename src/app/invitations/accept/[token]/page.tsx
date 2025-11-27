@@ -2,7 +2,6 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Spinner } from '@heroui/react'
 import { CheckCircle, MountainSnow, UserPlus, XCircle } from 'lucide-react'
-import { toast } from '@/lib/toast'
 
 import { use, useCallback, useEffect, useState } from 'react'
 
@@ -11,6 +10,7 @@ import { useRouter } from 'next/navigation'
 
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 import { formatDateConsistent } from '@/lib/utils/date'
 
 const logger = createLogger('InvitationAcceptPage')

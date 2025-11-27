@@ -13,8 +13,7 @@ import {
   Tooltip,
 } from '@heroui/react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { Mail, RefreshCw, Send, UserPlus, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { CheckCircle2, Mail, MoreVertical, RefreshCw, Send, UserPlus, X } from 'lucide-react'
 
 import { useCallback, useMemo } from 'react'
 
@@ -29,6 +28,7 @@ import {
 } from '@/lib/atoms/invitations'
 import { INVITATION_CONFIG } from '@/lib/invitation-tokens'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 import { formatDateShort } from '@/lib/utils/date'
 
 const logger = createLogger('AsyncInvitationsList')
@@ -216,20 +216,7 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                               disabled={isResending || isRevoking}
                               aria-label="Invitation actions menu"
                             >
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                                />
-                              </svg>
+                              <MoreVertical className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </DropdownTrigger>
                           <DropdownMenu aria-label="Invitation actions">

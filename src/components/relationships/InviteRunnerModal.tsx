@@ -14,7 +14,6 @@ import {
 } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { Mail, UserPlus } from 'lucide-react'
-import { toast } from '@/lib/toast'
 import { z } from 'zod'
 
 import { useCallback, useState } from 'react'
@@ -26,6 +25,7 @@ import {
   isInviteModalOpenAtom,
 } from '@/lib/atoms/invitations'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 
 /** Email validation schema - matches server-side Zod validation */
 const emailSchema = z.string().email('Please enter a valid email address')

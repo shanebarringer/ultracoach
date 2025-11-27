@@ -2,13 +2,13 @@
 
 import { Button, Card, CardBody, CardHeader, Divider, Textarea } from '@heroui/react'
 import { CheckCircle, MountainSnow, XCircle } from 'lucide-react'
-import { toast } from '@/lib/toast'
 
 import { use, useCallback, useState } from 'react'
 
 import Link from 'next/link'
 
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 
 const logger = createLogger('InvitationDeclinePage')
 

@@ -14,7 +14,6 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAtom } from 'jotai'
 import { Flag, Lock, Mail, MountainSnow, User, UserPlus } from 'lucide-react'
-import { toast } from '@/lib/toast'
 
 import React, { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -26,6 +25,7 @@ import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { signUpFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
 import { type SignUpForm, signUpSchema } from '@/types/forms'
 
 const logger = createLogger('SignUp')
@@ -148,17 +148,17 @@ export default function SignUp() {
               logger.warn('Failed to accept invitation after signup:', acceptData.message)
               // Surface error to user but allow them to continue
               toast.warning(
+                'Invitation Notice',
                 acceptData.message ||
-                  'Could not auto-accept invitation. You can accept it from your dashboard.',
-                { duration: 5000 }
+                  'Could not auto-accept invitation. You can accept it from your dashboard.'
               )
             }
           } catch (acceptError) {
             logger.error('Error accepting invitation after signup:', acceptError)
             // Surface error to user but allow them to continue
             toast.warning(
-              'Could not auto-accept invitation. You can accept it from your dashboard.',
-              { duration: 5000 }
+              'Invitation Notice',
+              'Could not auto-accept invitation. You can accept it from your dashboard.'
             )
           }
         }

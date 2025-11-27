@@ -337,8 +337,10 @@ export async function GET(request: NextRequest) {
         name: inv.inviterName,
         email: inv.inviterEmail,
       },
-      // Check if invitation is expired
-      isExpired: new Date() > new Date(inv.expiresAt!) && inv.status === 'pending',
+      // Check if invitation is expired (safely handle null expiresAt)
+      isExpired: inv.expiresAt
+        ? new Date() > new Date(inv.expiresAt) && inv.status === 'pending'
+        : false,
     }))
 
     logger.debug('Successfully fetched invitations', {
