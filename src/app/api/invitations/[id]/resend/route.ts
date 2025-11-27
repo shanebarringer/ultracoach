@@ -13,7 +13,7 @@ import {
   generateInvitationEmailHTML,
   generateInvitationEmailText,
 } from '@/lib/email/invitation-template'
-import { sendEmail } from '@/lib/email/send-email'
+import { type SendEmailOptions, type SendEmailResult, sendEmail } from '@/lib/email/send-email'
 import {
   INVITATION_CONFIG,
   buildDeclineUrl,
@@ -24,6 +24,21 @@ import { createLogger } from '@/lib/logger'
 import { coach_invitations } from '@/lib/schema'
 
 const logger = createLogger('api-invitations-resend')
+
+/** Timeout for email sending to prevent hanging requests */
+const EMAIL_SEND_TIMEOUT_MS = 10000 // 10 seconds
+
+/**
+ * Wraps sendEmail with a timeout to prevent indefinite blocking
+ * if the email service hangs
+ */
+async function sendEmailWithTimeout(options: SendEmailOptions): Promise<SendEmailResult> {
+  const timeoutPromise = new Promise<SendEmailResult>((_, reject) =>
+    setTimeout(() => reject(new Error('Email send timeout')), EMAIL_SEND_TIMEOUT_MS)
+  )
+
+  return Promise.race([sendEmail(options), timeoutPromise])
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -132,35 +147,50 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const acceptUrl = buildInvitationUrl(token)
     const declineUrl = buildDeclineUrl(token)
 
-    // Send email with the new invitation link
-    const emailResult = await sendEmail({
-      to: invitation.invitee_email,
-      subject: `Reminder: ${sessionUser.name || sessionUser.email} invites you to UltraCoach`,
-      html: generateInvitationEmailHTML({
-        inviterName: sessionUser.name || sessionUser.email,
-        inviterEmail: sessionUser.email,
-        invitedRole: invitation.invited_role as 'runner' | 'coach',
-        personalMessage: invitation.personal_message || undefined,
-        acceptUrl,
-        declineUrl,
-        expiresAt,
-      }),
-      text: generateInvitationEmailText({
-        inviterName: sessionUser.name || sessionUser.email,
-        inviterEmail: sessionUser.email,
-        invitedRole: invitation.invited_role as 'runner' | 'coach',
-        personalMessage: invitation.personal_message || undefined,
-        acceptUrl,
-        declineUrl,
-        expiresAt,
-      }),
-    })
-
-    if (!emailResult.success) {
-      logger.error('Failed to send resend email', {
-        invitationId: invitation.id,
-        error: emailResult.error,
+    // Send email with the new invitation link (with timeout protection)
+    let emailResult: SendEmailResult
+    try {
+      emailResult = await sendEmailWithTimeout({
+        to: invitation.invitee_email,
+        subject: `Reminder: ${sessionUser.name || sessionUser.email} invites you to UltraCoach`,
+        html: generateInvitationEmailHTML({
+          inviterName: sessionUser.name || sessionUser.email,
+          inviterEmail: sessionUser.email,
+          invitedRole: invitation.invited_role as 'runner' | 'coach',
+          personalMessage: invitation.personal_message || undefined,
+          acceptUrl,
+          declineUrl,
+          expiresAt,
+        }),
+        text: generateInvitationEmailText({
+          inviterName: sessionUser.name || sessionUser.email,
+          inviterEmail: sessionUser.email,
+          invitedRole: invitation.invited_role as 'runner' | 'coach',
+          personalMessage: invitation.personal_message || undefined,
+          acceptUrl,
+          declineUrl,
+          expiresAt,
+        }),
       })
+
+      if (!emailResult.success) {
+        logger.error('Failed to send resend email', {
+          invitationId: invitation.id,
+          error: emailResult.error,
+        })
+      }
+    } catch (error) {
+      // Handle timeout or other errors
+      const isTimeout = error instanceof Error && error.message === 'Email send timeout'
+      logger.error(isTimeout ? 'Email send timed out' : 'Error sending resend email', {
+        invitationId: invitation.id,
+        error: error instanceof Error ? error.message : String(error),
+        isTimeout,
+      })
+      emailResult = {
+        success: false,
+        error: isTimeout ? 'Email send timeout' : 'Email send failed',
+      }
     }
 
     return NextResponse.json({

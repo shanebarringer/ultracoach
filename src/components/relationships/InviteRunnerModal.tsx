@@ -116,22 +116,40 @@ export function InviteRunnerModal() {
         handleClose()
       }
     } catch (error) {
-      logger.error('Error creating invitation:', error)
-
-      // Handle specific error cases
+      // Handle specific error cases with detailed logging
       if (error instanceof Error) {
+        const errorCode = (error as Error & { code?: string }).code
+
         if (error.message.includes('ALREADY_INVITED')) {
+          logger.warn('Invitation blocked: already invited', {
+            branch: 'ALREADY_INVITED',
+            errorCode,
+            email: form.email,
+          })
           setEmailError('An invitation already exists for this email')
         } else if (error.message.includes('SELF_INVITATION')) {
+          logger.warn('Invitation blocked: self-invitation', {
+            branch: 'SELF_INVITATION',
+            errorCode,
+          })
           setEmailError('You cannot invite yourself')
         } else {
+          logger.error('Invitation creation failed', {
+            branch: 'GENERIC_ERROR',
+            errorCode,
+            message: error.message,
+          })
           toast.error(error.message || 'Failed to send invitation')
         }
       } else {
+        logger.error('Invitation creation failed with unknown error', {
+          branch: 'UNKNOWN_ERROR',
+          error,
+        })
         toast.error('Failed to send invitation')
       }
     }
-  }, [form, createInvitation, handleClose])
+  }, [form, createInvitation, handleClose, validateEmail])
 
   return (
     <Modal

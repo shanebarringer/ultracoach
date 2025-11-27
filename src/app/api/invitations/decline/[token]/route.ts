@@ -93,7 +93,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if expired (still allow declining expired invitations for cleanliness)
-    if (isTokenExpired(invitation.expires_at!)) {
+    if (invitation.expires_at && isTokenExpired(invitation.expires_at)) {
       await db
         .update(coach_invitations)
         .set({ status: 'expired', updated_at: new Date() })

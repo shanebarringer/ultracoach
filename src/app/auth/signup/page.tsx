@@ -27,16 +27,9 @@ import { signUpFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import { type SignUpForm, signUpSchema } from '@/types/forms'
+import type { InvitationDetails, ValidateInvitationResponse } from '@/types/invitations'
 
 const logger = createLogger('SignUp')
-
-interface InvitationDetails {
-  inviterName: string | null
-  inviterEmail: string
-  invitedRole: 'runner' | 'coach'
-  personalMessage: string | null
-  expiresAt: string
-}
 
 export default function SignUp() {
   const [formState, setFormState] = useAtom(signUpFormAtom)
@@ -60,7 +53,7 @@ export default function SignUp() {
         const response = await fetch(`/api/invitations/accept/${invitationToken}`, {
           credentials: 'same-origin',
         })
-        const data = await response.json()
+        const data: ValidateInvitationResponse = await response.json()
 
         if (data.valid && data.invitation) {
           setInvitation(data.invitation)

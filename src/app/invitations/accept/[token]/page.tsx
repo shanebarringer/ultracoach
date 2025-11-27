@@ -12,24 +12,16 @@ import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import { formatDateConsistent } from '@/lib/utils/date'
+import type {
+  AcceptInvitationResponse,
+  InvitationDetails,
+  ValidateInvitationResponse,
+} from '@/types/invitations'
 
 const logger = createLogger('InvitationAcceptPage')
 
-interface InvitationDetails {
-  inviterName: string | null
-  inviterEmail: string
-  invitedRole: 'runner' | 'coach'
-  personalMessage: string | null
-  expiresAt: string
-}
-
-interface ValidateResponse {
-  valid: boolean
-  error?: string
-  message?: string
-  invitation?: InvitationDetails
-  existingUser?: boolean
-}
+/** Delay before redirecting to dashboard after successful acceptance */
+const REDIRECT_DELAY_MS = 2000
 
 interface PageProps {
   params: Promise<{ token: string }>
@@ -67,7 +59,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
         const response = await fetch(`/api/invitations/accept/${token}`, {
           credentials: 'same-origin',
         })
-        const data: ValidateResponse = await response.json()
+        const data: ValidateInvitationResponse = await response.json()
 
         if (data.valid && data.invitation) {
           setInvitation(data.invitation)
@@ -104,7 +96,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
         credentials: 'same-origin',
       })
 
-      const data = await response.json()
+      const data: AcceptInvitationResponse = await response.json()
 
       if (data.success) {
         setState('accepted')
@@ -113,7 +105,7 @@ export default function InvitationAcceptPage({ params }: PageProps) {
         // Redirect to the appropriate dashboard
         setTimeout(() => {
           router.push(data.redirectUrl || '/dashboard')
-        }, 2000)
+        }, REDIRECT_DELAY_MS)
       } else {
         setErrorMessage(data.message || 'Failed to accept invitation')
         setState('error')

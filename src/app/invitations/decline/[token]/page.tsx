@@ -38,6 +38,22 @@ export default function InvitationDeclinePage({ params }: PageProps) {
         body: JSON.stringify({ reason: reason.trim() || undefined }),
       })
 
+      // Handle non-OK responses gracefully
+      if (!response.ok) {
+        let errorMsg = `Request failed with status ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMsg = errorData.message || errorMsg
+        } catch {
+          // Response wasn't JSON, try text
+          const errorText = await response.text().catch(() => '')
+          if (errorText) errorMsg = errorText
+        }
+        setErrorMessage(errorMsg)
+        setState('error')
+        return
+      }
+
       const data = await response.json()
 
       if (data.success) {
