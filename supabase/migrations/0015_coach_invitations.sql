@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS coach_invitations (
     invitee_email TEXT NOT NULL,
     invited_role TEXT NOT NULL DEFAULT 'runner' CHECK (invited_role IN ('runner', 'coach')),
     personal_message TEXT,
-    token TEXT NOT NULL UNIQUE,
+    token TEXT UNIQUE, -- Nullable: raw token only sent via email, hash stored for validation
     token_hash TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'revoked')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

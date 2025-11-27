@@ -387,6 +387,8 @@ export const coach_invitations = pgTable(
       .notNull(),
     // Optional personal message from coach
     personal_message: text('personal_message'),
+    // Token is nullable - only hash is stored for security, raw token sent via email
+    token: text('token'),
     // SHA-256 hash of token (for secure validation)
     // SECURITY: Raw token is NOT stored - only the hash for validation
     token_hash: text('token_hash').notNull(),
@@ -416,10 +418,14 @@ export const coach_invitations = pgTable(
     // Optional decline reason
     decline_reason: text('decline_reason'),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-  }
-  // Note: Unique constraint for pending invitations is handled in API logic
-  // since PostgreSQL unique constraints cannot be conditional on status.
-  // This allows re-inviting users after revocation or expiration.
+  },
+  table => ({
+    tokenUnique: unique('coach_invitations_token_unique').on(table.token),
+    inviterInviteeUnique: unique('coach_invitations_inviter_invitee_unique').on(
+      table.inviter_user_id,
+      table.invitee_email
+    ),
+  })
 )
 
 // User Onboarding
