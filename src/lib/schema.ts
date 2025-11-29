@@ -342,7 +342,7 @@ export const coach_connections = pgTable(
   'coach_connections',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    // First coach in the connection (alphabetically by ID or the inviter)
+    // First coach in the connection (the inviter)
     coach_a_id: text('coach_a_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),

@@ -215,7 +215,7 @@ pnpm db:migrate:local    # Uses: supabase migration up --local
 pnpm prod:db:migrate     # Uses: supabase db push --linked
 ```
 
-2. **For Rapid Prototyping Only** (bypasses migration files):
+1. **For Rapid Prototyping Only** (bypasses migration files):
 
 ```bash
 # Push schema directly to database (no migration file created)

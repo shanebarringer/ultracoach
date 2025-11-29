@@ -384,11 +384,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const acceptorName = sessionUser.name || sessionUser.email
         const inviterName = inviter.name || inviter.email
 
-        // Determine dashboard URL based on inviter's role
-        const inviterDashboardUrl =
-          invitation.invited_role === 'coach'
-            ? `${baseUrl}/dashboard/coach` // Coach-to-coach invite
-            : `${baseUrl}/dashboard/coach` // Coach-to-runner invite
+        // The inviter is always a coach, so dashboard is always /dashboard/coach
+        const inviterDashboardUrl = `${baseUrl}/dashboard/coach`
 
         await sendEmail({
           to: inviter.email,

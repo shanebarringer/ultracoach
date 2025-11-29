@@ -113,6 +113,27 @@
       "when": 1754695800000,
       "tag": "0015_coach_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1754695900000,
+      "tag": "0016_security_and_coach_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1754696000000,
+      "tag": "0017_coach_connections_bidirectional_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1754696100000,
+      "tag": "0018_coach_invitations_partial_unique",
+      "breakpoints": true
     }
   ]
 }

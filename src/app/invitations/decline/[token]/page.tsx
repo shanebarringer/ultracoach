@@ -38,7 +38,14 @@ export default function InvitationDeclinePage({ params }: PageProps) {
         body: JSON.stringify({ reason: reason.trim() || undefined }),
       })
 
-      // Handle non-OK responses gracefully
+      // Check for server errors first - provide friendlier message
+      if (!response.ok && response.status >= 500) {
+        setErrorMessage('Server error. Please try again later.')
+        setState('error')
+        return
+      }
+
+      // Handle other non-OK responses gracefully
       if (!response.ok) {
         let errorMsg = `Request failed with status ${response.status}`
         try {

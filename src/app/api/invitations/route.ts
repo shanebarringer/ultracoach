@@ -120,7 +120,6 @@ export async function POST(request: NextRequest) {
     if (existingUser.length > 0) {
       logger.info('User already exists for invitation email', {
         inviterUserId: sessionUser.id,
-        inviteeEmail: email,
       })
       // We still allow invitation - they can accept to create the relationship
     }
@@ -147,7 +146,6 @@ export async function POST(request: NextRequest) {
     logger.info('Invitation created', {
       invitationId: newInvitation.id,
       inviterUserId: sessionUser.id,
-      inviteeEmail: email,
       invitedRole: role,
       expiresAt: expiresAt.toISOString(),
     })
@@ -266,7 +264,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Build conditions based on type filter
-    let conditions: ReturnType<typeof eq> | ReturnType<typeof and> | undefined
+    // Initialize with default: all invitations for this user (sent or received)
+    const sentCondition = eq(coach_invitations.inviter_user_id, sessionUser.id)
+    const receivedCondition = eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
+    let conditions = or(sentCondition, receivedCondition)
 
     if (type === 'sent') {
       // Invitations sent by this user (as coach)
@@ -284,13 +285,9 @@ export async function GET(request: NextRequest) {
             eq(coach_invitations.status, status)
           )
         : eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
-    } else {
-      // All invitations (sent OR received)
-      const sentCondition = eq(coach_invitations.inviter_user_id, sessionUser.id)
-      const receivedCondition = eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
-      const baseCondition = or(sentCondition, receivedCondition)
-
-      conditions = status ? and(baseCondition, eq(coach_invitations.status, status)) : baseCondition
+    } else if (status) {
+      // No type filter but status filter - apply to default conditions
+      conditions = and(conditions, eq(coach_invitations.status, status))
     }
 
     // Fetch invitations with inviter info
@@ -314,7 +311,7 @@ export async function GET(request: NextRequest) {
       })
       .from(coach_invitations)
       .innerJoin(user, eq(coach_invitations.inviter_user_id, user.id))
-      .where(conditions!)
+      .where(conditions)
       .orderBy(desc(coach_invitations.created_at))
 
     // Format invitations with additional computed fields

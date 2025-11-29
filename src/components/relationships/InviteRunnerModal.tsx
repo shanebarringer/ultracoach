@@ -116,7 +116,9 @@ export function InviteRunnerModal() {
         handleClose()
       }
     } catch (error) {
-      // Handle specific error cases with detailed logging
+      // Handle specific error cases with detailed logging (PII masked)
+      const emailDomain = form.email.split('@')[1] || 'unknown'
+
       if (error instanceof Error) {
         const errorCode = (error as Error & { code?: string }).code
 
@@ -124,7 +126,7 @@ export function InviteRunnerModal() {
           logger.warn('Invitation blocked: already invited', {
             branch: 'ALREADY_INVITED',
             errorCode,
-            email: form.email,
+            emailDomain,
           })
           setEmailError('An invitation already exists for this email')
         } else if (error.message.includes('SELF_INVITATION')) {
@@ -138,6 +140,8 @@ export function InviteRunnerModal() {
             branch: 'GENERIC_ERROR',
             errorCode,
             message: error.message,
+            emailDomain,
+            role: form.role,
           })
           toast.error(error.message || 'Failed to send invitation')
         }
@@ -145,6 +149,8 @@ export function InviteRunnerModal() {
         logger.error('Invitation creation failed with unknown error', {
           branch: 'UNKNOWN_ERROR',
           error,
+          emailDomain,
+          role: form.role,
         })
         toast.error('Failed to send invitation')
       }

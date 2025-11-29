@@ -116,7 +116,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     logger.info('Invitation declined', {
       invitationId: invitation.id,
       inviterUserId: invitation.inviter_user_id,
-      inviteeEmail: invitation.invitee_email,
+      inviteeEmailDomain: invitation.invitee_email.split('@')[1] || 'unknown',
       hasReason: !!declineReason,
     })
 
