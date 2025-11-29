@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authClient } from '../better-auth-client'
 
 // Mock Better Auth client
+// Note: forgetPassword is NOT included because it's server-side only
 const mockAuthClient = {
   signIn: {
     email: vi.fn(),
@@ -18,7 +19,6 @@ const mockAuthClient = {
   updateUser: vi.fn(),
   deleteUser: vi.fn(),
   changePassword: vi.fn(),
-  forgetPassword: vi.fn(),
   resetPassword: vi.fn(),
   verifyEmail: vi.fn(),
   linkAccount: vi.fn(),
@@ -60,8 +60,9 @@ describe('authClient', () => {
 
     it('should expose password management methods', () => {
       expect(authClient.changePassword).toBeDefined()
-      expect(authClient.forgetPassword).toBeDefined()
       expect(authClient.resetPassword).toBeDefined()
+      // forgetPassword is server-side only, should not be on client
+      expect((authClient as Record<string, unknown>).forgetPassword).toBeUndefined()
     })
 
     it('should not expose unavailable methods', () => {

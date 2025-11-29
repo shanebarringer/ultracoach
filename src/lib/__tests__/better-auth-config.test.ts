@@ -136,8 +136,9 @@ describe('Better Auth Configuration', () => {
       const { auth } = await import('../better-auth')
       expect(auth).toBeDefined()
 
-      // Check that auth instance has proper configuration
-      expect(auth.$Infer).toBeDefined()
+      // Check that auth instance has api methods configured
+      expect(auth.api).toBeDefined()
+      expect(auth.api.getSession).toBeDefined()
     })
   })
 })

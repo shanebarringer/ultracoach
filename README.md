@@ -237,13 +237,19 @@ pnpm typecheck        # Run TypeScript type checking
 ### Database Management
 
 ```bash
+# Local development
 pnpm db:connect       # Connect to database via psql
 pnpm db:query         # Run SQL queries
-pnpm db:generate      # Generate Drizzle migrations
-pnpm db:migrate       # Apply migrations
-pnpm db:push          # Push schema changes
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Seed database with test data
+
+# Schema changes workflow (Drizzle generates, Supabase applies)
+pnpm db:generate      # Generate Drizzle migration from schema.ts
+pnpm db:migrate:local # Apply migrations locally (supabase migration up)
+pnpm db:push          # Push schema directly (prototyping only)
+
+# Production
+pnpm prod:db:migrate  # Apply migrations to production (supabase db push)
 ```
 
 ### Production

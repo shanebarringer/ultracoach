@@ -71,6 +71,69 @@
       "when": 1754695200000,
       "tag": "0009_strava_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1754695300000,
+      "tag": "0010_add_enhanced_workout_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1754695400000,
+      "tag": "0011_workout_performance_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1754695500000,
+      "tag": "0012_add_missing_query_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1754695600000,
+      "tag": "0013_add_notifications_data_column",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1754695700000,
+      "tag": "0014_add_notification_data_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1754695800000,
+      "tag": "0015_coach_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1754695900000,
+      "tag": "0016_security_and_coach_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1754696000000,
+      "tag": "0017_coach_connections_bidirectional_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1754696100000,
+      "tag": "0018_coach_invitations_partial_unique",
+      "breakpoints": true
     }
   ]
 }

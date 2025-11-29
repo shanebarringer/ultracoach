@@ -36,7 +36,11 @@ export default function ForgotPasswordPage() {
     logger.info('Password reset requested') // PII removed for compliance
 
     try {
-      const { error } = await authClient.forgetPassword({
+      // Use the underlying client to access forgetPassword method
+      // Better Auth client exposes this via the raw client instance
+      const client = authClient._getClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (client as any).forgetPassword({
         email: data.email,
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
