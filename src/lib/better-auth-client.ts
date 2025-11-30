@@ -130,7 +130,14 @@ export const authClient = {
     return getAuthClient().changePassword
   },
   get forgetPassword() {
-    return getAuthClient().forgetPassword
+    // Better Auth exposes this when forgotPasswordEnabled: true on server
+    // Type assertion needed as TypeScript can't infer dynamic plugin methods
+    type ForgetPasswordFn = (params: {
+      email: string
+      redirectTo?: string
+    }) => Promise<{ error?: { message?: string } | null }>
+
+    return (getAuthClient() as unknown as { forgetPassword: ForgetPasswordFn }).forgetPassword
   },
   get resetPassword() {
     return getAuthClient().resetPassword
