@@ -528,16 +528,20 @@ export default function MyApp({ Component, pageProps }) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Custom RUM implementation
+              // Custom RUM implementation using modern Performance API
               window.addEventListener('load', () => {
-                // Track page load time
-                const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                // Track page load time using PerformanceNavigationTiming
+                const navEntry = performance.getEntriesByType('navigation')[0];
+                const loadTime = navEntry
+                  ? navEntry.loadEventEnd - navEntry.startTime
+                  : performance.now(); // Fallback for older browsers
+
                 fetch('/api/analytics/performance', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     metric: 'page_load_time',
-                    value: loadTime,
+                    value: Math.round(loadTime),
                     url: window.location.href,
                   }),
                 });

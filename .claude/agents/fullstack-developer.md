@@ -541,7 +541,7 @@ const queryClient = new QueryClient({
         return failureCount < 3;
       },
       staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in React Query v5)
     },
     mutations: {
       retry: false,
@@ -789,6 +789,14 @@ api.interceptors.request.use(
   error => Promise.reject(error)
 )
 
+// Custom error class for auth failures (Next.js pattern)
+class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AuthenticationError'
+  }
+}
+
 // Response interceptor for token refresh and error handling
 api.interceptors.response.use(
   response => response,
@@ -813,11 +821,11 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
       } catch (refreshError) {
-        // Refresh failed, redirect to login
+        // Refresh failed - clear tokens and throw AuthenticationError
+        // Next.js pattern: AuthProvider or ErrorBoundary catches this and uses router.push()
         localStorage.removeItem('auth_token')
         localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
-        return Promise.reject(refreshError)
+        throw new AuthenticationError('Session expired. Please sign in again.')
       }
     }
 
@@ -831,6 +839,24 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+// Next.js AuthProvider pattern - handles AuthenticationError with router
+// Usage: Wrap your app with this provider in layout.tsx
+export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.error?.name === 'AuthenticationError') {
+        router.push('/auth/signin')
+      }
+    }
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [router])
+
+  return <>{children}</>
+}
 
 // Authentication API
 export const authAPI = {

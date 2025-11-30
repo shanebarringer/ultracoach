@@ -228,8 +228,8 @@ def main():
         
         print(status_line)
         
-    except Exception as e:
-        # Fallback display on any error
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        # Fallback display on JSON/data parsing errors
         print(f"\033[94m[Claude]\033[0m \033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m")
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ argument-hint: [--pull] [--push] [--validate] [--backup]
 description: Synchronize environment variables between local development and Vercel deployments
 ---
 
-## Vercel Environment Sync
+# Vercel Environment Sync
 
 **Sync Operation**: $ARGUMENTS
 
@@ -302,7 +302,7 @@ restore_environment() {
   if [ -z "$backup_timestamp" ]; then
     echo "❌ Please specify backup timestamp"
     echo "💡 Available backups:"
-    ls -1 "$BACKUP_DIR/" | grep -E "\.env" | cut -d'.' -f3 | sort -u
+    ls -1 "$BACKUP_DIR/" | grep -E "\.env" | cut -d'.' -f4 | sort -u
     exit 1
   fi
 
@@ -675,7 +675,3 @@ echo "✅ Environment validation passed"
 ## Comprehensive Sync Operations
 
 Implement complete environment synchronization workflow with validation, backup, security checks, and automation integration for seamless development and deployment processes.
-
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Analyze hook system and context monitoring capabilities", "status": "completed"}, {"content": "Design context threshold detection mechanism", "status": "completed"}, {"content": "Create hook script for automatic compact + clear sequence", "status": "pending"}, {"content": "Configure hook in settings.json with proper event triggers", "status": "pending"}, {"content": "Test hook execution and threshold detection", "status": "pending"}, {"content": "Add markdown copy button to Supabase blog post", "status": "completed"}, {"content": "Write Claude Code + Next.js and Vercel Integration article", "status": "completed"}, {"content": "Create Next.js Architecture Expert agent", "status": "completed"}, {"content": "Create Vercel Deployment Specialist agent", "status": "completed"}, {"content": "Create React Performance Optimizer agent", "status": "completed"}, {"content": "Create Next.js app scaffolding command", "status": "completed"}, {"content": "Create Vercel deployment optimization command", "status": "completed"}, {"content": "Create component generator command", "status": "completed"}, {"content": "Create API route tester command", "status": "completed"}, {"content": "Create bundle analyzer command", "status": "completed"}, {"content": "Create middleware creator command", "status": "completed"}, {"content": "Create edge function generator command", "status": "completed"}, {"content": "Create performance audit command", "status": "completed"}, {"content": "Create environment sync command", "status": "completed"}, {"content": "Create migration helper command", "status": "in_progress"}]

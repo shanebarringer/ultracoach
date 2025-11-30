@@ -224,9 +224,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - Authentication flows
 - State management patterns
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Create a new feature for tracking race results with UI, API, and database"
 ```
 
@@ -244,9 +244,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - Accessibility (WCAG compliance)
 - Performance optimization
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Build a responsive race calendar component with proper ARIA labels"
 ```
 
@@ -264,9 +264,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - TypeScript configuration
 - JavaScript to TypeScript migration
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Create type-safe API response handlers with proper error typing"
 ```
 
@@ -283,9 +283,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - Integration patterns
 - Authentication setup
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Configure a new MCP server for Stripe integration"
 ```
 
@@ -302,9 +302,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - Agent coordination
 - Memory management
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Maintain context across multiple feature development sessions"
 ```
 
@@ -321,9 +321,9 @@ All agents use **Opus 4.5** model for maximum capability.
 - License compliance checking
 - Safe dependency updates
 
-**Example invocation:**
+#### Example invocation:
 
-```
+```text
 "Scan for vulnerabilities and update outdated dependencies"
 ```
 
@@ -626,7 +626,7 @@ git commit -m "fix(auth): resolve login issue"
 
 ## Quick Reference Card
 
-```
+```text
 HOOKS:
   Pre-commit: typecheck → lint → format:check (blocking)
   Pre-push:   build only (~10s)

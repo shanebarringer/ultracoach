@@ -8,6 +8,16 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('better-auth-client')
 
+/**
+ * Type for the forgetPassword method.
+ * Better Auth exposes this when forgotPasswordEnabled: true on server,
+ * but TypeScript can't infer dynamic plugin methods.
+ */
+type ForgetPasswordFn = (params: {
+  email: string
+  redirectTo?: string
+}) => Promise<{ error?: { message?: string } | null }>
+
 // Lazy initialization to prevent issues during SSR/build
 let _authClient: ReturnType<typeof createAuthClient> | null = null
 
@@ -130,13 +140,6 @@ export const authClient = {
     return getAuthClient().changePassword
   },
   get forgetPassword() {
-    // Better Auth exposes this when forgotPasswordEnabled: true on server
-    // Type assertion needed as TypeScript can't infer dynamic plugin methods
-    type ForgetPasswordFn = (params: {
-      email: string
-      redirectTo?: string
-    }) => Promise<{ error?: { message?: string } | null }>
-
     return (getAuthClient() as unknown as { forgetPassword: ForgetPasswordFn }).forgetPassword
   },
   get resetPassword() {

@@ -39,7 +39,7 @@ Based on arguments and context, determine component type:
 
 Generate comprehensive component structure:
 
-```
+```text
 components/[ComponentName]/
 ├── index.ts                    # Barrel export
 ├── [ComponentName].tsx         # Main component

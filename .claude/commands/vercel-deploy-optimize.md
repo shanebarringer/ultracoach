@@ -4,7 +4,7 @@ argument-hint: [environment] [--analyze] [--preview]
 description: Optimize and deploy Next.js application to Vercel with performance monitoring
 ---
 
-## Vercel Deployment Optimization
+# Vercel Deployment Optimization
 
 **Target Environment**: $ARGUMENTS
 
