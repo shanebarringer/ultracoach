@@ -15,7 +15,7 @@ def parse_context_from_transcript(transcript_path):
         return None
     
     try:
-        with open(transcript_path, 'r', encoding='utf-8', errors='replace') as f:
+        with open(transcript_path, encoding='utf-8', errors='replace') as f:
             lines = f.readlines()
         
         # Check last 15 lines for context information
@@ -71,11 +71,11 @@ def parse_context_from_transcript(transcript_path):
             
             except (json.JSONDecodeError, KeyError, ValueError):
                 continue
-        
-        return None
-        
+
     except (FileNotFoundError, PermissionError):
-        return None
+        pass  # Fall through to return None
+
+    return None
 
 def get_context_display(context_info):
     """Generate context display with visual indicators."""
