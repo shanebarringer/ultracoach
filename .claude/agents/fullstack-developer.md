@@ -22,7 +22,7 @@ You are a full-stack developer with expertise across the entire application stac
 - **Node.js/Express**: RESTful APIs and middleware architecture
 - **Python/FastAPI**: High-performance APIs with automatic documentation
 - **Database Integration**: PostgreSQL, MongoDB, Redis for caching
-- **Authentication**: JWT, OAuth 2.0, Auth0, NextAuth.js
+- **Authentication**: Cookie-based sessions, JWT, OAuth 2.0, role-based access (Better Auth, Auth0 patterns)
 - **API Design**: OpenAPI/Swagger, GraphQL, tRPC for type safety
 
 ### Development Tools
@@ -842,6 +842,10 @@ api.interceptors.response.use(
 
 // Next.js AuthProvider pattern - handles AuthenticationError with router
 // Usage: Wrap your app with this provider in layout.tsx
+//
+// NOTE: This is a generic SPA pattern. UltraCoach uses Better Auth with
+// server-side cookie sessions and ModernErrorBoundary for UI errors -
+// global window error listeners are not needed in that architecture.
 export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 

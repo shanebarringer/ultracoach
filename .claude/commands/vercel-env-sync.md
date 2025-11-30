@@ -190,16 +190,16 @@ const validationRules: ValidationRule[] = [
     description: 'Database connection string',
   },
   {
-    name: 'NEXTAUTH_SECRET',
+    name: 'AUTH_SECRET',
     required: true,
     pattern: /.{32,}/,
-    description: 'NextAuth.js secret key (min 32 characters)',
+    description: 'Authentication secret key (min 32 characters)',
   },
   {
-    name: 'NEXTAUTH_URL',
+    name: 'NEXT_PUBLIC_APP_URL',
     required: true,
     pattern: /^https?:\/\/.+/,
-    description: 'NextAuth.js canonical URL',
+    description: 'Application canonical URL',
   },
   {
     name: 'API_KEY',
@@ -493,8 +493,9 @@ function getDatabaseDescription(key: string): string {
 }
 
 function getAuthDescription(key: string): string {
-  if (key === 'NEXTAUTH_SECRET') return 'NextAuth.js secret key'
-  if (key === 'NEXTAUTH_URL') return 'NextAuth.js canonical URL'
+  if (key === 'AUTH_SECRET') return 'Authentication secret key'
+  if (key === 'BETTER_AUTH_SECRET') return 'Better Auth secret key'
+  if (key === 'NEXT_PUBLIC_APP_URL') return 'Application canonical URL'
   if (key === 'JWT_SECRET') return 'JWT secret key'
   return 'Authentication configuration'
 }

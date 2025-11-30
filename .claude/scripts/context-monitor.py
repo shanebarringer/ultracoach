@@ -9,36 +9,45 @@ import sys
 import os
 import re
 
-def parse_context_from_transcript(transcript_path):
+def parse_context_from_transcript(transcript_path, model_name='Claude Sonnet'):
     """Parse context usage from transcript file."""
     if not transcript_path or not os.path.exists(transcript_path):
         return None
-    
+
+    # Model-specific context window sizes (tokens)
+    # Currently all models have 200k, but this dict allows for future variations
+    context_limits = {
+        'Claude Opus': 200000,
+        'Claude Sonnet': 200000,
+        'Claude Haiku': 200000,
+    }
+    context_limit = context_limits.get(model_name, 200000)
+
     try:
         with open(transcript_path, encoding='utf-8', errors='replace') as f:
             lines = f.readlines()
-        
+
         # Check last 15 lines for context information
         recent_lines = lines[-15:] if len(lines) > 15 else lines
-        
+
         for line in reversed(recent_lines):
             try:
                 data = json.loads(line.strip())
-                
+
                 # Method 1: Parse usage tokens from assistant messages
                 if data.get('type') == 'assistant':
                     message = data.get('message', {})
                     usage = message.get('usage', {})
-                    
+
                     if usage:
                         input_tokens = usage.get('input_tokens', 0)
                         cache_read = usage.get('cache_read_input_tokens', 0)
                         cache_creation = usage.get('cache_creation_input_tokens', 0)
-                        
-                        # Estimate context usage (assume 200k context for Claude Sonnet)
+
+                        # Estimate context usage based on model-specific limit
                         total_tokens = input_tokens + cache_read + cache_creation
                         if total_tokens > 0:
-                            percent_used = min(100, (total_tokens / 200000) * 100)
+                            percent_used = min(100, (total_tokens / context_limit) * 100)
                             return {
                                 'percent': percent_used,
                                 'tokens': total_tokens,
@@ -201,8 +210,8 @@ def main():
         transcript_path = data.get('transcript_path', '')
         cost_data = data.get('cost', {})
         
-        # Parse context usage
-        context_info = parse_context_from_transcript(transcript_path)
+        # Parse context usage with model-specific context limit
+        context_info = parse_context_from_transcript(transcript_path, model_name)
         
         # Build status components
         context_display = get_context_display(context_info)

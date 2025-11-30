@@ -4,7 +4,7 @@ argument-hint: [--lighthouse] [--bundle] [--runtime] [--all]
 description: Comprehensive Next.js performance audit with actionable optimization recommendations
 ---
 
-## Next.js Performance Audit
+# Next.js Performance Audit
 
 **Audit Type**: $ARGUMENTS
 
