@@ -401,6 +401,7 @@ export const coach_invitations = pgTable(
     expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
     accepted_at: timestamp('accepted_at', { withTimezone: true }),
     declined_at: timestamp('declined_at', { withTimezone: true }),
+    revoked_at: timestamp('revoked_at', { withTimezone: true }),
     // When accepted, link to the user who accepted
     invitee_user_id: text('invitee_user_id').references(() => user.id, { onDelete: 'set null' }),
     // When accepted, link to the created relationship (coach_runners or coach_connections)

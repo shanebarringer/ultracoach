@@ -239,168 +239,217 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .where(eq(user.id, invitation.inviter_user_id))
       .limit(1)
 
+    // Validate invited_role before proceeding
+    if (invitation.invited_role !== 'runner' && invitation.invited_role !== 'coach') {
+      logger.error('Invalid invited_role value encountered', {
+        invitationId: invitation.id,
+        invited_role: invitation.invited_role,
+      })
+      return NextResponse.json(
+        { success: false, error: 'INVALID_ROLE', message: 'Invalid invitation configuration' },
+        { status: 400 }
+      )
+    }
+
     // Create the appropriate relationship based on invited_role
-    let relationshipId: string
-    let relationshipType: 'coach_runner' | 'coach_connection'
+    // Wrapped in transaction for atomicity - if any operation fails, all changes are rolled back
+    let transactionResult: {
+      relationshipId: string
+      relationshipType: 'coach_runner' | 'coach_connection'
+    }
 
-    if (invitation.invited_role === 'runner') {
-      // Runner invitation: Create coach-runner relationship
-      // Inviter is the coach, acceptor is the runner
-      const coachId = invitation.inviter_user_id
-      const runnerId = sessionUser.id
+    try {
+      transactionResult = await db.transaction(async tx => {
+        let relationshipId: string
+        let relationshipType: 'coach_runner' | 'coach_connection'
 
-      // Check if relationship already exists
-      const existingRelationship = await db
-        .select()
-        .from(coach_runners)
-        .where(and(eq(coach_runners.coach_id, coachId), eq(coach_runners.runner_id, runnerId)))
-        .limit(1)
+        if (invitation.invited_role === 'runner') {
+          // Runner invitation: Create coach-runner relationship
+          // Inviter is the coach, acceptor is the runner
+          const coachId = invitation.inviter_user_id
+          const runnerId = sessionUser.id
 
-      if (existingRelationship.length > 0) {
-        // Relationship exists - update it to active
-        await db
-          .update(coach_runners)
-          .set({
-            status: 'active',
-            relationship_type: 'invited',
-            updated_at: new Date(),
-          })
-          .where(eq(coach_runners.id, existingRelationship[0].id))
+          // Check if relationship already exists
+          const existingRelationship = await tx
+            .select()
+            .from(coach_runners)
+            .where(and(eq(coach_runners.coach_id, coachId), eq(coach_runners.runner_id, runnerId)))
+            .limit(1)
 
-        relationshipId = existingRelationship[0].id
-      } else {
-        // Create new coach-runner relationship
-        const [newRelationship] = await db
-          .insert(coach_runners)
-          .values({
-            coach_id: coachId,
-            runner_id: runnerId,
-            status: 'active',
-            relationship_type: 'invited',
-            invited_by: 'coach',
-            relationship_started_at: new Date(),
-          })
-          .returning()
+          if (existingRelationship.length > 0) {
+            // Relationship exists - update it to active
+            await tx
+              .update(coach_runners)
+              .set({
+                status: 'active',
+                relationship_type: 'invited',
+                updated_at: new Date(),
+              })
+              .where(eq(coach_runners.id, existingRelationship[0].id))
 
-        // Verify the insert succeeded
-        if (!newRelationship?.id) {
-          logger.error('Failed to create coach-runner relationship - insert returned no result', {
-            invitationId: invitation.id,
-            coachId,
-            runnerId,
-          })
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'RELATIONSHIP_CREATE_FAILED',
-              message: 'Failed to create relationship',
-            },
-            { status: 500 }
-          )
-        }
+            relationshipId = existingRelationship[0].id
+          } else {
+            // Create new coach-runner relationship
+            const [newRelationship] = await tx
+              .insert(coach_runners)
+              .values({
+                coach_id: coachId,
+                runner_id: runnerId,
+                status: 'active',
+                relationship_type: 'invited',
+                invited_by: 'coach',
+                relationship_started_at: new Date(),
+              })
+              .returning()
 
-        relationshipId = newRelationship.id
-      }
-      relationshipType = 'coach_runner'
+            // Verify the insert succeeded
+            if (!newRelationship?.id) {
+              logger.error(
+                'Failed to create coach-runner relationship - insert returned no result',
+                {
+                  invitationId: invitation.id,
+                  coachId,
+                  runnerId,
+                }
+              )
+              throw new Error('RELATIONSHIP_CREATE_FAILED')
+            }
 
-      // Update invitation status with coach_runner relationship
-      await db
-        .update(coach_invitations)
-        .set({
-          status: 'accepted',
-          accepted_at: new Date(),
-          invitee_user_id: sessionUser.id,
-          coach_runner_relationship_id: relationshipId,
-          updated_at: new Date(),
-        })
-        .where(eq(coach_invitations.id, invitation.id))
-    } else {
-      // Coach invitation: Create coach-to-coach connection
-      // Inviter is coach A, acceptor is coach B
-      const coachAId = invitation.inviter_user_id
-      const coachBId = sessionUser.id
+            relationshipId = newRelationship.id
+          }
+          relationshipType = 'coach_runner'
 
-      // Check if connection already exists (in either direction)
-      const existingConnection = await db
-        .select()
-        .from(coach_connections)
-        .where(
-          or(
-            and(
-              eq(coach_connections.coach_a_id, coachAId),
-              eq(coach_connections.coach_b_id, coachBId)
-            ),
-            and(
-              eq(coach_connections.coach_a_id, coachBId),
-              eq(coach_connections.coach_b_id, coachAId)
+          // Update invitation status with coach_runner relationship
+          await tx
+            .update(coach_invitations)
+            .set({
+              status: 'accepted',
+              accepted_at: new Date(),
+              invitee_user_id: sessionUser.id,
+              coach_runner_relationship_id: relationshipId,
+              updated_at: new Date(),
+            })
+            .where(eq(coach_invitations.id, invitation.id))
+        } else {
+          // Coach invitation: Create coach-to-coach connection
+          // Inviter is coach A, acceptor is coach B
+          const coachAId = invitation.inviter_user_id
+          const coachBId = sessionUser.id
+
+          // Check if connection already exists (in either direction)
+          const existingConnection = await tx
+            .select()
+            .from(coach_connections)
+            .where(
+              or(
+                and(
+                  eq(coach_connections.coach_a_id, coachAId),
+                  eq(coach_connections.coach_b_id, coachBId)
+                ),
+                and(
+                  eq(coach_connections.coach_a_id, coachBId),
+                  eq(coach_connections.coach_b_id, coachAId)
+                )
+              )
             )
-          )
-        )
-        .limit(1)
+            .limit(1)
 
-      if (existingConnection.length > 0) {
-        // Connection exists - update it to active
-        await db
-          .update(coach_connections)
-          .set({
-            status: 'active',
-            updated_at: new Date(),
-          })
-          .where(eq(coach_connections.id, existingConnection[0].id))
+          if (existingConnection.length > 0) {
+            // Connection exists - update it to active
+            await tx
+              .update(coach_connections)
+              .set({
+                status: 'active',
+                updated_at: new Date(),
+              })
+              .where(eq(coach_connections.id, existingConnection[0].id))
 
-        relationshipId = existingConnection[0].id
-      } else {
-        // Create new coach-to-coach connection
-        const [newConnection] = await db
-          .insert(coach_connections)
-          .values({
-            coach_a_id: coachAId,
-            coach_b_id: coachBId,
-            status: 'active',
-            connection_started_at: new Date(),
-          })
-          .returning()
+            relationshipId = existingConnection[0].id
+          } else {
+            // Create new coach-to-coach connection
+            const [newConnection] = await tx
+              .insert(coach_connections)
+              .values({
+                coach_a_id: coachAId,
+                coach_b_id: coachBId,
+                status: 'active',
+                connection_started_at: new Date(),
+              })
+              .returning()
 
-        // Verify the insert succeeded
-        if (!newConnection?.id) {
-          logger.error('Failed to create coach connection - insert returned no result', {
+            // Verify the insert succeeded
+            if (!newConnection?.id) {
+              logger.error('Failed to create coach connection - insert returned no result', {
+                invitationId: invitation.id,
+                coachAId,
+                coachBId,
+              })
+              throw new Error('CONNECTION_CREATE_FAILED')
+            }
+
+            relationshipId = newConnection.id
+          }
+          relationshipType = 'coach_connection'
+
+          // Update invitation status with coach_connection relationship
+          await tx
+            .update(coach_invitations)
+            .set({
+              status: 'accepted',
+              accepted_at: new Date(),
+              invitee_user_id: sessionUser.id,
+              coach_connection_id: relationshipId,
+              updated_at: new Date(),
+            })
+            .where(eq(coach_invitations.id, invitation.id))
+
+          logger.info('Coach-to-coach connection created', {
             invitationId: invitation.id,
             coachAId,
             coachBId,
+            connectionId: relationshipId,
           })
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'CONNECTION_CREATE_FAILED',
-              message: 'Failed to create connection',
-            },
-            { status: 500 }
-          )
         }
 
-        relationshipId = newConnection.id
-      }
-      relationshipType = 'coach_connection'
-
-      // Update invitation status with coach_connection relationship
-      await db
-        .update(coach_invitations)
-        .set({
-          status: 'accepted',
-          accepted_at: new Date(),
-          invitee_user_id: sessionUser.id,
-          coach_connection_id: relationshipId,
-          updated_at: new Date(),
-        })
-        .where(eq(coach_invitations.id, invitation.id))
-
-      logger.info('Coach-to-coach connection created', {
-        invitationId: invitation.id,
-        coachAId,
-        coachBId,
-        connectionId: relationshipId,
+        return { relationshipId, relationshipType }
       })
+    } catch (txError) {
+      // Transaction failed - all changes rolled back
+      const errorMessage = txError instanceof Error ? txError.message : 'Unknown error'
+      logger.error('Transaction failed during invitation acceptance', {
+        invitationId: invitation.id,
+        error: errorMessage,
+      })
+
+      // Return appropriate error based on what failed
+      if (errorMessage === 'RELATIONSHIP_CREATE_FAILED') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'RELATIONSHIP_CREATE_FAILED',
+            message: 'Failed to create relationship',
+          },
+          { status: 500 }
+        )
+      }
+      if (errorMessage === 'CONNECTION_CREATE_FAILED') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'CONNECTION_CREATE_FAILED',
+            message: 'Failed to create connection',
+          },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json(
+        { success: false, error: 'TRANSACTION_FAILED', message: 'Failed to process invitation' },
+        { status: 500 }
+      )
     }
+
+    const { relationshipId, relationshipType } = transactionResult
 
     logger.info('Invitation accepted', {
       invitationId: invitation.id,

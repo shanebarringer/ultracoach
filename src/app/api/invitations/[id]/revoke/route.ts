@@ -86,6 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .update(coach_invitations)
       .set({
         status: 'revoked',
+        revoked_at: new Date(),
         updated_at: new Date(),
       })
       .where(eq(coach_invitations.id, invitation.id))
