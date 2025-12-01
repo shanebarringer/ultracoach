@@ -8,6 +8,16 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('better-auth-client')
 
+/**
+ * Type for the forgetPassword method.
+ * Better Auth exposes this when forgotPasswordEnabled: true on server,
+ * but TypeScript can't infer dynamic plugin methods.
+ */
+type ForgetPasswordFn = (params: {
+  email: string
+  redirectTo?: string
+}) => Promise<{ error?: { message?: string } | null }>
+
 // Lazy initialization to prevent issues during SSR/build
 let _authClient: ReturnType<typeof createAuthClient> | null = null
 
@@ -75,6 +85,7 @@ function getAuthClient() {
  * - `getSession` - Current session retrieval
  * - `updateUser` - User profile updates
  * - `changePassword` - Password management
+ * - `forgetPassword` - Password reset initiation
  * - `resetPassword` - Password reset completion
  * - `deleteUser` - Account deletion
  *
@@ -127,6 +138,9 @@ export const authClient = {
   // Password management
   get changePassword() {
     return getAuthClient().changePassword
+  },
+  get forgetPassword() {
+    return (getAuthClient() as unknown as { forgetPassword: ForgetPasswordFn }).forgetPassword
   },
   get resetPassword() {
     return getAuthClient().resetPassword
