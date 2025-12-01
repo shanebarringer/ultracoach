@@ -114,6 +114,52 @@ See `.context7-docs/nextjs/` for comprehensive guides:
 - `production-deployment-checklist.md` - Production verification checklist
 - `fetch-credentials-best-practices.md` - Fetch credentials and API client patterns
 
+## 🚀 Claude Code Quick Reference
+
+> **Full documentation**: See `.claude/docs/WORKFLOWS.md` for detailed hook/agent/MCP documentation.
+
+### Slash Commands
+
+| Command                         | Purpose                                         |
+| ------------------------------- | ----------------------------------------------- |
+| `/husky`                        | Run CI checks with auto-fix until passing       |
+| `/nextjs-component-generator`   | Generate Next.js components with best practices |
+| `/supabase-migration-assistant` | Create/manage database migrations               |
+| `/supabase-schema-sync`         | Sync schema between environments                |
+| `/supabase-data-explorer`       | Query and explore database                      |
+| `/vercel-deploy-optimize`       | Deploy to Vercel with optimization              |
+| `/vercel-env-sync`              | Sync environment variables                      |
+
+### Quality Gates (Automated)
+
+**Pre-commit** (blocks commit): typecheck → lint → format:check
+
+**Pre-push**: build only (~10 seconds). E2E tests run in CI.
+
+**Full local checks**: Use `/husky` command for thorough testing before pushing.
+
+### Available Agents (All Opus 4.5)
+
+| Agent                 | Use For                                     |
+| --------------------- | ------------------------------------------- |
+| `fullstack-developer` | End-to-end features (API + DB + UI)         |
+| `frontend-developer`  | React components, UI, accessibility         |
+| `typescript-pro`      | Complex types, migrations, type safety      |
+| `mcp-expert`          | MCP server configuration                    |
+| `context-manager`     | Multi-agent workflows, context preservation |
+| `dependency-manager`  | Vulnerability scanning, dependency updates  |
+
+### MCP Servers
+
+| Server     | Purpose                               |
+| ---------- | ------------------------------------- |
+| Supabase   | Read-only database queries and schema |
+| PostgreSQL | Local database operations             |
+| Context7   | Library documentation fetching        |
+| GitHub     | Repository management                 |
+| Linear     | Issue tracking                        |
+| Memory     | Persistent session context            |
+
 ## 🌐 API Client Best Practices (IMPORTANT)
 
 ### 🚫 CRITICAL: Server Component Anti-Pattern
@@ -205,147 +251,57 @@ supabase db dump --linked      # Dump production data
 
 **When Supabase CLI prompts for password, use the DATABASE_PASSWORD value from .env.production**
 
-### Content Security Policy (CSP) Configuration (CRITICAL)
+### Content Security Policy (CSP) Configuration
 
-**IMPLEMENTED**: UltraCoach uses **nonce-based Content Security Policy** for optimal security in production.
+**IMPLEMENTED**: UltraCoach uses **nonce-based CSP** for optimal security.
 
-#### 🔒 Security-First Approach: Nonce-Based CSP (Current Implementation)
+- **Location**: `src/middleware.ts` (nonce generation) + `src/app/layout.tsx` (nonce extraction)
+- **Key features**: Unique nonce per request, `'strict-dynamic'`, no `'unsafe-inline'` for scripts
+- **Troubleshooting**: White screen = check middleware nonce generation and layout extraction
 
-**UltraCoach uses the recommended security-first approach for Next.js 15 applications:**
-
-- ✅ **Unique nonce per request** - Cryptographically secure random nonce generated in middleware
-- ✅ **Zero `'unsafe-inline'` for scripts** - No broad inline script permissions (main XSS protection)
-- ✅ **`'strict-dynamic'`** - Allows scripts loaded by nonce-approved scripts
-- ✅ **Automatic nonce application** - Next.js applies nonce to all framework scripts
-- ✅ **Pragmatic style handling** - Uses `'unsafe-inline'` for styles (safe with React's automatic escaping)
-- ✅ **Environment-specific policies** - Dev includes `'unsafe-eval'` for HMR
-
-#### Implementation Details
-
-**Location**: `src/middleware.ts` (nonce generation and CSP header setting)
-
-The middleware generates a unique nonce for each request and builds a strict CSP header:
-
-```typescript
-// Generate unique nonce (cryptographically secure)
-// Using btoa() instead of Buffer for Edge runtime compatibility
-const nonce = btoa(crypto.randomUUID())
-
-// Build CSP with nonce-based script approval (environment-specific)
-const isDev = process.env.NODE_ENV === 'development'
-
-const cspDirectives = [
-  "default-src 'self'",
-  // script-src: Nonce-based protection (primary XSS defense)
-  // 'unsafe-inline' fallback for Next.js router navigation (ignored by modern browsers with nonce)
-  // Development includes 'unsafe-eval' for HMR (Hot Module Replacement)
-  `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
-  // style-src: Allow inline styles for React inline style attributes
-  // 'unsafe-inline' required for React styles (style={{...}})
-  // Safe because React automatically escapes all user content
-  // Google Fonts: External stylesheet and font files
-  `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
-  "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://api.strava.com https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  'upgrade-insecure-requests',
-]
-```
-
-**Layout Integration**: `src/app/layout.tsx`
-
-The root layout extracts the nonce and passes it to components that need it:
-
-```typescript
-const headersList = await headers()
-const nonce = headersList.get('x-nonce') ?? undefined
-
-// Pass nonce to PostHog and other script-loading components
-<PostHogProvider nonce={nonce}>
-```
-
-#### Why Nonce-Based CSP Is Superior
-
-**Security Benefits:**
-
-- 🛡️ **Blocks all unauthorized inline scripts** - Only scripts with matching nonce execute
-- 🔐 **Per-request randomization** - Attackers can't guess nonce values
-- ✅ **Industry best practice** - Recommended by Next.js, Google, and security experts
-- 🚫 **Eliminates XSS attack surface** - No `'unsafe-inline'` weakness
-
-**Official Documentation:**
-
-- [Next.js CSP Guide](https://nextjs.org/docs/app/guides/content-security-policy) - Official implementation guide
-- [MDN CSP Nonces](https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy/script-src) - Authoritative CSP reference
-
-#### Trade-offs & Requirements
-
-**Forces Dynamic Rendering:**
-
-- ⚠️ All pages must be dynamically rendered (no static optimization)
-- ⚠️ Disables Incremental Static Regeneration (ISR)
-- ⚠️ CDN caching requires additional configuration
-
-**For UltraCoach, This Is Ideal:**
-
-- ✅ Most pages already require dynamic rendering (authentication)
-- ✅ Server/Client Component pattern aligns perfectly
-- ✅ Security > static optimization for coaching platform
-- ✅ Middleware already in place for authentication
-
-#### Troubleshooting
-
-**Symptoms of CSP Issues:**
-
-- White screen on landing page
-- Console errors: "Refused to execute inline script"
-- SHA-256 hash violations for scripts
-- Pages render but don't hydrate
-
-**Solutions:**
-
-1. Verify middleware is generating nonce
-2. Check layout extracts nonce from `x-nonce` header
-3. Ensure Script components use `nonce` prop
-4. Confirm CSP header is set in response
-
-#### Legacy: unsafe-inline Approach (Not Recommended)
-
-**Historical Note**: Previous implementations used `'unsafe-inline'` as a compatibility measure. This approach:
-
-- ⚠️ **Weakens CSP protection** - Allows ALL inline scripts
-- 🔴 **Security trade-off** - Increases XSS attack surface
-- ⚠️ **Not recommended** - Use only if nonce-based CSP is not feasible
-
-If you need to temporarily use `'unsafe-inline'` for debugging, add to middleware CSP:
-
-```typescript
-// TEMPORARY ONLY - Remove in production
-script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'
-```
+**Full implementation details**: See `.context7-docs/security/csp-implementation.md`
 
 ## Git Commit Strategy:
 
 - Commit early and commit often
 - **ALWAYS** Run `pnpm lint` before adding and committing
 - **ALWAYS** Run `pnpm format` before adding and committing
-- **PRE-COMMIT HOOK COMMANDS**: The Husky pre-commit hook runs different commands than manual ones:
-  - Manual: `pnpm lint` (ESLint check)
-  - Pre-commit: `pnpm lint` (same)
-  - Manual: `pnpm format` (writes formatting changes)
-  - Pre-commit: `pnpm format:check` (only checks, fails if unformatted)
-  - Manual: `pnpm typecheck` (TypeScript validation)
-  - Pre-commit: `pnpm typecheck` (same)
-- **DEBUGGING TIP**: If pre-commit fails but manual commands pass, run `pnpm format:check` to verify formatting
-- **PRE-PUSH HOOK REQUIREMENTS**: Dev server must be running on port 3001 for E2E tests
-  - Start dev server: `pnpm dev` (in separate terminal)
-  - Verify server is ready: `curl http://localhost:3001`
-  - Pre-push hook will check for running server and fail early with helpful message if not detected
-  - Critical E2E tests (auth, race-import) require live server for authentication flows
+
+### Conventional Commits (ENFORCED)
+
+Commit messages are validated by a pre-tool hook. Use this format:
+
+```
+<type>[optional scope]: <description>
+```
+
+**Allowed types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`, `revert`
+
+**Examples:**
+
+```bash
+git commit -m "feat(auth): add OAuth2 support"
+git commit -m "fix: resolve race condition in workout sync"
+git commit -m "docs: update API documentation"
+```
+
+### Pre-commit Hook
+
+The Husky pre-commit hook runs these checks (blocks commit on failure):
+
+- `pnpm typecheck` - TypeScript validation
+- `pnpm lint` - ESLint checks
+- `pnpm format:check` - Prettier validation (check only, doesn't write)
+
+**DEBUGGING TIP**: If pre-commit fails but manual commands pass, run `pnpm format:check` to verify formatting.
+
+### Pre-push Hook (Simplified)
+
+Pre-push runs `pnpm build` only (~10 seconds). E2E tests run in CI.
+
+**For full local checks**, use the `/husky` command which runs typecheck, lint, format, tests, and build.
+
+**For detailed hook documentation, see `.claude/docs/WORKFLOWS.md`**
 
 ### Database Philosophy:
 
@@ -357,133 +313,27 @@ script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'
 
 ## 🔐 Better Auth Configuration (CRITICAL)
 
-### Database Schema Fields (EXTREMELY IMPORTANT)
+### Key Rules
 
-**CRITICAL**: Better Auth uses specific field naming that MUST be followed exactly:
+1. **Field naming**: Use `role: 'user'` (Better Auth standard), `userType: 'coach'|'runner'` (our differentiation)
+2. **API queries**: Filter by `user.userType`, NEVER `user.role`
+3. **Password hashing**: NEVER use bcrypt - Better Auth has its own format. Use sign-up API or browser automation.
+4. **Navigation**: Use `router.push()`, NEVER `window.location.href`
+5. **Client env vars**: Must have `NEXT_PUBLIC_` prefix
 
-- **Better Auth Role**: `role` field should be `'user'` (Better Auth standard)
-- **Application Role**: Use `user_type` field for coach/runner differentiation
-- **Database Queries**: ALL API queries must filter by `user.userType` (maps to `user_type` column)
-- **Session Data**: Better Auth will use `role: 'user'` for all users, customSession transforms this
-
-### Schema Configuration:
-
-```typescript
-// In schema.ts - BOTH fields required for Better Auth compatibility
-export const user = pgTable('better_auth_users', {
-  // ... other fields
-  role: text('role').default('user').notNull(), // Better Auth standard role
-  userType: text('user_type').default('runner').notNull(), // Our coach/runner differentiation
-})
-```
-
-### API Query Pattern (REQUIRED):
-
-```typescript
-// ✅ CORRECT - Use userType field for database queries
-.where(eq(user.userType, 'runner'))
-.where(eq(user.userType, 'coach'))
-
-// ❌ WRONG - Don't use role field for queries
-.where(eq(user.role, 'runner'))
-```
-
-### Data Consistency Fix:
-
-```sql
--- Fix any inconsistent role values to Better Auth standard
-UPDATE better_auth_users SET role = 'user' WHERE role != 'user';
-```
-
-### Password Hashing (CRITICAL)
-
-**IMPORTANT**: Better Auth uses its own password hashing format that is incompatible with bcrypt!
-
-- **NEVER** use bcrypt to hash passwords for Better Auth users
-- **NEVER** manually create account records with bcrypt-generated password hashes
-- **⚠️ SECURITY ISSUE**: Custom password hashing in `scripts/lib/database-operations.ts:96-100` causes authentication failures
-- Better Auth expects hex-formatted password hashes from its internal hashing system
-- Using bcrypt hashes will cause "User not found" errors during authentication
-
-### Correct Approaches:
-
-1. **For test users**: Use the automated creation script: `pnpm tsx scripts/create-test-users-automated.ts`
-2. **For production**: Always use Better Auth's sign-up API or web interface
-3. **For migrations**: If users exist with wrong hash format, delete and recreate through Better Auth
-
-### Scripts Available:
-
-- `scripts/fresh-test-user-setup.ts` - Cleans existing test users
-- `scripts/create-test-users-automated.ts` - Creates test users via browser automation
-- `scripts/test-better-auth-signin.ts` - Tests sign-in functionality
-
-### Client-Side Navigation Best Practices (CRITICAL - Added 2025-09-04):
-
-**NEVER use `window.location.href` for navigation in Next.js client components!**
-
-- **✅ CORRECT**: Use `router.push()` from `useRouter` hook
-- **❌ WRONG**: `window.location.href = '/dashboard'` (causes full page reload)
-- **✅ CORRECT**: Remove HTML form attributes when using client-side submission
-- **❌ WRONG**: Mix `onSubmit` handler with `method="post" action="/api/..."`
-
-### Environment Variables in Client Components:
-
-- **✅ CORRECT**: Use `NEXT_PUBLIC_` prefix for client-accessible env vars
-- **❌ WRONG**: Try to access `process.env.NODE_ENV` in client components
-- Add to `.env.local`: `NEXT_PUBLIC_APP_ENV=development`
-- Add to Vercel: `NEXT_PUBLIC_APP_ENV=production`
-
-### Error Symptoms:
-
-- "User not found" during sign-in with correct credentials
-- "hex string expected, got undefined" in Better Auth verification
-- Authentication timeouts in Playwright tests
-- API returning empty results when filtering by wrong field
-- **500 errors with "Bad escaped character in JSON"** - caused by improper JSON escaping in API calls
-
-### Critical Fix (2025-08-17):
-
-**✅ RESOLVED**: Better Auth API works perfectly when using proper JSON formatting. The authentication system is fully functional.
-
-**Always** use proper JSON formatting when testing APIs:
+### Test User Scripts
 
 ```bash
-# ✅ CORRECT - Use JSON file to avoid escaping issues
-curl http://localhost:3001/api/auth/sign-up/email -d @signup.json -H "Content-Type: application/json"
-
-# ❌ WRONG - Escaped quotes cause JSON parsing errors
-curl http://localhost:3001/api/auth/sign-up/email -d '{"email":"test@example.com"}'
+pnpm tsx scripts/create-test-users-automated.ts  # Create test users via browser
+pnpm tsx scripts/fresh-test-user-setup.ts        # Clean existing test users
+pnpm tsx scripts/test-better-auth-signin.ts      # Test sign-in functionality
 ```
 
-### Additional Fixes (2025-08-17):
+### Error Symptoms → Causes
 
-**✅ TRAINING PLAN TEMPLATES**: Created missing `/api/training-plans/templates` endpoint
-
-- **Issue**: CreateTrainingPlanModal was calling non-existent API endpoint
-- **Solution**: Created proper API endpoint with authentication and database integration
-- **Result**: 19 public templates now load correctly in training plan creation modal
-
-**✅ TYPESCRIPT IMPROVEMENTS**: Proper type extensions for Better Auth custom fields
-
-- **Issue**: Better Auth additionalFields not included in TypeScript signatures
-- **Solution**: Extended interfaces instead of using `any` types
-- **Implementation**: Created `SignUpEmailBody` interface for type safety
-
-```typescript
-// ✅ CORRECT - Extend types properly
-interface SignUpEmailBody {
-  email: string
-  password: string
-  name: string
-  userType?: string
-  callbackURL?: string
-}
-
-// Use with proper casting
-const result = await auth.api.signUpEmail({
-  body: userData as SignUpEmailBody,
-})
-```
+- "User not found" → bcrypt hash instead of Better Auth hash
+- "hex string expected" → Schema mismatch in session table
+- Empty API results → Filtering by `role` instead of `userType`
 
 ## 📊 Project Overview
 
@@ -520,174 +370,17 @@ UltraCoach is a professional ultramarathon coaching platform built with Next.js 
 - **React Suspense**: Modern async data loading with enhanced error boundaries and loading states
 - **Loading Components**: Comprehensive skeleton components for consistent UX across all data loading
 
-## 📝 Recent Project Notes
-
-- **CodeRabbit AI Improvements (2025-09-15)**: ✅ **COMPLETED** - Addressed 15 nitpick comments for enhanced code robustness
-  - **Issue**: CodeRabbit AI identified edge cases, type safety gaps, and potential bugs in date utilities and workout atoms
-  - **Critical Fixes Applied**:
-    - **Edge-time drift prevention**: Added `startOfDay()` normalization to `toLocalYMD()` to prevent timezone conversion issues
-    - **Hydration bug fix**: Fixed empty array hydration bug that caused stale UI when backend returns empty results
-    - **Response shape type safety**: Created `unwrapWorkout()` helper to handle inconsistent API response shapes (`{ workout }` vs bare object)
-    - **Test stabilization**: Added `vi.setSystemTime()` to prevent flaky time-dependent tests
-    - **Function naming clarity**: Renamed `getCurrentWeekRange()` to `getRollingWeekRange()` with accurate documentation
-  - **Enhanced Test Coverage**: Added ISO string test for `normalizeToEndOfDay` and boundary test for `isWorkoutWithinDays`
-  - **Code Quality**: Removed unused `workoutsLoadingAtom` and `workoutsErrorAtom` (replaced by Suspense pattern)
-  - **Documentation**: Updated `.context7-docs/date-fns/best-practices.md` with CodeRabbit AI learnings and patterns
-  - **Result**: Eliminated edge cases, enhanced type safety, and improved test reliability across date utility system
-
-- **CodeRabbit AI Improvements Phase 2 (2025-09-15)**: ✅ **COMPLETED** - Advanced date parsing and hydration architecture fixes
-  - **Issue**: Additional CodeRabbit AI review identified UTC vs Local timezone drift and forced Suspense issues
-  - **Critical Fixes Applied**:
-    - **Smart Date Parsing**: Created `parseInput()` helper that detects date format and uses appropriate parser
-    - **UTC Drift Prevention**: Date-only strings ("2024-03-15") now parse in local timezone instead of UTC
-    - **Hydration Architecture**: Moved `useHydrateWorkouts()` from generic hook to top-level entry points
-    - **Component Architecture**: Prevents unexpected Suspense boundaries in workout-consuming components
-    - **Testing Enhancement**: Added 7 new test cases for mixed date format scenarios (38/38 tests passing)
-    - **Format Detection**: ISO strings with time use `parseISO()`, date-only strings use `parse()` with format
-  - **Entry Points Updated**: DashboardRouter, WorkoutsPageClient, CalendarPageClient now handle hydration
-  - **Result**: Bulletproof timezone handling and cleaner component architecture with backward compatibility
-
-- **Messaging System Refactor (2025-09-14)**: ✅ **COMPLETED** - Fixed critical messaging display issue
-  - **Issue**: Messages were sending successfully but not displaying in UI due to atom family disconnect
-  - **Root Cause**: Duplicate state management - messages stored in global `messagesAtom` but read from conversation-specific atom families
-  - **Solution**: Applied Jotai best practice "derive state, don't duplicate it"
-  - **Changes Made**:
-    - Refactored `PerformantMessageList` to use derived atom pattern with `splitAtom` for granular updates
-    - Simplified `useMessages` hook to filter from global `messagesAtom` instead of using atom families
-    - Removed unused `conversationMessagesAtomsFamily` and `fetchConversationMessagesFamily`
-    - Fixed TypeScript errors with proper `PrimitiveAtom` type assertions
-  - **Best Practices Applied**: See `.context7-docs/jotai/best-practices.md` for complete Jotai patterns
-  - **Result**: Messaging now works correctly with simpler, more maintainable code following Jotai best practices
-
-- **CI/CD Pipeline Stabilization (2025-09-01)**: ✅ **COMPLETED** - Critical testing infrastructure improvements
-  - **Major Fix**: Resolved persistent CI failures by simplifying test suite from 56 to 20 stable core tests
-  - **Key Issues Fixed**:
-    - Removed invalid `--list-projects` command that caused immediate CI failures
-    - Eliminated problematic `waitForLoadState('networkidle')` calls that hung with real-time features
-    - Fixed duplicate app startup issues in CI environment
-    - Temporarily disabled sharded tests that were failing on test user creation
-  - **Lessons Learned**:
-    - Context7 docs correctly warn against `networkidle` with real-time apps
-    - Start with minimal stable test suite then gradually expand
-    - Complex test setups often fail in CI - simplicity wins
-  - **Next Steps**: Gradually re-enable temporarily disabled tests one by one
-
-- **Production Platform Achievement (2025-08-21)**: ✅ **COMPLETED** - Feature-complete platform with comprehensive integrations
-  - **Comprehensive Strava Integration**: OAuth flow, bi-directional sync, performance metrics import, real-time updates
-  - **13+ Major Milestones**: 222+ core tasks completed across authentication, state management, UI/UX, and integrations
-  - **Advanced State Management**: Complete Jotai atomic patterns with performance optimization and error resilience
-  - **Mountain Peak Design System**: Professional alpine-themed UI with HeroUI integration and responsive design
-- **Technical Excellence Achieved (2025-08-19)**: ✅ **COMPLETED** - Production-ready codebase standards
-  - **Zero TypeScript Errors**: Full type safety with strict mode enforcement across entire codebase
-  - **Zero ESLint Warnings**: Clean, maintainable code following modern React patterns
-  - **Advanced Architecture**: Server/Client Component hybrid pattern for optimal rendering performance
-  - **Real-time Communication**: Coach-runner chat with typing indicators, message synchronization, and optimized loading states
-- **Current Status**: Platform transitioned from active feature development to production hardening and testing infrastructure
-
-**Next Phase Focus:**
-
-- CI/CD pipeline stabilization and comprehensive testing coverage
-- Production monitoring, error tracking, and security hardening
-- Advanced features roadmap (Garmin integration, AI training recommendations)
-
-### ⚠️ Minor Areas for Future Enhancement
-
-1. **Rate Limiting Enhancement**
-
-   ```typescript
-   // Consider adding exponential backoff for Strava API calls
-   // Current: Fixed retry logic
-   // Suggestion: Implement exponential backoff with jitter
-   ```
-
-2. **Caching Strategy**
-
-   ```typescript
-   // Consider implementing Redis caching for frequently accessed Strava data
-   // Current: In-memory caching via Jotai atoms
-   // Future: Persistent caching for better UX
-   ```
-
-3. **Monitoring Enhancement**
-   ```typescript
-   // Consider adding metrics collection for sync operations
-   // Current: Excellent logging
-   // Future: Performance metrics and success rate tracking
-   ```
-
----
-
 ## 🎯 Jotai Atom Usage Patterns (IMPORTANT)
 
-**Proper usage of Jotai hooks for optimal performance and type safety:**
+**Quick rules:**
 
-### Reading Atoms
+- **Read only**: `useAtomValue(atom)` - no setter created
+- **Write only**: `useSetAtom(atom)` - no subscription created
+- **Both**: `useAtom(atom)` - when you need read AND write
 
-```typescript
-// ✅ GOOD - Use useAtomValue when ONLY reading (no writing needed)
-const races = useAtomValue(racesAtom) // Just the value, no setter
+**Key principle**: Derive state, don't duplicate it. Use `splitAtom` for list performance.
 
-// ❌ BAD - Don't use useAtom if you only need the value
-const [races] = useAtom(racesAtom) // Creates unnecessary setter
-```
-
-### Writing to Atoms
-
-```typescript
-// ✅ GOOD - Use useSetAtom when ONLY writing (no reading needed)
-const setRaces = useSetAtom(racesAtom) // Just the setter, no subscription
-
-// ❌ BAD - Don't use useAtom if you only need the setter
-const [, setRaces] = useAtom(racesAtom) // Creates unnecessary subscription
-```
-
-### Reading and Writing (Same Atom)
-
-```typescript
-// ✅ GOOD - Use useAtom when you need BOTH read and write
-const [races, setRaces] = useAtom(racesAtom) // Same atom, both operations
-
-// ❌ BAD - Don't split unnecessarily in the same component
-const races = useAtomValue(racesAtom)     // These are the SAME atom
-const setRaces = useSetAtom(racesAtom)    // being accessed twice
-```
-
-**Key Point**: `racesAtom` is ONE atom. The different hooks (`useAtom`, `useAtomValue`, `useSetAtom`) are just different ways to access it based on your needs.
-
-### Common Patterns
-
-1. **Simple atoms vs Refreshable atoms**
-
-   ```typescript
-   // Simple atom - setter expects a value
-   const racesAtom = atom<Race[]>([])
-   const setRaces = useSetAtom(racesAtom)
-   setRaces(newRaces) // Pass the new value directly
-
-   // Refreshable atom (write-only) - for async operations
-   const refreshRacesAtom = atom(null, async (get, set) => {
-     const races = await fetchRaces()
-     set(racesAtom, races)
-   })
-   const refresh = useSetAtom(refreshRacesAtom)
-   refresh() // Call with no arguments
-   ```
-
-2. **atomFamily for dynamic atoms**
-
-   ```typescript
-   // Creates atoms on demand based on parameters
-   const messagesByConversationFamily = atomFamily((conversationId: string) => atom<Message[]>([]))
-   ```
-
-3. **splitAtom for list optimization**
-   ```typescript
-   // Split array atom into individual atoms for each item
-   const messagesAtom = atom<Message[]>([])
-   const messageAtomsAtom = splitAtom(messagesAtom)
-   const [messageAtoms] = useAtom(messageAtomsAtom)
-   // Each messageAtom can be updated independently
-   ```
+**Full patterns and examples**: See `.context7-docs/jotai/best-practices.md`
 
 ## 🚨 TypeScript Code Quality Standards (CRITICAL)
 
@@ -721,190 +414,29 @@ const sessionData: any = { user: { role: 'coach' } }
 const userRole = (sessionData.user as any).role || 'runner'
 ```
 
-## 🎭 Playwright MCP Investigation Process (CRITICAL)
+## 🎭 Playwright Testing (CRITICAL)
 
-**Use Playwright MCP to investigate test failures and UI issues - it reveals real problems vs perceived issues**
+### Key Rules
 
-### 🚨 Session Persistence Race Condition (RESOLVED 2025-10-07)
+1. **Prefer `data-testid`** over text selectors - prevents strict mode violations
+2. **Use storageState pattern** for auth - don't manually inject cookies
+3. **Use Playwright MCP** to investigate failures - reveals real issues vs assumptions
+4. **Flaky tests = race conditions** - use `useHydrateAtoms` for synchronous state init
 
-**LESSON LEARNED (PR #136, ULT-54)**: When E2E tests for session persistence fail intermittently (50-80% pass rate):
+### Auth Files
 
-1. **Identify the race condition** - Components rendering before async effects complete
-2. **Use synchronous hydration** - Jotai's `useHydrateAtoms` sets state before first render
-3. **Server-side session fetching** - Pass `initialSession` from server to eliminate client-side loading
-4. **Eliminate flicker** - User menus and auth-dependent UI appear immediately on first render
+- Runner: `./playwright/.auth/runner.json`
+- Coach: `./playwright/.auth/coach.json`
 
-**Symptoms:**
+### Common Issues → Solutions
 
-- Test expectations like `await expect(page.getByTestId('user-menu')).toBeVisible()` fail intermittently
-- Components that depend on session state don't render consistently
-- Auth-based navigation behaves differently between test runs
+| Symptom               | Cause                                   | Fix                                                                  |
+| --------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| 50-80% pass rate      | Race condition in session state         | Use `useHydrateAtoms` instead of `useEffect`                         |
+| Strict mode violation | Text selector matches multiple elements | Use `getByTestId()`                                                  |
+| Auth timeout          | Manual cookie management                | Use `page.evaluate(() => fetch())` with `credentials: 'same-origin'` |
 
-**Root Cause:**
-`useEffect` runs **after** first render, creating a race condition where components like `Header` read `sessionAtom` before it's populated. Sometimes the timing works (lucky), sometimes it doesn't (flaky test).
-
-**Solution:**
-Replace async `useEffect` pattern with Jotai's `useHydrateAtoms` for synchronous state initialization before first render.
-
-```typescript
-// ❌ BEFORE: Async useEffect (50-80% pass rate)
-useEffect(() => {
-  if (initialSession) setSession(initialSession)
-}, [initialSession])
-
-// ✅ AFTER: Synchronous hydration (100% pass rate)
-useHydrateAtoms([
-  [sessionAtom, initialSession || null],
-  [userAtom, initialSession?.user || null],
-  [authLoadingAtom, false],
-])
-```
-
-**Results:**
-
-- Before: 50-80% pass rate with flakes on first attempt, needed retries
-- After: 100% pass rate (3/3 consecutive runs), zero flakes, no retries needed
-
-**See**: `.context7-docs/jotai/session-persistence-patterns.md` for complete implementation details
-
-### 🔍 Investigation Process (REQUIRED)
-
-**When tests fail or UI issues are reported, follow this process:**
-
-1. **Start Playwright MCP Investigation**
-
-   ```bash
-   # Use Playwright MCP tools to navigate and test the UI directly
-   # This reveals actual behavior vs test assumptions
-   ```
-
-2. **Key Discoveries from Our GPX Upload Investigation**
-   - **Perceived Issue**: "UI hanging on GPX upload"
-   - **Real Issue**: Test selector conflict (`getByText()` finding multiple elements)
-   - **Solution**: Use specific `data-testid` selectors instead of ambiguous text selectors
-
-### ✅ Success Pattern: GPX Upload Debug (2025-09-20)
-
-**Problem**: Test failure with GPX upload appearing to "hang"
-**Investigation**: Used Playwright MCP to test upload functionality directly
-**Finding**: NO hang - upload processed immediately with proper error handling
-**Root Cause**: Test selector `getByText('Test Ultra Race')` resolved to 2 elements (strict mode violation)
-**Fix**: Changed to specific `getByTestId('race-name-0')` selector
-
-### 🎯 Best Practices
-
-1. **Don't Assume Performance Issues** - Test failures often indicate selector or timing problems, not actual performance issues
-2. **Use Playwright MCP First** - Before debugging code, use MCP to verify actual UI behavior
-3. **Fix Root Causes** - Address test infrastructure issues (selectors, timing) rather than patching symptoms
-4. **Specific Selectors** - Always prefer `data-testid` over text-based selectors for stability
-
-### 📋 Investigation Checklist
-
-- [ ] Use Playwright MCP to reproduce the "issue" manually
-- [ ] Compare expected vs actual behavior in browser
-- [ ] Check for selector conflicts (strict mode violations)
-- [ ] Verify timing issues vs actual functionality problems
-- [ ] Update test selectors to be more specific and reliable
-
-**Key Learning**: Playwright MCP investigation is essential for distinguishing between real bugs and test infrastructure problems.
-
----
-
-## 🎭 Playwright Authentication Best Practices (UPDATED 2025-10-12)
-
-### storageState Pattern (RECOMMENDED)
-
-**The Official Playwright Way - Adopted in ULT-54:**
-
-- ✅ Use `page.evaluate(() => fetch())` for API authentication (sets cookies in browser context)
-- ✅ Playwright automatically captures cookies via `context.storageState({ path })`
-- ✅ Tests configured with `storageState` path load saved state automatically
-- ❌ Never manually extract/inject cookies - Playwright handles everything
-
-### What We Learned
-
-**Before (Manual Cookie Management):**
-
-- 40+ second timeouts, 50-80% pass rate
-- Complex cookie extraction/injection code
-- Race conditions and timing issues
-
-**After (storageState Pattern):**
-
-- 8.6 second setup time, 100% pass rate
-- Simple, clean code (20 lines vs 60+)
-- First-attempt success, no retries needed
-
-**Result**: 10x faster, 100% reliable, significantly simpler code
-
-### Implementation Pattern
-
-```typescript
-// ✅ CORRECT - auth.setup.ts
-setup('authenticate', async ({ page, context }) => {
-  await page.goto(`${baseUrl}/auth/signin`)
-
-  // Authenticate via API - cookies set automatically
-  await page.evaluate(
-    async ({ apiUrl, email, password }) => {
-      await fetch(apiUrl, {
-        method: 'POST',
-        credentials: 'same-origin', // CRITICAL for cookie handling
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-    },
-    { apiUrl, email, password }
-  )
-
-  await page.waitForTimeout(1000) // Let cookies propagate
-  await page.goto(`${baseUrl}/dashboard`) // Verify auth
-
-  // Save state - Playwright captures everything automatically
-  await context.storageState({ path: authFile })
-})
-```
-
-### Anti-Patterns
-
-```typescript
-// ❌ WRONG - Don't manually extract/inject cookies
-const cookies = await context.cookies()
-const sessionCookie = cookies.find(c => c.name === 'session_token')
-await context.addCookies([sessionCookie]) // Unnecessary!
-
-// ❌ WRONG - Don't use page.request.post()
-await page.request.post('/api/auth', { data: creds })
-// Sets cookies in isolated context, won't work!
-```
-
-### Configuration
-
-```typescript
-// playwright.config.ts
-projects: [
-  {
-    name: 'setup',
-    testMatch: /auth\.setup\.ts/,
-  },
-  {
-    name: 'chromium-authenticated',
-    use: {
-      storageState: './playwright/.auth/runner.json', // Auto-loads
-    },
-    dependencies: ['setup'], // Runs setup first
-  },
-]
-```
-
-### Key Files
-
-- `tests/auth.setup.ts` - Runner authentication setup
-- `tests/auth-coach.setup.ts` - Coach authentication setup
-- `playwright/.auth/runner.json` - Saved runner state
-- `playwright/.auth/coach.json` - Saved coach state
-
-**Reference**: See `.context7-docs/playwright/storagestate-authentication.md` for complete guide
+**Full implementation details**: See `.context7-docs/playwright/` for storageState patterns and authentication setup
 
 ---
 

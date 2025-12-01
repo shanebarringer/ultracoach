@@ -334,22 +334,41 @@ supabase db pull              # Sync schema changes
 
 ## 🔄 Development Workflow
 
+### Claude Code Infrastructure
+
+The project includes comprehensive Claude Code tooling for automated quality assurance:
+
+- **Slash Commands**: `/husky`, `/supabase-*`, `/vercel-*`, `/nextjs-*` for common workflows
+- **Agents**: 6 specialized agents (all Opus 4.5) for different development tasks
+- **MCP Servers**: Supabase, PostgreSQL, Context7, GitHub, Linear, Memory
+- **Quality Gates**: Automated pre-commit and pre-push hooks with auto-recovery
+
+**Full documentation**: See `.claude/docs/WORKFLOWS.md`
+
 ### Branch Strategy
 
 - **main**: Production-ready code
 - **feature/**: Feature development branches
 - **hotfix/**: Critical bug fixes
 
-### Commit Conventions
+### Commit Conventions (Enforced)
+
+Conventional commits are enforced via pre-tool hook:
 
 - **feat**: New features
 - **fix**: Bug fixes
 - **refactor**: Code refactoring
 - **docs**: Documentation updates
 - **test**: Test additions/updates
+- **chore**: Maintenance tasks
+- **perf**: Performance improvements
+- **style**: Code style changes
+- **ci**: CI/CD changes
+- **build**: Build system changes
 
 ### Testing Strategy
 
+- **Automated E2E**: Pre-push hook runs critical tests with auto-recovery
 - **Manual Testing**: Test user accounts with realistic data
 - **Integration Testing**: Database operations and real-time features
 - **Performance Testing**: State management and large datasets
