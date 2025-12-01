@@ -21,6 +21,15 @@ import { coach_connections, coach_invitations, coach_runners, user } from '@/lib
 
 const logger = createLogger('api-invitations-accept')
 
+/**
+ * Normalizes an email address for consistent comparison
+ * Returns null if input is null/undefined/empty
+ */
+function normalizeEmail(email: string | null | undefined): string | null {
+  if (!email) return null
+  return email.toLowerCase().trim()
+}
+
 interface RouteParams {
   params: Promise<{ token: string }>
 }
@@ -108,11 +117,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if invitee already has an account
-    const [existingUser] = await db
-      .select({ id: user.id })
-      .from(user)
-      .where(eq(user.email, invitation.inviteeEmail.toLowerCase()))
-      .limit(1)
+    const normalizedInviteeEmail = normalizeEmail(invitation.inviteeEmail)
+    let existingUser: { id: string } | undefined
+
+    // Only query if we have a valid email to search for
+    if (normalizedInviteeEmail) {
+      const [found] = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.email, normalizedInviteeEmail))
+        .limit(1)
+      existingUser = found
+    }
 
     return NextResponse.json({
       valid: true,
@@ -185,12 +201,35 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify the invitation is for this user's email
-    if (invitation.invitee_email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+    const invitationEmail = normalizeEmail(invitation.invitee_email)
+    const sessionEmail = normalizeEmail(sessionUser.email)
+
+    // Guard against null/undefined emails - shouldn't happen but defensive check
+    if (!invitationEmail || !sessionEmail) {
+      logger.error('Missing email during invitation acceptance', {
+        invitationId: invitation.id,
+        userId: sessionUser.id,
+        hasInvitationEmail: !!invitationEmail,
+        hasSessionEmail: !!sessionEmail,
+      })
+      return NextResponse.json(
+        { success: false, error: 'INVALID_EMAIL', message: 'Invalid email configuration' },
+        { status: 400 }
+      )
+    }
+
+    if (invitationEmail !== sessionEmail) {
+      logger.warn('Email mismatch during invitation acceptance', {
+        invitationId: invitation.id,
+        userId: sessionUser.id,
+        emailsDiffer: true,
+      })
+
       return NextResponse.json(
         {
           success: false,
           error: 'EMAIL_MISMATCH',
-          message: 'This invitation was sent to a different email address',
+          message: `This invitation was sent to ${invitation.invitee_email}. You are currently signed in as ${sessionUser.email}. Please sign out and sign in with the correct account, or contact the coach who sent this invitation.`,
         },
         { status: 403 }
       )
