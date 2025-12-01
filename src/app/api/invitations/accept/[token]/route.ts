@@ -108,10 +108,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if invitee already has an account
+    // Normalize email: lowercase + trim to handle whitespace inconsistencies
     const [existingUser] = await db
       .select({ id: user.id })
       .from(user)
-      .where(eq(user.email, invitation.inviteeEmail.toLowerCase()))
+      .where(eq(user.email, invitation.inviteeEmail.toLowerCase().trim()))
       .limit(1)
 
     return NextResponse.json({
@@ -185,12 +186,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify the invitation is for this user's email
-    if (invitation.invitee_email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+    // Normalize emails: lowercase + trim to handle whitespace inconsistencies
+    const invitationEmail = invitation.invitee_email.toLowerCase().trim()
+    const sessionEmail = sessionUser.email.toLowerCase().trim()
+
+    if (invitationEmail !== sessionEmail) {
+      logger.warn('Email mismatch during invitation acceptance', {
+        invitationEmail,
+        sessionEmail,
+        invitationId: invitation.id,
+        userId: sessionUser.id,
+      })
+
       return NextResponse.json(
         {
           success: false,
           error: 'EMAIL_MISMATCH',
-          message: 'This invitation was sent to a different email address',
+          message: `This invitation was sent to ${invitation.invitee_email}. You are currently signed in as ${sessionUser.email}. Please sign out and sign in with the correct account, or contact the coach who sent this invitation.`,
         },
         { status: 403 }
       )
