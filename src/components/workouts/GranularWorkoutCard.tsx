@@ -6,6 +6,7 @@ import { Calendar, Clock, MapPin, Target } from 'lucide-react'
 
 import { memo } from 'react'
 
+import { useUnitConverter } from '@/hooks/useUnitConverter'
 import { workoutAtomFamily } from '@/lib/atoms/index'
 import type { Workout } from '@/lib/supabase'
 import { formatDateConsistent } from '@/lib/utils/date'
@@ -76,6 +77,7 @@ WorkoutDate.displayName = 'WorkoutDate'
 // Individual workout distance component - only re-renders when distance changes
 const WorkoutDistance = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
   const [workout] = useAtom(workoutAtom)
+  const converter = useUnitConverter()
   if (!workout) return null
 
   const distance = workout.actual_distance || workout.planned_distance
@@ -84,7 +86,7 @@ const WorkoutDistance = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => 
   return (
     <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
       <MapPin className="h-4 w-4 mr-1" />
-      {distance} miles
+      {converter.distance(Number(distance), 'miles')}
     </div>
   )
 })

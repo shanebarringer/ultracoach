@@ -208,7 +208,7 @@ test.describe('Authentication Flows with Jotai Atoms', () => {
     // Coach-specific UI elements should be visible (updated to match actual UI)
     await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Training Expeditions' })).toBeVisible()
-    await expect(page.getByTestId('runners-section')).toBeVisible()
+    await expect(page.getByTestId('coach-runners-section')).toBeVisible()
 
     // Try to access runner dashboard (should redirect)
     await page.goto('/dashboard/runner', { waitUntil: 'domcontentloaded' })

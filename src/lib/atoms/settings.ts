@@ -120,6 +120,12 @@ export const asyncUserSettingsAtom = atom(
         credentials: 'same-origin',
       })
 
+      // Handle 401 gracefully - user is not authenticated, return null
+      if (response.status === 401) {
+        logger.debug('User not authenticated, skipping settings fetch')
+        return null
+      }
+
       if (!response.ok) {
         const errorMessage = `Failed to fetch user settings: ${response.status} ${response.statusText}`
         logger.error(errorMessage)
@@ -137,7 +143,12 @@ export const asyncUserSettingsAtom = atom(
       logger.info('User settings fetched successfully')
       return data.settings as UserSettings
     } catch (error) {
-      // Re-throw to let Suspense boundary handle it
+      // Handle network errors gracefully for unauthenticated users
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        logger.debug('Network error fetching settings (likely unauthenticated)')
+        return null
+      }
+      // Re-throw other errors to let Suspense boundary handle them
       logger.error('Error fetching user settings:', error)
       throw error
     }
