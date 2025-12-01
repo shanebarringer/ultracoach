@@ -192,10 +192,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (invitationEmail !== sessionEmail) {
       logger.warn('Email mismatch during invitation acceptance', {
-        invitationEmail,
-        sessionEmail,
         invitationId: invitation.id,
         userId: sessionUser.id,
+        emailsDiffer: true,
       })
 
       return NextResponse.json(
