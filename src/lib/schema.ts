@@ -333,6 +333,98 @@ export const coach_runners = pgTable(
   })
 )
 
+// ===================================
+// COACH CONNECTIONS (Coach-to-Coach Relationships)
+// ===================================
+
+// Coach Connections - for coach-to-coach professional relationships
+export const coach_connections = pgTable(
+  'coach_connections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // First coach in the connection (the inviter)
+    coach_a_id: text('coach_a_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Second coach in the connection (the invited coach)
+    coach_b_id: text('coach_b_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Connection status
+    status: text('status', { enum: ['pending', 'active', 'inactive'] })
+      .default('active')
+      .notNull(),
+    // When the connection was established
+    connection_started_at: timestamp('connection_started_at', { withTimezone: true }).defaultNow(),
+    // Timestamps
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  },
+  table => ({
+    // Note: Bidirectional uniqueness enforced at DB level via:
+    // idx_coach_connections_bidirectional_unique using LEAST/GREATEST
+    // This additional constraint helps Drizzle tooling
+    unique_coach_connection: unique().on(table.coach_a_id, table.coach_b_id),
+  })
+)
+
+// ===================================
+// COACH INVITATIONS
+// ===================================
+
+// Coach Invitations - for inviting new users to join UltraCoach via email
+export const coach_invitations = pgTable(
+  'coach_invitations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // Who sent the invitation
+    inviter_user_id: text('inviter_user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // Email address being invited
+    invitee_email: text('invitee_email').notNull(),
+    // What role they're invited as
+    invited_role: text('invited_role', { enum: ['runner', 'coach'] })
+      .default('runner')
+      .notNull(),
+    // Optional personal message from coach
+    personal_message: text('personal_message'),
+    // SHA-256 hash of token (for secure validation)
+    // SECURITY: Raw token is NOT stored - only the hash for validation
+    token_hash: text('token_hash').notNull(),
+    // Invitation status
+    status: text('status', { enum: ['pending', 'accepted', 'declined', 'expired', 'revoked'] })
+      .default('pending')
+      .notNull(),
+    // Timestamps
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+    accepted_at: timestamp('accepted_at', { withTimezone: true }),
+    declined_at: timestamp('declined_at', { withTimezone: true }),
+    revoked_at: timestamp('revoked_at', { withTimezone: true }),
+    // When accepted, link to the user who accepted
+    invitee_user_id: text('invitee_user_id').references(() => user.id, { onDelete: 'set null' }),
+    // When accepted, link to the created relationship (coach_runners or coach_connections)
+    coach_runner_relationship_id: uuid('coach_runner_relationship_id').references(
+      () => coach_runners.id,
+      { onDelete: 'set null' }
+    ),
+    // For coach-to-coach invitations, link to coach_connections
+    coach_connection_id: uuid('coach_connection_id').references(() => coach_connections.id, {
+      onDelete: 'set null',
+    }),
+    // Resend tracking
+    resend_count: integer('resend_count').default(0).notNull(),
+    last_resent_at: timestamp('last_resent_at', { withTimezone: true }),
+    // Optional decline reason
+    decline_reason: text('decline_reason'),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  }
+  // Note: Unique constraint on (inviter_user_id, invitee_email) is handled via
+  // partial unique index in the database (WHERE status = 'pending') to allow
+  // re-invitations after decline/expiry/revoke
+)
+
 // User Onboarding
 export const user_onboarding = pgTable('user_onboarding', {
   id: uuid('id').primaryKey().defaultRandom(),
