@@ -327,10 +327,6 @@ export async function POST(request: NextRequest) {
 
     const sessionUser = session.user as User
 
-    if (sessionUser.userType !== 'coach') {
-      return NextResponse.json({ error: 'Only coaches can create workouts' }, { status: 403 })
-    }
-
     const {
       trainingPlanId,
       date,
@@ -344,54 +340,92 @@ export async function POST(request: NextRequest) {
       elevationGain,
     } = await request.json()
 
-    if (!trainingPlanId || !date || !plannedType) {
+    // Date and workout type are always required
+    if (!date || !plannedType) {
       return NextResponse.json(
         {
-          error: 'Training plan ID, date, and workout type are required',
+          error: 'Date and workout type are required',
         },
         { status: 400 }
       )
     }
 
-    // Verify the coach owns this training plan
-    const [plan] = await db
-      .select({
-        id: training_plans.id,
-        coach_id: training_plans.coach_id,
-        runner_id: training_plans.runner_id,
-      })
-      .from(training_plans)
-      .where(
-        and(eq(training_plans.id, trainingPlanId), eq(training_plans.coach_id, sessionUser.id))
-      )
-      .limit(1)
+    // Determine the target user_id for this workout
+    let targetUserId: string
 
-    if (!plan) {
-      return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
-    }
-
-    // Verify the coach has an active relationship with the runner
-    const hasActiveRelationship = await db
-      .select()
-      .from(coach_runners)
-      .where(
-        and(
-          eq(coach_runners.coach_id, sessionUser.id),
-          eq(coach_runners.runner_id, plan.runner_id),
-          eq(coach_runners.status, 'active')
+    if (sessionUser.userType === 'runner') {
+      // Runners can only create standalone workouts for themselves
+      if (trainingPlanId) {
+        return NextResponse.json(
+          {
+            error:
+              'Runners cannot add workouts to training plans. Use standalone workouts instead.',
+          },
+          { status: 403 }
         )
-      )
-      .limit(1)
-
-    if (hasActiveRelationship.length === 0) {
-      logger.warn('Coach attempted to create workout without active relationship', {
-        hasActiveRelationship: false,
-        trainingPlanProvided: Boolean(trainingPlanId),
+      }
+      targetUserId = sessionUser.id
+      logger.debug('Runner creating standalone workout for themselves', {
+        userId: sessionUser.id,
       })
-      return NextResponse.json(
-        { error: 'No active relationship found with this runner' },
-        { status: 403 }
-      )
+    } else if (sessionUser.userType === 'coach') {
+      // Coaches must provide a training plan to create workouts for runners
+      if (!trainingPlanId) {
+        return NextResponse.json(
+          { error: 'Coaches must specify a training plan when creating workouts' },
+          { status: 400 }
+        )
+      }
+
+      // Verify the coach owns this training plan
+      const [plan] = await db
+        .select({
+          id: training_plans.id,
+          coach_id: training_plans.coach_id,
+          runner_id: training_plans.runner_id,
+        })
+        .from(training_plans)
+        .where(
+          and(eq(training_plans.id, trainingPlanId), eq(training_plans.coach_id, sessionUser.id))
+        )
+        .limit(1)
+
+      if (!plan) {
+        return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
+      }
+
+      // Verify the coach has an active relationship with the runner
+      const hasActiveRelationship = await db
+        .select()
+        .from(coach_runners)
+        .where(
+          and(
+            eq(coach_runners.coach_id, sessionUser.id),
+            eq(coach_runners.runner_id, plan.runner_id),
+            eq(coach_runners.status, 'active')
+          )
+        )
+        .limit(1)
+
+      if (hasActiveRelationship.length === 0) {
+        logger.warn('Coach attempted to create workout without active relationship', {
+          hasActiveRelationship: false,
+          trainingPlanProvided: Boolean(trainingPlanId),
+        })
+        return NextResponse.json(
+          { error: 'No active relationship found with this runner' },
+          { status: 403 }
+        )
+      }
+
+      targetUserId = plan.runner_id
+      logger.debug('Coach creating workout for runner via training plan', {
+        coachId: sessionUser.id,
+        runnerId: plan.runner_id,
+        trainingPlanId,
+      })
+    } else {
+      return NextResponse.json({ error: 'Invalid user type' }, { status: 403 })
     }
 
     // Parse numeric values properly to preserve 0 values
@@ -418,8 +452,8 @@ export async function POST(request: NextRequest) {
     const [workout] = await db
       .insert(workouts)
       .values({
-        training_plan_id: trainingPlanId,
-        user_id: plan.runner_id, // Required field
+        training_plan_id: trainingPlanId || null, // null for standalone workouts
+        user_id: targetUserId, // Runner's own ID for standalone, or plan's runner_id for coach-created
         title: workoutTitle, // Required field
         date: workoutDate,
         planned_type: plannedType,
@@ -447,33 +481,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create workout' }, { status: 500 })
     }
 
-    // Send notification to runner about new workout
-    try {
-      const [runner] = await db
-        .select({ id: user.id, fullName: user.fullName })
-        .from(user)
-        .where(eq(user.id, plan.runner_id))
-        .limit(1)
+    // Send notification to runner about new workout (only for coach-created workouts)
+    if (sessionUser.userType === 'coach' && trainingPlanId) {
+      try {
+        const [runner] = await db
+          .select({ id: user.id, fullName: user.fullName })
+          .from(user)
+          .where(eq(user.id, targetUserId))
+          .limit(1)
 
-      const [coach] = await db
-        .select({ fullName: user.fullName })
-        .from(user)
-        .where(eq(user.id, sessionUser.id))
-        .limit(1)
+        const [coach] = await db
+          .select({ fullName: user.fullName })
+          .from(user)
+          .where(eq(user.id, sessionUser.id))
+          .limit(1)
 
-      if (runner) {
-        const coachName = coach?.fullName || 'Your coach'
-        // Note: notifications table structure may need to be checked
-        // For now, skip notifications to avoid schema issues
-        // TODO: Implement proper notification system
-        // For now, skip notifications to avoid schema issues
-        logger.debug('Workout created successfully', {
-          hasRunner: Boolean(runner),
-          coachName,
-        })
+        if (runner) {
+          const coachName = coach?.fullName || 'Your coach'
+          // Note: notifications table structure may need to be checked
+          // For now, skip notifications to avoid schema issues
+          // TODO: Implement proper notification system
+          logger.debug('Coach-created workout saved successfully', {
+            hasRunner: Boolean(runner),
+            coachName,
+          })
+        }
+      } catch (error) {
+        logger.error('Failed to send notification for new workout', error)
       }
-    } catch (error) {
-      logger.error('Failed to send notification for new workout', error)
+    } else {
+      logger.debug('Standalone workout created by runner', {
+        userId: targetUserId,
+        workoutId: workout.id,
+      })
     }
 
     return NextResponse.json({ workout }, { status: 201 })
