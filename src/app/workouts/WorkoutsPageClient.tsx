@@ -314,6 +314,8 @@ function WorkoutsPageClientInner({ user }: Props) {
                 // Refresh workouts would go here if needed
               }}
               // trainingPlanId is optional for standalone workouts
+              // Show training plan CTA for runners who don't have any plans yet
+              showTrainingPlanCTA={!isCoach}
             />
           )}
 

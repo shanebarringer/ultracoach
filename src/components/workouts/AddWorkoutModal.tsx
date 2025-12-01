@@ -3,6 +3,7 @@
 import {
   Button,
   Input,
+  Link,
   Modal,
   ModalBody,
   ModalContent,
@@ -12,12 +13,13 @@ import {
   SelectItem,
   Textarea,
 } from '@heroui/react'
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { Calendar, Lightbulb } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
 import { api } from '@/lib/api-client'
-import { workoutsAtom } from '@/lib/atoms/index'
+import { trainingPlansAtom, workoutsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 import { commonToasts } from '@/lib/toast'
@@ -30,6 +32,7 @@ interface AddWorkoutModalProps {
   onSuccess: () => void
   trainingPlanId?: string // Made optional for standalone workouts
   initialDate?: string // Pre-populate the date field
+  showTrainingPlanCTA?: boolean // Show CTA to create training plan when user has none
 }
 
 export default function AddWorkoutModal({
@@ -38,8 +41,13 @@ export default function AddWorkoutModal({
   onSuccess,
   trainingPlanId,
   initialDate,
+  showTrainingPlanCTA = false,
 }: AddWorkoutModalProps) {
   const setWorkouts = useSetAtom(workoutsAtom)
+  const trainingPlans = useAtomValue(trainingPlansAtom)
+
+  // Show CTA if explicitly requested AND user has no training plans
+  const shouldShowCTA = showTrainingPlanCTA && trainingPlans.length === 0
   const [formData, setFormData] = useState({
     date: initialDate || '',
     plannedType: '',
@@ -225,6 +233,33 @@ export default function AddWorkoutModal({
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
                 {error}
+              </div>
+            )}
+
+            {/* Training Plan CTA for runners without plans */}
+            {shouldShowCTA && (
+              <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <Lightbulb className="h-5 w-5 text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-primary-800">
+                      Want to organize your training?
+                    </p>
+                    <p className="text-sm text-primary-700 mt-1">
+                      Create a training plan to track progress toward your next race with
+                      periodization and goal setting.
+                    </p>
+                    <Link
+                      href="/training-plans"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 mt-2"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Create Training Plan
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
 
