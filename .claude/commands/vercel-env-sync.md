@@ -41,7 +41,6 @@ interface EnvironmentConfig {
 const environmentFiles = {
   '.env.local': 'Local development overrides',
   '.env.development': 'Development environment',
-  '.env.staging': 'Staging/preview environment',
   '.env.production': 'Production environment',
   '.env': 'Default environment (committed to git)',
   '.env.example': 'Environment template (safe to commit)',
@@ -117,7 +116,7 @@ fi
 echo "🚀 Pushing environment variables to Vercel..."
 
 # Check if environment files exist
-ENV_FILES=(".env.production" ".env.staging" ".env.development")
+ENV_FILES=(".env.production" ".env.development")
 FOUND_FILES=()
 
 for file in "${ENV_FILES[@]}"; do
@@ -139,8 +138,6 @@ for file in "${FOUND_FILES[@]}"; do
   # Determine target environment
   if [[ "$file" == *"production"* ]]; then
     ENV="production"
-  elif [[ "$file" == *"staging"* ]]; then
-    ENV="preview"  # Vercel uses 'preview' for staging
   elif [[ "$file" == *"development"* ]]; then
     ENV="development"
   else
@@ -277,7 +274,7 @@ backup_environment() {
   mkdir -p "$BACKUP_DIR"
 
   # Backup local files
-  for file in .env.local .env.development .env.staging .env.production; do
+  for file in .env.local .env.development .env.production; do
     if [ -f "$file" ]; then
       cp "$file" "$BACKUP_DIR/${file}.${TIMESTAMP}"
       echo "✅ Backed up $file"
@@ -309,7 +306,7 @@ restore_environment() {
   echo "🔄 Restoring environment from backup $backup_timestamp..."
 
   # Restore local files
-  for file in .env.local .env.development .env.staging .env.production; do
+  for file in .env.local .env.development .env.production; do
     backup_file="$BACKUP_DIR/${file}.${backup_timestamp}"
     if [ -f "$backup_file" ]; then
       cp "$backup_file" "$file"
@@ -521,7 +518,7 @@ security_check() {
   local issues=0
 
   # Check for common security issues
-  for file in .env.local .env.development .env.staging .env.production; do
+  for file in .env.local .env.development .env.production; do
     if [ ! -f "$file" ]; then
       continue
     fi
