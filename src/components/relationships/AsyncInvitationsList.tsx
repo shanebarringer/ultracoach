@@ -213,7 +213,7 @@ export function AsyncInvitationsList({ onInvitationUpdated }: AsyncInvitationsLi
                               isIconOnly
                               size="sm"
                               variant="light"
-                              disabled={isResending || isRevoking}
+                              isDisabled={isResending || isRevoking}
                               aria-label="Invitation actions menu"
                             >
                               <MoreVertical className="h-4 w-4" aria-hidden="true" />

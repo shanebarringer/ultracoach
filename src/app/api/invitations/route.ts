@@ -186,15 +186,18 @@ export async function POST(request: NextRequest) {
       }),
     })
 
-    if (!emailResult.success) {
-      logger.error('Failed to send invitation email', {
+    // Track email send status for response
+    const emailSentSuccessfully = emailResult.success
+
+    if (!emailSentSuccessfully) {
+      logger.warn('Failed to send invitation email - invitation created but email failed', {
         invitationId: newInvitation.id,
         error: emailResult.error,
       })
-      // Still return success - invitation was created, email can be resent
     }
 
     // Return consistent response shape matching GET endpoint format
+    // Include emailWarning when email fails so UI can notify user
     return NextResponse.json(
       {
         success: true,
@@ -219,7 +222,14 @@ export async function POST(request: NextRequest) {
           },
           isExpired: false,
         },
-        emailSent: emailResult.success,
+        emailSent: emailSentSuccessfully,
+        // Warn caller when email fails so they know to use resend
+        ...(emailSentSuccessfully
+          ? {}
+          : {
+              emailWarning:
+                'Invitation created but email delivery failed. Use resend to try again.',
+            }),
       },
       { status: 201 }
     )

@@ -16,21 +16,38 @@ export interface InvitationDetails {
 
 /**
  * Response from invitation validation endpoint (GET)
+ * Uses discriminated union pattern for type-safe response handling
  */
-export interface ValidateInvitationResponse {
-  valid: boolean
-  error?: string
-  message?: string
-  invitation?: InvitationDetails
-  existingUser?: boolean
-}
+export type ValidateInvitationResponse =
+  | {
+      valid: true
+      invitation: InvitationDetails
+      existingUser: boolean
+    }
+  | {
+      valid: false
+      error: string
+      message: string
+    }
 
 /**
  * Response from invitation acceptance endpoint (POST)
+ * Uses discriminated union pattern for type-safe response handling
  */
-export interface AcceptInvitationResponse {
-  success: boolean
-  message?: string
-  redirectUrl?: string
-  error?: string
-}
+export type AcceptInvitationResponse =
+  | {
+      success: true
+      redirectUrl: string
+      relationship: {
+        id: string
+        type: 'coach_runner' | 'coach_connection'
+        inviterId: string
+        inviteeId: string
+        status: 'active'
+      }
+    }
+  | {
+      success: false
+      error: string
+      message: string
+    }

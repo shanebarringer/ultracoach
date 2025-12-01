@@ -55,10 +55,10 @@ export default function SignUp() {
         })
         const data: ValidateInvitationResponse = await response.json()
 
-        if (data.valid && data.invitation) {
+        if (data.valid) {
           setInvitation(data.invitation)
         } else {
-          setInvitationError(data.message || 'Invalid invitation')
+          setInvitationError(data.message)
         }
       } catch (error) {
         logger.error('Failed to load invitation details:', error)

@@ -90,10 +90,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
       .where(eq(coach_invitations.id, invitation.id))
 
+    // Mask email for PII protection in logs (show only domain)
+    const emailDomain = invitation.invitee_email.split('@')[1] || 'unknown'
     logger.info('Invitation revoked', {
       invitationId: invitation.id,
       inviterUserId: sessionUser.id,
-      inviteeEmail: invitation.invitee_email,
+      inviteeEmailDomain: emailDomain,
     })
 
     return NextResponse.json({

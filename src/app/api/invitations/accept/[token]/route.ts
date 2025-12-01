@@ -282,6 +282,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           })
           .returning()
 
+        // Verify the insert succeeded
+        if (!newRelationship?.id) {
+          logger.error('Failed to create coach-runner relationship - insert returned no result', {
+            invitationId: invitation.id,
+            coachId,
+            runnerId,
+          })
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'RELATIONSHIP_CREATE_FAILED',
+              message: 'Failed to create relationship',
+            },
+            { status: 500 }
+          )
+        }
+
         relationshipId = newRelationship.id
       }
       relationshipType = 'coach_runner'
@@ -343,6 +360,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             connection_started_at: new Date(),
           })
           .returning()
+
+        // Verify the insert succeeded
+        if (!newConnection?.id) {
+          logger.error('Failed to create coach connection - insert returned no result', {
+            invitationId: invitation.id,
+            coachAId,
+            coachBId,
+          })
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'CONNECTION_CREATE_FAILED',
+              message: 'Failed to create connection',
+            },
+            { status: 500 }
+          )
+        }
 
         relationshipId = newConnection.id
       }
