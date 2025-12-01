@@ -60,7 +60,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'INVALID_JSON', message: 'Request body must be valid JSON' },
+        { status: 400 }
+      )
+    }
     const parseResult = createInvitationSchema.safeParse(body)
 
     if (!parseResult.success) {
@@ -216,6 +224,16 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
+    // Handle Postgres unique constraint violation (race condition on duplicate invite)
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      return NextResponse.json(
+        {
+          error: 'ALREADY_INVITED',
+          message: 'An invitation for this email already exists',
+        },
+        { status: 409 }
+      )
+    }
     logger.error('Error creating invitation:', error)
     return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 })
   }
@@ -237,7 +255,25 @@ export async function GET(request: NextRequest) {
     const sessionUser = session.user as User
     const { searchParams } = new URL(request.url)
     const statusParam = searchParams.get('status')
-    const type = searchParams.get('type') // 'sent' or 'received'
+    const typeParam = searchParams.get('type') // 'sent' or 'received'
+
+    // Validate type parameter if provided
+    const validTypes = ['sent', 'received'] as const
+    type InvitationType = (typeof validTypes)[number]
+    let type: InvitationType | null = null
+
+    if (typeParam) {
+      if (!validTypes.includes(typeParam as InvitationType)) {
+        return NextResponse.json(
+          {
+            error: 'INVALID_TYPE',
+            message: `Invalid type filter. Must be one of: ${validTypes.join(', ')}`,
+          },
+          { status: 400 }
+        )
+      }
+      type = typeParam as InvitationType
+    }
 
     // Validate status parameter if provided
     const validStatuses = ['pending', 'accepted', 'declined', 'expired', 'revoked'] as const

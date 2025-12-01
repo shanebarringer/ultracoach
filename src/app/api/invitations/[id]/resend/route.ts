@@ -25,6 +25,15 @@ import { coach_invitations } from '@/lib/schema'
 
 const logger = createLogger('api-invitations-resend')
 
+/**
+ * Masks an ID for logging to avoid PII exposure
+ * Shows first 4 and last 4 characters with ... in between
+ */
+function maskId(id: string): string {
+  if (id.length <= 8) return '***'
+  return `${id.slice(0, 4)}...${id.slice(-4)}`
+}
+
 /** Timeout for email sending to prevent hanging requests */
 const EMAIL_SEND_TIMEOUT_MS = 10000 // 10 seconds
 
@@ -138,7 +147,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .where(eq(coach_invitations.id, invitation.id))
 
     logger.info('Invitation token regenerated for resend', {
-      invitationId: invitation.id,
+      invitationId: maskId(invitation.id),
       resendCount: invitation.resend_count + 1,
       newExpiresAt: expiresAt.toISOString(),
     })
@@ -175,7 +184,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       if (!emailResult.success) {
         logger.error('Failed to send resend email', {
-          invitationId: invitation.id,
+          invitationId: maskId(invitation.id),
           error: emailResult.error,
         })
       }
@@ -183,7 +192,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // Handle timeout or other errors
       const isTimeout = error instanceof Error && error.message === 'Email send timeout'
       logger.error(isTimeout ? 'Email send timed out' : 'Error sending resend email', {
-        invitationId: invitation.id,
+        invitationId: maskId(invitation.id),
         error: error instanceof Error ? error.message : String(error),
         isTimeout,
       })

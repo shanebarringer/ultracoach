@@ -260,14 +260,14 @@ export function InviteRunnerModal() {
         </ModalBody>
 
         <ModalFooter className="border-t border-default-200 pt-4">
-          <Button variant="flat" onPress={handleClose} disabled={isCreating}>
+          <Button variant="flat" onPress={handleClose} isDisabled={isCreating}>
             Cancel
           </Button>
           <Button
             color="secondary"
             onPress={handleSubmit}
             isLoading={isCreating}
-            disabled={isCreating || !form.email.trim()}
+            isDisabled={isCreating || !form.email.trim()}
           >
             Send Invitation
           </Button>

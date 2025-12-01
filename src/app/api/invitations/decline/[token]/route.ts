@@ -32,13 +32,28 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Get optional decline reason from body
+    // Get optional decline reason from body with validation
     let declineReason: string | null = null
     try {
       const body = await request.json()
-      declineReason = body.reason || null
+      if (body.reason !== undefined && body.reason !== null) {
+        // Coerce to string and trim
+        const reasonString = String(body.reason).trim()
+        // Validate max length (500 chars to match frontend)
+        if (reasonString.length > 500) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'REASON_TOO_LONG',
+              message: 'Decline reason must be 500 characters or less',
+            },
+            { status: 400 }
+          )
+        }
+        declineReason = reasonString || null
+      }
     } catch {
-      // No body is fine
+      // No body is fine - decline reason is optional
     }
 
     // Hash the token to look it up
