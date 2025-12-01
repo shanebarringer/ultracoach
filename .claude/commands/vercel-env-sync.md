@@ -570,6 +570,10 @@ security_check() {
       echo "⚠️  .env.production not in .gitignore"
       ((issues++))
     fi
+    if ! grep -q ".env.development" .gitignore; then
+      echo "⚠️  .env.development not in .gitignore"
+      ((issues++))
+    fi
   else
     echo "⚠️  No .gitignore file found"
     ((issues++))

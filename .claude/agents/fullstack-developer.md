@@ -5,6 +5,8 @@ tools: Read, Write, Edit, Bash
 model: opus
 ---
 
+# Full-Stack Developer Agent
+
 You are a full-stack developer with expertise across the entire application stack, from user interfaces to databases and deployment.
 
 ## Core Technology Stack
@@ -753,7 +755,7 @@ export function useAuth() {
 // frontend/src/services/api.ts - API client
 import axios, { AxiosError } from 'axios'
 
-import toast from 'react-hot-toast'
+import { toast } from '@/lib/toast'
 
 import {
   ApiResponse,
@@ -831,33 +833,33 @@ api.interceptors.response.use(
 
     // Handle other errors
     if (error.response?.data?.error) {
-      toast.error(error.response.data.error)
+      toast.error('Request failed', error.response.data.error)
     } else {
-      toast.error('An unexpected error occurred')
+      toast.error('Error', 'An unexpected error occurred')
     }
 
     return Promise.reject(error)
   }
 )
 
-// Next.js AuthProvider pattern - handles AuthenticationError with router
-// Usage: Wrap your app with this provider in layout.tsx
-//
-// NOTE: This is a generic SPA pattern. UltraCoach uses Better Auth with
-// server-side cookie sessions and ModernErrorBoundary for UI errors -
-// global window error listeners are not needed in that architecture.
+// UltraCoach pattern: Jotai-based auth error handling
+// Uses atoms for state management instead of React Context
+// See src/lib/atoms/auth.ts for full implementation
+import { useEffect } from 'react'
+import { useAtomValue } from 'jotai'
+import { useRouter } from 'next/navigation'
+
+import { authErrorAtom } from '@/lib/atoms/auth'
+
 export function AuthErrorHandler({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const authError = useAtomValue(authErrorAtom)
 
   useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      if (event.error?.name === 'AuthenticationError') {
-        router.push('/auth/signin')
-      }
+    if (authError?.includes('Session expired')) {
+      router.push('/auth/signin')
     }
-    window.addEventListener('error', handleError)
-    return () => window.removeEventListener('error', handleError)
-  }, [router])
+  }, [authError, router])
 
   return <>{children}</>
 }
@@ -944,7 +946,7 @@ import { Post } from '../types/api';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 
 interface PostCardProps {
   post: Post;
@@ -969,16 +971,16 @@ export function PostCard({ post, showActions = true, className = '' }: PostCardP
           ),
         };
       });
-      toast.success('Post liked!');
+      toast.success('Post liked!', 'Your like has been recorded');
     },
     onError: () => {
-      toast.error('Failed to like post');
+      toast.error('Failed to like post', 'Please try again');
     },
   });
 
   const handleLike = () => {
     if (!user) {
-      toast.error('Please login to like posts');
+      toast.error('Authentication required', 'Please login to like posts');
       return;
     }
     likeMutation.mutate(post.id);
@@ -1134,54 +1136,65 @@ export class ErrorBoundary extends Component<Props, State> {
 ### Code Quality and Testing
 
 ```typescript
-// Testing example with Jest and React Testing Library
-// frontend/src/components/__tests__/PostCard.test.tsx
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
-import { PostCard } from '../PostCard';
-import { AuthProvider } from '../../contexts/AuthContext';
-import { mockPost, mockUser } from '../../__mocks__/data';
+/**
+ * @vitest-environment node
+ */
+// Unit testing example with Vitest - testing validation schemas
+// src/lib/__tests__/post-validation.test.ts
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+// Post creation schema
+const createPostSchema = z.object({
+  title: z
+    .string()
+    .min(1, { message: 'Title is required' })
+    .max(200, { message: 'Title must be 200 characters or less' }),
+  content: z.string().min(1, { message: 'Content is required' }),
+  tags: z.array(z.string()).max(5, { message: 'Maximum 5 tags allowed' }),
+  published: z.boolean().default(false),
+})
 
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
-};
+describe('Post Validation', () => {
+  it('should validate correct post data', () => {
+    const validData = {
+      title: 'My First Post',
+      content: 'This is the content of my post.',
+      tags: ['typescript', 'testing'],
+      published: true,
+    }
 
-describe('PostCard', () => {
-  it('renders post information correctly', () => {
-    render(<PostCard post={mockPost} />, { wrapper: createWrapper() });
+    const result = createPostSchema.safeParse(validData)
+    expect(result.success).toBe(true)
+  })
 
-    expect(screen.getByText(mockPost.title)).toBeInTheDocument();
-    expect(screen.getByText(mockPost.author.name)).toBeInTheDocument();
-    expect(screen.getByText(`${mockPost.viewCount}`)).toBeInTheDocument();
-    expect(screen.getByText(`${mockPost.likeCount}`)).toBeInTheDocument();
-  });
+  it('should reject empty title', () => {
+    const invalidData = {
+      title: '',
+      content: 'Some content',
+      tags: [],
+      published: false,
+    }
 
-  it('handles like button click', async () => {
-    const user = userEvent.setup();
-    render(<PostCard post={mockPost} />, { wrapper: createWrapper() });
+    const result = createPostSchema.safeParse(invalidData)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Title is required')
+    }
+  })
 
-    const likeButton = screen.getByRole('button', { name: /like/i });
-    await user.click(likeButton);
+  it('should reject too many tags', () => {
+    const invalidData = {
+      title: 'Valid Title',
+      content: 'Some content',
+      tags: ['one', 'two', 'three', 'four', 'five', 'six'],
+      published: false,
+    }
 
-    await waitFor(() => {
-      expect(screen.getByText('Post liked!')).toBeInTheDocument();
-    });
-  });
-});
+    const result = createPostSchema.safeParse(invalidData)
+    expect(result.success).toBe(false)
+  })
+})
 ```
 
 ### Performance Optimization
