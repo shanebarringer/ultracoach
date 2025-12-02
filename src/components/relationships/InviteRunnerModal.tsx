@@ -13,7 +13,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { Mail, UserPlus } from 'lucide-react'
+import { Mail, User, UserPlus } from 'lucide-react'
 import { z } from 'zod'
 
 import { useCallback, useState } from 'react'
@@ -51,6 +51,13 @@ export function InviteRunnerModal() {
     [setForm]
   )
 
+  const handleNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm(prev => ({ ...prev, name: e.target.value }))
+    },
+    [setForm]
+  )
+
   const handleRoleChange = useCallback(
     (value: string) => {
       setForm(prev => ({ ...prev, role: value as 'runner' | 'coach' }))
@@ -71,6 +78,7 @@ export function InviteRunnerModal() {
     setEmailError(null)
     setForm({
       email: '',
+      name: '',
       role: 'runner',
       message: '',
       expirationDays: 14,
@@ -102,6 +110,7 @@ export function InviteRunnerModal() {
     try {
       const result = await createInvitation({
         email: form.email.trim().toLowerCase(),
+        name: form.name?.trim() || undefined,
         role: form.role,
         message: form.message?.trim() || undefined,
         expirationDays: 14,
@@ -193,6 +202,19 @@ export function InviteRunnerModal() {
               variant="bordered"
               isRequired
               autoFocus
+            />
+          </div>
+
+          {/* Name Input (Optional) */}
+          <div className="space-y-2">
+            <Input
+              label="Name (optional)"
+              placeholder="Enter their name"
+              description="If provided, this will pre-fill the signup form"
+              value={form.name || ''}
+              onChange={handleNameChange}
+              startContent={<User className="h-4 w-4 text-default-400" />}
+              variant="bordered"
             />
           </div>
 

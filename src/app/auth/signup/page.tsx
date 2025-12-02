@@ -92,6 +92,11 @@ export default function SignUp() {
   useEffect(() => {
     if (invitation) {
       setValue('role', invitation.invitedRole)
+      setValue('email', invitation.inviteeEmail)
+      // Pre-fill name if provided in invitation (optional, can be edited)
+      if (invitation.inviteeName) {
+        setValue('fullName', invitation.inviteeName)
+      }
     }
   }, [invitation, setValue])
 
@@ -302,6 +307,10 @@ export default function SignUp() {
                       placeholder="Enter your base camp email"
                       isInvalid={!!fieldState.error}
                       errorMessage={fieldState.error?.message}
+                      isReadOnly={!!invitation}
+                      description={
+                        invitation ? 'Email from invitation (cannot be changed)' : undefined
+                      }
                       startContent={
                         <Mail className="w-4 h-4 text-foreground-400" aria-hidden="true" />
                       }

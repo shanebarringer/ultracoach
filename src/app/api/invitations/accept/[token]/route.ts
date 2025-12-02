@@ -57,6 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select({
         id: coach_invitations.id,
         inviteeEmail: coach_invitations.invitee_email,
+        inviteeName: coach_invitations.invitee_name,
         invitedRole: coach_invitations.invited_role,
         personalMessage: coach_invitations.personal_message,
         status: coach_invitations.status,
@@ -138,6 +139,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         invitedRole: invitation.invitedRole,
         personalMessage: invitation.personalMessage,
         expiresAt: invitation.expiresAt,
+        inviteeEmail: invitation.inviteeEmail,
+        inviteeName: invitation.inviteeName,
       },
       existingUser: !!existingUser,
     })
