@@ -12,6 +12,7 @@
  */
 import { atom } from 'jotai'
 
+import { getTourStepCount } from '@/components/tours/tours/metadata'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('TourAtoms')
@@ -139,7 +140,8 @@ export const startTourAtom = atom(null, (get, set, tourId: TourId) => {
     return false
   }
 
-  const totalSteps = tourId === 'coach-onboarding' ? 11 : 8 // Coach has more steps
+  // Get step count from centralized metadata
+  const totalSteps = getTourStepCount(tourId)
 
   set(activeTourAtom, {
     tourId,

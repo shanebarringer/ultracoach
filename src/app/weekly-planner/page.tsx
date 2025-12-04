@@ -95,7 +95,10 @@ function RunnersPanel() {
   }
 
   return (
-    <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
+    <Card
+      className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary"
+      data-testid="weekly-planner-selection"
+    >
       <CardHeader className="px-4 lg:px-6">
         <div className="flex flex-col gap-4 w-full">
           {/* Header Row: Title and Action Controls */}

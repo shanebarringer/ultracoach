@@ -38,6 +38,7 @@ export const coachOnboardingTour: Tour = {
       ),
       selector: '[data-testid="coach-dashboard-content"]',
       side: 'bottom',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
@@ -57,6 +58,7 @@ export const coachOnboardingTour: Tour = {
       ),
       selector: '[data-testid="runners-section"]',
       side: 'right',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
@@ -75,7 +77,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="connect-athletes-button"]',
-      side: 'bottom',
+      side: 'left',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
@@ -94,7 +97,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="training-plans-section"]',
-      side: 'left',
+      side: 'right',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
@@ -115,8 +119,10 @@ export const coachOnboardingTour: Tour = {
       ),
       selector: '[data-testid="kbar-search-button"]',
       side: 'bottom',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
+      nextRoute: '/weekly-planner',
     },
     {
       icon: '📅',
@@ -132,10 +138,12 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="weekly-planner-section"]',
+      selector: '[data-testid="weekly-planner-selection"]',
       side: 'bottom',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
+      prevRoute: '/dashboard/coach',
       nextRoute: '/calendar',
     },
     {
@@ -153,7 +161,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="calendar-view"]',
-      side: 'left',
+      side: 'top', // 'top' places card visually below target - avoids top-of-viewport cutoff
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/weekly-planner',
@@ -174,7 +183,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="chat-section"]',
-      side: 'right',
+      side: 'top', // 'top' places card visually below target - avoids top-of-viewport cutoff
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/calendar',
@@ -194,6 +204,7 @@ export const coachOnboardingTour: Tour = {
       ),
       selector: '[data-testid="notification-bell"]',
       side: 'bottom',
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/chat',
@@ -213,7 +224,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="theme-toggle"]',
-      side: 'bottom',
+      side: 'left', // Theme toggle is near right edge - 'left' prevents right overflow
+      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       nextRoute: '/races',
@@ -233,7 +245,8 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="import-races-modal-trigger"]',
-      side: 'left',
+      side: 'bottom',
+      pointerPadding: 20,
       showControls: true,
       showSkip: false, // No skip on last step
       prevRoute: '/dashboard/coach',

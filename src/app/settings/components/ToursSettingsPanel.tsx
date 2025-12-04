@@ -8,6 +8,7 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
+import { tourMetadata } from '@/components/tours/tours/metadata'
 import { resetTourAtom, shouldStartTourAtom, tourStateAtom } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -23,23 +24,23 @@ interface TourInfo {
   dashboardUrl: string
 }
 
+// Build tours array from centralized metadata
 const tours: TourInfo[] = [
   {
     id: 'coach',
-    name: 'Coach Tour',
-    description: 'Learn how to manage athletes, create training plans, and track progress.',
+    name: tourMetadata['coach-onboarding'].name,
+    description: tourMetadata['coach-onboarding'].description,
     icon: <RouteIcon className="w-5 h-5 text-primary" />,
-    stepCount: 11,
-    dashboardUrl: '/dashboard/coach',
+    stepCount: tourMetadata['coach-onboarding'].stepCount,
+    dashboardUrl: tourMetadata['coach-onboarding'].dashboardUrl,
   },
   {
     id: 'runner',
-    name: 'Runner Tour',
-    description:
-      'Discover how to track workouts, view training plans, and communicate with your coach.',
+    name: tourMetadata['runner-onboarding'].name,
+    description: tourMetadata['runner-onboarding'].description,
     icon: <MapPinIcon className="w-5 h-5 text-secondary" />,
-    stepCount: 8,
-    dashboardUrl: '/dashboard/runner',
+    stepCount: tourMetadata['runner-onboarding'].stepCount,
+    dashboardUrl: tourMetadata['runner-onboarding'].dashboardUrl,
   },
 ]
 
@@ -51,6 +52,13 @@ export default function ToursSettingsPanel() {
   const [resetting, setResetting] = useState<string | null>(null)
 
   const handleStartTour = (tour: TourInfo) => {
+    // Guard against unimplemented tours
+    if (tour.id === 'runner') {
+      logger.warn('Runner tour not yet implemented')
+      toast.info('Coming Soon', 'The runner tour is not yet available.')
+      return
+    }
+
     logger.info('Starting tour from settings', { tourId: tour.id })
     setShouldStartTour(true)
     router.push(tour.dashboardUrl)
