@@ -37,9 +37,9 @@ export default function TourCard({
   const progressPercent = ((currentStep + 1) / totalSteps) * 100
 
   return (
-    <Card className="w-[380px] shadow-xl border border-alpine-200 dark:border-alpine-700 bg-background/95 backdrop-blur-sm">
+    <Card className="relative z-50 w-[380px] shadow-xl border border-alpine-200 dark:border-alpine-700 bg-background/95 backdrop-blur-sm">
       {/* Header with gradient accent */}
-      <CardHeader className="flex flex-col gap-2 pb-2">
+      <CardHeader className="relative z-10 flex flex-col gap-2 pb-2">
         {/* Top bar with skip button */}
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2 text-alpine-600 dark:text-alpine-400">
@@ -79,9 +79,9 @@ export default function TourCard({
         </div>
       </CardHeader>
 
-      <CardBody className="py-3 px-4">
+      <CardBody className="relative z-10 py-3 px-4">
         {/* Content */}
-        <div className="text-sm text-default-600 dark:text-default-400 leading-relaxed">
+        <div className="text-sm text-foreground/80 dark:text-foreground/70 leading-relaxed">
           {step.content}
         </div>
 
@@ -89,7 +89,7 @@ export default function TourCard({
         <div className="mt-2">{arrow}</div>
       </CardBody>
 
-      <CardFooter className="flex justify-between items-center pt-2 border-t border-alpine-100 dark:border-alpine-800">
+      <CardFooter className="relative z-10 flex justify-between items-center pt-2 border-t border-alpine-100 dark:border-alpine-800">
         {/* Navigation buttons */}
         <div className="flex gap-2">
           <Button
@@ -109,7 +109,6 @@ export default function TourCard({
           color="primary"
           onPress={nextStep}
           endContent={!isLastStep && <ChevronRight className="w-4 h-4" />}
-          className="bg-gradient-to-r from-alpine-600 to-alpine-500 shadow-md"
         >
           {isLastStep ? 'Complete Tour' : 'Next'}
         </Button>

@@ -117,7 +117,6 @@ export const coachOnboardingTour: Tour = {
       side: 'bottom',
       showControls: true,
       showSkip: true,
-      nextRoute: '/weekly-planner',
     },
     {
       icon: '📅',
@@ -137,7 +136,6 @@ export const coachOnboardingTour: Tour = {
       side: 'bottom',
       showControls: true,
       showSkip: true,
-      prevRoute: '/dashboard/coach',
       nextRoute: '/calendar',
     },
     {

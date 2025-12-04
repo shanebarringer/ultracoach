@@ -7,12 +7,13 @@
  * integrating with Jotai atoms for state management and API
  * for database persistence.
  */
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 
 import React, { useCallback } from 'react'
 
 import { NextStep, NextStepProvider } from 'nextstepjs'
 
+import { themeModeAtom } from '@/lib/atoms/index'
 import {
   type TourId,
   completeTourAtom,
@@ -32,10 +33,16 @@ interface NextStepWrapperProps {
 }
 
 export default function NextStepWrapper({ children }: NextStepWrapperProps) {
+  const themeMode = useAtomValue(themeModeAtom)
   const startTour = useSetAtom(startTourAtom)
   const updateProgress = useSetAtom(updateTourProgressAtom)
   const completeTour = useSetAtom(completeTourAtom)
   const skipTour = useSetAtom(skipTourAtom)
+
+  // Dynamic shadow based on theme for proper overlay visibility
+  const isDarkMode = themeMode === 'dark'
+  const shadowRgb = isDarkMode ? '255, 255, 255' : '0, 0, 0'
+  const shadowOpacity = isDarkMode ? '0.15' : '0.5'
 
   /**
    * Persist tour action to database
@@ -120,6 +127,8 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
       <NextStep
         steps={allTours}
         cardComponent={TourCard}
+        shadowRgb={shadowRgb}
+        shadowOpacity={shadowOpacity}
         onStart={handleStart}
         onStepChange={handleStepChange}
         onComplete={handleComplete}
