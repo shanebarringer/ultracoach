@@ -22,7 +22,7 @@ export default function ChatPageClient({ user }: Props) {
     <Layout>
       <ModernErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card className="flex h-[calc(100vh-200px)] overflow-hidden">
+          <Card className="flex h-[calc(100vh-200px)] overflow-hidden" data-testid="chat-section">
             {/* Conversations Sidebar */}
             <div className="w-full md:w-1/3 lg:w-1/4 border-r border-divider flex flex-col">
               <CardHeader className="bg-content2 border-b border-divider">

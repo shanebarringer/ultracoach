@@ -249,7 +249,7 @@ export default function NotificationBell() {
   return (
     <Dropdown placement="bottom-end" className="min-w-80">
       <DropdownTrigger>
-        <Button variant="light" isIconOnly className="relative">
+        <Button variant="light" isIconOnly className="relative" data-testid="notification-bell">
           <Badge
             content={unreadCount > 0 ? unreadCount.toString() : ''}
             color="danger"

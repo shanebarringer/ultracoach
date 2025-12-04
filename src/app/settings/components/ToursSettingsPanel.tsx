@@ -1,0 +1,231 @@
+'use client'
+
+import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { CheckCircleIcon, CompassIcon, MapPinIcon, RefreshCwIcon, RouteIcon } from 'lucide-react'
+
+import { useState } from 'react'
+
+import { useRouter } from 'next/navigation'
+
+import { resetTourAtom, shouldStartTourAtom, tourStateAtom } from '@/lib/atoms/tours'
+import { createLogger } from '@/lib/logger'
+import { toast } from '@/lib/toast'
+
+const logger = createLogger('ToursSettingsPanel')
+
+interface TourInfo {
+  id: 'coach' | 'runner'
+  name: string
+  description: string
+  icon: React.ReactNode
+  stepCount: number
+  dashboardUrl: string
+}
+
+const tours: TourInfo[] = [
+  {
+    id: 'coach',
+    name: 'Coach Tour',
+    description: 'Learn how to manage athletes, create training plans, and track progress.',
+    icon: <RouteIcon className="w-5 h-5 text-primary" />,
+    stepCount: 11,
+    dashboardUrl: '/dashboard/coach',
+  },
+  {
+    id: 'runner',
+    name: 'Runner Tour',
+    description:
+      'Discover how to track workouts, view training plans, and communicate with your coach.',
+    icon: <MapPinIcon className="w-5 h-5 text-secondary" />,
+    stepCount: 8,
+    dashboardUrl: '/dashboard/runner',
+  },
+]
+
+export default function ToursSettingsPanel() {
+  const router = useRouter()
+  const tourState = useAtomValue(tourStateAtom)
+  const setShouldStartTour = useSetAtom(shouldStartTourAtom)
+  const resetTour = useSetAtom(resetTourAtom)
+  const [resetting, setResetting] = useState<string | null>(null)
+
+  const handleStartTour = (tour: TourInfo) => {
+    logger.info('Starting tour from settings', { tourId: tour.id })
+    setShouldStartTour(true)
+    router.push(tour.dashboardUrl)
+  }
+
+  const handleResetTour = async (tourId: 'coach' | 'runner') => {
+    setResetting(tourId)
+    try {
+      logger.info('Resetting tour', { tourId })
+
+      // Call API to reset the tour
+      const response = await fetch('/api/tours', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ tourId: `${tourId}-onboarding`, action: 'reset' }),
+      })
+
+      if (response.ok) {
+        resetTour(`${tourId}-onboarding`)
+        toast.success('Tour reset successfully', 'You can now restart the guided tour.')
+      } else {
+        throw new Error('Failed to reset tour')
+      }
+    } catch (error) {
+      logger.error('Failed to reset tour', { tourId, error })
+      toast.error('Reset failed', 'Could not reset the tour. Please try again.')
+    } finally {
+      setResetting(null)
+    }
+  }
+
+  const isTourCompleted = (tourId: 'coach' | 'runner') => {
+    return tourId === 'coach' ? tourState.coachTourCompleted : tourState.runnerTourCompleted
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Guided Tours Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CompassIcon className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">Guided Tours</h3>
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody className="space-y-4">
+          <p className="text-foreground-600">
+            Take a guided tour of UltraCoach to learn about key features and get started quickly.
+            You can restart tours at any time to refresh your knowledge.
+          </p>
+
+          <div className="p-4 bg-alpine-50 dark:bg-alpine-900/20 rounded-lg border border-alpine-200 dark:border-alpine-800">
+            <div className="flex items-start gap-3">
+              <CompassIcon className="w-5 h-5 text-alpine-600 dark:text-alpine-400 mt-0.5" />
+              <div>
+                <p className="font-medium text-foreground">Quick Tip</p>
+                <p className="text-sm text-foreground-600">
+                  You can also start a tour anytime using the keyboard shortcut{' '}
+                  <kbd className="px-2 py-0.5 bg-content3 rounded text-xs font-mono">T</kbd>{' '}
+                  <kbd className="px-2 py-0.5 bg-content3 rounded text-xs font-mono">G</kbd> or by
+                  pressing{' '}
+                  <kbd className="px-2 py-0.5 bg-content3 rounded text-xs font-mono">Cmd+K</kbd> and
+                  searching for &quot;Guided Tour&quot;.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Available Tours */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <RouteIcon className="w-5 h-5 text-secondary" />
+            <h3 className="text-lg font-semibold">Available Tours</h3>
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody className="space-y-4">
+          {tours.map(tour => {
+            const completed = isTourCompleted(tour.id)
+
+            return (
+              <div
+                key={tour.id}
+                className="flex items-start justify-between p-4 border rounded-lg border-divider hover:border-primary/30 transition-colors"
+              >
+                <div className="flex gap-4">
+                  <div className="p-2 bg-content2 rounded-lg">{tour.icon}</div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-foreground">{tour.name}</h4>
+                      {completed && (
+                        <Chip
+                          startContent={<CheckCircleIcon className="w-3 h-3" />}
+                          color="success"
+                          variant="flat"
+                          size="sm"
+                        >
+                          Completed
+                        </Chip>
+                      )}
+                    </div>
+                    <p className="text-sm text-foreground-600 mt-1">{tour.description}</p>
+                    <p className="text-xs text-foreground-500 mt-2">
+                      {tour.stepCount} steps • ~{Math.round(tour.stepCount * 0.5)} min
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  {completed && (
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      startContent={<RefreshCwIcon className="w-3 h-3" />}
+                      isLoading={resetting === tour.id}
+                      onPress={() => handleResetTour(tour.id)}
+                    >
+                      Reset
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    color="primary"
+                    variant={completed ? 'flat' : 'solid'}
+                    startContent={<CompassIcon className="w-3 h-3" />}
+                    onPress={() => handleStartTour(tour)}
+                  >
+                    {completed ? 'Restart' : 'Start Tour'}
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </CardBody>
+      </Card>
+
+      {/* Tour Progress */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CheckCircleIcon className="w-5 h-5 text-success" />
+            <h3 className="text-lg font-semibold">Tour Progress</h3>
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-content2 rounded-lg text-center">
+              <p className="text-3xl font-bold text-primary">
+                {(tourState.coachTourCompleted ? 1 : 0) + (tourState.runnerTourCompleted ? 1 : 0)}
+              </p>
+              <p className="text-sm text-foreground-600">Tours Completed</p>
+            </div>
+            <div className="p-4 bg-content2 rounded-lg text-center">
+              <p className="text-3xl font-bold text-secondary">
+                {2 -
+                  (tourState.coachTourCompleted ? 1 : 0) -
+                  (tourState.runnerTourCompleted ? 1 : 0)}
+              </p>
+              <p className="text-sm text-foreground-600">Tours Remaining</p>
+            </div>
+          </div>
+
+          {tourState.lastTourStartedAt && (
+            <p className="text-xs text-foreground-500 mt-4 text-center">
+              Last tour started: {new Date(tourState.lastTourStartedAt).toLocaleDateString()}
+            </p>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  )
+}

@@ -730,7 +730,10 @@ export default function WeeklyPlannerCalendar({
   }
 
   return (
-    <Card className="bg-background border-l-4 border-l-primary shadow-xl">
+    <Card
+      className="bg-background border-l-4 border-l-primary shadow-xl"
+      data-testid="weekly-planner-section"
+    >
       <CardHeader>
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-3">
