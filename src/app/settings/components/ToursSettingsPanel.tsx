@@ -8,8 +8,9 @@ import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import { tourMetadata } from '@/components/tours/tours/metadata'
+import { isTourImplemented, tourMetadata } from '@/components/tours/tours/metadata'
 import { resetTourAtom, shouldStartTourAtom, tourStateAtom } from '@/lib/atoms/tours'
+import type { TourId } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -52,14 +53,15 @@ export default function ToursSettingsPanel() {
   const [resetting, setResetting] = useState<string | null>(null)
 
   const handleStartTour = (tour: TourInfo) => {
-    // Guard against unimplemented tours
-    if (tour.id === 'runner') {
-      logger.warn('Runner tour not yet implemented')
+    // Guard against unimplemented tours using centralized metadata
+    const tourId = `${tour.id}-onboarding` as TourId
+    if (!isTourImplemented(tourId)) {
+      logger.warn('Tour not yet implemented', { tourId })
       toast.info('Coming Soon', 'The runner tour is not yet available.')
       return
     }
 
-    logger.info('Starting tour from settings', { tourId: tour.id })
+    logger.info('Starting tour from settings', { tourId })
     setShouldStartTour(true)
     router.push(tour.dashboardUrl)
   }
