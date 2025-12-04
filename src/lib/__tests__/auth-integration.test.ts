@@ -3,30 +3,24 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock environment variables
-const originalEnv = process.env
-
-beforeEach(() => {
-  vi.clearAllMocks()
-  process.env = {
-    ...originalEnv,
-    DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-    BETTER_AUTH_SECRET: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-    NODE_ENV: 'test',
-  }
-})
-
-afterEach(() => {
-  process.env = originalEnv
-})
+// Mock database module FIRST to prevent real DB connections
+vi.mock('../database', () => ({
+  db: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  client: {
+    end: vi.fn(),
+  },
+}))
 
 // Mock Better Auth
 const mockSignIn = vi.fn()
 const mockSignUp = vi.fn()
 const mockSignOut = vi.fn()
 const mockGetSession = vi.fn()
-
-// Better Auth test utilities
 
 vi.mock('better-auth', () => ({
   betterAuth: vi.fn(() => ({
@@ -39,33 +33,45 @@ vi.mock('better-auth', () => ({
   })),
 }))
 
-// Mock database
+vi.mock('better-auth/adapters/drizzle', () => ({
+  drizzleAdapter: vi.fn(),
+}))
+
+vi.mock('better-auth/next-js', () => ({
+  nextCookies: vi.fn(),
+}))
+
+vi.mock('better-auth/plugins', () => ({
+  admin: vi.fn(),
+  customSession: vi.fn(fn => fn),
+}))
+
+vi.mock('resend', () => ({
+  Resend: vi.fn(),
+}))
+
+// Mock environment variables
+const originalEnv = process.env
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.resetModules()
+  process.env = {
+    ...originalEnv,
+    DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    BETTER_AUTH_SECRET: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    NODE_ENV: 'test',
+  }
+})
+
+afterEach(() => {
+  process.env = originalEnv
+})
+
+// Mock database helpers
 const mockInsert = vi.fn()
-const mockUpdate = vi.fn()
 const mockWhere = vi.fn()
 const mockFrom = vi.fn()
-
-vi.mock('drizzle-orm/node-postgres', () => ({
-  drizzle: vi.fn(() => ({
-    select: vi.fn(() => ({
-      from: mockFrom.mockReturnValue({
-        where: mockWhere.mockReturnValue({
-          limit: vi.fn().mockResolvedValue([]),
-        }),
-      }),
-    })),
-    insert: mockInsert,
-    update: mockUpdate,
-  })),
-}))
-
-vi.mock('pg', () => ({
-  Pool: vi.fn(() => ({
-    query: vi.fn(),
-    end: vi.fn(),
-    on: vi.fn(),
-  })),
-}))
 
 describe('Authentication Integration Tests', () => {
   describe('Complete Authentication Flow', () => {
