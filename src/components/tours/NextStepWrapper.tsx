@@ -28,6 +28,9 @@ import { allTours } from './tours'
 
 const logger = createLogger('NextStepWrapper')
 
+// Valid tour IDs for runtime validation (static, never changes)
+const VALID_TOUR_IDS: readonly TourId[] = ['coach-onboarding', 'runner-onboarding'] as const
+
 interface NextStepWrapperProps {
   children: React.ReactNode
 }
@@ -40,9 +43,10 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
   const skipTour = useSetAtom(skipTourAtom)
 
   // Dynamic shadow based on theme for proper overlay visibility
+  // Stronger dimming ensures spotlight target stands out clearly
   const isDarkMode = themeMode === 'dark'
   const shadowRgb = isDarkMode ? '255, 255, 255' : '0, 0, 0'
-  const shadowOpacity = isDarkMode ? '0.15' : '0.5'
+  const shadowOpacity = isDarkMode ? '0.4' : '0.6'
 
   /**
    * Persist tour action to database
@@ -69,11 +73,17 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
   )
 
   /**
-   * Handle tour start
+   * Handle tour start with runtime validation
    */
   const handleStart = useCallback(
     (tourName: string | null) => {
       if (!tourName) return
+
+      // Runtime validation - ensure tourName is a valid TourId
+      if (!VALID_TOUR_IDS.includes(tourName as TourId)) {
+        logger.warn('Unknown tour name received', { tourName })
+        return
+      }
 
       logger.info('Tour started', { tourName })
       const tourId = tourName as TourId
@@ -97,11 +107,17 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
   )
 
   /**
-   * Handle tour complete
+   * Handle tour complete with runtime validation
    */
   const handleComplete = useCallback(
     (tourName: string | null) => {
       if (!tourName) return
+
+      // Runtime validation - ensure tourName is a valid TourId
+      if (!VALID_TOUR_IDS.includes(tourName as TourId)) {
+        logger.warn('Unknown tour name received on complete', { tourName })
+        return
+      }
 
       logger.info('Tour completed', { tourName })
       const tourId = tourName as TourId

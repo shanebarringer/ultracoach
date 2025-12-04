@@ -4,8 +4,8 @@
 
 -- Add tour completion tracking columns
 ALTER TABLE user_onboarding
-ADD COLUMN IF NOT EXISTS coach_tour_completed BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS runner_tour_completed BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS coach_tour_completed BOOLEAN NOT NULL DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS runner_tour_completed BOOLEAN NOT NULL DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS last_tour_started_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS last_tour_completed_at TIMESTAMPTZ;
 

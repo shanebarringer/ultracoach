@@ -1,22 +1,20 @@
 /**
- * Product Tour API Routes
+ * Tours API Route
  *
  * GET: Fetch user's tour completion status
- * POST: Update tour completion status
- * PATCH: Reset tour for re-taking
+ * POST: Update tour via action parameter ('start', 'complete', 'reset')
  */
 import { eq } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
+import type { TourId } from '@/lib/atoms/tours'
 import { auth } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { user_onboarding } from '@/lib/schema'
 
 const logger = createLogger('api/tours')
-
-type TourId = 'coach-onboarding' | 'runner-onboarding'
 
 interface TourUpdateRequest {
   tourId: TourId

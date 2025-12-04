@@ -443,8 +443,8 @@ export const user_onboarding = pgTable('user_onboarding', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   // Product tour tracking (NextStep.js integration)
-  coach_tour_completed: boolean('coach_tour_completed').default(false),
-  runner_tour_completed: boolean('runner_tour_completed').default(false),
+  coach_tour_completed: boolean('coach_tour_completed').default(false).notNull(),
+  runner_tour_completed: boolean('runner_tour_completed').default(false).notNull(),
   last_tour_started_at: timestamp('last_tour_started_at', { withTimezone: true }),
   last_tour_completed_at: timestamp('last_tour_completed_at', { withTimezone: true }),
 })

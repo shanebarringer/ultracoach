@@ -60,6 +60,13 @@ export default function TourTrigger({ userRole }: TourTriggerProps) {
       return
     }
 
+    // Guard: Runner tour not yet implemented
+    if (userRole === 'runner') {
+      logger.debug('Runner tour not yet implemented, skipping')
+      setShouldStartTour(false)
+      return
+    }
+
     // Mark as triggered to prevent re-runs
     hasTriggered.current = true
 
@@ -72,7 +79,9 @@ export default function TourTrigger({ userRole }: TourTriggerProps) {
         setShouldStartTour(false)
       } catch (error) {
         logger.error('Failed to start tour', { tourId, error })
-        hasTriggered.current = false // Allow retry
+        // Reset both ref and atom to allow future retry attempts
+        hasTriggered.current = false
+        setShouldStartTour(false)
       }
     }, 500)
 

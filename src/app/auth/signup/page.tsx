@@ -121,7 +121,8 @@ export default function SignUp() {
         setError('email', { message: sanitizedError })
       } else {
         logger.info('Sign up successful:', { userRole: data.role })
-        setFormState(prev => ({ ...prev, loading: false }))
+        // CRITICAL: Sync the form's role to the atom's userType for handleOnboardingComplete
+        setFormState(prev => ({ ...prev, loading: false, userType: data.role }))
 
         // If there's an invitation, accept it automatically
         if (invitationToken) {
