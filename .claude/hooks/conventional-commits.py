@@ -18,13 +18,18 @@ if tool_name != "Bash" or "git commit" not in command:
     sys.exit(0)
 
 # Extract commit message from -m flag
-# Handle both -m "message" and -m 'message' formats
-match = re.search(r'git commit.*?-m\s+["\']([^"\']+)["\']', command)
+# Handle both -m "message" and -m 'message' formats (including multiline)
+match = re.search(r'git commit.*?-m\s+["\'](.+?)["\'](?:\s|$)', command, re.DOTALL)
 if not match:
-    # Also try heredoc format: -m "$(cat <<'EOF' ... EOF)"
-    heredoc_match = re.search(r'git commit.*?-m\s+"?\$\(cat\s+<<["\']?EOF["\']?\s*\n(.+?)\nEOF', command, re.DOTALL)
+    # Try heredoc format: -m "$(cat <<'EOF' ... EOF)" or -m "$(cat <<EOF ... EOF)"
+    # Handle various whitespace and newline representations
+    heredoc_match = re.search(
+        r'git commit.*?-m\s+["\']?\$\(cat\s+<<[\-]?["\']?(\w+)["\']?[\s\n]+(.+?)[\s\n]+\1',
+        command,
+        re.DOTALL
+    )
     if heredoc_match:
-        commit_msg = heredoc_match.group(1).strip()
+        commit_msg = heredoc_match.group(2).strip()
     else:
         sys.exit(0)  # Can't extract message, allow it
 else:
