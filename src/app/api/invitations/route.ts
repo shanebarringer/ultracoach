@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       .values({
         inviter_user_id: sessionUser.id,
         invitee_email: email.toLowerCase(),
-        invitee_name: name?.trim() || null,
+        invitee_name: name || null,
         invited_role: role,
         personal_message: message || null,
         token_hash: tokenHash,

@@ -123,7 +123,7 @@ PreToolUse (Claude Code) - Conventional commits validation
 
 ### Commit Log for PR
 
-```
+```text
 7010cea refactor(python): apply Ruff style improvements to context-monitor.py
 [Previous commits for Session 1 work]
 ```

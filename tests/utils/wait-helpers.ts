@@ -116,9 +116,10 @@ export async function navigateWithAuthVerification(
   await page.goto(targetUrl)
   await page.waitForLoadState('domcontentloaded')
 
-  // Check if we got redirected to signin
+  // Check if we got redirected to signin using precise regex to avoid matching
+  // unintended paths like /auth/signin-callback
   const currentUrl = page.url()
-  const isAuthRedirect = currentUrl.includes('/auth/signin') || currentUrl.includes('/auth/signup')
+  const isAuthRedirect = /\/(auth\/(signin|signup))($|\?)/.test(currentUrl)
 
   if (isAuthRedirect) {
     const errorMessage = `Auth redirect detected: Expected "${targetUrl}" but got "${currentUrl}". storageState may not be loaded correctly.`
@@ -135,8 +136,8 @@ export async function navigateWithAuthVerification(
     timeout,
   })
 
-  // Wait for React hydration
-  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
+  // Wait for page to be fully ready (includes React hydration)
+  await waitForPageReady(page)
 
   return true
 }

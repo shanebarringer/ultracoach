@@ -68,9 +68,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Wait for either Connect buttons OR a message indicating no runners available
+      // Wait for Connect buttons to be available
       const connectButton = page.getByRole('button', { name: 'Connect' }).first()
-      const noRunnersText = page.getByText(/no runners|no available/i).first()
 
       // Check if any Connect buttons exist (with shorter timeout to fail fast if none)
       const hasConnectButtons = await connectButton.isVisible({ timeout: 5000 }).catch(() => false)

@@ -88,4 +88,4 @@ supabase/logs/
 .claude/context/
 
 # Temporary migration backups
-supabase/migrations_backup/coderabbit-response.md
+supabase/migrations_backup/
