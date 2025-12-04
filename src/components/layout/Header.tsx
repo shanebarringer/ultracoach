@@ -110,6 +110,7 @@ function Header() {
             isIconOnly
             variant="light"
             aria-label="Open menu"
+            data-testid="nav-menu-button"
             className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
             onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
           >

@@ -4,24 +4,27 @@
  * A guided tour introducing coaches to key UltraCoach features.
  * Uses NextStep.js with page navigation for a multi-page tour experience.
  *
- * Tour Flow:
- * 1. Dashboard overview
- * 2. Athletes section
- * 3. Connect athletes button
- * 4. Training plans section
- * 5. K-bar quick commands
- * 6. Weekly planner (navigates)
- * 7. Calendar view (navigates)
- * 8. Chat/messaging (navigates)
- * 9. Notifications
- * 10. Theme toggle
- * 11. Race management (navigates)
+ * Tour Flow (13 Steps):
+ * 1. Welcome (centered modal - no spotlight)
+ * 2. Navigation Menu (hamburger button)
+ * 3. Athletes section
+ * 4. Connect athletes button
+ * 5. Training plans section
+ * 6. K-bar quick commands → /weekly-planner
+ * 7. Weekly Planner Selection
+ * 8. Weekly Workout Grid (modal) → /calendar
+ * 9. Calendar view → /chat
+ * 10. Chat/messaging → /dashboard/coach
+ * 11. Notifications
+ * 12. Theme toggle → /races
+ * 13. Race management (final)
  */
 import type { Tour } from 'nextstepjs'
 
 export const coachOnboardingTour: Tour = {
   tour: 'coach-onboarding',
   steps: [
+    // Step 1: Welcome - Centered modal (no selector = centered overlay)
     {
       icon: '🏔️',
       title: 'Welcome to Summit Dashboard',
@@ -36,12 +39,34 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="coach-dashboard-content"]',
-      side: 'bottom-right',
+      // No selector = centered modal overlay
+      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
+    // Step 2: Navigation Menu (NEW)
+    {
+      icon: '☰',
+      title: 'Navigation Menu',
+      content: (
+        <>
+          <p className="mb-2">
+            Click the menu icon to open the navigation drawer. From there you can quickly access all
+            areas of UltraCoach.
+          </p>
+          <p className="text-sm text-default-500">
+            You can pin the drawer open for easier navigation.
+          </p>
+        </>
+      ),
+      selector: '[data-testid="nav-menu-button"]',
+      side: 'bottom',
+      pointerPadding: 10,
+      showControls: true,
+      showSkip: true,
+    },
+    // Step 3: Your Athletes
     {
       icon: '👥',
       title: 'Your Athletes',
@@ -62,6 +87,7 @@ export const coachOnboardingTour: Tour = {
       showControls: true,
       showSkip: true,
     },
+    // Step 4: Connect New Athletes
     {
       icon: '🔗',
       title: 'Connect New Athletes',
@@ -82,6 +108,7 @@ export const coachOnboardingTour: Tour = {
       showControls: true,
       showSkip: true,
     },
+    // Step 5: Training Expeditions
     {
       icon: '📋',
       title: 'Training Expeditions',
@@ -102,6 +129,7 @@ export const coachOnboardingTour: Tour = {
       showControls: true,
       showSkip: true,
     },
+    // Step 6: K-bar Quick Commands
     {
       icon: '⌨️',
       title: 'Quick Commands (K-bar)',
@@ -124,6 +152,7 @@ export const coachOnboardingTour: Tour = {
       showSkip: true,
       nextRoute: '/weekly-planner',
     },
+    // Step 7: Weekly Planner Selection
     {
       icon: '📅',
       title: 'Weekly Planner',
@@ -131,7 +160,7 @@ export const coachOnboardingTour: Tour = {
         <>
           <p className="mb-2">
             The weekly planner gives you a bird&apos;s-eye view of your athletes&apos; training
-            week. Quickly add, edit, or reschedule workouts using drag-and-drop.
+            week. Select an athlete to view and manage their training schedule.
           </p>
           <p className="text-sm text-default-500">
             Perfect for making real-time adjustments to training plans.
@@ -144,8 +173,30 @@ export const coachOnboardingTour: Tour = {
       showControls: true,
       showSkip: true,
       prevRoute: '/dashboard/coach',
+    },
+    // Step 8: Weekly Workout Grid (NEW - modal overlay)
+    {
+      icon: '📊',
+      title: 'Weekly Workout Grid',
+      content: (
+        <>
+          <p className="mb-2">
+            Once you select an athlete, you&apos;ll see their weekly training calendar with a 7-day
+            grid. Here you can add, edit, and reschedule workouts for each day.
+          </p>
+          <p className="text-sm text-default-500">
+            Drag and drop workouts to reschedule, or click any day to add new training sessions.
+          </p>
+        </>
+      ),
+      // No selector = centered modal overlay
+      side: 'bottom',
+      pointerPadding: 20,
+      showControls: true,
+      showSkip: true,
       nextRoute: '/calendar',
     },
+    // Step 9: Training Calendar
     {
       icon: '🗓️',
       title: 'Training Calendar',
@@ -160,14 +211,15 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="calendar-view"]',
-      side: 'top', // 'top' places card visually below target - avoids top-of-viewport cutoff
+      selector: '[data-testid="monthly-calendar"]',
+      side: 'right',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/weekly-planner',
       nextRoute: '/chat',
     },
+    // Step 10: Chat/Messaging
     {
       icon: '💬',
       title: 'Athlete Communication',
@@ -182,14 +234,15 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="chat-section"]',
-      side: 'right', // 'right' avoids vertical overflow for tall chat section
+      selector: '[data-testid="conversation-list"]',
+      side: 'left',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/calendar',
       nextRoute: '/dashboard/coach',
     },
+    // Step 11: Notifications
     {
       icon: '🔔',
       title: 'Notifications',
@@ -209,6 +262,7 @@ export const coachOnboardingTour: Tour = {
       showSkip: true,
       prevRoute: '/chat',
     },
+    // Step 12: Theme Toggle
     {
       icon: '🌙',
       title: 'Theme Toggle',
@@ -224,12 +278,13 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="theme-toggle"]',
-      side: 'bottom-left', // 'bottom-left' drops card below header into visible area
+      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       nextRoute: '/races',
     },
+    // Step 13: Race Management (Final)
     {
       icon: '🏁',
       title: 'Race Management',
