@@ -37,7 +37,13 @@ export default function TourCard({
   const progressPercent = ((currentStep + 1) / totalSteps) * 100
 
   return (
-    <Card className="relative z-50 w-[90vw] sm:w-[380px] max-w-[calc(100vw-32px)] max-h-[80vh] overflow-y-auto shadow-xl border border-alpine-200 dark:border-alpine-700 bg-background/95 backdrop-blur-sm">
+    <Card
+      className="relative z-50 w-[90vw] sm:w-[380px] max-w-[calc(100vw-32px)] overflow-y-auto shadow-xl border border-alpine-200 dark:border-alpine-700 bg-background/95 backdrop-blur-sm"
+      style={{
+        // Viewport containment: ensures card stays within visible area with safety margins
+        maxHeight: 'calc(100vh - 120px)',
+      }}
+    >
       {/* Header with gradient accent */}
       <CardHeader className="relative z-10 flex flex-col gap-2 pb-2">
         {/* Top bar with skip button */}

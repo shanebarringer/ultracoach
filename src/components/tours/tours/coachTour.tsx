@@ -37,7 +37,7 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="coach-dashboard-content"]',
-      side: 'bottom',
+      side: 'bottom-right',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
@@ -139,7 +139,7 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="weekly-planner-selection"]',
-      side: 'bottom',
+      side: 'right',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
@@ -183,7 +183,7 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="chat-section"]',
-      side: 'top', // 'top' places card visually below target - avoids top-of-viewport cutoff
+      side: 'right', // 'right' avoids vertical overflow for tall chat section
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
@@ -224,7 +224,7 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       selector: '[data-testid="theme-toggle"]',
-      side: 'left', // Theme toggle is near right edge - 'left' prevents right overflow
+      side: 'bottom-left', // 'bottom-left' drops card below header into visible area
       pointerPadding: 20,
       showControls: true,
       showSkip: true,

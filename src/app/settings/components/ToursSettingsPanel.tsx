@@ -4,7 +4,7 @@ import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react
 import { useAtomValue, useSetAtom } from 'jotai'
 import { CheckCircleIcon, CompassIcon, MapPinIcon, RefreshCwIcon, RouteIcon } from 'lucide-react'
 
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -16,11 +16,14 @@ import { toast } from '@/lib/toast'
 
 const logger = createLogger('ToursSettingsPanel')
 
+/** Tour key type for coach/runner differentiation */
+type TourKey = 'coach' | 'runner'
+
 interface TourInfo {
-  id: 'coach' | 'runner'
+  id: TourKey
   name: string
   description: string
-  icon: React.ReactNode
+  icon: ReactNode
   stepCount: number
   dashboardUrl: string
 }
@@ -50,14 +53,14 @@ export default function ToursSettingsPanel() {
   const tourState = useAtomValue(tourStateAtom)
   const setShouldStartTour = useSetAtom(shouldStartTourAtom)
   const resetTour = useSetAtom(resetTourAtom)
-  const [resetting, setResetting] = useState<string | null>(null)
+  const [resetting, setResetting] = useState<TourKey | null>(null)
 
   const handleStartTour = (tour: TourInfo) => {
     // Guard against unimplemented tours using centralized metadata
     const tourId = `${tour.id}-onboarding` as TourId
     if (!isTourImplemented(tourId)) {
       logger.warn('Tour not yet implemented', { tourId })
-      toast.info('Coming Soon', 'The runner tour is not yet available.')
+      toast.info('Coming Soon', `The ${tour.name} is not yet available.`)
       return
     }
 
@@ -66,7 +69,7 @@ export default function ToursSettingsPanel() {
     router.push(tour.dashboardUrl)
   }
 
-  const handleResetTour = async (tourId: 'coach' | 'runner') => {
+  const handleResetTour = async (tourId: TourKey) => {
     setResetting(tourId)
     try {
       logger.info('Resetting tour', { tourId })
@@ -93,7 +96,7 @@ export default function ToursSettingsPanel() {
     }
   }
 
-  const isTourCompleted = (tourId: 'coach' | 'runner') => {
+  const isTourCompleted = (tourId: TourKey) => {
     return tourId === 'coach' ? tourState.coachTourCompleted : tourState.runnerTourCompleted
   }
 
@@ -215,15 +218,13 @@ export default function ToursSettingsPanel() {
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-content2 rounded-lg text-center">
               <p className="text-3xl font-bold text-primary">
-                {(tourState.coachTourCompleted ? 1 : 0) + (tourState.runnerTourCompleted ? 1 : 0)}
+                {tours.filter(t => isTourCompleted(t.id)).length}
               </p>
               <p className="text-sm text-foreground-600">Tours Completed</p>
             </div>
             <div className="p-4 bg-content2 rounded-lg text-center">
               <p className="text-3xl font-bold text-secondary">
-                {2 -
-                  (tourState.coachTourCompleted ? 1 : 0) -
-                  (tourState.runnerTourCompleted ? 1 : 0)}
+                {tours.length - tours.filter(t => isTourCompleted(t.id)).length}
               </p>
               <p className="text-sm text-foreground-600">Tours Remaining</p>
             </div>

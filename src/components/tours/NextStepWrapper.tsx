@@ -149,6 +149,7 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
         onStepChange={handleStepChange}
         onComplete={handleComplete}
         onSkip={handleSkip}
+        scrollToTop={false}
       >
         {children}
       </NextStep>
