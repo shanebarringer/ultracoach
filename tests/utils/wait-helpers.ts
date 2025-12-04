@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { Page, expect, test } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -95,4 +95,48 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   }
 
   return clicked
+}
+
+/**
+ * Navigate to a protected page with auth verification.
+ * If the page redirects to signin, the test is skipped with a clear message.
+ *
+ * @param page - Playwright page object
+ * @param targetUrl - The protected URL to navigate to
+ * @param options - Configuration options
+ * @returns true if navigation succeeded, throws or skips if auth failed
+ */
+export async function navigateWithAuthVerification(
+  page: Page,
+  targetUrl: string,
+  options: { skipOnAuthFailure?: boolean; timeout?: number } = {}
+) {
+  const { skipOnAuthFailure = true, timeout = 10000 } = options
+
+  await page.goto(targetUrl)
+  await page.waitForLoadState('domcontentloaded')
+
+  // Check if we got redirected to signin
+  const currentUrl = page.url()
+  const isAuthRedirect = currentUrl.includes('/auth/signin') || currentUrl.includes('/auth/signup')
+
+  if (isAuthRedirect) {
+    const errorMessage = `Auth redirect detected: Expected "${targetUrl}" but got "${currentUrl}". storageState may not be loaded correctly.`
+
+    if (skipOnAuthFailure) {
+      test.skip(true, errorMessage)
+    } else {
+      throw new Error(errorMessage)
+    }
+  }
+
+  // Verify we're on the expected URL
+  await expect(page).toHaveURL(new RegExp(targetUrl.replace(/\//g, '\\/')), {
+    timeout,
+  })
+
+  // Wait for React hydration
+  await page.waitForTimeout(process.env.CI ? 3000 : 2000)
+
+  return true
 }

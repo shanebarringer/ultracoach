@@ -27,10 +27,27 @@ import { coach_invitations, user } from '@/lib/schema'
 
 const logger = createLogger('api-invitations')
 
+/**
+ * Unicode-friendly name validation pattern
+ * - Starts with a Unicode letter or mark
+ * - Allows letters, marks, spaces, hyphens, and apostrophes
+ * - Supports international names (e.g., "José García", "O'Brien", "Mary-Jane")
+ */
+const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'\- ]*$/u
+
 // Validation schema for creating an invitation
 const createInvitationSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  name: z.string().max(100, 'Name must be 100 characters or less').optional(),
+  name: z
+    .string()
+    .transform(val => val.trim().replace(/\s+/g, ' ')) // Trim and collapse multiple spaces
+    .refine(val => val.length === 0 || NAME_PATTERN.test(val), {
+      message: 'Name must contain only letters, spaces, hyphens, and apostrophes',
+    })
+    .refine(val => val.length <= 100, {
+      message: 'Name must be 100 characters or less',
+    })
+    .optional(),
   role: z.enum(['runner', 'coach']).default('runner'),
   message: z.string().max(500, 'Message must be 500 characters or less').optional(),
   expirationDays: z

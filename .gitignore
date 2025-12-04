@@ -84,5 +84,8 @@ supabase/logs/
 # Context7 documentation cache
 .context7-docs/
 
+# Claude Code session context (temporary working documents)
+.claude/context/
+
 # Temporary migration backups
 supabase/migrations_backup/coderabbit-response.md
