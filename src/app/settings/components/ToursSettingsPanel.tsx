@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 
 import { isTourImplemented, tourMetadata } from '@/components/tours/tours/metadata'
 import {
+  type TourState,
   hydrateTourStateAtom,
   resetTourAtom,
   shouldStartTourAtom,
@@ -109,7 +110,7 @@ export default function ToursSettingsPanel() {
           credentials: 'same-origin',
         })
         if (response.ok) {
-          const data = await response.json()
+          const data: Partial<TourState> = await response.json()
           hydrateTourState(data)
         }
       } catch (refetchError) {
