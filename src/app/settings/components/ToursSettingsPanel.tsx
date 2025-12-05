@@ -159,6 +159,11 @@ export default function ToursSettingsPanel() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-foreground">{tour.name}</h4>
+                      {!isTourImplemented(`${tour.id}-onboarding` as TourId) && (
+                        <Chip color="warning" variant="flat" size="sm">
+                          Coming Soon
+                        </Chip>
+                      )}
                       {completed && (
                         <Chip
                           startContent={<CheckCircleIcon className="w-3 h-3" />}

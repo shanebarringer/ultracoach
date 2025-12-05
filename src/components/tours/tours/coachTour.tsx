@@ -211,8 +211,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="monthly-calendar"]',
-      side: 'right',
+      // No selector = centered modal overlay
+      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
@@ -234,8 +234,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="conversation-list"]',
-      side: 'left',
+      // No selector = centered modal overlay
+      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,

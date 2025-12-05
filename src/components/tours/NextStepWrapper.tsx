@@ -25,11 +25,12 @@ import { createLogger } from '@/lib/logger'
 
 import TourCard from './TourCard'
 import { allTours } from './tours'
+import { tourMetadata } from './tours/metadata'
 
 const logger = createLogger('NextStepWrapper')
 
-// Valid tour IDs for runtime validation (static, never changes)
-const VALID_TOUR_IDS: readonly TourId[] = ['coach-onboarding', 'runner-onboarding'] as const
+// Valid tour IDs derived from centralized metadata (single source of truth)
+const VALID_TOUR_IDS = Object.keys(tourMetadata) as TourId[]
 
 interface NextStepWrapperProps {
   children: React.ReactNode
@@ -128,12 +129,28 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
   )
 
   /**
-   * Handle tour skip
+   * Handle tour skip with database persistence
    */
   const handleSkip = useCallback(
     (step: number, tourName: string | null) => {
+      if (!tourName) return
+
       logger.info('Tour skipped', { tourName, step })
       skipTour()
+
+      // Persist skip action to database (fire-and-forget for UI responsiveness)
+      fetch('/api/tours', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          tourId: tourName,
+          action: 'skip',
+          metadata: { stoppedAtStep: step },
+        }),
+      }).catch(error => {
+        logger.error('Failed to persist tour skip', { tourName, step, error })
+      })
     },
     [skipTour]
   )
