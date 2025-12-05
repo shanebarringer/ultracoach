@@ -3,13 +3,26 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Chainable mock factory for Drizzle-style query builder API
+function createChainableMock(resolvedValue: unknown = []) {
+  const chain = {
+    from: vi.fn(() => chain),
+    where: vi.fn(() => chain),
+    limit: vi.fn(() => Promise.resolve(resolvedValue)),
+    values: vi.fn(() => chain),
+    returning: vi.fn(() => Promise.resolve(resolvedValue)),
+    set: vi.fn(() => chain),
+  }
+  return chain
+}
+
 // Mock database module FIRST to prevent real DB connections
 vi.mock('../database', () => ({
   db: {
-    select: vi.fn(),
-    insert: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+    select: vi.fn(() => createChainableMock()),
+    insert: vi.fn(() => createChainableMock()),
+    update: vi.fn(() => createChainableMock()),
+    delete: vi.fn(() => createChainableMock()),
   },
   client: {
     end: vi.fn(),
@@ -59,7 +72,7 @@ beforeEach(() => {
   process.env = {
     ...originalEnv,
     DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-    BETTER_AUTH_SECRET: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    BETTER_AUTH_SECRET: 'test_secret_for_unit_tests_only_'.padEnd(64, 'x'), // Non-hex to avoid secret scanner flags
     NODE_ENV: 'test',
   }
 })
@@ -292,20 +305,15 @@ describe('Authentication Integration Tests', () => {
 
       const { auth } = await import('../better-auth')
 
-      // Test should not throw but handle gracefully
-      await expect(async () => {
-        try {
-          await auth.api.signInEmail({
-            body: {
-              email: 'test@example.com',
-              password: 'password123',
-            },
-          })
-        } catch (error) {
-          // Database errors should be handled gracefully
-          expect(error).toBeInstanceOf(Error)
-        }
-      }).not.toThrow()
+      // Better Auth should propagate database errors as rejections
+      await expect(
+        auth.api.signInEmail({
+          body: {
+            email: 'test@example.com',
+            password: 'password123',
+          },
+        })
+      ).rejects.toThrow('Database connection failed')
     })
   })
 

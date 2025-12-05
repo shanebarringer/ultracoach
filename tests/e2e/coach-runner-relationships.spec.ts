@@ -43,8 +43,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Should show "Find Runners" section
-      await expect(page.getByText('Find Runners')).toBeVisible()
+      // Should show "Find Runners" section (use data-testid for reliability in CI)
+      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 15000 })
 
       // Check if any Connect buttons exist (may be empty if no seed data)
       const connectButton = page.getByRole('button', { name: 'Connect' }).first()
