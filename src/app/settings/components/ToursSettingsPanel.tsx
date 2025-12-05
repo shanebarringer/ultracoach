@@ -1,6 +1,7 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react'
+import { format } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { CheckCircleIcon, CompassIcon, MapPinIcon, RefreshCwIcon, RouteIcon } from 'lucide-react'
 
@@ -9,7 +10,12 @@ import { type ReactNode, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { isTourImplemented, tourMetadata } from '@/components/tours/tours/metadata'
-import { resetTourAtom, shouldStartTourAtom, tourStateAtom } from '@/lib/atoms/tours'
+import {
+  hydrateTourStateAtom,
+  resetTourAtom,
+  shouldStartTourAtom,
+  tourStateAtom,
+} from '@/lib/atoms/tours'
 import type { TourId } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -53,6 +59,7 @@ export default function ToursSettingsPanel() {
   const tourState = useAtomValue(tourStateAtom)
   const setShouldStartTour = useSetAtom(shouldStartTourAtom)
   const resetTour = useSetAtom(resetTourAtom)
+  const hydrateTourState = useSetAtom(hydrateTourStateAtom)
   const [resetting, setResetting] = useState<TourKey | null>(null)
 
   const handleStartTour = (tour: TourInfo) => {
@@ -95,7 +102,19 @@ export default function ToursSettingsPanel() {
     } catch (error) {
       logger.error('Failed to reset tour', { tourId, error })
       toast.error('Reset failed', 'Could not reset the tour. Please try again.')
-      // Note: Full rollback would require refetching tour state from the server
+
+      // Rollback: Refetch tour state from server to restore correct state
+      try {
+        const response = await fetch('/api/tours', {
+          credentials: 'same-origin',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          hydrateTourState(data)
+        }
+      } catch (refetchError) {
+        logger.warn('Failed to refetch tour state after error', { refetchError })
+      }
     } finally {
       setResetting(null)
     }
@@ -247,12 +266,7 @@ export default function ToursSettingsPanel() {
 
           {tourState.lastTourStartedAt && (
             <p className="text-xs text-foreground-500 mt-4 text-center">
-              Last tour started:{' '}
-              {new Date(tourState.lastTourStartedAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })}
+              Last tour started: {format(new Date(tourState.lastTourStartedAt), 'MMM d, yyyy')}
             </p>
           )}
         </CardBody>
