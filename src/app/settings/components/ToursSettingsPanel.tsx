@@ -4,7 +4,7 @@ import { Button, Card, CardBody, CardHeader, Chip, Divider } from '@heroui/react
 import { useAtomValue, useSetAtom } from 'jotai'
 import { CheckCircleIcon, CompassIcon, MapPinIcon, RefreshCwIcon, RouteIcon } from 'lucide-react'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -99,6 +99,13 @@ export default function ToursSettingsPanel() {
   const isTourCompleted = (tourId: TourKey) => {
     return tourId === 'coach' ? tourState.coachTourCompleted : tourState.runnerTourCompleted
   }
+
+  // Memoize completed tours count to avoid duplicate filter computation
+  const completedToursCount = useMemo(
+    () => tours.filter(t => isTourCompleted(t.id)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isTourCompleted depends on tourState
+    [tourState.coachTourCompleted, tourState.runnerTourCompleted]
+  )
 
   return (
     <div className="space-y-6">
@@ -222,14 +229,12 @@ export default function ToursSettingsPanel() {
         <CardBody>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-content2 rounded-lg text-center">
-              <p className="text-3xl font-bold text-primary">
-                {tours.filter(t => isTourCompleted(t.id)).length}
-              </p>
+              <p className="text-3xl font-bold text-primary">{completedToursCount}</p>
               <p className="text-sm text-foreground-600">Tours Completed</p>
             </div>
             <div className="p-4 bg-content2 rounded-lg text-center">
               <p className="text-3xl font-bold text-secondary">
-                {tours.length - tours.filter(t => isTourCompleted(t.id)).length}
+                {tours.length - completedToursCount}
               </p>
               <p className="text-sm text-foreground-600">Tours Remaining</p>
             </div>

@@ -135,6 +135,12 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
     (step: number, tourName: string | null) => {
       if (!tourName) return
 
+      // Runtime validation - ensure tourName is a valid TourId
+      if (!VALID_TOUR_IDS.includes(tourName as TourId)) {
+        logger.warn('Unknown tour name received on skip', { tourName })
+        return
+      }
+
       logger.info('Tour skipped', { tourName, step })
       skipTour()
 

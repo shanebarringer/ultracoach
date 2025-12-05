@@ -40,7 +40,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
@@ -168,13 +167,12 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/dashboard/coach',
     },
-    // Step 8: Weekly Workout Grid (NEW - modal overlay)
+    // Step 8: Weekly Workout Grid (centered modal overlay)
     {
       icon: '📊',
       title: 'Weekly Workout Grid',
@@ -189,15 +187,13 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // body selector required for nextRoute navigation to work
-      selector: 'body',
-      side: 'bottom',
+      // No selector = centered modal overlay
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       nextRoute: '/calendar',
     },
-    // Step 9: Training Calendar
+    // Step 9: Training Calendar (centered modal overlay)
     {
       icon: '🗓️',
       title: 'Training Calendar',
@@ -212,16 +208,14 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // body selector required for nextRoute/prevRoute navigation to work
-      selector: 'body',
-      side: 'bottom',
+      // No selector = centered modal overlay
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/weekly-planner',
       nextRoute: '/chat',
     },
-    // Step 10: Chat/Messaging
+    // Step 10: Chat/Messaging (centered modal overlay)
     {
       icon: '💬',
       title: 'Athlete Communication',
@@ -236,9 +230,7 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // body selector required for nextRoute/prevRoute navigation to work
-      selector: 'body',
-      side: 'bottom',
+      // No selector = centered modal overlay
       pointerPadding: 20,
       showControls: true,
       showSkip: true,
