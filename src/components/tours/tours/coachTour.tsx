@@ -40,7 +40,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      pointerPadding: 20,
       showControls: true,
       showSkip: true,
     },
@@ -167,7 +166,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/dashboard/coach',
@@ -188,7 +186,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       nextRoute: '/calendar',
@@ -209,7 +206,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/weekly-planner',
@@ -231,7 +227,6 @@ export const coachOnboardingTour: Tour = {
         </>
       ),
       // No selector = centered modal overlay
-      pointerPadding: 20,
       showControls: true,
       showSkip: true,
       prevRoute: '/calendar',

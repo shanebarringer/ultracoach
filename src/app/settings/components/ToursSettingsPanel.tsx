@@ -71,19 +71,23 @@ export default function ToursSettingsPanel() {
 
   const handleResetTour = async (tourId: TourKey) => {
     setResetting(tourId)
+    const fullTourId = `${tourId}-onboarding` as TourId
+
     try {
       logger.info('Resetting tour', { tourId })
 
-      // Call API to reset the tour
+      // Optimistic update - reset UI immediately for better UX
+      resetTour(fullTourId)
+
+      // Call API to persist the reset
       const response = await fetch('/api/tours', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ tourId: `${tourId}-onboarding`, action: 'reset' }),
+        body: JSON.stringify({ tourId: fullTourId, action: 'reset' }),
       })
 
       if (response.ok) {
-        resetTour(`${tourId}-onboarding`)
         toast.success('Tour reset successfully', 'You can now restart the guided tour.')
       } else {
         throw new Error('Failed to reset tour')
@@ -91,6 +95,7 @@ export default function ToursSettingsPanel() {
     } catch (error) {
       logger.error('Failed to reset tour', { tourId, error })
       toast.error('Reset failed', 'Could not reset the tour. Please try again.')
+      // Note: Full rollback would require refetching tour state from the server
     } finally {
       setResetting(null)
     }
@@ -242,7 +247,12 @@ export default function ToursSettingsPanel() {
 
           {tourState.lastTourStartedAt && (
             <p className="text-xs text-foreground-500 mt-4 text-center">
-              Last tour started: {new Date(tourState.lastTourStartedAt).toLocaleDateString()}
+              Last tour started:{' '}
+              {new Date(tourState.lastTourStartedAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
             </p>
           )}
         </CardBody>

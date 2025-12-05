@@ -63,8 +63,14 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
         })
 
         if (!response.ok) {
-          const error = await response.json()
-          logger.warn('Failed to persist tour action', { tourId, action, error })
+          // Fallback for non-JSON responses (e.g., HTML 500 errors)
+          let errorDetails: unknown
+          try {
+            errorDetails = await response.json()
+          } catch {
+            errorDetails = { status: response.status, statusText: response.statusText }
+          }
+          logger.warn('Failed to persist tour action', { tourId, action, error: errorDetails })
         }
       } catch (error) {
         logger.error('Error persisting tour action', { tourId, action, error })
@@ -100,6 +106,12 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
   const handleStepChange = useCallback(
     (step: number, tourName: string | null) => {
       if (!tourName) return
+
+      // Runtime validation - ensure tourName is a valid TourId
+      if (!VALID_TOUR_IDS.includes(tourName as TourId)) {
+        logger.warn('Unknown tour name received on step change', { tourName })
+        return
+      }
 
       logger.debug('Tour step changed', { tourName, step })
       updateProgress(step)
