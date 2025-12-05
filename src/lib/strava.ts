@@ -4,21 +4,53 @@ import { createLogger } from './logger'
 
 const logger = createLogger('strava')
 
+/**
+ * Get the base URL for Strava OAuth redirect
+ * Uses a fallback chain to handle various deployment configurations
+ */
+function getBaseUrl(): string {
+  // Explicit redirect URI takes priority - extract base URL from it
+  if (process.env.STRAVA_REDIRECT_URI) {
+    return process.env.STRAVA_REDIRECT_URI.replace('/api/strava/callback', '')
+  }
+  // Primary: Check for app URL
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  // Fallback: Better Auth URL (often set in production)
+  if (process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
+    return process.env.NEXT_PUBLIC_BETTER_AUTH_URL
+  }
+  // Development fallback
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3001'
+  }
+  // Return empty string - validation will catch this
+  return ''
+}
+
 // Strava OAuth configuration
 export const STRAVA_CONFIG = {
   CLIENT_ID: process.env.STRAVA_CLIENT_ID!,
   CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET!,
-  REDIRECT_URI:
-    process.env.STRAVA_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/strava/callback`,
+  REDIRECT_URI: process.env.STRAVA_REDIRECT_URI || `${getBaseUrl()}/api/strava/callback`,
   SCOPE: 'read,activity:read_all,profile:read_all',
   WEBHOOK_VERIFY_TOKEN: process.env.STRAVA_WEBHOOK_VERIFY_TOKEN,
 } as const
 
 // Validate required environment variables
 function validateStravaConfig() {
-  const missing = []
+  const missing: string[] = []
   if (!STRAVA_CONFIG.CLIENT_ID) missing.push('STRAVA_CLIENT_ID')
   if (!STRAVA_CONFIG.CLIENT_SECRET) missing.push('STRAVA_CLIENT_SECRET')
+  // Validate redirect URI is properly configured (not undefined or empty)
+  if (
+    !STRAVA_CONFIG.REDIRECT_URI ||
+    STRAVA_CONFIG.REDIRECT_URI.startsWith('undefined') ||
+    STRAVA_CONFIG.REDIRECT_URI === '/api/strava/callback'
+  ) {
+    missing.push('NEXT_PUBLIC_APP_URL or STRAVA_REDIRECT_URI')
+  }
 
   if (missing.length > 0) {
     logger.warn(`Missing Strava environment variables: ${missing.join(', ')}`)
