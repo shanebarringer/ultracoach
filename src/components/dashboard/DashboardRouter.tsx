@@ -6,6 +6,7 @@ import CoachDashboard from '@/components/dashboard/CoachDashboard'
 import RunnerDashboard from '@/components/dashboard/RunnerDashboard'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import TourTrigger from '@/components/tours/TourTrigger'
 import { CoachDashboardSkeleton, RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { createLogger } from '@/lib/logger'
@@ -61,6 +62,9 @@ export default function DashboardRouter({ user }: Props) {
   return (
     <Layout>
       <ModernErrorBoundary>
+        {/* Tour Trigger - automatically starts product tour after onboarding */}
+        <TourTrigger userRole={user.userType} />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Suspense
             fallback={

@@ -2,7 +2,7 @@ import { and, ilike, or, sql } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
-import { db } from '@/lib/db'
+import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import {
   addRateLimitHeaders,
@@ -10,6 +10,7 @@ import {
   raceBulkImportLimiter,
 } from '@/lib/redis-rate-limiter'
 import { races } from '@/lib/schema'
+import { parseCSVDate } from '@/lib/utils/date'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('RaceBulkImportAPI')
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
         // Set defaults for missing fields
         const raceData = {
           name: importRace.name,
-          date: importRace.date ? new Date(importRace.date) : null,
+          date: parseCSVDate(importRace.date),
           distance_miles: String(importRace.distance_miles || 0),
           distance_type: importRace.distance_type || 'Custom',
           location: importRace.location || 'Unknown Location',

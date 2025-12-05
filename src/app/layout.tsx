@@ -7,6 +7,7 @@ import { headers } from 'next/headers'
 import KBarProvider from '@/components/kbar/KBarProvider'
 import { PostHogErrorBoundary } from '@/components/providers/PostHogErrorBoundary'
 import { ThemeWrapper } from '@/components/providers/ThemeWrapper'
+import NextStepWrapper from '@/components/tours/NextStepWrapper'
 import { Toaster } from '@/components/ui/toast'
 import { auth } from '@/lib/better-auth'
 import { BetterAuthProvider } from '@/providers/BetterAuthProvider'
@@ -48,8 +49,10 @@ export default async function RootLayout({
                 <HeroUIProvider>
                   <ThemeWrapper>
                     <KBarProvider>
-                      {children}
-                      <Toaster />
+                      <NextStepWrapper>
+                        {children}
+                        <Toaster />
+                      </NextStepWrapper>
                     </KBarProvider>
                   </ThemeWrapper>
                 </HeroUIProvider>

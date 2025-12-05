@@ -44,6 +44,7 @@ const ThemeToggle = memo(function ThemeToggle() {
       onClick={toggleTheme}
       aria-label="Toggle theme"
       className="hover:bg-primary/10 transition-colors"
+      data-testid="theme-toggle"
     >
       {themeMode === 'light' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
     </Button>
@@ -65,6 +66,7 @@ const SearchButton = memo(function SearchButton() {
       onClick={openKBar}
       aria-label="Search (⌘K)"
       className="hover:bg-primary/10 transition-colors"
+      data-testid="kbar-search-button"
     >
       <Search className="h-5 w-5" />
     </Button>
@@ -108,6 +110,7 @@ function Header() {
             isIconOnly
             variant="light"
             aria-label="Open menu"
+            data-testid="nav-menu-button"
             className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
             onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
           >

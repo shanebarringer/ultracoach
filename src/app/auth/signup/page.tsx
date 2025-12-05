@@ -12,7 +12,7 @@ import {
   Spinner,
 } from '@heroui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { Flag, Lock, Mail, MountainSnow, User, UserPlus } from 'lucide-react'
 
 import React, { useEffect, useState } from 'react'
@@ -24,6 +24,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
 import { signUpFormAtom } from '@/lib/atoms/index'
+import { shouldStartTourAtom } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import { type SignUpForm, signUpSchema } from '@/types/forms'
@@ -34,6 +35,7 @@ const logger = createLogger('SignUp')
 export default function SignUp() {
   const [formState, setFormState] = useAtom(signUpFormAtom)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const setShouldStartTour = useSetAtom(shouldStartTourAtom)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signUp } = useBetterAuth()
@@ -124,7 +126,8 @@ export default function SignUp() {
         setError('email', { message: sanitizedError })
       } else {
         logger.info('Sign up successful:', { userRole: data.role })
-        setFormState(prev => ({ ...prev, loading: false }))
+        // CRITICAL: Sync the form's role to the atom's userType for handleOnboardingComplete
+        setFormState(prev => ({ ...prev, loading: false, userType: data.role }))
 
         // If there's an invitation, accept it automatically
         if (invitationToken) {
@@ -189,10 +192,14 @@ export default function SignUp() {
   }
 
   const handleOnboardingComplete = () => {
-    logger.info('Onboarding completed, redirecting to dashboard')
+    logger.info('Onboarding completed, triggering product tour and redirecting to dashboard')
     // Use Next.js router for navigation (best practice)
     const role = formState.userType || 'runner'
     const dashboardUrl = role === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+
+    // Trigger product tour after redirect
+    setShouldStartTour(true)
+
     router.push(dashboardUrl)
   }
 
