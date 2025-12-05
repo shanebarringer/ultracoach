@@ -11,6 +11,7 @@
  * 4. User can restart via K-bar (t+g) or Settings page
  */
 import { atom } from 'jotai'
+import { atomFamily } from 'jotai/utils'
 
 import { getTourStepCount } from '@/components/tours/tours/metadata'
 import { createLogger } from '@/lib/logger'
@@ -101,24 +102,19 @@ export const isTourActiveAtom = atom(get => {
 
 /**
  * Whether a specific tour should show (not completed and not currently active)
+ * Uses atomFamily for proper memoization per tourId
  */
-export const shouldShowTourAtom = atom(get => {
-  return (tourId: TourId): boolean => {
-    const tourState = get(tourStateAtom)
+export const shouldShowTourAtomFamily = atomFamily((tourId: TourId) =>
+  atom(get => {
     const activeTour = get(activeTourAtom)
-
-    // Don't show if another tour is active
     if (activeTour !== null) return false
 
-    if (tourId === 'coach-onboarding') {
-      return !tourState.coachTourCompleted
-    } else if (tourId === 'runner-onboarding') {
-      return !tourState.runnerTourCompleted
-    }
-
-    return false
-  }
-})
+    const tourState = get(tourStateAtom)
+    return tourId === 'coach-onboarding'
+      ? !tourState.coachTourCompleted
+      : !tourState.runnerTourCompleted
+  })
+)
 
 // ========================================
 // Action Atoms
@@ -271,7 +267,7 @@ tourErrorAtom.debugLabel = 'tours/error'
 isCoachTourCompletedAtom.debugLabel = 'tours/isCoachCompleted'
 isRunnerTourCompletedAtom.debugLabel = 'tours/isRunnerCompleted'
 isTourActiveAtom.debugLabel = 'tours/isActive'
-shouldShowTourAtom.debugLabel = 'tours/shouldShow'
+// Note: atomFamily doesn't support debugLabel - individual atoms are auto-named
 startTourAtom.debugLabel = 'tours/start'
 updateTourProgressAtom.debugLabel = 'tours/updateProgress'
 completeTourAtom.debugLabel = 'tours/complete'
