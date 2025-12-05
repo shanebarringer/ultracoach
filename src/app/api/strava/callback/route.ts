@@ -10,7 +10,11 @@ import { STRAVA_ENABLED, exchangeCodeForTokens } from '@/lib/strava'
 
 const logger = createLogger('strava-callback-api')
 
-export async function GET(req: NextRequest) {
+/**
+ * Process the Strava callback and return the destination URL.
+ * We separate this from the GET handler to avoid try/catch blocks catching NEXT_REDIRECT errors.
+ */
+async function getCallbackDestination(req: NextRequest): Promise<string> {
   try {
     logger.info('Strava callback received', {
       url: req.url,
@@ -20,7 +24,7 @@ export async function GET(req: NextRequest) {
     // Check if Strava is enabled
     if (!STRAVA_ENABLED) {
       logger.warn('Strava integration is not configured')
-      return redirect('/settings?error=strava_not_configured')
+      return '/settings?error=strava_not_configured'
     }
 
     const { searchParams } = new URL(req.url)
@@ -43,12 +47,12 @@ export async function GET(req: NextRequest) {
     // Handle OAuth errors
     if (error) {
       logger.warn('Strava OAuth error:', error)
-      return redirect(`/settings?error=strava_${error}`)
+      return `/settings?error=strava_${error}`
     }
 
     if (!code || !state) {
       logger.error('Missing code or state parameter', { code: !!code, state: !!state })
-      return redirect('/settings?error=strava_invalid_callback')
+      return '/settings?error=strava_invalid_callback'
     }
 
     // Decode and verify state parameter
@@ -57,7 +61,7 @@ export async function GET(req: NextRequest) {
       stateData = JSON.parse(Buffer.from(state, 'base64url').toString())
     } catch (error) {
       logger.error('Invalid state parameter:', error)
-      return redirect('/settings?error=strava_invalid_state')
+      return '/settings?error=strava_invalid_state'
     }
 
     const { userId, timestamp, returnUrl } = stateData
@@ -65,7 +69,7 @@ export async function GET(req: NextRequest) {
     // Verify state is not too old (5 minutes max)
     if (Date.now() - timestamp > 5 * 60 * 1000) {
       logger.error('State parameter expired')
-      return redirect('/settings?error=strava_state_expired')
+      return '/settings?error=strava_state_expired'
     }
 
     // Verify user exists
@@ -73,7 +77,7 @@ export async function GET(req: NextRequest) {
 
     if (existingUser.length === 0) {
       logger.error('User not found for Strava callback:', userId)
-      return redirect('/settings?error=strava_user_not_found')
+      return '/settings?error=strava_user_not_found'
     }
 
     // Exchange code for tokens
@@ -90,7 +94,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenData.access_token || !tokenData.refresh_token) {
       logger.error('Invalid token response from Strava', { tokenData })
-      return redirect('/settings?error=strava_token_failed')
+      return '/settings?error=strava_token_failed'
     }
 
     // Check if this Strava athlete is already connected to another user
@@ -106,7 +110,7 @@ export async function GET(req: NextRequest) {
         existingUserId: existingConnection[0].user_id,
         requestingUserId: userId,
       })
-      return redirect('/settings?error=strava_already_connected')
+      return '/settings?error=strava_already_connected'
     }
 
     // Create or update Strava connection
@@ -165,10 +169,19 @@ export async function GET(req: NextRequest) {
     // Determine where to redirect after successful connection
     const redirectUrl = returnUrl || '/dashboard'
     logger.info('Strava OAuth callback completed successfully', { redirecting_to: redirectUrl })
-    // Redirect to original page or dashboard with success
-    return redirect(`${redirectUrl}?success=strava_connected`)
+
+    return `${redirectUrl}?success=strava_connected`
   } catch (error) {
     logger.error('Error processing Strava callback:', error)
-    return redirect('/settings?error=strava_callback_failed')
+    return '/settings?error=strava_callback_failed'
   }
+}
+
+export async function GET(req: NextRequest) {
+  // Execute logic and get the destination URL
+  // This must be done BEFORE calling redirect() to avoid the try/catch trap
+  const destination = await getCallbackDestination(req)
+
+  // Now perform the redirect
+  return redirect(destination)
 }
