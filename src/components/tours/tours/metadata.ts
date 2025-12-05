@@ -8,12 +8,31 @@ import type { TourId } from '@/lib/atoms/tours'
 
 import { coachOnboardingTour } from './coachTour'
 
+/** Short form tour key used in UI components */
+export type TourKey = 'coach' | 'runner'
+
 export interface TourMetadata {
   stepCount: number
   isImplemented: boolean
   dashboardUrl: string
   name: string
   description: string
+  /** Estimated time to complete tour in minutes (~30s per step) */
+  estimatedMinutes: number
+}
+
+/** Type-safe mapping from TourKey to TourId */
+const TOUR_KEY_TO_ID: Record<TourKey, TourId> = {
+  coach: 'coach-onboarding',
+  runner: 'runner-onboarding',
+} as const
+
+/**
+ * Convert TourKey to TourId with compile-time type safety.
+ * Eliminates unsafe `as TourId` type assertions.
+ */
+export function tourKeyToTourId(tourKey: TourKey): TourId {
+  return TOUR_KEY_TO_ID[tourKey]
 }
 
 /**
@@ -27,6 +46,7 @@ export const tourMetadata: Record<TourId, TourMetadata> = {
     dashboardUrl: '/dashboard/coach',
     name: 'Coach Tour',
     description: 'Learn how to manage athletes, create training plans, and track progress.',
+    estimatedMinutes: Math.ceil(coachOnboardingTour.steps.length * 0.5),
   },
   'runner-onboarding': {
     stepCount: 8, // Placeholder until runner tour is implemented
@@ -35,8 +55,9 @@ export const tourMetadata: Record<TourId, TourMetadata> = {
     name: 'Runner Tour',
     description:
       'Discover how to track workouts, view training plans, and communicate with your coach.',
+    estimatedMinutes: 4, // 8 steps * 0.5 = 4 min
   },
-} as const
+}
 
 /**
  * Get step count for a tour, derived from the actual tour definition

@@ -9,7 +9,12 @@ import { type ReactNode, useMemo, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
-import { isTourImplemented, tourMetadata } from '@/components/tours/tours/metadata'
+import {
+  type TourKey,
+  isTourImplemented,
+  tourKeyToTourId,
+  tourMetadata,
+} from '@/components/tours/tours/metadata'
 import {
   type TourState,
   hydrateTourStateAtom,
@@ -17,14 +22,10 @@ import {
   shouldStartTourAtom,
   tourStateAtom,
 } from '@/lib/atoms/tours'
-import type { TourId } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
 const logger = createLogger('ToursSettingsPanel')
-
-/** Tour key type for coach/runner differentiation */
-type TourKey = 'coach' | 'runner'
 
 interface TourInfo {
   id: TourKey
@@ -33,6 +34,7 @@ interface TourInfo {
   icon: ReactNode
   stepCount: number
   dashboardUrl: string
+  estimatedMinutes: number
 }
 
 // Build tours array from centralized metadata
@@ -44,6 +46,7 @@ const tours: TourInfo[] = [
     icon: <RouteIcon className="w-5 h-5 text-primary" />,
     stepCount: tourMetadata['coach-onboarding'].stepCount,
     dashboardUrl: tourMetadata['coach-onboarding'].dashboardUrl,
+    estimatedMinutes: tourMetadata['coach-onboarding'].estimatedMinutes,
   },
   {
     id: 'runner',
@@ -52,6 +55,7 @@ const tours: TourInfo[] = [
     icon: <MapPinIcon className="w-5 h-5 text-secondary" />,
     stepCount: tourMetadata['runner-onboarding'].stepCount,
     dashboardUrl: tourMetadata['runner-onboarding'].dashboardUrl,
+    estimatedMinutes: tourMetadata['runner-onboarding'].estimatedMinutes,
   },
 ]
 
@@ -65,7 +69,7 @@ export default function ToursSettingsPanel() {
 
   const handleStartTour = (tour: TourInfo) => {
     // Guard against unimplemented tours using centralized metadata
-    const tourId = `${tour.id}-onboarding` as TourId
+    const tourId = tourKeyToTourId(tour.id)
     if (!isTourImplemented(tourId)) {
       logger.warn('Tour not yet implemented', { tourId })
       toast.info('Coming Soon', `The ${tour.name} is not yet available.`)
@@ -79,7 +83,7 @@ export default function ToursSettingsPanel() {
 
   const handleResetTour = async (tourId: TourKey) => {
     setResetting(tourId)
-    const fullTourId = `${tourId}-onboarding` as TourId
+    const fullTourId = tourKeyToTourId(tourId)
 
     try {
       logger.info('Resetting tour', { tourId })
@@ -191,7 +195,7 @@ export default function ToursSettingsPanel() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-foreground">{tour.name}</h4>
-                      {!isTourImplemented(`${tour.id}-onboarding` as TourId) && (
+                      {!isTourImplemented(tourKeyToTourId(tour.id)) && (
                         <Chip color="warning" variant="flat" size="sm">
                           Coming Soon
                         </Chip>
@@ -209,7 +213,7 @@ export default function ToursSettingsPanel() {
                     </div>
                     <p className="text-sm text-foreground-600 mt-1">{tour.description}</p>
                     <p className="text-xs text-foreground-500 mt-2">
-                      {tour.stepCount} steps • ~{Math.round(tour.stepCount * 0.5)} min
+                      {tour.stepCount} steps • ~{tour.estimatedMinutes} min
                     </p>
                   </div>
                 </div>

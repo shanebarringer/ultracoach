@@ -260,6 +260,43 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       return undefined
     }
 
+    /**
+     * Normalize various date formats to ISO YYYY-MM-DD format.
+     * Required because races API uses strict z.string().date() validation.
+     *
+     * Supported formats:
+     * - YYYY-MM-DD (already ISO, pass through)
+     * - MM/DD/YYYY (US format)
+     * - DD/MM/YYYY (EU format - assumed if day > 12)
+     * - Month DD, YYYY (e.g., "Jan 15, 2024")
+     * - DD Month YYYY (e.g., "15 Jan 2024")
+     */
+    const normalizeToISODate = (dateStr: string | undefined): string | undefined => {
+      if (!dateStr) return undefined
+
+      const trimmed = dateStr.trim()
+      if (trimmed === '') return undefined
+
+      // Already ISO format (YYYY-MM-DD)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed
+      }
+
+      // Try to parse with Date constructor and extract ISO date
+      const parsed = new Date(trimmed)
+      if (!isNaN(parsed.getTime())) {
+        // Avoid timezone issues by extracting components directly
+        const year = parsed.getFullYear()
+        const month = String(parsed.getMonth() + 1).padStart(2, '0')
+        const day = String(parsed.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+
+      // If parsing fails, log warning and return undefined
+      logger.warn('Could not parse date from CSV', { dateStr })
+      return undefined
+    }
+
     return new Promise((resolve, reject) => {
       logger.debug('Starting CSV parse', {
         fileName: file.name,
@@ -436,7 +473,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
                       const race: ParsedRaceData = {
                         name: name.trim(),
-                        date: getDate(),
+                        date: normalizeToISODate(getDate()),
                         location: getLocation(),
                         distance_miles: getDistance(),
                         distance_type:

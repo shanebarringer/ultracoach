@@ -17,10 +17,7 @@ const logger = createLogger('RacesAPI')
  */
 const CreateRaceSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
-  date: z
-    .string()
-    .min(1, 'Date is required')
-    .refine(val => !isNaN(new Date(val).getTime()), { message: 'Invalid date format' }),
+  date: z.string().date('Invalid date format - use YYYY-MM-DD'),
   distance_miles: z.number().positive('Distance must be positive'),
   distance_type: z.string().min(1, 'Distance type is required'),
   location: z.string().min(1, 'Location is required').max(500, 'Location too long'),
