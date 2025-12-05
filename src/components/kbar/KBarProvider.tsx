@@ -16,6 +16,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Compass,
   Home,
   MessageSquare,
   Mountain,
@@ -36,6 +37,7 @@ import {
   stravaConnectionStatusAtom,
   workoutStravaShowPanelAtom,
 } from '@/lib/atoms/index'
+import { shouldStartTourAtom } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('KBarProvider')
@@ -105,6 +107,9 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
   const [, refreshStravaActivities] = useAtom(stravaActivitiesRefreshableAtom)
   const setShowStravaPanel = useSetAtom(workoutStravaShowPanelAtom)
+
+  // Tour trigger atom
+  const setShouldStartTour = useSetAtom(shouldStartTourAtom)
 
   // Extract userType for dependency array
   const userType = (session?.user as ExtendedUser)?.userType
@@ -319,6 +324,30 @@ export default function KBarProvider({ children }: KBarProviderProps) {
           router.push('/workouts?timeframe=this-week')
         },
       },
+
+      // Help & Onboarding
+      {
+        id: 'help',
+        name: 'Help & Onboarding',
+        subtitle: 'Tutorials and guided tours',
+      },
+      {
+        id: 'start-guided-tour',
+        name: 'Start Guided Tour',
+        subtitle: 'Take a tour of UltraCoach features',
+        shortcut: ['t', 'g'],
+        keywords: 'tour guide help onboarding tutorial walkthrough',
+        icon: <Compass className="w-4 h-4" />,
+        parent: 'help',
+        perform: () => {
+          logger.info('Starting guided tour from K-bar')
+          // Navigate to dashboard first if not already there
+          const dashboardUrl = userType === 'coach' ? '/dashboard/coach' : '/dashboard/runner'
+          router.push(dashboardUrl)
+          // Set the atom to trigger the tour
+          setShouldStartTour(true)
+        },
+      },
     ]
 
     // Add role-specific actions
@@ -353,7 +382,14 @@ export default function KBarProvider({ children }: KBarProviderProps) {
     }
 
     return coreActions
-  }, [router, userType, connectionStatus, refreshStravaActivities, setShowStravaPanel])
+  }, [
+    router,
+    userType,
+    connectionStatus,
+    refreshStravaActivities,
+    setShowStravaPanel,
+    setShouldStartTour,
+  ])
 
   return (
     <KBar actions={actions}>

@@ -5,6 +5,7 @@ import { useAtomValue } from 'jotai'
 import {
   Activity,
   BellIcon,
+  CompassIcon,
   MessageSquareIcon,
   PaletteIcon,
   RulerIcon,
@@ -24,6 +25,7 @@ import IntegrationsSettingsPanel from './components/IntegrationsSettingsPanel'
 import NotificationSettingsPanel from './components/NotificationSettingsPanel'
 import PrivacySettingsPanel from './components/PrivacySettingsPanel'
 import ProfileSettingsPanel from './components/ProfileSettingsPanel'
+import ToursSettingsPanel from './components/ToursSettingsPanel'
 import TrainingSettingsPanel from './components/TrainingSettingsPanel'
 import UnitSettingsPanel from './components/UnitSettingsPanel'
 
@@ -89,6 +91,12 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
       title: 'Integrations',
       icon: <Activity className="w-4 h-4" />,
       component: <IntegrationsSettingsPanel />,
+    },
+    {
+      key: 'tours',
+      title: 'Guided Tours',
+      icon: <CompassIcon className="w-4 h-4" />,
+      component: <ToursSettingsPanel />,
     },
   ]
 

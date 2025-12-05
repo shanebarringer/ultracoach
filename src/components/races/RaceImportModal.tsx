@@ -260,6 +260,124 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       return undefined
     }
 
+    /** Parse month name to 1-based month number */
+    const parseMonthName = (name: string): number | undefined => {
+      const months: Record<string, number> = {
+        jan: 1,
+        january: 1,
+        feb: 2,
+        february: 2,
+        mar: 3,
+        march: 3,
+        apr: 4,
+        april: 4,
+        may: 5,
+        jun: 6,
+        june: 6,
+        jul: 7,
+        july: 7,
+        aug: 8,
+        august: 8,
+        sep: 9,
+        sept: 9,
+        september: 9,
+        oct: 10,
+        october: 10,
+        nov: 11,
+        november: 11,
+        dec: 12,
+        december: 12,
+      }
+      return months[name.toLowerCase()]
+    }
+
+    /**
+     * Normalize various date formats to ISO YYYY-MM-DD format.
+     * Required because races API uses strict z.string().date() validation.
+     *
+     * Supported formats:
+     * - YYYY-MM-DD (already ISO, pass through)
+     * - MM/DD/YYYY (US format)
+     * - DD/MM/YYYY (EU format - detected if day > 12)
+     * - Month DD, YYYY (e.g., "Jan 15, 2024")
+     * - DD Month YYYY (e.g., "15 Jan 2024")
+     */
+    const normalizeToISODate = (dateStr: string | undefined): string | undefined => {
+      if (!dateStr) return undefined
+
+      const trimmed = dateStr.trim()
+      if (trimmed === '') return undefined
+
+      // 1. Already ISO format (YYYY-MM-DD) - pass through
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed
+      }
+
+      // 2. Slash format: DD/MM/YYYY or MM/DD/YYYY
+      const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+      if (slashMatch) {
+        const [, first, second, year] = slashMatch
+        const firstNum = parseInt(first, 10)
+        const secondNum = parseInt(second, 10)
+
+        let day: number, month: number
+        // Heuristic: if first number > 12, it must be day (DD/MM/YYYY - EU format)
+        if (firstNum > 12) {
+          day = firstNum
+          month = secondNum
+        } else {
+          // Assume MM/DD/YYYY (US format) for ambiguous cases
+          month = firstNum
+          day = secondNum
+        }
+
+        // Validate day/month ranges
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+          logger.warn('Invalid day/month in slash date', { dateStr, day, month })
+          return undefined
+        }
+
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      }
+
+      // 3. Month-name format: "Month DD, YYYY" or "Month DD YYYY"
+      const monthNameFirstMatch = trimmed.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/)
+      if (monthNameFirstMatch) {
+        const [, monthName, day, year] = monthNameFirstMatch
+        const month = parseMonthName(monthName)
+        if (month !== undefined) {
+          return `${year}-${String(month).padStart(2, '0')}-${String(parseInt(day, 10)).padStart(2, '0')}`
+        }
+      }
+
+      // 4. Reversed month-name format: "DD Month YYYY"
+      const dayFirstMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/)
+      if (dayFirstMatch) {
+        const [, day, monthName, year] = dayFirstMatch
+        const month = parseMonthName(monthName)
+        if (month !== undefined) {
+          return `${year}-${String(month).padStart(2, '0')}-${String(parseInt(day, 10)).padStart(2, '0')}`
+        }
+      }
+
+      // 5. Fallback: Only for truly unambiguous month-name inputs that regex didn't catch
+      // This catches variations like "January 15th, 2024" with ordinal suffixes
+      const parsed = new Date(trimmed)
+      if (!isNaN(parsed.getTime())) {
+        // Verify it contains a month name to avoid ambiguous numeric dates
+        if (/[A-Za-z]/.test(trimmed)) {
+          const year = parsed.getFullYear()
+          const month = String(parsed.getMonth() + 1).padStart(2, '0')
+          const day = String(parsed.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+      }
+
+      // Parsing failed
+      logger.warn('Could not parse date from CSV', { dateStr })
+      return undefined
+    }
+
     return new Promise((resolve, reject) => {
       logger.debug('Starting CSV parse', {
         fileName: file.name,
@@ -436,7 +554,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
 
                       const race: ParsedRaceData = {
                         name: name.trim(),
-                        date: getDate(),
+                        date: normalizeToISODate(getDate()),
                         location: getLocation(),
                         distance_miles: getDistance(),
                         distance_type:
