@@ -35,6 +35,56 @@ export const parseInput = (date: Date | string): Date => {
 }
 
 /**
+ * Common date formats found in CSV files for race imports.
+ * Order matters: most specific/unambiguous formats first.
+ */
+const CSV_DATE_FORMATS = [
+  'yyyy-MM-dd', // ISO date-only (most reliable)
+  'MM/dd/yyyy', // US format
+  'dd/MM/yyyy', // EU format
+  'MMMM d, yyyy', // "January 15, 2024"
+  'MMMM do, yyyy', // "January 15th, 2024"
+  'MMM d, yyyy', // "Jan 15, 2024"
+  'd MMM yyyy', // "15 Jan 2024"
+  'MM-dd-yyyy', // US with dashes
+]
+
+/**
+ * Parses date strings from CSV imports with support for multiple formats.
+ * Uses date-fns with explicit format patterns to ensure deterministic behavior
+ * across all environments (no engine-dependent Date parsing).
+ *
+ * @param dateStr - Date string from CSV file
+ * @returns Parsed Date object or null if invalid/unparseable
+ */
+export const parseCSVDate = (dateStr: string | undefined | null): Date | null => {
+  if (!dateStr) return null
+
+  const trimmed = dateStr.trim()
+  if (!trimmed) return null
+
+  // Try parseInput first (handles ISO strings with time)
+  try {
+    const parsed = parseInput(trimmed)
+    if (isValid(parsed)) return parsed
+  } catch {
+    // Continue to explicit format attempts
+  }
+
+  // Try explicit CSV formats
+  for (const fmt of CSV_DATE_FORMATS) {
+    try {
+      const parsed = parseFmt(trimmed, fmt, new Date())
+      if (isValid(parsed)) return parsed
+    } catch {
+      // Continue to next format
+    }
+  }
+
+  return null
+}
+
+/**
  * Converts a date to YYYY-MM-DD format in local timezone
  * This prevents UTC drift when comparing dates
  * @param date - Date object or ISO string
