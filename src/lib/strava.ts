@@ -1,5 +1,6 @@
 import strava from 'strava-v3'
 
+import { getBaseUrl } from './base-url'
 import { createLogger } from './logger'
 
 const logger = createLogger('strava')
@@ -8,17 +9,24 @@ const logger = createLogger('strava')
 export const STRAVA_CONFIG = {
   CLIENT_ID: process.env.STRAVA_CLIENT_ID!,
   CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET!,
-  REDIRECT_URI:
-    process.env.STRAVA_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/api/strava/callback`,
+  REDIRECT_URI: process.env.STRAVA_REDIRECT_URI || `${getBaseUrl()}/api/strava/callback`,
   SCOPE: 'read,activity:read_all,profile:read_all',
   WEBHOOK_VERIFY_TOKEN: process.env.STRAVA_WEBHOOK_VERIFY_TOKEN,
 } as const
 
 // Validate required environment variables
 function validateStravaConfig() {
-  const missing = []
+  const missing: string[] = []
   if (!STRAVA_CONFIG.CLIENT_ID) missing.push('STRAVA_CLIENT_ID')
   if (!STRAVA_CONFIG.CLIENT_SECRET) missing.push('STRAVA_CLIENT_SECRET')
+  // Validate redirect URI is properly configured (not undefined or empty)
+  if (
+    !STRAVA_CONFIG.REDIRECT_URI ||
+    STRAVA_CONFIG.REDIRECT_URI.startsWith('undefined') ||
+    STRAVA_CONFIG.REDIRECT_URI === '/api/strava/callback'
+  ) {
+    missing.push('NEXT_PUBLIC_APP_URL or STRAVA_REDIRECT_URI')
+  }
 
   if (missing.length > 0) {
     logger.warn(`Missing Strava environment variables: ${missing.join(', ')}`)
