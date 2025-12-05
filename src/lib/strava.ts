@@ -1,33 +1,9 @@
 import strava from 'strava-v3'
 
+import { getBaseUrl } from './base-url'
 import { createLogger } from './logger'
 
 const logger = createLogger('strava')
-
-/**
- * Get the base URL for Strava OAuth redirect
- * Uses a fallback chain to handle various deployment configurations
- */
-function getBaseUrl(): string {
-  // Explicit redirect URI takes priority - extract base URL from it
-  if (process.env.STRAVA_REDIRECT_URI) {
-    return process.env.STRAVA_REDIRECT_URI.replace('/api/strava/callback', '')
-  }
-  // Primary: Check for app URL
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL
-  }
-  // Fallback: Better Auth URL (often set in production)
-  if (process.env.NEXT_PUBLIC_BETTER_AUTH_URL) {
-    return process.env.NEXT_PUBLIC_BETTER_AUTH_URL
-  }
-  // Development fallback
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3001'
-  }
-  // Return empty string - validation will catch this
-  return ''
-}
 
 // Strava OAuth configuration
 export const STRAVA_CONFIG = {
