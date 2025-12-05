@@ -640,7 +640,11 @@ export const strava_activity_syncs = pgTable(
     strava_activity_id: text('strava_activity_id').notNull(),
     ultracoach_workout_id: uuid('ultracoach_workout_id'),
     activity_data: json('activity_data').notNull(),
-    sync_type: text('sync_type').default('manual').notNull(),
+    sync_type: text('sync_type', {
+      enum: ['manual', 'automatic', 'webhook'],
+    })
+      .default('manual')
+      .notNull(),
     sync_status: text('sync_status', {
       enum: ['pending', 'synced', 'failed', 'ignored'],
     })
