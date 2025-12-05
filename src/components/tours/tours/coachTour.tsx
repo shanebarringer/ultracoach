@@ -167,8 +167,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      selector: '[data-testid="weekly-planner-selection"]',
-      side: 'right',
+      // No selector = centered modal overlay
+      side: 'bottom',
       pointerPadding: 20,
       showControls: true,
       showSkip: true,

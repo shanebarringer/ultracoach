@@ -39,6 +39,20 @@ export interface TourProgress {
 }
 
 // ========================================
+// Helper Functions
+// ========================================
+
+/**
+ * Maps a TourId to the corresponding completion state update
+ * Reduces duplication in completeTourAtom and resetTourAtom
+ */
+function getTourCompletionUpdate(tourId: TourId, completed: boolean): Partial<TourState> {
+  return tourId === 'coach-onboarding'
+    ? { coachTourCompleted: completed }
+    : { runnerTourCompleted: completed }
+}
+
+// ========================================
 // Core Tour State Atoms
 // ========================================
 
@@ -194,9 +208,7 @@ export const completeTourAtom = atom(null, (get, set) => {
   const currentState = get(tourStateAtom)
   set(tourStateAtom, {
     ...currentState,
-    ...(tourId === 'coach-onboarding'
-      ? { coachTourCompleted: true }
-      : { runnerTourCompleted: true }),
+    ...getTourCompletionUpdate(tourId, true),
     lastTourCompletedAt: now,
   })
 
@@ -234,9 +246,7 @@ export const resetTourAtom = atom(null, (get, set, tourId: TourId) => {
 
   set(tourStateAtom, {
     ...currentState,
-    ...(tourId === 'coach-onboarding'
-      ? { coachTourCompleted: false }
-      : { runnerTourCompleted: false }),
+    ...getTourCompletionUpdate(tourId, false),
   })
 
   logger.info('Tour reset', { tourId })
