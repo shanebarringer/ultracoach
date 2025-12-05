@@ -25,7 +25,7 @@ export interface TourMetadata {
 const TOUR_KEY_TO_ID: Record<TourKey, TourId> = {
   coach: 'coach-onboarding',
   runner: 'runner-onboarding',
-} as const
+}
 
 /**
  * Convert TourKey to TourId with compile-time type safety.
