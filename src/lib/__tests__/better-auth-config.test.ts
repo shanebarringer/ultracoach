@@ -90,13 +90,13 @@ describe('Better Auth Configuration', () => {
       expect(threwExpectedError).toBe(true)
     })
 
-    it('should require DATABASE_URL (tested in database module)', async () => {
+    it('initializes auth when DATABASE_URL is set', async () => {
       // DATABASE_URL validation happens in database.ts, not better-auth.ts
-      // This test verifies that better-auth handles the case when database is available
+      // This test verifies that better-auth initializes correctly when database is available
       vi.stubEnv('DATABASE_URL', 'postgresql://test')
       vi.stubEnv('BETTER_AUTH_SECRET', 'a'.repeat(64))
 
-      // Should not throw when DATABASE_URL is set
+      // Should initialize auth successfully when DATABASE_URL is set
       const { auth } = await import('../better-auth')
       expect(auth).toBeDefined()
     })

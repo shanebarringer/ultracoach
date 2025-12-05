@@ -68,11 +68,6 @@ afterEach(() => {
   process.env = originalEnv
 })
 
-// Mock database helpers
-const mockInsert = vi.fn()
-const mockWhere = vi.fn()
-const mockFrom = vi.fn()
-
 describe('Authentication Integration Tests', () => {
   describe('Complete Authentication Flow', () => {
     it('should handle complete sign-up flow', async () => {
@@ -84,13 +79,6 @@ describe('Authentication Integration Tests', () => {
           name: 'Test User',
         },
         token: 'test-session-token',
-      })
-
-      // Mock user creation in database
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([]), // User doesn't exist
-        }),
       })
 
       // Import the auth module after setting up mocks
@@ -124,22 +112,10 @@ describe('Authentication Integration Tests', () => {
           id: 'test-user-id',
           email: 'test@example.com',
           name: 'Test User',
-          role: 'runner',
+          role: 'user',
+          userType: 'runner',
         },
         token: 'test-session-token',
-      })
-
-      // Mock user exists in database
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([
-            {
-              id: 'test-user-id',
-              email: 'test@example.com',
-              role: 'runner',
-            },
-          ]),
-        }),
       })
 
       const { auth } = await import('../better-auth')
@@ -160,7 +136,7 @@ describe('Authentication Integration Tests', () => {
       })
 
       expect(result?.user.email).toBe('test@example.com')
-      expect((result?.user as { role?: string })?.role).toBe('runner')
+      expect((result?.user as { userType?: string })?.userType).toBe('runner')
     })
 
     it('should handle session validation', async () => {
@@ -169,7 +145,8 @@ describe('Authentication Integration Tests', () => {
         user: {
           id: 'test-user-id',
           email: 'test@example.com',
-          role: 'coach',
+          role: 'user',
+          userType: 'coach',
         },
         session: {
           id: 'test-session-id',
@@ -282,33 +259,17 @@ describe('Authentication Integration Tests', () => {
   describe('Database Integration', () => {
     it('should create user record in database during sign-up', async () => {
       // Mock successful Better Auth sign-up
+      // Note: Better Auth handles database operations internally via the drizzle adapter
       mockSignUp.mockResolvedValueOnce({
         data: {
           user: {
             id: 'test-user-id',
             email: 'test@example.com',
             name: 'Test User',
+            role: 'user',
+            userType: 'runner',
           },
         },
-      })
-
-      // Mock database operations
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([]), // User doesn't exist
-        }),
-      })
-
-      mockInsert.mockReturnValueOnce({
-        values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([
-            {
-              id: 'test-user-id',
-              email: 'test@example.com',
-              role: 'runner',
-            },
-          ]),
-        }),
       })
 
       const { auth } = await import('../better-auth')
@@ -326,8 +287,8 @@ describe('Authentication Integration Tests', () => {
     })
 
     it('should handle database connection errors gracefully', async () => {
-      // Mock database connection error
-      vi.mocked(mockFrom).mockRejectedValueOnce(new Error('Database connection failed'))
+      // Mock database connection error via Better Auth
+      mockSignIn.mockRejectedValueOnce(new Error('Database connection failed'))
 
       const { auth } = await import('../better-auth')
 
