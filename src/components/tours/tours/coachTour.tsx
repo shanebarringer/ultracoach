@@ -189,7 +189,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // No selector = centered modal overlay
+      // body selector required for nextRoute navigation to work
+      selector: 'body',
       side: 'bottom',
       pointerPadding: 20,
       showControls: true,
@@ -211,7 +212,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // No selector = centered modal overlay
+      // body selector required for nextRoute/prevRoute navigation to work
+      selector: 'body',
       side: 'bottom',
       pointerPadding: 20,
       showControls: true,
@@ -234,7 +236,8 @@ export const coachOnboardingTour: Tour = {
           </p>
         </>
       ),
-      // No selector = centered modal overlay
+      // body selector required for nextRoute/prevRoute navigation to work
+      selector: 'body',
       side: 'bottom',
       pointerPadding: 20,
       showControls: true,
