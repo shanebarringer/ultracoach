@@ -39,13 +39,20 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Connect" button to navigate to runner selection
       await page.getByTestId('connect-athletes-button').click()
 
-      // Navigate directly to relationships page
-      await page.goto('/relationships')
+      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
-      // Wait directly for the "Find Runners" heading to appear (more reliable than Suspense boundary)
-      // This heading should always be present once AsyncRunnerSelector renders, regardless of data
-      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 30000 })
+      // Wait for EITHER skeleton OR actual heading (more resilient)
+      // Use .or() combinator pattern from Playwright best practices
+      const heading = page.getByTestId('find-runners-heading')
+      const skeleton = page.locator('.animate-pulse').first()
+
+      // Wait for page to start rendering (skeleton appears quickly)
+      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+
+      // Then wait for final heading to appear (API might take time)
+      await expect(heading).toBeVisible({ timeout: 30000 })
 
       // Check if any Connect buttons exist (may be empty if no seed data)
       const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
@@ -60,12 +67,15 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
       await page.getByTestId('connect-athletes-button').click()
 
-      // Navigate directly to relationships page
-      await page.goto('/relationships')
+      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
-      // Wait directly for the "Find Runners" heading to appear
-      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 30000 })
+      // Use progressive waiting with .or() combinator
+      const heading = page.getByTestId('find-runners-heading')
+      const skeleton = page.locator('.animate-pulse').first()
+      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+      await expect(heading).toBeVisible({ timeout: 30000 })
 
       // Wait for Connect buttons to be available
       const connectButton = await getConnectButtonOrSkip(page, 'Connect', {

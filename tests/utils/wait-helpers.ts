@@ -132,7 +132,9 @@ export async function navigateWithAuthVerification(
   }
 
   // Verify we're on the expected URL
-  await expect(page).toHaveURL(new RegExp(targetUrl.replace(/\//g, '\\/')), {
+  // Escape ALL regex metacharacters: . * + ? ^ $ { } ( ) | [ ] \ /
+  const escapedUrl = targetUrl.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&')
+  await expect(page).toHaveURL(new RegExp(escapedUrl), {
     timeout,
   })
 
