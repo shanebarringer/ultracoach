@@ -150,10 +150,11 @@ export default defineConfig({
       // No dependencies - unauth flows should start fresh without pre-auth state
     },
 
-    // Authenticated coach tests for race import
+    // Authenticated coach tests for race import (excludes @runner tagged tests)
     {
       name: 'chromium-race-import-coach',
       testMatch: /race-import\.spec\.ts/,
+      grepInvert: /@runner/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved coach authentication state
@@ -162,11 +163,11 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
     },
 
-    // Runner tests for race import (verify no access)
+    // Runner tests for race import (verify runners CAN import - ULT-18)
     {
       name: 'chromium-race-import-runner',
       testMatch: /race-import\.spec\.ts/,
-      grep: /should not allow runners to import/,
+      grep: /@runner/,
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state
