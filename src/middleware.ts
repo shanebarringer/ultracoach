@@ -27,7 +27,8 @@ function generateCSPHeader(nonce: string): string {
     // React automatically escapes all user content, preventing style injection attacks
     // Main XSS protection comes from nonce-based script-src (above)
     `style-src 'self' https://fonts.googleapis.com 'unsafe-inline'`,
-    "img-src 'self' data: https://api.strava.com https://*.supabase.co blob:",
+    // img-src: Strava CDN (dgalywyr863hv.cloudfront.net) hosts athlete profile images
+    "img-src 'self' data: https://api.strava.com https://*.supabase.co https://dgalywyr863hv.cloudfront.net blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
     // connect-src: PostHog uses multiple subdomains (us.i.posthog.com, us-assets.i.posthog.com)
     // so we use wildcard https://*.posthog.com to cover all of them

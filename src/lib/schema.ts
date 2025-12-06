@@ -1,11 +1,11 @@
 import {
-  bigint,
   boolean,
   decimal,
   foreignKey,
   integer,
   json,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -639,14 +639,20 @@ export const strava_activity_syncs = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     connection_id: uuid('connection_id').notNull(),
-    strava_activity_id: bigint('strava_activity_id', { mode: 'number' }).notNull(),
+    strava_activity_id: text('strava_activity_id').notNull(),
     ultracoach_workout_id: uuid('ultracoach_workout_id'),
     activity_data: json('activity_data').notNull(),
+    sync_type: text('sync_type', {
+      enum: ['manual', 'automatic', 'webhook'],
+    })
+      .default('manual')
+      .notNull(),
     sync_status: text('sync_status', {
       enum: ['pending', 'synced', 'failed', 'ignored'],
     })
       .default('pending')
       .notNull(),
+    match_confidence: real('match_confidence'),
     sync_error: text('sync_error'),
     synced_at: timestamp('synced_at', { withTimezone: true }),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -1,12 +1,12 @@
 import { createHash, randomBytes, timingSafeEqual } from 'crypto'
 
+import { BASE_URL_CONFIG, getBaseUrl } from './base-url'
+
 const TOKEN_LENGTH = 32 // 256 bits of entropy
 const DEFAULT_EXPIRATION_DAYS = 14
 const MAX_EXPIRATION_DAYS = 30
 /** Maximum number of times an invitation can be resent */
 const MAX_RESENDS = 3
-/** Default fallback URL for development */
-const DEFAULT_BASE_URL = 'http://localhost:3001'
 
 export interface TokenData {
   /** URL-safe token for email link */
@@ -79,66 +79,8 @@ export function isTokenExpired(expiresAt: Date | string): boolean {
   return new Date() > expiry
 }
 
-/**
- * Normalizes a URL or hostname by trimming whitespace and removing trailing slashes
- * @param value - The URL or hostname to normalize
- * @returns Normalized string or null if empty/whitespace-only
- */
-function normalizeUrl(value: string | undefined): string | null {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  // Strip trailing slashes to prevent double-slash URLs
-  return trimmed.replace(/\/+$/, '')
-}
-
-/**
- * Strips http:// or https:// protocol from a hostname
- * Handles misconfigured env vars that accidentally include protocol
- */
-function stripProtocol(hostname: string): string {
-  return hostname.replace(/^https?:\/\//, '')
-}
-
-/**
- * Gets the application base URL from environment variables
- *
- * Priority order:
- * 1. NEXT_PUBLIC_APP_URL - Explicitly set app URL (recommended for production)
- * 2. VERCEL_PROJECT_PRODUCTION_URL - Auto-set by Vercel for production domain
- * 3. VERCEL_URL - Auto-set by Vercel for preview/production deployments
- * 4. DEFAULT_BASE_URL - Fallback for local development
- *
- * @returns The base URL for building invitation links
- * @throws Error if NEXT_PUBLIC_APP_URL is set but missing http:// or https:// protocol
- */
-export function getBaseUrl(): string {
-  // Priority 1: Explicitly configured app URL
-  const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
-  if (appUrl) {
-    if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://')) {
-      throw new Error(`NEXT_PUBLIC_APP_URL must start with http:// or https://, got: ${appUrl}`)
-    }
-    return appUrl
-  }
-
-  // Priority 2: Vercel production URL (hostname only, needs https://)
-  // Strip any accidental protocol to prevent double-protocol URLs
-  const prodUrl = normalizeUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL)
-  if (prodUrl) {
-    return `https://${stripProtocol(prodUrl)}`
-  }
-
-  // Priority 3: Vercel deployment URL (hostname only, needs https://)
-  // Strip any accidental protocol to prevent double-protocol URLs
-  const vercelUrl = normalizeUrl(process.env.VERCEL_URL)
-  if (vercelUrl) {
-    return `https://${stripProtocol(vercelUrl)}`
-  }
-
-  // Priority 4: Local development fallback
-  return DEFAULT_BASE_URL
-}
+// Re-export getBaseUrl for backward compatibility
+export { getBaseUrl } from './base-url'
 
 /**
  * Builds the full invitation acceptance URL
@@ -167,5 +109,5 @@ export const INVITATION_CONFIG = {
   MAX_EXPIRATION_DAYS,
   TOKEN_LENGTH,
   MAX_RESENDS,
-  DEFAULT_BASE_URL,
+  DEFAULT_BASE_URL: BASE_URL_CONFIG.DEFAULT_BASE_URL,
 } as const

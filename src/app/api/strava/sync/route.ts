@@ -49,11 +49,11 @@ export async function POST(req: NextRequest) {
 
     const conn = connection[0]
 
-    // Check if activity is already synced
+    // Check if activity is already synced (convert to string for text column)
     const existingSync = await db
       .select()
       .from(strava_activity_syncs)
-      .where(eq(strava_activity_syncs.strava_activity_id, activity_id))
+      .where(eq(strava_activity_syncs.strava_activity_id, activity_id.toString()))
       .limit(1)
 
     if (existingSync.length > 0) {
@@ -124,14 +124,15 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Create sync record
+    // Create sync record (convert activity_id to string for text column)
     const sync = await db
       .insert(strava_activity_syncs)
       .values({
         connection_id: conn.id,
-        strava_activity_id: activity_id,
+        strava_activity_id: activity_id.toString(),
         ultracoach_workout_id: ultracoachWorkoutId,
         activity_data: activity,
+        sync_type: 'manual',
         sync_status: 'synced',
         synced_at: new Date(),
         created_at: new Date(),
