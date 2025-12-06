@@ -27,9 +27,27 @@ import { coach_invitations, user } from '@/lib/schema'
 
 const logger = createLogger('api-invitations')
 
+/**
+ * Unicode-friendly name validation pattern
+ * - Starts with a Unicode letter or mark
+ * - Allows letters, marks, spaces, hyphens, and apostrophes
+ * - Supports international names (e.g., "José García", "O'Brien", "Mary-Jane")
+ */
+const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'\- ]*$/u
+
 // Validation schema for creating an invitation
 const createInvitationSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
+  name: z
+    .string()
+    .transform(val => val.trim().replace(/\s+/g, ' ')) // Trim and collapse multiple spaces
+    .refine(val => val.length === 0 || NAME_PATTERN.test(val), {
+      message: 'Name must contain only letters, spaces, hyphens, and apostrophes',
+    })
+    .refine(val => val.length <= 100, {
+      message: 'Name must be 100 characters or less',
+    })
+    .optional(),
   role: z.enum(['runner', 'coach']).default('runner'),
   message: z.string().max(500, 'Message must be 500 characters or less').optional(),
   expirationDays: z
@@ -82,7 +100,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, role, message, expirationDays } = parseResult.data
+    const { email, name, role, message, expirationDays } = parseResult.data
 
     // Prevent coaches from inviting themselves
     if (email.toLowerCase() === sessionUser.email.toLowerCase()) {
@@ -143,6 +161,7 @@ export async function POST(request: NextRequest) {
       .values({
         inviter_user_id: sessionUser.id,
         invitee_email: email.toLowerCase(),
+        invitee_name: name || null,
         invited_role: role,
         personal_message: message || null,
         token_hash: tokenHash,
@@ -204,6 +223,7 @@ export async function POST(request: NextRequest) {
         invitation: {
           id: newInvitation.id,
           inviteeEmail: newInvitation.invitee_email,
+          inviteeName: newInvitation.invitee_name,
           invitedRole: newInvitation.invited_role,
           personalMessage: newInvitation.personal_message,
           status: newInvitation.status,
@@ -341,6 +361,7 @@ export async function GET(request: NextRequest) {
       .select({
         id: coach_invitations.id,
         inviteeEmail: coach_invitations.invitee_email,
+        inviteeName: coach_invitations.invitee_name,
         invitedRole: coach_invitations.invited_role,
         personalMessage: coach_invitations.personal_message,
         status: coach_invitations.status,
@@ -364,6 +385,7 @@ export async function GET(request: NextRequest) {
     const formattedInvitations = invitations.map(inv => ({
       id: inv.id,
       inviteeEmail: inv.inviteeEmail,
+      inviteeName: inv.inviteeName,
       invitedRole: inv.invitedRole,
       personalMessage: inv.personalMessage,
       status: inv.status,

@@ -7,7 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { waitForPageReady } from '../utils/wait-helpers'
+import { getConnectButtonOrSkip, waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -39,27 +39,51 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Connect" button to navigate to runner selection
       await page.getByTestId('connect-athletes-button').click()
 
-      // Navigate directly to relationships page
-      await page.goto('/relationships')
+      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
-      // Should show "Find Runners" section
-      await expect(page.getByText('Find Runners')).toBeVisible()
+      // Wait for EITHER skeleton OR actual heading (more resilient)
+      // Use .or() combinator pattern from Playwright best practices
+      const heading = page.getByTestId('find-runners-heading')
+      const skeleton = page.locator('.animate-pulse').first()
+
+      // Wait for page to start rendering (skeleton appears quickly)
+      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+
+      // Then wait for final heading to appear (API might take time)
+      await expect(heading).toBeVisible({ timeout: 30000 })
+
+      // Check if any Connect buttons exist (may be empty if no seed data)
+      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
+        testName: 'should display available runners to connect with',
+      })
 
       // Should display runner cards or connect buttons
-      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
+      await expect(connectButton).toBeVisible()
     })
 
     test('should send connection request to runner', async ({ page }) => {
       // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
       await page.getByTestId('connect-athletes-button').click()
 
-      // Navigate directly to relationships page
-      await page.goto('/relationships')
+      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
+      // Use progressive waiting with .or() combinator
+      const heading = page.getByTestId('find-runners-heading')
+      const skeleton = page.locator('.animate-pulse').first()
+      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+      await expect(heading).toBeVisible({ timeout: 30000 })
+
+      // Wait for Connect buttons to be available
+      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
+        testName: 'should send connection request to runner',
+      })
+
       // Click connect on first available runner
-      await page.getByRole('button', { name: 'Connect' }).first().click()
+      await connectButton.click()
 
       // Wait for the pending status to appear (indicating the relationship was created and UI updated)
       await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })

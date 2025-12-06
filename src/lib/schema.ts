@@ -383,6 +383,8 @@ export const coach_invitations = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     // Email address being invited
     invitee_email: text('invitee_email').notNull(),
+    // Optional: Name of the person being invited (for email personalization and signup pre-fill)
+    invitee_name: text('invitee_name'),
     // What role they're invited as
     invited_role: text('invited_role', { enum: ['runner', 'coach'] })
       .default('runner')

@@ -100,7 +100,9 @@ export function AsyncCoachSelector({ onRelationshipCreated }: AsyncCoachSelector
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <UserPlusIcon className="h-6 w-6 text-primary" />
-            <h3 className="text-xl font-semibold">Find a Coach</h3>
+            <h3 className="text-xl font-semibold" data-testid="find-coaches-heading">
+              Find a Coach
+            </h3>
           </div>
 
           <Input

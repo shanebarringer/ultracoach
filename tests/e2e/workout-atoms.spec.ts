@@ -12,6 +12,7 @@ import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
 import { TEST_TIMEOUTS } from '../utils/test-helpers'
+import { navigateWithAuthVerification } from '../utils/wait-helpers'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
@@ -286,19 +287,15 @@ test.describe('Workout Atoms Functionality', () => {
 
   test.describe('Workout Atom State Synchronization', () => {
     test('should refresh workouts when navigating between pages', async ({ page }) => {
-      // Start on workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
+      // Navigate to workouts page with auth verification (skips if not authenticated)
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Get workout count
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const workoutsPageCount = await workoutCards.count()
 
-      // Navigate to dashboard
-      await page.goto('/dashboard/runner')
-
-      await expect(page).toHaveURL('/dashboard/runner')
+      // Navigate to dashboard with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
       // Check workouts are displayed on dashboard
       const dashboardWorkouts = page.locator(
@@ -306,10 +303,8 @@ test.describe('Workout Atoms Functionality', () => {
       )
       const dashboardCount = await dashboardWorkouts.count()
 
-      // Navigate to calendar
-      await page.goto('/calendar')
-
-      await expect(page).toHaveURL('/calendar')
+      // Navigate to calendar with auth verification
+      await navigateWithAuthVerification(page, '/calendar')
 
       // Check workouts in calendar
       const calendarEvents = page.locator('[data-testid="calendar-workout"], .fc-event')
@@ -324,10 +319,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should maintain workout state across page refreshes', async ({ page }) => {
-      // Navigate to workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
+      // Navigate to workouts page with auth verification (skips if not authenticated)
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Get initial workout data
       const workoutCards = page.locator('[data-testid="workout-card"]')

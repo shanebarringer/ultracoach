@@ -47,6 +47,7 @@ export interface Invitation {
 
 export interface CreateInvitationPayload {
   email: string
+  name?: string
   role: 'runner' | 'coach'
   message?: string
   expirationDays?: number
@@ -120,6 +121,7 @@ export const isInviteModalOpenAtom = atom(false)
 /** Form state for creating new invitations */
 export const inviteFormAtom = atom<CreateInvitationPayload>({
   email: '',
+  name: '',
   role: 'runner',
   message: '',
   expirationDays: 14,
@@ -168,6 +170,7 @@ export const createInvitationAtom = atom(
       set(isInviteModalOpenAtom, false)
       set(inviteFormAtom, {
         email: '',
+        name: '',
         role: 'runner',
         message: '',
         expirationDays: 14,
