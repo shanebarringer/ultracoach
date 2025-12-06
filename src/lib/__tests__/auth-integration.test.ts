@@ -70,37 +70,10 @@ interface MockSignInResponse {
     id: string
     email: string
     name: string
-    role: string
-    userType: 'coach' | 'runner'
+    role: 'user' // Better Auth standard - always 'user'
+    userType: 'coach' | 'runner' // Application differentiation
   }
   token: string
-}
-
-/** Mock response structure for Better Auth sign-up */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface MockSignUpResponse {
-  user: {
-    id: string
-    email: string
-    name: string
-  }
-  token: string
-}
-
-/** Mock session data structure */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface MockSessionData {
-  user: {
-    id: string
-    email: string
-    role: string
-    userType: 'coach' | 'runner'
-  }
-  session: {
-    id: string
-    token: string
-    expiresAt: Date
-  }
 }
 
 /**

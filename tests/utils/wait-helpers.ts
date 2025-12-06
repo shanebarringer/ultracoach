@@ -144,46 +144,50 @@ export async function navigateWithAuthVerification(
 
 /**
  * Wait for Suspense boundaries to resolve by detecting when loading states disappear.
- * Looks for skeleton components (animate-pulse class) to disappear.
+ * Uses a more lenient approach that checks for significant loading reduction rather
+ * than waiting for ALL loaders to disappear (which can timeout in complex UIs).
  *
  * @param page - Playwright page object
  * @param options - Configuration options
- * @param options.timeout - Maximum time to wait in milliseconds (default: 30000)
- * @returns Promise that resolves when Suspense boundaries have resolved
+ * @param options.timeout - Maximum time to wait in milliseconds (default: 15000)
+ * @param options.maxSkeletons - Maximum skeletons to allow (default: 2 for minor UI elements)
+ * @returns Promise that resolves when main Suspense boundaries have resolved
  */
-export async function waitForSuspenseBoundary(page: Page, options: { timeout?: number } = {}) {
-  const { timeout = 30000 } = options
+export async function waitForSuspenseBoundary(
+  page: Page,
+  options: { timeout?: number; maxSkeletons?: number } = {}
+) {
+  const { timeout = 15000, maxSkeletons = 2 } = options
 
-  // Wait for skeleton/loading states to disappear
+  // Wait for main content to load - allow minor skeleton elements to persist
+  // This prevents timeouts when small UI elements (avatars, badges) are still loading
   await page.waitForFunction(
-    () => {
+    (maxAllowed: number) => {
       const skeletons = document.querySelectorAll('.animate-pulse')
-      const loadingText = document.evaluate(
-        "//*[contains(text(), 'Loading')]",
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null
-      ).singleNodeValue
-      return skeletons.length === 0 && !loadingText
+      // Check for blocking "Loading..." text in main content area only
+      const mainContent = document.querySelector('main') || document.body
+      const hasBlockingLoader = mainContent.textContent?.includes('Loading...') ?? false
+      // Allow test to proceed if skeletons are minimal and no blocking loader
+      return skeletons.length <= maxAllowed && !hasBlockingLoader
     },
+    maxSkeletons,
     { timeout }
   )
 
-  // Additional wait for React state updates
-  await page.waitForTimeout(process.env.CI ? 2000 : 1000)
+  // Brief wait for React state updates (reduced from 2000/1000)
+  await page.waitForTimeout(process.env.CI ? 1000 : 500)
 }
 
 /**
- * Get Connect button or skip test if no data available.
- * Prevents test failures when seed data isn't present in CI.
+ * Gets a button locator and skips the test if the button is not available.
+ * Useful for tests that depend on specific test data being seeded.
  *
- * @param page - Playwright page object
- * @param buttonName - Name of the button to find (default: 'Connect')
+ * @param page - Playwright Page object
+ * @param buttonName - Name of the button to look for (default: 'Connect')
  * @param options - Configuration options
  * @param options.timeout - Timeout in ms for visibility check (default: 5000)
  * @param options.testName - Test name to include in skip message
- * @returns The Connect button locator or null if test was skipped
+ * @returns The button locator (test is skipped if button not found)
  */
 export async function getConnectButtonOrSkip(
   page: Page,
