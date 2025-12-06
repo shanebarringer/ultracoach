@@ -304,15 +304,19 @@ describe('Authentication Integration Tests', () => {
       expect(mockSignUp).toHaveBeenCalled()
     })
 
-    it('should handle database connection errors gracefully', async () => {
+    it('should reject with Error for infrastructure failures (database connection)', async () => {
       // Mock database connection error via Better Auth
       mockSignIn.mockRejectedValueOnce(new Error('Database connection failed'))
 
       const { auth } = await import('../better-auth')
 
-      // Test Expectation: Better Auth should propagate database errors as promise rejections
-      // rather than returning error objects, ensuring proper error handling in the application.
-      // This behavior allows calling code to use try/catch blocks for database error handling.
+      // Better Auth Error Handling Behavior:
+      // - Infrastructure errors (database connection, network): REJECTS with Error object
+      // - Validation errors (weak password, invalid email): RETURNS { error: {...} } object
+      //
+      // This distinction allows callers to:
+      // - Use try/catch for unexpected infrastructure failures
+      // - Check response.error for expected validation/business logic errors
       await expect(
         auth.api.signInEmail({
           body: {
@@ -325,8 +329,10 @@ describe('Authentication Integration Tests', () => {
   })
 
   describe('Security Validations', () => {
-    it('should validate password requirements', async () => {
+    it('should return error object for validation failures (weak password)', async () => {
       // Mock weak password rejection
+      // Note: Validation errors are RETURNED as { error: {...} } objects (not rejected)
+      // This is different from infrastructure errors which reject with Error objects
       mockSignUp.mockResolvedValueOnce({
         error: {
           message: 'Password does not meet requirements',

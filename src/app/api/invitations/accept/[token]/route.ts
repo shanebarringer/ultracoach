@@ -3,7 +3,7 @@
  * GET /api/invitations/accept/[token] - Validate token and get invitation details
  * POST /api/invitations/accept/[token] - Accept the invitation
  */
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, ilike, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -118,15 +118,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if invitee already has an account
-    const normalizedInviteeEmail = normalizeEmail(invitation.inviteeEmail)
+    // Use case-insensitive comparison to handle mixed-case email storage
     let existingUser: { id: string } | undefined
 
     // Only query if we have a valid email to search for
-    if (normalizedInviteeEmail) {
+    if (invitation.inviteeEmail) {
       const [found] = await db
         .select({ id: user.id })
         .from(user)
-        .where(eq(user.email, normalizedInviteeEmail))
+        .where(ilike(user.email, invitation.inviteeEmail))
         .limit(1)
       existingUser = found
     }
