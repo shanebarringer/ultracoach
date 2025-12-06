@@ -1,5 +1,8 @@
+import { Suspense } from 'react'
+
 import { notFound, redirect } from 'next/navigation'
 
+import { ChatWindowSkeleton } from '@/components/ui/LoadingSkeletons'
 import { getUserById, requireAuth, verifyConversationPermission } from '@/utils/auth-server'
 
 import ChatUserPageClient from './ChatUserPageClient'
@@ -42,6 +45,10 @@ export default async function ChatUserPage({ params }: Props) {
     redirect('/chat')
   }
 
-  // Pass all authenticated data to Client Component
-  return <ChatUserPageClient user={session.user} recipient={recipient} userId={userId} />
+  // Pass all authenticated data to Client Component wrapped in Suspense
+  return (
+    <Suspense fallback={<ChatWindowSkeleton />}>
+      <ChatUserPageClient user={session.user} recipient={recipient} userId={userId} />
+    </Suspense>
+  )
 }
