@@ -1,4 +1,4 @@
-import { Page, expect, test } from '@playwright/test'
+import { type Locator, Page, expect, test } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -193,7 +193,7 @@ export async function getConnectButtonOrSkip(
   page: Page,
   buttonName: string = 'Connect',
   options: { timeout?: number; testName?: string } = {}
-) {
+): Promise<Locator> {
   const { timeout = 5000, testName = 'test' } = options
 
   const button = page.getByRole('button', { name: buttonName }).first()

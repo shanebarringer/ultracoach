@@ -7,11 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import {
-  getConnectButtonOrSkip,
-  waitForPageReady,
-  waitForSuspenseBoundary,
-} from '../utils/wait-helpers'
+import { getConnectButtonOrSkip, waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -47,12 +43,9 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Wait for Suspense boundaries to resolve before checking for content
-      // RunnerSelectorSkeleton has 10+ skeleton elements, so use higher threshold
-      await waitForSuspenseBoundary(page, { timeout: 30000, maxSkeletons: 15 })
-
-      // Should show "Find Runners" section (use data-testid for reliability in CI)
-      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 15000 })
+      // Wait directly for the "Find Runners" heading to appear (more reliable than Suspense boundary)
+      // This heading should always be present once AsyncRunnerSelector renders, regardless of data
+      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 30000 })
 
       // Check if any Connect buttons exist (may be empty if no seed data)
       const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
@@ -71,9 +64,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Wait for Suspense boundaries to resolve before checking for content
-      // RunnerSelectorSkeleton has 10+ skeleton elements, so use higher threshold
-      await waitForSuspenseBoundary(page, { timeout: 30000, maxSkeletons: 15 })
+      // Wait directly for the "Find Runners" heading to appear
+      await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 30000 })
 
       // Wait for Connect buttons to be available
       const connectButton = await getConnectButtonOrSkip(page, 'Connect', {

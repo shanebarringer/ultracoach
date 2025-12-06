@@ -3,27 +3,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Chainable mock factory for Drizzle-style query builder API
-function createChainableMock(resolvedValue: unknown = []) {
-  const chain = {
-    from: vi.fn(() => chain),
-    where: vi.fn(() => chain),
-    limit: vi.fn(() => Promise.resolve(resolvedValue)),
-    values: vi.fn(() => chain),
-    returning: vi.fn(() => Promise.resolve(resolvedValue)),
-    set: vi.fn(() => chain),
-  }
-  return chain
-}
-
 // Mock database module FIRST to prevent real DB connections
+// Better Auth's drizzle adapter handles all DB operations internally
 vi.mock('../database', () => ({
-  db: {
-    select: vi.fn(() => createChainableMock()),
-    insert: vi.fn(() => createChainableMock()),
-    update: vi.fn(() => createChainableMock()),
-    delete: vi.fn(() => createChainableMock()),
-  },
+  db: {}, // Minimal mock - Better Auth doesn't require specific methods
   client: {
     end: vi.fn(),
   },
