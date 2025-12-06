@@ -63,6 +63,54 @@ vi.mock('resend', () => ({
   Resend: vi.fn(),
 }))
 
+// Type interfaces for mock responses
+/** Mock response structure for Better Auth sign-in */
+interface MockSignInResponse {
+  user: {
+    id: string
+    email: string
+    name: string
+    role: string
+    userType: 'coach' | 'runner'
+  }
+  token: string
+}
+
+/** Mock response structure for Better Auth sign-up */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface MockSignUpResponse {
+  user: {
+    id: string
+    email: string
+    name: string
+  }
+  token: string
+}
+
+/** Mock session data structure */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface MockSessionData {
+  user: {
+    id: string
+    email: string
+    role: string
+    userType: 'coach' | 'runner'
+  }
+  session: {
+    id: string
+    token: string
+    expiresAt: Date
+  }
+}
+
+/**
+ * Generate non-secret test string for BETTER_AUTH_SECRET.
+ * Uses non-hex characters to avoid triggering secret scanners.
+ */
+function generateTestSecret(length: number = 64): string {
+  return 'test_secret_for_unit_tests_only_'.padEnd(length, 'x')
+}
+
 // Mock environment variables
 const originalEnv = process.env
 
@@ -72,7 +120,7 @@ beforeEach(() => {
   process.env = {
     ...originalEnv,
     DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-    BETTER_AUTH_SECRET: 'test_secret_for_unit_tests_only_'.padEnd(64, 'x'), // Non-hex to avoid secret scanner flags
+    BETTER_AUTH_SECRET: generateTestSecret(64),
     NODE_ENV: 'test',
   }
 })
@@ -149,7 +197,8 @@ describe('Authentication Integration Tests', () => {
       })
 
       expect(result?.user.email).toBe('test@example.com')
-      expect((result?.user as { userType?: string })?.userType).toBe('runner')
+      const signInResult = result as MockSignInResponse
+      expect(signInResult.user.userType).toBe('runner')
     })
 
     it('should handle session validation', async () => {
@@ -305,7 +354,9 @@ describe('Authentication Integration Tests', () => {
 
       const { auth } = await import('../better-auth')
 
-      // Better Auth should propagate database errors as rejections
+      // Test Expectation: Better Auth should propagate database errors as promise rejections
+      // rather than returning error objects, ensuring proper error handling in the application.
+      // This behavior allows calling code to use try/catch blocks for database error handling.
       await expect(
         auth.api.signInEmail({
           body: {

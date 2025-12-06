@@ -45,6 +45,14 @@ vi.mock('resend', () => ({
   Resend: vi.fn(),
 }))
 
+/**
+ * Generate non-secret test string for BETTER_AUTH_SECRET.
+ * Uses non-hex characters to avoid triggering secret scanners.
+ */
+function generateTestSecret(length: number = 64): string {
+  return 'test_secret_for_unit_tests_only_'.padEnd(length, 'x')
+}
+
 // Mock environment variables
 const originalEnv = process.env
 
@@ -55,7 +63,7 @@ beforeEach(() => {
   process.env = {
     ...originalEnv,
     DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-    BETTER_AUTH_SECRET: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    BETTER_AUTH_SECRET: generateTestSecret(64),
     NODE_ENV: 'test',
   }
 })
@@ -94,7 +102,7 @@ describe('Better Auth Configuration', () => {
       // DATABASE_URL validation happens in database.ts, not better-auth.ts
       // This test verifies that better-auth initializes correctly when database is available
       vi.stubEnv('DATABASE_URL', 'postgresql://test')
-      vi.stubEnv('BETTER_AUTH_SECRET', 'a'.repeat(64))
+      vi.stubEnv('BETTER_AUTH_SECRET', generateTestSecret(64))
 
       // Should initialize auth successfully when DATABASE_URL is set
       const { auth } = await import('../better-auth')
@@ -112,7 +120,7 @@ describe('Better Auth Configuration', () => {
     })
 
     it('should accept valid BETTER_AUTH_SECRET', async () => {
-      vi.stubEnv('BETTER_AUTH_SECRET', 'a'.repeat(64))
+      vi.stubEnv('BETTER_AUTH_SECRET', generateTestSecret(64))
       vi.stubEnv('DATABASE_URL', 'postgresql://test')
 
       // Should not throw an error during import
@@ -124,7 +132,7 @@ describe('Better Auth Configuration', () => {
   describe('SSL Configuration', () => {
     it('should use SSL in production environment', async () => {
       vi.stubEnv('NODE_ENV', 'production')
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       // Import and check SSL configuration would be applied
@@ -134,7 +142,7 @@ describe('Better Auth Configuration', () => {
 
     it('should not use SSL in development environment', async () => {
       vi.stubEnv('NODE_ENV', 'development')
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       // Should work without SSL configuration
@@ -146,7 +154,7 @@ describe('Better Auth Configuration', () => {
   describe('Base URL Configuration', () => {
     it('should use VERCEL_URL when available', async () => {
       process.env.VERCEL_URL = 'my-app.vercel.app'
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')
@@ -155,7 +163,7 @@ describe('Better Auth Configuration', () => {
 
     it('should use BETTER_AUTH_URL when provided', async () => {
       process.env.BETTER_AUTH_URL = 'https://custom-domain.com/api/auth'
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')
@@ -166,7 +174,7 @@ describe('Better Auth Configuration', () => {
       delete process.env.VERCEL_URL
       delete process.env.BETTER_AUTH_URL
       vi.stubEnv('NODE_ENV', 'development')
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')
@@ -177,7 +185,7 @@ describe('Better Auth Configuration', () => {
   describe('Database Connection Pool', () => {
     it('should configure production connection pool settings', async () => {
       vi.stubEnv('NODE_ENV', 'production')
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')
@@ -186,7 +194,7 @@ describe('Better Auth Configuration', () => {
 
     it('should configure development connection pool settings', async () => {
       vi.stubEnv('NODE_ENV', 'development')
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')
@@ -196,7 +204,7 @@ describe('Better Auth Configuration', () => {
 
   describe('User Configuration', () => {
     it('should configure additional user fields', async () => {
-      process.env.BETTER_AUTH_SECRET = 'a'.repeat(64)
+      process.env.BETTER_AUTH_SECRET = generateTestSecret(64)
       process.env.DATABASE_URL = 'postgresql://test'
 
       const { auth } = await import('../better-auth')

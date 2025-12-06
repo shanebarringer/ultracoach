@@ -141,3 +141,66 @@ export async function navigateWithAuthVerification(
 
   return true
 }
+
+/**
+ * Wait for Suspense boundaries to resolve by detecting when loading states disappear.
+ * Looks for skeleton components (animate-pulse class) to disappear.
+ *
+ * @param page - Playwright page object
+ * @param options - Configuration options
+ * @param options.timeout - Maximum time to wait in milliseconds (default: 30000)
+ * @returns Promise that resolves when Suspense boundaries have resolved
+ */
+export async function waitForSuspenseBoundary(page: Page, options: { timeout?: number } = {}) {
+  const { timeout = 30000 } = options
+
+  // Wait for skeleton/loading states to disappear
+  await page.waitForFunction(
+    () => {
+      const skeletons = document.querySelectorAll('.animate-pulse')
+      const loadingText = document.evaluate(
+        "//*[contains(text(), 'Loading')]",
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue
+      return skeletons.length === 0 && !loadingText
+    },
+    { timeout }
+  )
+
+  // Additional wait for React state updates
+  await page.waitForTimeout(process.env.CI ? 2000 : 1000)
+}
+
+/**
+ * Get Connect button or skip test if no data available.
+ * Prevents test failures when seed data isn't present in CI.
+ *
+ * @param page - Playwright page object
+ * @param buttonName - Name of the button to find (default: 'Connect')
+ * @param options - Configuration options
+ * @param options.timeout - Timeout in ms for visibility check (default: 5000)
+ * @param options.testName - Test name to include in skip message
+ * @returns The Connect button locator or null if test was skipped
+ */
+export async function getConnectButtonOrSkip(
+  page: Page,
+  buttonName: string = 'Connect',
+  options: { timeout?: number; testName?: string } = {}
+) {
+  const { timeout = 5000, testName = 'test' } = options
+
+  const button = page.getByRole('button', { name: buttonName }).first()
+  const hasButton = await button.isVisible({ timeout }).catch(() => false)
+
+  if (!hasButton) {
+    test.skip(
+      true,
+      `No "${buttonName}" buttons available - test data may not be seeded for ${testName}`
+    )
+  }
+
+  return button
+}

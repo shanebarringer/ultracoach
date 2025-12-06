@@ -7,7 +7,11 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { waitForPageReady } from '../utils/wait-helpers'
+import {
+  getConnectButtonOrSkip,
+  waitForPageReady,
+  waitForSuspenseBoundary,
+} from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -43,18 +47,16 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
+      // Wait for Suspense boundaries to resolve before checking for content
+      await waitForSuspenseBoundary(page, { timeout: 30000 })
+
       // Should show "Find Runners" section (use data-testid for reliability in CI)
       await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 15000 })
 
       // Check if any Connect buttons exist (may be empty if no seed data)
-      const connectButton = page.getByRole('button', { name: 'Connect' }).first()
-      const hasConnectButtons = await connectButton.isVisible({ timeout: 5000 }).catch(() => false)
-
-      if (!hasConnectButtons) {
-        // Skip assertion if no runners available - CI may not have seed data
-        test.skip(true, 'No runners available to display - test data may not be seeded')
-        return
-      }
+      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
+        testName: 'should display available runners to connect with',
+      })
 
       // Should display runner cards or connect buttons
       await expect(connectButton).toBeVisible()
@@ -68,17 +70,13 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.goto('/relationships')
       await waitForPageReady(page)
 
+      // Wait for Suspense boundaries to resolve before checking for content
+      await waitForSuspenseBoundary(page, { timeout: 30000 })
+
       // Wait for Connect buttons to be available
-      const connectButton = page.getByRole('button', { name: 'Connect' }).first()
-
-      // Check if any Connect buttons exist (with shorter timeout to fail fast if none)
-      const hasConnectButtons = await connectButton.isVisible({ timeout: 5000 }).catch(() => false)
-
-      if (!hasConnectButtons) {
-        // Skip test if no runners are available to connect with
-        test.skip(true, 'No runners available to connect with - test data may not be seeded')
-        return
-      }
+      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
+        testName: 'should send connection request to runner',
+      })
 
       // Click connect on first available runner
       await connectButton.click()
