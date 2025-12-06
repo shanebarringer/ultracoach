@@ -48,7 +48,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       await waitForPageReady(page)
 
       // Wait for Suspense boundaries to resolve before checking for content
-      await waitForSuspenseBoundary(page, { timeout: 30000 })
+      // RunnerSelectorSkeleton has 10+ skeleton elements, so use higher threshold
+      await waitForSuspenseBoundary(page, { timeout: 30000, maxSkeletons: 15 })
 
       // Should show "Find Runners" section (use data-testid for reliability in CI)
       await expect(page.getByTestId('find-runners-heading')).toBeVisible({ timeout: 15000 })
@@ -71,7 +72,8 @@ test.describe('Coach-Runner Relationship Management', () => {
       await waitForPageReady(page)
 
       // Wait for Suspense boundaries to resolve before checking for content
-      await waitForSuspenseBoundary(page, { timeout: 30000 })
+      // RunnerSelectorSkeleton has 10+ skeleton elements, so use higher threshold
+      await waitForSuspenseBoundary(page, { timeout: 30000, maxSkeletons: 15 })
 
       // Wait for Connect buttons to be available
       const connectButton = await getConnectButtonOrSkip(page, 'Connect', {

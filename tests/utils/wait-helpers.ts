@@ -187,7 +187,7 @@ export async function waitForSuspenseBoundary(
  * @param options - Configuration options
  * @param options.timeout - Timeout in ms for visibility check (default: 5000)
  * @param options.testName - Test name to include in skip message
- * @returns The button locator (test is skipped if button not found)
+ * @returns The button locator (always returns when button is found; test.skip() throws if not found)
  */
 export async function getConnectButtonOrSkip(
   page: Page,
