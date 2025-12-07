@@ -3,7 +3,7 @@
  * POST /api/invitations - Create and send an invitation
  * GET /api/invitations - List invitations for authenticated user
  */
-import { and, desc, eq, or } from 'drizzle-orm'
+import { and, desc, eq, ilike, or } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -111,13 +111,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already a pending invitation for this email from this coach
+    // Use case-insensitive comparison to prevent duplicate invitations for same email
     const existingInvitation = await db
       .select()
       .from(coach_invitations)
       .where(
         and(
           eq(coach_invitations.inviter_user_id, sessionUser.id),
-          eq(coach_invitations.invitee_email, email.toLowerCase()),
+          ilike(coach_invitations.invitee_email, email),
           eq(coach_invitations.status, 'pending')
         )
       )
@@ -136,10 +137,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if the user already exists and has a relationship with this coach
+    // Use case-insensitive comparison to handle mixed-case email storage
     const existingUser = await db
       .select({ id: user.id, email: user.email })
       .from(user)
-      .where(eq(user.email, email.toLowerCase()))
+      .where(ilike(user.email, email))
       .limit(1)
 
     // If user exists, suggest creating a relationship directly instead
@@ -332,7 +334,8 @@ export async function GET(request: NextRequest) {
     // Build conditions based on type filter
     // Initialize with default: all invitations for this user (sent or received)
     const sentCondition = eq(coach_invitations.inviter_user_id, sessionUser.id)
-    const receivedCondition = eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
+    // Use case-insensitive comparison for email matching
+    const receivedCondition = ilike(coach_invitations.invitee_email, sessionUser.email)
     let conditions = or(sentCondition, receivedCondition)
 
     if (type === 'sent') {
@@ -345,12 +348,13 @@ export async function GET(request: NextRequest) {
         : eq(coach_invitations.inviter_user_id, sessionUser.id)
     } else if (type === 'received') {
       // Invitations received by this user (by email)
+      // Use case-insensitive comparison for email matching
       conditions = status
         ? and(
-            eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase()),
+            ilike(coach_invitations.invitee_email, sessionUser.email),
             eq(coach_invitations.status, status)
           )
-        : eq(coach_invitations.invitee_email, sessionUser.email.toLowerCase())
+        : ilike(coach_invitations.invitee_email, sessionUser.email)
     } else if (status) {
       // No type filter but status filter - apply to default conditions
       conditions = and(conditions, eq(coach_invitations.status, status))
