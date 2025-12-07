@@ -150,10 +150,11 @@ export default defineConfig({
       // No dependencies - unauth flows should start fresh without pre-auth state
     },
 
-    // Authenticated coach tests for race import
+    // Authenticated coach tests for race import (root tests directory)
     {
       name: 'chromium-race-import-coach',
-      testMatch: /race-import\.spec\.ts/,
+      testMatch: '**/race-import.spec.ts',
+      testIgnore: '**/e2e/**', // Exclude e2e directory
       // Exclude runner-tagged tests to avoid duplicates
       grepInvert: /@runner/,
       use: {
@@ -164,12 +165,25 @@ export default defineConfig({
       dependencies: ['setup-coach'], // Ensure coach auth setup completes first
     },
 
-    // Runner tests for race import (verify runner access)
+    // Runner tests for race import in root tests directory (tagged tests)
     {
       name: 'chromium-race-import-runner',
-      testMatch: /race-import\.spec\.ts/,
+      testMatch: '**/race-import.spec.ts',
+      testIgnore: '**/e2e/**', // Exclude e2e directory
       // Run only runner-tagged tests
       grep: /@runner/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use saved runner authentication state
+        storageState: './playwright/.auth/runner.json',
+      },
+      dependencies: ['setup'], // Ensure runner auth setup completes first
+    },
+
+    // Runner tests for race import in e2e directory (dedicated runner tests)
+    {
+      name: 'chromium-race-import-runner-e2e',
+      testMatch: '**/e2e/race-import-runner.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         // Use saved runner authentication state

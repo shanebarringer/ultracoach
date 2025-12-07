@@ -822,7 +822,7 @@ test.describe('Race Import Edge Cases', () => {
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 })
     // Close modal to avoid leaking state into subsequent tests
     await page.keyboard.press('Escape').catch(() => {})
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 })
   })
 
   test('runner: should allow runners to import races (open modal + preview) @runner', async ({
@@ -868,6 +868,6 @@ test.describe('Race Import Edge Cases', () => {
 
     // Close modal to avoid leaking state
     await page.keyboard.press('Escape').catch(() => {})
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 })
   })
 })

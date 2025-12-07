@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-import { waitForHeroUIReady } from './utils/heroui-helpers'
-import { waitForFileUploadProcessing } from './utils/suspense-helpers'
-import { type TestLogger, getTestLogger } from './utils/test-logger'
+import { waitForHeroUIReady } from '../utils/heroui-helpers'
+import { waitForFileUploadProcessing } from '../utils/suspense-helpers'
+import { type TestLogger, getTestLogger } from '../utils/test-logger'
 
 let logger: TestLogger
 test.beforeAll(async () => {
-  logger = await getTestLogger('tests/race-import-runner.spec')
+  logger = await getTestLogger('tests/e2e/race-import-runner.spec')
 })
 
 const TEST_GPX_CONTENT = `<?xml version="1.0"?>
@@ -94,8 +94,8 @@ test.describe('Runner race import capabilities', () => {
     await expect(confirm).toBeVisible()
     await confirm.click()
 
-    // Modal closes on success
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 15000 })
+    // Modal closes on success - use single role-based locator for robustness
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 })
   })
 
   test('runner can bulk import via CSV (mocked API)', async ({ page }) => {
@@ -147,7 +147,7 @@ test.describe('Runner race import capabilities', () => {
     await expect(confirm).toBeVisible()
     await confirm.click()
 
-    // Modal closes on success
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 15000 })
+    // Modal closes on success - use single role-based locator for robustness
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 })
   })
 })
