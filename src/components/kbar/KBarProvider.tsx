@@ -18,12 +18,8 @@ import {
   Clock,
   Compass,
   Home,
-  MessageSquare,
-  Mountain,
   RefreshCw,
-  Route,
   Target,
-  TrendingUp,
   User,
 } from 'lucide-react'
 
@@ -32,6 +28,7 @@ import { ReactNode, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { useNavigationItems } from '@/hooks/useNavigationItems'
 import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
@@ -103,6 +100,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   const router = useRouter()
   const { data: session } = useSession()
 
+  const navigationItems = useNavigationItems(session)
+
   // Strava state atoms
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
   const [, refreshStravaActivities] = useAtom(stravaActivitiesRefreshableAtom)
@@ -115,53 +114,42 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   const userType = (session?.user as ExtendedUser)?.userType
 
   const actions: Action[] = useMemo(() => {
+    const navigationActions: Action[] = navigationItems.map(item => {
+      const IconComponent = item.icon
+
+      const id = `nav:${item.href}`
+      const keywords = [item.label, item.description].filter(Boolean).join(' ')
+
+      const shortcut =
+        item.href === '/dashboard'
+          ? ['g', 'd']
+          : item.href === '/workouts'
+            ? ['g', 'w']
+            : item.href === '/calendar'
+              ? ['g', 'c']
+              : item.href === '/training-plans'
+                ? ['g', 't']
+                : item.href === '/chat'
+                  ? ['g', 'm']
+                  : item.href === '/runners'
+                    ? ['g', 'r']
+                    : item.href === '/weekly-planner'
+                      ? ['g', 'y']
+                      : undefined
+
+      return {
+        id,
+        name: item.label,
+        subtitle: item.description,
+        keywords,
+        shortcut,
+        icon: IconComponent ? <IconComponent className="w-4 h-4" /> : <Home className="w-4 h-4" />,
+        perform: () => router.push(item.href),
+      }
+    })
+
     const coreActions: Action[] = [
-      // Navigation Commands
-      {
-        id: 'dashboard',
-        name: 'Dashboard',
-        subtitle: 'Go to your base camp',
-        shortcut: ['g', 'd'],
-        keywords: 'dashboard home base camp',
-        icon: <Home className="w-4 h-4" />,
-        perform: () => router.push('/dashboard'),
-      },
-      {
-        id: 'workouts',
-        name: 'Training Log',
-        subtitle: 'View and manage your workouts',
-        shortcut: ['g', 'w'],
-        keywords: 'workouts training log ascents',
-        icon: <Mountain className="w-4 h-4" />,
-        perform: () => router.push('/workouts'),
-      },
-      {
-        id: 'calendar',
-        name: 'Calendar',
-        subtitle: 'View your training calendar',
-        shortcut: ['g', 'c'],
-        keywords: 'calendar schedule plan',
-        icon: <Calendar className="w-4 h-4" />,
-        perform: () => router.push('/calendar'),
-      },
-      {
-        id: 'training-plans',
-        name: 'Training Plans',
-        subtitle: 'Manage your expedition plans',
-        shortcut: ['g', 't'],
-        keywords: 'training plans expeditions routes',
-        icon: <Route className="w-4 h-4" />,
-        perform: () => router.push('/training-plans'),
-      },
-      {
-        id: 'messages',
-        name: 'Messages',
-        subtitle: 'Chat with your guide or athletes',
-        shortcut: ['g', 'm'],
-        keywords: 'messages chat communication guide coach',
-        icon: <MessageSquare className="w-4 h-4" />,
-        perform: () => router.push('/chat'),
-      },
+      // Profile & account
       {
         id: 'profile',
         name: 'Profile',
@@ -332,6 +320,18 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         subtitle: 'Tutorials and guided tours',
       },
       {
+        id: 'open-help-page',
+        name: 'Open Help Center',
+        subtitle: 'View Help & Support documentation',
+        shortcut: ['g', 'h'],
+        keywords: 'help support documentation faq',
+        icon: <Compass className="w-4 h-4" />,
+        parent: 'help',
+        perform: () => {
+          router.push('/help')
+        },
+      },
+      {
         id: 'start-guided-tour',
         name: 'Start Guided Tour',
         subtitle: 'Take a tour of UltraCoach features',
@@ -349,41 +349,10 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         },
       },
     ]
-
-    // Add role-specific actions
-    if (userType === 'coach') {
-      coreActions.push(
-        {
-          id: 'coach-actions',
-          name: 'Coach Actions',
-          subtitle: 'Coach-specific tools and features',
-        },
-        {
-          id: 'view-runners',
-          name: 'View Athletes',
-          subtitle: 'Manage your athletes',
-          shortcut: ['g', 'r'],
-          keywords: 'athletes runners students',
-          icon: <TrendingUp className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/runners'),
-        },
-        {
-          id: 'weekly-planner',
-          name: 'Weekly Planner',
-          subtitle: 'Plan training sessions',
-          shortcut: ['g', 'y'],
-          keywords: 'weekly planner schedule training',
-          icon: <Calendar className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/weekly-planner'),
-        }
-      )
-    }
-
-    return coreActions
+    return [...navigationActions, ...coreActions]
   }, [
     router,
+    navigationItems,
     userType,
     connectionStatus,
     refreshStravaActivities,
