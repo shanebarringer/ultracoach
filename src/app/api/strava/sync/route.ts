@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -11,6 +11,9 @@ import { STRAVA_ACTIVITY_TYPE_MAP, StravaActivity } from '@/types/strava'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('strava-sync-api')
+
+// Convert average heart rate to a 1-10 intensity scale
+const HR_INTENSITY_DIVISOR = 20
 
 const SyncRequestSchema = z.object({
   activity_id: z.number(),
@@ -50,17 +53,55 @@ export async function POST(req: NextRequest) {
     const conn = connection[0]
 
     // Check if activity is already synced (convert to string for text column)
+    const activityIdString = activity_id.toString()
+
     const existingSync = await db
       .select()
       .from(strava_activity_syncs)
-      .where(eq(strava_activity_syncs.strava_activity_id, activity_id.toString()))
+      .where(
+        and(
+          eq(strava_activity_syncs.strava_activity_id, activityIdString),
+          eq(strava_activity_syncs.connection_id, conn.id)
+        )
+      )
       .limit(1)
 
-    if (existingSync.length > 0) {
-      return NextResponse.json(
-        { error: 'Activity already synced', sync_id: existingSync[0].id },
-        { status: 409 }
-      )
+    const existingSyncRecord = existingSync[0] ?? null
+    const shouldAttachWorkoutToExistingSync =
+      !!existingSyncRecord && existingSyncRecord.ultracoach_workout_id === null && sync_as_workout
+
+    // If we already have a sync record (and it is fully linked to a workout when requested),
+    // treat this call as idempotent and return the existing data instead of 409.
+    // NOTE: This endpoint is now idempotent. For already-synced activities,
+    // we return 200 with `{ reused: true }` instead of 409.
+    if (existingSyncRecord && !shouldAttachWorkoutToExistingSync) {
+      const storedActivity = existingSyncRecord.activity_data as StravaActivity | null
+
+      logger.info('Strava activity already synced, returning existing record', {
+        userId: session.user.id,
+        stravaActivityId: activity_id,
+        syncId: existingSyncRecord.id,
+        workoutId: existingSyncRecord.ultracoach_workout_id,
+      })
+
+      const syncedAt = existingSyncRecord.synced_at ?? existingSyncRecord.created_at
+
+      return NextResponse.json({
+        sync_id: existingSyncRecord.id,
+        workout_id: existingSyncRecord.ultracoach_workout_id,
+        activity: storedActivity
+          ? {
+              id: storedActivity.id,
+              name: storedActivity.name,
+              type: storedActivity.sport_type,
+              distance: storedActivity.distance,
+              moving_time: storedActivity.moving_time,
+              start_date: storedActivity.start_date,
+            }
+          : undefined,
+        synced_at: syncedAt ? syncedAt.toISOString() : undefined,
+        reused: true,
+      })
     }
 
     // Ensure token is valid
@@ -103,7 +144,10 @@ export async function POST(req: NextRequest) {
           actual_type: workoutCategory,
           category: workoutCategory,
           intensity: activity.average_heartrate
-            ? Math.min(Math.max(Math.round(activity.average_heartrate / 20), 1), 10)
+            ? Math.min(
+                Math.max(Math.round(activity.average_heartrate / HR_INTENSITY_DIVISOR), 1),
+                10
+              )
             : 5,
           workout_notes: `Imported from Strava: ${activity.name}\n\nDistance: ${distanceMiles.toFixed(2)} miles\nMoving Time: ${Math.floor(durationMinutes / 60)}:${String(durationMinutes % 60).padStart(2, '0')}\nElevation Gain: ${Math.round(activity.total_elevation_gain * 3.28084)} ft`,
           status: 'completed',
@@ -124,21 +168,38 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Create sync record (convert activity_id to string for text column)
-    const sync = await db
-      .insert(strava_activity_syncs)
-      .values({
-        connection_id: conn.id,
-        strava_activity_id: activity_id.toString(),
-        ultracoach_workout_id: ultracoachWorkoutId,
-        activity_data: activity,
-        sync_type: 'manual',
-        sync_status: 'synced',
-        synced_at: new Date(),
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
-      .returning({ id: strava_activity_syncs.id })
+    // Create or update sync record (convert activity_id to string for text column).
+    // `syncTimestamp` represents the time of this successful sync operation and is
+    // used consistently for DB timestamps and the API response.
+    const syncTimestamp = new Date()
+
+    const sync = existingSyncRecord
+      ? await db
+          .update(strava_activity_syncs)
+          .set({
+            ultracoach_workout_id: ultracoachWorkoutId ?? existingSyncRecord.ultracoach_workout_id,
+            activity_data: activity,
+            sync_type: 'manual',
+            sync_status: 'synced',
+            synced_at: syncTimestamp,
+            updated_at: syncTimestamp,
+          })
+          .where(eq(strava_activity_syncs.id, existingSyncRecord.id))
+          .returning({ id: strava_activity_syncs.id })
+      : await db
+          .insert(strava_activity_syncs)
+          .values({
+            connection_id: conn.id,
+            strava_activity_id: activityIdString,
+            ultracoach_workout_id: ultracoachWorkoutId,
+            activity_data: activity,
+            sync_type: 'manual',
+            sync_status: 'synced',
+            synced_at: syncTimestamp,
+            created_at: syncTimestamp,
+            updated_at: syncTimestamp,
+          })
+          .returning({ id: strava_activity_syncs.id })
 
     logger.info('Synced Strava activity successfully', {
       userId: session.user.id,
@@ -158,7 +219,7 @@ export async function POST(req: NextRequest) {
         moving_time: activity.moving_time,
         start_date: activity.start_date,
       },
-      synced_at: new Date().toISOString(),
+      synced_at: syncTimestamp.toISOString(),
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
