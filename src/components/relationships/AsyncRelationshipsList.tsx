@@ -41,7 +41,7 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
   // Refresh relationships function
   const refreshRelationships = async () => {
     try {
-      const response = await fetch('/api/coach-runners')
+      const response = await fetch('/api/coach-runners', { credentials: 'same-origin' })
       if (response.ok) {
         const data = await response.json()
         setRelationships(data.relationships || [])
@@ -63,6 +63,7 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
           status: newStatus,
         }),
