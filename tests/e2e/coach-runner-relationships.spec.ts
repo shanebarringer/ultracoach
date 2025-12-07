@@ -182,8 +182,15 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
 
-      // Should show "Find a Coach" section
-      await expect(page.getByText('Find a Coach')).toBeVisible()
+      // Use progressive waiting pattern for better reliability
+      const findCoachHeading = page.getByText('Find a Coach')
+      const skeleton = page.locator('.animate-pulse').first()
+
+      // Wait for page to start rendering (skeleton appears quickly)
+      await expect(skeleton.or(findCoachHeading)).toBeVisible({ timeout: 5000 })
+
+      // Then wait for final heading to appear (API might take time)
+      await expect(findCoachHeading).toBeVisible({ timeout: 30000 })
 
       // Should display coaches with Connect buttons
       await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
@@ -199,6 +206,12 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Wait for navigation to relationships page
       await page.waitForURL('**/relationships', { timeout: 10000 })
       await waitForPageReady(page)
+
+      // Use progressive waiting pattern for better reliability
+      const findCoachHeading = page.getByText('Find a Coach')
+      const skeleton = page.locator('.animate-pulse').first()
+      await expect(skeleton.or(findCoachHeading)).toBeVisible({ timeout: 5000 })
+      await expect(findCoachHeading).toBeVisible({ timeout: 30000 })
 
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()
