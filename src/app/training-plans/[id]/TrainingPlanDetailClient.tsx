@@ -42,9 +42,8 @@ interface TrainingPlanDetailClientProps {
   user: {
     id: string
     email: string
-    role: 'coach' | 'runner'
     name: string | null
-    userType?: 'runner' | 'coach'
+    userType: 'runner' | 'coach'
   }
   planId: string
 }
@@ -79,8 +78,14 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     next_plan?: TrainingPlan
   }>({})
 
-  // Derive loading state
-  const loading = allTrainingPlans.length === 0 || (planId && !trainingPlan)
+  // Track if initial data check is complete
+  // Suspense boundary handles async atom loading, so when we're here, data is fetched
+  // An empty array is a valid state (user has no plans), not a loading state
+  const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false)
+
+  // Derive loading state - only true during initial render before we've checked the data
+  // Once hasCheckedInitialData is true, we know if the plan exists or not
+  const loading = !hasCheckedInitialData && !trainingPlan
 
   // Create extended training plan object by combining base plan with extended data
   const extendedTrainingPlan = useMemo(() => {
@@ -155,13 +160,20 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     // Trigger workout refresh when component mounts
     refreshWorkouts()
 
+    // Mark initial data check as complete after first render
+    // This allows us to distinguish between "loading" and "plan not found"
+    if (!hasCheckedInitialData) {
+      setHasCheckedInitialData(true)
+    }
+
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
       fetchExtendedPlanData()
     }
 
-    // If plan ID is provided but plan not found in atom, it might not exist
-    if (planId && allTrainingPlans.length > 0 && !trainingPlan) {
+    // If plan ID is provided but plan not found after data check, redirect
+    // Don't require allTrainingPlans.length > 0 - empty array is valid (no plans)
+    if (hasCheckedInitialData && planId && !trainingPlan) {
       router.push('/training-plans')
     }
   }, [
@@ -169,7 +181,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     extendedPlanData,
     fetchExtendedPlanData,
     planId,
-    allTrainingPlans.length,
+    hasCheckedInitialData,
     refreshWorkouts,
     router,
   ])
@@ -698,6 +710,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                                 <div className="flex gap-2 mt-4">
                                   {user.userType === 'runner' && workout.status === 'planned' && (
                                     <button
+                                      type="button"
                                       onClick={() => handleLogWorkout(workout)}
                                       className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
                                     >
@@ -706,6 +719,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                                   )}
                                   {user.userType === 'runner' && workout.status === 'completed' && (
                                     <button
+                                      type="button"
                                       onClick={() => handleLogWorkout(workout)}
                                       className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                                     >
@@ -804,6 +818,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                             <div className="flex gap-2 mt-4">
                               {user.userType === 'runner' && workout.status === 'planned' && (
                                 <button
+                                  type="button"
                                   onClick={() => handleLogWorkout(workout)}
                                   className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
                                 >
@@ -812,6 +827,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                               )}
                               {user.userType === 'runner' && workout.status === 'completed' && (
                                 <button
+                                  type="button"
                                   onClick={() => handleLogWorkout(workout)}
                                   className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
                                 >

@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { WeeklyPlannerSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -18,9 +17,6 @@ export const dynamic = 'force-dynamic'
  * Coaches see the runner selection page, runners are redirected to their own planner.
  */
 export default async function WeeklyPlannerPage() {
-  // Force dynamic rendering
-  await headers()
-
   // Server-side authentication
   const session = await getServerSession()
 
@@ -38,10 +34,10 @@ export default async function WeeklyPlannerPage() {
     redirect('/dashboard')
   }
 
-  // Pass authenticated user data to Client Component wrapped in Suspense
+  // Client Component handles runner selection UI - no user data needed
   return (
     <Suspense fallback={<WeeklyPlannerSkeleton />}>
-      <WeeklyPlannerClient user={session.user} />
+      <WeeklyPlannerClient />
     </Suspense>
   )
 }

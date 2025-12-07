@@ -12,17 +12,7 @@ import Layout from '@/components/layout/Layout'
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/supabase'
 
-interface WeeklyPlannerClientProps {
-  user: {
-    id: string
-    email: string
-    role: 'coach' | 'runner'
-    name: string | null
-    userType?: 'runner' | 'coach'
-  }
-}
-
-export default function WeeklyPlannerClient({ user: _user }: WeeklyPlannerClientProps) {
+export default function WeeklyPlannerClient() {
   const router = useRouter()
   const [viewMode, setViewMode] = useState<'grid' | 'dropdown'>('grid')
   const runners = useAtomValue(connectedRunnersAtom)

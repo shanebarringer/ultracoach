@@ -24,9 +24,8 @@ interface WeeklyPlannerRunnerClientProps {
   user: {
     id: string
     email: string
-    role: 'coach' | 'runner'
     name: string | null
-    userType?: 'runner' | 'coach'
+    userType: 'runner' | 'coach'
   }
   runnerId: string
 }
@@ -66,9 +65,8 @@ function RunnerWeeklyPage({
   sessionUser: {
     id: string
     email: string
-    role: 'coach' | 'runner'
     name: string | null
-    userType?: 'runner' | 'coach'
+    userType: 'runner' | 'coach'
   }
   runnerId: string
   currentWeek: Date
@@ -102,18 +100,21 @@ function RunnerWeeklyPage({
   const selectedRunner = (() => {
     if (isRunnerSelf) {
       // Runner viewing their own training - use session data
+      // Note: created_at/updated_at are required by User type but not used by WeeklyPlannerCalendar
+      // These are placeholder values since session doesn't include DB timestamps
       const trimmedName = sessionUser.name?.trim()
-      return {
+      const userFromSession: User = {
         id: sessionUser.id,
         email: sessionUser.email,
         full_name:
           trimmedName && trimmedName !== ''
             ? trimmedName
             : getDisplayNameFromEmail(sessionUser.email),
-        userType: 'runner' as const,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as User
+        userType: 'runner',
+        created_at: '', // Placeholder - not used by WeeklyPlannerCalendar
+        updated_at: '', // Placeholder - not used by WeeklyPlannerCalendar
+      }
+      return userFromSession
     }
     // Coach viewing runner's training - find from connected runners
     return runnerId && Array.isArray(runners) && runners.length > 0

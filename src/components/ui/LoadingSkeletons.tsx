@@ -723,6 +723,7 @@ export const WeeklyPlannerSkeleton = () => (
     role="status"
     aria-label="Loading weekly planner"
   >
+    <span className="sr-only">Loading weekly planner content, please wait...</span>
     {/* Header Card */}
     <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
       <CardBody className="px-4 lg:px-6 py-4">
@@ -785,6 +786,7 @@ export const WeeklyPlannerRunnerSkeleton = () => (
     role="status"
     aria-label="Loading runner weekly planner"
   >
+    <span className="sr-only">Loading runner weekly planner content, please wait...</span>
     {/* Consolidated Header Card */}
     <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
       <CardBody className="pb-4 px-4 lg:px-6">
@@ -870,6 +872,7 @@ export const TrainingPlanDetailSkeleton = () => (
     role="status"
     aria-label="Loading training plan details"
   >
+    <span className="sr-only">Loading training plan details, please wait...</span>
     <div className="space-y-6">
       {/* Training Phases Card */}
       <Card className="mb-8 bg-content1 border-l-4 border-l-primary">

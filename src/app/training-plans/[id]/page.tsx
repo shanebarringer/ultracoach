@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { TrainingPlanDetailSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -22,9 +21,6 @@ interface Props {
  * Both coaches and runners can view training plan details.
  */
 export default async function TrainingPlanDetailPage({ params }: Props) {
-  // Force dynamic rendering
-  await headers()
-
   // Server-side authentication
   const session = await requireAuth()
 

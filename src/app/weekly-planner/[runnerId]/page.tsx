@@ -1,6 +1,5 @@
 import { Suspense } from 'react'
 
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { WeeklyPlannerRunnerSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -22,9 +21,6 @@ interface Props {
  * Coaches can view any runner's planner, runners can only view their own.
  */
 export default async function WeeklyPlannerRunnerPage({ params }: Props) {
-  // Force dynamic rendering
-  await headers()
-
   // Server-side authentication
   const session = await getServerSession()
 
