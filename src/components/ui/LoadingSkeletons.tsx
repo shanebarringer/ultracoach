@@ -467,7 +467,12 @@ export const RunnerDashboardSkeleton = () => (
 
 // Chat Window Skeleton
 export const ChatWindowSkeleton = () => (
-  <div className="flex flex-col h-full min-h-0">
+  <div
+    className="flex flex-col h-full min-h-0"
+    role="status"
+    aria-label="Loading chat conversation"
+  >
+    <span className="sr-only">Loading chat conversation, please wait...</span>
     {/* Chat Header Skeleton */}
     <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
       <div className="flex items-center space-x-3">
