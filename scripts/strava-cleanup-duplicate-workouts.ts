@@ -92,12 +92,24 @@ async function findStravaDuplicateWorkouts() {
     })
 
     for (const group of duplicateGroups) {
-      const [userId, dateKey, titleKey] = group.key.split('|', 3)
+      const segments = group.key.split('|')
+
+      if (segments.length < 3) {
+        logger.error('Unexpected Strava duplicate group key format', {
+          key: group.key,
+          segments,
+        })
+        continue
+      }
+
+      const [userId, dateKey, titleKey, distanceKey, durationKey] = segments
 
       logger.warn('Duplicate group', {
         userId,
         date: dateKey,
         title: titleKey,
+        distance: distanceKey ?? 'unknown',
+        duration: durationKey ?? 'unknown',
         count: group.workouts.length,
       })
 

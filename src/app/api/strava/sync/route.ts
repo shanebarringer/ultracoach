@@ -162,7 +162,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Create or update sync record (convert activity_id to string for text column)
+    // Create or update sync record (convert activity_id to string for text column).
+    // `syncTimestamp` represents the time of this successful sync operation and is
+    // used consistently for DB timestamps and the API response.
+    const syncTimestamp = new Date()
+
     const sync = existingSyncRecord
       ? await db
           .update(strava_activity_syncs)
@@ -171,8 +175,8 @@ export async function POST(req: NextRequest) {
             activity_data: activity,
             sync_type: 'manual',
             sync_status: 'synced',
-            synced_at: new Date(),
-            updated_at: new Date(),
+            synced_at: syncTimestamp,
+            updated_at: syncTimestamp,
           })
           .where(eq(strava_activity_syncs.id, existingSyncRecord.id))
           .returning({ id: strava_activity_syncs.id })
@@ -185,9 +189,9 @@ export async function POST(req: NextRequest) {
             activity_data: activity,
             sync_type: 'manual',
             sync_status: 'synced',
-            synced_at: new Date(),
-            created_at: new Date(),
-            updated_at: new Date(),
+            synced_at: syncTimestamp,
+            created_at: syncTimestamp,
+            updated_at: syncTimestamp,
           })
           .returning({ id: strava_activity_syncs.id })
 
@@ -209,7 +213,7 @@ export async function POST(req: NextRequest) {
         moving_time: activity.moving_time,
         start_date: activity.start_date,
       },
-      synced_at: new Date().toISOString(),
+      synced_at: syncTimestamp.toISOString(),
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
