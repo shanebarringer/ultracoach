@@ -119,14 +119,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Check if invitee already has an account
     // Use case-insensitive comparison to handle mixed-case email storage
+    const normalizedInviteeEmail = normalizeEmail(invitation.inviteeEmail)
     let existingUser: { id: string } | undefined
 
     // Only query if we have a valid email to search for
-    if (invitation.inviteeEmail) {
+    if (normalizedInviteeEmail) {
       const [found] = await db
         .select({ id: user.id })
         .from(user)
-        .where(ilike(user.email, invitation.inviteeEmail))
+        .where(ilike(user.email, normalizedInviteeEmail))
         .limit(1)
       existingUser = found
     }
