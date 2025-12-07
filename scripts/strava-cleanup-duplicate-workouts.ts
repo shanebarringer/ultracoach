@@ -1,12 +1,9 @@
 #!/usr/bin/env tsx
-import { config } from 'dotenv'
 import { and, asc, eq, ilike, inArray } from 'drizzle-orm'
 
 import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
 import { workouts } from '../src/lib/schema'
-
-config({ path: '.env.local' })
 
 const logger = createLogger('strava-duplicate-workouts')
 
@@ -159,6 +156,8 @@ async function findStravaDuplicateWorkouts() {
   } catch (error) {
     logger.error('Failed to scan Strava duplicate workouts', {
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'UnknownError',
     })
     process.exit(1)
   }

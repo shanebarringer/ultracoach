@@ -12,6 +12,9 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('strava-sync-api')
 
+// Convert average heart rate to a 1-10 intensity scale
+const HR_INTENSITY_DIVISOR = 20
+
 const SyncRequestSchema = z.object({
   activity_id: z.number(),
   sync_as_workout: z.boolean().default(true),
@@ -141,7 +144,10 @@ export async function POST(req: NextRequest) {
           actual_type: workoutCategory,
           category: workoutCategory,
           intensity: activity.average_heartrate
-            ? Math.min(Math.max(Math.round(activity.average_heartrate / 20), 1), 10)
+            ? Math.min(
+                Math.max(Math.round(activity.average_heartrate / HR_INTENSITY_DIVISOR), 1),
+                10
+              )
             : 5,
           workout_notes: `Imported from Strava: ${activity.name}\n\nDistance: ${distanceMiles.toFixed(2)} miles\nMoving Time: ${Math.floor(durationMinutes / 60)}:${String(durationMinutes % 60).padStart(2, '0')}\nElevation Gain: ${Math.round(activity.total_elevation_gain * 3.28084)} ft`,
           status: 'completed',
