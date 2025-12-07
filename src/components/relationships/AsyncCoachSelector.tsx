@@ -35,7 +35,7 @@ export function AsyncCoachSelector({ onRelationshipCreated }: AsyncCoachSelector
   // Refresh function for relationships
   const refreshRelationshipData = async () => {
     try {
-      const response = await fetch('/api/coach-runners')
+      const response = await fetch('/api/coach-runners', { credentials: 'same-origin' })
       if (response.ok) {
         const data = await response.json()
         setRelationships(data.relationships || [])
@@ -63,6 +63,7 @@ export function AsyncCoachSelector({ onRelationshipCreated }: AsyncCoachSelector
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
           target_user_id: coachId,
           relationship_type: 'standard',
