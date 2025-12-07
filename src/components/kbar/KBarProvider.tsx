@@ -14,13 +14,19 @@ import {
 import {
   Activity,
   Calendar,
+  CalendarDays,
   CheckCircle,
   Clock,
   Compass,
   Home,
+  MessageSquarePlus,
+  Mountain,
   RefreshCw,
+  Route,
   Target,
+  TrendingUp,
   User,
+  Users,
 } from 'lucide-react'
 
 import { ReactNode, useMemo } from 'react'
@@ -30,8 +36,10 @@ import { useRouter } from 'next/navigation'
 import { useSession } from '@/hooks/useBetterSession'
 import { useNavigationItems } from '@/hooks/useNavigationItems'
 import {
+  chatUiStateAtom,
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
+  uiStateAtom,
   workoutStravaShowPanelAtom,
 } from '@/lib/atoms/index'
 import { shouldStartTourAtom } from '@/lib/atoms/tours'
@@ -110,6 +118,10 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   // Tour trigger atom
   const setShouldStartTour = useSetAtom(shouldStartTourAtom)
 
+  // Global UI state for cross-page workflows
+  const setUiState = useSetAtom(uiStateAtom)
+  const setChatUiState = useSetAtom(chatUiStateAtom)
+
   // Extract userType for dependency array
   const userType = (session?.user as ExtendedUser)?.userType
 
@@ -159,6 +171,14 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         icon: <User className="w-4 h-4" />,
         perform: () => router.push('/profile'),
       },
+      {
+        id: 'find-coach',
+        name: 'Find Coaches',
+        subtitle: 'Browse the public coach directory',
+        keywords: 'coaches directory find coach relationships',
+        icon: <Users className="w-4 h-4" />,
+        perform: () => router.push('/coaches'),
+      },
 
       // Quick Actions
       {
@@ -189,6 +209,38 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         parent: 'quick-actions',
         perform: () => {
           router.push('/workouts?filter=today')
+        },
+      },
+      {
+        id: 'new-workout',
+        name: 'Log New Workout',
+        subtitle: 'Create a new workout entry',
+        keywords: 'new workout log training add session',
+        icon: <Mountain className="w-4 h-4" />,
+        parent: 'quick-actions',
+        perform: () => {
+          logger.info('New workout command triggered from K-bar')
+          router.push('/workouts')
+          setUiState(prev => ({
+            ...prev,
+            isAddWorkoutModalOpen: true,
+          }))
+        },
+      },
+      {
+        id: 'start-new-conversation',
+        name: 'Start New Conversation',
+        subtitle: 'Message a coach or runner',
+        keywords: 'messages chat conversation new coach runner',
+        icon: <MessageSquarePlus className="w-4 h-4" />,
+        parent: 'quick-actions',
+        perform: () => {
+          logger.info('Start new conversation command triggered from K-bar')
+          router.push('/chat')
+          setChatUiState(prev => ({
+            ...prev,
+            showNewMessage: true,
+          }))
         },
       },
 
@@ -349,6 +401,73 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         },
       },
     ]
+    // Runner-specific actions
+    if (userType === 'runner') {
+      coreActions.push({
+        id: 'weekly-planner-runner',
+        name: 'My Weekly Planner',
+        subtitle: 'View your weekly training schedule',
+        keywords: 'weekly planner my training schedule',
+        icon: <CalendarDays className="w-4 h-4" />,
+        perform: () => router.push('/weekly-planner'),
+      })
+    }
+
+    // Coach-specific actions
+    if (userType === 'coach') {
+      coreActions.push(
+        {
+          id: 'coach-actions',
+          name: 'Coach Actions',
+          subtitle: 'Coach-specific tools and features',
+        },
+        {
+          id: 'view-runners',
+          name: 'View Athletes',
+          subtitle: 'Manage your athletes',
+          shortcut: ['g', 'r'],
+          keywords: 'athletes runners students',
+          icon: <TrendingUp className="w-4 h-4" />,
+          parent: 'coach-actions',
+          perform: () => router.push('/runners'),
+        },
+        {
+          id: 'weekly-planner',
+          name: 'Weekly Planner',
+          subtitle: 'Plan training sessions',
+          keywords: 'weekly planner schedule training coach',
+          icon: <Calendar className="w-4 h-4" />,
+          parent: 'coach-actions',
+          perform: () => router.push('/weekly-planner'),
+        },
+        {
+          id: 'coach-weekly-overview',
+          name: 'Weekly Overview',
+          subtitle: 'View athlete progress overview',
+          keywords: 'overview athletes progress coach weekly',
+          icon: <TrendingUp className="w-4 h-4" />,
+          parent: 'coach-actions',
+          perform: () => router.push('/coach/weekly-overview'),
+        },
+        {
+          id: 'create-training-plan',
+          name: 'Create Training Plan',
+          subtitle: 'Design a new plan for your athletes',
+          keywords: 'training plans create expedition program coach',
+          icon: <Route className="w-4 h-4" />,
+          parent: 'coach-actions',
+          perform: () => {
+            logger.info('Create training plan command triggered from K-bar')
+            router.push('/training-plans')
+            setUiState(prev => ({
+              ...prev,
+              showCreateTrainingPlan: true,
+            }))
+          },
+        }
+      )
+    }
+
     return [...navigationActions, ...coreActions]
   }, [
     router,
@@ -358,6 +477,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
     refreshStravaActivities,
     setShowStravaPanel,
     setShouldStartTour,
+    setUiState,
+    setChatUiState,
   ])
 
   return (
