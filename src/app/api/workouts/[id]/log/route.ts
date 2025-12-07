@@ -37,7 +37,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id: workoutId } = await params
-    const body: WorkoutLogData = await request.json()
+
+    let body: WorkoutLogData
+    try {
+      body = (await request.json()) as WorkoutLogData
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
 
     // Get the workout to ensure it belongs to the user
     const [workout] = await db
@@ -56,6 +62,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updated_at: new Date(),
     }
 
+    // Helper to check if a value was actually provided (not null or undefined)
+    const isProvided = (v: unknown) => v !== undefined && v !== null
+
     // Add all provided fields to update
     const allowedFields = [
       'actual_distance',
@@ -66,11 +75,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       'intensity',
       'terrain',
       'elevation_gain',
-    ]
+    ] as const
 
     for (const field of allowedFields) {
-      if (body[field as keyof WorkoutLogData] !== undefined) {
-        updateData[field] = body[field as keyof WorkoutLogData]
+      const value = body[field]
+      if (isProvided(value)) {
+        updateData[field] = value
       }
     }
 
@@ -84,17 +94,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       'temperature',
       'weather_conditions',
       'wind_speed',
-    ]
+    ] as const
+
+    // Check if any valid fields were provided
+    const hasAllowedField = allowedFields.some(k => isProvided(body[k]))
+    const hasMetricField = metricFields.some(k => isProvided(body[k]))
+    if (!hasAllowedField && !hasMetricField) {
+      return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 })
+    }
 
     for (const field of metricFields) {
-      if (body[field as keyof WorkoutLogData] !== undefined) {
-        additionalMetrics[field] = body[field as keyof WorkoutLogData]
+      const value = body[field]
+      if (isProvided(value)) {
+        additionalMetrics[field] = value
       }
     }
 
     // If we have additional metrics, append them to workout_notes as structured data
     if (Object.keys(additionalMetrics).length > 0) {
-      const existingNotes = updateData.workout_notes || workout.workout_notes || ''
+      let existingNotes =
+        (updateData.workout_notes as string | undefined) || workout.workout_notes || ''
+      // Remove any existing metrics block to avoid accumulation on repeated updates
+      existingNotes = existingNotes.replace(/\n?\n?\[METRICS\][\s\S]*?\[\/METRICS\]/g, '').trim()
       const metricsJson = JSON.stringify(additionalMetrics)
       updateData.workout_notes = existingNotes
         ? `${existingNotes}\n\n[METRICS]${metricsJson}[/METRICS]`
