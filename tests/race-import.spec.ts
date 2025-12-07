@@ -402,7 +402,7 @@ test.describe('Race Import Flow', () => {
     await uploadButton.click({ timeout: 10000 })
 
     // Wait for import to complete and modal to close (confirms successful import)
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 })
   })
 
   test('should handle duplicate race detection', async ({ page }) => {
@@ -587,7 +587,7 @@ test.describe('Race Import Flow', () => {
     await confirmImportButton.click()
 
     // Wait for bulk import to complete - modal closes on success (more reliable than toast)
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 30000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 30000 })
   })
 
   test('should show progress indicator during import', async ({ page }) => {
@@ -660,7 +660,7 @@ test.describe('Race Import Flow', () => {
     await page.unroute('**/api/races/import').catch(() => {})
 
     // Modal should close on success as a secondary signal
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 30000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 30000 })
   })
 })
 
@@ -804,7 +804,7 @@ test.describe('Race Import Edge Cases', () => {
     })
   })
 
-  test('should only allow coaches to import races', async ({ page }) => {
+  test('should allow coaches to import races', async ({ page }) => {
     // This test runs with coach auth (from main test suite)
     // and verifies that import functionality is available to coaches
 
@@ -822,32 +822,250 @@ test.describe('Race Import Edge Cases', () => {
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 })
     // Close modal to avoid leaking state into subsequent tests
     await page.keyboard.press('Escape').catch(() => {})
-    await expect(page.locator('[role="dialog"], .modal')).not.toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 })
+  })
+})
+
+// Runner-specific race import tests (ULT-18: Runners should have race import capabilities)
+// These tests use @runner tag for filtering in playwright.config.ts
+test.describe('Runner Race Import @runner', () => {
+  test.beforeEach(async ({ page }) => {
+    logger.info('🏃 Starting runner race import test setup...')
+
+    // Navigate directly to races page - storageState provides runner authentication
+    await page.goto('/races')
+
+    // Wait for either races page or potential redirect
+    await page.waitForURL(
+      url => {
+        const urlStr = url.toString()
+        return urlStr.includes('/races') || urlStr.includes('/auth/signin')
+      },
+      { timeout: 30000 }
+    )
+
+    // Verify we're on races page (not redirected to signin)
+    const currentUrl = page.url()
+    if (currentUrl.includes('/auth/signin')) {
+      throw new Error(`Runner authentication failed - redirected to signin: ${currentUrl}`)
+    }
+
+    // Wait for loading to complete if we're on the races page
+    const loadingIndicator = page.getByText(/Loading race expeditions/i)
+    try {
+      await loadingIndicator.waitFor({ state: 'hidden', timeout: 30000 })
+    } catch {
+      logger.debug('Loading state check completed (expected in fast CI)')
+    }
   })
 
-  test.skip('should not allow runners to import races', async ({ page }) => {
-    // SKIPPED: Test currently fails because runners CAN see import button
-    // This is actually the DESIRED behavior per Linear ticket ULT-18:
-    // "Runners should have race import capabilities"
-    //
-    // The test discovered that the UI already allows runner access,
-    // but backend/API support may need implementation.
-    //
-    // TODO: Update this test when ULT-18 is complete to verify
-    // runners CAN import races (opposite of current expectation)
-
-    // This test runs with runner auth (from runner project config)
-    // and verifies that import functionality is NOT available to runners
-
-    // Navigate to races page to check lack of import functionality
-    await page.goto('/races')
-    await page.waitForLoadState('domcontentloaded')
-
-    // Wait for page to be ready
+  test('runner: should see import races button @runner', async ({ page }) => {
+    // Wait for page to be fully ready
     await waitForHeroUIReady(page)
 
-    // Runner should NOT see the import button
+    // Runner should see the import button (ULT-18 requirement)
     const importButton = page.getByTestId('import-races-modal-trigger')
-    await expect(importButton).not.toBeVisible({ timeout: 10000 })
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+
+    // Verify clicking opens the modal
+    await importButton.click()
+    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 10000 })
+
+    // Close modal
+    await page.keyboard.press('Escape').catch(() => {})
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 })
+
+    logger.info('✅ Runner can see and open import races modal')
+  })
+
+  test('runner: should import GPX file @runner', async ({ page }) => {
+    logger.info('[Runner Test] Starting GPX file import test')
+
+    await waitForHeroUIReady(page)
+
+    // Mock the import API to avoid database dependencies
+    await page.route('**/api/races/import', async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            race: {
+              id: 'runner-gpx-test-1',
+              name: 'Runner Test GPX Race',
+              distance_miles: '31.07',
+              distance_type: '50K',
+              terrain_type: 'trail',
+              location: '37.7749, -122.4194',
+              elevation_gain_feet: 55,
+            },
+            message: 'Race "Runner Test GPX Race" imported successfully',
+          }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Open import modal
+    const importButton = page.getByTestId('import-races-modal-trigger')
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click()
+
+    // Upload GPX file
+    const buffer = Buffer.from(TEST_GPX_CONTENT)
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
+    await fileInput.setInputFiles({
+      name: 'runner-test-race.gpx',
+      mimeType: 'application/gpx+xml',
+      buffer,
+    })
+
+    // Wait for parsing to complete
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 90000, logger)
+
+    // Verify preview shows the parsed race
+    const raceElement = page.getByTestId('race-name-0')
+    await expect(raceElement).toBeVisible({ timeout: 30000 })
+
+    // Click import button
+    const uploadButton = page.getByTestId('import-races-button')
+    await expect(uploadButton).toBeVisible({ timeout: 10000 })
+    await uploadButton.click()
+
+    // Modal should close on success
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 })
+
+    logger.info('✅ Runner successfully imported GPX file')
+  })
+
+  test('runner: should import CSV file @runner', async ({ page }) => {
+    logger.info('[Runner Test] Starting CSV file import test')
+
+    await waitForHeroUIReady(page)
+
+    // Mock the bulk import API
+    await page.route('**/api/races/bulk-import', async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            summary: {
+              totalRequested: 3,
+              successful: 3,
+              duplicates: 0,
+              errors: 0,
+            },
+            insertedRaces: [
+              {
+                id: '1',
+                name: 'Western States 100',
+                location: 'Auburn, CA',
+                distance_miles: '100',
+              },
+              { id: '2', name: 'Leadville 100', location: 'Leadville, CO', distance_miles: '100' },
+              { id: '3', name: 'UTMB', location: 'Chamonix, France', distance_miles: '103' },
+            ],
+            message: 'Bulk import completed: 3 successful, 0 duplicates skipped, 0 errors',
+          }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Open import modal
+    const importButton = page.getByTestId('import-races-modal-trigger')
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click()
+
+    // Upload CSV file
+    const buffer = Buffer.from(TEST_CSV_CONTENT)
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
+    await fileInput.setInputFiles({
+      name: 'runner-test-races.csv',
+      mimeType: 'text/csv',
+      buffer,
+    })
+
+    // Wait for parsing to complete
+    await waitForFileUploadProcessing(page, 'Western States 100', 90000, logger)
+
+    // Verify all races appear in preview
+    const raceList = page.getByTestId('race-list')
+    await expect(raceList.getByText('Western States 100')).toBeVisible({ timeout: 30000 })
+    await expect(raceList.getByText('Leadville 100')).toBeVisible({ timeout: 30000 })
+    await expect(raceList.getByText('UTMB')).toBeVisible({ timeout: 30000 })
+
+    // Click import button
+    const uploadButton = page.getByTestId('import-races-button')
+    await expect(uploadButton).toBeVisible({ timeout: 20000 })
+    await uploadButton.click()
+
+    // Modal should close on success
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 30000 })
+
+    logger.info('✅ Runner successfully imported CSV file with 3 races')
+  })
+
+  test('runner: should see duplicate detection warning @runner', async ({ page }) => {
+    logger.info('[Runner Test] Starting duplicate detection test')
+
+    await waitForHeroUIReady(page)
+
+    // Open import modal
+    const importButton = page.getByTestId('import-races-modal-trigger')
+    await expect(importButton).toBeVisible({ timeout: 30000 })
+    await importButton.click()
+
+    // Upload GPX file
+    const buffer = Buffer.from(TEST_GPX_CONTENT)
+    const fileInput = page.locator('[role="dialog"] input[type="file"]')
+    await fileInput.setInputFiles({
+      name: 'duplicate-test-race.gpx',
+      mimeType: 'application/gpx+xml',
+      buffer,
+    })
+
+    // Wait for parsing
+    await waitForFileUploadProcessing(page, 'Test Ultra Race', 30000, logger)
+
+    // Mock duplicate response
+    await page.route('**/api/races/import', async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Potential duplicate race detected',
+            details: 'A similar race may already exist: Test Ultra Race',
+            existingRaces: [
+              {
+                id: '1',
+                name: 'Test Ultra Race',
+                location: 'San Francisco, CA',
+                distance: '31',
+                date: '2024-06-15',
+              },
+            ],
+          }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Click import button
+    const uploadButton = page.getByTestId('import-races-button')
+    await uploadButton.click()
+
+    // Should show duplicate warning
+    const duplicateWarning = page
+      .getByText('duplicate race detected')
+      .or(page.getByText('similar race may already exist'))
+    await expect(duplicateWarning.first()).toBeVisible({ timeout: 15000 })
+
+    logger.info('✅ Runner sees duplicate detection warning correctly')
   })
 })
