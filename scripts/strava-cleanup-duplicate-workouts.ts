@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 import { config } from 'dotenv'
-import { and, asc, eq, ilike } from 'drizzle-orm'
+import { and, asc, eq, ilike, inArray } from 'drizzle-orm'
 
 import { db } from '../src/lib/database'
 import { createLogger } from '../src/lib/logger'
@@ -139,14 +139,19 @@ async function findStravaDuplicateWorkouts() {
 
       // To actually delete duplicates once you are happy with this report,
       // uncomment the block below and run this script again in a safe environment.
+      // The explicit `CONFIRM_STRAVA_DUP_DELETE === "true"` check provides a
+      // safety guard so accidental execution without the env flag set will only
+      // log duplicates instead of deleting them.
       //
-      // const duplicateIds = duplicates.map(workout => workout.id)
-      // if (duplicateIds.length > 0) {
-      //   await db.delete(workouts).where(inArray(workouts.id, duplicateIds))
-      //   logger.info('Deleted duplicate workouts', {
-      //     key: group.key,
-      //     deletedCount: duplicateIds.length,
-      //   })
+      // if (process.env.CONFIRM_STRAVA_DUP_DELETE === 'true') {
+      //   const duplicateIds = duplicates.map(workout => workout.id)
+      //   if (duplicateIds.length > 0) {
+      //     await db.delete(workouts).where(inArray(workouts.id, duplicateIds))
+      //     logger.info('Deleted duplicate workouts', {
+      //       key: group.key,
+      //       deletedCount: duplicateIds.length,
+      //     })
+      //   }
       // }
     }
 
