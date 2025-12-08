@@ -48,13 +48,16 @@ interface TrainingPlanDetailClientProps {
   planId: string
 }
 
+// Type alias for workout status to ensure type safety
+type WorkoutStatus = Workout['status']
+
 // Local component to render individual workout cards (reduces duplication)
 interface WorkoutCardItemProps {
   workout: Workout
   userType: 'runner' | 'coach'
   onLogWorkout: (workout: Workout) => void
   formatDate: (dateString: string) => string
-  getWorkoutStatusColor: (status: string) => string
+  getWorkoutStatusColor: (status: WorkoutStatus) => string
 }
 
 function WorkoutCardItem({
@@ -181,6 +184,38 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       ...extendedPlanData,
     } as TrainingPlanWithUsers
   }, [trainingPlan, extendedPlanData])
+
+  // Shared helper: sorted phases with calculated date boundaries
+  // Reused by calculateCurrentPhase, workout grouping, and UI rendering
+  const sortedPhasesWithDates = useMemo(() => {
+    if (
+      !extendedTrainingPlan?.plan_phases ||
+      extendedTrainingPlan.plan_phases.length === 0 ||
+      !extendedTrainingPlan.start_date
+    ) {
+      return { phases: [], phaseDates: {} as Record<string, { start: Date; end: Date }> }
+    }
+
+    const planStartDate = new Date(extendedTrainingPlan.start_date)
+    const phaseDates: Record<string, { start: Date; end: Date }> = {}
+    let cumulativeWeeks = 0
+
+    // Clone and sort phases by order
+    const phases = [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)
+
+    phases.forEach(phase => {
+      const phaseStartDate = new Date(planStartDate)
+      phaseStartDate.setDate(planStartDate.getDate() + cumulativeWeeks * 7)
+
+      const phaseEndDate = new Date(phaseStartDate)
+      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 for inclusive boundary
+
+      phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
+      cumulativeWeeks += phase.duration_weeks
+    })
+
+    return { phases, phaseDates }
+  }, [extendedTrainingPlan])
 
   const fetchExtendedPlanData = useCallback(async () => {
     if (!user?.id || !planId || !trainingPlan) return
@@ -342,78 +377,53 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     })
   }
 
+  // Calculate current phase using shared sortedPhasesWithDates
   const calculateCurrentPhase = useCallback(() => {
-    if (
-      !extendedTrainingPlan?.start_date ||
-      !extendedTrainingPlan.plan_phases ||
-      extendedTrainingPlan.plan_phases.length === 0
-    ) {
-      return null
-    }
+    const { phases, phaseDates } = sortedPhasesWithDates
+    if (phases.length === 0) return null
 
-    const planStartDate = new Date(extendedTrainingPlan.start_date)
     const today = new Date()
-    let cumulativeWeeks = 0
-
-    // Use same date calculation as workout grouping for consistency
-    // Clone array before sorting to avoid mutating original
-    for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
-      const phaseStartDate = new Date(planStartDate)
-      phaseStartDate.setDate(planStartDate.getDate() + cumulativeWeeks * 7)
-
-      const phaseEndDate = new Date(phaseStartDate)
-      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 for inclusive boundary
-
-      if (today >= phaseStartDate && today <= phaseEndDate) {
+    for (const phase of phases) {
+      const { start, end } = phaseDates[phase.id]
+      if (today >= start && today <= end) {
         return phase
       }
-      cumulativeWeeks += phase.duration_weeks
     }
     return null
-  }, [extendedTrainingPlan])
+  }, [sortedPhasesWithDates])
 
   const currentPhase = calculateCurrentPhase()
 
-  // Memoize workout grouping to avoid recalculating on every render
+  // Memoize workout grouping using shared sortedPhasesWithDates
   const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = useMemo((): {
     grouped: Record<string, Workout[]>
     ungrouped: Workout[]
   } => {
-    if (
-      !extendedTrainingPlan?.plan_phases ||
-      extendedTrainingPlan.plan_phases.length === 0 ||
-      !extendedTrainingPlan.start_date
-    ) {
-      return { grouped: {}, ungrouped: workouts }
+    const { phases, phaseDates } = sortedPhasesWithDates
+
+    if (phases.length === 0) {
+      // Sort ungrouped workouts by date for deterministic order
+      const sortedWorkouts = [...workouts].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      )
+      return { grouped: {}, ungrouped: sortedWorkouts }
     }
 
+    // Initialize empty arrays for each phase
     const grouped: Record<string, Workout[]> = {}
-    const phaseDates: Record<string, { start: Date; end: Date }> = {}
-    const planStartDate = new Date(extendedTrainingPlan.start_date)
-    let currentWeekOffset = 0
-
-    // Clone array before sorting to avoid mutating original
-    const sortedPhases = [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)
-    sortedPhases.forEach(phase => {
-        const phaseStartDate = new Date(planStartDate)
-        phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
-        const phaseEndDate = new Date(phaseStartDate)
-        phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 to keep it within the week
-
-        phaseDates[phase.id] = { start: phaseStartDate, end: phaseEndDate }
-        grouped[phase.id] = []
-        currentWeekOffset += phase.duration_weeks
-      })
+    phases.forEach(phase => {
+      grouped[phase.id] = []
+    })
 
     const ungrouped: Workout[] = []
 
     workouts.forEach((workout: Workout) => {
       const workoutDate = new Date(workout.date)
       let foundPhase = false
-      for (const phaseId in phaseDates) {
-        const { start, end } = phaseDates[phaseId]
+      for (const phase of phases) {
+        const { start, end } = phaseDates[phase.id]
         if (workoutDate >= start && workoutDate <= end) {
-          grouped[phaseId].push(workout)
+          grouped[phase.id].push(workout)
           foundPhase = true
           break
         }
@@ -428,16 +438,19 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       grouped[phaseId].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     }
 
-    return { grouped, ungrouped }
-  }, [extendedTrainingPlan, workouts])
+    // Sort ungrouped workouts by date for deterministic order
+    ungrouped.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  const getWorkoutStatusColor = (status: string) => {
+    return { grouped, ungrouped }
+  }, [sortedPhasesWithDates, workouts])
+
+  const getWorkoutStatusColor = (status: WorkoutStatus): string => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800'
       case 'skipped':
         return 'bg-red-100 text-red-800'
-      default:
+      case 'planned':
         return 'bg-yellow-100 text-yellow-800'
     }
   }
@@ -459,12 +472,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
               </h2>
             </CardHeader>
             <CardBody>
-              {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
+              {sortedPhasesWithDates.phases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Clone array before sorting to avoid mutating original */}
-                  {[...extendedTrainingPlan.plan_phases]
-                    .sort((a, b) => a.order - b.order)
-                    .map(phase => (
+                  {/* Use shared sortedPhasesWithDates for consistent ordering */}
+                  {sortedPhasesWithDates.phases.map(phase => (
                       <Card
                         key={phase.id}
                         className={`border ${currentPhase?.id === phase.id ? 'border-primary bg-primary/5' : 'border-default-200'}`}
@@ -727,10 +738,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
               </div>
             ) : (
               <div className="space-y-8">
-                {/* Clone array before sorting to avoid mutating original */}
-                {[...(extendedTrainingPlan?.plan_phases ?? [])]
-                  .sort((a, b) => a.order - b.order)
-                  .map(phase => (
+                {/* Use shared sortedPhasesWithDates for consistent ordering */}
+                {sortedPhasesWithDates.phases.map(phase => (
                     <div key={phase.id}>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         {phase.phase_name}
