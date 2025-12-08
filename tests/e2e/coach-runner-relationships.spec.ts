@@ -7,11 +7,7 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import {
-  getConnectButtonOrSkip,
-  navigateWithAuthVerification,
-  waitForPageReady,
-} from '../utils/wait-helpers'
+import { navigateWithAuthVerification, waitForPageReady } from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -40,52 +36,30 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Coach dashboard shows "Your Athletes" heading (use more specific selector)
       await expect(page.getByRole('heading', { name: 'Your Athletes' })).toBeVisible()
 
-      // Click "Connect" button then navigate with full page load
-      // (client-side navigation via Link can leave page in transitional state in CI)
+      // Click "Connect" button to navigate to runner selection
       await page.getByTestId('connect-athletes-button').click()
+
+      // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Wait for EITHER skeleton OR actual heading (more resilient)
-      // Use .or() combinator pattern from Playwright best practices
-      const heading = page.getByTestId('find-runners-heading')
-      const skeleton = page.locator('.animate-pulse').first()
-
-      // Wait for page to start rendering (skeleton appears quickly)
-      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
-
-      // Then wait for final heading to appear (API might take time)
-      await expect(heading).toBeVisible({ timeout: 30000 })
-
-      // Check if any Connect buttons exist (may be empty if no seed data)
-      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
-        testName: 'should display available runners to connect with',
-      })
+      // Should show "Find Runners" section
+      await expect(page.getByText('Find Runners')).toBeVisible()
 
       // Should display runner cards or connect buttons
-      await expect(connectButton).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
     })
 
     test('should send connection request to runner', async ({ page }) => {
-      // Click "Connect" button then navigate with full page load
-      // (client-side navigation via Link can leave page in transitional state in CI)
+      // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
       await page.getByTestId('connect-athletes-button').click()
+
+      // Navigate directly to relationships page
       await page.goto('/relationships')
       await waitForPageReady(page)
 
-      // Use progressive waiting with .or() combinator
-      const heading = page.getByTestId('find-runners-heading')
-      const skeleton = page.locator('.animate-pulse').first()
-      await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
-      await expect(heading).toBeVisible({ timeout: 30000 })
-
-      // Wait for Connect buttons to be available
-      const connectButton = await getConnectButtonOrSkip(page, 'Connect', {
-        testName: 'should send connection request to runner',
-      })
-
       // Click connect on first available runner
-      await connectButton.click()
+      await page.getByRole('button', { name: 'Connect' }).first().click()
 
       // Wait for the pending status to appear (indicating the relationship was created and UI updated)
       await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
