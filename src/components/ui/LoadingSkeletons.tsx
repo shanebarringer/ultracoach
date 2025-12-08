@@ -467,11 +467,7 @@ export const RunnerDashboardSkeleton = () => (
 
 // Chat Window Skeleton
 export const ChatWindowSkeleton = () => (
-  <div
-    className="flex flex-col h-full min-h-0"
-    role="status"
-    aria-label="Loading chat conversation"
-  >
+  <output className="flex flex-col h-full min-h-0 block" aria-label="Loading chat conversation">
     <span className="sr-only">Loading chat conversation, please wait...</span>
     {/* Chat Header Skeleton */}
     <div className="flex items-center justify-between px-6 py-4 border-b border-divider">
@@ -514,7 +510,7 @@ export const ChatWindowSkeleton = () => (
         <Skeleton className="h-10 w-20 rounded" />
       </div>
     </div>
-  </div>
+  </output>
 )
 
 // Workouts Page Skeleton
@@ -723,9 +719,8 @@ export const RacesPageSkeleton = () => (
 
 // Weekly Planner Page Skeleton
 export const WeeklyPlannerSkeleton = () => (
-  <div
-    className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8"
-    role="status"
+  <output
+    className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8 block"
     aria-label="Loading weekly planner"
   >
     <span className="sr-only">Loading weekly planner content, please wait...</span>
@@ -781,14 +776,13 @@ export const WeeklyPlannerSkeleton = () => (
         </div>
       </CardBody>
     </Card>
-  </div>
+  </output>
 )
 
 // Weekly Planner Runner Detail Skeleton
 export const WeeklyPlannerRunnerSkeleton = () => (
-  <div
-    className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8"
-    role="status"
+  <output
+    className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8 block"
     aria-label="Loading runner weekly planner"
   >
     <span className="sr-only">Loading runner weekly planner content, please wait...</span>
@@ -867,14 +861,13 @@ export const WeeklyPlannerRunnerSkeleton = () => (
         ))}
       </div>
     </div>
-  </div>
+  </output>
 )
 
 // Training Plan Detail Skeleton
 export const TrainingPlanDetailSkeleton = () => (
-  <div
-    className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-    role="status"
+  <output
+    className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 block"
     aria-label="Loading training plan details"
   >
     <span className="sr-only">Loading training plan details, please wait...</span>
@@ -971,7 +964,7 @@ export const TrainingPlanDetailSkeleton = () => (
         </CardBody>
       </Card>
     </div>
-  </div>
+  </output>
 )
 
 // Generic fallback for unknown content types

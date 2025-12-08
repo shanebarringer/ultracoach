@@ -259,7 +259,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
   const currentPhase = calculateCurrentPhase()
 
-  const groupWorkoutsByPhase = useCallback((): {
+  // Memoize workout grouping to avoid recalculating on every render
+  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = useMemo((): {
     grouped: Record<string, Workout[]>
     ungrouped: Workout[]
   } => {
@@ -314,8 +315,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
     return { grouped, ungrouped }
   }, [extendedTrainingPlan, workouts])
-
-  const { grouped: workoutsByPhase, ungrouped: ungroupedWorkouts } = groupWorkoutsByPhase()
 
   const getWorkoutStatusColor = (status: string) => {
     switch (status) {
