@@ -175,6 +175,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
   // Track active planId to prevent stale responses from overwriting state
   const activePlanRef = useRef(planId)
+  // Track whether extended data fetch has been initiated for current plan
+  const hasRequestedExtendedData = useRef(false)
 
   // Create extended training plan object by combining base plan with extended data
   const extendedTrainingPlan = useMemo(() => {
@@ -301,6 +303,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   // Prevents stale data (phases, race, adjacent plans) from previous plan
   useEffect(() => {
     activePlanRef.current = planId
+    hasRequestedExtendedData.current = false
     setExtendedPlanData({})
   }, [planId])
 
@@ -316,12 +319,13 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     }
   }, [refreshWorkouts])
 
-  // Effect 2: Fetch extended plan data when training plan exists but data hasn't been fetched
+  // Effect 2: Fetch extended plan data when training plan exists but data hasn't been requested
   useEffect(() => {
-    if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
+    if (trainingPlan && !hasRequestedExtendedData.current) {
+      hasRequestedExtendedData.current = true
       fetchExtendedPlanData()
     }
-  }, [trainingPlan, extendedPlanData, fetchExtendedPlanData])
+  }, [trainingPlan, fetchExtendedPlanData])
 
   // Effect 3: Redirect if plan ID is provided but plan not found (after Suspense resolves)
   useEffect(() => {
@@ -357,11 +361,32 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         commonToasts.trainingPlanDeleted()
         router.push('/training-plans')
       } else {
-        const errorData = await response.json()
-        commonToasts.trainingPlanError(errorData.error || 'Failed to delete training plan')
+        // Safe JSON parsing - response may be HTML or plain text on server errors
+        let errorMessage = 'Failed to delete training plan'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData?.error || errorMessage
+        } catch {
+          // JSON parse failed, try reading as text
+          try {
+            const errorText = await response.text()
+            errorMessage = errorText || response.statusText || errorMessage
+          } catch {
+            // Fall back to statusText if text() also fails
+            errorMessage = response.statusText || errorMessage
+          }
+        }
+        // Log error for PostHog capture (capture_console_errors is enabled)
+        logger.error('Failed to delete training plan', {
+          status: response.status,
+          statusText: response.statusText,
+          errorMessage,
+          planId,
+        })
+        commonToasts.trainingPlanError(errorMessage)
       }
     } catch (error) {
-      logger.error('Error deleting training plan', { error })
+      logger.error('Error deleting training plan', { error, planId })
       commonToasts.trainingPlanError('Failed to delete training plan')
     } finally {
       setIsDeleting(false)
@@ -452,6 +477,12 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         return 'bg-red-100 text-red-800'
       case 'planned':
         return 'bg-yellow-100 text-yellow-800'
+      default: {
+        // Log unexpected status for debugging - PostHog will capture via console errors
+        const unexpectedStatus: never = status
+        logger.warn('Unexpected workout status encountered', { status: unexpectedStatus })
+        return 'bg-gray-100 text-gray-800'
+      }
     }
   }
 
