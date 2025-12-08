@@ -3,6 +3,8 @@
 import { useAtomValue } from 'jotai'
 import { useHydrateAtoms } from 'jotai/utils'
 
+import { useEffect, useRef } from 'react'
+
 import { connectedRunnersAtom, connectedRunnersSyncAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
@@ -24,9 +26,16 @@ export function useHydrateConnectedRunners() {
   // Same pattern as useHydrateWorkouts - eliminates timing issues on page refresh
   useHydrateAtoms([[connectedRunnersSyncAtom, asyncRunners ?? []]])
 
-  logger.debug('Hydrating connected runners atom from async data', {
-    count: asyncRunners?.length ?? 0,
-  })
+  // Log hydration only once to avoid noisy debug output
+  const hasLogged = useRef(false)
+  useEffect(() => {
+    if (!hasLogged.current) {
+      hasLogged.current = true
+      logger.debug('Hydrating connected runners atom from async data', {
+        count: asyncRunners?.length ?? 0,
+      })
+    }
+  }, [asyncRunners])
 
   return asyncRunners
 }

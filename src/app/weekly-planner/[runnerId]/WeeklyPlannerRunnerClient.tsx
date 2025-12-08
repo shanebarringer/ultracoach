@@ -1,7 +1,6 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
-import { useAtomValue } from 'jotai'
 import {
   CalendarDaysIcon,
   ChevronLeftIcon,
@@ -16,7 +15,7 @@ import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
+import { useHydrateConnectedRunners } from '@/hooks/useHydrateConnectedRunners'
 import type { User } from '@/lib/supabase'
 import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 
@@ -76,7 +75,8 @@ function RunnerWeeklyPage({
   setCurrentWeek: (d: Date) => void
 }) {
   const router = useRouter()
-  const runners = useAtomValue(connectedRunnersAtom)
+  // Hydrate connected runners atom synchronously before reading
+  const runners = useHydrateConnectedRunners()
 
   const formatWeekRange = (monday: Date) => {
     const sunday = new Date(monday)

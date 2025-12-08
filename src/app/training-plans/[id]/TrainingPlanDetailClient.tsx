@@ -12,7 +12,7 @@ import {
   UserIcon,
 } from 'lucide-react'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -258,21 +258,32 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     setExtendedPlanData({})
   }, [planId])
 
-  useEffect(() => {
-    // Trigger workout refresh when component mounts
-    refreshWorkouts()
+  // Track if initial operations have been performed
+  const hasRefreshedWorkouts = useRef(false)
+  const hasRedirected = useRef(false)
 
-    // If plan is found but extended data hasn't been fetched, fetch it
+  // Effect 1: Refresh workouts once on mount
+  useEffect(() => {
+    if (!hasRefreshedWorkouts.current) {
+      hasRefreshedWorkouts.current = true
+      refreshWorkouts()
+    }
+  }, [refreshWorkouts])
+
+  // Effect 2: Fetch extended plan data when training plan exists but data hasn't been fetched
+  useEffect(() => {
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
       fetchExtendedPlanData()
     }
+  }, [trainingPlan, extendedPlanData, fetchExtendedPlanData])
 
-    // If plan ID is provided but plan not found, redirect to training plans list.
-    // Suspense ensures initial data resolution, so no extra flag is needed.
-    if (planId && !trainingPlan) {
+  // Effect 3: Redirect if plan ID is provided but plan not found (after Suspense resolves)
+  useEffect(() => {
+    if (planId && !trainingPlan && !hasRedirected.current) {
+      hasRedirected.current = true
       router.push('/training-plans')
     }
-  }, [trainingPlan, extendedPlanData, fetchExtendedPlanData, planId, refreshWorkouts, router])
+  }, [planId, trainingPlan, router])
 
   const handleAddWorkoutSuccess = () => {
     // NO refreshWorkouts() call - AddWorkoutModal uses optimistic updates!
