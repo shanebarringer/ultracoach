@@ -3,7 +3,7 @@
  * GET /api/invitations/accept/[token] - Validate token and get invitation details
  * POST /api/invitations/accept/[token] - Accept the invitation
  */
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, ilike, or } from 'drizzle-orm'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -57,6 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select({
         id: coach_invitations.id,
         inviteeEmail: coach_invitations.invitee_email,
+        inviteeName: coach_invitations.invitee_name,
         invitedRole: coach_invitations.invited_role,
         personalMessage: coach_invitations.personal_message,
         status: coach_invitations.status,
@@ -117,6 +118,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if invitee already has an account
+    // Use case-insensitive comparison to handle mixed-case email storage
     const normalizedInviteeEmail = normalizeEmail(invitation.inviteeEmail)
     let existingUser: { id: string } | undefined
 
@@ -125,7 +127,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const [found] = await db
         .select({ id: user.id })
         .from(user)
-        .where(eq(user.email, normalizedInviteeEmail))
+        .where(ilike(user.email, normalizedInviteeEmail))
         .limit(1)
       existingUser = found
     }
@@ -138,6 +140,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         invitedRole: invitation.invitedRole,
         personalMessage: invitation.personalMessage,
         expiresAt: invitation.expiresAt,
+        inviteeEmail: invitation.inviteeEmail,
+        inviteeName: invitation.inviteeName,
       },
       existingUser: !!existingUser,
     })

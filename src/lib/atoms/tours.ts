@@ -160,6 +160,12 @@ export const startTourAtom = atom(null, (get, set, tourId: TourId) => {
     startedAt: new Date().toISOString(),
   })
 
+  const now = new Date().toISOString()
+  set(tourStateAtom, current => ({
+    ...current,
+    lastTourStartedAt: now,
+  }))
+
   set(shouldStartTourAtom, false)
 
   logger.info('Tour started', { tourId, totalSteps })

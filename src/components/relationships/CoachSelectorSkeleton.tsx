@@ -8,7 +8,7 @@ import { Card, CardBody } from '@heroui/react'
  */
 export function CoachSelectorSkeleton() {
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="coach-selector-skeleton">
       <CardBody className="p-6">
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">

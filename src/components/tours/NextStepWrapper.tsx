@@ -9,7 +9,7 @@
  */
 import { useAtomValue, useSetAtom } from 'jotai'
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { NextStep, NextStepProvider } from 'nextstepjs'
 
@@ -45,21 +45,29 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
 
   // Dynamic shadow based on theme for proper overlay visibility
   // Stronger dimming ensures spotlight target stands out clearly
-  const isDarkMode = themeMode === 'dark'
-  const shadowRgb = isDarkMode ? '255, 255, 255' : '0, 0, 0'
-  const shadowOpacity = isDarkMode ? '0.4' : '0.6'
+  const { shadowRgb, shadowOpacity } = useMemo(() => {
+    const isDarkMode = themeMode === 'dark'
+    return {
+      shadowRgb: isDarkMode ? '255, 255, 255' : '0, 0, 0',
+      shadowOpacity: isDarkMode ? '0.4' : '0.6',
+    }
+  }, [themeMode])
 
   /**
    * Persist tour action to database
    */
   const persistTourAction = useCallback(
-    async (tourId: TourId, action: 'start' | 'complete' | 'reset') => {
+    async (
+      tourId: TourId,
+      action: 'start' | 'complete' | 'reset' | 'skip',
+      metadata?: { stoppedAtStep?: number }
+    ) => {
       try {
         const response = await fetch('/api/tours', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ tourId, action }),
+          body: JSON.stringify({ tourId, action, ...(metadata && { metadata }) }),
         })
 
         if (!response.ok) {

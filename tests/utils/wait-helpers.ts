@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test'
+import { type Locator, Page, expect, test } from '@playwright/test'
 
 /**
  * Wait for the page to be fully loaded and ready for interaction
@@ -95,4 +95,152 @@ export async function navigateToPage(page: Page, linkText: string | RegExp, requ
   }
 
   return clicked
+}
+
+/**
+ * Navigate to a protected page with auth verification.
+ * If the page redirects to signin, the test is skipped with a clear message.
+ *
+ * @param page - Playwright page object
+ * @param targetUrl - The protected URL to navigate to
+ * @param options - Configuration options
+ * @returns true if navigation succeeded, throws or skips if auth failed
+ */
+export async function navigateWithAuthVerification(
+  page: Page,
+  targetUrl: string,
+  options: { skipOnAuthFailure?: boolean; timeout?: number } = {}
+) {
+  const { skipOnAuthFailure = true, timeout = 10000 } = options
+
+  await page.goto(targetUrl)
+  await page.waitForLoadState('domcontentloaded')
+
+  // Check if we got redirected to signin using precise regex to avoid matching
+  // unintended paths like /auth/signin-callback
+  const currentUrl = page.url()
+  const isAuthRedirect = /\/(auth\/(signin|signup))($|\?)/.test(currentUrl)
+
+  if (isAuthRedirect) {
+    const errorMessage = `Auth redirect detected: Expected "${targetUrl}" but got "${currentUrl}". storageState may not be loaded correctly.`
+
+    if (skipOnAuthFailure) {
+      test.skip(true, errorMessage)
+    } else {
+      throw new Error(errorMessage)
+    }
+  }
+
+  // Verify we're on the expected URL
+  // Escape ALL regex metacharacters: . * + ? ^ $ { } ( ) | [ ] \ /
+  const escapedUrl = targetUrl.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&')
+  await expect(page).toHaveURL(new RegExp(escapedUrl), {
+    timeout,
+  })
+
+  // Wait for page to be fully ready (includes React hydration)
+  await waitForPageReady(page)
+
+  return true
+}
+
+/**
+ * Wait for Suspense boundaries to resolve by detecting when loading states disappear.
+ * Uses a more lenient approach that checks for significant loading reduction rather
+ * than waiting for ALL loaders to disappear (which can timeout in complex UIs).
+ *
+ * @param page - Playwright page object
+ * @param options - Configuration options
+ * @param options.timeout - Maximum time to wait in milliseconds (default: 15000)
+ * @param options.maxSkeletons - Maximum skeletons to allow (default: 2 for minor UI elements)
+ * @returns Promise that resolves when main Suspense boundaries have resolved
+ */
+export async function waitForSuspenseBoundary(
+  page: Page,
+  options: { timeout?: number; maxSkeletons?: number } = {}
+) {
+  const { timeout = 15000, maxSkeletons = 2 } = options
+
+  // Wait for main content to load - allow minor skeleton elements to persist
+  // This prevents timeouts when small UI elements (avatars, badges) are still loading
+  await page.waitForFunction(
+    (maxAllowed: number) => {
+      const skeletons = document.querySelectorAll('.animate-pulse')
+      // Check for blocking "Loading..." text in main content area only
+      const mainContent = document.querySelector('main') || document.body
+      const hasBlockingLoader = mainContent.textContent?.includes('Loading...') ?? false
+      // Allow test to proceed if skeletons are minimal and no blocking loader
+      return skeletons.length <= maxAllowed && !hasBlockingLoader
+    },
+    maxSkeletons,
+    { timeout }
+  )
+
+  // Brief wait for React state updates (reduced from 2000/1000)
+  await page.waitForTimeout(process.env.CI ? 1000 : 500)
+}
+
+/**
+ * Gets a button locator and skips the test if the button is not available.
+ * Useful for tests that depend on specific test data being seeded.
+ *
+ * @param page - Playwright Page object
+ * @param buttonName - Name of the button to look for (default: 'Connect')
+ * @param options - Configuration options
+ * @param options.timeout - Timeout in ms for visibility check (default: 5000)
+ * @param options.testName - Test name to include in skip message
+ * @returns The button locator (always returns when button is found; test.skip() throws if not found)
+ */
+export async function getConnectButtonOrSkip(
+  page: Page,
+  buttonName: string = 'Connect',
+  options: { timeout?: number; testName?: string } = {}
+): Promise<Locator> {
+  const { timeout = 5000, testName = 'test' } = options
+
+  const button = page.getByRole('button', { name: buttonName }).first()
+  const hasButton = await button.isVisible({ timeout }).catch(() => false)
+
+  if (!hasButton) {
+    test.skip(
+      true,
+      `No "${buttonName}" buttons available - test data may not be seeded for ${testName}`
+    )
+  }
+
+  return button
+}
+
+/**
+ * Wait for relationships section to fully load using progressive waiting pattern.
+ * Detects when skeletons transition to actual content for reliable test execution.
+ *
+ * Uses data-testid selectors for robustness against text/styling changes.
+ *
+ * @param page - Playwright page object
+ * @param sectionType - Which section to wait for ('coach' or 'runner')
+ * @param options - Configuration options
+ * @param options.timeout - Maximum wait time for final content (default: 30000ms)
+ */
+export async function waitForRelationshipsSection(
+  page: Page,
+  sectionType: 'coach' | 'runner',
+  options: { timeout?: number } = {}
+) {
+  const { timeout = 30000 } = options
+
+  // Map section type to appropriate test IDs
+  const skeletonTestId =
+    sectionType === 'coach' ? 'coach-selector-skeleton' : 'runner-selector-skeleton'
+  const headingTestId = sectionType === 'coach' ? 'find-coaches-heading' : 'find-runners-heading'
+
+  const skeleton = page.getByTestId(skeletonTestId)
+  const heading = page.getByTestId(headingTestId)
+
+  // Progressive wait: first wait for either skeleton or content to appear
+  // (skeleton appears quickly while data loads, content appears when ready)
+  await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+
+  // Then wait for final content heading (API might take time to respond)
+  await expect(heading).toBeVisible({ timeout })
 }

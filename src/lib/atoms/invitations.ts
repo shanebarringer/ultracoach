@@ -47,6 +47,7 @@ export interface Invitation {
 
 export interface CreateInvitationPayload {
   email: string
+  name?: string
   role: 'runner' | 'coach'
   message?: string
   expirationDays?: number
@@ -58,9 +59,8 @@ export interface CreateInvitationPayload {
 
 /**
  * Async atom that fetches sent invitations.
- * Throws errors to be handled by Suspense error boundaries.
+ * Returns empty array on error to allow graceful degradation.
  * @returns Promise<Invitation[]> - List of sent invitations
- * @throws Error if fetch fails (handled by error boundary)
  */
 export const sentInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invitation[]> => {
   if (!isBrowser) return []
@@ -74,17 +74,17 @@ export const sentInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invita
     invitationsLogger.debug('Sent invitations fetched', { count: invitations.length })
     return invitations
   } catch (error) {
+    // Log error but return empty array for graceful degradation
+    // This prevents the entire page from failing when invitations API is unavailable
     invitationsLogger.error('Error fetching sent invitations', error)
-    // Re-throw to let error boundaries handle it - don't silently swallow errors
-    throw error
+    return []
   }
 })
 
 /**
  * Async atom that fetches received invitations (pending only).
- * Throws errors to be handled by Suspense error boundaries.
+ * Returns empty array on error to allow graceful degradation.
  * @returns Promise<Invitation[]> - List of pending received invitations
- * @throws Error if fetch fails (handled by error boundary)
  */
 export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invitation[]> => {
   if (!isBrowser) return []
@@ -101,9 +101,10 @@ export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<In
     invitationsLogger.debug('Received invitations fetched', { count: invitations.length })
     return invitations
   } catch (error) {
+    // Log error but return empty array for graceful degradation
+    // This prevents the entire page from failing when invitations API is unavailable
     invitationsLogger.error('Error fetching received invitations', error)
-    // Re-throw to let error boundaries handle it - don't silently swallow errors
-    throw error
+    return []
   }
 })
 
@@ -117,9 +118,17 @@ export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<In
 /** Controls visibility of the invite modal */
 export const isInviteModalOpenAtom = atom(false)
 
-/** Form state for creating new invitations */
+/**
+ * Form state for creating new invitations.
+ *
+ * Note: `name` and `message` use empty strings for controlled input binding.
+ * These are converted to `undefined` before API submission via the
+ * InviteRunnerModal component (e.g., `name?.trim() || undefined`).
+ * The backend normalizes empty/undefined to NULL in the database.
+ */
 export const inviteFormAtom = atom<CreateInvitationPayload>({
   email: '',
+  name: '',
   role: 'runner',
   message: '',
   expirationDays: 14,
@@ -168,6 +177,7 @@ export const createInvitationAtom = atom(
       set(isInviteModalOpenAtom, false)
       set(inviteFormAtom, {
         email: '',
+        name: '',
         role: 'runner',
         message: '',
         expirationDays: 14,

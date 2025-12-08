@@ -37,27 +37,19 @@ interface TourInfo {
   estimatedMinutes: number
 }
 
-// Build tours array from centralized metadata
-const tours: TourInfo[] = [
-  {
-    id: 'coach',
-    name: tourMetadata['coach-onboarding'].name,
-    description: tourMetadata['coach-onboarding'].description,
-    icon: <RouteIcon className="w-5 h-5 text-primary" />,
-    stepCount: tourMetadata['coach-onboarding'].stepCount,
-    dashboardUrl: tourMetadata['coach-onboarding'].dashboardUrl,
-    estimatedMinutes: tourMetadata['coach-onboarding'].estimatedMinutes,
-  },
-  {
-    id: 'runner',
-    name: tourMetadata['runner-onboarding'].name,
-    description: tourMetadata['runner-onboarding'].description,
-    icon: <MapPinIcon className="w-5 h-5 text-secondary" />,
-    stepCount: tourMetadata['runner-onboarding'].stepCount,
-    dashboardUrl: tourMetadata['runner-onboarding'].dashboardUrl,
-    estimatedMinutes: tourMetadata['runner-onboarding'].estimatedMinutes,
-  },
-]
+const tourIcons: Record<TourKey, ReactNode> = {
+  coach: <RouteIcon className="w-5 h-5 text-primary" />,
+  runner: <MapPinIcon className="w-5 h-5 text-secondary" />,
+}
+
+const tours: TourInfo[] = (['coach', 'runner'] as const).map(key => {
+  const meta = tourMetadata[`${key}-onboarding` as keyof typeof tourMetadata]
+  return {
+    id: key,
+    ...meta,
+    icon: tourIcons[key],
+  }
+})
 
 export default function ToursSettingsPanel() {
   const router = useRouter()
@@ -269,11 +261,12 @@ export default function ToursSettingsPanel() {
             </div>
           </div>
 
-          {tourState.lastTourStartedAt && (
-            <p className="text-xs text-foreground-500 mt-4 text-center">
-              Last tour started: {format(new Date(tourState.lastTourStartedAt), 'MMM d, yyyy')}
-            </p>
-          )}
+          {tourState.lastTourStartedAt &&
+            !isNaN(new Date(tourState.lastTourStartedAt).getTime()) && (
+              <p className="text-xs text-foreground-500 mt-4 text-center">
+                Last tour started: {format(new Date(tourState.lastTourStartedAt), 'MMM d, yyyy')}
+              </p>
+            )}
         </CardBody>
       </Card>
     </div>

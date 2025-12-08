@@ -16,11 +16,6 @@ import { user_onboarding } from '@/lib/schema'
 
 const logger = createLogger('api/tours')
 
-interface TourUpdateRequest {
-  tourId: TourId
-  action: 'complete' | 'start' | 'reset'
-}
-
 /**
  * GET /api/tours
  * Fetch user's tour completion status
@@ -76,16 +71,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = (await request.json()) as TourUpdateRequest
-    const { tourId, action } = body
+    const body = await request.json()
 
-    if (!tourId || !['coach-onboarding', 'runner-onboarding'].includes(tourId)) {
+    // Type guard and validate tourId
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    const tourId = (body as Record<string, unknown>).tourId
+    const action = (body as Record<string, unknown>).action
+
+    const validTourIds = ['coach-onboarding', 'runner-onboarding'] as const
+    if (!tourId || typeof tourId !== 'string' || !validTourIds.includes(tourId as TourId)) {
       return NextResponse.json({ error: 'Invalid tour ID' }, { status: 400 })
     }
 
-    if (!action || !['complete', 'start', 'reset'].includes(action)) {
+    const validActions = ['complete', 'start', 'reset'] as const
+    if (
+      !action ||
+      typeof action !== 'string' ||
+      !validActions.includes(action as (typeof validActions)[number])
+    ) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
+
+    // After validation, narrow types for TypeScript
+    const validatedTourId = tourId as TourId
+    const validatedAction = action as (typeof validActions)[number]
 
     const now = new Date()
 
@@ -103,12 +115,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Build update based on action and tour type
-    const isCoachTour = tourId === 'coach-onboarding'
-    const updateData: Record<string, unknown> = {
+    const isCoachTour = validatedTourId === 'coach-onboarding'
+    const updateData: Partial<typeof user_onboarding.$inferInsert> = {
       updated_at: now,
     }
 
-    switch (action) {
+    switch (validatedAction) {
       case 'start':
         updateData.last_tour_started_at = now
         break
@@ -144,8 +156,8 @@ export async function POST(request: NextRequest) {
 
     logger.info('Tour status updated', {
       userId: session.user.id,
-      tourId,
-      action,
+      tourId: validatedTourId,
+      action: validatedAction,
     })
 
     return NextResponse.json({

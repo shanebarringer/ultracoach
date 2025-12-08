@@ -10,6 +10,18 @@ import { getServerSession } from '@/utils/auth-server'
 const logger = createLogger('RacesAPI')
 
 /**
+ * Valid distance type categories for races
+ * Matches the DISTANCE_TYPES constant in RacesPageClient.tsx
+ */
+const VALID_DISTANCE_TYPES = ['50K', '50M', '100K', '100M', 'Marathon', 'Custom'] as const
+
+/**
+ * Valid terrain type categories for races
+ * Matches the TERRAIN_TYPES constant in RacesPageClient.tsx
+ */
+const VALID_TERRAIN_TYPES = ['trail', 'mountain', 'road', 'mixed'] as const
+
+/**
  * Zod schema for race creation validation
  * Validates types, formats, and ranges for all race fields
  *
@@ -19,10 +31,14 @@ const CreateRaceSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
   date: z.string().date('Invalid date format - use YYYY-MM-DD'),
   distance_miles: z.number().positive('Distance must be positive'),
-  distance_type: z.string().min(1, 'Distance type is required'),
+  distance_type: z.enum(VALID_DISTANCE_TYPES, {
+    message: `Distance type must be one of: ${VALID_DISTANCE_TYPES.join(', ')}`,
+  }),
   location: z.string().min(1, 'Location is required').max(500, 'Location too long'),
   elevation_gain_feet: z.number().int().nonnegative('Elevation cannot be negative').optional(),
-  terrain_type: z.string().min(1, 'Terrain type is required'),
+  terrain_type: z.enum(VALID_TERRAIN_TYPES, {
+    message: `Terrain type must be one of: ${VALID_TERRAIN_TYPES.join(', ')}`,
+  }),
   website_url: z.string().url('Invalid URL format').optional().nullable(),
   notes: z.string().max(2000, 'Notes too long').optional().nullable(),
 })
@@ -100,7 +116,7 @@ export async function POST(request: NextRequest) {
           distance_miles: String(distance_miles), // Convert to string for Drizzle decimal type
           distance_type,
           location,
-          elevation_gain_feet: elevation_gain_feet ?? 0,
+          elevation_gain_feet: elevation_gain_feet ?? null,
           terrain_type,
           website_url: website_url ?? null,
           notes: notes ?? null,

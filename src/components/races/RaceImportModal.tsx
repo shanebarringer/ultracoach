@@ -321,7 +321,16 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         const secondNum = parseInt(second, 10)
 
         let day: number, month: number
-        // Heuristic: if first number > 12, it must be day (DD/MM/YYYY - EU format)
+        /**
+         * Heuristic for ambiguous slash dates (e.g., 01/02/2024):
+         * - If first number > 12, it must be day → DD/MM/YYYY (EU format)
+         * - Otherwise, assume MM/DD/YYYY (US format)
+         *
+         * LIMITATION: Ambiguous dates like 01/02/2024 will be parsed as
+         * January 2nd (US) rather than February 1st (EU). This is documented
+         * behavior - users should use unambiguous formats like "Jan 2, 2024"
+         * or "2024-01-02" for critical data.
+         */
         if (firstNum > 12) {
           day = firstNum
           month = secondNum
@@ -334,6 +343,17 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         // Validate day/month ranges
         if (month < 1 || month > 12 || day < 1 || day > 31) {
           logger.warn('Invalid day/month in slash date', { dateStr, day, month })
+          return undefined
+        }
+
+        // Validate the date is actually valid (e.g., not Feb 30)
+        const testDate = new Date(parseInt(year, 10), month - 1, day)
+        if (
+          testDate.getFullYear() !== parseInt(year, 10) ||
+          testDate.getMonth() !== month - 1 ||
+          testDate.getDate() !== day
+        ) {
+          logger.warn('Invalid calendar date in slash format', { dateStr, day, month, year })
           return undefined
         }
 

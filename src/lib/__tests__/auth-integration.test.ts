@@ -3,30 +3,20 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock environment variables
-const originalEnv = process.env
-
-beforeEach(() => {
-  vi.clearAllMocks()
-  process.env = {
-    ...originalEnv,
-    DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
-    BETTER_AUTH_SECRET: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-    NODE_ENV: 'test',
-  }
-})
-
-afterEach(() => {
-  process.env = originalEnv
-})
+// Mock database module FIRST to prevent real DB connections
+// Better Auth's drizzle adapter handles all DB operations internally
+vi.mock('../database', () => ({
+  db: {}, // Minimal mock - Better Auth doesn't require specific methods
+  client: {
+    end: vi.fn(),
+  },
+}))
 
 // Mock Better Auth
 const mockSignIn = vi.fn()
 const mockSignUp = vi.fn()
 const mockSignOut = vi.fn()
 const mockGetSession = vi.fn()
-
-// Better Auth test utilities
 
 vi.mock('better-auth', () => ({
   betterAuth: vi.fn(() => ({
@@ -39,33 +29,61 @@ vi.mock('better-auth', () => ({
   })),
 }))
 
-// Mock database
-const mockInsert = vi.fn()
-const mockUpdate = vi.fn()
-const mockWhere = vi.fn()
-const mockFrom = vi.fn()
-
-vi.mock('drizzle-orm/node-postgres', () => ({
-  drizzle: vi.fn(() => ({
-    select: vi.fn(() => ({
-      from: mockFrom.mockReturnValue({
-        where: mockWhere.mockReturnValue({
-          limit: vi.fn().mockResolvedValue([]),
-        }),
-      }),
-    })),
-    insert: mockInsert,
-    update: mockUpdate,
-  })),
+vi.mock('better-auth/adapters/drizzle', () => ({
+  drizzleAdapter: vi.fn(),
 }))
 
-vi.mock('pg', () => ({
-  Pool: vi.fn(() => ({
-    query: vi.fn(),
-    end: vi.fn(),
-    on: vi.fn(),
-  })),
+vi.mock('better-auth/next-js', () => ({
+  nextCookies: vi.fn(),
 }))
+
+vi.mock('better-auth/plugins', () => ({
+  admin: vi.fn(),
+  customSession: vi.fn(fn => fn),
+}))
+
+vi.mock('resend', () => ({
+  Resend: vi.fn(),
+}))
+
+// Type interfaces for mock responses
+/** Mock response structure for Better Auth sign-in */
+interface MockSignInResponse {
+  user: {
+    id: string
+    email: string
+    name: string
+    role: 'user' // Better Auth standard - always 'user'
+    userType: 'coach' | 'runner' // Application differentiation
+  }
+  token: string
+}
+
+/**
+ * Generate non-secret test string for BETTER_AUTH_SECRET.
+ * Uses non-hex characters to avoid triggering secret scanners.
+ */
+function generateTestSecret(length: number = 64): string {
+  return 'test_secret_for_unit_tests_only_'.padEnd(length, 'x')
+}
+
+// Mock environment variables
+const originalEnv = process.env
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.resetModules()
+  process.env = {
+    ...originalEnv,
+    DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    BETTER_AUTH_SECRET: generateTestSecret(64),
+    NODE_ENV: 'test',
+  }
+})
+
+afterEach(() => {
+  process.env = originalEnv
+})
 
 describe('Authentication Integration Tests', () => {
   describe('Complete Authentication Flow', () => {
@@ -78,13 +96,6 @@ describe('Authentication Integration Tests', () => {
           name: 'Test User',
         },
         token: 'test-session-token',
-      })
-
-      // Mock user creation in database
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([]), // User doesn't exist
-        }),
       })
 
       // Import the auth module after setting up mocks
@@ -118,22 +129,10 @@ describe('Authentication Integration Tests', () => {
           id: 'test-user-id',
           email: 'test@example.com',
           name: 'Test User',
-          role: 'runner',
+          role: 'user',
+          userType: 'runner',
         },
         token: 'test-session-token',
-      })
-
-      // Mock user exists in database
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([
-            {
-              id: 'test-user-id',
-              email: 'test@example.com',
-              role: 'runner',
-            },
-          ]),
-        }),
       })
 
       const { auth } = await import('../better-auth')
@@ -154,7 +153,8 @@ describe('Authentication Integration Tests', () => {
       })
 
       expect(result?.user.email).toBe('test@example.com')
-      expect((result?.user as { role?: string })?.role).toBe('runner')
+      const signInResult = result as MockSignInResponse
+      expect(signInResult.user.userType).toBe('runner')
     })
 
     it('should handle session validation', async () => {
@@ -163,7 +163,8 @@ describe('Authentication Integration Tests', () => {
         user: {
           id: 'test-user-id',
           email: 'test@example.com',
-          role: 'coach',
+          role: 'user',
+          userType: 'coach',
         },
         session: {
           id: 'test-session-id',
@@ -276,33 +277,17 @@ describe('Authentication Integration Tests', () => {
   describe('Database Integration', () => {
     it('should create user record in database during sign-up', async () => {
       // Mock successful Better Auth sign-up
+      // Note: Better Auth handles database operations internally via the drizzle adapter
       mockSignUp.mockResolvedValueOnce({
         data: {
           user: {
             id: 'test-user-id',
             email: 'test@example.com',
             name: 'Test User',
+            role: 'user',
+            userType: 'runner',
           },
         },
-      })
-
-      // Mock database operations
-      mockFrom.mockReturnValueOnce({
-        where: mockWhere.mockReturnValueOnce({
-          limit: vi.fn().mockResolvedValueOnce([]), // User doesn't exist
-        }),
-      })
-
-      mockInsert.mockReturnValueOnce({
-        values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([
-            {
-              id: 'test-user-id',
-              email: 'test@example.com',
-              role: 'runner',
-            },
-          ]),
-        }),
       })
 
       const { auth } = await import('../better-auth')
@@ -319,32 +304,35 @@ describe('Authentication Integration Tests', () => {
       expect(mockSignUp).toHaveBeenCalled()
     })
 
-    it('should handle database connection errors gracefully', async () => {
-      // Mock database connection error
-      vi.mocked(mockFrom).mockRejectedValueOnce(new Error('Database connection failed'))
+    it('should reject with Error for infrastructure failures (database connection)', async () => {
+      // Mock database connection error via Better Auth
+      mockSignIn.mockRejectedValueOnce(new Error('Database connection failed'))
 
       const { auth } = await import('../better-auth')
 
-      // Test should not throw but handle gracefully
-      await expect(async () => {
-        try {
-          await auth.api.signInEmail({
-            body: {
-              email: 'test@example.com',
-              password: 'password123',
-            },
-          })
-        } catch (error) {
-          // Database errors should be handled gracefully
-          expect(error).toBeInstanceOf(Error)
-        }
-      }).not.toThrow()
+      // Better Auth Error Handling Behavior:
+      // - Infrastructure errors (database connection, network): REJECTS with Error object
+      // - Validation errors (weak password, invalid email): RETURNS { error: {...} } object
+      //
+      // This distinction allows callers to:
+      // - Use try/catch for unexpected infrastructure failures
+      // - Check response.error for expected validation/business logic errors
+      await expect(
+        auth.api.signInEmail({
+          body: {
+            email: 'test@example.com',
+            password: 'password123',
+          },
+        })
+      ).rejects.toThrow('Database connection failed')
     })
   })
 
   describe('Security Validations', () => {
-    it('should validate password requirements', async () => {
+    it('should return error object for validation failures (weak password)', async () => {
       // Mock weak password rejection
+      // Note: Validation errors are RETURNED as { error: {...} } objects (not rejected)
+      // This is different from infrastructure errors which reject with Error objects
       mockSignUp.mockResolvedValueOnce({
         error: {
           message: 'Password does not meet requirements',

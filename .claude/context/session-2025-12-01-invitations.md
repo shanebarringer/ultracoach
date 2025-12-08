@@ -6,7 +6,26 @@ This session focused on completing the coach invitations feature, including data
 
 ## Completed Work
 
-### 1. Database Migrations Applied
+### 1. Vercel URL Priority for Production Links (PR Core Change)
+
+**Implementation**: `src/lib/invitation-tokens.ts` (lines 105-141)
+
+The `getBaseUrl()` function now uses proper priority for production URL resolution:
+
+```typescript
+// Priority order:
+// 1. NEXT_PUBLIC_APP_URL - Explicitly set app URL (recommended for production)
+// 2. VERCEL_PROJECT_PRODUCTION_URL - Auto-set by Vercel for production domain
+// 3. VERCEL_URL - Auto-set by Vercel for preview/production deployments
+// 4. DEFAULT_BASE_URL - Fallback for local development
+```
+
+**Why this matters:**
+- `VERCEL_PROJECT_PRODUCTION_URL` gives the actual production domain (e.g., `www.ultracoach.dev`)
+- `VERCEL_URL` gives deployment-specific URLs (e.g., `ultracoach-git-feature-xxx.vercel.app`)
+- Using the production URL ensures invitation links work correctly in production emails
+
+### 2. Database Migrations Applied
 
 **Migration 0019: Make token_hash unique**
 
@@ -40,7 +59,7 @@ When `RESEND_FROM_EMAIL` is not set, emails fall back to `onboarding@resend.dev`
 
 Add to Vercel environment variables:
 
-```
+```bash
 RESEND_FROM_EMAIL=UltraCoach <shane@ultracoach.dev>
 ```
 

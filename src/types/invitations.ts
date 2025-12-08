@@ -12,6 +12,10 @@ export interface InvitationDetails {
   invitedRole: 'runner' | 'coach'
   personalMessage: string | null
   expiresAt: string
+  /** Optional name of the person being invited - used to pre-fill signup form */
+  inviteeName: string | null
+  /** Email of the person being invited - used to pre-fill signup form */
+  inviteeEmail: string
 }
 
 /**

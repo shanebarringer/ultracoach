@@ -6,6 +6,9 @@
  * - Strava OAuth redirects
  * - Any other feature requiring the application base URL
  */
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('base-url')
 
 /** Default fallback URL for development */
 const DEFAULT_BASE_URL = 'http://localhost:3001'
@@ -49,7 +52,9 @@ export function getBaseUrl(): string {
   const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL)
   if (appUrl) {
     if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://')) {
-      throw new Error(`NEXT_PUBLIC_APP_URL must start with http:// or https://, got: ${appUrl}`)
+      const errorMsg = `NEXT_PUBLIC_APP_URL must start with http:// or https://, got: ${appUrl}`
+      logger.error(errorMsg)
+      throw new Error(errorMsg)
     }
     return appUrl
   }
@@ -58,9 +63,9 @@ export function getBaseUrl(): string {
   const betterAuthUrl = normalizeUrl(process.env.NEXT_PUBLIC_BETTER_AUTH_URL)
   if (betterAuthUrl) {
     if (!betterAuthUrl.startsWith('http://') && !betterAuthUrl.startsWith('https://')) {
-      throw new Error(
-        `NEXT_PUBLIC_BETTER_AUTH_URL must start with http:// or https://, got: ${betterAuthUrl}`
-      )
+      const errorMsg = `NEXT_PUBLIC_BETTER_AUTH_URL must start with http:// or https://, got: ${betterAuthUrl}`
+      logger.error(errorMsg)
+      throw new Error(errorMsg)
     }
     return betterAuthUrl
   }

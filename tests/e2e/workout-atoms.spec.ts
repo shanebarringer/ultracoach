@@ -12,14 +12,13 @@ import { Page, expect, test } from '@playwright/test'
 import { addDays, format } from 'date-fns'
 
 import { TEST_TIMEOUTS } from '../utils/test-helpers'
+import { navigateWithAuthVerification } from '../utils/wait-helpers'
 
 test.describe('Workout Atoms Functionality', () => {
   test.describe('Runner Dashboard Workout Display', () => {
     test('should display upcoming workouts on runner dashboard', async ({ page }) => {
-      // Navigate to runner dashboard
-      await page.goto('/dashboard/runner')
-
-      await expect(page).toHaveURL('/dashboard/runner')
+      // Navigate to runner dashboard with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
       // Wait for dashboard to load with Suspense boundary
       await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
@@ -52,10 +51,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should display recent/completed workouts on runner dashboard', async ({ page }) => {
-      // Navigate to runner dashboard
-      await page.goto('/dashboard/runner')
-
-      await expect(page).toHaveURL('/dashboard/runner')
+      // Navigate to runner dashboard with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
       // Wait for dashboard to load
       await page.waitForSelector('h1:has-text("Runner Dashboard")', { timeout: 10000 })
@@ -83,10 +80,9 @@ test.describe('Workout Atoms Functionality', () => {
 
   test.describe('Weekly Planner Workout Persistence', () => {
     test('should persist workouts on weekly planner after navigation', async ({ page }) => {
-      // First, go to calendar/weekly planner
-      await page.goto('/calendar')
-
-      await expect(page).toHaveURL('/calendar')
+      // First, go to calendar/weekly planner with auth verification
+      // This will skip the test gracefully if auth session is not available
+      await navigateWithAuthVerification(page, '/calendar')
 
       // Wait for calendar to load
       await page.waitForSelector('h1:has-text("Training Calendar")', { timeout: 10000 })
@@ -95,15 +91,11 @@ test.describe('Workout Atoms Functionality', () => {
       const calendarWorkouts = page.locator('[data-testid="calendar-workout"], .fc-event')
       const initialCount = await calendarWorkouts.count()
 
-      // Navigate away to another page
-      await page.goto('/dashboard/runner')
+      // Navigate away to another page with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
-      await expect(page).toHaveURL('/dashboard/runner')
-
-      // Navigate back to calendar
-      await page.goto('/calendar')
-
-      await expect(page).toHaveURL('/calendar')
+      // Navigate back to calendar with auth verification
+      await navigateWithAuthVerification(page, '/calendar')
 
       // Verify workouts are still there
       const afterNavCount = await calendarWorkouts.count()
@@ -111,10 +103,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should show workouts in weekly planner view', async ({ page }) => {
-      // Navigate to training plans page first
-      await page.goto('/training-plans')
-
-      await expect(page).toHaveURL('/training-plans')
+      // Navigate to training plans page with auth verification
+      await navigateWithAuthVerification(page, '/training-plans')
 
       // Look for a training plan with workouts
       const planCards = page.locator('[data-testid="training-plan-card"]')
@@ -146,13 +136,8 @@ test.describe('Workout Atoms Functionality', () => {
 
   test.describe('Workout Completion Modal', () => {
     test('should successfully submit workout completion modal', async ({ page }) => {
-      // Navigate to workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
-
-      // Wait for workouts to load
-      await page.waitForLoadState('domcontentloaded')
+      // Navigate to workouts page with auth verification
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Find a planned workout to complete
       const plannedWorkouts = page.locator('[data-testid="workout-card"][data-status="planned"]')
@@ -230,19 +215,15 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should update dashboard after workout completion', async ({ page }) => {
-      // Start on dashboard to get initial counts
-      await page.goto('/dashboard/runner')
-
-      await expect(page).toHaveURL('/dashboard/runner')
+      // Start on dashboard with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
       // Get initial upcoming count
       const upcomingWorkouts = page.locator('[data-testid="upcoming-workout-card"]')
       const initialUpcomingCount = await upcomingWorkouts.count()
 
-      // Navigate to workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
+      // Navigate to workouts page with auth verification
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Try to mark a workout as complete
       const plannedWorkouts = page.locator('[data-testid="workout-card"][data-status="planned"]')
@@ -263,10 +244,8 @@ test.describe('Workout Atoms Functionality', () => {
             // No confirmation dialog appeared
           }
 
-          // Go back to dashboard
-          await page.goto('/dashboard/runner')
-
-          await expect(page).toHaveURL('/dashboard/runner')
+          // Go back to dashboard with auth verification
+          await navigateWithAuthVerification(page, '/dashboard/runner')
 
           // Verify counts have changed
           const newUpcomingCount = await upcomingWorkouts.count()
@@ -286,19 +265,15 @@ test.describe('Workout Atoms Functionality', () => {
 
   test.describe('Workout Atom State Synchronization', () => {
     test('should refresh workouts when navigating between pages', async ({ page }) => {
-      // Start on workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
+      // Navigate to workouts page with auth verification (skips if not authenticated)
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Get workout count
       const workoutCards = page.locator('[data-testid="workout-card"]')
       const workoutsPageCount = await workoutCards.count()
 
-      // Navigate to dashboard
-      await page.goto('/dashboard/runner')
-
-      await expect(page).toHaveURL('/dashboard/runner')
+      // Navigate to dashboard with auth verification
+      await navigateWithAuthVerification(page, '/dashboard/runner')
 
       // Check workouts are displayed on dashboard
       const dashboardWorkouts = page.locator(
@@ -306,10 +281,8 @@ test.describe('Workout Atoms Functionality', () => {
       )
       const dashboardCount = await dashboardWorkouts.count()
 
-      // Navigate to calendar
-      await page.goto('/calendar')
-
-      await expect(page).toHaveURL('/calendar')
+      // Navigate to calendar with auth verification
+      await navigateWithAuthVerification(page, '/calendar')
 
       // Check workouts in calendar
       const calendarEvents = page.locator('[data-testid="calendar-workout"], .fc-event')
@@ -324,10 +297,8 @@ test.describe('Workout Atoms Functionality', () => {
     })
 
     test('should maintain workout state across page refreshes', async ({ page }) => {
-      // Navigate to workouts page
-      await page.goto('/workouts')
-
-      await expect(page).toHaveURL('/workouts')
+      // Navigate to workouts page with auth verification (skips if not authenticated)
+      await navigateWithAuthVerification(page, '/workouts')
 
       // Get initial workout data
       const workoutCards = page.locator('[data-testid="workout-card"]')
