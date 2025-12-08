@@ -339,7 +339,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     let cumulativeWeeks = 0
 
     // Use same date calculation as workout grouping for consistency
-    for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
+    // Clone array before sorting to avoid mutating original
+    for (const phase of [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)) {
       const phaseStartDate = new Date(planStartDate)
       phaseStartDate.setDate(planStartDate.getDate() + cumulativeWeeks * 7)
 
@@ -374,9 +375,9 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     const planStartDate = new Date(extendedTrainingPlan.start_date)
     let currentWeekOffset = 0
 
-    extendedTrainingPlan.plan_phases
-      .sort((a, b) => a.order - b.order)
-      .forEach(phase => {
+    // Clone array before sorting to avoid mutating original
+    const sortedPhases = [...extendedTrainingPlan.plan_phases].sort((a, b) => a.order - b.order)
+    sortedPhases.forEach(phase => {
         const phaseStartDate = new Date(planStartDate)
         phaseStartDate.setDate(planStartDate.getDate() + currentWeekOffset * 7)
         const phaseEndDate = new Date(phaseStartDate)
@@ -443,7 +444,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
             <CardBody>
               {extendedTrainingPlan.plan_phases && extendedTrainingPlan.plan_phases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {extendedTrainingPlan.plan_phases
+                  {/* Clone array before sorting to avoid mutating original */}
+                  {[...extendedTrainingPlan.plan_phases]
                     .sort((a, b) => a.order - b.order)
                     .map(phase => (
                       <Card
@@ -640,7 +642,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                         <h3 className="font-semibold text-warning">Goal Type</h3>
                       </div>
                       <Chip size="sm" color="warning" variant="flat">
-                        {extendedTrainingPlan.goal_type.replace('_', ' ')}
+                        {extendedTrainingPlan.goal_type.replace(/_/g, ' ')}
                       </Chip>
                     </CardBody>
                   </Card>
@@ -655,7 +657,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                         <h3 className="font-semibold text-default-600">Plan Type</h3>
                       </div>
                       <Chip size="sm" color="default" variant="flat">
-                        {extendedTrainingPlan.plan_type.replace('_', ' ')}
+                        {extendedTrainingPlan.plan_type.replace(/_/g, ' ')}
                       </Chip>
                     </CardBody>
                   </Card>
@@ -708,8 +710,9 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
               </div>
             ) : (
               <div className="space-y-8">
-                {extendedTrainingPlan?.plan_phases
-                  ?.sort((a, b) => a.order - b.order)
+                {/* Clone array before sorting to avoid mutating original */}
+                {[...(extendedTrainingPlan?.plan_phases ?? [])]
+                  .sort((a, b) => a.order - b.order)
                   .map(phase => (
                     <div key={phase.id}>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
