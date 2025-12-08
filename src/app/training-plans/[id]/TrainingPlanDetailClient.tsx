@@ -160,7 +160,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
   // Local UI state (keep these as useState since they're UI-specific)
   const [showAddWorkout, setShowAddWorkout] = useState(false)
-  const [showLogWorkout, setShowLogWorkout] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -170,6 +169,9 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     previous_plan?: TrainingPlan
     next_plan?: TrainingPlan
   }>({})
+
+  // Track active planId to prevent stale responses from overwriting state
+  const activePlanRef = useRef(planId)
 
   // Create extended training plan object by combining base plan with extended data
   const extendedTrainingPlan = useMemo(() => {
@@ -183,19 +185,28 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   const fetchExtendedPlanData = useCallback(async () => {
     if (!user?.id || !planId || !trainingPlan) return
 
+    // Capture the planId at the start of this fetch to check against later
+    const fetchPlanId = planId
+
     try {
       // Fetch plan phases
       const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
         credentials: 'same-origin',
       })
+
+      // Guard: Don't update state if user navigated to a different plan
+      if (activePlanRef.current !== fetchPlanId) return
+
       if (phasesResponse.ok) {
         const phasesData = await phasesResponse.json()
+        if (activePlanRef.current !== fetchPlanId) return
         setExtendedPlanData(prev => ({
           ...prev,
           plan_phases: phasesData.plan_phases || [],
         }))
       } else {
         logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+        if (activePlanRef.current !== fetchPlanId) return
         // Set empty array to avoid stale data and show user-facing error
         setExtendedPlanData(prev => ({
           ...prev,
@@ -212,8 +223,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
           `/api/training-plans/${trainingPlan.previous_plan_id}`,
           { credentials: 'same-origin' }
         )
+        if (activePlanRef.current !== fetchPlanId) return
         if (prevPlanResponse.ok) {
           const prevPlanData = await prevPlanResponse.json()
+          if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
             previous_plan: prevPlanData.trainingPlan,
@@ -228,8 +241,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
           credentials: 'same-origin',
         })
+        if (activePlanRef.current !== fetchPlanId) return
         if (nextPlanResponse.ok) {
           const nextPlanData = await nextPlanResponse.json()
+          if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
             next_plan: nextPlanData.trainingPlan,
@@ -240,6 +255,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         }
       }
     } catch (error) {
+      // Guard: Don't show toast if user navigated away
+      if (activePlanRef.current !== fetchPlanId) return
       logger.error('Error fetching extended plan data', { error })
       commonToasts.trainingPlanError('Failed to load plan details. Please try refreshing the page.')
     }
@@ -248,6 +265,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   // Reset extended plan data when navigating to a different plan
   // Prevents stale data (phases, race, adjacent plans) from previous plan
   useEffect(() => {
+    activePlanRef.current = planId
     setExtendedPlanData({})
   }, [planId])
 
@@ -291,7 +309,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
   const handleLogWorkout = (workout: Workout) => {
     setSelectedWorkout(workout)
-    setShowLogWorkout(true)
   }
 
   const handleDelete = async () => {
@@ -772,10 +789,11 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
           />
         )}
 
+        {/* Modal visibility derived from selectedWorkout - single source of truth */}
         {selectedWorkout && (
           <WorkoutLogModal
-            isOpen={showLogWorkout}
-            onClose={() => setShowLogWorkout(false)}
+            isOpen={true}
+            onClose={() => setSelectedWorkout(null)}
             onSuccess={handleLogWorkoutSuccess}
             workout={selectedWorkout}
           />
