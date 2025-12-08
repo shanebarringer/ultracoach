@@ -95,6 +95,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
+    // After validation, narrow types for TypeScript
+    const validatedTourId = tourId as TourId
+    const validatedAction = action as (typeof validActions)[number]
+
     const now = new Date()
 
     // Check if user has onboarding record
@@ -111,12 +115,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Build update based on action and tour type
-    const isCoachTour = tourId === 'coach-onboarding'
+    const isCoachTour = validatedTourId === 'coach-onboarding'
     const updateData: Partial<typeof user_onboarding.$inferInsert> = {
       updated_at: now,
     }
 
-    switch (action) {
+    switch (validatedAction) {
       case 'start':
         updateData.last_tour_started_at = now
         break
@@ -152,8 +156,8 @@ export async function POST(request: NextRequest) {
 
     logger.info('Tour status updated', {
       userId: session.user.id,
-      tourId,
-      action,
+      tourId: validatedTourId,
+      action: validatedAction,
     })
 
     return NextResponse.json({
