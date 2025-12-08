@@ -38,7 +38,10 @@ export default function WeeklyPlannerRunnerClient({
     // Get current week's Monday
     const today = new Date()
     const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
+    const day = today.getDay()
+    // Sunday is 0, treat as 7 for calculation
+    const daysToSubtract = day === 0 ? 6 : day - 1
+    monday.setDate(today.getDate() - daysToSubtract)
     return monday
   })
 
@@ -90,7 +93,10 @@ function RunnerWeeklyPage({
   const goToCurrentWeek = () => {
     const today = new Date()
     const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
+    const day = today.getDay()
+    // Sunday is 0, treat as 7 for calculation
+    const daysToSubtract = day === 0 ? 6 : day - 1
+    monday.setDate(today.getDate() - daysToSubtract)
     setCurrentWeek(monday)
   }
 

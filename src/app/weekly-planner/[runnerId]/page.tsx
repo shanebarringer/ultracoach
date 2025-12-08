@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
 import { WeeklyPlannerRunnerSkeleton } from '@/components/ui/LoadingSkeletons'
-import { getServerSession } from '@/utils/auth-server'
+import { requireAuth } from '@/utils/auth-server'
 
 import WeeklyPlannerRunnerClient from './WeeklyPlannerRunnerClient'
 
@@ -21,12 +21,8 @@ interface Props {
  * Coaches can view any runner's planner, runners can only view their own.
  */
 export default async function WeeklyPlannerRunnerPage({ params }: Props) {
-  // Server-side authentication
-  const session = await getServerSession()
-
-  if (!session) {
-    redirect('/auth/signin')
-  }
+  // Server-side authentication - redirects to signin if not authenticated
+  const session = await requireAuth()
 
   // Await params in Next.js 15
   const { runnerId } = await params

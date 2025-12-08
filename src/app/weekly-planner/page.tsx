@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 
 import { WeeklyPlannerSkeleton } from '@/components/ui/LoadingSkeletons'
-import { getServerSession } from '@/utils/auth-server'
+import { requireAuth } from '@/utils/auth-server'
 
 import WeeklyPlannerClient from './WeeklyPlannerClient'
 
@@ -17,12 +17,8 @@ export const dynamic = 'force-dynamic'
  * Coaches see the runner selection page, runners are redirected to their own planner.
  */
 export default async function WeeklyPlannerPage() {
-  // Server-side authentication
-  const session = await getServerSession()
-
-  if (!session) {
-    redirect('/auth/signin')
-  }
+  // Server-side authentication - redirects to signin if not authenticated
+  const session = await requireAuth()
 
   // Runners are redirected to their own weekly planner
   if (session.user.userType === 'runner') {

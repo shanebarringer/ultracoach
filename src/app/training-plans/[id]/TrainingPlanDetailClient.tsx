@@ -78,14 +78,11 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     next_plan?: TrainingPlan
   }>({})
 
-  // Track if initial data check is complete
-  // Suspense boundary handles async atom loading, so when we're here, data is fetched
-  // An empty array is a valid state (user has no plans), not a loading state
-  const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false)
-
-  // Derive loading state - only true during initial render before we've checked the data
-  // Once hasCheckedInitialData is true, we know if the plan exists or not
-  const loading = !hasCheckedInitialData && !trainingPlan
+  // Since this component is wrapped in Suspense, the async atom has already resolved
+  // when this component renders. The loading state is handled by the Suspense boundary,
+  // so we don't need a separate loading state here.
+  // An empty array is a valid state (user has no plans), not a loading state.
+  const loading = false
 
   // Create extended training plan object by combining base plan with extended data
   const extendedTrainingPlan = useMemo(() => {
@@ -112,6 +109,14 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         }))
       } else {
         logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+        // Set empty array to avoid stale data and show user-facing error
+        setExtendedPlanData(prev => ({
+          ...prev,
+          plan_phases: [],
+        }))
+        commonToasts.trainingPlanError(
+          'Failed to load training phases. Please try refreshing the page.'
+        )
       }
 
       // Fetch previous and next plans if they exist
@@ -128,6 +133,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
           }))
         } else {
           logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
+          // Silent failure for linked plans - not critical for main view
         }
       }
 
@@ -143,10 +149,12 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
           }))
         } else {
           logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
+          // Silent failure for linked plans - not critical for main view
         }
       }
     } catch (error) {
       logger.error('Error fetching extended plan data', { error })
+      commonToasts.trainingPlanError('Failed to load plan details. Please try refreshing the page.')
     }
   }, [user?.id, planId, trainingPlan])
 
@@ -160,31 +168,17 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     // Trigger workout refresh when component mounts
     refreshWorkouts()
 
-    // Mark initial data check as complete after first render
-    // This allows us to distinguish between "loading" and "plan not found"
-    if (!hasCheckedInitialData) {
-      setHasCheckedInitialData(true)
-    }
-
     // If plan is found but extended data hasn't been fetched, fetch it
     if (trainingPlan && Object.keys(extendedPlanData).length === 0) {
       fetchExtendedPlanData()
     }
 
-    // If plan ID is provided but plan not found after data check, redirect
-    // Don't require allTrainingPlans.length > 0 - empty array is valid (no plans)
-    if (hasCheckedInitialData && planId && !trainingPlan) {
+    // If plan ID is provided but plan not found, redirect to training plans list
+    // Note: hasCheckedInitialData is initialized to true because Suspense has resolved
+    if (planId && !trainingPlan) {
       router.push('/training-plans')
     }
-  }, [
-    trainingPlan,
-    extendedPlanData,
-    fetchExtendedPlanData,
-    planId,
-    hasCheckedInitialData,
-    refreshWorkouts,
-    router,
-  ])
+  }, [trainingPlan, extendedPlanData, fetchExtendedPlanData, planId, refreshWorkouts, router])
 
   const handleAddWorkoutSuccess = () => {
     // NO refreshWorkouts() call - AddWorkoutModal uses optimistic updates!
