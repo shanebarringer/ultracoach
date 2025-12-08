@@ -6,7 +6,7 @@ import { Card, CardBody, Input } from '@heroui/react'
  */
 export function RunnerSelectorSkeleton() {
   return (
-    <Card className="w-full">
+    <Card className="w-full" data-testid="runner-selector-skeleton">
       <CardBody className="p-6">
         <div className="space-y-4">
           {/* Header skeleton */}

@@ -118,7 +118,14 @@ export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<In
 /** Controls visibility of the invite modal */
 export const isInviteModalOpenAtom = atom(false)
 
-/** Form state for creating new invitations */
+/**
+ * Form state for creating new invitations.
+ *
+ * Note: `name` and `message` use empty strings for controlled input binding.
+ * These are converted to `undefined` before API submission via the
+ * InviteRunnerModal component (e.g., `name?.trim() || undefined`).
+ * The backend normalizes empty/undefined to NULL in the database.
+ */
 export const inviteFormAtom = atom<CreateInvitationPayload>({
   email: '',
   name: '',

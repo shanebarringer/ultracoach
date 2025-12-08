@@ -7,7 +7,11 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { navigateWithAuthVerification, waitForPageReady } from '../utils/wait-helpers'
+import {
+  navigateWithAuthVerification,
+  waitForPageReady,
+  waitForRelationshipsSection,
+} from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -154,10 +158,10 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button to navigate to coach selection using testid
       await page.getByTestId('find-coach-button').click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('**/relationships', { timeout: 10000 })
+      // Wait for EITHER relationships page OR auth redirect (prevents timeout on auth redirect)
+      await page.waitForURL(/\/(relationships|auth\/(signin|signup))/, { timeout: 10000 })
 
-      // Check for auth redirect after navigation - skip test if session was lost
+      // Check which page we landed on - skip test if auth redirect occurred
       const currentUrl = page.url()
       if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
         test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
@@ -165,15 +169,8 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       await waitForPageReady(page)
 
-      // Use progressive waiting pattern for better reliability
-      const findCoachHeading = page.getByText('Find a Coach')
-      const skeleton = page.locator('.animate-pulse').first()
-
-      // Wait for page to start rendering (skeleton appears quickly)
-      await expect(skeleton.or(findCoachHeading)).toBeVisible({ timeout: 5000 })
-
-      // Then wait for final heading to appear (API might take time)
-      await expect(findCoachHeading).toBeVisible({ timeout: 30000 })
+      // Wait for coach selector section to load (handles skeleton transition)
+      await waitForRelationshipsSection(page, 'coach')
 
       // Should display coaches with Connect buttons
       await expect(page.getByRole('button', { name: 'Connect' }).first()).toBeVisible()
@@ -186,10 +183,10 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click Find Coach button from dashboard using testid
       await page.getByTestId('find-coach-button').click()
 
-      // Wait for navigation to relationships page
-      await page.waitForURL('**/relationships', { timeout: 10000 })
+      // Wait for EITHER relationships page OR auth redirect (prevents timeout on auth redirect)
+      await page.waitForURL(/\/(relationships|auth\/(signin|signup))/, { timeout: 10000 })
 
-      // Check for auth redirect after navigation - skip test if session was lost
+      // Check which page we landed on - skip test if auth redirect occurred
       const currentUrl = page.url()
       if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
         test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
@@ -197,11 +194,8 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       await waitForPageReady(page)
 
-      // Use progressive waiting pattern for better reliability
-      const findCoachHeading = page.getByText('Find a Coach')
-      const skeleton = page.locator('.animate-pulse').first()
-      await expect(skeleton.or(findCoachHeading)).toBeVisible({ timeout: 5000 })
-      await expect(findCoachHeading).toBeVisible({ timeout: 30000 })
+      // Wait for coach selector section to load (handles skeleton transition)
+      await waitForRelationshipsSection(page, 'coach')
 
       // Click Connect on first available coach
       await page.getByRole('button', { name: 'Connect' }).first().click()

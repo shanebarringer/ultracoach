@@ -210,3 +210,37 @@ export async function getConnectButtonOrSkip(
 
   return button
 }
+
+/**
+ * Wait for relationships section to fully load using progressive waiting pattern.
+ * Detects when skeletons transition to actual content for reliable test execution.
+ *
+ * Uses data-testid selectors for robustness against text/styling changes.
+ *
+ * @param page - Playwright page object
+ * @param sectionType - Which section to wait for ('coach' or 'runner')
+ * @param options - Configuration options
+ * @param options.timeout - Maximum wait time for final content (default: 30000ms)
+ */
+export async function waitForRelationshipsSection(
+  page: Page,
+  sectionType: 'coach' | 'runner',
+  options: { timeout?: number } = {}
+) {
+  const { timeout = 30000 } = options
+
+  // Map section type to appropriate test IDs
+  const skeletonTestId =
+    sectionType === 'coach' ? 'coach-selector-skeleton' : 'runner-selector-skeleton'
+  const headingTestId = sectionType === 'coach' ? 'find-coaches-heading' : 'find-runners-heading'
+
+  const skeleton = page.getByTestId(skeletonTestId)
+  const heading = page.getByTestId(headingTestId)
+
+  // Progressive wait: first wait for either skeleton or content to appear
+  // (skeleton appears quickly while data loads, content appears when ready)
+  await expect(skeleton.or(heading)).toBeVisible({ timeout: 5000 })
+
+  // Then wait for final content heading (API might take time to respond)
+  await expect(heading).toBeVisible({ timeout })
+}
