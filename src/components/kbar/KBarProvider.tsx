@@ -100,7 +100,6 @@ interface ExtendedUser {
   id: string
   email: string
   name: string
-  role: 'runner' | 'coach'
   userType?: 'runner' | 'coach'
 }
 
@@ -284,6 +283,9 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         perform: () => {
           logger.info('Strava status command triggered')
           if (!connectionStatus.connected) {
+            // Use a full page redirect here because /api/strava/connect
+            // performs a server-side redirect to the external Strava OAuth page.
+            // router.push is intended for app routes, not OAuth handshakes.
             logger.info('Redirecting to Strava connect')
             window.location.href = '/api/strava/connect'
           } else {
@@ -303,6 +305,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         parent: 'strava',
         perform: () => {
           logger.info('Strava connect command triggered')
+          // See note above: this must be a hard redirect so the OAuth
+          // provider can take over the browser session.
           window.location.href = '/api/strava/connect'
         },
       },
