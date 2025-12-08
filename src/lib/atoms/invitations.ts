@@ -59,9 +59,8 @@ export interface CreateInvitationPayload {
 
 /**
  * Async atom that fetches sent invitations.
- * Throws errors to be handled by Suspense error boundaries.
+ * Returns empty array on error to allow graceful degradation.
  * @returns Promise<Invitation[]> - List of sent invitations
- * @throws Error if fetch fails (handled by error boundary)
  */
 export const sentInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invitation[]> => {
   if (!isBrowser) return []
@@ -75,17 +74,17 @@ export const sentInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invita
     invitationsLogger.debug('Sent invitations fetched', { count: invitations.length })
     return invitations
   } catch (error) {
+    // Log error but return empty array for graceful degradation
+    // This prevents the entire page from failing when invitations API is unavailable
     invitationsLogger.error('Error fetching sent invitations', error)
-    // Re-throw to let error boundaries handle it - don't silently swallow errors
-    throw error
+    return []
   }
 })
 
 /**
  * Async atom that fetches received invitations (pending only).
- * Throws errors to be handled by Suspense error boundaries.
+ * Returns empty array on error to allow graceful degradation.
  * @returns Promise<Invitation[]> - List of pending received invitations
- * @throws Error if fetch fails (handled by error boundary)
  */
 export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<Invitation[]> => {
   if (!isBrowser) return []
@@ -102,9 +101,10 @@ export const receivedInvitationsAsyncAtom = atomWithRefresh(async (): Promise<In
     invitationsLogger.debug('Received invitations fetched', { count: invitations.length })
     return invitations
   } catch (error) {
+    // Log error but return empty array for graceful degradation
+    // This prevents the entire page from failing when invitations API is unavailable
     invitationsLogger.error('Error fetching received invitations', error)
-    // Re-throw to let error boundaries handle it - don't silently swallow errors
-    throw error
+    return []
   }
 })
 
