@@ -19,12 +19,13 @@ if tool_name != "Bash" or "git commit" not in command:
 
 # Extract commit message from -m flag
 # Handle both -m "message" and -m 'message' formats (including multiline)
-match = re.search(r'git commit.*?-m\s+["\'](.+?)["\'](?:\s|$)', command, re.DOTALL)
+# Uses backreference \1 to ensure matching opening/closing quotes
+match = re.search(r'git commit.*?-m\s+(["\'])(.+?)\1(?:\s|$)', command, re.DOTALL)
 if not match:
     # Try heredoc format: -m "$(cat <<'EOF' ... EOF)" or -m "$(cat <<EOF ... EOF)"
     # Handle various whitespace and newline representations
     heredoc_match = re.search(
-        r'git commit.*?-m\s+["\']?\$\(cat\s+<<[\-]?["\']?(\w+)["\']?[\s\n]+(.+?)[\s\n]+\1',
+        r'git commit.*?-m\s+["\']?\$\(cat\s+<<[\-]?["\']?(\w+)["\']?\s+(.+?)\s+\1',
         command,
         re.DOTALL
     )
@@ -33,7 +34,7 @@ if not match:
     else:
         sys.exit(0)  # Can't extract message, allow it
 else:
-    commit_msg = match.group(1)
+    commit_msg = match.group(2)  # Group 2 now contains the message (group 1 is the quote char)
 
 # Check if message follows Conventional Commits format
 # Format: type(scope)?: description

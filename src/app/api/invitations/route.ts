@@ -3,7 +3,7 @@
  * POST /api/invitations - Create and send an invitation
  * GET /api/invitations - List invitations for authenticated user
  */
-import { and, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await db
       .select({ id: user.id, email: user.email })
       .from(user)
-      .where(ilike(user.email, email))
+      .where(sql`lower(${user.email}) = ${email.toLowerCase()}`)
       .limit(1)
 
     // If user exists, suggest creating a relationship directly instead
