@@ -14,7 +14,6 @@ import {
 import {
   Activity,
   Calendar,
-  CalendarDays,
   CheckCircle,
   Clock,
   Compass,
@@ -24,7 +23,6 @@ import {
   RefreshCw,
   Route,
   Target,
-  TrendingUp,
   User,
   Users,
 } from 'lucide-react'
@@ -125,28 +123,23 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   const userType = (session?.user as ExtendedUser)?.userType
 
   const actions: Action[] = useMemo(() => {
+    const shortcutMap: Record<string, string[]> = {
+      '/dashboard': ['g', 'd'],
+      '/workouts': ['g', 'w'],
+      '/calendar': ['g', 'c'],
+      '/training-plans': ['g', 't'],
+      '/chat': ['g', 'm'],
+      '/runners': ['g', 'r'],
+      '/weekly-planner': ['g', 'y'],
+    }
+
     const navigationActions: Action[] = navigationItems.map(item => {
       const IconComponent = item.icon
 
       const id = `nav:${item.href}`
       const keywords = [item.label, item.description].filter(Boolean).join(' ')
 
-      const shortcut =
-        item.href === '/dashboard'
-          ? ['g', 'd']
-          : item.href === '/workouts'
-            ? ['g', 'w']
-            : item.href === '/calendar'
-              ? ['g', 'c']
-              : item.href === '/training-plans'
-                ? ['g', 't']
-                : item.href === '/chat'
-                  ? ['g', 'm']
-                  : item.href === '/runners'
-                    ? ['g', 'r']
-                    : item.href === '/weekly-planner'
-                      ? ['g', 'y']
-                      : undefined
+      const shortcut = shortcutMap[item.href]
 
       return {
         id,
@@ -405,18 +398,6 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         },
       },
     ]
-    // Runner-specific actions
-    if (userType === 'runner') {
-      coreActions.push({
-        id: 'weekly-planner-runner',
-        name: 'My Weekly Planner',
-        subtitle: 'View your weekly training schedule',
-        keywords: 'weekly planner my training schedule',
-        icon: <CalendarDays className="w-4 h-4" />,
-        perform: () => router.push('/weekly-planner'),
-      })
-    }
-
     // Coach-specific actions
     if (userType === 'coach') {
       coreActions.push(
@@ -424,34 +405,6 @@ export default function KBarProvider({ children }: KBarProviderProps) {
           id: 'coach-actions',
           name: 'Coach Actions',
           subtitle: 'Coach-specific tools and features',
-        },
-        {
-          id: 'view-runners',
-          name: 'View Athletes',
-          subtitle: 'Manage your athletes',
-          shortcut: ['g', 'r'],
-          keywords: 'athletes runners students',
-          icon: <TrendingUp className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/runners'),
-        },
-        {
-          id: 'weekly-planner',
-          name: 'Weekly Planner',
-          subtitle: 'Plan training sessions',
-          keywords: 'weekly planner schedule training coach',
-          icon: <Calendar className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/weekly-planner'),
-        },
-        {
-          id: 'coach-weekly-overview',
-          name: 'Weekly Overview',
-          subtitle: 'View athlete progress overview',
-          keywords: 'overview athletes progress coach weekly',
-          icon: <TrendingUp className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/coach/weekly-overview'),
         },
         {
           id: 'create-training-plan',
