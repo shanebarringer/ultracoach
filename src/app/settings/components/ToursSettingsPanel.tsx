@@ -53,7 +53,7 @@ const tours: TourInfo[] = (['coach', 'runner'] as const).map(key => {
 
 export default function ToursSettingsPanel() {
   const router = useRouter()
-  const tourState = useAtomValue(tourStateAtom)
+  const { coachTourCompleted, runnerTourCompleted, lastTourStartedAt } = useAtomValue(tourStateAtom)
   const setShouldStartTour = useSetAtom(shouldStartTourAtom)
   const resetTour = useSetAtom(resetTourAtom)
   const hydrateTourState = useSetAtom(hydrateTourStateAtom)
@@ -118,15 +118,22 @@ export default function ToursSettingsPanel() {
   }
 
   const isTourCompleted = (tourId: TourKey) => {
-    return tourId === 'coach' ? tourState.coachTourCompleted : tourState.runnerTourCompleted
+    return tourId === 'coach' ? coachTourCompleted : runnerTourCompleted
   }
 
   // Memoize completed tours count to avoid duplicate filter computation
   const completedToursCount = useMemo(
     () => tours.filter(t => isTourCompleted(t.id)).length,
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isTourCompleted depends on tourState
-    [tourState.coachTourCompleted, tourState.runnerTourCompleted]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isTourCompleted depends on destructured state
+    [coachTourCompleted, runnerTourCompleted]
   )
+
+  // Parse date once to avoid duplicate parsing
+  const lastTourStartedDate = useMemo(() => {
+    if (!lastTourStartedAt) return null
+    const parsed = new Date(lastTourStartedAt)
+    return isNaN(parsed.getTime()) ? null : parsed
+  }, [lastTourStartedAt])
 
   return (
     <div className="space-y-6">
@@ -261,12 +268,11 @@ export default function ToursSettingsPanel() {
             </div>
           </div>
 
-          {tourState.lastTourStartedAt &&
-            !isNaN(new Date(tourState.lastTourStartedAt).getTime()) && (
-              <p className="text-xs text-foreground-500 mt-4 text-center">
-                Last tour started: {format(new Date(tourState.lastTourStartedAt), 'MMM d, yyyy')}
-              </p>
-            )}
+          {lastTourStartedDate && (
+            <p className="text-xs text-foreground-500 mt-4 text-center">
+              Last tour started: {format(lastTourStartedDate, 'MMM d, yyyy')}
+            </p>
+          )}
         </CardBody>
       </Card>
     </div>

@@ -131,7 +131,9 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <UserGroupIcon className="h-6 w-6 text-primary" />
-            <h3 className="text-xl font-semibold">My Relationships</h3>
+            <h3 className="text-xl font-semibold" data-testid="my-relationships-heading">
+              My Relationships
+            </h3>
           </div>
 
           <Tabs
@@ -182,6 +184,7 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
                         variant="flat"
                         color={getStatusColor(relationship.status)}
                         startContent={getStatusIcon(relationship.status)}
+                        data-testid={`relationship-status-${relationship.status}`}
                       >
                         {relationship.status}
                       </Chip>
@@ -203,6 +206,7 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
                           onClick={() => updateRelationshipStatus(relationship.id, 'active')}
                           isLoading={updatingIds.has(relationship.id)}
                           disabled={updatingIds.has(relationship.id)}
+                          data-testid="relationship-accept-button"
                         >
                           Accept
                         </Button>
@@ -213,6 +217,7 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
                           onClick={() => updateRelationshipStatus(relationship.id, 'inactive')}
                           isLoading={updatingIds.has(relationship.id)}
                           disabled={updatingIds.has(relationship.id)}
+                          data-testid="relationship-decline-button"
                         >
                           Decline
                         </Button>
