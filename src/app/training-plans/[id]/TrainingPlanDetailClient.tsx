@@ -19,7 +19,6 @@ import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import ConfirmModal from '@/components/ui/ConfirmModal'
-import { TrainingPlanDetailSkeleton } from '@/components/ui/LoadingSkeletons'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
@@ -171,12 +170,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
     previous_plan?: TrainingPlan
     next_plan?: TrainingPlan
   }>({})
-
-  // Since this component is wrapped in Suspense, the async atom has already resolved
-  // when this component renders. The loading state is handled by the Suspense boundary,
-  // so we don't need a separate loading state here.
-  // An empty array is a valid state (user has no plans), not a loading state.
-  const loading = false
 
   // Create extended training plan object by combining base plan with extended data
   const extendedTrainingPlan = useMemo(() => {
@@ -341,18 +334,22 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       return null
     }
 
-    const startDate = new Date(extendedTrainingPlan.start_date)
+    const planStartDate = new Date(extendedTrainingPlan.start_date)
     const today = new Date()
-    let totalWeeks = 0
+    let cumulativeWeeks = 0
 
+    // Use same date calculation as workout grouping for consistency
     for (const phase of extendedTrainingPlan.plan_phases.sort((a, b) => a.order - b.order)) {
-      const phaseEndDate = new Date(startDate)
-      phaseEndDate.setDate(startDate.getDate() + (totalWeeks + phase.duration_weeks) * 7)
+      const phaseStartDate = new Date(planStartDate)
+      phaseStartDate.setDate(planStartDate.getDate() + cumulativeWeeks * 7)
 
-      if (today >= startDate && today <= phaseEndDate) {
+      const phaseEndDate = new Date(phaseStartDate)
+      phaseEndDate.setDate(phaseStartDate.getDate() + phase.duration_weeks * 7 - 1) // -1 for inclusive boundary
+
+      if (today >= phaseStartDate && today <= phaseEndDate) {
         return phase
       }
-      totalWeeks += phase.duration_weeks
+      cumulativeWeeks += phase.duration_weeks
     }
     return null
   }, [extendedTrainingPlan])
@@ -425,14 +422,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       default:
         return 'bg-yellow-100 text-yellow-800'
     }
-  }
-
-  if (loading) {
-    return (
-      <Layout>
-        <TrainingPlanDetailSkeleton />
-      </Layout>
-    )
   }
 
   if (!extendedTrainingPlan) {
