@@ -18,13 +18,13 @@ import {
   Clock,
   Compass,
   Home,
-  MessageSquare,
+  MessageSquarePlus,
   Mountain,
   RefreshCw,
   Route,
   Target,
-  TrendingUp,
   User,
+  Users,
 } from 'lucide-react'
 
 import { ReactNode, useMemo } from 'react'
@@ -32,9 +32,12 @@ import { ReactNode, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { useNavigationItems } from '@/hooks/useNavigationItems'
 import {
+  chatUiStateAtom,
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
+  uiStateAtom,
   workoutStravaShowPanelAtom,
 } from '@/lib/atoms/index'
 import { shouldStartTourAtom } from '@/lib/atoms/tours'
@@ -95,13 +98,14 @@ interface ExtendedUser {
   id: string
   email: string
   name: string
-  role: 'runner' | 'coach'
   userType?: 'runner' | 'coach'
 }
 
 export default function KBarProvider({ children }: KBarProviderProps) {
   const router = useRouter()
   const { data: session } = useSession()
+
+  const navigationItems = useNavigationItems(session)
 
   // Strava state atoms
   const [connectionStatus] = useAtom(stravaConnectionStatusAtom)
@@ -111,57 +115,45 @@ export default function KBarProvider({ children }: KBarProviderProps) {
   // Tour trigger atom
   const setShouldStartTour = useSetAtom(shouldStartTourAtom)
 
+  // Global UI state for cross-page workflows
+  const setUiState = useSetAtom(uiStateAtom)
+  const setChatUiState = useSetAtom(chatUiStateAtom)
+
   // Extract userType for dependency array
   const userType = (session?.user as ExtendedUser)?.userType
 
   const actions: Action[] = useMemo(() => {
+    const shortcutMap: Record<string, string[]> = {
+      '/dashboard': ['g', 'd'],
+      '/workouts': ['g', 'w'],
+      '/calendar': ['g', 'c'],
+      '/training-plans': ['g', 't'],
+      '/chat': ['g', 'm'],
+      '/runners': ['g', 'r'],
+      '/weekly-planner': ['g', 'y'],
+    }
+
+    const navigationActions: Action[] = navigationItems.map(item => {
+      const IconComponent = item.icon
+
+      const id = `nav:${item.href}`
+      const keywords = [item.label, item.description].filter(Boolean).join(' ')
+
+      const shortcut = shortcutMap[item.href]
+
+      return {
+        id,
+        name: item.label,
+        subtitle: item.description,
+        keywords,
+        shortcut,
+        icon: IconComponent ? <IconComponent className="w-4 h-4" /> : <Home className="w-4 h-4" />,
+        perform: () => router.push(item.href),
+      }
+    })
+
     const coreActions: Action[] = [
-      // Navigation Commands
-      {
-        id: 'dashboard',
-        name: 'Dashboard',
-        subtitle: 'Go to your base camp',
-        shortcut: ['g', 'd'],
-        keywords: 'dashboard home base camp',
-        icon: <Home className="w-4 h-4" />,
-        perform: () => router.push('/dashboard'),
-      },
-      {
-        id: 'workouts',
-        name: 'Training Log',
-        subtitle: 'View and manage your workouts',
-        shortcut: ['g', 'w'],
-        keywords: 'workouts training log ascents',
-        icon: <Mountain className="w-4 h-4" />,
-        perform: () => router.push('/workouts'),
-      },
-      {
-        id: 'calendar',
-        name: 'Calendar',
-        subtitle: 'View your training calendar',
-        shortcut: ['g', 'c'],
-        keywords: 'calendar schedule plan',
-        icon: <Calendar className="w-4 h-4" />,
-        perform: () => router.push('/calendar'),
-      },
-      {
-        id: 'training-plans',
-        name: 'Training Plans',
-        subtitle: 'Manage your expedition plans',
-        shortcut: ['g', 't'],
-        keywords: 'training plans expeditions routes',
-        icon: <Route className="w-4 h-4" />,
-        perform: () => router.push('/training-plans'),
-      },
-      {
-        id: 'messages',
-        name: 'Messages',
-        subtitle: 'Chat with your guide or athletes',
-        shortcut: ['g', 'm'],
-        keywords: 'messages chat communication guide coach',
-        icon: <MessageSquare className="w-4 h-4" />,
-        perform: () => router.push('/chat'),
-      },
+      // Profile & account
       {
         id: 'profile',
         name: 'Profile',
@@ -170,6 +162,14 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         keywords: 'profile settings account',
         icon: <User className="w-4 h-4" />,
         perform: () => router.push('/profile'),
+      },
+      {
+        id: 'find-coach',
+        name: 'Find Coaches',
+        subtitle: 'Browse the public coach directory',
+        keywords: 'coaches directory find coach relationships',
+        icon: <Users className="w-4 h-4" />,
+        perform: () => router.push('/coaches'),
       },
 
       // Quick Actions
@@ -201,6 +201,38 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         parent: 'quick-actions',
         perform: () => {
           router.push('/workouts?filter=today')
+        },
+      },
+      {
+        id: 'new-workout',
+        name: 'Log New Workout',
+        subtitle: 'Create a new workout entry',
+        keywords: 'new workout log training add session',
+        icon: <Mountain className="w-4 h-4" />,
+        parent: 'quick-actions',
+        perform: () => {
+          logger.info('New workout command triggered from K-bar')
+          router.push('/workouts')
+          setUiState(prev => ({
+            ...prev,
+            isAddWorkoutModalOpen: true,
+          }))
+        },
+      },
+      {
+        id: 'start-new-conversation',
+        name: 'Start New Conversation',
+        subtitle: 'Message a coach or runner',
+        keywords: 'messages chat conversation new coach runner',
+        icon: <MessageSquarePlus className="w-4 h-4" />,
+        parent: 'quick-actions',
+        perform: () => {
+          logger.info('Start new conversation command triggered from K-bar')
+          router.push('/chat')
+          setChatUiState(prev => ({
+            ...prev,
+            showNewMessage: true,
+          }))
         },
       },
 
@@ -244,6 +276,9 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         perform: () => {
           logger.info('Strava status command triggered')
           if (!connectionStatus.connected) {
+            // Use a full page redirect here because /api/strava/connect
+            // performs a server-side redirect to the external Strava OAuth page.
+            // router.push is intended for app routes, not OAuth handshakes.
             logger.info('Redirecting to Strava connect')
             window.location.href = '/api/strava/connect'
           } else {
@@ -263,6 +298,8 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         parent: 'strava',
         perform: () => {
           logger.info('Strava connect command triggered')
+          // See note above: this must be a hard redirect so the OAuth
+          // provider can take over the browser session.
           window.location.href = '/api/strava/connect'
         },
       },
@@ -332,6 +369,18 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         subtitle: 'Tutorials and guided tours',
       },
       {
+        id: 'open-help-page',
+        name: 'Open Help Center',
+        subtitle: 'View Help & Support documentation',
+        shortcut: ['g', 'h'],
+        keywords: 'help support documentation faq',
+        icon: <Compass className="w-4 h-4" />,
+        parent: 'help',
+        perform: () => {
+          router.push('/help')
+        },
+      },
+      {
         id: 'start-guided-tour',
         name: 'Start Guided Tour',
         subtitle: 'Take a tour of UltraCoach features',
@@ -349,8 +398,7 @@ export default function KBarProvider({ children }: KBarProviderProps) {
         },
       },
     ]
-
-    // Add role-specific actions
+    // Coach-specific actions
     if (userType === 'coach') {
       coreActions.push(
         {
@@ -359,36 +407,35 @@ export default function KBarProvider({ children }: KBarProviderProps) {
           subtitle: 'Coach-specific tools and features',
         },
         {
-          id: 'view-runners',
-          name: 'View Athletes',
-          subtitle: 'Manage your athletes',
-          shortcut: ['g', 'r'],
-          keywords: 'athletes runners students',
-          icon: <TrendingUp className="w-4 h-4" />,
+          id: 'create-training-plan',
+          name: 'Create Training Plan',
+          subtitle: 'Design a new plan for your athletes',
+          keywords: 'training plans create expedition program coach',
+          icon: <Route className="w-4 h-4" />,
           parent: 'coach-actions',
-          perform: () => router.push('/runners'),
-        },
-        {
-          id: 'weekly-planner',
-          name: 'Weekly Planner',
-          subtitle: 'Plan training sessions',
-          shortcut: ['g', 'y'],
-          keywords: 'weekly planner schedule training',
-          icon: <Calendar className="w-4 h-4" />,
-          parent: 'coach-actions',
-          perform: () => router.push('/weekly-planner'),
+          perform: () => {
+            logger.info('Create training plan command triggered from K-bar')
+            router.push('/training-plans')
+            setUiState(prev => ({
+              ...prev,
+              showCreateTrainingPlan: true,
+            }))
+          },
         }
       )
     }
 
-    return coreActions
+    return [...navigationActions, ...coreActions]
   }, [
     router,
+    navigationItems,
     userType,
     connectionStatus,
     refreshStravaActivities,
     setShowStravaPanel,
     setShouldStartTour,
+    setUiState,
+    setChatUiState,
   ])
 
   return (
