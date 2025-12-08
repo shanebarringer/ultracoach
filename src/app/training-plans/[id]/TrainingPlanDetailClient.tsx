@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 import { TrainingPlanDetailSkeleton } from '@/components/ui/LoadingSkeletons'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
@@ -48,6 +49,98 @@ interface TrainingPlanDetailClientProps {
   planId: string
 }
 
+// Local component to render individual workout cards (reduces duplication)
+interface WorkoutCardItemProps {
+  workout: Workout
+  userType: 'runner' | 'coach'
+  onLogWorkout: (workout: Workout) => void
+  formatDate: (dateString: string) => string
+  getWorkoutStatusColor: (status: string) => string
+}
+
+function WorkoutCardItem({
+  workout,
+  userType,
+  onLogWorkout,
+  formatDate,
+  getWorkoutStatusColor,
+}: WorkoutCardItemProps) {
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="font-medium text-gray-900 dark:text-white">{workout.planned_type}</h3>
+            <span
+              className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}
+            >
+              {workout.status}
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{formatDate(workout.date)}</p>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Planned:</span>
+              <span className="ml-2 text-gray-700 dark:text-gray-200">
+                {workout.planned_distance && `${workout.planned_distance} miles`}
+                {workout.planned_duration && ` • ${workout.planned_duration} min`}
+              </span>
+            </div>
+
+            {workout.status === 'completed' && (
+              <div>
+                <span className="text-gray-500 dark:text-gray-400">Actual:</span>
+                <span className="ml-2 text-gray-700 dark:text-gray-200">
+                  {workout.actual_distance && `${workout.actual_distance} miles`}
+                  {workout.actual_duration && ` • ${workout.actual_duration} min`}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {workout.workout_notes && (
+            <div className="mt-2">
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Notes:</span>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">{workout.workout_notes}</p>
+            </div>
+          )}
+
+          {workout.coach_feedback && (
+            <div className="mt-2">
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Coach Feedback:</span>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                {workout.coach_feedback}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          {userType === 'runner' && workout.status === 'planned' && (
+            <button
+              type="button"
+              onClick={() => onLogWorkout(workout)}
+              className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
+            >
+              Log Workout
+            </button>
+          )}
+          {userType === 'runner' && workout.status === 'completed' && (
+            <button
+              type="button"
+              onClick={() => onLogWorkout(workout)}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
+            >
+              Edit Log
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanDetailClientProps) {
   const router = useRouter()
 
@@ -69,6 +162,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   // Local UI state (keep these as useState since they're UI-specific)
   const [showAddWorkout, setShowAddWorkout] = useState(false)
   const [showLogWorkout, setShowLogWorkout] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [extendedPlanData, setExtendedPlanData] = useState<{
@@ -197,12 +291,6 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   }
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        'Are you sure you want to delete this training plan? This action cannot be undone.'
-      )
-    )
-      return
     setIsDeleting(true)
     try {
       const response = await fetch(`/api/training-plans/${planId}`, {
@@ -221,6 +309,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       commonToasts.trainingPlanError('Failed to delete training plan')
     } finally {
       setIsDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -455,7 +544,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                   <Button
                     variant="flat"
                     color="danger"
-                    onPress={handleDelete}
+                    onPress={() => setShowDeleteConfirm(true)}
                     isLoading={isDeleting}
                     startContent={<Trash2Icon className="w-4 h-4" />}
                     size="sm"
@@ -629,99 +718,14 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                       {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
                         <div className="space-y-4">
                           {workoutsByPhase[phase.id]?.map((workout: Workout) => (
-                            <div
+                            <WorkoutCardItem
                               key={workout.id}
-                              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                            >
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-medium text-gray-900 dark:text-white">
-                                      {workout.planned_type}
-                                    </h3>
-                                    <span
-                                      className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}
-                                    >
-                                      {workout.status}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    {formatDate(workout.date)}
-                                  </p>
-
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                      <span className="text-gray-500 dark:text-gray-400">
-                                        Planned:
-                                      </span>
-                                      <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                        {workout.planned_distance &&
-                                          `${workout.planned_distance} miles`}
-                                        {workout.planned_duration &&
-                                          ` • ${workout.planned_duration} min`}
-                                      </span>
-                                    </div>
-
-                                    {workout.status === 'completed' && (
-                                      <div>
-                                        <span className="text-gray-500 dark:text-gray-400">
-                                          Actual:
-                                        </span>
-                                        <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                          {workout.actual_distance &&
-                                            `${workout.actual_distance} miles`}
-                                          {workout.actual_duration &&
-                                            ` • ${workout.actual_duration} min`}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {workout.workout_notes && (
-                                    <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                        Notes:
-                                      </span>
-                                      <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                        {workout.workout_notes}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {workout.coach_feedback && (
-                                    <div className="mt-2">
-                                      <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                        Coach Feedback:
-                                      </span>
-                                      <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                        {workout.coach_feedback}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="flex gap-2 mt-4">
-                                  {user.userType === 'runner' && workout.status === 'planned' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleLogWorkout(workout)}
-                                      className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
-                                    >
-                                      Log Workout
-                                    </button>
-                                  )}
-                                  {user.userType === 'runner' && workout.status === 'completed' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleLogWorkout(workout)}
-                                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                                    >
-                                      Edit Log
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                              workout={workout}
+                              userType={user.userType}
+                              onLogWorkout={handleLogWorkout}
+                              formatDate={formatDate}
+                              getWorkoutStatusColor={getWorkoutStatusColor}
+                            />
                           ))}
                         </div>
                       ) : (
@@ -739,97 +743,14 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                     </h3>
                     <div className="space-y-4">
                       {ungroupedWorkouts.map((workout: Workout) => (
-                        <div
+                        <WorkoutCardItem
                           key={workout.id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-medium text-gray-900 dark:text-white">
-                                  {workout.planned_type}
-                                </h3>
-                                <span
-                                  className={`px-2 py-1 text-xs rounded-full ${getWorkoutStatusColor(workout.status)}`}
-                                >
-                                  {workout.status}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                {formatDate(workout.date)}
-                              </p>
-
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <span className="text-gray-500 dark:text-gray-400">Planned:</span>
-                                  <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                    {workout.planned_distance &&
-                                      `${workout.planned_distance} miles`}
-                                    {workout.planned_duration &&
-                                      ` • ${workout.planned_duration} min`}
-                                  </span>
-                                </div>
-
-                                {workout.status === 'completed' && (
-                                  <div>
-                                    <span className="text-gray-500 dark:text-gray-400">
-                                      Actual:
-                                    </span>
-                                    <span className="ml-2 text-gray-700 dark:text-gray-200">
-                                      {workout.actual_distance &&
-                                        `${workout.actual_distance} miles`}
-                                      {workout.actual_duration &&
-                                        ` • ${workout.actual_duration} min`}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {workout.workout_notes && (
-                                <div className="mt-2">
-                                  <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                    Notes:
-                                  </span>
-                                  <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                    {workout.workout_notes}
-                                  </p>
-                                </div>
-                              )}
-
-                              {workout.coach_feedback && (
-                                <div className="mt-2">
-                                  <span className="text-gray-500 dark:text-gray-400 text-sm">
-                                    Coach Feedback:
-                                  </span>
-                                  <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
-                                    {workout.coach_feedback}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex gap-2 mt-4">
-                              {user.userType === 'runner' && workout.status === 'planned' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-green-600 text-white text-sm rounded-sm hover:bg-green-700 transition-colors dark:bg-green-700 dark:hover:bg-green-600"
-                                >
-                                  Log Workout
-                                </button>
-                              )}
-                              {user.userType === 'runner' && workout.status === 'completed' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleLogWorkout(workout)}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700 transition-colors dark:bg-blue-700 dark:hover:bg-blue-600"
-                                >
-                                  Edit Log
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                          workout={workout}
+                          userType={user.userType}
+                          onLogWorkout={handleLogWorkout}
+                          formatDate={formatDate}
+                          getWorkoutStatusColor={getWorkoutStatusColor}
+                        />
                       ))}
                     </div>
                   </div>
@@ -856,6 +777,18 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
             workout={selectedWorkout}
           />
         )}
+
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="Delete Training Plan"
+          message="Are you sure you want to delete this training plan? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmColor="danger"
+          isLoading={isDeleting}
+        />
       </div>
     </Layout>
   )

@@ -60,6 +60,17 @@ interface DayWorkout {
   }
 }
 
+/**
+ * Props for WeeklyPlannerCalendar component.
+ *
+ * @property runner - The runner whose weekly plan is being displayed/edited
+ * @property weekStart - The Monday date of the week to display
+ * @property readOnly - If true, disables editing (for runners viewing their own plan)
+ * @property onWeekUpdate - Callback fired after successful save. Required to notify parent
+ *   components of updates. Even if the callback body is empty, it signals that the component
+ *   completed a mutation, allowing parents to trigger side effects (analytics, navigation, etc.)
+ *   if needed. The component already handles optimistic updates and atom refresh internally.
+ */
 interface WeeklyPlannerCalendarProps {
   runner: User
   weekStart: Date

@@ -198,9 +198,10 @@ function RunnerWeeklyPage({
                   <p className="font-medium text-foreground text-sm truncate" title={displayName}>
                     {displayName}
                   </p>
-                  {/* Status Chips - Note: connectedRunnersAtom only returns active relationships,
-                      so "Active" status is accurate. "Training" is a visual indicator that could be
-                      replaced with dynamic data from active training plans in a future enhancement. */}
+                  {/* TODO: Replace hardcoded status chips with dynamic data.
+                      Currently "Active" is accurate since connectedRunnersAtom only returns active relationships.
+                      "Training" should be derived from whether the runner has an active training plan.
+                      See: https://linear.app/ultracoach for tracking this enhancement. */}
                   <div className="flex items-center gap-2 mt-1">
                     <Chip
                       size="sm"
