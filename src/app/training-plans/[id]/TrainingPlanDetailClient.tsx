@@ -267,8 +267,8 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       fetchExtendedPlanData()
     }
 
-    // If plan ID is provided but plan not found, redirect to training plans list
-    // Note: hasCheckedInitialData is initialized to true because Suspense has resolved
+    // If plan ID is provided but plan not found, redirect to training plans list.
+    // Suspense ensures initial data resolution, so no extra flag is needed.
     if (planId && !trainingPlan) {
       router.push('/training-plans')
     }

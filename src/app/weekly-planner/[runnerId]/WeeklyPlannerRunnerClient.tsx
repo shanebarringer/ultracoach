@@ -109,6 +109,7 @@ function RunnerWeeklyPage({
       // Note: created_at/updated_at are required by User type but not used by WeeklyPlannerCalendar
       // These are placeholder values since session doesn't include DB timestamps
       const trimmedName = sessionUser.name?.trim()
+      const now = new Date().toISOString()
       const userFromSession: User = {
         id: sessionUser.id,
         email: sessionUser.email,
@@ -117,8 +118,8 @@ function RunnerWeeklyPage({
             ? trimmedName
             : getDisplayNameFromEmail(sessionUser.email),
         userType: 'runner',
-        created_at: '', // Placeholder - not used by WeeklyPlannerCalendar
-        updated_at: '', // Placeholder - not used by WeeklyPlannerCalendar
+        created_at: now, // Session doesn't include DB timestamps; use current time as fallback
+        updated_at: now, // Session doesn't include DB timestamps; use current time as fallback
       }
       return userFromSession
     }

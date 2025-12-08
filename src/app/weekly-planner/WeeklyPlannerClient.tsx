@@ -1,7 +1,6 @@
 'use client'
 
 import { Avatar, Button, Card, CardBody, CardHeader, Chip, Select, SelectItem } from '@heroui/react'
-import { useAtomValue } from 'jotai'
 import { CalendarDaysIcon, FlagIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 
 import { useState } from 'react'
@@ -9,13 +8,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
+import { useHydrateConnectedRunners } from '@/hooks/useHydrateConnectedRunners'
 import type { User } from '@/lib/supabase'
 
 export default function WeeklyPlannerClient() {
   const router = useRouter()
   const [viewMode, setViewMode] = useState<'grid' | 'dropdown'>('grid')
-  const runners = useAtomValue(connectedRunnersAtom)
+
+  // Hydrate connected runners atom synchronously before reading
+  const runners = useHydrateConnectedRunners()
   const runnersArray = Array.isArray(runners) ? runners : []
 
   const handleRunnerSelection = (keys: 'all' | Set<React.Key>) => {
@@ -176,7 +177,13 @@ export default function WeeklyPlannerClient() {
                           >
                             {runner.email}
                           </p>
+                          {/* Status chips derived from runner data.
+                              "Active" is shown because connectedRunnersAtom only returns
+                              runners with active coach relationships.
+                              TODO: "Training" should be derived from whether runner has
+                              an active training plan - requires additional API data. */}
                           <div className="flex items-center gap-1 lg:gap-2 mt-2">
+                            {/* Active status - always true for connected runners */}
                             <Chip
                               size="sm"
                               variant="flat"
@@ -186,6 +193,8 @@ export default function WeeklyPlannerClient() {
                             >
                               Active
                             </Chip>
+                            {/* TODO: Replace with conditional check for active training plan:
+                                {runner.hasActiveTrainingPlan && (...)} */}
                             <Chip
                               size="sm"
                               variant="flat"
