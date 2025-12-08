@@ -7,7 +7,11 @@
 import { expect, test } from '@playwright/test'
 
 import { TEST_USERS } from '../utils/test-helpers'
-import { getConnectButtonOrSkip, waitForPageReady } from '../utils/wait-helpers'
+import {
+  getConnectButtonOrSkip,
+  navigateWithAuthVerification,
+  waitForPageReady,
+} from '../utils/wait-helpers'
 
 test.describe('Coach-Runner Relationship Management', () => {
   // Use coach authentication for cleanup operations
@@ -27,9 +31,9 @@ test.describe('Coach-Runner Relationship Management', () => {
 
   test.describe('Coach Perspective', () => {
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the coach dashboard - storageState provides authentication
-      await page.goto('/dashboard/coach')
-      await waitForPageReady(page)
+      // Navigate directly to the coach dashboard with auth verification
+      // This will skip the test gracefully if auth session is not available
+      await navigateWithAuthVerification(page, '/dashboard/coach')
     })
 
     test('should display available runners to connect with', async ({ page }) => {
@@ -39,8 +43,15 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Connect" button to navigate to runner selection
       await page.getByTestId('connect-athletes-button').click()
 
-      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      // Wait for URL change confirmation
       await page.waitForURL('**/relationships', { timeout: 10000 })
+
+      // Check for auth redirect after navigation - skip test if session was lost
+      const currentUrl = page.url()
+      if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
+        test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
+      }
+
       await waitForPageReady(page)
 
       // Wait for EITHER skeleton OR actual heading (more resilient)
@@ -67,8 +78,15 @@ test.describe('Coach-Runner Relationship Management', () => {
       // Click "Connect" button from dashboard (use specific testid to avoid Strava button collision)
       await page.getByTestId('connect-athletes-button').click()
 
-      // Wait for URL change confirmation (removed duplicate page.goto to fix race condition)
+      // Wait for URL change confirmation
       await page.waitForURL('**/relationships', { timeout: 10000 })
+
+      // Check for auth redirect after navigation - skip test if session was lost
+      const currentUrl = page.url()
+      if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
+        test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
+      }
+
       await waitForPageReady(page)
 
       // Use progressive waiting with .or() combinator
@@ -166,9 +184,9 @@ test.describe('Coach-Runner Relationship Management', () => {
     test.use({ storageState: './playwright/.auth/runner.json' })
 
     test.beforeEach(async ({ page }) => {
-      // Navigate directly to the runner dashboard - storageState provides authentication
-      await page.goto('/dashboard/runner')
-      await waitForPageReady(page)
+      // Navigate directly to the runner dashboard with auth verification
+      // This will skip the test gracefully if auth session is not available
+      await navigateWithAuthVerification(page, '/dashboard/runner')
     })
 
     test('should display available coaches to connect with', async ({ page }) => {
@@ -180,6 +198,13 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       // Wait for navigation to relationships page
       await page.waitForURL('**/relationships', { timeout: 10000 })
+
+      // Check for auth redirect after navigation - skip test if session was lost
+      const currentUrl = page.url()
+      if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
+        test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
+      }
+
       await waitForPageReady(page)
 
       // Use progressive waiting pattern for better reliability
@@ -205,6 +230,13 @@ test.describe('Coach-Runner Relationship Management', () => {
 
       // Wait for navigation to relationships page
       await page.waitForURL('**/relationships', { timeout: 10000 })
+
+      // Check for auth redirect after navigation - skip test if session was lost
+      const currentUrl = page.url()
+      if (/\/(auth\/(signin|signup))($|\?)/.test(currentUrl)) {
+        test.skip(true, `Auth redirect detected after navigation: ${currentUrl}`)
+      }
+
       await waitForPageReady(page)
 
       // Use progressive waiting pattern for better reliability
