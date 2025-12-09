@@ -133,8 +133,7 @@ export function ComingSoonOverlay({
       <div
         className={blur ? 'opacity-60 pointer-events-none select-none filter blur-[1px]' : ''}
         aria-hidden={blur || undefined}
-        // @ts-expect-error - inert is a valid HTML attribute but not yet in React types
-        inert={blur ? '' : undefined}
+        {...(blur && { inert: true })}
         tabIndex={blur ? -1 : undefined}
       >
         {children}
