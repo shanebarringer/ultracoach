@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { checkTrainingPlanAccess } from '@/lib/training-plan-auth'
 
 const logger = createLogger('TrainingPlanPhasesAPI')
 
@@ -43,22 +44,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
 
-    // Explicit authorization for supported user types (deny unknown types by default)
-    let hasAccess = false
-
-    if (session.user.userType === 'coach') {
-      hasAccess = plan.coach_id === session.user.id
-    } else if (session.user.userType === 'runner') {
-      hasAccess = plan.runner_id === session.user.id
-    } else {
-      // Deny access for unknown/unsupported user types
-      logger.warn('Unknown userType attempted phases access', {
-        planId,
-        userId: session.user.id,
-        userType: session.user.userType,
-      })
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    // Use shared auth helper for consistent authorization logic
+    const { hasAccess } = checkTrainingPlanAccess(
+      { id: session.user.id, userType: session.user.userType },
+      { coach_id: plan.coach_id, runner_id: plan.runner_id }
+    )
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

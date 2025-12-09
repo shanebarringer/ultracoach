@@ -266,7 +266,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
           plan_phases: phasesData.plan_phases || [],
         }))
       } else {
-        logger.error('Failed to fetch plan phases', { status: phasesResponse.statusText })
+        logger.error('Failed to fetch plan phases', {
+          status: phasesResponse.status,
+          statusText: phasesResponse.statusText,
+        })
         if (activePlanRef.current !== fetchPlanId) return
         // Set empty array to avoid stale data and show user-facing error
         setExtendedPlanData(prev => ({
@@ -293,7 +296,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
             previous_plan: prevPlanData.trainingPlan,
           }))
         } else {
-          logger.error('Failed to fetch previous plan', { status: prevPlanResponse.statusText })
+          logger.error('Failed to fetch previous plan', {
+            status: prevPlanResponse.status,
+            statusText: prevPlanResponse.statusText,
+          })
           // Silent failure for linked plans - not critical for main view
         }
       }
@@ -311,7 +317,10 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
             next_plan: nextPlanData.trainingPlan,
           }))
         } else {
-          logger.error('Failed to fetch next plan', { status: nextPlanResponse.statusText })
+          logger.error('Failed to fetch next plan', {
+            status: nextPlanResponse.status,
+            statusText: nextPlanResponse.statusText,
+          })
           // Silent failure for linked plans - not critical for main view
         }
       }
