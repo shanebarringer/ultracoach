@@ -4,6 +4,7 @@ import { BarChart3, Calendar, MessageSquare, Mountain, Target, Trophy, Users } f
 import type { Metadata } from 'next'
 
 import Layout from '@/components/layout/Layout'
+import { ComingSoonBadge } from '@/components/ui/ComingSoonBadge'
 
 export const metadata: Metadata = {
   title: 'About UltraCoach',
@@ -116,7 +117,10 @@ export default function AboutPage() {
               <div className="flex items-start gap-3">
                 <BarChart3 className="w-5 h-5 text-success flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-foreground mb-2">Advanced Analytics</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-foreground">Advanced Analytics</h3>
+                    <ComingSoonBadge tooltip="Enhanced analytics features are coming soon!" />
+                  </div>
                   <p className="text-sm text-foreground/70">
                     Performance insights, training load management, and progress visualization
                   </p>
