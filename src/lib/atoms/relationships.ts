@@ -84,6 +84,12 @@ export const connectingRunnerIdsAtom = atom<Set<string>>(new Set<string>())
  */
 export const runnersAtom = atom<User[]>([])
 
+/**
+ * Synchronous connected runners atom - stores hydrated connected runners data.
+ * Use useHydrateConnectedRunners() to initialize from async atom.
+ */
+export const connectedRunnersSyncAtom = atom<User[]>([])
+
 // Connected runners atom (Suspense-friendly async atom)
 // - Returns a plain User[] when resolved
 // - Uses atomWithRefresh so callers can `set(connectedRunnersAtom)` to refetch
@@ -155,6 +161,7 @@ connectCoachFormAtom.debugLabel = 'relationships/connectCoachForm'
 runnerSearchTermAtom.debugLabel = 'relationships/runnerSearchTerm'
 connectingRunnerIdsAtom.debugLabel = 'relationships/connectingRunnerIds'
 runnersAtom.debugLabel = 'relationships/runners'
+connectedRunnersSyncAtom.debugLabel = 'relationships/connectedRunnersSync'
 connectedRunnersAtom.debugLabel = 'relationships/connectedRunners'
 availableCoachesAtom.debugLabel = 'relationships/availableCoaches'
 availableRunnersAtom.debugLabel = 'relationships/availableRunners'

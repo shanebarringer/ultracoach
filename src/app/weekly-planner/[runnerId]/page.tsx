@@ -1,329 +1,50 @@
-'use client'
+import { Suspense } from 'react'
 
-import { Avatar, Button, Card, CardBody, CardHeader, Chip, Spinner } from '@heroui/react'
-import { useAtomValue } from 'jotai'
-// useAtom available for refresh functionality if needed: import { useAtom, useAtomValue } from 'jotai'
-import {
-  CalendarDaysIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  FlagIcon,
-  TrendingUpIcon,
-} from 'lucide-react'
+import { redirect } from 'next/navigation'
 
-import { Suspense, useEffect, useState } from 'react'
+import { WeeklyPlannerRunnerSkeleton } from '@/components/ui/LoadingSkeletons'
+import { requireAuth } from '@/utils/auth-server'
 
-import { useParams, useRouter } from 'next/navigation'
+import WeeklyPlannerRunnerClient from './WeeklyPlannerRunnerClient'
 
-import Layout from '@/components/layout/Layout'
-import WeeklyPlannerCalendar from '@/components/workouts/WeeklyPlannerCalendar'
-import { useSession } from '@/hooks/useBetterSession'
-import { connectedRunnersAtom } from '@/lib/atoms/index'
-import type { User } from '@/lib/supabase'
-import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 
-export default function WeeklyPlannerRunnerPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const params = useParams()
-  const runnerId = params.runnerId as string
-  const [currentWeek, setCurrentWeek] = useState(() => {
-    // Get current week's Monday
-    const today = new Date()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
-    return monday
-  })
-
-  // Defer connected runners read to a Suspense-wrapped child
-
-  useEffect(() => {
-    if (status === 'loading') return
-
-    if (!session) {
-      router.push('/auth/signin')
-      return
-    }
-
-    // Allow both coaches and runners
-    if (session.user.userType !== 'coach' && session.user.userType !== 'runner') {
-      router.push('/dashboard')
-      return
-    }
-
-    // If runner, ensure they can only view their own training
-    if (session.user.userType === 'runner' && session.user.id !== runnerId) {
-      router.push(`/weekly-planner/${session.user.id}`)
-      return
-    }
-  }, [status, session, router, runnerId])
-
-  // Runner details and connected runners are resolved within RunnerWeeklyPage under Suspense
-
-  if (status === 'loading') {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <Spinner size="lg" color="primary" label="Loading training schedule..." />
-        </div>
-      </Layout>
-    )
-  }
-
-  if (!session || (session.user.userType !== 'coach' && session.user.userType !== 'runner')) {
-    return null
-  }
-
-  return (
-    <Layout>
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-4 lg:py-8">
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" color="primary" label="Loading runner details..." />
-            </div>
-          }
-        >
-          <RunnerWeeklyPage
-            sessionUser={session.user}
-            runnerId={runnerId}
-            currentWeek={currentWeek}
-            setCurrentWeek={setCurrentWeek}
-          />
-        </Suspense>
-      </div>
-    </Layout>
-  )
+interface Props {
+  params: Promise<{ runnerId: string }>
 }
 
-function RunnerWeeklyPage({
-  sessionUser,
-  runnerId,
-  currentWeek,
-  setCurrentWeek,
-}: {
-  sessionUser: {
-    id: string
-    email: string
-    role: 'coach' | 'runner'
-    name: string | null
-    userType?: 'runner' | 'coach'
-  }
-  runnerId: string
-  currentWeek: Date
-  setCurrentWeek: (d: Date) => void
-}) {
-  const router = useRouter()
-  const runners = useAtomValue(connectedRunnersAtom)
+/**
+ * Weekly Planner Runner Page (Server Component)
+ *
+ * Forces dynamic rendering and handles server-side authentication.
+ * Coaches can view any runner's planner, runners can only view their own.
+ */
+export default async function WeeklyPlannerRunnerPage({ params }: Props) {
+  // Server-side authentication - redirects to signin if not authenticated
+  const session = await requireAuth()
 
-  const formatWeekRange = (monday: Date) => {
-    const sunday = new Date(monday)
-    sunday.setDate(monday.getDate() + 6)
-    return `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  // Await params in Next.js 15
+  const { runnerId } = await params
+
+  if (!runnerId) {
+    redirect('/weekly-planner')
   }
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeek = new Date(currentWeek)
-    newWeek.setDate(newWeek.getDate() + (direction === 'next' ? 7 : -7))
-    setCurrentWeek(newWeek)
+  // Allow both coaches and runners
+  if (session.user.userType !== 'coach' && session.user.userType !== 'runner') {
+    redirect('/dashboard')
   }
 
-  const goToCurrentWeek = () => {
-    const today = new Date()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - today.getDay() + 1)
-    setCurrentWeek(monday)
+  // If runner, ensure they can only view their own training
+  if (session.user.userType === 'runner' && session.user.id !== runnerId) {
+    redirect(`/weekly-planner/${session.user.id}`)
   }
 
-  // Derive selectedRunner directly from URL and session
-  const isRunnerSelf = sessionUser?.userType === 'runner' && sessionUser.id === runnerId
-
-  const selectedRunner = (() => {
-    if (isRunnerSelf) {
-      // Runner viewing their own training - use session data
-      const trimmedName = sessionUser.name?.trim()
-      return {
-        id: sessionUser.id,
-        email: sessionUser.email,
-        full_name:
-          trimmedName && trimmedName !== ''
-            ? trimmedName
-            : getDisplayNameFromEmail(sessionUser.email),
-        userType: 'runner' as const,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as User
-    }
-    // Coach viewing runner's training - find from connected runners
-    return runnerId && Array.isArray(runners) && runners.length > 0
-      ? (runners as User[]).find((r: User) => r.id === runnerId) || null
-      : null
-  })()
-
-  if (!selectedRunner) {
-    return (
-      <div className="max-w-[1600px] mx-auto px-8 py-8">
-        <Card className="border-warning-200 bg-warning-50">
-          <CardBody className="text-center py-12">
-            <div className="text-warning-600 mb-4">Runner not found</div>
-            <Button color="primary" onPress={() => router.push('/weekly-planner')}>
-              Back to Weekly Planner
-            </Button>
-          </CardBody>
-        </Card>
-      </div>
-    )
-  }
-
-  // Compute display name once for consistency
-  // Trim full_name before checking - whitespace-only names should fall back to email-derived name
-  const trimmedFullName = selectedRunner.full_name?.trim()
-  const displayName =
-    trimmedFullName && trimmedFullName !== ''
-      ? trimmedFullName
-      : getDisplayNameFromEmail(selectedRunner.email)
-
+  // Pass authenticated user data and runnerId to Client Component wrapped in Suspense
   return (
-    <>
-      {/* Consolidated Header - Mobile Optimized with Fixed Alignment */}
-      <Card className="mb-4 lg:mb-6 bg-content1 border-l-4 border-l-primary">
-        <CardHeader className="pb-4 px-4 lg:px-6">
-          <div className="flex flex-col w-full gap-4">
-            {/* Row 1: Title and Change Runner Button */}
-            <div className="flex items-start justify-between w-full gap-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <CalendarDaysIcon className="w-6 lg:w-8 h-6 lg:h-8 text-primary flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-lg lg:text-2xl font-bold text-foreground">
-                    🏔️ {sessionUser?.userType === 'runner' ? 'My Training' : 'Weekly Planner'}
-                  </h1>
-                  <p className="text-foreground/70 text-xs lg:text-sm truncate">
-                    {sessionUser?.userType === 'runner'
-                      ? 'Your weekly overview'
-                      : `Planning for ${displayName}`}
-                  </p>
-                </div>
-              </div>
-              {sessionUser?.userType === 'coach' && (
-                <Button
-                  variant="flat"
-                  color="secondary"
-                  size="sm"
-                  onPress={() => router.push('/weekly-planner')}
-                  className="flex-shrink-0"
-                >
-                  Change Runner
-                </Button>
-              )}
-            </div>
-
-            {/* Row 2: Runner Info and Week Navigation */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
-              {/* Runner Info */}
-              <div className="flex items-center gap-3 min-w-0">
-                <Avatar
-                  name={displayName}
-                  size="sm"
-                  className="bg-primary text-white flex-shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate" title={displayName}>
-                    {displayName}
-                  </p>
-                  {/* Status Chips - Note: connectedRunnersAtom only returns active relationships,
-                      so "Active" status is accurate. "Training" is a visual indicator that could be
-                      replaced with dynamic data from active training plans in a future enhancement. */}
-                  <div className="flex items-center gap-2 mt-1">
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color="success"
-                      startContent={<TrendingUpIcon className="w-3 h-3" />}
-                      className="text-xs"
-                    >
-                      Active
-                    </Chip>
-                    <Chip
-                      size="sm"
-                      variant="flat"
-                      color="secondary"
-                      startContent={<FlagIcon className="w-3 h-3" />}
-                      className="text-xs"
-                    >
-                      Training
-                    </Chip>
-                  </div>
-                </div>
-              </div>
-
-              {/* Week Navigation - Always Horizontal */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="text-left sm:text-right min-w-0">
-                  <p
-                    className="font-semibold text-foreground text-sm truncate"
-                    title={formatWeekRange(currentWeek)}
-                    aria-live="polite"
-                  >
-                    {formatWeekRange(currentWeek)}
-                  </p>
-                  <p className="text-foreground/50 text-xs">Training Week</p>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigateWeek('prev')}
-                    className="text-foreground/70 hover:text-foreground"
-                    aria-label="Previous week"
-                  >
-                    <ChevronLeftIcon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="flat"
-                    color="warning"
-                    size="sm"
-                    onPress={goToCurrentWeek}
-                    className="px-2 lg:px-3 text-xs lg:text-sm"
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigateWeek('next')}
-                    className="text-foreground/70 hover:text-foreground"
-                    aria-label="Next week"
-                  >
-                    <ChevronRightIcon className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Weekly Calendar - Responsive with Suspense for workout hydration */}
-      <div className="w-full">
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center min-h-[400px]">
-              <Spinner size="lg" color="primary" label="Loading weekly workouts..." />
-            </div>
-          }
-        >
-          <WeeklyPlannerCalendar
-            runner={selectedRunner}
-            weekStart={currentWeek}
-            readOnly={sessionUser?.userType === 'runner'}
-            onWeekUpdate={() => {
-              // Week updated successfully - data will be automatically refreshed
-            }}
-          />
-        </Suspense>
-      </div>
-    </>
+    <Suspense fallback={<WeeklyPlannerRunnerSkeleton />}>
+      <WeeklyPlannerRunnerClient user={session.user} runnerId={runnerId} />
+    </Suspense>
   )
 }
