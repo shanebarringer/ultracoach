@@ -285,7 +285,7 @@ const WORKOUT_TYPE_TO_CATEGORY: Record<string, string> = {
 export default function WeeklyPlannerCalendar({
   runner,
   weekStart,
-  // readOnly = false,
+  readOnly = false,
   onWeekUpdate,
 }: WeeklyPlannerCalendarProps) {
   // CRITICAL FIX (Phase 2): Call useHydrateWorkouts() BEFORE reading workoutsAtom
@@ -759,7 +759,7 @@ export default function WeeklyPlannerCalendar({
             </div>
           </div>
 
-          {hasChanges && (
+          {hasChanges && !readOnly && (
             <Button
               color="success"
               variant="solid"
@@ -825,14 +825,45 @@ export default function WeeklyPlannerCalendar({
                       {/* Quick Category and Terrain */}
                       {day.workout && (
                         <div className="flex flex-col gap-1">
-                          <CategoryChip
-                            category={day.workout?.category}
-                            onSelect={catId => updateDayWorkout(index, 'category', catId)}
-                          />
-                          <TerrainChip
-                            terrain={day.workout?.terrain}
-                            onSelect={terrain => updateDayWorkout(index, 'terrain', terrain)}
-                          />
+                          {readOnly ? (
+                            // Read-only: show chips without popover triggers
+                            <>
+                              {day.workout.category && (
+                                <Chip
+                                  size="sm"
+                                  color={getChipColor(
+                                    WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)
+                                      ?.color
+                                  )}
+                                  variant="flat"
+                                >
+                                  {WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)
+                                    ?.name || day.workout.category}
+                                </Chip>
+                              )}
+                              {day.workout.terrain && (
+                                <Chip
+                                  size="sm"
+                                  color={TERRAIN_OPTIONS[day.workout.terrain]?.color || 'default'}
+                                  variant="flat"
+                                >
+                                  {TERRAIN_OPTIONS[day.workout.terrain]?.label || day.workout.terrain}
+                                </Chip>
+                              )}
+                            </>
+                          ) : (
+                            // Editable: show chips with popover triggers
+                            <>
+                              <CategoryChip
+                                category={day.workout?.category}
+                                onSelect={catId => updateDayWorkout(index, 'category', catId)}
+                              />
+                              <TerrainChip
+                                terrain={day.workout?.terrain}
+                                onSelect={terrain => updateDayWorkout(index, 'terrain', terrain)}
+                              />
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -847,6 +878,7 @@ export default function WeeklyPlannerCalendar({
                       classNames={{ label: 'text-xs font-medium mb-1' }}
                       size="sm"
                       fullWidth
+                      isDisabled={readOnly}
                       selectedKeys={day.workout?.type ? [day.workout.type] : []}
                       onSelectionChange={keys => {
                         const selectedType = Array.from(keys).join('')
@@ -871,6 +903,7 @@ export default function WeeklyPlannerCalendar({
                             size="sm"
                             step="0.1"
                             min="0"
+                            isDisabled={readOnly}
                             value={day.workout.distance?.toString() || ''}
                             onChange={e => updateDayWorkout(index, 'distance', e.target.value)}
                             placeholder="5.5"
@@ -882,6 +915,7 @@ export default function WeeklyPlannerCalendar({
                             classNames={{ label: 'text-xs mb-1' }}
                             size="sm"
                             min="0"
+                            isDisabled={readOnly}
                             value={day.workout.duration?.toString() || ''}
                             onChange={e => updateDayWorkout(index, 'duration', e.target.value)}
                             placeholder="60"
@@ -899,6 +933,7 @@ export default function WeeklyPlannerCalendar({
                               size="sm"
                               min="1"
                               max="10"
+                              isDisabled={readOnly}
                               value={day.workout.intensity?.toString() || ''}
                               onChange={e => updateDayWorkout(index, 'intensity', e.target.value)}
                               placeholder="7"
@@ -911,6 +946,7 @@ export default function WeeklyPlannerCalendar({
                               classNames={{ label: 'text-xs mb-1' }}
                               size="sm"
                               min="0"
+                              isDisabled={readOnly}
                               value={day.workout.elevationGain?.toString() || ''}
                               onChange={e =>
                                 updateDayWorkout(index, 'elevationGain', e.target.value)
@@ -924,6 +960,7 @@ export default function WeeklyPlannerCalendar({
                               classNames={{ label: 'text-xs mb-1' }}
                               size="sm"
                               rows={2}
+                              isDisabled={readOnly}
                               value={day.workout.notes || ''}
                               onChange={e => updateDayWorkout(index, 'notes', e.target.value)}
                               placeholder="Training notes..."
@@ -975,7 +1012,7 @@ export default function WeeklyPlannerCalendar({
                           >
                             {isExpanded ? 'Less' : 'More'}
                           </Button>
-                          {isExpanded && (
+                          {isExpanded && !readOnly && (
                             <Button
                               variant="light"
                               color="danger"
@@ -1003,7 +1040,7 @@ export default function WeeklyPlannerCalendar({
           </div>
         </div>
 
-        {hasChanges && (
+        {hasChanges && !readOnly && (
           <Card className="mt-6 bg-warning/10 border-l-4 border-l-warning">
             <CardBody className="p-4">
               <div className="flex items-center gap-3">
