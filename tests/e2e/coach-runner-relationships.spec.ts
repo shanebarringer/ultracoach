@@ -66,14 +66,16 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
       // Wait for the pending status to appear (indicating the relationship was created and UI updated)
-      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
+      await expect(page.getByTestId('relationship-status-pending').first()).toBeVisible({
+        timeout: 10000,
+      })
 
       // Runner should move to "My Relationships" section with pending status
-      await expect(page.getByText('My Relationships')).toBeVisible()
+      await expect(page.getByTestId('my-relationships-heading')).toBeVisible()
 
-      // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
-      await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
-      await expect(page.getByRole('button', { name: 'Decline' }).first()).toBeVisible()
+      // Should have Accept/Decline buttons for the pending relationship
+      await expect(page.getByTestId('relationship-accept-button').first()).toBeVisible()
+      await expect(page.getByTestId('relationship-decline-button').first()).toBeVisible()
     })
 
     // Skip this test in CI - requires existing relationships
@@ -201,14 +203,16 @@ test.describe('Coach-Runner Relationship Management', () => {
       await page.getByRole('button', { name: 'Connect' }).first().click()
 
       // Wait for the pending status to appear (indicating the relationship was created and UI updated)
-      await expect(page.getByText('pending').first()).toBeVisible({ timeout: 10000 })
+      await expect(page.getByTestId('relationship-status-pending').first()).toBeVisible({
+        timeout: 10000,
+      })
 
       // Coach should move to "My Relationships" section with pending status
-      await expect(page.getByText('My Relationships')).toBeVisible()
+      await expect(page.getByTestId('my-relationships-heading')).toBeVisible()
 
-      // Should have Accept/Decline buttons for the pending relationship (use first() to avoid strict mode)
-      await expect(page.getByRole('button', { name: 'Accept' }).first()).toBeVisible()
-      await expect(page.getByRole('button', { name: 'Decline' }).first()).toBeVisible()
+      // Should have Accept/Decline buttons for the pending relationship
+      await expect(page.getByTestId('relationship-accept-button').first()).toBeVisible()
+      await expect(page.getByTestId('relationship-decline-button').first()).toBeVisible()
     })
 
     test.skip('should manage coach relationship', async ({ page }) => {

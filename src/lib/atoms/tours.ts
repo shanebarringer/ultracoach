@@ -153,14 +153,16 @@ export const startTourAtom = atom(null, (get, set, tourId: TourId) => {
   // Get step count from centralized metadata
   const totalSteps = getTourStepCount(tourId)
 
+  // Use same timestamp for both state updates for consistency
+  const now = new Date().toISOString()
+
   set(activeTourAtom, {
     tourId,
     currentStep: 0,
     totalSteps,
-    startedAt: new Date().toISOString(),
+    startedAt: now,
   })
 
-  const now = new Date().toISOString()
   set(tourStateAtom, current => ({
     ...current,
     lastTourStartedAt: now,
