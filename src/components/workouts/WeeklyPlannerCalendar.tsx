@@ -560,7 +560,7 @@ export default function WeeklyPlannerCalendar({
   }
 
   const saveWeekPlan = async () => {
-    if (!session?.user?.id || !runner.id) return
+    if (!session?.user?.id || !runner.id || readOnly) return
 
     setSaving(true)
 
@@ -847,7 +847,19 @@ export default function WeeklyPlannerCalendar({
                                   color={TERRAIN_OPTIONS[day.workout.terrain]?.color || 'default'}
                                   variant="flat"
                                 >
-                                  {TERRAIN_OPTIONS[day.workout.terrain]?.label || day.workout.terrain}
+                                  {(() => {
+                                    const terrainOption = TERRAIN_OPTIONS[day.workout.terrain]
+                                    if (terrainOption) {
+                                      const TerrainIcon = terrainOption.icon
+                                      return (
+                                        <span className="flex items-center gap-1">
+                                          <TerrainIcon className="w-4 h-4" />
+                                          {terrainOption.label}
+                                        </span>
+                                      )
+                                    }
+                                    return day.workout.terrain
+                                  })()}
                                 </Chip>
                               )}
                             </>
