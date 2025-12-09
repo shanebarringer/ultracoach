@@ -54,6 +54,10 @@ type TrainingPlanWithUsers = TrainingPlan & {
   next_plan?: TrainingPlan
 }
 
+// Response types for API fetch calls (ensures type safety in strict mode)
+type PhasesResponse = { plan_phases?: PlanPhase[] }
+type TrainingPlanResponse = { trainingPlan: TrainingPlan; workouts?: Workout[] }
+
 interface TrainingPlanDetailClientProps {
   user: {
     id: string
@@ -122,7 +126,7 @@ function WorkoutCardItem({
           {workout.workout_notes && (
             <div className="mt-2">
               <span className="text-gray-500 dark:text-gray-400 text-sm">Notes:</span>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 whitespace-pre-line">
                 {workout.workout_notes}
               </p>
             </div>
@@ -131,7 +135,7 @@ function WorkoutCardItem({
           {workout.coach_feedback && (
             <div className="mt-2">
               <span className="text-gray-500 dark:text-gray-400 text-sm">Coach Feedback:</span>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1 whitespace-pre-line">
                 {workout.coach_feedback}
               </p>
             </div>
@@ -255,7 +259,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       if (activePlanRef.current !== fetchPlanId) return
 
       if (phasesResponse.ok) {
-        const phasesData = await phasesResponse.json()
+        const phasesData: PhasesResponse = await phasesResponse.json()
         if (activePlanRef.current !== fetchPlanId) return
         setExtendedPlanData(prev => ({
           ...prev,
@@ -282,7 +286,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         )
         if (activePlanRef.current !== fetchPlanId) return
         if (prevPlanResponse.ok) {
-          const prevPlanData = await prevPlanResponse.json()
+          const prevPlanData: TrainingPlanResponse = await prevPlanResponse.json()
           if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
@@ -300,7 +304,7 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
         })
         if (activePlanRef.current !== fetchPlanId) return
         if (nextPlanResponse.ok) {
-          const nextPlanData = await nextPlanResponse.json()
+          const nextPlanData: TrainingPlanResponse = await nextPlanResponse.json()
           if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
