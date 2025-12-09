@@ -29,9 +29,25 @@ import { commonToasts } from '@/lib/toast'
 
 const logger = createLogger('TrainingPlanDetail')
 
+/**
+ * Extended training plan type with flattened user fields.
+ *
+ * Note: User data comes from the list API (/api/training-plans) which uses
+ * Drizzle LEFT JOIN and returns flattened fields (runner_name, coach_name, etc.)
+ * rather than nested User objects. The [id] route is NOT used for user data.
+ */
 type TrainingPlanWithUsers = TrainingPlan & {
+  // Nested user objects (legacy - may not be populated)
   runners?: User
   coaches?: User
+  // Flattened user fields from API (Drizzle LEFT JOIN response)
+  runner_name?: string | null
+  runner_full_name?: string | null
+  runner_email?: string | null
+  coach_name?: string | null
+  coach_full_name?: string | null
+  coach_email?: string | null
+  // Extended data
   race?: Race
   plan_phases?: PlanPhase[]
   previous_plan?: TrainingPlan
@@ -79,7 +95,9 @@ function WorkoutCardItem({
               {workout.status}
             </span>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{formatDate(workout.date)}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+            {formatDate(workout.date)}
+          </p>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -104,7 +122,9 @@ function WorkoutCardItem({
           {workout.workout_notes && (
             <div className="mt-2">
               <span className="text-gray-500 dark:text-gray-400 text-sm">Notes:</span>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">{workout.workout_notes}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                {workout.workout_notes}
+              </p>
             </div>
           )}
 
@@ -507,23 +527,23 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Use shared sortedPhasesWithDates for consistent ordering */}
                   {sortedPhasesWithDates.phases.map(phase => (
-                      <Card
-                        key={phase.id}
-                        className={`border ${currentPhase?.id === phase.id ? 'border-primary bg-primary/5' : 'border-default-200'}`}
-                      >
-                        <CardBody className="p-4">
-                          <h3 className="font-semibold text-foreground mb-1">{phase.phase_name}</h3>
-                          <p className="text-sm text-foreground/70 mb-2">
-                            Duration: {phase.duration_weeks} weeks
-                          </p>
-                          {currentPhase?.id === phase.id && (
-                            <Chip size="sm" color="primary" variant="flat" className="mt-1">
-                              Current Phase
-                            </Chip>
-                          )}
-                        </CardBody>
-                      </Card>
-                    ))}
+                    <Card
+                      key={phase.id}
+                      className={`border ${currentPhase?.id === phase.id ? 'border-primary bg-primary/5' : 'border-default-200'}`}
+                    >
+                      <CardBody className="p-4">
+                        <h3 className="font-semibold text-foreground mb-1">{phase.phase_name}</h3>
+                        <p className="text-sm text-foreground/70 mb-2">
+                          Duration: {phase.duration_weeks} weeks
+                        </p>
+                        {currentPhase?.id === phase.id && (
+                          <Chip size="sm" color="primary" variant="flat" className="mt-1">
+                            Current Phase
+                          </Chip>
+                        )}
+                      </CardBody>
+                    </Card>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -602,16 +622,18 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                   >
                     Back
                   </Button>
-                  <Button
-                    variant="flat"
-                    color="danger"
-                    onPress={() => setShowDeleteConfirm(true)}
-                    isLoading={isDeleting}
-                    startContent={<Trash2Icon className="w-4 h-4" />}
-                    size="sm"
-                  >
-                    Delete
-                  </Button>
+                  {user.userType === 'coach' && (
+                    <Button
+                      variant="flat"
+                      color="danger"
+                      onPress={() => setShowDeleteConfirm(true)}
+                      isLoading={isDeleting}
+                      startContent={<Trash2Icon className="w-4 h-4" />}
+                      size="sm"
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -677,16 +699,20 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
                     </div>
                     <p className="text-foreground font-medium">
                       {user.userType === 'coach'
-                        ? extendedTrainingPlan.runners?.full_name || 'Runner not found'
-                        : extendedTrainingPlan.coaches?.full_name || 'Coach not found'}
+                        ? extendedTrainingPlan.runner_full_name ||
+                          extendedTrainingPlan.runner_name ||
+                          'Runner not found'
+                        : extendedTrainingPlan.coach_full_name ||
+                          extendedTrainingPlan.coach_name ||
+                          'Coach not found'}
                     </p>
                     {(user.userType === 'coach'
-                      ? extendedTrainingPlan.runners?.email
-                      : extendedTrainingPlan.coaches?.email) && (
+                      ? extendedTrainingPlan.runner_email
+                      : extendedTrainingPlan.coach_email) && (
                       <p className="text-foreground/70 text-sm">
                         {user.userType === 'coach'
-                          ? extendedTrainingPlan.runners?.email
-                          : extendedTrainingPlan.coaches?.email}
+                          ? extendedTrainingPlan.runner_email
+                          : extendedTrainingPlan.coach_email}
                       </p>
                     )}
                   </CardBody>
@@ -771,30 +797,30 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
               <div className="space-y-8">
                 {/* Use shared sortedPhasesWithDates for consistent ordering */}
                 {sortedPhasesWithDates.phases.map(phase => (
-                    <div key={phase.id}>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        {phase.phase_name}
-                      </h3>
-                      {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
-                        <div className="space-y-4">
-                          {workoutsByPhase[phase.id]?.map((workout: Workout) => (
-                            <WorkoutCardItem
-                              key={workout.id}
-                              workout={workout}
-                              userType={user.userType}
-                              onLogWorkout={handleLogWorkout}
-                              formatDate={formatDate}
-                              getWorkoutStatusColor={getWorkoutStatusColor}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-gray-500 dark:text-gray-400 text-sm">
-                          No workouts planned for this phase.
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  <div key={phase.id}>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      {phase.phase_name}
+                    </h3>
+                    {workoutsByPhase[phase.id] && workoutsByPhase[phase.id]?.length > 0 ? (
+                      <div className="space-y-4">
+                        {workoutsByPhase[phase.id]?.map((workout: Workout) => (
+                          <WorkoutCardItem
+                            key={workout.id}
+                            workout={workout}
+                            userType={user.userType}
+                            onLogWorkout={handleLogWorkout}
+                            formatDate={formatDate}
+                            getWorkoutStatusColor={getWorkoutStatusColor}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">
+                        No workouts planned for this phase.
+                      </div>
+                    )}
+                  </div>
+                ))}
 
                 {ungroupedWorkouts.length > 0 && (
                   <div>
