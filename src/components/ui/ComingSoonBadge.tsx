@@ -1,5 +1,6 @@
 'use client'
 
+import type { ChipProps } from '@heroui/react'
 import { Chip, Tooltip } from '@heroui/react'
 import { Clock, Sparkles, Wrench, Zap } from 'lucide-react'
 
@@ -16,6 +17,12 @@ interface ComingSoonBadgeProps {
   size?: 'sm' | 'md' | 'lg'
   /** Optional custom className */
   className?: string
+  /**
+   * Additional props to pass to the underlying Chip component.
+   * Useful for adding onClick, data-* attributes, radius, etc.
+   * Component-controlled props (variant, color, size, startContent) take precedence.
+   */
+  chipProps?: Partial<Omit<ChipProps, 'variant' | 'color' | 'size' | 'startContent' | 'children'>>
 }
 
 const variantConfig: Record<
@@ -67,17 +74,22 @@ export function ComingSoonBadge({
   tooltip,
   size = 'sm',
   className = '',
+  chipProps,
 }: ComingSoonBadgeProps) {
   const config = variantConfig[variant]
   const tooltipText = tooltip || config.defaultTooltip
 
+  // Merge external className with internal className
+  const mergedClassName = `font-medium ${className} ${chipProps?.className || ''}`.trim()
+
   const badge = (
     <Chip
+      {...chipProps}
       variant="flat"
       color={config.color}
       size={size}
       startContent={config.icon}
-      className={`font-medium ${className}`}
+      className={mergedClassName}
     >
       {config.label}
     </Chip>
@@ -92,12 +104,21 @@ export function ComingSoonBadge({
 
 /**
  * ComingSoonOverlay - An overlay version for marking entire sections as coming soon
+ *
+ * @note When `blur` is true, the content is made non-interactive for both mouse
+ * and keyboard/assistive technology users via `aria-hidden` and `inert` attributes.
+ * This is intended for decorative/preview content that should not be interacted with.
  */
 interface ComingSoonOverlayProps {
   children: ReactNode
   variant?: BadgeVariant
   message?: string
-  /** Whether to blur the underlying content */
+  /**
+   * Whether to blur the underlying content.
+   * When true, content becomes non-interactive (pointer-events disabled,
+   * aria-hidden for screen readers, inert for keyboard navigation).
+   * Use only for decorative/preview content that should not be accessible.
+   */
   blur?: boolean
 }
 
@@ -109,7 +130,13 @@ export function ComingSoonOverlay({
 }: ComingSoonOverlayProps) {
   return (
     <div className="relative">
-      <div className={blur ? 'opacity-60 pointer-events-none select-none filter blur-[1px]' : ''}>
+      <div
+        className={blur ? 'opacity-60 pointer-events-none select-none filter blur-[1px]' : ''}
+        aria-hidden={blur || undefined}
+        // @ts-expect-error - inert is a valid HTML attribute but not yet in React types
+        inert={blur ? '' : undefined}
+        tabIndex={blur ? -1 : undefined}
+      >
         {children}
       </div>
       <div className="absolute top-2 right-2 z-10">

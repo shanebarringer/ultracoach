@@ -1,16 +1,45 @@
-import { Card, CardBody, Chip, Tooltip } from '@heroui/react'
+import { Card, CardBody, Chip } from '@heroui/react'
 import { Check, Clock, Sparkles } from 'lucide-react'
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import Layout from '@/components/layout/Layout'
+import { ComingSoonBadge } from '@/components/ui/ComingSoonBadge'
 
 export const metadata: Metadata = {
   title: 'Pricing - UltraCoach',
   description:
     'Choose the UltraCoach plan that works for you. Free for runners, affordable for coaches.',
 }
+
+/** Roadmap features data for the "Coming Soon" section */
+const roadmapFeatures = [
+  {
+    title: 'AI Coaching Insights',
+    description: 'Smart training recommendations',
+  },
+  {
+    title: 'Community Features',
+    description: 'Connect with other athletes',
+  },
+  {
+    title: 'Advanced Analytics',
+    description: 'Deep performance insights',
+  },
+  {
+    title: 'Garmin Integration',
+    description: 'Sync your Garmin data',
+  },
+  {
+    title: 'Mobile App',
+    description: 'iOS and Android apps',
+  },
+  {
+    title: 'Race Predictions',
+    description: 'AI-powered finish time estimates',
+  },
+] as const
 
 export default function PricingPage() {
   return (
@@ -81,23 +110,12 @@ export default function PricingPage() {
 
           {/* Coach Plan */}
           <Card className="border-2 border-success-200 shadow-lg relative overflow-visible">
-            {/* Coming Soon Badge */}
+            {/* Coming Soon Badge - using shared component */}
             <div className="absolute -top-3 right-4 z-10">
-              <Tooltip
-                content="Paid plans are coming soon! Coaches currently enjoy free access during our beta period."
-                placement="top"
-                showArrow
-              >
-                <Chip
-                  variant="flat"
-                  color="warning"
-                  size="sm"
-                  startContent={<Clock className="w-3 h-3" />}
-                  className="font-medium shadow-md"
-                >
-                  Coming Soon
-                </Chip>
-              </Tooltip>
+              <ComingSoonBadge
+                tooltip="Paid plans are coming soon! Coaches currently enjoy free access during our beta period."
+                chipProps={{ className: 'shadow-md' }}
+              />
             </div>
 
             <CardBody className="p-8">
@@ -184,48 +202,18 @@ export default function PricingPage() {
               </div>
 
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">AI Coaching Insights</p>
-                    <p className="text-sm text-default-500">Smart training recommendations</p>
+                {roadmapFeatures.map(feature => (
+                  <div
+                    key={feature.title}
+                    className="flex items-start gap-3 p-4 bg-default-100 rounded-lg"
+                  >
+                    <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-default-800">{feature.title}</p>
+                      <p className="text-sm text-default-500">{feature.description}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">Community Features</p>
-                    <p className="text-sm text-default-500">Connect with other athletes</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">Advanced Analytics</p>
-                    <p className="text-sm text-default-500">Deep performance insights</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">Garmin Integration</p>
-                    <p className="text-sm text-default-500">Sync your Garmin data</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">Mobile App</p>
-                    <p className="text-sm text-default-500">iOS and Android apps</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-default-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-warning-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-default-800">Race Predictions</p>
-                    <p className="text-sm text-default-500">AI-powered finish time estimates</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardBody>
           </Card>

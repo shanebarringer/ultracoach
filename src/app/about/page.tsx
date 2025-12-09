@@ -1,18 +1,10 @@
-import { Card, CardBody, CardHeader, Chip, Tooltip } from '@heroui/react'
-import {
-  BarChart3,
-  Calendar,
-  Clock,
-  MessageSquare,
-  Mountain,
-  Target,
-  Trophy,
-  Users,
-} from 'lucide-react'
+import { Card, CardBody, CardHeader, Chip } from '@heroui/react'
+import { BarChart3, Calendar, MessageSquare, Mountain, Target, Trophy, Users } from 'lucide-react'
 
 import type { Metadata } from 'next'
 
 import Layout from '@/components/layout/Layout'
+import { ComingSoonBadge } from '@/components/ui/ComingSoonBadge'
 
 export const metadata: Metadata = {
   title: 'About UltraCoach',
@@ -127,21 +119,7 @@ export default function AboutPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold text-foreground">Advanced Analytics</h3>
-                    <Tooltip
-                      content="Enhanced analytics features are coming soon!"
-                      placement="top"
-                      showArrow
-                    >
-                      <Chip
-                        variant="flat"
-                        color="warning"
-                        size="sm"
-                        startContent={<Clock className="w-2.5 h-2.5" />}
-                        className="text-xs"
-                      >
-                        Coming Soon
-                      </Chip>
-                    </Tooltip>
+                    <ComingSoonBadge tooltip="Enhanced analytics features are coming soon!" />
                   </div>
                   <p className="text-sm text-foreground/70">
                     Performance insights, training load management, and progress visualization
