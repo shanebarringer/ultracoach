@@ -157,7 +157,7 @@ export default function SignIn() {
   if (isRedirecting) {
     return (
       <ModernErrorBoundary>
-        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center bg-background py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
           <div className="max-w-md w-full">
             <Card className="border-t-4 border-t-primary shadow-2xl">
               <CardBody className="text-center py-12">
@@ -194,7 +194,7 @@ export default function SignIn() {
 
   return (
     <ModernErrorBoundary>
-      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-background py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           <Card className="border-t-4 border-t-primary shadow-2xl">
             <CardHeader className="text-center pb-4">
@@ -268,7 +268,7 @@ export default function SignIn() {
                 <div className="flex justify-end">
                   <Link
                     href="/auth/forgot-password"
-                    className="text-sm text-primary hover:text-primary-600 transition-colors"
+                    className="text-sm text-primary hover:text-primary-600 transition-colors py-2 px-1 -mx-1 touch-manipulation"
                   >
                     Forgot your password?
                   </Link>

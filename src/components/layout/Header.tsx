@@ -43,7 +43,7 @@ const ThemeToggle = memo(function ThemeToggle() {
       variant="light"
       onClick={toggleTheme}
       aria-label="Toggle theme"
-      className="hover:bg-primary/10 transition-colors"
+      className="min-w-[44px] min-h-[44px] hover:bg-primary/10 transition-colors"
       data-testid="theme-toggle"
     >
       {themeMode === 'light' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
@@ -65,7 +65,7 @@ const SearchButton = memo(function SearchButton() {
       variant="light"
       onClick={openKBar}
       aria-label="Search (⌘K)"
-      className="hover:bg-primary/10 transition-colors"
+      className="min-w-[44px] min-h-[44px] hover:bg-primary/10 transition-colors"
       data-testid="kbar-search-button"
     >
       <Search className="h-5 w-5" />
@@ -104,14 +104,14 @@ function Header() {
       height="4rem"
       maxWidth="full"
     >
-      <div className="max-w-7xl w-full mx-auto px-6 flex justify-between items-center">
-        <div className="flex items-center gap-6">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 flex justify-between items-center">
+        <div className="flex items-center gap-3 sm:gap-6">
           <Button
             isIconOnly
             variant="light"
             aria-label="Open menu"
             data-testid="nav-menu-button"
-            className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
+            className="min-w-[44px] min-h-[44px] flex-shrink-0 text-foreground hover:text-primary transition-colors"
             onClick={() => setUiState(prev => ({ ...prev, isDrawerOpen: true }))}
           >
             <Menu className="h-6 w-6" />
@@ -132,19 +132,35 @@ function Header() {
 
         {/* suppressHydrationWarning: Auth state differs server vs client (expected behavior)
             Server renders Sign In/Sign Up buttons, client may render user avatar after hydration */}
-        <div className="flex items-center gap-2 flex-shrink-0" suppressHydrationWarning>
+        <div className="flex items-center gap-2 sm:gap-3" suppressHydrationWarning>
           {!session && status !== 'loading' && (
             <>
-              <Button as={Link} href="/auth/signin" variant="light" size="sm">
+              {/* Hide text buttons on mobile - users can access via hamburger menu */}
+              <Button
+                as={Link}
+                href="/auth/signin"
+                variant="light"
+                size="sm"
+                className="hidden sm:flex"
+              >
                 Sign In
               </Button>
-              <Button as={Link} href="/auth/signup" color="primary" size="sm">
+              <Button
+                as={Link}
+                href="/auth/signup"
+                color="primary"
+                size="sm"
+                className="hidden sm:flex"
+              >
                 Sign Up
               </Button>
             </>
           )}
 
-          <SearchButton />
+          {/* Hide search on mobile - accessible via hamburger menu or ⌘K */}
+          <div className="hidden sm:block">
+            <SearchButton />
+          </div>
 
           {session && <NotificationBell />}
 
@@ -155,7 +171,8 @@ function Header() {
               <DropdownTrigger data-testid="user-menu">
                 <Avatar
                   name={(session.user?.name as string) || 'User'}
-                  className="cursor-pointer bg-primary text-white"
+                  size="sm"
+                  className="cursor-pointer bg-primary text-white flex-shrink-0"
                 />
               </DropdownTrigger>
               <DropdownMenu aria-label="User menu">

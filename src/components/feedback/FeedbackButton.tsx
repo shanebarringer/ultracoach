@@ -20,7 +20,8 @@ export default function FeedbackButton({
 }: FeedbackButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const baseClasses = variant === 'floating' ? 'fixed bottom-4 right-4 z-50 shadow-lg' : ''
+  const baseClasses =
+    variant === 'floating' ? 'fixed bottom-4 right-4 z-50 shadow-lg hidden sm:flex' : ''
 
   return (
     <>

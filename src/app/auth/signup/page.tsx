@@ -212,7 +212,7 @@ export default function SignUp() {
   // Show loading state when fetching invitation
   if (invitationLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
         <Card className="max-w-md w-full">
           <CardBody className="text-center py-12">
             <Spinner size="lg" color="secondary" />
@@ -224,7 +224,7 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <Card className="border-t-4 border-t-secondary shadow-2xl">
           <CardHeader className="text-center pb-4">

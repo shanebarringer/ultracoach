@@ -19,7 +19,7 @@ export default function HomePageClient() {
       {/* Hero Section with Mountain Peak Enhanced styling */}
       <div className="relative overflow-hidden bg-linear-to-br from-primary-600 via-primary-700 to-secondary-600">
         <div className="absolute inset-0 bg-black/20" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
           <div className="text-center text-white">
             <Chip
               variant="flat"
@@ -33,18 +33,18 @@ export default function HomePageClient() {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-linear-to-r from-white to-warning-200 bg-clip-text text-transparent">
               Conquer Your Peaks
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100">
+            <p className="text-lg sm:text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100 px-2">
               Master ultramarathon excellence with expert coaching, scientific training methods, and
               the tools to reach every summit on your journey.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md mx-auto sm:max-w-none">
               <Button
                 as={Link}
                 href="/auth/signup"
                 size="lg"
                 color="warning"
                 variant="solid"
-                className="text-primary-900 font-semibold"
+                className="w-full sm:w-auto min-h-[48px] text-primary-900 font-semibold"
                 endContent={<ArrowRightIcon className="w-4 h-4" />}
               >
                 Begin Your Ascent
@@ -54,7 +54,7 @@ export default function HomePageClient() {
                 href="/coaches"
                 size="lg"
                 variant="bordered"
-                className="border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
+                className="w-full sm:w-auto min-h-[48px] border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
                 startContent={<UsersIcon className="w-4 h-4" />}
               >
                 Find Your Guide
@@ -63,7 +63,7 @@ export default function HomePageClient() {
           </div>
         </div>
         {/* Mountain silhouette decoration */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-default-50 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-8 sm:h-16 bg-linear-to-t from-default-50 to-transparent" />
       </div>
 
       {/* Features Section */}
@@ -82,7 +82,7 @@ export default function HomePageClient() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <Card className="border-none shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardBody className="text-center p-8">
                 <div className="bg-linear-to-br from-success-100 to-success-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -152,14 +152,14 @@ export default function HomePageClient() {
             Join the expedition of ultramarathon athletes who are already conquering their peaks
             with professional coaching, scientific training, and unwavering support.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md mx-auto sm:max-w-none">
             <Button
               as={Link}
               href="/auth/signup"
               size="lg"
               color="warning"
               variant="solid"
-              className="text-primary-900 font-bold text-lg px-8"
+              className="w-full sm:w-auto min-h-[48px] text-primary-900 font-bold text-lg px-8"
               endContent={<ArrowRightIcon className="w-5 h-5" />}
             >
               Start Your Expedition Today
@@ -169,7 +169,7 @@ export default function HomePageClient() {
               href="/auth/signin"
               size="lg"
               variant="bordered"
-              className="border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
+              className="w-full sm:w-auto min-h-[48px] border-white text-white hover:bg-white hover:text-primary-700 font-semibold"
             >
               Return to Base Camp
             </Button>

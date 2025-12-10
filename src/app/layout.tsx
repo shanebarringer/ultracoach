@@ -1,7 +1,7 @@
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 
 import KBarProvider from '@/components/kbar/KBarProvider'
@@ -20,6 +20,12 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'UltraCoach - Ultramarathon Training Platform',
   description: 'Connect with coaches and manage your ultramarathon training',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default async function RootLayout({
