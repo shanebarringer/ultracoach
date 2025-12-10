@@ -19,7 +19,7 @@ export default function HomePageClient() {
       {/* Hero Section with Mountain Peak Enhanced styling */}
       <div className="relative overflow-hidden bg-linear-to-br from-primary-600 via-primary-700 to-secondary-600">
         <div className="absolute inset-0 bg-black/20" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
           <div className="text-center text-white">
             <Chip
               variant="flat"
@@ -33,7 +33,7 @@ export default function HomePageClient() {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-linear-to-r from-white to-warning-200 bg-clip-text text-transparent">
               Conquer Your Peaks
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100">
+            <p className="text-lg sm:text-xl md:text-2xl mb-8 max-w-4xl mx-auto text-primary-100 px-2">
               Master ultramarathon excellence with expert coaching, scientific training methods, and
               the tools to reach every summit on your journey.
             </p>
@@ -63,7 +63,7 @@ export default function HomePageClient() {
           </div>
         </div>
         {/* Mountain silhouette decoration */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-default-50 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-8 sm:h-16 bg-linear-to-t from-default-50 to-transparent" />
       </div>
 
       {/* Features Section */}
