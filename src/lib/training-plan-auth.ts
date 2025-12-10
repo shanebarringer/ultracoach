@@ -3,11 +3,16 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('TrainingPlanAuth')
 
 /**
+ * Valid user types for training plan authorization.
+ */
+export type UserType = 'coach' | 'runner'
+
+/**
  * Minimal user info required for training plan authorization.
  */
 export type AuthUserInfo = {
   id: string
-  userType: string
+  userType: UserType | (string & {}) // Allow known types + defensive for unknowns
 }
 
 /**

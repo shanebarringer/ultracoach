@@ -75,12 +75,17 @@ export async function DELETE(
     }
 
     // Use shared auth helper for consistent authorization logic
-    const { hasAccess } = checkTrainingPlanAccess(
+    const { hasAccess, reason } = checkTrainingPlanAccess(
       { id: session.user.id, userType: session.user.userType },
       { coach_id: plan.coach_id, runner_id: plan.runner_id }
     )
 
     if (!hasAccess) {
+      logger.warn('Forbidden training plan delete attempt', {
+        id,
+        userId: session.user.id,
+        reason,
+      })
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     // Delete the plan
