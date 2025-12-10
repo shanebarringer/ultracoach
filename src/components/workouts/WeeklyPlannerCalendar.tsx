@@ -1,6 +1,8 @@
 'use client'
 
 import {
+  Accordion,
+  AccordionItem,
   Button,
   Card,
   CardBody,
@@ -282,6 +284,225 @@ const WORKOUT_TYPE_TO_CATEGORY: Record<string, string> = {
   'Rest Day': 'rest',
 }
 
+interface DayCardProps {
+  day: DayWorkout
+  index: number
+  isToday: boolean
+  readOnly?: boolean
+  onUpdateWorkout: (dayIndex: number, field: string, value: string | number | undefined) => void
+  onClearWorkout: (dayIndex: number) => void
+}
+
+function DayCard({
+  day,
+  index,
+  isToday,
+  readOnly = false,
+  onUpdateWorkout,
+  onClearWorkout,
+}: DayCardProps) {
+  return (
+    <div className="space-y-4">
+      {/* Quick Category and Terrain */}
+      {day.workout && (
+        <div className="flex flex-col gap-2">
+          {readOnly ? (
+            // Read-only: show chips without popover triggers
+            <>
+              {day.workout.category && (
+                <Chip
+                  size="sm"
+                  color={getChipColor(
+                    WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)?.color
+                  )}
+                  variant="flat"
+                >
+                  {WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)?.name ||
+                    day.workout.category}
+                </Chip>
+              )}
+              {day.workout.terrain && (
+                <Chip
+                  size="sm"
+                  color={TERRAIN_OPTIONS[day.workout.terrain]?.color || 'default'}
+                  variant="flat"
+                >
+                  {(() => {
+                    const terrainOption = TERRAIN_OPTIONS[day.workout.terrain]
+                    if (terrainOption) {
+                      const TerrainIcon = terrainOption.icon
+                      return (
+                        <span className="flex items-center gap-1">
+                          <TerrainIcon className="w-4 h-4" />
+                          {terrainOption.label}
+                        </span>
+                      )
+                    }
+                    return day.workout.terrain
+                  })()}
+                </Chip>
+              )}
+            </>
+          ) : (
+            // Editable: show chips with popover triggers
+            <>
+              <CategoryChip
+                category={day.workout?.category}
+                onSelect={catId => onUpdateWorkout(index, 'category', catId)}
+              />
+              <TerrainChip
+                terrain={day.workout?.terrain}
+                onSelect={terrain => onUpdateWorkout(index, 'terrain', terrain)}
+              />
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Workout Type */}
+      <Select
+        label="Workout Type"
+        classNames={{ label: 'text-xs font-medium mb-1' }}
+        size="sm"
+        fullWidth
+        isDisabled={readOnly}
+        selectedKeys={day.workout?.type ? [day.workout.type] : []}
+        onSelectionChange={keys => {
+          const selectedType = Array.from(keys).join('')
+          onUpdateWorkout(index, 'type', selectedType)
+        }}
+        placeholder="Rest"
+        items={WORKOUT_TYPES.map(type => ({ id: type, name: type }))}
+        className="text-xs"
+      >
+        {item => <SelectItem key={item.id}>{item.name}</SelectItem>}
+      </Select>
+
+      {/* Workout Details */}
+      {day.workout && day.workout.type && day.workout.type !== 'Rest Day' && (
+        <>
+          {/* Essential fields - always visible */}
+          <div className="grid grid-cols-1 gap-2">
+            <Input
+              type="number"
+              label="Distance (mi)"
+              classNames={{ label: 'text-xs mb-1' }}
+              size="sm"
+              step="0.1"
+              min="0"
+              isDisabled={readOnly}
+              value={day.workout.distance?.toString() || ''}
+              onChange={e => onUpdateWorkout(index, 'distance', e.target.value)}
+              placeholder="5.5"
+              className="text-xs"
+            />
+            <Input
+              type="number"
+              label="Duration (min)"
+              classNames={{ label: 'text-xs mb-1' }}
+              size="sm"
+              min="0"
+              isDisabled={readOnly}
+              value={day.workout.duration?.toString() || ''}
+              onChange={e => onUpdateWorkout(index, 'duration', e.target.value)}
+              placeholder="60"
+              className="text-xs"
+            />
+          </div>
+
+          {/* Additional fields for accordion (always visible on mobile) */}
+          <Input
+            type="number"
+            label="Intensity (1-10)"
+            classNames={{ label: 'text-xs mb-1' }}
+            size="sm"
+            min="1"
+            max="10"
+            isDisabled={readOnly}
+            value={day.workout.intensity?.toString() || ''}
+            onChange={e => onUpdateWorkout(index, 'intensity', e.target.value)}
+            placeholder="7"
+            className="text-xs"
+          />
+
+          <Input
+            type="number"
+            label="Elevation (ft)"
+            classNames={{ label: 'text-xs mb-1' }}
+            size="sm"
+            min="0"
+            isDisabled={readOnly}
+            value={day.workout.elevationGain?.toString() || ''}
+            onChange={e => onUpdateWorkout(index, 'elevationGain', e.target.value)}
+            placeholder="500"
+            className="text-xs"
+          />
+
+          <Textarea
+            label="Notes"
+            classNames={{ label: 'text-xs mb-1' }}
+            size="sm"
+            rows={3}
+            isDisabled={readOnly}
+            value={day.workout.notes || ''}
+            onChange={e => onUpdateWorkout(index, 'notes', e.target.value)}
+            placeholder="Training notes..."
+            className="text-xs"
+          />
+
+          {/* Intensity Indicator */}
+          {day.workout.intensity && (
+            <div className="pt-1">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-xs text-foreground/70">Zone:</span>
+                <Chip
+                  size="sm"
+                  color={getIntensityColor(day.workout.intensity)}
+                  variant="flat"
+                  className="text-xs h-4"
+                >
+                  {getIntensityLabel(day.workout.intensity)}
+                </Chip>
+              </div>
+              <div className="w-full bg-default-200 rounded-full h-1">
+                <div
+                  className={classNames(
+                    'h-1 rounded-full transition-all duration-300',
+                    day.workout.intensity <= 3
+                      ? 'bg-success'
+                      : day.workout.intensity <= 5
+                        ? 'bg-primary'
+                        : day.workout.intensity <= 7
+                          ? 'bg-warning'
+                          : 'bg-danger'
+                  )}
+                  style={{ width: `${day.workout.intensity * 10}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons - only clear button on mobile accordion */}
+          {!readOnly && (
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="light"
+                color="danger"
+                size="sm"
+                className="text-xs px-3 py-2 h-8 min-h-8 flex-1"
+                onClick={() => onClearWorkout(index)}
+                aria-label={`Clear ${day.dayName} workout`}
+              >
+                Clear Workout
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function WeeklyPlannerCalendar({
   runner,
   weekStart,
@@ -307,7 +528,6 @@ export default function WeeklyPlannerCalendar({
   const refreshWorkouts = useSetAtom(refreshWorkoutsAtom)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
-  const [expandedDays, setExpandedDays] = useState<Record<number, boolean>>({})
 
   // Filter workouts for this week and runner
   const existingWorkouts = useMemo(() => {
@@ -775,24 +995,94 @@ export default function WeeklyPlannerCalendar({
       </CardHeader>
 
       <CardBody className="p-6">
-        {/* Horizontal Scrolling Container for Mobile */}
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-7 gap-3">
-            {weekWorkouts.map((day, index) => {
-              const isExpanded = expandedDays[index] || false
-              const toggleExpanded = () => {
-                setExpandedDays(prev => ({ ...prev, [index]: !isExpanded }))
-              }
+        {/* Responsive Grid Layout: Mobile (1 col) → Tablet (2 cols) → Desktop (7 cols) */}
+        <div className="w-full">
+          {/* Mobile/Tablet: Accordion View */}
+          <div className="lg:hidden">
+            <Accordion defaultExpandedKeys={[]} selectionMode="single" variant="light">
+              {weekWorkouts.map((day, index) => {
+                // Create summary of workout for collapsed state
+                const workoutSummary = day.workout
+                  ? `${day.workout.type}${
+                      day.workout.distance
+                        ? ` • ${day.workout.distance} mi`
+                        : ''
+                    }${
+                      day.workout.duration
+                        ? ` • ${day.workout.duration} min`
+                        : ''
+                    }`
+                  : 'Rest Day'
 
-              return (
+                return (
+                  <AccordionItem
+                    key={day.date.toISOString()}
+                    title={
+                      <div className="flex flex-col gap-2 w-full py-1">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="text-left">
+                            <h4 className="font-semibold text-sm">
+                              {day.dayName}, {formatDate(day.date)}
+                            </h4>
+                            {isToday(day.date) && (
+                              <Chip
+                                size="sm"
+                                color="primary"
+                                variant="flat"
+                                className="mt-1"
+                              >
+                                Today
+                              </Chip>
+                            )}
+                          </div>
+                          <div className="text-right text-xs text-foreground/70 flex-shrink-0">
+                            {day.workout?.category && (
+                              <Chip
+                                size="sm"
+                                color={getChipColor(
+                                  WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)
+                                    ?.color
+                                )}
+                                variant="flat"
+                                className="text-xs"
+                              >
+                                {WORKOUT_CATEGORIES.find(c => c.id === day.workout?.category)
+                                  ?.name || day.workout.category}
+                              </Chip>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-foreground/70 truncate">{workoutSummary}</p>
+                      </div>
+                    }
+                    data-testid={`accordion-item-${index}`}
+                    aria-label={`${day.dayName} workout details`}
+                  >
+                    <DayCard
+                      day={day}
+                      index={index}
+                      isToday={isToday(day.date)}
+                      readOnly={readOnly}
+                      onUpdateWorkout={updateDayWorkout}
+                      onClearWorkout={clearDayWorkout}
+                    />
+                  </AccordionItem>
+                )
+              })}
+            </Accordion>
+          </div>
+
+          {/* Desktop: 7-Column Grid View */}
+          <div className="hidden lg:block">
+            <div className="grid grid-cols-7 gap-3">
+              {weekWorkouts.map((day, index) => (
                 <Card
                   key={day.date.toISOString()}
                   className={classNames(
                     'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
                     isToday(day.date)
                       ? 'ring-2 ring-primary bg-primary/10 border-l-4 border-l-primary'
-                      : 'hover:bg-secondary/5 border-l-4 border-l-transparent',
-                    isExpanded ? 'row-span-2' : ''
+                      : 'hover:bg-secondary/5 border-l-4 border-l-transparent'
                   )}
                 >
                   <CardHeader className="pb-2 px-3 pt-3">
@@ -881,12 +1171,10 @@ export default function WeeklyPlannerCalendar({
                     </div>
                   </CardHeader>
 
-                  <CardBody
-                    className={classNames('px-3 pb-3 pt-1', isExpanded ? 'space-y-3' : 'space-y-2')}
-                  >
+                  <CardBody className="px-3 pb-3 pt-1 space-y-2">
                     {/* Compact Workout Type */}
                     <Select
-                      label={isExpanded ? 'Workout Type' : 'Type'}
+                      label="Type"
                       classNames={{ label: 'text-xs font-medium mb-1' }}
                       size="sm"
                       fullWidth
@@ -935,120 +1223,25 @@ export default function WeeklyPlannerCalendar({
                           />
                         </div>
 
-                        {/* Expandable section */}
-                        {isExpanded && (
-                          <>
-                            <Input
-                              type="number"
-                              label="Intensity (1-10)"
-                              classNames={{ label: 'text-xs mb-1' }}
-                              size="sm"
-                              min="1"
-                              max="10"
-                              isDisabled={readOnly}
-                              value={day.workout.intensity?.toString() || ''}
-                              onChange={e => updateDayWorkout(index, 'intensity', e.target.value)}
-                              placeholder="7"
-                              className="text-xs"
-                            />
-
-                            <Input
-                              type="number"
-                              label="Elevation (ft)"
-                              classNames={{ label: 'text-xs mb-1' }}
-                              size="sm"
-                              min="0"
-                              isDisabled={readOnly}
-                              value={day.workout.elevationGain?.toString() || ''}
-                              onChange={e =>
-                                updateDayWorkout(index, 'elevationGain', e.target.value)
-                              }
-                              placeholder="500"
-                              className="text-xs"
-                            />
-
-                            <Textarea
-                              label="Notes"
-                              classNames={{ label: 'text-xs mb-1' }}
-                              size="sm"
-                              rows={2}
-                              isDisabled={readOnly}
-                              value={day.workout.notes || ''}
-                              onChange={e => updateDayWorkout(index, 'notes', e.target.value)}
-                              placeholder="Training notes..."
-                              className="text-xs"
-                            />
-
-                            {/* Intensity Indicator */}
-                            {day.workout.intensity && (
-                              <div className="pt-1">
-                                <div className="flex items-center gap-1 mb-1">
-                                  <span className="text-xs text-foreground/70">Zone:</span>
-                                  <Chip
-                                    size="sm"
-                                    color={getIntensityColor(day.workout.intensity)}
-                                    variant="flat"
-                                    className="text-xs h-4"
-                                  >
-                                    {getIntensityLabel(day.workout.intensity)}
-                                  </Chip>
-                                </div>
-                                <div className="w-full bg-default-200 rounded-full h-1">
-                                  <div
-                                    className={classNames(
-                                      'h-1 rounded-full transition-all duration-300',
-                                      day.workout.intensity <= 3
-                                        ? 'bg-success'
-                                        : day.workout.intensity <= 5
-                                          ? 'bg-primary'
-                                          : day.workout.intensity <= 7
-                                            ? 'bg-warning'
-                                            : 'bg-danger'
-                                    )}
-                                    style={{ width: `${day.workout.intensity * 10}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-
-                        {/* Action buttons */}
-                        <div className="flex gap-1 pt-1">
+                        {/* Clean button for desktop */}
+                        {!readOnly && (
                           <Button
                             variant="light"
-                            color={isExpanded ? 'primary' : 'default'}
+                            color="danger"
                             size="sm"
-                            className="text-xs px-2 py-1 h-6 min-h-6 flex-1"
-                            onClick={toggleExpanded}
+                            className="text-xs px-2 py-1 h-6 min-h-6 w-full"
+                            onClick={() => clearDayWorkout(index)}
+                            aria-label={`Clear ${day.dayName} workout`}
                           >
-                            {isExpanded ? 'Less' : 'More'}
+                            Clear
                           </Button>
-                          {isExpanded && !readOnly && (
-                            <Button
-                              variant="light"
-                              color="danger"
-                              size="sm"
-                              className="text-xs px-2 py-1 h-6 min-h-6 flex-1"
-                              onClick={() => clearDayWorkout(index)}
-                            >
-                              Clear
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </>
                     )}
                   </CardBody>
                 </Card>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Mobile Instructions */}
-        <div className="lg:hidden mt-4">
-          <div className="text-center text-sm text-foreground/60">
-            💡 Swipe horizontally to view all days • Tap &quot;More&quot; for detailed editing
+              ))}
+            </div>
           </div>
         </div>
 
