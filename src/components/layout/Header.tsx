@@ -132,7 +132,7 @@ function Header() {
 
         {/* suppressHydrationWarning: Auth state differs server vs client (expected behavior)
             Server renders Sign In/Sign Up buttons, client may render user avatar after hydration */}
-        <div className="flex items-center gap-1 sm:gap-2" suppressHydrationWarning>
+        <div className="flex items-center gap-2 sm:gap-3" suppressHydrationWarning>
           {!session && status !== 'loading' && (
             <>
               {/* Hide text buttons on mobile - users can access via hamburger menu */}
@@ -168,7 +168,8 @@ function Header() {
               <DropdownTrigger data-testid="user-menu">
                 <Avatar
                   name={(session.user?.name as string) || 'User'}
-                  className="cursor-pointer bg-primary text-white"
+                  size="sm"
+                  className="cursor-pointer bg-primary text-white flex-shrink-0"
                 />
               </DropdownTrigger>
               <DropdownMenu aria-label="User menu">
