@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from '@heroui/react'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns'
+import { addWeeks, endOfWeek, format, startOfWeek, subWeeks } from 'date-fns'
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -67,7 +67,7 @@ export default function WeekView({
     try {
       const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 })
       const days: WorkoutDay[] = []
-      
+
       const todayDate = today(getLocalTimeZone())
       let currentDate = new Date(currentWeekStart)
 
@@ -78,7 +78,7 @@ export default function WeekView({
           currentDate.getMonth() + 1,
           currentDate.getDate()
         )
-        
+
         // Format to match workout data format
         const dateString = format(currentDate, 'yyyy-MM-dd')
         const dayWorkouts = (workouts || []).filter(workout => {
@@ -110,20 +110,20 @@ export default function WeekView({
   }, [currentWeekStart, workouts])
 
   const navigateWeek = useCallback((direction: 'prev' | 'next') => {
-    const newWeekStart = direction === 'prev' 
-      ? subWeeks(currentWeekStart, 1)
-      : addWeeks(currentWeekStart, 1)
-    
-    setCurrentWeekStart(newWeekStart)
-    
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    setCurrentWeekStart(prevStart => {
+      const newWeekStart = direction === 'prev' ? subWeeks(prevStart, 1) : addWeeks(prevStart, 1)
+
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+
+      setAnnounceText(`Navigated to week of ${formatter.format(newWeekStart)}`)
+
+      return newWeekStart
     })
-    const weekEnd = endOfWeek(newWeekStart, { weekStartsOn: 0 })
-    setAnnounceText(`Navigated to week of ${formatter.format(newWeekStart)}`)
-  }, [currentWeekStart])
+  }, [])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setIsDragging(true)
@@ -131,20 +131,23 @@ export default function WeekView({
     setDragDistance(0)
   }, [])
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return
-    const currentX = e.touches[0].clientX
-    setDragDistance(currentX - dragStartX)
-  }, [isDragging, dragStartX])
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return
+      const currentX = e.touches[0].clientX
+      setDragDistance(currentX - dragStartX)
+    },
+    [isDragging, dragStartX]
+  )
 
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return
-    
+
     const threshold = 100 // Minimum distance for a swipe
     if (Math.abs(dragDistance) > threshold) {
       navigateWeek(dragDistance > 0 ? 'prev' : 'next')
     }
-    
+
     setIsDragging(false)
     setDragDistance(0)
   }, [isDragging, dragDistance, navigateWeek])
@@ -187,61 +190,64 @@ export default function WeekView({
   }, [currentWeekStart])
 
   // Keyboard navigation for accessibility
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, day: WorkoutDay) => {
-    const currentIndex = weekDays.findIndex(d => d.date.compare(day.date) === 0)
-    if (currentIndex === -1) return
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, day: WorkoutDay) => {
+      const currentIndex = weekDays.findIndex(d => d.date.compare(day.date) === 0)
+      if (currentIndex === -1) return
 
-    let nextIndex: number | null = null
+      let nextIndex: number | null = null
 
-    switch (e.key) {
-      case 'ArrowLeft':
-        e.preventDefault()
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : null
-        break
-      case 'ArrowRight':
-        e.preventDefault()
-        nextIndex = currentIndex < weekDays.length - 1 ? currentIndex + 1 : null
-        break
-      case 'Home':
-        e.preventDefault()
-        nextIndex = 0
-        break
-      case 'End':
-        e.preventDefault()
-        nextIndex = weekDays.length - 1
-        break
-      case 'PageUp':
-        e.preventDefault()
-        navigateWeek('prev')
-        return
-      case 'PageDown':
-        e.preventDefault()
-        navigateWeek('next')
-        return
-      default:
-        return
-    }
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : null
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          nextIndex = currentIndex < weekDays.length - 1 ? currentIndex + 1 : null
+          break
+        case 'Home':
+          e.preventDefault()
+          nextIndex = 0
+          break
+        case 'End':
+          e.preventDefault()
+          nextIndex = weekDays.length - 1
+          break
+        case 'PageUp':
+          e.preventDefault()
+          navigateWeek('prev')
+          return
+        case 'PageDown':
+          e.preventDefault()
+          navigateWeek('next')
+          return
+        default:
+          return
+      }
 
-    if (nextIndex !== null) {
-      const nextDay = weekDays[nextIndex]
-      setFocusedDate(nextDay.date)
-      setAnnounceText(
-        `Focus moved to ${nextDay.date.toDate(getLocalTimeZone()).toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'long',
-          day: 'numeric',
-        })}`
-      )
+      if (nextIndex !== null) {
+        const nextDay = weekDays[nextIndex]
+        setFocusedDate(nextDay.date)
+        setAnnounceText(
+          `Focus moved to ${nextDay.date.toDate(getLocalTimeZone()).toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          })}`
+        )
 
-      // Focus the next day
-      setTimeout(() => {
-        const nextElement = containerRef.current?.querySelector(
-          `[data-week-date="${nextDay.date.toString()}"]`
-        ) as HTMLElement
-        nextElement?.focus()
-      }, 0)
-    }
-  }, [weekDays, navigateWeek])
+        // Focus the next day
+        setTimeout(() => {
+          const nextElement = containerRef.current?.querySelector(
+            `[data-week-date="${nextDay.date.toString()}"]`
+          ) as HTMLElement
+          nextElement?.focus()
+        }, 0)
+      }
+    },
+    [weekDays, navigateWeek]
+  )
 
   // Auto-focus management for accessibility
   useEffect(() => {
@@ -450,13 +456,19 @@ export default function WeekView({
                                     </Chip>
                                   </div>
                                   {workout.planned_distance && (
-                                    <div className="text-xs">Distance: {workout.planned_distance} miles</div>
+                                    <div className="text-xs">
+                                      Distance: {workout.planned_distance} miles
+                                    </div>
                                   )}
                                   {workout.planned_duration && (
-                                    <div className="text-xs">Duration: {workout.planned_duration} min</div>
+                                    <div className="text-xs">
+                                      Duration: {workout.planned_duration} min
+                                    </div>
                                   )}
                                   {workout.workout_notes && (
-                                    <div className="text-xs text-foreground-600">{workout.workout_notes}</div>
+                                    <div className="text-xs text-foreground-600">
+                                      {workout.workout_notes}
+                                    </div>
                                   )}
                                 </div>
                               </PopoverContent>
