@@ -777,7 +777,7 @@ export default function WeeklyPlannerCalendar({
       <CardBody className="p-6">
         {/* Horizontal Scrolling Container for Mobile */}
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-7 gap-3 min-w-[700px] lg:min-w-0">
+          <div className="grid grid-cols-7 gap-3">
             {weekWorkouts.map((day, index) => {
               const isExpanded = expandedDays[index] || false
               const toggleExpanded = () => {

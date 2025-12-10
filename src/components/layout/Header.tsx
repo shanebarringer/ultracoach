@@ -157,7 +157,10 @@ function Header() {
             </>
           )}
 
-          <SearchButton />
+          {/* Hide search on mobile - accessible via hamburger menu or ⌘K */}
+          <div className="hidden sm:block">
+            <SearchButton />
+          </div>
 
           {session && <NotificationBell />}
 
