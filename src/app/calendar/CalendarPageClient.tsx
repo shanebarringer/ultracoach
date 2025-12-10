@@ -100,16 +100,18 @@ function CalendarContent({ user }: Props) {
   // Mobile-first default: on first client render, prefer week view on smaller screens.
   // This runs only once per client session and does not react to later resizes.
   useEffect(() => {
-    if (calendarUiState.hasInitializedInitialViewPreference) return
+    setCalendarUiState(prev => {
+      if (prev.hasInitializedInitialViewPreference) return prev
 
-    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 1024
+      const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 1024
 
-    setCalendarUiState(prev => ({
-      ...prev,
-      view: isSmallScreen && prev.view === 'month' ? 'week' : prev.view,
-      hasInitializedInitialViewPreference: true,
-    }))
-  }, [calendarUiState.hasInitializedInitialViewPreference, setCalendarUiState])
+      return {
+        ...prev,
+        view: isSmallScreen && prev.view === 'month' ? 'week' : prev.view,
+        hasInitializedInitialViewPreference: true,
+      }
+    })
+  }, [setCalendarUiState])
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
