@@ -20,6 +20,11 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'UltraCoach - Ultramarathon Training Platform',
   description: 'Connect with coaches and manage your ultramarathon training',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
 }
 
 export default async function RootLayout({
