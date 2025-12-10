@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createLogger } from '@/lib/logger'
 import { getServerSession } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { checkTrainingPlanAccess } from '@/lib/training-plan-auth'
 
 const logger = createLogger('TrainingPlanAPI')
 
@@ -63,15 +64,29 @@ export async function DELETE(
       .select('*')
       .eq('id', id)
       .single()
-    if (planError || !plan) {
+    // Separate error handling for better observability
+    if (planError) {
+      logger.error('Error loading training plan for delete', { id, error: planError })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    if (!plan) {
       return NextResponse.json({ error: 'Training plan not found' }, { status: 404 })
     }
-    const hasAccess =
-      session.user.userType === 'coach'
-        ? plan.coach_id === session.user.id
-        : plan.runner_id === session.user.id
+
+    // Use shared auth helper for consistent authorization logic
+    const { hasAccess, reason } = checkTrainingPlanAccess(
+      { id: session.user.id, userType: session.user.userType },
+      { coach_id: plan.coach_id, runner_id: plan.runner_id }
+    )
+
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      logger.warn('Forbidden training plan delete attempt', {
+        id,
+        userId: session.user.id,
+        reason,
+      })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     // Delete the plan
     const { error: deleteError } = await supabaseAdmin.from('training_plans').delete().eq('id', id)

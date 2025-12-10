@@ -58,6 +58,7 @@ debug-*.png
 successful-*.png
 playwright-results.txt
 supabase/migrations_old/
+.playwright-mcp/
 
 # mcp config
 .mcp.json
