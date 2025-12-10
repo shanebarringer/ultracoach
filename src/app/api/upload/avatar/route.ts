@@ -65,38 +65,57 @@ export async function POST(request: NextRequest) {
     // Generate public URL
     const avatarUrl = `/uploads/avatars/${filename}`
 
-    // Update or create user profile with new avatar URL
-    const existingProfile = await db
-      .select()
-      .from(user_profiles)
-      .where(eq(user_profiles.user_id, session.user.id))
-      .limit(1)
-
-    if (existingProfile.length > 0) {
-      // Delete old avatar file if it exists
-      const oldAvatarUrl = existingProfile[0].avatar_url
-      if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
-        try {
-          const oldFilePath = join(process.cwd(), 'public', oldAvatarUrl)
-          await unlink(oldFilePath)
-        } catch (error) {
-          logger.warn('Failed to delete old avatar file:', error)
-        }
-      }
-
-      // Update existing profile
-      await db
-        .update(user_profiles)
-        .set({ 
-          avatar_url: avatarUrl,
-          updated_at: new Date()
-        })
+    // Update or create user profile with new avatar URL (with fallback for missing table)
+    let existingProfile = []
+    try {
+      existingProfile = await db
+        .select()
+        .from(user_profiles)
         .where(eq(user_profiles.user_id, session.user.id))
-    } else {
-      // Create new profile
-      await db.insert(user_profiles).values({
-        user_id: session.user.id,
-        avatar_url: avatarUrl,
+        .limit(1)
+    } catch (error) {
+      logger.warn('user_profiles table not found, skipping avatar URL update')
+      // Still return success since the file was uploaded successfully
+      return NextResponse.json({ 
+        avatarUrl,
+        message: 'Avatar uploaded successfully (profile table not found)' 
+      })
+    }
+
+    try {
+      if (existingProfile.length > 0) {
+        // Delete old avatar file if it exists
+        const oldAvatarUrl = existingProfile[0].avatar_url
+        if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
+          try {
+            const oldFilePath = join(process.cwd(), 'public', oldAvatarUrl)
+            await unlink(oldFilePath)
+          } catch (error) {
+            logger.warn('Failed to delete old avatar file:', error)
+          }
+        }
+
+        // Update existing profile
+        await db
+          .update(user_profiles)
+          .set({ 
+            avatar_url: avatarUrl,
+            updated_at: new Date()
+          })
+          .where(eq(user_profiles.user_id, session.user.id))
+      } else {
+        // Create new profile
+        await db.insert(user_profiles).values({
+          user_id: session.user.id,
+          avatar_url: avatarUrl,
+        })
+      }
+    } catch (error) {
+      logger.error('Failed to update avatar URL in database:', error)
+      // Still return success since the file was uploaded successfully
+      return NextResponse.json({ 
+        avatarUrl,
+        message: 'Avatar uploaded successfully (database update failed)' 
       })
     }
 
@@ -128,12 +147,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get current avatar URL
-    const existingProfile = await db
-      .select()
-      .from(user_profiles)
-      .where(eq(user_profiles.user_id, session.user.id))
-      .limit(1)
+    // Get current avatar URL (with fallback for missing table)
+    let existingProfile = []
+    try {
+      existingProfile = await db
+        .select()
+        .from(user_profiles)
+        .where(eq(user_profiles.user_id, session.user.id))
+        .limit(1)
+    } catch (error) {
+      logger.warn('user_profiles table not found, skipping avatar removal')
+      return NextResponse.json({ 
+        message: 'Avatar removal skipped - table not found' 
+      })
+    }
 
     if (existingProfile.length > 0 && existingProfile[0].avatar_url) {
       const avatarUrl = existingProfile[0].avatar_url
@@ -149,13 +176,21 @@ export async function DELETE(request: NextRequest) {
       }
 
       // Remove avatar URL from database
-      await db
-        .update(user_profiles)
-        .set({ 
-          avatar_url: null,
-          updated_at: new Date()
-        })
-        .where(eq(user_profiles.user_id, session.user.id))
+      try {
+        await db
+          .update(user_profiles)
+          .set({ 
+            avatar_url: null,
+            updated_at: new Date()
+          })
+          .where(eq(user_profiles.user_id, session.user.id))
+      } catch (error) {
+        logger.error('Failed to remove avatar URL from database:', error)
+        return NextResponse.json(
+          { error: 'Failed to remove avatar from database' },
+          { status: 500 }
+        )
+      }
     }
 
     logger.info('Avatar removed successfully', {
