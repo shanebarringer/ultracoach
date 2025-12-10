@@ -10,10 +10,12 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
+import WeekView from '@/components/calendar/WeekView'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
+import { useEffect, useState } from 'react'
 import {
   calendarUiStateAtom,
   connectedRunnersAtom,
@@ -95,6 +97,22 @@ function CalendarContent({ user }: Props) {
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
+
+  // Responsive screen size detection
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    
+    // Check on mount
+    checkScreenSize()
+    
+    // Listen for resize events
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
@@ -212,6 +230,30 @@ function CalendarContent({ user }: Props) {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Calendar View Toggle */}
+                <div className="flex items-center bg-content1 rounded-lg p-1 border border-divider">
+                  <button
+                    onClick={() => setCalendarUiState(prev => ({ ...prev, view: 'week' }))}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarUiState.view === 'week'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground-600 hover:text-foreground'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setCalendarUiState(prev => ({ ...prev, view: 'month' }))}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarUiState.view === 'month'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground-600 hover:text-foreground'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+
                 {/* Runner Dropdown for Coaches */}
                 {user.role === 'coach' && connectedRunners.length > 0 && (
                   <Select
@@ -270,12 +312,23 @@ function CalendarContent({ user }: Props) {
                 </div>
               </div>
             )}
-            <MemoizedMonthlyCalendar
-              workouts={filteredWorkouts}
-              onWorkoutClick={handleWorkoutClick}
-              onDateClick={handleDateClick}
-              className="max-w-none overflow-x-auto"
-            />
+            
+            {/* Conditional rendering based on view preference and screen size */}
+            {calendarUiState.view === 'week' || isMobile ? (
+              <WeekView
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none"
+              />
+            ) : (
+              <MemoizedMonthlyCalendar
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none overflow-x-auto"
+              />
+            )}
           </div>
 
           {/* Empty State */}

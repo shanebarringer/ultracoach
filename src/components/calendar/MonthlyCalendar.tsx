@@ -292,7 +292,7 @@ export default function MonthlyCalendar({
 
       <CardBody className="px-6 pb-6">
         {/* Week headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2" role="row">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-1 mb-2" role="row">
           {weekDays.map(day => (
             <div
               key={day}
@@ -317,7 +317,7 @@ export default function MonthlyCalendar({
         ) : (
           <div
             ref={calendarRef}
-            className="grid grid-cols-7 gap-1"
+            className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-1"
             role="grid"
             aria-label={`Calendar for ${formatMonthYear}`}
             aria-describedby="calendar-instructions"
@@ -381,88 +381,123 @@ export default function MonthlyCalendar({
 
                   {/* Workouts */}
                   <div className="space-y-1">
-                    {day.workouts.slice(0, 2).map(workout => (
-                      <Popover key={workout.id} placement="top">
-                        <PopoverTrigger>
-                          <div
-                            className={`
-                            px-1.5 py-0.5 rounded text-xs cursor-pointer transition-transform hover:scale-105
-                            ${getWorkoutColor(workout) === 'success' ? 'bg-success-100 dark:bg-success-100/20 text-success-700 dark:text-success-400' : ''}
-                            ${getWorkoutColor(workout) === 'danger' ? 'bg-danger-100 dark:bg-danger-100/20 text-danger-700 dark:text-danger-400' : ''}
-                            ${getWorkoutColor(workout) === 'warning' ? 'bg-warning-100 dark:bg-warning-100/20 text-warning-700 dark:text-warning-400' : ''}
-                            ${getWorkoutColor(workout) === 'primary' ? 'bg-primary-100 dark:bg-primary-100/20 text-primary-700 dark:text-primary-400' : ''}
-                          `}
-                            onClick={e => {
-                              e.stopPropagation()
-                              onWorkoutClick?.(workout)
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`${workout.planned_type?.replace('_', ' ') || 'Workout'}, ${workout.status || 'planned'}, ${workout.planned_distance ? workout.planned_distance + ' miles' : ''} ${workout.planned_duration ? workout.planned_duration + ' minutes' : ''}, click for details`}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
+                    {day.workouts.length === 0 ? (
+                      <div className="text-xs text-foreground-400 italic">No workouts</div>
+                    ) : (
+                      <>
+                        {/* Desktop: Full workout details */}
+                        <div className="hidden lg:block space-y-1">
+                          {day.workouts.slice(0, 2).map(workout => (
+                            <Popover key={workout.id} placement="top">
+                              <PopoverTrigger>
+                                <div
+                                  className={`
+                                  px-1.5 py-0.5 rounded text-xs cursor-pointer transition-transform hover:scale-105
+                                  ${getWorkoutColor(workout) === 'success' ? 'bg-success-100 dark:bg-success-100/20 text-success-700 dark:text-success-400' : ''}
+                                  ${getWorkoutColor(workout) === 'danger' ? 'bg-danger-100 dark:bg-danger-100/20 text-danger-700 dark:text-danger-400' : ''}
+                                  ${getWorkoutColor(workout) === 'warning' ? 'bg-warning-100 dark:bg-warning-100/20 text-warning-700 dark:text-warning-400' : ''}
+                                  ${getWorkoutColor(workout) === 'primary' ? 'bg-primary-100 dark:bg-primary-100/20 text-primary-700 dark:text-primary-400' : ''}
+                                `}
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    onWorkoutClick?.(workout)
+                                  }}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label={`${workout.planned_type?.replace('_', ' ') || 'Workout'}, ${workout.status || 'planned'}, ${workout.planned_distance ? workout.planned_distance + ' miles' : ''} ${workout.planned_duration ? workout.planned_duration + ' minutes' : ''}, click for details`}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      onWorkoutClick?.(workout)
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-1 truncate">
+                                    {getWorkoutIcon(workout.planned_type)}
+                                    <span className="truncate">
+                                      {workout.planned_type?.replace('_', ' ') || 'Workout'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </PopoverTrigger>
+
+                              <PopoverContent className="max-w-xs">
+                                <div className="p-3 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-semibold text-sm">
+                                      {workout.planned_type?.replace('_', ' ').toUpperCase()}
+                                    </h4>
+                                    {workout.intensity && (
+                                      <Chip
+                                        size="sm"
+                                        color={getIntensityColor(workout.intensity)}
+                                        variant="flat"
+                                      >
+                                        Zone {workout.intensity}
+                                      </Chip>
+                                    )}
+                                  </div>
+
+                                  <div className="space-y-1 text-xs">
+                                    {workout.planned_distance && (
+                                      <div>Distance: {workout.planned_distance} miles</div>
+                                    )}
+                                    {workout.planned_duration && (
+                                      <div>Duration: {workout.planned_duration} min</div>
+                                    )}
+                                    {workout.workout_notes && (
+                                      <div className="text-foreground-600">{workout.workout_notes}</div>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center justify-between text-xs">
+                                    <Chip size="sm" color={getWorkoutColor(workout)} variant="flat">
+                                      {workout.status || 'planned'}
+                                    </Chip>
+                                    {workout.terrain && (
+                                      <span className="text-foreground-600">{workout.terrain}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ))}
+
+                          {/* Show "+X more" if there are additional workouts */}
+                          {day.workouts.length > 2 && (
+                            <div className="text-xs text-foreground-500 px-1.5">
+                              +{day.workouts.length - 2} more
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Mobile/Tablet: Color-coded dots */}
+                        <div className="lg:hidden flex flex-wrap gap-0.5">
+                          {day.workouts.map(workout => (
+                            <button
+                              key={workout.id}
+                              className={`
+                                w-2 h-2 rounded-full transition-transform hover:scale-125 focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-1
+                                ${workout.status === 'completed' ? 'bg-success-500' : ''}
+                                ${workout.status === 'skipped' ? 'bg-danger-500' : ''}
+                                ${workout.intensity && workout.intensity >= 7 ? 'bg-warning-500' : ''}
+                                ${(!workout.intensity || workout.intensity < 7) && workout.status !== 'completed' && workout.status !== 'skipped' ? 'bg-primary-500' : ''}
+                              `}
+                              onClick={e => {
                                 e.stopPropagation()
                                 onWorkoutClick?.(workout)
-                              }
-                            }}
-                          >
-                            <div className="flex items-center gap-1 truncate">
-                              {getWorkoutIcon(workout.planned_type)}
-                              <span className="truncate">
-                                {workout.planned_type?.replace('_', ' ') || 'Workout'}
-                              </span>
+                              }}
+                              aria-label={`${workout.planned_type?.replace('_', ' ') || 'Workout'} - ${workout.status || 'planned'}`}
+                            />
+                          ))}
+                          {day.workouts.length > 8 && (
+                            <div className="text-xs text-foreground-500 px-1">
+                              +{day.workouts.length - 8}
                             </div>
-                          </div>
-                        </PopoverTrigger>
-
-                        <PopoverContent className="max-w-xs">
-                          <div className="p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-sm">
-                                {workout.planned_type?.replace('_', ' ').toUpperCase()}
-                              </h4>
-                              {workout.intensity && (
-                                <Chip
-                                  size="sm"
-                                  color={getIntensityColor(workout.intensity)}
-                                  variant="flat"
-                                >
-                                  Zone {workout.intensity}
-                                </Chip>
-                              )}
-                            </div>
-
-                            <div className="space-y-1 text-xs">
-                              {workout.planned_distance && (
-                                <div>Distance: {workout.planned_distance} miles</div>
-                              )}
-                              {workout.planned_duration && (
-                                <div>Duration: {workout.planned_duration} min</div>
-                              )}
-                              {workout.workout_notes && (
-                                <div className="text-foreground-600">{workout.workout_notes}</div>
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs">
-                              <Chip size="sm" color={getWorkoutColor(workout)} variant="flat">
-                                {workout.status || 'planned'}
-                              </Chip>
-                              {workout.terrain && (
-                                <span className="text-foreground-600">{workout.terrain}</span>
-                              )}
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    ))}
-
-                    {/* Show "+X more" if there are additional workouts */}
-                    {day.workouts.length > 2 && (
-                      <div className="text-xs text-foreground-500 px-1.5">
-                        +{day.workouts.length - 2} more
-                      </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
