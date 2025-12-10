@@ -13,11 +13,12 @@ import AboutMeSection from '@/components/profile/AboutMeSection'
 import AvatarUpload from '@/components/profile/AvatarUpload'
 import CertificationsSection from '@/components/profile/CertificationsSection'
 import SocialProfiles from '@/components/profile/SocialProfiles'
-import UltraSignupResults from '@/components/profile/UltraSignupResults'
+// import UltraSignupResults from '@/components/profile/UltraSignupResults'
 import WorkWithMeCard from '@/components/profile/WorkWithMeCard'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
 import { formatMonthYear } from '@/lib/utils/date'
+import type { Certification, ProfileData, SocialProfile } from '@/types/profile'
 
 const logger = createLogger('Profile')
 
@@ -32,59 +33,6 @@ interface ProfilePageClientProps {
   }
 }
 
-interface SocialProfile {
-  id: string
-  platform: string
-  username?: string
-  profile_url: string
-  display_name?: string
-  is_verified: boolean
-  is_public: boolean
-}
-
-interface Certification {
-  id: string
-  name: string
-  issuing_organization: string
-  credential_id?: string
-  issue_date?: string
-  expiration_date?: string
-  verification_url?: string
-  status: 'active' | 'expired' | 'pending' | 'revoked'
-  is_featured: boolean
-}
-
-interface CoachStatistics {
-  total_athletes: number
-  active_athletes: number
-  average_rating: number
-  total_reviews: number
-  years_coaching: number
-  success_stories: number
-}
-
-interface UserProfile {
-  bio?: string | null
-  location?: string | null
-  website?: string | null
-  years_experience?: number | null
-  specialties?: string[] | null
-  achievements?: string[] | null
-  availability_status?: 'available' | 'limited' | 'unavailable' | null
-  hourly_rate?: number | null
-  consultation_enabled?: boolean | null
-  avatar_url?: string | null
-}
-
-interface ProfileData {
-  profile: UserProfile | null
-  social_profiles: SocialProfile[]
-  certifications: Certification[]
-  coach_statistics: CoachStatistics | null
-  strava_connected: boolean
-  strava_username: string | null
-}
-
 export default function ProfilePageClient({ user }: ProfilePageClientProps) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
@@ -95,13 +43,15 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     email: user.email || '',
   })
 
-  const isCoach = user.role === 'coach' || user.userType === 'coach'
+  const isCoach = user.userType === 'coach'
 
   // Load profile data
   useEffect(() => {
     const loadProfileData = async () => {
       try {
-        const response = await fetch('/api/profile')
+        const response = await fetch('/api/profile', {
+          credentials: 'same-origin',
+        })
         if (response.ok) {
           const data = await response.json()
           setProfileData(data)
@@ -156,10 +106,12 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     if (profileData) {
       setProfileData({
         ...profileData,
-        profile: {
-          ...profileData.profile,
-          avatar_url: avatarUrl,
-        },
+        profile: profileData.profile
+          ? {
+              ...profileData.profile,
+              avatar_url: avatarUrl,
+            }
+          : null,
       })
     }
   }
@@ -168,28 +120,30 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     if (profileData) {
       setProfileData({
         ...profileData,
-        profile: {
-          ...profileData.profile,
-          bio,
-        },
+        profile: profileData.profile
+          ? {
+              ...profileData.profile,
+              bio,
+            }
+          : null,
       })
     }
   }
 
-  const handleSocialProfilesChange = (profiles: SocialProfile[]) => {
+  const handleSocialProfilesChange = (profiles: unknown) => {
     if (profileData) {
       setProfileData({
         ...profileData,
-        social_profiles: profiles,
+        social_profiles: profiles as SocialProfile[],
       })
     }
   }
 
-  const handleCertificationsChange = (certifications: Certification[]) => {
+  const handleCertificationsChange = (certifications: unknown) => {
     if (profileData) {
       setProfileData({
         ...profileData,
-        certifications,
+        certifications: certifications as Certification[],
       })
     }
   }
@@ -198,10 +152,12 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     if (profileData) {
       setProfileData({
         ...profileData,
-        profile: {
-          ...profileData.profile,
-          availability_status: status,
-        },
+        profile: profileData.profile
+          ? {
+              ...profileData.profile,
+              availability_status: status,
+            }
+          : null,
       })
     }
   }
@@ -267,6 +223,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                         currentAvatarUrl={profileData?.profile?.avatar_url}
                         onAvatarChange={handleAvatarChange}
                         size="lg"
+                        userName={user.name}
                       />
                     </div>
 
@@ -339,14 +296,16 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 stravaUsername={profileData?.strava_username ?? undefined}
               />
 
-              {/* UltraSignup Results */}
+              {/* UltraSignup Results - Hidden until implementation is complete */}
+              {/* 
               <UltraSignupResults
-                connection={null} // TODO: Implement UltraSignup connection
-                results={[]} // TODO: Implement race results
-                onConnectionChange={() => {}} // TODO: Implement
-                onResultsChange={() => {}} // TODO: Implement
+                connection={null}
+                results={[]}
+                onConnectionChange={() => {}}
+                onResultsChange={() => {}}
                 isEditable={true}
               />
+              */}
             </div>
 
             {/* Sidebar */}
@@ -379,7 +338,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 <CardBody className="space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Account Type:</span>
-                    <span className="font-medium capitalize">{user.role || 'Runner'}</span>
+                    <span className="font-medium capitalize">{user.userType || 'Runner'}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-foreground-600">Member Since:</span>

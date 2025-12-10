@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validate file type
+    // Validate file type by MIME type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
     }
@@ -39,28 +39,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
     }
 
+    // Validate and sanitize file extension
+    const rawExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    const extension = allowedExtensions.includes(rawExtension) ? rawExtension : 'jpg'
+
+    // Validate file content by checking magic bytes
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+
+    // Check magic bytes for common image formats
+    const isValidImage =
+      // JPEG: FF D8 FF
+      (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) ||
+      // PNG: 89 50 4E 47
+      (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) ||
+      // GIF: 47 49 46
+      (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) ||
+      // WebP: RIFF...WEBP
+      (buffer[0] === 0x52 &&
+        buffer[1] === 0x49 &&
+        buffer[2] === 0x46 &&
+        buffer[3] === 0x46 &&
+        buffer[8] === 0x57 &&
+        buffer[9] === 0x45 &&
+        buffer[10] === 0x42 &&
+        buffer[11] === 0x50)
+
+    if (!isValidImage) {
+      return NextResponse.json({ error: 'Invalid image file format' }, { status: 400 })
+    }
+
     // Generate unique filename
     const timestamp = Date.now()
-    const extension = file.name.split('.').pop() || 'jpg'
     const filename = `avatar-${session.user.id}-${timestamp}.${extension}`
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars')
 
     try {
-      await writeFile(join(uploadsDir, 'test'), '')
-      await unlink(join(uploadsDir, 'test'))
-    } catch {
-      // Directory doesn't exist, create it
       const { mkdir } = await import('fs/promises')
       await mkdir(uploadsDir, { recursive: true })
+    } catch (error) {
+      // Directory might already exist, that's fine
+      logger.debug('Directory creation result:', error)
     }
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    // Save the file (buffer already available from validation)
     const filePath = join(uploadsDir, filename)
-
     await writeFile(filePath, buffer)
 
     // Generate public URL

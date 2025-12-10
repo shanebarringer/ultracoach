@@ -3,7 +3,9 @@
 import { Button } from '@heroui/react'
 import { Camera, X } from 'lucide-react'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
+
+import Image from 'next/image'
 
 // import { useDropzone } from 'react-dropzone' // TODO: Install react-dropzone
 
@@ -17,6 +19,7 @@ interface AvatarUploadProps {
   onAvatarChange: (avatarUrl: string | null) => void
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
+  userName?: string | null
 }
 
 export default function AvatarUpload({
@@ -24,9 +27,11 @@ export default function AvatarUpload({
   onAvatarChange,
   size = 'lg',
   disabled = false,
+  userName,
 }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sizeClasses = {
     sm: 'w-16 h-16',
@@ -73,6 +78,7 @@ export default function AvatarUpload({
         const response = await fetch('/api/upload/avatar', {
           method: 'POST',
           body: formData,
+          credentials: 'same-origin',
         })
 
         if (!response.ok) {
@@ -115,6 +121,7 @@ export default function AvatarUpload({
       // Call API to remove avatar
       const response = await fetch('/api/upload/avatar', {
         method: 'DELETE',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
@@ -133,14 +140,27 @@ export default function AvatarUpload({
     }
   }
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'S'
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'UC' // UltraCoach default
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
+  }
+
+  const handleAvatarClick = () => {
+    if (!isUploading && !disabled) {
+      fileInputRef.current?.click()
+    }
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleAvatarClick()
+    }
   }
 
   return (
@@ -150,28 +170,37 @@ export default function AvatarUpload({
           className={`
             relative ${sizeClasses[size]} rounded-full overflow-hidden cursor-pointer
             ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
-            transition-all duration-200
+            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary
           `}
-          onClick={() => {
-            if (!isUploading && !disabled) {
-              document.getElementById('avatar-upload')?.click()
-            }
-          }}
+          onClick={handleAvatarClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={disabled || isUploading ? -1 : 0}
+          aria-label="Upload profile picture"
         >
           <input
-            id="avatar-upload"
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
             disabled={disabled || isUploading}
+            aria-hidden="true"
           />
 
           {previewUrl ? (
-            <img src={previewUrl} alt="Profile avatar" className="w-full h-full object-cover" />
+            <Image
+              src={previewUrl}
+              alt="Profile avatar"
+              fill
+              className="object-cover"
+              sizes="128px"
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-              <span className="text-2xl font-bold text-foreground-600">{getInitials('Shane')}</span>
+              <span className="text-2xl font-bold text-foreground-600">
+                {getInitials(userName)}
+              </span>
             </div>
           )}
 

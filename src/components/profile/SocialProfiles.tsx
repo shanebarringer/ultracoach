@@ -190,7 +190,9 @@ export default function SocialProfiles({
           <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg border border-success/20">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
+                <span className="text-white font-bold text-sm">
+                  {stravaUsername ? stravaUsername[0].toUpperCase() : 'S'}
+                </span>
               </div>
               <div>
                 <p className="font-medium text-foreground">Strava</p>

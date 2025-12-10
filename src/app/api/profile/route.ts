@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -11,6 +12,7 @@ import {
   strava_connections,
   user_profiles,
 } from '@/lib/schema'
+import type { StravaAthleteData } from '@/types/profile'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('ProfileAPI')
@@ -58,7 +60,7 @@ export async function GET() {
 
     // Get coach statistics (if user is a coach, with fallback for missing table)
     let coachStats = null
-    if (session.user.role === 'coach' || session.user.userType === 'coach') {
+    if (session.user.userType === 'coach') {
       try {
         const stats = await db
           .select()
@@ -106,7 +108,7 @@ export async function GET() {
       coach_statistics: coachStats,
       strava_connected: stravaConnection.length > 0,
       strava_username: stravaConnection[0]
-        ? (stravaConnection[0].athlete_data as { username?: string })?.username || null
+        ? (stravaConnection[0].athlete_data as StravaAthleteData)?.username || null
         : null,
     })
   } catch (error) {
@@ -115,6 +117,18 @@ export async function GET() {
   }
 }
 
+const profileUpdateSchema = z.object({
+  bio: z.string().max(1000).optional(),
+  location: z.string().max(200).optional(),
+  website: z.string().url().optional().or(z.literal('')),
+  years_experience: z.number().int().min(0).max(100).optional(),
+  specialties: z.array(z.string().max(100)).max(20).optional(),
+  achievements: z.array(z.string().max(200)).max(50).optional(),
+  availability_status: z.enum(['available', 'limited', 'unavailable']).optional(),
+  hourly_rate: z.string().max(20).optional(),
+  consultation_enabled: z.boolean().optional(),
+})
+
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession()
@@ -122,7 +136,28 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+
+    // Validate input data
+    let validatedData
+    try {
+      validatedData = profileUpdateSchema.parse(body)
+    } catch (error) {
+      logger.warn('Profile update validation failed:', error)
+      return NextResponse.json(
+        {
+          error: 'Invalid input data',
+          details: error instanceof z.ZodError ? error.issues : 'Validation failed',
+        },
+        { status: 400 }
+      )
+    }
+
     const {
       bio,
       location,
@@ -133,7 +168,7 @@ export async function PUT(request: NextRequest) {
       availability_status,
       hourly_rate,
       consultation_enabled,
-    } = body
+    } = validatedData
 
     // Check if profile exists (with fallback for missing table)
     let existingProfile = []
