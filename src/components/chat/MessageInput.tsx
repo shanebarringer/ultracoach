@@ -77,11 +77,12 @@ export default function MessageInput({
               linkType={messageInput.linkType || undefined}
             />
             <Button
-              size="sm"
+              size="md"
               variant="light"
               isIconOnly
               onPress={handleRemoveWorkout}
-              className="absolute top-2 right-2 text-default-400 hover:text-default-600"
+              className="absolute top-2 right-2 text-default-400 hover:text-default-600 min-w-[44px] min-h-[44px]"
+              aria-label="Remove linked workout"
             >
               ×
             </Button>
@@ -108,38 +109,41 @@ export default function MessageInput({
                   ? `Add ${messageInput.linkType} about ${messageInput.linkedWorkout.planned_type || 'workout'}...`
                   : 'Type your message...'
               }
-              minRows={1}
+              minRows={2}
               maxRows={5}
               disabled={disabled}
               classNames={{
-                input: 'text-small text-foreground',
-                inputWrapper: 'bg-default-100 dark:bg-default-50',
+                input: 'text-base sm:text-small leading-relaxed text-foreground',
+                inputWrapper: 'bg-default-100 dark:bg-default-50 min-h-[60px] focus-within:ring-2 focus-within:ring-primary/20',
               }}
             />
           </div>
 
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             {/* Workout link button */}
             <Button
-              size="sm"
+              size="md"
               variant="light"
               isIconOnly
               onPress={() => setMessageInput(prev => ({ ...prev, showWorkoutSelector: true }))}
               disabled={disabled}
-              className="text-default-500 hover:text-primary-500"
+              className="text-default-500 hover:text-primary-500 min-w-[44px] min-h-[44px]"
+              aria-label="Link workout to message"
             >
-              <Link2 className="h-4 w-4" />
+              <Link2 className="h-5 w-5" />
             </Button>
 
             {/* Send button */}
             <Button
               type="submit"
-              size="sm"
+              size="md"
               color="primary"
               isIconOnly
               disabled={!messageInput.message.trim() || disabled}
+              className="min-w-[44px] min-h-[44px]"
+              aria-label="Send message"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
         </form>
