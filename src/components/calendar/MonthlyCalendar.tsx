@@ -447,7 +447,9 @@ export default function MonthlyCalendar({
                                       <div>Duration: {workout.planned_duration} min</div>
                                     )}
                                     {workout.workout_notes && (
-                                      <div className="text-foreground-600">{workout.workout_notes}</div>
+                                      <div className="text-foreground-600">
+                                        {workout.workout_notes}
+                                      </div>
                                     )}
                                   </div>
 

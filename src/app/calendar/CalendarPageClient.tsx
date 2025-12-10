@@ -4,7 +4,7 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
 
-import { Suspense, memo, useCallback, useRef } from 'react'
+import { Suspense, memo, useCallback, useEffect, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,6 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
 import { useHydrateWorkouts, useWorkouts } from '@/hooks/useWorkouts'
-import { useEffect, useState } from 'react'
 import {
   calendarUiStateAtom,
   connectedRunnersAtom,
@@ -98,21 +97,19 @@ function CalendarContent({ user }: Props) {
   const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
 
-  // Responsive screen size detection
-  const [isMobile, setIsMobile] = useState(false)
-
+  // Mobile-first default: on first client render, prefer week view on smaller screens.
+  // This runs only once per client session and does not react to later resizes.
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024)
-    }
-    
-    // Check on mount
-    checkScreenSize()
-    
-    // Listen for resize events
-    window.addEventListener('resize', checkScreenSize)
-    return () => window.removeEventListener('resize', checkScreenSize)
-  }, [])
+    if (calendarUiState.hasInitializedInitialViewPreference) return
+
+    const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 1024
+
+    setCalendarUiState(prev => ({
+      ...prev,
+      view: isSmallScreen && prev.view === 'month' ? 'week' : prev.view,
+      hasInitializedInitialViewPreference: true,
+    }))
+  }, [calendarUiState.hasInitializedInitialViewPreference, setCalendarUiState])
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
@@ -312,9 +309,14 @@ function CalendarContent({ user }: Props) {
                 </div>
               </div>
             )}
-            
-            {/* Conditional rendering based on view preference and screen size */}
-            {calendarUiState.view === 'week' || isMobile ? (
+
+            {/*
+              View selection rules:
+              - On first client load on small screens, we default `view` to `week`
+                (see hasInitializedInitialViewPreference logic above).
+              - After that, `view` reflects the user's explicit choice on all screen sizes.
+            */}
+            {calendarUiState.view === 'week' ? (
               <WeekView
                 workouts={filteredWorkouts}
                 onWorkoutClick={handleWorkoutClick}

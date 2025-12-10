@@ -69,6 +69,7 @@ export const calendarUiStateAtom = atom({
   showAddWorkoutModal: false,
   workoutsLoading: false,
   selectedRunnerId: null as string | null,
+  hasInitializedInitialViewPreference: false,
 })
 
 // Theme mode
