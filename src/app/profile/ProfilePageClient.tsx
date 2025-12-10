@@ -1,14 +1,20 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Input } from '@heroui/react'
-import { MailIcon, MountainSnowIcon, UserIcon } from 'lucide-react'
+import { Button, Card, CardBody, CardHeader, Divider, Input, Chip } from '@heroui/react'
+import { MailIcon, MountainSnowIcon, UserIcon, Users } from 'lucide-react'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
+import AvatarUpload from '@/components/profile/AvatarUpload'
+import AboutMeSection from '@/components/profile/AboutMeSection'
+import SocialProfiles from '@/components/profile/SocialProfiles'
+import CertificationsSection from '@/components/profile/CertificationsSection'
+import WorkWithMeCard from '@/components/profile/WorkWithMeCard'
+import UltraSignupResults from '@/components/profile/UltraSignupResults'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
 import { formatMonthYear } from '@/lib/utils/date'
@@ -21,23 +27,57 @@ interface ProfilePageClientProps {
     email: string
     name: string | null
     role: 'coach' | 'runner'
+    userType: 'coach' | 'runner'
     createdAt: string | Date
   }
+}
+
+interface ProfileData {
+  profile: any
+  social_profiles: any[]
+  certifications: any[]
+  coach_statistics: any
+  strava_connected: boolean
+  strava_username: string | null
 }
 
 export default function ProfilePageClient({ user }: ProfilePageClientProps) {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [formData, setFormData] = useState({
     name: user.name || '',
     email: user.email || '',
   })
 
+  const isCoach = user.role === 'coach' || user.userType === 'coach'
+
+  // Load profile data
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        const response = await fetch('/api/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setProfileData(data)
+        }
+      } catch (error) {
+        logger.error('Failed to load profile data:', error)
+        commonToasts.error('Failed to load profile data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadProfileData()
+  }, [])
+
   const handleSave = async () => {
     try {
       logger.info('Saving profile changes:', formData)
 
-      // TODO: Implement profile update API call
+      // TODO: Implement basic user info update API call
       // const response = await fetch('/api/user/profile', {
       //   method: 'PUT',
       //   headers: { 'Content-Type': 'application/json' },
@@ -68,25 +108,105 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     setIsEditing(false)
   }
 
+  const handleAvatarChange = (avatarUrl: string | null) => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        profile: {
+          ...profileData.profile,
+          avatar_url: avatarUrl,
+        },
+      })
+    }
+  }
+
+  const handleBioChange = (bio: string) => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        profile: {
+          ...profileData.profile,
+          bio,
+        },
+      })
+    }
+  }
+
+  const handleSocialProfilesChange = (profiles: any[]) => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        social_profiles: profiles,
+      })
+    }
+  }
+
+  const handleCertificationsChange = (certifications: any[]) => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        certifications,
+      })
+    }
+  }
+
+  const handleAvailabilityChange = (status: 'available' | 'limited' | 'unavailable') => {
+    if (profileData) {
+      setProfileData({
+        ...profileData,
+        profile: {
+          ...profileData.profile,
+          availability_status: status,
+        },
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
+            <div className="h-8 bg-default-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-3 space-y-6">
+                <div className="h-64 bg-default-200 rounded"></div>
+                <div className="h-48 bg-default-200 rounded"></div>
+              </div>
+              <div className="h-96 bg-default-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
       <ModernErrorBoundary>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <MountainSnowIcon className="h-8 w-8 text-primary" />
+              <Users className="h-8 w-8 text-primary" />
               <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Profile Settings
+                Coach Profile
               </h1>
+              {isCoach && (
+                <Chip color="primary" variant="flat">
+                  Coach Account
+                </Chip>
+              )}
             </div>
             <p className="text-foreground-600 text-lg">
-              Manage your account information and preferences
+              Build your coaching profile to attract and inspire athletes
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Information */}
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-3 space-y-8">
+              {/* Avatar and Basic Info */}
               <Card className="border border-divider">
                 <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
                   <div className="flex items-center gap-2">
@@ -96,49 +216,115 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 </CardHeader>
                 <Divider />
                 <CardBody className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                      label="Full Name"
-                      value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
-                      variant="bordered"
-                      isReadOnly={!isEditing}
-                      className={isEditing ? '' : 'opacity-75'}
-                    />
-                    <Input
-                      label="Email Address"
-                      value={formData.email}
-                      onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
-                      variant="bordered"
-                      isReadOnly={!isEditing}
-                      className={isEditing ? '' : 'opacity-75'}
-                    />
-                  </div>
+                  <div className="flex flex-col md:flex-row gap-8 items-start">
+                    {/* Avatar Upload */}
+                    <div className="flex-shrink-0">
+                      <AvatarUpload
+                        currentAvatarUrl={profileData?.profile?.avatar_url}
+                        onAvatarChange={handleAvatarChange}
+                        size="lg"
+                      />
+                    </div>
 
-                  <div className="flex gap-3 justify-end">
-                    {!isEditing ? (
-                      <Button color="primary" variant="flat" onPress={() => setIsEditing(true)}>
-                        Edit Profile
-                      </Button>
-                    ) : (
-                      <>
-                        <Button variant="light" onPress={handleCancel}>
-                          Cancel
-                        </Button>
-                        <Button color="primary" onPress={handleSave}>
-                          Save Changes
-                        </Button>
-                      </>
-                    )}
+                    {/* Basic Info Form */}
+                    <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                          label="Full Name"
+                          value={formData.name}
+                          onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
+                          variant="bordered"
+                          isReadOnly={!isEditing}
+                          className={isEditing ? '' : 'opacity-75'}
+                        />
+                        <Input
+                          label="Email Address"
+                          value={formData.email}
+                          onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
+                          variant="bordered"
+                          isReadOnly={!isEditing}
+                          className={isEditing ? '' : 'opacity-75'}
+                        />
+                      </div>
+
+                      <div className="flex gap-3 justify-end">
+                        {!isEditing ? (
+                          <Button color="primary" variant="flat" onPress={() => setIsEditing(true)}>
+                            Edit Profile
+                          </Button>
+                        ) : (
+                          <>
+                            <Button variant="light" onPress={handleCancel}>
+                              Cancel
+                            </Button>
+                            <Button color="primary" onPress={handleSave}>
+                              Save Changes
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </CardBody>
               </Card>
+
+              {/* About Me Section */}
+              <AboutMeSection
+                bio={profileData?.profile?.bio}
+                onBioChange={handleBioChange}
+                isEditable={true}
+              />
+
+              {/* Certifications & Specialties */}
+              {isCoach && (
+                <CertificationsSection
+                  certifications={profileData?.certifications || []}
+                  onCertificationsChange={handleCertificationsChange}
+                  isEditable={true}
+                />
+              )}
+
+              {/* Social Profiles */}
+              <SocialProfiles
+                userId={user.id}
+                profiles={profileData?.social_profiles || []}
+                onProfilesChange={handleSocialProfilesChange}
+                stravaConnected={profileData?.strava_connected}
+                stravaUsername={profileData?.strava_username}
+              />
+
+              {/* UltraSignup Results */}
+              <UltraSignupResults
+                connection={null} // TODO: Implement UltraSignup connection
+                results={[]} // TODO: Implement race results
+                onConnectionChange={() => {}} // TODO: Implement
+                onResultsChange={() => {}} // TODO: Implement
+                isEditable={true}
+              />
             </div>
 
-            {/* Account Summary */}
+            {/* Sidebar */}
             <div className="space-y-6">
+              {/* Work With Me Card (for coaches) */}
+              {isCoach && (
+                <WorkWithMeCard
+                  coachStats={profileData?.coach_statistics || {
+                    total_athletes: 0,
+                    active_athletes: 0,
+                    average_rating: 0,
+                    total_reviews: 0,
+                    years_coaching: 0,
+                    success_stories: 0,
+                  }}
+                  availabilityStatus={profileData?.profile?.availability_status || 'available'}
+                  onAvailabilityChange={handleAvailabilityChange}
+                  isOwnProfile={true}
+                />
+              )}
+
+              {/* Account Summary */}
               <Card className="border border-divider">
                 <CardHeader>
                   <h3 className="text-lg font-semibold text-foreground">Account Summary</h3>
@@ -156,6 +342,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 </CardBody>
               </Card>
 
+              {/* Quick Actions */}
               <Card className="border border-divider">
                 <CardHeader>
                   <h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>

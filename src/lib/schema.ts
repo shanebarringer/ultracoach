@@ -711,3 +711,179 @@ export const strava_webhook_events = pgTable(
     }),
   })
 )
+
+// ===================================
+// ENHANCED PROFILE SYSTEM TABLES
+// ===================================
+
+// User profiles - extended profile information for all users
+export const user_profiles = pgTable(
+  'user_profiles',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    bio: text('bio'),
+    avatar_url: text('avatar_url'),
+    location: text('location'),
+    website: text('website'),
+    years_experience: integer('years_experience'),
+    specialties: json('specialties').$type<string[]>().default([]),
+    achievements: json('achievements').$type<string[]>().default([]),
+    availability_status: text('availability_status', {
+      enum: ['available', 'limited', 'unavailable'],
+    }).default('available'),
+    hourly_rate: decimal('hourly_rate', { precision: 10, scale: 2 }),
+    consultation_enabled: boolean('consultation_enabled').default(false),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'user_profiles_user_id_fkey',
+    }).onDelete('cascade'),
+    userUnique: unique('user_profiles_user_id_unique').on(table.user_id),
+  })
+)
+
+// Social profiles - extensible social media connections
+export const social_profiles = pgTable(
+  'social_profiles',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    platform: text('platform', {
+      enum: ['strava', 'instagram', 'twitter', 'youtube', 'facebook', 'linkedin', 'tiktok'],
+    }).notNull(),
+    username: text('username'),
+    profile_url: text('profile_url').notNull(),
+    display_name: text('display_name'),
+    is_verified: boolean('is_verified').default(false),
+    is_public: boolean('is_public').default(true),
+    connection_data: json('connection_data'), // For storing platform-specific data
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'social_profiles_user_id_fkey',
+    }).onDelete('cascade'),
+    userPlatformUnique: unique('social_profiles_user_platform_unique').on(
+      table.user_id,
+      table.platform
+    ),
+  })
+)
+
+// Certifications - coaching certifications and credentials
+export const certifications = pgTable(
+  'certifications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    name: text('name').notNull(),
+    issuing_organization: text('issuing_organization').notNull(),
+    credential_id: text('credential_id'),
+    issue_date: timestamp('issue_date', { withTimezone: true }),
+    expiration_date: timestamp('expiration_date', { withTimezone: true }),
+    verification_url: text('verification_url'),
+    certificate_file_url: text('certificate_file_url'),
+    status: text('status', {
+      enum: ['active', 'expired', 'pending', 'revoked'],
+    }).default('active').notNull(),
+    is_featured: boolean('is_featured').default(false),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'certifications_user_id_fkey',
+    }).onDelete('cascade'),
+  })
+)
+
+// UltraSignup connections - for race results integration
+export const ultrasignup_connections = pgTable(
+  'ultrasignup_connections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    ultrasignup_athlete_id: text('ultrasignup_athlete_id'),
+    profile_url: text('profile_url').notNull(),
+    athlete_name: text('athlete_name'),
+    is_verified: boolean('is_verified').default(false),
+    last_sync_at: timestamp('last_sync_at', { withTimezone: true }),
+    sync_enabled: boolean('sync_enabled').default(true),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'ultrasignup_connections_user_id_fkey',
+    }).onDelete('cascade'),
+    userUnique: unique('ultrasignup_connections_user_id_unique').on(table.user_id),
+  })
+)
+
+// Race results - cached race results from UltraSignup
+export const race_results = pgTable(
+  'race_results',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    connection_id: uuid('connection_id').notNull(),
+    race_name: text('race_name').notNull(),
+    race_date: timestamp('race_date', { withTimezone: true }),
+    distance: text('distance'),
+    finish_time: text('finish_time'),
+    overall_place: integer('overall_place'),
+    gender_place: integer('gender_place'),
+    age_group_place: integer('age_group_place'),
+    total_participants: integer('total_participants'),
+    race_url: text('race_url'),
+    result_data: json('result_data'), // For storing additional race data
+    is_featured: boolean('is_featured').default(false),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    connectionRef: foreignKey({
+      columns: [table.connection_id],
+      foreignColumns: [ultrasignup_connections.id],
+      name: 'race_results_connection_id_fkey',
+    }).onDelete('cascade'),
+  })
+)
+
+// Coach statistics - for displaying coach performance metrics
+export const coach_statistics = pgTable(
+  'coach_statistics',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    user_id: text('user_id').notNull(),
+    total_athletes: integer('total_athletes').default(0),
+    active_athletes: integer('active_athletes').default(0),
+    average_rating: decimal('average_rating', { precision: 3, scale: 2 }),
+    total_reviews: integer('total_reviews').default(0),
+    years_coaching: integer('years_coaching').default(0),
+    success_stories: integer('success_stories').default(0),
+    completed_training_plans: integer('completed_training_plans').default(0),
+    last_calculated_at: timestamp('last_calculated_at', { withTimezone: true }),
+    created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    userRef: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [user.id],
+      name: 'coach_statistics_user_id_fkey',
+    }).onDelete('cascade'),
+    userUnique: unique('coach_statistics_user_id_unique').on(table.user_id),
+  })
+)
