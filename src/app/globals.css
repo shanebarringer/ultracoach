@@ -228,6 +228,16 @@
       Arial,
       sans-serif;
     font-weight: 400;
+    /*
+      Prevent horizontal scrolling on mobile while preserving
+      component-level horizontal scroll (e.g., calendars, tables).
+
+      Page-level overflow on small screens was causing the UI to
+      extend beyond the viewport. Components that intentionally
+      scroll horizontally already use `overflow-x-auto`, which
+      continues to work as expected with this guard in place.
+    */
+    overflow-x: hidden;
     transition:
       background-color 0.3s ease,
       color 0.3s ease;
