@@ -1,7 +1,24 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, useDisclosure, Chip } from '@heroui/react'
-import { Award, Calendar, ExternalLink, Plus, X, AlertTriangle } from 'lucide-react'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Divider,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
+  useDisclosure,
+} from '@heroui/react'
+import { AlertTriangle, Award, Calendar, ExternalLink, Plus, X } from 'lucide-react'
+
 import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
@@ -66,15 +83,15 @@ export default function CertificationsSection({
   const [verificationUrl, setVerificationUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
-
   const handleAddCertification = async () => {
     const certName = selectedCert === 'custom' ? customName : selectedCert
-    const certOrg = selectedCert === 'custom' ? organization : 
-      COMMON_CERTIFICATIONS.find(c => c.name === selectedCert)?.organization || organization
+    const certOrg =
+      selectedCert === 'custom'
+        ? organization
+        : COMMON_CERTIFICATIONS.find(c => c.name === selectedCert)?.organization || organization
 
     if (!certName || !certOrg) {
-      commonToasts.error('Please fill in required fields')
+      commonToasts.saveError('Please fill in required fields')
       return
     }
 
@@ -100,16 +117,16 @@ export default function CertificationsSection({
 
       const newCertification = await response.json()
       onCertificationsChange([...certifications, newCertification])
-      
+
       // Reset form
       resetForm()
       onClose()
-      
-      commonToasts.success('Certification added successfully!')
+
+      commonToasts.saveSuccess()
       logger.info('Certification added', { name: certName })
     } catch (error) {
       logger.error('Failed to add certification:', error)
-      commonToasts.error('Failed to add certification')
+      commonToasts.saveError('Failed to add certification')
     } finally {
       setIsLoading(false)
     }
@@ -126,11 +143,11 @@ export default function CertificationsSection({
       }
 
       onCertificationsChange(certifications.filter(c => c.id !== certId))
-      commonToasts.success('Certification removed')
+      commonToasts.deleteSuccess()
       logger.info('Certification removed', { certId, name: certName })
     } catch (error) {
       logger.error('Failed to remove certification:', error)
-      commonToasts.error('Failed to remove certification')
+      commonToasts.deleteError('Failed to remove certification')
     }
   }
 
@@ -198,8 +215,11 @@ export default function CertificationsSection({
               Certifications
             </h4>
             <div className="space-y-3">
-              {certifications.map((cert) => (
-                <div key={cert.id} className="flex items-start justify-between p-3 bg-default-50 rounded-lg">
+              {certifications.map(cert => (
+                <div
+                  key={cert.id}
+                  className="flex items-start justify-between p-3 bg-default-50 rounded-lg"
+                >
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
@@ -223,9 +243,11 @@ export default function CertificationsSection({
                           color={getStatusColor(cert)}
                           variant="flat"
                           startContent={
-                            (isExpired(cert) || isExpiringSoon(cert)) ? 
-                            <AlertTriangle className="w-3 h-3" /> : 
-                            <Award className="w-3 h-3" />
+                            isExpired(cert) || isExpiringSoon(cert) ? (
+                              <AlertTriangle className="w-3 h-3" />
+                            ) : (
+                              <Award className="w-3 h-3" />
+                            )
                           }
                         >
                           {getStatusText(cert)}
@@ -269,13 +291,8 @@ export default function CertificationsSection({
         <div>
           <h4 className="text-sm font-medium text-foreground-600 mb-3">Coaching Specialties</h4>
           <div className="flex flex-wrap gap-2">
-            {COACHING_SPECIALTIES.slice(0, 6).map((specialty) => (
-              <Chip
-                key={specialty}
-                size="sm"
-                variant="flat"
-                color="primary"
-              >
+            {COACHING_SPECIALTIES.slice(0, 6).map(specialty => (
+              <Chip key={specialty} size="sm" variant="flat" color="primary">
                 {specialty}
               </Chip>
             ))}
@@ -310,18 +327,21 @@ export default function CertificationsSection({
             <Select
               label="Certification"
               placeholder="Select a certification or choose custom"
-              value={selectedCert}
-              onChange={(e) => setSelectedCert(e.target.value)}
+              selectedKeys={selectedCert ? [selectedCert] : []}
+              onSelectionChange={keys => {
+                const selected = Array.from(keys)[0]
+                setSelectedCert(selected ? String(selected) : '')
+              }}
               variant="bordered"
             >
-              {COMMON_CERTIFICATIONS.map((cert) => (
-                <SelectItem key={cert.name} value={cert.name}>
-                  {cert.name} - {cert.organization}
-                </SelectItem>
-              ))}
-              <SelectItem key="custom" value="custom">
-                Custom Certification
-              </SelectItem>
+              <>
+                {COMMON_CERTIFICATIONS.map(cert => (
+                  <SelectItem key={cert.name}>
+                    {cert.name} - {cert.organization}
+                  </SelectItem>
+                ))}
+                <SelectItem key="custom">Custom Certification</SelectItem>
+              </>
             </Select>
 
             {selectedCert === 'custom' && (
@@ -330,7 +350,7 @@ export default function CertificationsSection({
                   label="Certification Name"
                   placeholder="e.g., Advanced Trail Running Coach"
                   value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
+                  onChange={e => setCustomName(e.target.value)}
                   variant="bordered"
                   isRequired
                 />
@@ -338,7 +358,7 @@ export default function CertificationsSection({
                   label="Issuing Organization"
                   placeholder="e.g., International Trail Running Association"
                   value={organization}
-                  onChange={(e) => setOrganization(e.target.value)}
+                  onChange={e => setOrganization(e.target.value)}
                   variant="bordered"
                   isRequired
                 />
@@ -350,14 +370,14 @@ export default function CertificationsSection({
                 label="Credential ID (Optional)"
                 placeholder="Certificate number"
                 value={credentialId}
-                onChange={(e) => setCredentialId(e.target.value)}
+                onChange={e => setCredentialId(e.target.value)}
                 variant="bordered"
               />
               <Input
                 label="Issue Date (Optional)"
                 type="date"
                 value={issueDate}
-                onChange={(e) => setIssueDate(e.target.value)}
+                onChange={e => setIssueDate(e.target.value)}
                 variant="bordered"
               />
             </div>
@@ -367,14 +387,14 @@ export default function CertificationsSection({
                 label="Expiration Date (Optional)"
                 type="date"
                 value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
+                onChange={e => setExpirationDate(e.target.value)}
                 variant="bordered"
               />
               <Input
                 label="Verification URL (Optional)"
                 placeholder="https://..."
                 value={verificationUrl}
-                onChange={(e) => setVerificationUrl(e.target.value)}
+                onChange={e => setVerificationUrl(e.target.value)}
                 variant="bordered"
               />
             </div>
@@ -393,7 +413,9 @@ export default function CertificationsSection({
               color="primary"
               onPress={handleAddCertification}
               isLoading={isLoading}
-              isDisabled={!selectedCert || (selectedCert === 'custom' && (!customName || !organization))}
+              isDisabled={
+                !selectedCert || (selectedCert === 'custom' && (!customName || !organization))
+              }
             >
               Add Certification
             </Button>

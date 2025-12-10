@@ -1,8 +1,22 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from '@heroui/react'
-import { Check, ExternalLink, Instagram, Plus, Twitter, Youtube, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Divider,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from '@heroui/react'
+import { Check, ExternalLink, Instagram, Plus, Twitter, X, Youtube } from 'lucide-react'
+
+import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
@@ -86,7 +100,7 @@ export default function SocialProfiles({
 
     // Validate URL format
     if (!platform.urlPattern.test(profileUrl)) {
-      commonToasts.error(`Please enter a valid ${platform.name} URL`)
+      commonToasts.saveError(`Please enter a valid ${platform.name} URL`)
       return
     }
 
@@ -109,24 +123,24 @@ export default function SocialProfiles({
 
       const newProfile = await response.json()
       onProfilesChange([...profiles, newProfile])
-      
+
       // Reset form
       setSelectedPlatform('')
       setProfileUrl('')
       setDisplayName('')
       onClose()
-      
-      commonToasts.success(`${platform.name} profile added successfully!`)
+
+      commonToasts.saveSuccess()
       logger.info('Social profile added', { platform: selectedPlatform, userId })
     } catch (error) {
       logger.error('Failed to add social profile:', error)
-      commonToasts.error('Failed to add social profile')
+      commonToasts.saveError('Failed to add social profile')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleRemoveProfile = async (profileId: string, platformName: string) => {
+  const handleRemoveProfile = async (profileId: string, _platformName: string) => {
     try {
       const response = await fetch(`/api/profile/social/${profileId}`, {
         method: 'DELETE',
@@ -137,11 +151,11 @@ export default function SocialProfiles({
       }
 
       onProfilesChange(profiles.filter(p => p.id !== profileId))
-      commonToasts.success(`${platformName} profile removed`)
+      commonToasts.deleteSuccess()
       logger.info('Social profile removed', { profileId, userId })
     } catch (error) {
       logger.error('Failed to remove social profile:', error)
-      commonToasts.error('Failed to remove social profile')
+      commonToasts.deleteError('Failed to remove social profile')
     }
   }
 
@@ -180,21 +194,13 @@ export default function SocialProfiles({
               </div>
               <div>
                 <p className="font-medium text-foreground">Strava</p>
-                <p className="text-sm text-foreground-600">
-                  {stravaUsername || 'Connected'}
-                </p>
+                <p className="text-sm text-foreground-600">{stravaUsername || 'Connected'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success" />
               <span className="text-sm text-success font-medium">Connected</span>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                as="a"
-                href="/settings/integrations"
-              >
+              <Button isIconOnly size="sm" variant="light" as="a" href="/settings/integrations">
                 <ExternalLink className="w-4 h-4" />
               </Button>
             </div>
@@ -202,14 +208,17 @@ export default function SocialProfiles({
         )}
 
         {/* Other Social Profiles */}
-        {profiles.map((profile) => {
+        {profiles.map(profile => {
           const platform = SOCIAL_PLATFORMS.find(p => p.id === profile.platform)
           if (!platform) return null
 
           const IconComponent = platform.icon
 
           return (
-            <div key={profile.id} className="flex items-center justify-between p-3 bg-default-50 rounded-lg">
+            <div
+              key={profile.id}
+              className="flex items-center justify-between p-3 bg-default-50 rounded-lg"
+            >
               <div className="flex items-center gap-3">
                 <IconComponent className={`w-6 h-6 ${platform.color}`} />
                 <div>
@@ -250,7 +259,7 @@ export default function SocialProfiles({
           <div className="space-y-2">
             <p className="text-sm text-foreground-600 mb-3">Add more profiles:</p>
             <div className="flex flex-wrap gap-2">
-              {getAvailablePlatforms().map((platform) => {
+              {getAvailablePlatforms().map(platform => {
                 const IconComponent = platform.icon
                 return (
                   <Button
@@ -273,12 +282,7 @@ export default function SocialProfiles({
             <p className="text-foreground-600 mb-4">
               Connect your Strava profile to showcase your running history to potential athletes
             </p>
-            <Button
-              color="primary"
-              variant="flat"
-              as="a"
-              href="/settings/integrations"
-            >
+            <Button color="primary" variant="flat" as="a" href="/settings/integrations">
               Connect Strava
             </Button>
           </div>
@@ -293,7 +297,7 @@ export default function SocialProfiles({
             {!selectedPlatform ? (
               <div className="space-y-3">
                 <p className="text-foreground-600">Select a platform:</p>
-                {getAvailablePlatforms().map((platform) => {
+                {getAvailablePlatforms().map(platform => {
                   const IconComponent = platform.icon
                   return (
                     <Button
@@ -326,7 +330,7 @@ export default function SocialProfiles({
                         label="Profile URL"
                         placeholder={platform.placeholder}
                         value={profileUrl}
-                        onChange={(e) => setProfileUrl(e.target.value)}
+                        onChange={e => setProfileUrl(e.target.value)}
                         startContent={<ExternalLink className="w-4 h-4 text-foreground-400" />}
                         variant="bordered"
                         isRequired
@@ -336,7 +340,7 @@ export default function SocialProfiles({
                         label="Display Name (Optional)"
                         placeholder="How you want it to appear"
                         value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
+                        onChange={e => setDisplayName(e.target.value)}
                         variant="bordered"
                       />
                     </>

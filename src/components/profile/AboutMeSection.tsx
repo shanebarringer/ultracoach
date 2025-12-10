@@ -1,7 +1,8 @@
 'use client'
 
 import { Button, Card, CardBody, CardHeader, Divider, Textarea } from '@heroui/react'
-import { Edit3, Save, X } from 'lucide-react'
+import { Edit3, Save } from 'lucide-react'
+
 import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
@@ -28,7 +29,7 @@ export default function AboutMeSection({
 
   const handleSave = async () => {
     if (editedBio.length > MAX_BIO_LENGTH) {
-      commonToasts.error(`Bio must be ${MAX_BIO_LENGTH} characters or less`)
+      commonToasts.saveError(`Bio must be ${MAX_BIO_LENGTH} characters or less`)
       return
     }
 
@@ -47,11 +48,11 @@ export default function AboutMeSection({
 
       onBioChange(editedBio)
       setIsEditing(false)
-      commonToasts.success('Bio updated successfully!')
+      commonToasts.saveSuccess()
       logger.info('Bio updated successfully')
     } catch (error) {
       logger.error('Failed to update bio:', error)
-      commonToasts.error('Failed to update bio')
+      commonToasts.saveError('Failed to update bio')
     } finally {
       setIsLoading(false)
     }
@@ -91,7 +92,7 @@ export default function AboutMeSection({
         <div className="space-y-4">
           <Textarea
             value={editedBio}
-            onChange={(e) => setEditedBio(e.target.value)}
+            onChange={e => setEditedBio(e.target.value)}
             placeholder="Ultramarathon coach with 15+ years of experience helping runners achieve their goals from 50K to 100 milers. I specialize in:
 
 • First-time ultra finishers
@@ -108,21 +109,16 @@ I've coached athletes to podium finishes at Western States, UTMB, and Leadville.
               input: 'resize-none',
             }}
           />
-          
+
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <span className={isOverLimit() ? 'text-danger' : 'text-foreground-600'}>
                 {getCharacterCount()}/{MAX_BIO_LENGTH} characters
               </span>
             </div>
-            
+
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="light"
-                onPress={handleCancel}
-                isDisabled={isLoading}
-              >
+              <Button size="sm" variant="light" onPress={handleCancel} isDisabled={isLoading}>
                 Cancel
               </Button>
               <Button
@@ -150,7 +146,7 @@ I've coached athletes to podium finishes at Western States, UTMB, and Leadville.
             </p>
           ))}
         </div>
-        
+
         {isEditable && (
           <div className="flex justify-end pt-2">
             <Button
@@ -185,9 +181,7 @@ I've coached athletes to podium finishes at Western States, UTMB, and Leadville.
         </div>
       </CardHeader>
       <Divider />
-      <CardBody>
-        {renderBioContent()}
-      </CardBody>
+      <CardBody>{renderBioContent()}</CardBody>
     </Card>
   )
 }

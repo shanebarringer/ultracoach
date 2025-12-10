@@ -1,7 +1,8 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Switch, Chip } from '@heroui/react'
-import { Users, Star, Calendar, MessageCircle, Eye } from 'lucide-react'
+import { Button, Card, CardBody, CardHeader, Chip, Divider, Switch } from '@heroui/react'
+import { Calendar, Eye, MessageCircle, Star, Users } from 'lucide-react'
+
 import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
@@ -35,9 +36,9 @@ export default function WorkWithMeCard({
 
   const handleAvailabilityToggle = async (isAvailable: boolean) => {
     const newStatus = isAvailable ? 'available' : 'unavailable'
-    
+
     setIsUpdatingAvailability(true)
-    
+
     try {
       const response = await fetch('/api/profile', {
         method: 'PUT',
@@ -50,11 +51,11 @@ export default function WorkWithMeCard({
       }
 
       onAvailabilityChange(newStatus)
-      commonToasts.success(`Availability updated to ${newStatus}`)
+      commonToasts.saveSuccess()
       logger.info('Availability updated', { status: newStatus })
     } catch (error) {
       logger.error('Failed to update availability:', error)
-      commonToasts.error('Failed to update availability')
+      commonToasts.saveError('Failed to update availability')
     } finally {
       setIsUpdatingAvailability(false)
     }
@@ -115,7 +116,7 @@ export default function WorkWithMeCard({
             </div>
             <div className="text-xs text-foreground-600">Athletes Coached</div>
           </div>
-          
+
           <div>
             <div className="flex items-center justify-center mb-1">
               <Star className="w-4 h-4 text-warning mr-1" />
@@ -125,7 +126,7 @@ export default function WorkWithMeCard({
             </div>
             <div className="text-xs text-foreground-600">Avg Rating</div>
           </div>
-          
+
           <div>
             <div className="flex items-center justify-center mb-1">
               <Calendar className="w-4 h-4 text-secondary mr-1" />
@@ -141,15 +142,11 @@ export default function WorkWithMeCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-foreground-600">Availability Status</span>
-            <Chip
-              size="sm"
-              color={getAvailabilityColor()}
-              variant="flat"
-            >
+            <Chip size="sm" color={getAvailabilityColor()} variant="flat">
               {getAvailabilityText()}
             </Chip>
           </div>
-          
+
           {isOwnProfile && (
             <div className="flex items-center justify-between p-3 bg-default-50 rounded-lg">
               <span className="text-sm text-foreground-600">Accepting Athletes</span>
@@ -161,15 +158,11 @@ export default function WorkWithMeCard({
               />
             </div>
           )}
-          
+
           {!isOwnProfile && (
             <div className="text-center">
-              <p className="text-sm text-foreground-600 mb-2">
-                {getSpotsLeftText()}
-              </p>
-              <div className="text-xs text-foreground-500">
-                Preview what athletes see:
-              </div>
+              <p className="text-sm text-foreground-600 mb-2">{getSpotsLeftText()}</p>
+              <div className="text-xs text-foreground-500">Preview what athletes see:</div>
             </div>
           )}
         </div>
@@ -185,7 +178,7 @@ export default function WorkWithMeCard({
             >
               Request Free Consultation
             </Button>
-            
+
             <Button
               variant="bordered"
               className="w-full"
@@ -200,20 +193,13 @@ export default function WorkWithMeCard({
           <div className="space-y-3">
             <div className="text-center p-4 bg-info/10 rounded-lg border border-info/20">
               <Eye className="w-5 h-5 text-info mx-auto mb-2" />
-              <p className="text-sm text-info-600 font-medium mb-1">
-                Profile Preview Mode
-              </p>
+              <p className="text-sm text-info-600 font-medium mb-1">Profile Preview Mode</p>
               <p className="text-xs text-info-500">
                 This is how your profile appears to potential athletes
               </p>
             </div>
-            
-            <Button
-              variant="flat"
-              className="w-full"
-              as="a"
-              href="/dashboard/coach"
-            >
+
+            <Button variant="flat" className="w-full" as="a" href="/dashboard/coach">
               Back to Dashboard
             </Button>
           </div>

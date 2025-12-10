@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, unlink } from 'fs/promises'
-import { join } from 'path'
 import { eq } from 'drizzle-orm'
+import { unlink, writeFile } from 'fs/promises'
+import { join } from 'path'
 
-import { getServerSession } from '@/utils/auth-server'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
-import { user_profiles } from '@/lib/schema'
 import { createLogger } from '@/lib/logger'
+import { user_profiles } from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('AvatarUploadAPI')
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars')
-    
+
     try {
       await writeFile(join(uploadsDir, 'test'), '')
       await unlink(join(uploadsDir, 'test'))
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     const filePath = join(uploadsDir, filename)
-    
+
     await writeFile(filePath, buffer)
 
     // Generate public URL
@@ -73,12 +74,12 @@ export async function POST(request: NextRequest) {
         .from(user_profiles)
         .where(eq(user_profiles.user_id, session.user.id))
         .limit(1)
-    } catch (error) {
+    } catch {
       logger.warn('user_profiles table not found, skipping avatar URL update')
       // Still return success since the file was uploaded successfully
-      return NextResponse.json({ 
+      return NextResponse.json({
         avatarUrl,
-        message: 'Avatar uploaded successfully (profile table not found)' 
+        message: 'Avatar uploaded successfully (profile table not found)',
       })
     }
 
@@ -98,9 +99,9 @@ export async function POST(request: NextRequest) {
         // Update existing profile
         await db
           .update(user_profiles)
-          .set({ 
+          .set({
             avatar_url: avatarUrl,
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .where(eq(user_profiles.user_id, session.user.id))
       } else {
@@ -113,9 +114,9 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       logger.error('Failed to update avatar URL in database:', error)
       // Still return success since the file was uploaded successfully
-      return NextResponse.json({ 
+      return NextResponse.json({
         avatarUrl,
-        message: 'Avatar uploaded successfully (database update failed)' 
+        message: 'Avatar uploaded successfully (database update failed)',
       })
     }
 
@@ -125,21 +126,17 @@ export async function POST(request: NextRequest) {
       fileSize: file.size,
     })
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       avatarUrl,
-      message: 'Avatar uploaded successfully' 
+      message: 'Avatar uploaded successfully',
     })
-
   } catch (error) {
     logger.error('Avatar upload failed:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload avatar' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     // Check authentication
     const session = await getServerSession()
@@ -155,16 +152,16 @@ export async function DELETE(request: NextRequest) {
         .from(user_profiles)
         .where(eq(user_profiles.user_id, session.user.id))
         .limit(1)
-    } catch (error) {
+    } catch {
       logger.warn('user_profiles table not found, skipping avatar removal')
-      return NextResponse.json({ 
-        message: 'Avatar removal skipped - table not found' 
+      return NextResponse.json({
+        message: 'Avatar removal skipped - table not found',
       })
     }
 
     if (existingProfile.length > 0 && existingProfile[0].avatar_url) {
       const avatarUrl = existingProfile[0].avatar_url
-      
+
       // Delete file if it's a local upload
       if (avatarUrl.startsWith('/uploads/avatars/')) {
         try {
@@ -179,9 +176,9 @@ export async function DELETE(request: NextRequest) {
       try {
         await db
           .update(user_profiles)
-          .set({ 
+          .set({
             avatar_url: null,
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .where(eq(user_profiles.user_id, session.user.id))
       } catch (error) {
@@ -197,15 +194,11 @@ export async function DELETE(request: NextRequest) {
       userId: session.user.id,
     })
 
-    return NextResponse.json({ 
-      message: 'Avatar removed successfully' 
+    return NextResponse.json({
+      message: 'Avatar removed successfully',
     })
-
   } catch (error) {
     logger.error('Avatar removal failed:', error)
-    return NextResponse.json(
-      { error: 'Failed to remove avatar' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to remove avatar' }, { status: 500 })
   }
 }

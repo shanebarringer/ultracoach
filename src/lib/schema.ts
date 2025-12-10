@@ -793,7 +793,9 @@ export const certifications = pgTable(
     certificate_file_url: text('certificate_file_url'),
     status: text('status', {
       enum: ['active', 'expired', 'pending', 'revoked'],
-    }).default('active').notNull(),
+    })
+      .default('active')
+      .notNull(),
     is_featured: boolean('is_featured').default(false),
     created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

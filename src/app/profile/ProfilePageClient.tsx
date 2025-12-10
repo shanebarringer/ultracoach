@@ -1,20 +1,20 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Input, Chip } from '@heroui/react'
-import { MailIcon, MountainSnowIcon, UserIcon, Users } from 'lucide-react'
+import { Button, Card, CardBody, CardHeader, Chip, Divider, Input } from '@heroui/react'
+import { MailIcon, UserIcon, Users } from 'lucide-react'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
-import AvatarUpload from '@/components/profile/AvatarUpload'
 import AboutMeSection from '@/components/profile/AboutMeSection'
-import SocialProfiles from '@/components/profile/SocialProfiles'
+import AvatarUpload from '@/components/profile/AvatarUpload'
 import CertificationsSection from '@/components/profile/CertificationsSection'
-import WorkWithMeCard from '@/components/profile/WorkWithMeCard'
+import SocialProfiles from '@/components/profile/SocialProfiles'
 import UltraSignupResults from '@/components/profile/UltraSignupResults'
+import WorkWithMeCard from '@/components/profile/WorkWithMeCard'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
 import { formatMonthYear } from '@/lib/utils/date'
@@ -32,11 +32,55 @@ interface ProfilePageClientProps {
   }
 }
 
+interface SocialProfile {
+  id: string
+  platform: string
+  username?: string
+  profile_url: string
+  display_name?: string
+  is_verified: boolean
+  is_public: boolean
+}
+
+interface Certification {
+  id: string
+  name: string
+  issuing_organization: string
+  credential_id?: string
+  issue_date?: string
+  expiration_date?: string
+  verification_url?: string
+  status: 'active' | 'expired' | 'pending' | 'revoked'
+  is_featured: boolean
+}
+
+interface CoachStatistics {
+  total_athletes: number
+  active_athletes: number
+  average_rating: number
+  total_reviews: number
+  years_coaching: number
+  success_stories: number
+}
+
+interface UserProfile {
+  bio?: string | null
+  location?: string | null
+  website?: string | null
+  years_experience?: number | null
+  specialties?: string[] | null
+  achievements?: string[] | null
+  availability_status?: 'available' | 'limited' | 'unavailable' | null
+  hourly_rate?: number | null
+  consultation_enabled?: boolean | null
+  avatar_url?: string | null
+}
+
 interface ProfileData {
-  profile: any
-  social_profiles: any[]
-  certifications: any[]
-  coach_statistics: any
+  profile: UserProfile | null
+  social_profiles: SocialProfile[]
+  certifications: Certification[]
+  coach_statistics: CoachStatistics | null
   strava_connected: boolean
   strava_username: string | null
 }
@@ -64,7 +108,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
         }
       } catch (error) {
         logger.error('Failed to load profile data:', error)
-        commonToasts.error('Failed to load profile data')
+        commonToasts.profileError('Failed to load profile data')
       } finally {
         setIsLoading(false)
       }
@@ -132,7 +176,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     }
   }
 
-  const handleSocialProfilesChange = (profiles: any[]) => {
+  const handleSocialProfilesChange = (profiles: SocialProfile[]) => {
     if (profileData) {
       setProfileData({
         ...profileData,
@@ -141,7 +185,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     }
   }
 
-  const handleCertificationsChange = (certifications: any[]) => {
+  const handleCertificationsChange = (certifications: Certification[]) => {
     if (profileData) {
       setProfileData({
         ...profileData,
@@ -292,7 +336,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 profiles={profileData?.social_profiles || []}
                 onProfilesChange={handleSocialProfilesChange}
                 stravaConnected={profileData?.strava_connected}
-                stravaUsername={profileData?.strava_username}
+                stravaUsername={profileData?.strava_username ?? undefined}
               />
 
               {/* UltraSignup Results */}
@@ -310,14 +354,16 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
               {/* Work With Me Card (for coaches) */}
               {isCoach && (
                 <WorkWithMeCard
-                  coachStats={profileData?.coach_statistics || {
-                    total_athletes: 0,
-                    active_athletes: 0,
-                    average_rating: 0,
-                    total_reviews: 0,
-                    years_coaching: 0,
-                    success_stories: 0,
-                  }}
+                  coachStats={
+                    profileData?.coach_statistics || {
+                      total_athletes: 0,
+                      active_athletes: 0,
+                      average_rating: 0,
+                      total_reviews: 0,
+                      years_coaching: 0,
+                      success_stories: 0,
+                    }
+                  }
                   availabilityStatus={profileData?.profile?.availability_status || 'available'}
                   onAvailabilityChange={handleAvailabilityChange}
                   isOwnProfile={true}

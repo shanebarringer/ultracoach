@@ -1,14 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 
-import { getServerSession } from '@/utils/auth-server'
+import { NextRequest, NextResponse } from 'next/server'
+
 import { db } from '@/lib/db'
-import { user_profiles, social_profiles, certifications, coach_statistics, strava_connections } from '@/lib/schema'
 import { createLogger } from '@/lib/logger'
+import {
+  certifications,
+  coach_statistics,
+  social_profiles,
+  strava_connections,
+  user_profiles,
+} from '@/lib/schema'
+import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('ProfileAPI')
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession()
     if (!session?.user?.id) {
@@ -16,36 +23,36 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user profile (with fallback for missing table)
-    let profile = []
+    let profile: (typeof user_profiles.$inferSelect)[] = []
     try {
       profile = await db
         .select()
         .from(user_profiles)
         .where(eq(user_profiles.user_id, session.user.id))
         .limit(1)
-    } catch (error) {
+    } catch {
       logger.warn('user_profiles table not found, using empty profile')
     }
 
     // Get social profiles (with fallback for missing table)
-    let socialProfiles = []
+    let socialProfiles: (typeof social_profiles.$inferSelect)[] = []
     try {
       socialProfiles = await db
         .select()
         .from(social_profiles)
         .where(eq(social_profiles.user_id, session.user.id))
-    } catch (error) {
+    } catch {
       logger.warn('social_profiles table not found, using empty array')
     }
 
     // Get certifications (with fallback for missing table)
-    let userCertifications = []
+    let userCertifications: (typeof certifications.$inferSelect)[] = []
     try {
       userCertifications = await db
         .select()
         .from(certifications)
         .where(eq(certifications.user_id, session.user.id))
-    } catch (error) {
+    } catch {
       logger.warn('certifications table not found, using empty array')
     }
 
@@ -58,7 +65,7 @@ export async function GET(request: NextRequest) {
           .from(coach_statistics)
           .where(eq(coach_statistics.user_id, session.user.id))
           .limit(1)
-        
+
         coachStats = stats[0] || {
           total_athletes: 0,
           active_athletes: 0,
@@ -67,7 +74,7 @@ export async function GET(request: NextRequest) {
           years_coaching: 0,
           success_stories: 0,
         }
-      } catch (error) {
+      } catch {
         logger.warn('coach_statistics table not found, using default stats')
         coachStats = {
           total_athletes: 0,
@@ -81,14 +88,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get Strava connection status (with fallback for missing table)
-    let stravaConnection = []
+    let stravaConnection: (typeof strava_connections.$inferSelect)[] = []
     try {
       stravaConnection = await db
         .select()
         .from(strava_connections)
         .where(eq(strava_connections.user_id, session.user.id))
         .limit(1)
-    } catch (error) {
+    } catch {
       logger.warn('strava_connections table not found, using empty array')
     }
 
@@ -98,15 +105,13 @@ export async function GET(request: NextRequest) {
       certifications: userCertifications,
       coach_statistics: coachStats,
       strava_connected: stravaConnection.length > 0,
-      strava_username: stravaConnection[0]?.athlete_data?.username || null,
+      strava_username: stravaConnection[0]
+        ? (stravaConnection[0].athlete_data as { username?: string })?.username || null
+        : null,
     })
-
   } catch (error) {
     logger.error('Failed to fetch profile:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch profile' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
   }
 }
 
@@ -138,10 +143,10 @@ export async function PUT(request: NextRequest) {
         .from(user_profiles)
         .where(eq(user_profiles.user_id, session.user.id))
         .limit(1)
-    } catch (error) {
+    } catch {
       logger.warn('user_profiles table not found, skipping profile update')
-      return NextResponse.json({ 
-        message: 'Profile update skipped - table not found' 
+      return NextResponse.json({
+        message: 'Profile update skipped - table not found',
       })
     }
 
@@ -185,15 +190,11 @@ export async function PUT(request: NextRequest) {
       fields: Object.keys(updateData),
     })
 
-    return NextResponse.json({ 
-      message: 'Profile updated successfully' 
+    return NextResponse.json({
+      message: 'Profile updated successfully',
     })
-
   } catch (error) {
     logger.error('Failed to update profile:', error)
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
 }

@@ -1,7 +1,22 @@
 'use client'
 
-import { Button, Card, CardBody, CardHeader, Divider, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Input, useDisclosure } from '@heroui/react'
-import { Trophy, ExternalLink, Plus, Settings, Check, X } from 'lucide-react'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Divider,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from '@heroui/react'
+import { Check, ExternalLink, Plus, Settings, Trophy } from 'lucide-react'
+
 import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
@@ -54,13 +69,13 @@ export default function UltraSignupResults({
 
   const handleConnectProfile = async () => {
     if (!profileUrl) {
-      commonToasts.error('Please enter your UltraSignup profile URL')
+      commonToasts.saveError('Please enter your UltraSignup profile URL')
       return
     }
 
     // Validate URL format
     if (!profileUrl.includes('ultrasignup.com')) {
-      commonToasts.error('Please enter a valid UltraSignup profile URL')
+      commonToasts.saveError('Please enter a valid UltraSignup profile URL')
       return
     }
 
@@ -79,18 +94,18 @@ export default function UltraSignupResults({
 
       const newConnection = await response.json()
       onConnectionChange(newConnection)
-      
+
       setProfileUrl('')
       onClose()
-      
-      commonToasts.success('UltraSignup profile connected successfully!')
+
+      commonToasts.saveSuccess()
       logger.info('UltraSignup profile connected', { profileUrl })
-      
+
       // Automatically sync results after connecting
       handleSyncResults()
     } catch (error) {
       logger.error('Failed to connect UltraSignup profile:', error)
-      commonToasts.error('Failed to connect UltraSignup profile')
+      commonToasts.saveError('Failed to connect UltraSignup profile')
     } finally {
       setIsLoading(false)
     }
@@ -112,12 +127,12 @@ export default function UltraSignupResults({
 
       const { results: newResults } = await response.json()
       onResultsChange(newResults)
-      
-      commonToasts.success('Race results synced successfully!')
+
+      commonToasts.saveSuccess()
       logger.info('Race results synced', { resultCount: newResults.length })
     } catch (error) {
       logger.error('Failed to sync race results:', error)
-      commonToasts.error('Failed to sync race results')
+      commonToasts.saveError('Failed to sync race results')
     } finally {
       setIsSyncing(false)
     }
@@ -137,12 +152,12 @@ export default function UltraSignupResults({
 
       onConnectionChange(null)
       onResultsChange([])
-      
-      commonToasts.success('UltraSignup profile disconnected')
+
+      commonToasts.deleteSuccess()
       logger.info('UltraSignup profile disconnected')
     } catch (error) {
       logger.error('Failed to disconnect UltraSignup profile:', error)
-      commonToasts.error('Failed to disconnect UltraSignup profile')
+      commonToasts.deleteError('Failed to disconnect UltraSignup profile')
     }
   }
 
@@ -166,7 +181,7 @@ export default function UltraSignupResults({
     return 'default'
   }
 
-  const formatPlace = (place: number, total: number) => {
+  const formatPlace = (place: number) => {
     const suffix = place === 1 ? 'st' : place === 2 ? 'nd' : place === 3 ? 'rd' : 'th'
     return `${place}${suffix}`
   }
@@ -178,7 +193,9 @@ export default function UltraSignupResults({
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-warning" />
             <h3 className="text-lg font-semibold text-foreground">UltraSignup Results</h3>
-            <Chip size="sm" variant="flat" color="secondary">Optional</Chip>
+            <Chip size="sm" variant="flat" color="secondary">
+              Optional
+            </Chip>
           </div>
           {isEditable && (
             <div className="flex items-center gap-2">
@@ -238,8 +255,11 @@ export default function UltraSignupResults({
             <div>
               <h4 className="text-sm font-medium text-foreground-600 mb-3">Recent Results</h4>
               <div className="space-y-3">
-                {results.slice(0, 3).map((result) => (
-                  <div key={result.id} className="flex items-center justify-between p-3 bg-default-50 rounded-lg">
+                {results.slice(0, 3).map(result => (
+                  <div
+                    key={result.id}
+                    className="flex items-center justify-between p-3 bg-default-50 rounded-lg"
+                  >
                     <div className="flex-1">
                       <h5 className="font-medium text-foreground">{result.race_name}</h5>
                       <div className="flex items-center gap-4 mt-1">
@@ -250,14 +270,16 @@ export default function UltraSignupResults({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium text-foreground">{formatTime(result.finish_time)}</div>
+                      <div className="font-medium text-foreground">
+                        {formatTime(result.finish_time)}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Chip
                           size="sm"
                           color={getPlaceColor(result.overall_place, result.total_participants)}
                           variant="flat"
                         >
-                          {formatPlace(result.overall_place, result.total_participants)}
+                          {formatPlace(result.overall_place)}
                         </Chip>
                         {result.race_url && (
                           <Button
@@ -277,7 +299,7 @@ export default function UltraSignupResults({
                   </div>
                 ))}
               </div>
-              
+
               {results.length > 3 && (
                 <div className="text-center mt-4">
                   <Button
@@ -298,9 +320,7 @@ export default function UltraSignupResults({
         ) : connection && results.length === 0 ? (
           <div className="text-center py-8">
             <Trophy className="w-12 h-12 text-foreground-300 mx-auto mb-4" />
-            <p className="text-foreground-600 mb-4">
-              Profile connected but no race results found
-            </p>
+            <p className="text-foreground-600 mb-4">Profile connected but no race results found</p>
             <Button
               color="primary"
               variant="flat"
@@ -314,7 +334,8 @@ export default function UltraSignupResults({
           <div className="text-center py-8">
             <Trophy className="w-12 h-12 text-foreground-300 mx-auto mb-4" />
             <p className="text-foreground-600 mb-4">
-              Connect your UltraSignup profile to showcase your race results and build credibility with potential athletes
+              Connect your UltraSignup profile to showcase your race results and build credibility
+              with potential athletes
             </p>
             {isEditable && (
               <Button
@@ -346,7 +367,7 @@ export default function UltraSignupResults({
                   label="UltraSignup Profile URL"
                   placeholder="https://ultrasignup.com/results_participant.aspx?fname=John&lname=Doe"
                   value={profileUrl}
-                  onChange={(e) => setProfileUrl(e.target.value)}
+                  onChange={e => setProfileUrl(e.target.value)}
                   variant="bordered"
                   startContent={<ExternalLink className="w-4 h-4 text-foreground-400" />}
                 />
@@ -379,18 +400,15 @@ export default function UltraSignupResults({
                     View Profile
                   </Button>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-warning/10 rounded-lg border border-warning/20">
                   <div>
                     <p className="text-sm font-medium text-warning-600">Disconnect Profile</p>
-                    <p className="text-xs text-warning-500">This will remove all synced race results</p>
+                    <p className="text-xs text-warning-500">
+                      This will remove all synced race results
+                    </p>
                   </div>
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="flat"
-                    onPress={handleDisconnect}
-                  >
+                  <Button size="sm" color="danger" variant="flat" onPress={handleDisconnect}>
                     Disconnect
                   </Button>
                 </div>

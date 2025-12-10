@@ -1,8 +1,10 @@
 'use client'
 
 import { Button } from '@heroui/react'
-import { Camera, Upload, X } from 'lucide-react'
+import { Camera, X } from 'lucide-react'
+
 import { useCallback, useState } from 'react'
+
 // import { useDropzone } from 'react-dropzone' // TODO: Install react-dropzone
 
 import { createLogger } from '@/lib/logger'
@@ -43,16 +45,16 @@ export default function AvatarUpload({
       if (acceptedFiles.length === 0) return
 
       const file = acceptedFiles[0]
-      
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        commonToasts.error('Please select an image file')
+        commonToasts.saveError('Please select an image file')
         return
       }
 
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        commonToasts.error('Image must be smaller than 5MB')
+        commonToasts.saveError('Image must be smaller than 5MB')
         return
       }
 
@@ -78,17 +80,17 @@ export default function AvatarUpload({
         }
 
         const { avatarUrl } = await response.json()
-        
+
         // Update parent component
         onAvatarChange(avatarUrl)
         setPreviewUrl(avatarUrl)
-        
-        commonToasts.success('Avatar updated successfully!')
+
+        commonToasts.saveSuccess()
         logger.info('Avatar uploaded successfully', { avatarUrl })
       } catch (error) {
         logger.error('Avatar upload failed:', error)
-        commonToasts.error('Failed to upload avatar')
-        
+        commonToasts.saveError('Failed to upload avatar')
+
         // Reset preview on error
         setPreviewUrl(currentAvatarUrl || null)
       } finally {
@@ -109,7 +111,7 @@ export default function AvatarUpload({
   const handleRemoveAvatar = async () => {
     try {
       setIsUploading(true)
-      
+
       // Call API to remove avatar
       const response = await fetch('/api/upload/avatar', {
         method: 'DELETE',
@@ -121,11 +123,11 @@ export default function AvatarUpload({
 
       onAvatarChange(null)
       setPreviewUrl(null)
-      commonToasts.success('Avatar removed successfully!')
+      commonToasts.deleteSuccess()
       logger.info('Avatar removed successfully')
     } catch (error) {
       logger.error('Avatar removal failed:', error)
-      commonToasts.error('Failed to remove avatar')
+      commonToasts.deleteError('Failed to remove avatar')
     } finally {
       setIsUploading(false)
     }
@@ -164,18 +166,12 @@ export default function AvatarUpload({
             className="hidden"
             disabled={disabled || isUploading}
           />
-          
+
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Profile avatar"
-              className="w-full h-full object-cover"
-            />
+            <img src={previewUrl} alt="Profile avatar" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-              <span className="text-2xl font-bold text-foreground-600">
-                {getInitials('Shane')}
-              </span>
+              <span className="text-2xl font-bold text-foreground-600">{getInitials('Shane')}</span>
             </div>
           )}
 
@@ -207,12 +203,8 @@ export default function AvatarUpload({
       </div>
 
       <div className="text-center">
-        <p className="text-sm text-foreground-600 mb-2">
-          Click to upload photo
-        </p>
-        <p className="text-xs text-foreground-400">
-          JPG, PNG, GIF up to 5MB
-        </p>
+        <p className="text-sm text-foreground-600 mb-2">Click to upload photo</p>
+        <p className="text-xs text-foreground-400">JPG, PNG, GIF up to 5MB</p>
       </div>
     </div>
   )
