@@ -17,6 +17,24 @@ import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('ProfileAPI')
 
+/**
+ * Profile API - Database Table Strategy
+ *
+ * This API uses try-catch blocks for graceful degradation during development/migration.
+ * All tables (user_profiles, social_profiles, certifications, coach_statistics) are
+ * REQUIRED in production and created via migrations.
+ *
+ * Try-catch fallbacks are ONLY for:
+ * - Local development before running migrations
+ * - Preventing crashes during database schema changes
+ * - Smooth migration rollout across environments
+ *
+ * In production, these tables MUST exist. If they don't, it indicates a deployment issue.
+ *
+ * TODO: Once all environments are stable, consider removing try-catch fallbacks
+ * and letting errors surface naturally for faster debugging.
+ */
+
 export async function GET() {
   try {
     const session = await getServerSession()
@@ -214,8 +232,55 @@ export async function PUT(request: NextRequest) {
       }
     } catch (error) {
       logger.error('Failed to update user profile:', error)
+
+      // Enhanced error handling with type differentiation
+      if (error && typeof error === 'object' && 'code' in error) {
+        const dbError = error as { code: string; message?: string }
+
+        // PostgreSQL constraint violation
+        if (dbError.code === '23505' || dbError.code === 'P2002') {
+          return NextResponse.json(
+            {
+              error: 'Duplicate entry',
+              type: 'CONSTRAINT_VIOLATION',
+              message: 'A profile entry with this data already exists',
+            },
+            { status: 409 }
+          )
+        }
+
+        // Foreign key violation
+        if (dbError.code === '23503' || dbError.code === 'P2003') {
+          return NextResponse.json(
+            {
+              error: 'Invalid reference',
+              type: 'FOREIGN_KEY_VIOLATION',
+              message: 'Referenced user does not exist',
+            },
+            { status: 400 }
+          )
+        }
+
+        // Connection errors
+        if (dbError.code === 'ECONNREFUSED' || dbError.code === 'ETIMEDOUT') {
+          return NextResponse.json(
+            {
+              error: 'Database unavailable',
+              type: 'CONNECTION_ERROR',
+              message: 'Unable to connect to database',
+            },
+            { status: 503 }
+          )
+        }
+      }
+
+      // Generic database error
       return NextResponse.json(
-        { error: 'Failed to update profile - database error' },
+        {
+          error: 'Failed to update profile',
+          type: 'DATABASE_ERROR',
+          message: 'An unexpected database error occurred',
+        },
         { status: 500 }
       )
     }

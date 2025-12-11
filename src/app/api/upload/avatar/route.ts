@@ -1,15 +1,40 @@
 import { eq } from 'drizzle-orm'
-import { unlink, writeFile } from 'fs/promises'
-import { join } from 'path'
 
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/lib/db'
 import { createLogger } from '@/lib/logger'
+import { RedisRateLimiter, addRateLimitHeaders, formatRetryAfter } from '@/lib/redis-rate-limiter'
 import { user_profiles } from '@/lib/schema'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('AvatarUploadAPI')
+
+// Rate limiter for avatar uploads (10 uploads per hour per user)
+const avatarUploadLimiter = new RedisRateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  keyGenerator: (userId: string) => `avatar-upload:${userId}`,
+})
+
+/**
+ * Avatar Upload API - Production Ready
+ *
+ * Storage: Supabase Storage (cloud-based)
+ * - Works seamlessly with Vercel serverless deployment
+ * - 1GB free storage + 2GB bandwidth/month
+ * - Built-in CDN for fast delivery
+ * - Automatic image optimization available
+ *
+ * Security:
+ * - RLS policies enforce user-specific access
+ * - Magic bytes validation (server-side)
+ * - File type and size validation
+ * - 5MB maximum file size
+ *
+ * See: docs/SUPABASE_STORAGE_SETUP.md for setup instructions
+ */
 
 // Maximum file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -20,6 +45,26 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check rate limit (10 uploads per hour)
+    const rateLimitResult = await avatarUploadLimiter.check(session.user.id)
+    if (!rateLimitResult.allowed) {
+      const retryDisplay = formatRetryAfter(rateLimitResult.retryAfter)
+      logger.warn('Avatar upload rate limit exceeded', {
+        userId: session.user.id,
+        retryAfter: rateLimitResult.retryAfter,
+      })
+
+      const response = NextResponse.json(
+        {
+          error: 'Too many upload attempts',
+          message: `Please try again ${retryDisplay}`,
+          retryAfter: rateLimitResult.retryAfter, // Always in seconds
+        },
+        { status: 429 }
+      )
+      return addRateLimitHeaders(response, rateLimitResult)
     }
 
     const formData = await request.formData()
@@ -74,23 +119,29 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const filename = `avatar-${session.user.id}-${timestamp}.${extension}`
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars')
+    // Upload to Supabase Storage
+    // File path: {userId}/{filename} for organization
+    const storagePath = `${session.user.id}/${filename}`
 
-    try {
-      const { mkdir } = await import('fs/promises')
-      await mkdir(uploadsDir, { recursive: true })
-    } catch (error) {
-      // Directory might already exist, that's fine
-      logger.debug('Directory creation result:', error)
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('avatars')
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: true, // Replace if exists
+      })
+
+    if (uploadError) {
+      logger.error('Supabase storage upload failed:', uploadError)
+      return NextResponse.json({ error: 'Failed to upload avatar to storage' }, { status: 500 })
     }
 
-    // Save the file (buffer already available from validation)
-    const filePath = join(uploadsDir, filename)
-    await writeFile(filePath, buffer)
+    // Get public URL for the uploaded file
+    const {
+      data: { publicUrl },
+    } = supabaseAdmin.storage.from('avatars').getPublicUrl(storagePath)
 
-    // Generate public URL
-    const avatarUrl = `/uploads/avatars/${filename}`
+    const avatarUrl = publicUrl
 
     // Update or create user profile with new avatar URL (with fallback for missing table)
     let existingProfile = []
@@ -111,12 +162,21 @@ export async function POST(request: NextRequest) {
 
     try {
       if (existingProfile.length > 0) {
-        // Delete old avatar file if it exists
+        // Delete old avatar file from Supabase Storage if it exists
         const oldAvatarUrl = existingProfile[0].avatar_url
-        if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
+        if (oldAvatarUrl && oldAvatarUrl.includes('/storage/v1/object/public/avatars/')) {
           try {
-            const oldFilePath = join(process.cwd(), 'public', oldAvatarUrl)
-            await unlink(oldFilePath)
+            // Extract storage path from URL
+            const oldPath = oldAvatarUrl.split('/storage/v1/object/public/avatars/')[1]
+            if (oldPath) {
+              const { error: deleteError } = await supabaseAdmin.storage
+                .from('avatars')
+                .remove([oldPath])
+
+              if (deleteError) {
+                logger.warn('Failed to delete old avatar from storage:', deleteError)
+              }
+            }
           } catch (error) {
             logger.warn('Failed to delete old avatar file:', error)
           }
@@ -152,10 +212,12 @@ export async function POST(request: NextRequest) {
       fileSize: file.size,
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       avatarUrl,
       message: 'Avatar uploaded successfully',
     })
+
+    return addRateLimitHeaders(response, rateLimitResult)
   } catch (error) {
     logger.error('Avatar upload failed:', error)
     return NextResponse.json({ error: 'Failed to upload avatar' }, { status: 500 })
@@ -188,11 +250,20 @@ export async function DELETE() {
     if (existingProfile.length > 0 && existingProfile[0].avatar_url) {
       const avatarUrl = existingProfile[0].avatar_url
 
-      // Delete file if it's a local upload
-      if (avatarUrl.startsWith('/uploads/avatars/')) {
+      // Delete file from Supabase Storage
+      if (avatarUrl.includes('/storage/v1/object/public/avatars/')) {
         try {
-          const filePath = join(process.cwd(), 'public', avatarUrl)
-          await unlink(filePath)
+          // Extract storage path from URL
+          const storagePath = avatarUrl.split('/storage/v1/object/public/avatars/')[1]
+          if (storagePath) {
+            const { error: deleteError } = await supabaseAdmin.storage
+              .from('avatars')
+              .remove([storagePath])
+
+            if (deleteError) {
+              logger.warn('Failed to delete avatar from storage:', deleteError)
+            }
+          }
         } catch (error) {
           logger.warn('Failed to delete avatar file:', error)
         }
