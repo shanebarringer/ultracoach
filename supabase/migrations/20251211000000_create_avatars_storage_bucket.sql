@@ -1,5 +1,8 @@
 -- Create avatars storage bucket for profile images
 -- This migration sets up Supabase Storage for avatar uploads
+--
+-- IDEMPOTENT: This migration is safe to run multiple times
+-- ON CONFLICT (id) DO NOTHING prevents duplicate bucket creation
 
 -- Create the avatars bucket (public access for reading)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -43,4 +46,3 @@ USING (
   bucket_id = 'avatars' AND
   (storage.foldername(name))[1] = auth.uid()::text
 );
-

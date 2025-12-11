@@ -234,6 +234,11 @@ export async function PUT(request: NextRequest) {
       logger.error('Failed to update user profile:', error)
 
       // Enhanced error handling with type differentiation
+      // Clients should implement retry logic based on error type:
+      // - CONSTRAINT_VIOLATION (409): Don't retry, show user error
+      // - FOREIGN_KEY_VIOLATION (400): Don't retry, show user error
+      // - CONNECTION_ERROR (503): Retry with exponential backoff (max 3 attempts)
+      // - DATABASE_ERROR (500): Retry once after 1s delay, then show error
       if (error && typeof error === 'object' && 'code' in error) {
         const dbError = error as { code: string; message?: string }
 

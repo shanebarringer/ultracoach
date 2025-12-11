@@ -52,9 +52,11 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-...
 ### Database
 
 - [ ] All migrations applied to production database
+
   ```bash
   pnpm run prod:db:migrate
   ```
+
 - [ ] Database connection pooling configured (Supabase handles this)
 - [ ] Backup strategy in place
 - [ ] Supabase Storage bucket created (`avatars`)
@@ -414,7 +416,8 @@ if (!session?.user?.id) {
 
 - Next.js Image component for automatic optimization
 - Supabase Storage transforms for avatars
-  ```
+
+  ```text
   ?width=200&height=200&quality=80&format=webp
   ```
 

@@ -206,6 +206,48 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Clean up old avatars to prevent storage bloat
+    // Keep only the 3 most recent avatars per user
+    try {
+      const { data: existingFiles } = await supabaseAdmin.storage
+        .from('avatars')
+        .list(session.user.id)
+
+      if (existingFiles && existingFiles.length > 3) {
+        // Sort by created_at descending (newest first)
+        const sortedFiles = existingFiles.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+
+        // Keep the 3 newest, delete the rest
+        const filesToDelete = sortedFiles.slice(3).map(f => `${session.user.id}/${f.name}`)
+
+        if (filesToDelete.length > 0) {
+          const { error: cleanupError } = await supabaseAdmin.storage
+            .from('avatars')
+            .remove(filesToDelete)
+
+          if (cleanupError) {
+            logger.warn('Failed to cleanup old avatars:', {
+              userId: session.user.id,
+              error: cleanupError,
+            })
+          } else {
+            logger.info('Cleaned up old avatars', {
+              userId: session.user.id,
+              deletedCount: filesToDelete.length,
+            })
+          }
+        }
+      }
+    } catch (cleanupError) {
+      // Non-critical - just log the error
+      logger.warn('Avatar cleanup failed:', {
+        userId: session.user.id,
+        error: cleanupError,
+      })
+    }
+
     logger.info('Avatar uploaded successfully', {
       userId: session.user.id,
       filename,

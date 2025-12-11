@@ -166,7 +166,8 @@ export default function AvatarUpload({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative group">
-        <div
+        <button
+          type="button"
           className={`
             relative ${sizeClasses[size]} rounded-full overflow-hidden cursor-pointer
             ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
@@ -174,8 +175,7 @@ export default function AvatarUpload({
           `}
           onClick={handleAvatarClick}
           onKeyDown={handleKeyDown}
-          role="button"
-          tabIndex={disabled || isUploading ? -1 : 0}
+          disabled={disabled || isUploading}
           aria-label="Upload profile picture"
         >
           <input
@@ -185,7 +185,6 @@ export default function AvatarUpload({
             onChange={handleFileSelect}
             className="hidden"
             disabled={disabled || isUploading}
-            aria-hidden="true"
           />
 
           {previewUrl ? (
@@ -214,7 +213,7 @@ export default function AvatarUpload({
           </div>
 
           {/* Upload indicator - removed drag functionality for now */}
-        </div>
+        </button>
 
         {/* Remove button */}
         {previewUrl && !isUploading && (

@@ -66,7 +66,7 @@ https://[project-ref].supabase.co/storage/v1/object/public/avatars/[user-id]/ava
 
 ## Storage Structure
 
-```
+```text
 avatars/
 ├── [user-id-1]/
 │   └── avatar-[user-id-1]-[timestamp].jpg
@@ -104,25 +104,25 @@ Supabase Storage supports automatic image transformations via URL parameters:
 
 ### Resize Image
 
-```
+```text
 {publicUrl}?width=200&height=200
 ```
 
 ### Quality Adjustment
 
-```
+```text
 {publicUrl}?quality=80
 ```
 
 ### Format Conversion
 
-```
+```text
 {publicUrl}?format=webp
 ```
 
 ### Combined
 
-```
+```text
 {publicUrl}?width=200&height=200&quality=80&format=webp
 ```
 
