@@ -56,6 +56,15 @@ export const toastMessagesAtom = atom<
   }>
 >([])
 
+// Helper to get week start (Sunday)
+const getWeekStart = (date: Date = new Date()) => {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  d.setDate(d.getDate() - day) // Go back to Sunday
+  return d
+}
+
 // Calendar UI state
 export const calendarUiStateAtom = atom({
   view: 'month' as 'week' | 'month' | 'day',
@@ -70,6 +79,9 @@ export const calendarUiStateAtom = atom({
   workoutsLoading: false,
   selectedRunnerId: null as string | null,
   hasInitializedInitialViewPreference: false,
+  // Week navigation state - shared between WeekView and MonthlyCalendar
+  currentWeekStart: getWeekStart(),
+  currentMonth: new Date(),
 })
 
 // Theme mode
