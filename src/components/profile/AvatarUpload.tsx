@@ -202,7 +202,10 @@ export default function AvatarUpload({
               sizes="128px"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center" data-testid="avatar-initials">
+            <div
+              className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center"
+              data-testid="avatar-initials"
+            >
               <span className="text-2xl font-bold text-foreground-600">
                 {getInitials(userName)}
               </span>
@@ -212,7 +215,10 @@ export default function AvatarUpload({
           {/* Camera overlay */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
             {isUploading ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" data-testid="upload-spinner" />
+              <div
+                className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"
+                data-testid="upload-spinner"
+              />
             ) : (
               <Camera className={`${iconSizes[size]} text-white`} />
             )}
@@ -239,10 +245,10 @@ export default function AvatarUpload({
       <div className="text-center">
         <p className="text-sm text-foreground-600 mb-2">Click to upload photo</p>
         <p className="text-xs text-foreground-400">JPG, PNG, GIF up to 5MB</p>
-        
+
         {/* Success indicator for tests */}
         {uploadSuccess && (
-          <div 
+          <div
             data-testid="avatar-upload-success"
             className="mt-2 text-success text-sm font-medium"
           >
