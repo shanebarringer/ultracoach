@@ -37,10 +37,32 @@ on:
 jobs:
   vitest:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: ultracoach_vitest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     env:
+      # Test database configuration
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ultracoach_vitest
+      NODE_ENV: test
       # Required for Better Auth tests - must be set in GitHub repository secrets
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      NODE_ENV: test
+      # Mock Supabase configuration for vitest
+      NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-anon-key-for-testing
+      SUPABASE_SERVICE_ROLE_KEY: mock-service-role-key-for-testing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,6 +79,16 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Set up vitest database schema
+        run: |
+          echo "Setting up vitest database schema..."
+          # Apply all database migrations in order
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying migration: $migration"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d ultracoach_vitest -f "$migration"
+          done
+          echo "Vitest database schema setup complete"
 
       - name: Run Vitest tests
         run: pnpm test:run
