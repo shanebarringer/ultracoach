@@ -5,9 +5,7 @@ import { NextRequest } from 'next/server'
 import { GET, PUT } from '../route'
 
 // Mock dependencies
-vi.mock('@/lib/db')
 vi.mock('@/utils/auth-server')
-vi.mock('@/lib/logger')
 
 describe('Profile API - GET', () => {
   beforeEach(() => {
