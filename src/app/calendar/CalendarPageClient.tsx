@@ -4,12 +4,13 @@ import { Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
 
-import { Suspense, memo, useCallback, useRef } from 'react'
+import { Suspense, memo, useCallback, useEffect, useRef } from 'react'
 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
+import WeekView from '@/components/calendar/WeekView'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -95,6 +96,22 @@ function CalendarContent({ user }: Props) {
   const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
   const trainingPlans = useAtomValue(asyncTrainingPlansAtom) // Using async atom with Suspense
   const connectedRunners = useAtomValue(connectedRunnersAtom) // Suspense-friendly async atom
+
+  // Mobile-first default: on first client render, prefer week view on smaller screens.
+  // This runs only once per client session and does not react to later resizes.
+  useEffect(() => {
+    setCalendarUiState(prev => {
+      if (prev.hasInitializedInitialViewPreference) return prev
+
+      const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 1024
+
+      return {
+        ...prev,
+        view: isSmallScreen && prev.view === 'month' ? 'week' : prev.view,
+        hasInitializedInitialViewPreference: true,
+      }
+    })
+  }, [setCalendarUiState])
 
   // Prevent race conditions in modal operations
   const operationInProgress = useRef(false)
@@ -212,6 +229,30 @@ function CalendarContent({ user }: Props) {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {/* Calendar View Toggle */}
+                <div className="flex items-center bg-content1 rounded-lg p-1 border border-divider">
+                  <button
+                    onClick={() => setCalendarUiState(prev => ({ ...prev, view: 'week' }))}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarUiState.view === 'week'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground-600 hover:text-foreground'
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setCalendarUiState(prev => ({ ...prev, view: 'month' }))}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      calendarUiState.view === 'month'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground-600 hover:text-foreground'
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+
                 {/* Runner Dropdown for Coaches */}
                 {user.role === 'coach' && connectedRunners.length > 0 && (
                   <Select
@@ -270,12 +311,28 @@ function CalendarContent({ user }: Props) {
                 </div>
               </div>
             )}
-            <MemoizedMonthlyCalendar
-              workouts={filteredWorkouts}
-              onWorkoutClick={handleWorkoutClick}
-              onDateClick={handleDateClick}
-              className="max-w-none overflow-x-auto"
-            />
+
+            {/*
+              View selection rules:
+              - On first client load on small screens, we default `view` to `week`
+                (see hasInitializedInitialViewPreference logic above).
+              - After that, `view` reflects the user's explicit choice on all screen sizes.
+            */}
+            {calendarUiState.view === 'week' ? (
+              <WeekView
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none"
+              />
+            ) : (
+              <MemoizedMonthlyCalendar
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none overflow-x-auto"
+              />
+            )}
           </div>
 
           {/* Empty State */}
