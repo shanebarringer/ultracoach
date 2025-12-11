@@ -12,6 +12,7 @@ import {
 } from '@heroui/react'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { addWeeks, endOfWeek, format, startOfWeek, subWeeks } from 'date-fns'
+import { useAtom } from 'jotai'
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -24,6 +25,7 @@ import {
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { calendarUiStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
 
@@ -50,10 +52,22 @@ export default function WeekView({
   onDateClick,
   className = '',
 }: WeekViewProps) {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date()
-    return startOfWeek(today, { weekStartsOn: 0 }) // Start on Sunday
-  })
+  // Use Jotai for navigation state (shared with MonthlyCalendar)
+  const [calendarUiState, setCalendarUiState] = useAtom(calendarUiStateAtom)
+  const currentWeekStart = calendarUiState.currentWeekStart
+
+  // Update week start via Jotai atom
+  const setCurrentWeekStart = useCallback(
+    (updater: Date | ((prev: Date) => Date)) => {
+      setCalendarUiState(prev => ({
+        ...prev,
+        currentWeekStart: typeof updater === 'function' ? updater(prev.currentWeekStart) : updater,
+      }))
+    },
+    [setCalendarUiState]
+  )
+
+  // Ephemeral interaction state (local useState is appropriate here)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartX, setDragStartX] = useState(0)
   const [dragDistance, setDragDistance] = useState(0)
@@ -109,21 +123,24 @@ export default function WeekView({
     }
   }, [currentWeekStart, workouts])
 
-  const navigateWeek = useCallback((direction: 'prev' | 'next') => {
-    setCurrentWeekStart(prevStart => {
-      const newWeekStart = direction === 'prev' ? subWeeks(prevStart, 1) : addWeeks(prevStart, 1)
+  const navigateWeek = useCallback(
+    (direction: 'prev' | 'next') => {
+      setCurrentWeekStart(prevStart => {
+        const newWeekStart = direction === 'prev' ? subWeeks(prevStart, 1) : addWeeks(prevStart, 1)
 
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        })
+
+        setAnnounceText(`Navigated to week of ${formatter.format(newWeekStart)}`)
+
+        return newWeekStart
       })
-
-      setAnnounceText(`Navigated to week of ${formatter.format(newWeekStart)}`)
-
-      return newWeekStart
-    })
-  }, [])
+    },
+    [setCurrentWeekStart]
+  )
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     setIsDragging(true)
@@ -280,7 +297,10 @@ export default function WeekView({
           <Button
             variant="light"
             size="sm"
-            onPress={() => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+            onPress={() => {
+              const today = new Date()
+              setCurrentWeekStart(startOfWeek(today, { weekStartsOn: 0 }))
+            }}
             aria-label="Go to current week"
           >
             Today
