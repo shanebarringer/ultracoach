@@ -16,6 +16,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import classNames from 'classnames'
+import { isToday as isTodayDateFns } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-react'
 
@@ -735,11 +736,6 @@ export default function WeeklyPlannerCalendar({
     })
   }
 
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
-  }
-
   return (
     <Card
       className="bg-background border-l-4 border-l-primary shadow-xl"
@@ -783,13 +779,14 @@ export default function WeeklyPlannerCalendar({
               const toggleExpanded = () => {
                 setExpandedDays(prev => ({ ...prev, [index]: !isExpanded }))
               }
+              const isTodayDate = isTodayDateFns(day.date)
 
               return (
                 <Card
                   key={day.date.toISOString()}
                   className={classNames(
                     'transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-                    isToday(day.date)
+                    isTodayDate
                       ? 'ring-2 ring-primary bg-primary/10 border-l-4 border-l-primary'
                       : 'hover:bg-secondary/5 border-l-4 border-l-transparent',
                     isExpanded ? 'row-span-2' : ''
@@ -802,7 +799,7 @@ export default function WeeklyPlannerCalendar({
                         <h4
                           className={classNames(
                             'font-semibold text-xs',
-                            isToday(day.date) ? 'text-primary' : 'text-foreground'
+                            isTodayDate ? 'text-primary' : 'text-foreground'
                           )}
                         >
                           {day.dayName.slice(0, 3)}
@@ -810,12 +807,12 @@ export default function WeeklyPlannerCalendar({
                         <p
                           className={classNames(
                             'text-xs',
-                            isToday(day.date) ? 'text-primary/70' : 'text-foreground/70'
+                            isTodayDate ? 'text-primary/70' : 'text-foreground/70'
                           )}
                         >
                           {formatDate(day.date)}
                         </p>
-                        {isToday(day.date) && (
+                        {isTodayDate && (
                           <Chip size="sm" color="primary" variant="flat" className="mt-1">
                             Today
                           </Chip>
