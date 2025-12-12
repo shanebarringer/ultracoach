@@ -296,7 +296,7 @@ interface DayCardProps {
 function DayCard({
   day,
   index,
-  isToday,
+  isToday: _isToday,
   readOnly = false,
   onUpdateWorkout,
   onClearWorkout,
