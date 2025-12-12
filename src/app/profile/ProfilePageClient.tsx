@@ -15,6 +15,7 @@ import CertificationsSection from '@/components/profile/CertificationsSection'
 import SocialProfiles from '@/components/profile/SocialProfiles'
 // import UltraSignupResults from '@/components/profile/UltraSignupResults'
 import WorkWithMeCard from '@/components/profile/WorkWithMeCard'
+import { useFeatureFlagValue } from '@/hooks/usePostHogIdentify'
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
 import { formatMonthYear } from '@/lib/utils/date'
@@ -43,11 +44,19 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     email: user.email || '',
   })
 
+  // Feature flag for enhanced coach profile
+  const enhancedProfileEnabled = useFeatureFlagValue('enhanced-coach-profile')
   const isCoach = user.userType === 'coach'
 
-  // Load profile data
+  // Load profile data (only when enhanced profile is enabled)
   useEffect(() => {
     const loadProfileData = async () => {
+      // Skip loading if feature is disabled
+      if (!enhancedProfileEnabled) {
+        setIsLoading(false)
+        return
+      }
+
       try {
         const response = await fetch('/api/profile', {
           credentials: 'same-origin',
@@ -65,7 +74,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     }
 
     loadProfileData()
-  }, [])
+  }, [enhancedProfileEnabled])
 
   const handleSave = async () => {
     try {
@@ -271,30 +280,35 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
                 </CardBody>
               </Card>
 
-              {/* About Me Section */}
-              <AboutMeSection
-                bio={profileData?.profile?.bio}
-                onBioChange={handleBioChange}
-                isEditable={true}
-              />
+              {/* Enhanced Profile Sections - Feature Flagged */}
+              {enhancedProfileEnabled && (
+                <>
+                  {/* About Me Section */}
+                  <AboutMeSection
+                    bio={profileData?.profile?.bio}
+                    onBioChange={handleBioChange}
+                    isEditable={true}
+                  />
 
-              {/* Certifications & Specialties */}
-              {isCoach && (
-                <CertificationsSection
-                  certifications={profileData?.certifications || []}
-                  onCertificationsChange={handleCertificationsChange}
-                  isEditable={true}
-                />
+                  {/* Certifications & Specialties */}
+                  {isCoach && (
+                    <CertificationsSection
+                      certifications={profileData?.certifications || []}
+                      onCertificationsChange={handleCertificationsChange}
+                      isEditable={true}
+                    />
+                  )}
+
+                  {/* Social Profiles */}
+                  <SocialProfiles
+                    userId={user.id}
+                    profiles={profileData?.social_profiles || []}
+                    onProfilesChange={handleSocialProfilesChange}
+                    stravaConnected={profileData?.strava_connected}
+                    stravaUsername={profileData?.strava_username ?? undefined}
+                  />
+                </>
               )}
-
-              {/* Social Profiles */}
-              <SocialProfiles
-                userId={user.id}
-                profiles={profileData?.social_profiles || []}
-                onProfilesChange={handleSocialProfilesChange}
-                stravaConnected={profileData?.strava_connected}
-                stravaUsername={profileData?.strava_username ?? undefined}
-              />
 
               {/* UltraSignup Results - Hidden until implementation is complete */}
               {/* 
@@ -310,8 +324,8 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Work With Me Card (for coaches) */}
-              {isCoach && (
+              {/* Work With Me Card (for coaches) - Feature Flagged */}
+              {isCoach && enhancedProfileEnabled && (
                 <WorkWithMeCard
                   coachStats={
                     profileData?.coach_statistics || {

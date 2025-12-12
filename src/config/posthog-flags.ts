@@ -28,6 +28,7 @@ export const COMMON_FEATURE_FLAGS: readonly string[] = [
   'premium-features',
   'beta-access',
   'enhanced-analytics',
+  'enhanced-coach-profile',
 ] as const
 
 /**
