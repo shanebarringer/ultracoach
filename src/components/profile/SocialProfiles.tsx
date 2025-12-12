@@ -110,6 +110,7 @@ export default function SocialProfiles({
       const response = await fetch('/api/profile/social', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           platform: selectedPlatform,
           profile_url: profileUrl,
@@ -144,6 +145,7 @@ export default function SocialProfiles({
     try {
       const response = await fetch(`/api/profile/social/${profileId}`, {
         method: 'DELETE',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {

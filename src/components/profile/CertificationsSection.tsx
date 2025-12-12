@@ -101,6 +101,7 @@ export default function CertificationsSection({
       const response = await fetch('/api/profile/certifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           name: certName,
           issuing_organization: certOrg,
@@ -136,6 +137,7 @@ export default function CertificationsSection({
     try {
       const response = await fetch(`/api/profile/certifications/${certId}`, {
         method: 'DELETE',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {

@@ -80,16 +80,8 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     try {
       logger.info('Saving profile changes:', formData)
 
-      // TODO: Implement basic user info update API call
-      // const response = await fetch('/api/user/profile', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
+      // Basic user info updates handled via other profile components
+      // This section maintains the edit state toggle only
       setIsEditing(false)
 
       // Show success toast

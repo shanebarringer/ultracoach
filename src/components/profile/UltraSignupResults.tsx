@@ -85,6 +85,7 @@ export default function UltraSignupResults({
       const response = await fetch('/api/profile/ultrasignup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ profile_url: profileUrl }),
       })
 
