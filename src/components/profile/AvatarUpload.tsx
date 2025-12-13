@@ -3,7 +3,7 @@
 import { Button } from '@heroui/react'
 import { Camera, X } from 'lucide-react'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Image from 'next/image'
 
@@ -33,6 +33,15 @@ export default function AvatarUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   const sizeClasses = {
     sm: 'w-16 h-16',
@@ -67,6 +76,11 @@ export default function AvatarUpload({
       setIsUploading(true)
 
       try {
+        // Revoke old blob URL to prevent memory leak
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(previewUrl)
+        }
+
         // Create preview URL
         const preview = URL.createObjectURL(file)
         setPreviewUrl(preview)
@@ -109,7 +123,7 @@ export default function AvatarUpload({
         setIsUploading(false)
       }
     },
-    [currentAvatarUrl, onAvatarChange]
+    [currentAvatarUrl, onAvatarChange, previewUrl]
   )
 
   // Simplified file input without dropzone for now

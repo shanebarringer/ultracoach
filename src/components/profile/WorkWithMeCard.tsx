@@ -80,23 +80,25 @@ export default function WorkWithMeCard({
       case 'available':
         return 'Accepting Athletes'
       case 'limited':
-        return 'Waitlist Only'
+        return 'Limited Availability'
       case 'unavailable':
-        return 'Waitlist Only'
+        return 'Not Accepting Athletes'
       default:
         return 'Unknown'
     }
   }
 
   const formatRating = (rating: number) => {
-    return rating ? rating.toFixed(1) : '0.0'
+    return rating ? rating.toFixed(1) : '--'
   }
 
   const getSpotsLeftText = () => {
     if (availabilityStatus === 'available') {
-      return '3 spots left'
+      return 'Accepting new athletes'
+    } else if (availabilityStatus === 'limited') {
+      return 'Limited availability'
     }
-    return 'Waitlist Only'
+    return 'Not accepting athletes'
   }
 
   return (
@@ -113,7 +115,7 @@ export default function WorkWithMeCard({
               <Users className="w-4 h-4 text-primary mr-1" />
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {coachStats.active_athletes || 45}+
+              {coachStats.active_athletes > 0 ? `${coachStats.active_athletes}+` : '--'}
             </div>
             <div className="text-xs text-foreground-600">Athletes Coached</div>
           </div>
@@ -123,7 +125,7 @@ export default function WorkWithMeCard({
               <Star className="w-4 h-4 text-warning mr-1" />
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {formatRating(coachStats.average_rating || 4.9)}
+              {formatRating(coachStats.average_rating)}
             </div>
             <div className="text-xs text-foreground-600">Avg Rating</div>
           </div>
@@ -133,7 +135,7 @@ export default function WorkWithMeCard({
               <Calendar className="w-4 h-4 text-secondary mr-1" />
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {coachStats.years_coaching || 15}
+              {coachStats.years_coaching > 0 ? coachStats.years_coaching : '--'}
             </div>
             <div className="text-xs text-foreground-600">Years Experience</div>
           </div>

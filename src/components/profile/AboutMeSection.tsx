@@ -3,7 +3,7 @@
 import { Button, Card, CardBody, CardHeader, Divider, Textarea } from '@heroui/react'
 import { Edit3, Save } from 'lucide-react'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
@@ -26,6 +26,11 @@ export default function AboutMeSection({
   const [isEditing, setIsEditing] = useState(false)
   const [editedBio, setEditedBio] = useState(bio || '')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Sync editedBio when bio prop changes
+  useEffect(() => {
+    setEditedBio(bio || '')
+  }, [bio])
 
   const handleSave = async () => {
     if (editedBio.length > MAX_BIO_LENGTH) {
@@ -141,11 +146,14 @@ I've coached athletes to podium finishes at Western States, UTMB, and Leadville.
     return (
       <div className="space-y-4">
         <div className="prose prose-sm max-w-none text-foreground-700">
-          {bio?.split('\n').map((paragraph, index) => (
-            <p key={index} className="mb-3 last:mb-0">
-              {paragraph}
-            </p>
-          ))}
+          {bio
+            ?.split('\n')
+            .filter(paragraph => paragraph.trim().length > 0)
+            .map((paragraph, index) => (
+              <p key={index} className="mb-3 last:mb-0">
+                {paragraph}
+              </p>
+            ))}
         </div>
 
         {isEditable && (

@@ -93,6 +93,12 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
+    // SECURITY: Ensure buffer has enough bytes to validate magic bytes
+    // WebP requires checking up to byte 11, so minimum 12 bytes needed
+    if (buffer.length < 12) {
+      return NextResponse.json({ error: 'File too small to be a valid image' }, { status: 400 })
+    }
+
     // Check magic bytes for common image formats
     const isValidImage =
       // JPEG: FF D8 FF
@@ -169,12 +175,21 @@ export async function POST(request: NextRequest) {
             // Extract storage path from URL
             const oldPath = oldAvatarUrl.split('/storage/v1/object/public/avatars/')[1]
             if (oldPath) {
-              const { error: deleteError } = await supabaseAdmin.storage
-                .from('avatars')
-                .remove([oldPath])
+              // SECURITY: Verify path starts with user's ID to prevent cross-user deletion
+              if (!oldPath.startsWith(`${session.user.id}/`)) {
+                logger.warn('Attempted deletion of non-owned avatar', {
+                  userId: session.user.id,
+                  path: oldPath,
+                })
+                // Skip deletion silently - don't reveal information to attacker
+              } else {
+                const { error: deleteError } = await supabaseAdmin.storage
+                  .from('avatars')
+                  .remove([oldPath])
 
-              if (deleteError) {
-                logger.warn('Failed to delete old avatar from storage:', deleteError)
+                if (deleteError) {
+                  logger.warn('Failed to delete old avatar from storage:', deleteError)
+                }
               }
             }
           } catch (error) {
@@ -298,12 +313,21 @@ export async function DELETE() {
           // Extract storage path from URL
           const storagePath = avatarUrl.split('/storage/v1/object/public/avatars/')[1]
           if (storagePath) {
-            const { error: deleteError } = await supabaseAdmin.storage
-              .from('avatars')
-              .remove([storagePath])
+            // SECURITY: Verify path starts with user's ID to prevent cross-user deletion
+            if (!storagePath.startsWith(`${session.user.id}/`)) {
+              logger.warn('Attempted deletion of non-owned avatar', {
+                userId: session.user.id,
+                path: storagePath,
+              })
+              // Skip deletion silently - don't reveal information to attacker
+            } else {
+              const { error: deleteError } = await supabaseAdmin.storage
+                .from('avatars')
+                .remove([storagePath])
 
-            if (deleteError) {
-              logger.warn('Failed to delete avatar from storage:', deleteError)
+              if (deleteError) {
+                logger.warn('Failed to delete avatar from storage:', deleteError)
+              }
             }
           }
         } catch (error) {

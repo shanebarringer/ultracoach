@@ -120,6 +120,7 @@ export default function UltraSignupResults({
     try {
       const response = await fetch('/api/profile/ultrasignup/sync', {
         method: 'POST',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {
@@ -145,6 +146,7 @@ export default function UltraSignupResults({
     try {
       const response = await fetch('/api/profile/ultrasignup', {
         method: 'DELETE',
+        credentials: 'same-origin',
       })
 
       if (!response.ok) {

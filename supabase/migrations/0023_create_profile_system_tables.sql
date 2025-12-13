@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS "user_profiles" (
 	"website" text,
 	"years_experience" integer,
 	"specialties" jsonb DEFAULT '[]'::jsonb,
-	"achievements" text,
+	"achievements" jsonb DEFAULT '[]'::jsonb,
 	"availability_status" text DEFAULT 'available',
 	"hourly_rate" decimal(10,2),
 	"consultation_enabled" boolean DEFAULT false,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS "user_profiles" (
 	CONSTRAINT "user_profiles_user_id_unique" UNIQUE("user_id")
 );
 
--- Create social_profiles table  
+-- Create social_profiles table
 CREATE TABLE IF NOT EXISTS "social_profiles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS "social_profiles" (
 	"is_public" boolean DEFAULT true,
 	"connection_data" jsonb,
 	"created_at" timestamp with time zone DEFAULT now(),
-	"updated_at" timestamp with time zone DEFAULT now()
+	"updated_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "social_profiles_user_platform_unique" UNIQUE ("user_id", "platform")
 );
 
 -- Create certifications table
@@ -64,13 +65,13 @@ CREATE TABLE IF NOT EXISTS "certifications" (
 CREATE TABLE IF NOT EXISTS "coach_statistics" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
-	"total_athletes" integer DEFAULT 0,
-	"active_athletes" integer DEFAULT 0,
-	"average_rating" decimal(3,2),
-	"total_reviews" integer DEFAULT 0,
-	"years_coaching" integer DEFAULT 0,
-	"success_stories" integer DEFAULT 0,
-	"completed_training_plans" integer DEFAULT 0,
+	"total_athletes" integer DEFAULT 0 CHECK ("total_athletes" >= 0),
+	"active_athletes" integer DEFAULT 0 CHECK ("active_athletes" >= 0),
+	"average_rating" decimal(3,2) CHECK ("average_rating" >= 0 AND "average_rating" <= 5),
+	"total_reviews" integer DEFAULT 0 CHECK ("total_reviews" >= 0),
+	"years_coaching" integer DEFAULT 0 CHECK ("years_coaching" >= 0),
+	"success_stories" integer DEFAULT 0 CHECK ("success_stories" >= 0),
+	"completed_training_plans" integer DEFAULT 0 CHECK ("completed_training_plans" >= 0),
 	"last_calculated_at" timestamp with time zone DEFAULT now(),
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now(),

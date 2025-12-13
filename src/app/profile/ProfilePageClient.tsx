@@ -191,7 +191,7 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
             <div className="flex items-center gap-3 mb-4">
               <Users className="h-8 w-8 text-primary" />
               <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Coach Profile
+                {isCoach ? 'Coach Profile' : 'Profile'}
               </h1>
               {isCoach && (
                 <Chip color="primary" variant="flat">
@@ -200,7 +200,9 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
               )}
             </div>
             <p className="text-foreground-600 text-lg">
-              Build your coaching profile to attract and inspire athletes
+              {isCoach
+                ? 'Build your coaching profile to attract and inspire athletes'
+                : 'Manage your personal information and preferences'}
             </p>
           </div>
 
