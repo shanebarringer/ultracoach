@@ -170,33 +170,82 @@ export const CoachDashboardSkeleton = () => (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
       {/* Primary Column - Athletes */}
       <div className="xl:col-span-2 space-y-6">
-        {/* Your Athletes Card */}
+        {/* Athletes Grid with Search/Filter */}
         <Card shadow="sm">
           <CardBody className="p-6">
+            {/* Header with title */}
             <div className="flex justify-between items-center pb-4 mb-4 border-b border-divider">
               <div>
                 <Skeleton className="h-6 w-32 rounded mb-2" />
                 <Skeleton className="h-4 w-48 rounded" />
               </div>
-              <Skeleton className="h-8 w-20 rounded" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Search and View Toggle */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <Skeleton className="h-10 flex-1 rounded-lg" />
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <Skeleton className="h-10 w-10 rounded-lg" />
+              </div>
+            </div>
+
+            {/* Filter Chips */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Skeleton className="h-8 w-16 rounded-full" />
+              <Skeleton className="h-8 w-20 rounded-full" />
+              <Skeleton className="h-8 w-24 rounded-full" />
+              <Skeleton className="h-8 w-32 rounded-full" />
+            </div>
+
+            {/* Enhanced Athlete Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="border border-divider rounded-lg p-3">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-20 rounded" />
-                      <Skeleton className="h-3 w-32 rounded" />
+                <div key={i} className="border border-divider rounded-xl p-4">
+                  {/* Header with Avatar and Status */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Skeleton className="h-5 w-24 rounded" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-32 rounded" />
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Skeleton className="h-7 flex-1 rounded" />
-                    <Skeleton className="h-7 flex-1 rounded" />
+
+                  {/* Metrics Row */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    {/* Weekly Mileage */}
+                    <div className="bg-default-50 rounded-lg p-2">
+                      <Skeleton className="h-3 w-16 rounded mb-1" />
+                      <div className="flex items-center gap-1">
+                        <Skeleton className="h-5 w-12 rounded" />
+                        <Skeleton className="h-4 w-8 rounded" />
+                      </div>
+                    </div>
+                    {/* Completion Rate */}
+                    <div className="bg-default-50 rounded-lg p-2">
+                      <Skeleton className="h-3 w-20 rounded mb-1" />
+                      <Skeleton className="h-2 w-full rounded-full mt-2" />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 flex-1 rounded-lg" />
+                    <Skeleton className="h-8 flex-1 rounded-lg" />
+                    <Skeleton className="h-8 flex-1 rounded-lg" />
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-divider">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-5 w-20 rounded" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
             </div>
           </CardBody>
         </Card>
