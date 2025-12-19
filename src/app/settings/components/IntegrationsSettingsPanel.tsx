@@ -5,6 +5,7 @@ import { Activity } from 'lucide-react'
 
 import GarminActivityList from '@/components/garmin/GarminActivityList'
 import GarminFeatureFlag from '@/components/garmin/GarminFeatureFlag'
+import ActivitySourcePreference from '@/components/settings/ActivitySourcePreference'
 import GarminConnectionCard from '@/components/settings/GarminConnectionCard'
 import StravaActivityList from '@/components/strava/StravaActivityList'
 import StravaConnectionCard from '@/components/strava/StravaConnectionCard'
@@ -33,6 +34,14 @@ export default function IntegrationsSettingsPanel() {
             </GarminFeatureFlag>
           </div>
         </div>
+
+        {/* Activity Source Preference - shown when Garmin is enabled */}
+        <GarminFeatureFlag>
+          <div>
+            <h3 className="text-lg font-medium mb-4">Data Preferences</h3>
+            <ActivitySourcePreference />
+          </div>
+        </GarminFeatureFlag>
 
         <div>
           <h3 className="text-lg font-medium mb-4">Activity Sync</h3>

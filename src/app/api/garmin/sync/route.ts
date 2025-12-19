@@ -43,6 +43,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'workout_ids array is required' }, { status: 400 })
     }
 
+    // Prevent DoS via unbounded array size
+    const MAX_SYNC_WORKOUTS = 50
+    if (workout_ids.length > MAX_SYNC_WORKOUTS) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_SYNC_WORKOUTS} workouts per sync request` },
+        { status: 400 }
+      )
+    }
+
     logger.info('Starting workout sync', {
       userId: session.user.id,
       workoutCount: workout_ids.length,

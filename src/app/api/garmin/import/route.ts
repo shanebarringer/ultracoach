@@ -13,6 +13,7 @@ import { GarminAPIClient, isTokenExpired } from '@/lib/garmin-client'
 import { createLogger } from '@/lib/logger'
 import { garmin_connections, garmin_workout_syncs, workouts } from '@/lib/schema'
 import type { ImportActivityRequest, ImportActivityResponse } from '@/types/garmin'
+import { logDedupDecision, shouldAllowImport } from '@/utils/activity-dedup'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('garmin-import-api')
@@ -39,8 +40,13 @@ export async function POST(request: Request) {
     const body: ImportActivityRequest = await request.json()
     const { activity_id, workout_id } = body
 
-    if (!activity_id) {
-      return NextResponse.json({ error: 'activity_id is required' }, { status: 400 })
+    if (
+      !activity_id ||
+      typeof activity_id !== 'number' ||
+      activity_id <= 0 ||
+      !Number.isInteger(activity_id)
+    ) {
+      return NextResponse.json({ error: 'activity_id must be a positive integer' }, { status: 400 })
     }
 
     logger.info('Importing Garmin activity', {
@@ -143,6 +149,30 @@ export async function POST(request: Request) {
           suggestion: 'Try specifying a workout_id explicitly',
         },
         { status: 404 }
+      )
+    }
+
+    // Check deduplication rules before importing
+    const dedupResult = await shouldAllowImport(session.user.id, targetWorkout.id, 'garmin')
+
+    logDedupDecision(dedupResult.shouldProceed ? 'allow' : 'block', {
+      userId: session.user.id,
+      workoutId: targetWorkout.id,
+      importSource: 'garmin',
+      existingSource: dedupResult.existingSource,
+      userPreference: dedupResult.userPreference,
+      reason: dedupResult.reason,
+    })
+
+    if (!dedupResult.shouldProceed) {
+      return NextResponse.json(
+        {
+          error: 'Import blocked by deduplication rules',
+          reason: dedupResult.reason,
+          existingSource: dedupResult.existingSource,
+          userPreference: dedupResult.userPreference,
+        },
+        { status: 409 }
       )
     }
 

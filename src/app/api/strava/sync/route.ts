@@ -8,6 +8,7 @@ import { createLogger } from '@/lib/logger'
 import { strava_activity_syncs, strava_connections, workouts } from '@/lib/schema'
 import { ensureValidToken, getActivityById } from '@/lib/strava'
 import { STRAVA_ACTIVITY_TYPE_MAP, StravaActivity } from '@/types/strava'
+import { logDedupDecision, shouldAllowImport } from '@/utils/activity-dedup'
 import { getServerSession } from '@/utils/auth-server'
 
 const logger = createLogger('strava-sync-api')
@@ -80,6 +81,28 @@ export async function POST(req: NextRequest) {
     let ultracoachWorkoutId = null
 
     if (sync_as_workout) {
+      // Check deduplication rules before creating workout
+      const dedupResult = await shouldAllowImport(session.user.id, null, 'strava')
+
+      logDedupDecision(dedupResult.shouldProceed ? 'allow' : 'block', {
+        userId: session.user.id,
+        workoutId: null,
+        importSource: 'strava',
+        userPreference: dedupResult.userPreference,
+        reason: dedupResult.reason,
+      })
+
+      if (!dedupResult.shouldProceed) {
+        return NextResponse.json(
+          {
+            error: 'Import blocked by deduplication rules',
+            reason: dedupResult.reason,
+            userPreference: dedupResult.userPreference,
+          },
+          { status: 409 }
+        )
+      }
+
       // Convert Strava activity to UltraCoach workout
       const workoutCategory = STRAVA_ACTIVITY_TYPE_MAP[activity.sport_type] || 'easy'
 

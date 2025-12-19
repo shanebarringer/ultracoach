@@ -28,10 +28,11 @@ export async function GET(request: Request) {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    // Parse query parameters with explicit radix
+    // Parse query parameters with explicit radix and bounds validation
     const { searchParams } = new URL(request.url)
-    const start = parseInt(searchParams.get('start') || '0', 10)
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const MAX_LIMIT = 100
+    const start = Math.max(0, parseInt(searchParams.get('start') || '0', 10))
+    const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)))
 
     logger.info('Fetching Garmin activities', {
       userId: session.user.id,
