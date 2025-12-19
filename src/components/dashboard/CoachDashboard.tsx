@@ -14,7 +14,6 @@ import classNames from 'classnames'
 import { memo, useMemo } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 import StravaDashboardWidget from '@/components/strava/StravaDashboardWidget'
 import { CoachDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -24,6 +23,7 @@ import type { TrainingPlan, User } from '@/lib/supabase'
 import { formatDateConsistent } from '@/lib/utils/date'
 
 import RecentActivity from './RecentActivity'
+import { AthletesGrid } from './coach'
 
 const logger = createLogger('CoachDashboard')
 
@@ -190,18 +190,7 @@ const MetricCard = memo(function MetricCard({
 })
 
 function CoachDashboard() {
-  const { trainingPlans, runners, recentWorkouts, loading, relationships } = useDashboardData()
-  const router = useRouter()
-
-  // Handler for viewing runner progress
-  const handleViewProgress = (runnerId: string) => {
-    router.push(`/weekly-planner/${runnerId}`)
-  }
-
-  // Handler for sending messages to runners
-  const handleSendMessage = (runnerId: string) => {
-    router.push(`/chat/${runnerId}`)
-  }
+  const { trainingPlans, runners, recentWorkouts, loading } = useDashboardData()
 
   // Memoize expensive computations and add logging
   const { typedTrainingPlans, coachStats } = useMemo(() => {
@@ -258,125 +247,8 @@ function CoachDashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Primary Column - Athletes (Most Important) */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Your Athletes - Moved to top for priority */}
-          <Card shadow="sm" data-testid="runners-section">
-            <CardHeader className="flex justify-between items-center pb-4">
-              <div>
-                <h3 className="text-xl font-semibold text-foreground">Your Athletes</h3>
-                <p className="text-sm text-foreground-600">
-                  {runners.length} runners on their summit journey
-                </p>
-              </div>
-              <Button
-                as={Link}
-                href="/relationships"
-                size="sm"
-                color="primary"
-                className="bg-primary text-white font-medium"
-                data-testid="connect-athletes-button"
-              >
-                🏃‍♂️ Connect
-              </Button>
-            </CardHeader>
-            <CardBody>
-              {runners.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto h-12 w-12 bg-default-100 rounded-full flex items-center justify-center mb-3">
-                    <UsersIcon className="h-6 w-6 text-default-400" />
-                  </div>
-                  <p className="text-foreground font-medium mb-1">No athletes connected</p>
-                  <p className="text-sm text-foreground-500 mb-4">
-                    Connect with runners to start coaching.
-                  </p>
-                  <Button
-                    as={Link}
-                    href="/relationships"
-                    color="primary"
-                    size="sm"
-                    data-testid="find-athletes-button"
-                  >
-                    Find Athletes to Coach
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {runners.slice(0, 4).map((runner: User) => {
-                      const relationship = relationships.find(
-                        (rel: { other_party: { id: string } }) => rel.other_party.id === runner.id
-                      )
-
-                      return (
-                        <div
-                          key={runner.id}
-                          className="border border-divider rounded-lg p-3 bg-content2/50 hover:bg-content2 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                              {(runner.full_name || 'U').charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-foreground text-sm truncate">
-                                  {runner.full_name || 'User'}
-                                </h4>
-                                {relationship && (
-                                  <Chip
-                                    size="sm"
-                                    color={relationship.status === 'active' ? 'success' : 'warning'}
-                                    variant="flat"
-                                    className="capitalize"
-                                  >
-                                    {relationship.status}
-                                  </Chip>
-                                )}
-                              </div>
-                              <p className="text-xs text-foreground-500 truncate">{runner.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="flat"
-                              color="primary"
-                              className="flex-1 text-xs h-7"
-                              onPress={() => handleViewProgress(runner.id)}
-                            >
-                              Progress
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="flat"
-                              color="success"
-                              className="flex-1 text-xs h-7"
-                              onPress={() => handleSendMessage(runner.id)}
-                            >
-                              Message
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Show more link if there are more runners */}
-                  {runners.length > 4 && (
-                    <div className="pt-3 border-t border-divider text-center">
-                      <Button
-                        as={Link}
-                        href="/relationships"
-                        size="sm"
-                        variant="flat"
-                        color="primary"
-                      >
-                        View All {runners.length} Athletes
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardBody>
-          </Card>
+          {/* Enhanced Athletes Grid with search, filter, pagination */}
+          <AthletesGrid />
 
           {/* Training Expeditions - Secondary priority */}
           <Card shadow="sm" data-testid="training-plans-section">
