@@ -25,6 +25,7 @@ export * from './settings' // User settings management atoms
 export * from './strava' // Strava integration atoms
 export * from './tours' // Product tour state atoms (NextStep.js)
 export * from './training-plans' // Training plan and template atoms
+export * from './onboarding' // Coach onboarding checklist atoms
 export * from './ui' // UI state, modals, and extended UI atoms
 export * from './workouts' // Workout management atoms
 
