@@ -1,8 +1,9 @@
 'use client'
 
-import { Select, SelectItem } from '@heroui/react'
+import { Button, ButtonGroup, Select, SelectItem } from '@heroui/react'
 import { CalendarDate } from '@internationalized/date'
 import { useAtom, useAtomValue } from 'jotai'
+import { CalendarDays, CalendarRange, RefreshCw } from 'lucide-react'
 
 import { Suspense, memo, useCallback, useRef } from 'react'
 
@@ -10,6 +11,7 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 
 import MonthlyCalendar from '@/components/calendar/MonthlyCalendar'
+import WeekView from '@/components/calendar/WeekView'
 import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import { CalendarPageSkeleton } from '@/components/ui/LoadingSkeletons'
@@ -31,6 +33,31 @@ import type { ServerSession } from '@/utils/auth-server'
 
 // Enhanced memoization with custom comparison logic to prevent unnecessary re-renders
 const MemoizedMonthlyCalendar = memo(MonthlyCalendar, (prevProps, nextProps) => {
+  // Compare workouts array more intelligently
+  if (prevProps.workouts.length !== nextProps.workouts.length) {
+    return false // Re-render if workout count changed
+  }
+
+  // Deep comparison of workout IDs, dates, and status changes
+  const prevWorkoutIds = prevProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
+  const nextWorkoutIds = nextProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
+
+  for (let i = 0; i < prevWorkoutIds.length; i++) {
+    if (prevWorkoutIds[i] !== nextWorkoutIds[i]) {
+      return false // Re-render if any workout changed
+    }
+  }
+
+  // Compare other props
+  return (
+    prevProps.onWorkoutClick === nextProps.onWorkoutClick &&
+    prevProps.onDateClick === nextProps.onDateClick &&
+    prevProps.className === nextProps.className
+  )
+})
+
+// Enhanced memoization for WeekView with same comparison logic
+const MemoizedWeekView = memo(WeekView, (prevProps, nextProps) => {
   // Compare workouts array more intelligently
   if (prevProps.workouts.length !== nextProps.workouts.length) {
     return false // Re-render if workout count changed
@@ -211,13 +238,37 @@ function CalendarContent({ user }: Props) {
                     : 'Track your training progress and upcoming workouts'}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* View Toggle - Mobile-optimized */}
+                <ButtonGroup size="sm" aria-label="Calendar view toggle">
+                  <Button
+                    variant={calendarUiState.view === 'week' ? 'solid' : 'bordered'}
+                    color={calendarUiState.view === 'week' ? 'primary' : 'default'}
+                    onPress={() => setCalendarUiState(prev => ({ ...prev, view: 'week' }))}
+                    aria-label="Week view"
+                    className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Week</span>
+                  </Button>
+                  <Button
+                    variant={calendarUiState.view === 'month' ? 'solid' : 'bordered'}
+                    color={calendarUiState.view === 'month' ? 'primary' : 'default'}
+                    onPress={() => setCalendarUiState(prev => ({ ...prev, view: 'month' }))}
+                    aria-label="Month view"
+                    className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
+                  >
+                    <CalendarRange className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Month</span>
+                  </Button>
+                </ButtonGroup>
+
                 {/* Runner Dropdown for Coaches */}
                 {user.role === 'coach' && connectedRunners.length > 0 && (
                   <Select
                     placeholder="All Runners"
                     size="sm"
-                    className="min-w-[160px]"
+                    className="min-w-[140px] sm:min-w-[160px]"
                     selectedKeys={
                       calendarUiState.selectedRunnerId ? [calendarUiState.selectedRunnerId] : []
                     }
@@ -237,26 +288,24 @@ function CalendarContent({ user }: Props) {
                   </Select>
                 )}
 
-                <button
-                  onClick={handleRefreshWorkouts}
-                  disabled={workoutsLoading || calendarUiState.workoutsLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors disabled:opacity-50"
+                <Button
+                  size="sm"
+                  variant="flat"
+                  color="primary"
+                  onPress={handleRefreshWorkouts}
+                  isDisabled={workoutsLoading || calendarUiState.workoutsLoading}
+                  aria-label="Refresh workouts"
+                  className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
                 >
-                  <svg
-                    className={`w-4 h-4 ${workoutsLoading || calendarUiState.workoutsLoading ? 'animate-spin' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  {workoutsLoading || calendarUiState.workoutsLoading ? 'Refreshing...' : 'Refresh'}
-                </button>
+                  <RefreshCw
+                    className={`h-4 w-4 ${workoutsLoading || calendarUiState.workoutsLoading ? 'animate-spin' : ''}`}
+                  />
+                  <span className="hidden sm:inline ml-1">
+                    {workoutsLoading || calendarUiState.workoutsLoading
+                      ? 'Refreshing...'
+                      : 'Refresh'}
+                  </span>
+                </Button>
               </div>
             </div>
           </div>
@@ -270,12 +319,22 @@ function CalendarContent({ user }: Props) {
                 </div>
               </div>
             )}
-            <MemoizedMonthlyCalendar
-              workouts={filteredWorkouts}
-              onWorkoutClick={handleWorkoutClick}
-              onDateClick={handleDateClick}
-              className="max-w-none overflow-x-auto"
-            />
+            {/* Conditional Calendar View Rendering */}
+            {calendarUiState.view === 'week' ? (
+              <MemoizedWeekView
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none"
+              />
+            ) : (
+              <MemoizedMonthlyCalendar
+                workouts={filteredWorkouts}
+                onWorkoutClick={handleWorkoutClick}
+                onDateClick={handleDateClick}
+                className="max-w-none overflow-x-auto"
+              />
+            )}
           </div>
 
           {/* Empty State */}
