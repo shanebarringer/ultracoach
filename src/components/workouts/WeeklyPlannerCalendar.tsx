@@ -16,6 +16,7 @@ import {
   Textarea,
 } from '@heroui/react'
 import classNames from 'classnames'
+import { isToday } from 'date-fns'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { MountainIcon, PlayIcon, RouteIcon, TargetIcon, ZapIcon } from 'lucide-react'
 
@@ -733,11 +734,6 @@ export default function WeeklyPlannerCalendar({
       month: 'short',
       day: 'numeric',
     })
-  }
-
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
   }
 
   return (
