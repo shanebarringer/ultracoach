@@ -31,9 +31,22 @@ import { toast } from '@/lib/toast'
 import { getDisplayNameFromEmail } from '@/lib/utils/user-names'
 import type { ServerSession } from '@/utils/auth-server'
 
-// Enhanced memoization with custom comparison logic to prevent unnecessary re-renders
-const MemoizedMonthlyCalendar = memo(MonthlyCalendar, (prevProps, nextProps) => {
-  // Compare workouts array more intelligently
+/**
+ * Shared comparison function for calendar view memoization.
+ * Prevents unnecessary re-renders by deeply comparing workout arrays and props.
+ */
+interface CalendarViewProps {
+  workouts: Workout[]
+  onWorkoutClick?: (workout: Workout) => void
+  onDateClick?: (date: CalendarDate) => void
+  className?: string
+}
+
+function calendarPropsAreEqual(
+  prevProps: CalendarViewProps,
+  nextProps: CalendarViewProps
+): boolean {
+  // Compare workouts array length first (fast path)
   if (prevProps.workouts.length !== nextProps.workouts.length) {
     return false // Re-render if workout count changed
   }
@@ -54,32 +67,13 @@ const MemoizedMonthlyCalendar = memo(MonthlyCalendar, (prevProps, nextProps) => 
     prevProps.onDateClick === nextProps.onDateClick &&
     prevProps.className === nextProps.className
   )
-})
+}
 
-// Enhanced memoization for WeekView with same comparison logic
-const MemoizedWeekView = memo(WeekView, (prevProps, nextProps) => {
-  // Compare workouts array more intelligently
-  if (prevProps.workouts.length !== nextProps.workouts.length) {
-    return false // Re-render if workout count changed
-  }
+// Enhanced memoization with shared comparison logic to prevent unnecessary re-renders
+const MemoizedMonthlyCalendar = memo(MonthlyCalendar, calendarPropsAreEqual)
 
-  // Deep comparison of workout IDs, dates, and status changes
-  const prevWorkoutIds = prevProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
-  const nextWorkoutIds = nextProps.workouts.map(w => `${w.id}-${w.date}-${w.status || 'planned'}`)
-
-  for (let i = 0; i < prevWorkoutIds.length; i++) {
-    if (prevWorkoutIds[i] !== nextWorkoutIds[i]) {
-      return false // Re-render if any workout changed
-    }
-  }
-
-  // Compare other props
-  return (
-    prevProps.onWorkoutClick === nextProps.onWorkoutClick &&
-    prevProps.onDateClick === nextProps.onDateClick &&
-    prevProps.className === nextProps.className
-  )
-})
+// Enhanced memoization for WeekView with shared comparison logic
+const MemoizedWeekView = memo(WeekView, calendarPropsAreEqual)
 
 // Dynamic imports for modals to reduce initial bundle size
 const WorkoutLogModal = dynamic(() => import('@/components/workouts/WorkoutLogModal'), {
