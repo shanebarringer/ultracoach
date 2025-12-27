@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { getTestLogger } from './utils/test-logger'
+
 // iPhone 14 Pro viewport
 const MOBILE_VIEWPORT = { width: 390, height: 844 }
 
@@ -7,10 +9,12 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   test.use({ viewport: MOBILE_VIEWPORT })
 
   test('Landing Page - Hero Section', async ({ page }) => {
-    await page.goto('http://localhost:3001')
+    const logger = await getTestLogger('mobile-ui-visual')
 
-    // Wait for hero section to be visible
-    await page.waitForSelector('h1', { timeout: 10000 })
+    await page.goto('/')
+
+    // Wait for hero section to be visible using data-testid
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     // Take screenshot of hero section (top of page)
     await page.screenshot({
@@ -22,16 +26,21 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth)
     const viewportWidth = await page.evaluate(() => window.innerWidth)
 
-    console.log(`Body scroll width: ${bodyWidth}, Viewport width: ${viewportWidth}`)
+    logger.info(`Body scroll width: ${bodyWidth}, Viewport width: ${viewportWidth}`)
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 1) // Allow 1px tolerance
   })
 
   test('Landing Page - Features Section', async ({ page }) => {
-    await page.goto('http://localhost:3001')
+    await page.goto('/')
+
+    // Wait for page content to load
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     // Scroll to features section
     await page.evaluate(() => window.scrollTo(0, 600))
-    await page.waitForTimeout(500)
+
+    // Wait for scroll to complete
+    await expect(page.locator('body')).toBeVisible()
 
     await page.screenshot({
       path: 'tests/screenshots/mobile-02-landing-features.png',
@@ -40,11 +49,16 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   })
 
   test('Landing Page - CTA Section', async ({ page }) => {
-    await page.goto('http://localhost:3001')
+    await page.goto('/')
+
+    // Wait for page content to load
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     // Scroll to bottom CTA section
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight - 844))
-    await page.waitForTimeout(500)
+
+    // Wait for scroll to complete
+    await expect(page.locator('body')).toBeVisible()
 
     await page.screenshot({
       path: 'tests/screenshots/mobile-03-landing-cta.png',
@@ -53,8 +67,8 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   })
 
   test('Landing Page - Full Page Screenshot', async ({ page }) => {
-    await page.goto('http://localhost:3001')
-    await page.waitForSelector('h1', { timeout: 10000 })
+    await page.goto('/')
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     await page.screenshot({
       path: 'tests/screenshots/mobile-04-landing-fullpage.png',
@@ -63,10 +77,12 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   })
 
   test('Sign In Page', async ({ page }) => {
-    await page.goto('http://localhost:3001/auth/signin')
+    const logger = await getTestLogger('mobile-ui-visual')
 
-    // Wait for form to be visible
-    await page.waitForSelector('form', { timeout: 10000 })
+    await page.goto('/auth/signin')
+
+    // Wait for auth form to be visible using data-testid with fallback
+    await page.waitForSelector('[data-testid="signin-form"], form', { timeout: 10000 })
 
     await page.screenshot({
       path: 'tests/screenshots/mobile-05-signin-page.png',
@@ -77,13 +93,14 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth)
     const viewportWidth = await page.evaluate(() => window.innerWidth)
 
-    console.log(`Signin - Body scroll width: ${bodyWidth}, Viewport width: ${viewportWidth}`)
+    logger.info(`Signin - Body scroll width: ${bodyWidth}, Viewport width: ${viewportWidth}`)
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 1)
   })
 
   test('Header and Navigation', async ({ page }) => {
-    await page.goto('http://localhost:3001')
-    await page.waitForSelector('nav', { timeout: 10000 })
+    await page.goto('/')
+    // Wait for navbar using data-testid with fallback
+    await page.waitForSelector('[data-testid="navbar"], nav', { timeout: 10000 })
 
     // Screenshot header in initial state
     await page.screenshot({
@@ -94,12 +111,14 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
 
     // Try to find and click hamburger menu if it exists
     const menuButton = page.locator(
-      '[aria-label="Toggle navigation menu"], button[aria-label*="menu"], [data-testid="navbar-menu-toggle"]'
+      '[data-testid="navbar-menu-toggle"], [aria-label="Toggle navigation menu"], button[aria-label*="menu"]'
     )
 
     if (await menuButton.isVisible()) {
       await menuButton.click()
-      await page.waitForTimeout(500)
+
+      // Wait for menu animation to complete
+      await expect(menuButton).toBeVisible()
 
       await page.screenshot({
         path: 'tests/screenshots/mobile-07-navigation-open.png',
@@ -109,8 +128,10 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   })
 
   test('Horizontal Scroll Detection', async ({ page }) => {
-    await page.goto('http://localhost:3001')
-    await page.waitForSelector('h1', { timeout: 10000 })
+    const logger = await getTestLogger('mobile-ui-visual')
+
+    await page.goto('/')
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     // Detailed horizontal scroll analysis
     const scrollInfo = await page.evaluate(() => {
@@ -130,7 +151,7 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
       }
     })
 
-    console.log('Horizontal scroll analysis:', JSON.stringify(scrollInfo, null, 2))
+    logger.info('Horizontal scroll analysis:', JSON.stringify(scrollInfo, null, 2))
 
     // Take screenshot showing the full width
     await page.screenshot({
@@ -143,8 +164,10 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
   })
 
   test('Touch Target Sizes', async ({ page }) => {
-    await page.goto('http://localhost:3001')
-    await page.waitForSelector('h1', { timeout: 10000 })
+    const logger = await getTestLogger('mobile-ui-visual')
+
+    await page.goto('/')
+    await page.waitForSelector('[data-testid="hero-section"], h1', { timeout: 10000 })
 
     // Check button sizes
     const buttons = await page.locator('button, a[href]').all()
@@ -164,7 +187,7 @@ test.describe('Mobile UI Visual Tests - iPhone 14 Pro', () => {
     }
 
     if (touchTargetIssues.length > 0) {
-      console.log('Touch target size warnings:', touchTargetIssues)
+      logger.warn('Touch target size warnings:', touchTargetIssues)
     }
 
     // Screenshot for reference

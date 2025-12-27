@@ -412,8 +412,6 @@ export default function WeeklyPlannerCalendar({
         })
         if (existingWorkout) {
           logger.debug(`Matched workout for ${dayIso}:`, existingWorkout)
-        }
-        if (existingWorkout) {
           return {
             ...day,
             workout: {
