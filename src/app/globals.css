@@ -156,6 +156,18 @@
     --summit-gold-600: #d97706;
     --summit-gold-700: #b45309;
 
+    /* Forest Green - Success/Completion colors */
+    --forest-50: #f0fdf4;
+    --forest-100: #dcfce7;
+    --forest-200: #bbf7d0;
+    --forest-300: #86efac;
+    --forest-400: #4ade80;
+    --forest-500: #22c55e;
+    --forest-600: #16a34a;
+    --forest-700: #15803d;
+    --forest-800: #166534;
+    --forest-900: #14532d;
+
     --granite-50: #f8fafc;
     --granite-100: #f1f5f9;
     --granite-200: #e2e8f0;
