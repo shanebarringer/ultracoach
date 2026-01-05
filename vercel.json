@@ -3,6 +3,12 @@
   "installCommand": "pnpm install",
   "devCommand": "pnpm dev",
   "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/keep-alive",
+      "schedule": "0 9 * * 0"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
