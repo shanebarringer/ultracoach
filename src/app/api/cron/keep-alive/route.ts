@@ -8,6 +8,17 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('CronKeepAlive')
 
+interface PingResult {
+  success: boolean
+  latency?: number
+  error?: string
+}
+
+interface KeepAliveResults {
+  redis: PingResult
+  supabase: PingResult
+}
+
 /**
  * Keep-alive cron endpoint to prevent database archival due to inactivity.
  *
@@ -34,10 +45,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const results: {
-    redis: { success: boolean; latency?: number; error?: string }
-    supabase: { success: boolean; latency?: number; error?: string }
-  } = {
+  const results: KeepAliveResults = {
     redis: { success: false },
     supabase: { success: false },
   }
