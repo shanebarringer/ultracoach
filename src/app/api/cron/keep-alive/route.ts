@@ -18,11 +18,18 @@ const logger = createLogger('CronKeepAlive')
  * Scheduled via Vercel Cron to run weekly.
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret to prevent unauthorized access
+  // Verify cron secret - fail closed if not configured
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Fail closed: reject if CRON_SECRET is not configured
+  if (!cronSecret) {
+    logger.error('CRON_SECRET is not set; refusing to serve keep-alive')
+    return NextResponse.json({ error: 'Service misconfigured' }, { status: 500 })
+  }
+
+  // Validate the bearer token (Vercel Cron sends CRON_SECRET as Authorization: Bearer <secret>)
+  if (authHeader !== `Bearer ${cronSecret}`) {
     logger.warn('Unauthorized cron access attempt')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
