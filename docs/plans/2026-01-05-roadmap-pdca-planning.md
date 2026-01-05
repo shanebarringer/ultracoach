@@ -1,7 +1,7 @@
 # UltraCoach Roadmap & PDCA Planning
 
 **Created**: 2026-01-05
-**Last Updated**: 2026-01-05
+**Last Updated**: 2026-01-05 (Evening - Post-Triage Update)
 
 ---
 
@@ -16,18 +16,47 @@ This document provides a comprehensive analysis of all open PRs and Linear issue
 
 ## Current State Analysis
 
-### Open Pull Requests (6 total)
+### Open Pull Requests (3 total - Updated)
 
-| PR   | Title                                    | Age     | Status           | Priority                  |
-| ---- | ---------------------------------------- | ------- | ---------------- | ------------------------- |
-| #299 | feat(cron): keep-alive endpoint          | 0 days  | Ready for review | **P0** - Merge today      |
-| #293 | feat(dashboard): coach dashboard layout  | 17 days | Stale            | **P1** - Review this week |
-| #291 | fix(weekly-planner): standardize isToday | 25 days | Bot PR (CTO)     | **P2** - Evaluate/close   |
-| #281 | Enhance Coach Profile (ULT-125)          | 26 days | Bot PR (Codegen) | **P1** - Review this week |
-| #225 | Claude/garmin-sync-setup                 | 41 days | Stale            | **P3** - Evaluate/close   |
-| #202 | feat(settings): notification filtering   | 47 days | Stale            | **P3** - Evaluate/close   |
+| PR   | Title                                   | Age     | Status      | Priority                                  |
+| ---- | --------------------------------------- | ------- | ----------- | ----------------------------------------- |
+| #300 | docs: roadmap and PDCA planning         | 0 days  | Open        | **P2** - Documentation                    |
+| #293 | feat(dashboard): coach dashboard layout | 17 days | In Review   | **P1** - Ready to merge after review      |
+| #281 | Enhance Coach Profile (ULT-125)         | 26 days | **BLOCKED** | **P1** - Blocked by security issues below |
 
-**Key Insight**: 4 of 6 PRs are over 2 weeks old. Bot-generated PRs need human evaluation.
+#### ✅ Triage Completed Today
+
+- ✅ **#299** - Merged (keep-alive cron endpoint)
+- ✅ **#291** - Closed (bot PR, stale)
+- ✅ **#225** - Closed (Garmin sync, stale 41 days)
+- ✅ **#202** - Closed (notification filtering, stale 47 days)
+
+**Result**: Reduced open PRs from 6 → 3 (50% reduction)
+
+### 🚨 PR #281 Blockers (From Code Review)
+
+These issues **MUST be resolved** before PR #281 can be merged:
+
+| Ticket      | Issue                          | Severity     | Effort |
+| ----------- | ------------------------------ | ------------ | ------ |
+| **ULT-133** | Security: Avatar upload        | **CRITICAL** | 3h     |
+| **ULT-136** | Security: API input validation | **HIGH**     | 2h     |
+| **ULT-137** | Bug: Hardcoded user name       | **HIGH**     | 30m    |
+
+**Total estimated effort**: ~5.5 hours to unblock PR #281
+
+### New Tickets (From Code Review Audit)
+
+| Ticket      | Title                             | Sprint   | Priority |
+| ----------- | --------------------------------- | -------- | -------- |
+| **ULT-132** | PR #293: Pagination & performance | Sprint 2 | Medium   |
+| **ULT-133** | PR #281: Avatar upload security   | Sprint 1 | Critical |
+| **ULT-134** | PR #281: Type safety (any types)  | Sprint 2 | Medium   |
+| **ULT-135** | PR #281: Keyboard accessibility   | Sprint 3 | Medium   |
+| **ULT-136** | PR #281: Zod API validation       | Sprint 1 | High     |
+| **ULT-137** | PR #281: Hardcoded user name      | Sprint 1 | High     |
+
+**Key Insight**: 3 tickets block PR #281 merge. All are security or bug-related.
 
 ### Linear Issues by Status
 
@@ -152,17 +181,22 @@ If unsuccessful:
 
 #### Sprint 1: Foundation (Week 1-2)
 
-**Theme**: Clear the decks - merge/close PRs, complete in-progress work
+**Theme**: Clear the decks - merge/close PRs, fix blockers, complete in-progress work
 
-| Priority | Item                                      | Type  | Effort |
-| -------- | ----------------------------------------- | ----- | ------ |
-| P0       | Merge PR #299 (keep-alive cron)           | PR    | XS     |
-| P0       | Review/close stale PRs (#291, #225, #202) | PR    | S      |
-| P1       | Review PR #293 (coach dashboard)          | PR    | M      |
-| P1       | Review PR #281 (coach profile - ULT-125)  | PR    | M      |
-| P1       | ULT-130: Run profile system migrations    | Infra | XS     |
+| Priority | Item                                     | Type     | Effort | Status  |
+| -------- | ---------------------------------------- | -------- | ------ | ------- |
+| P0       | ~~Merge PR #299 (keep-alive cron)~~      | PR       | XS     | ✅      |
+| P0       | ~~Close stale PRs (#291, #225, #202)~~   | PR       | S      | ✅      |
+| P0       | **ULT-133**: Avatar upload security      | Security | M      | Todo    |
+| P0       | **ULT-136**: Zod API validation          | Security | S      | Todo    |
+| P0       | **ULT-137**: Fix hardcoded user name     | Bug      | XS     | Todo    |
+| P1       | Review PR #293 (coach dashboard)         | PR       | M      | Review  |
+| P1       | Review PR #281 (coach profile - ULT-125) | PR       | M      | Blocked |
+| P1       | ULT-130: Run profile system migrations   | Infra    | XS     | Backlog |
 
-**Goal**: Reduce open PRs from 6 to ≤2
+**Goal**: Reduce open PRs from 6 to ≤2, unblock PR #281
+
+**Progress**: 2/8 items complete (25%)
 
 #### Sprint 2: Testing & Stability (Week 2-3)
 
@@ -275,13 +309,33 @@ gh pr close 291 --comment "Closing bot-generated PR. Will address manually if ne
 
 ## Success Metrics Dashboard
 
-| Metric               | Current | Target (4 weeks) |
-| -------------------- | ------- | ---------------- |
-| Open PRs             | 6       | ≤2               |
-| Average PR age       | 26 days | <7 days          |
-| In Progress items    | 4       | ≤3               |
-| Stable E2E tests     | 20      | 35+              |
-| Todo items completed | 0/6     | 4/6              |
+| Metric               | Start of Day | Current | Target (4 weeks) | Status |
+| -------------------- | ------------ | ------- | ---------------- | ------ |
+| Open PRs             | 6            | **3**   | ≤2               | 🟡 50% |
+| Average PR age       | 26 days      | 14 days | <7 days          | 🟡 46% |
+| In Progress items    | 4            | 4       | ≤3               | 🔴 0%  |
+| Stable E2E tests     | 20           | 20      | 35+              | 🔴 0%  |
+| Todo items completed | 0/6          | 0/6     | 4/6              | 🔴 0%  |
+| New tickets created  | 0            | **6**   | -                | ✅     |
+
+### Day 1 Progress Summary
+
+**Accomplished**:
+
+- ✅ Merged PR #299 (keep-alive cron)
+- ✅ Closed 3 stale PRs (#291, #225, #202)
+- ✅ Created roadmap PR #300
+- ✅ Audited code review feedback on PR #293 and #281
+- ✅ Created 6 new Linear tickets from code review
+- ✅ Prioritized tickets by sprint
+- ✅ Identified 3 blockers for PR #281
+
+**Next Actions**:
+
+1. Fix PR #281 blockers (ULT-133, ULT-136, ULT-137) - ~5.5h effort
+2. Merge PR #293 after review
+3. Merge PR #281 after blockers resolved
+4. Begin Sprint 2 testing work
 
 ---
 
