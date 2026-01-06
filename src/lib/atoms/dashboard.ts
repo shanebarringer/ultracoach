@@ -112,6 +112,44 @@ export interface AthleteWithMetrics {
 // ============================================================================
 
 /**
+ * Week boundary dates for metric calculations.
+ * Memoized at module level to avoid recalculating for each athlete.
+ */
+interface WeekBoundaries {
+  now: Date
+  startOfWeek: Date
+  startOfLastWeek: Date
+  timestamp: number
+}
+
+let cachedBoundaries: WeekBoundaries | null = null
+const CACHE_TTL_MS = 60000 // 1 minute cache
+
+function getWeekBoundaries(): WeekBoundaries {
+  const now = Date.now()
+  if (cachedBoundaries && now - cachedBoundaries.timestamp < CACHE_TTL_MS) {
+    return cachedBoundaries
+  }
+
+  const nowDate = new Date()
+  const startOfWeek = new Date(nowDate)
+  startOfWeek.setDate(nowDate.getDate() - nowDate.getDay()) // Start of current week (Sunday)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const startOfLastWeek = new Date(startOfWeek)
+  startOfLastWeek.setDate(startOfLastWeek.getDate() - 7)
+
+  cachedBoundaries = {
+    now: nowDate,
+    startOfWeek,
+    startOfLastWeek,
+    timestamp: now,
+  }
+
+  return cachedBoundaries
+}
+
+/**
  * Calculate athlete metrics based on their workout data
  */
 function calculateAthleteMetrics(
@@ -125,13 +163,7 @@ function calculateAthleteMetrics(
     actual_distance?: number | null
   }>
 ): AthleteMetrics {
-  const now = new Date()
-  const startOfWeek = new Date(now)
-  startOfWeek.setDate(now.getDate() - now.getDay()) // Start of current week (Sunday)
-  startOfWeek.setHours(0, 0, 0, 0)
-
-  const startOfLastWeek = new Date(startOfWeek)
-  startOfLastWeek.setDate(startOfLastWeek.getDate() - 7)
+  const { now, startOfWeek, startOfLastWeek } = getWeekBoundaries()
 
   // Filter workouts for this athlete
   const athleteWorkouts = workouts.filter(w => w.user_id === athleteId)
@@ -294,15 +326,25 @@ export const paginatedAthletesAtom = atom(get => {
 
 /**
  * Status counts for filter chips
+ * Uses single-pass reduce instead of multiple filter calls for better performance
  */
 export const athleteStatusCountsAtom = atom(get => {
   const athletesWithMetrics = get(athletesWithMetricsAtom)
 
+  // Single pass through the array instead of 3 separate filters
+  const counts = athletesWithMetrics.reduce(
+    (acc, a) => {
+      if (a.relationship.status === 'active') acc.active++
+      if (a.relationship.status === 'pending') acc.pending++
+      if (a.metrics.needsAttention) acc.needsAttention++
+      return acc
+    },
+    { active: 0, pending: 0, needsAttention: 0 }
+  )
+
   return {
     all: athletesWithMetrics.length,
-    active: athletesWithMetrics.filter(a => a.relationship.status === 'active').length,
-    pending: athletesWithMetrics.filter(a => a.relationship.status === 'pending').length,
-    needsAttention: athletesWithMetrics.filter(a => a.metrics.needsAttention).length,
+    ...counts,
   }
 })
 

@@ -75,14 +75,16 @@ function AthleteCardComponent({ athlete, viewMode = 'grid' }: AthleteCardProps) 
 
   const trendDisplay = getTrendDisplay()
 
-  // Get initials for avatar
+  // Get initials for avatar with defensive handling for empty strings
   const getInitials = () => {
-    const name = relationship.other_party.full_name || relationship.other_party.name || 'U'
-    const parts = name.split(' ')
+    const rawName = relationship.other_party.full_name || relationship.other_party.name || ''
+    const name = rawName.trim()
+    if (!name) return 'U'
+    const parts = name.split(' ').filter(Boolean)
     if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase() || 'U'
     }
-    return name.charAt(0).toUpperCase()
+    return name.charAt(0).toUpperCase() || 'U'
   }
 
   // Format last activity text
