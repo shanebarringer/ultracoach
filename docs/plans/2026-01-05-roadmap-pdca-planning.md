@@ -232,7 +232,7 @@ If unsuccessful:
 | P1       | ULT-14: Complete Security Audit     | L      |
 | P2       | ULT-96: CSP Violation Reporting     | S      |
 | P2       | ULT-95: Redis Health Check Endpoint | S      |
-| P3       | ULT-97: Rate Limiting Telemetry     | M      |
+| P3       | ULT-97: Rate-Limiting Telemetry     | M      |
 
 **Goal**: Pass security audit, implement monitoring
 
@@ -361,7 +361,7 @@ gh pr close 291 --comment "Closing bot-generated PR. Will address manually if ne
 - ULT-55: Jotai debug label conventions
 - ULT-128: Beta invitation emails
 - ULT-96: CSP Violation Reporting
-- ULT-97: Rate Limiting Telemetry
+- ULT-97: Rate-Limiting Telemetry
 - ULT-98: PostHog Reverse Proxy
 - ULT-95: Redis Health Check
 
