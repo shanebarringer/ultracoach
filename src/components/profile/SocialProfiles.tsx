@@ -20,18 +20,9 @@ import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
+import type { SocialProfile } from '@/types/profile'
 
 const logger = createLogger('SocialProfiles')
-
-interface SocialProfile {
-  id: string
-  platform: string
-  username?: string
-  profile_url: string
-  display_name?: string
-  is_verified: boolean
-  is_public: boolean
-}
 
 interface SocialProfilesProps {
   userId: string
@@ -41,7 +32,16 @@ interface SocialProfilesProps {
   stravaUsername?: string
 }
 
-const SOCIAL_PLATFORMS = [
+type SocialPlatformId = SocialProfile['platform']
+
+const SOCIAL_PLATFORMS: Array<{
+  id: SocialPlatformId
+  name: string
+  icon: typeof Instagram
+  color: string
+  placeholder: string
+  urlPattern: RegExp
+}> = [
   {
     id: 'instagram',
     name: 'Instagram',
@@ -76,7 +76,7 @@ export default function SocialProfiles({
   stravaUsername,
 }: SocialProfilesProps) {
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('')
+  const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatformId | ''>('')
   const [profileUrl, setProfileUrl] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -161,7 +161,7 @@ export default function SocialProfiles({
     }
   }
 
-  const openAddModal = (platformId?: string) => {
+  const openAddModal = (platformId?: SocialPlatformId) => {
     if (platformId) {
       setSelectedPlatform(platformId)
     }

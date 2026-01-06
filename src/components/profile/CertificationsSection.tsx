@@ -23,20 +23,9 @@ import { useState } from 'react'
 
 import { createLogger } from '@/lib/logger'
 import { commonToasts } from '@/lib/toast'
+import type { Certification } from '@/types/profile'
 
 const logger = createLogger('CertificationsSection')
-
-interface Certification {
-  id: string
-  name: string
-  issuing_organization: string
-  credential_id?: string
-  issue_date?: string
-  expiration_date?: string
-  verification_url?: string
-  status: 'active' | 'expired' | 'pending' | 'revoked'
-  is_featured: boolean
-}
 
 interface CertificationsSectionProps {
   certifications: Certification[]

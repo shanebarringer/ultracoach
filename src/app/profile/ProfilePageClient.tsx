@@ -131,20 +131,20 @@ export default function ProfilePageClient({ user }: ProfilePageClientProps) {
     }
   }
 
-  const handleSocialProfilesChange = (profiles: unknown) => {
+  const handleSocialProfilesChange = (profiles: SocialProfile[]) => {
     if (profileData) {
       setProfileData({
         ...profileData,
-        social_profiles: profiles as SocialProfile[],
+        social_profiles: profiles,
       })
     }
   }
 
-  const handleCertificationsChange = (certifications: unknown) => {
+  const handleCertificationsChange = (certs: Certification[]) => {
     if (profileData) {
       setProfileData({
         ...profileData,
-        certifications: certifications as Certification[],
+        certifications: certs,
       })
     }
   }
