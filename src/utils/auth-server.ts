@@ -387,8 +387,8 @@ export async function verifyConversationPermission(recipientId: string): Promise
               eq(coach_runners.coach_id, recipientId)
             )
           ),
-          // Only active relationships
-          eq(coach_runners.status, 'active')
+          // Allow both active and pending relationships (aligned with API routes)
+          or(eq(coach_runners.status, 'active'), eq(coach_runners.status, 'pending'))
         )
       )
       .limit(1)

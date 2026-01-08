@@ -234,6 +234,11 @@ export const sendMessageActionAtom = atom(
       }).finally(() => clearTimeout(timeout))
 
       if (!response.ok) {
+        // Handle 401 specifically - session expired
+        if (response.status === 401) {
+          set(sessionAtom, null)
+          throw new Error('Session expired. Please sign in again.')
+        }
         throw new Error('Failed to send message')
       }
 

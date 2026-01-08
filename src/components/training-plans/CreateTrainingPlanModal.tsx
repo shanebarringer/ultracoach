@@ -240,14 +240,19 @@ export default function CreateTrainingPlanModal({
         })
       }
 
-      setFormState(prev => ({ ...prev, loading: false, error: '' }))
       reset() // Reset form with react-hook-form
 
       // Show success toast
       commonToasts.trainingPlanCreated()
 
-      onSuccess()
-      onClose()
+      // Call callbacks after loading state is cleared in finally block
+      try {
+        onSuccess()
+        onClose()
+      } catch (callbackError) {
+        logger.error('Error in success callbacks:', callbackError)
+        // Don't prevent modal closing on callback errors
+      }
     } catch (error) {
       // Skip logging/toasting on user-initiated cancellations
       if (axios.isCancel(error) || (isAxiosError(error) && error.code === 'ERR_CANCELED')) {
@@ -265,12 +270,14 @@ export default function CreateTrainingPlanModal({
       logger.error('Error creating training plan:', error)
       setFormState(prev => ({
         ...prev,
-        loading: false,
         error: message,
       }))
 
       // Show error toast (suppressing global toast via request config)
       commonToasts.trainingPlanError(message)
+    } finally {
+      // CRITICAL: Guarantee loading state is always cleared
+      setFormState(prev => ({ ...prev, loading: false }))
     }
   }
 
