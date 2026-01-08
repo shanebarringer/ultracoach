@@ -66,7 +66,9 @@ export function useMessages(recipientId?: string) {
       }
 
       try {
-        const response = await fetch(`/api/messages?recipientId=${targetId}`)
+        const response = await fetch(`/api/messages?recipientId=${targetId}`, {
+          credentials: 'same-origin',
+        })
 
         if (!response.ok) {
           logger.error('Error fetching messages:', response.statusText)
@@ -96,6 +98,7 @@ export function useMessages(recipientId?: string) {
               headers: {
                 'Content-Type': 'application/json',
               },
+              credentials: 'same-origin',
               body: JSON.stringify({
                 senderId: targetId,
                 recipientId: session.user.id,
@@ -150,6 +153,7 @@ export function useMessages(recipientId?: string) {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             senderId: targetId,
             recipientId: session.user.id,
@@ -203,7 +207,9 @@ export function useMessages(recipientId?: string) {
         if (!isRelevantMessage) return
 
         // Fetch the sender info for the new message
-        fetch(`/api/users/${newMessage.sender_id}`)
+        fetch(`/api/users/${newMessage.sender_id}`, {
+          credentials: 'same-origin',
+        })
           .then(response => response.json())
           .then(({ user: sender }) => {
             if (sender) {

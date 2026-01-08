@@ -332,7 +332,6 @@ function CoachDashboard() {
               value={trainingPlans.length}
               subtitle="expeditions"
               icon={CalendarDaysIcon}
-              trend={{ value: 12, direction: 'up' }}
               color="primary"
             />
             <MetricCard
@@ -340,7 +339,6 @@ function CoachDashboard() {
               value={runners.length}
               subtitle="connected"
               icon={UsersIcon}
-              trend={{ value: 8, direction: 'up' }}
               color="success"
             />
             <MetricCard

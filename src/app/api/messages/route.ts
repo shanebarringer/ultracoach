@@ -97,9 +97,9 @@ export async function GET(request: NextRequest) {
         id: user.id,
         email: user.email,
         name: user.name,
-        fullName: user.fullName,
-        role: user.userType, // Fix: use userType from database
-        createdAt: user.createdAt,
+        full_name: user.fullName, // Use snake_case to match frontend interface
+        userType: user.userType,
+        created_at: user.createdAt, // Use snake_case for consistency
       })
       .from(user)
       .where(or(...Array.from(userIds).map(id => eq(user.id, id))))
