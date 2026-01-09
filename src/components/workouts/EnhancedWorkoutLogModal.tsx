@@ -374,7 +374,7 @@ const EnhancedWorkoutLogModal = memo(
 
           logger.info('Submitting enhanced workout log update:', { workoutId: workout.id, payload })
 
-          await api.patch(`/api/workouts/${workout.id}`, payload)
+          await api.patch(`/api/workouts/${workout.id}`, payload, { suppressGlobalToast: true })
 
           logger.info('Enhanced workout updated successfully')
 

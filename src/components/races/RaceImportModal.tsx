@@ -855,7 +855,7 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
             return await api.post<BulkImportResponse>(
               '/api/races/bulk-import',
               { races: parsedRaces },
-              { timeout: 20000 }
+              { timeout: 20000, suppressGlobalToast: true }
             )
           },
           2, // max 2 retries for bulk import
@@ -900,7 +900,10 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
         const race = parsedRaces[0]
         await retryWithBackoff(
           async () => {
-            return await api.post('/api/races/import', race, { timeout: 15000 })
+            return await api.post('/api/races/import', race, {
+              timeout: 15000,
+              suppressGlobalToast: true,
+            })
           },
           3, // max 3 retries for single import
           1000, // 1 second base delay

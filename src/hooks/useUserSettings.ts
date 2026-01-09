@@ -166,7 +166,7 @@ export function useUserSettings(): UseUserSettingsReturn {
           success: boolean
           settings: UserSettings
           error?: string
-        }>('/api/settings', settingsUpdate)
+        }>('/api/settings', settingsUpdate, { suppressGlobalToast: true })
 
         const data = response.data
 
@@ -207,10 +207,14 @@ export function useUserSettings(): UseUserSettingsReturn {
           success: boolean
           settings: UserSettings
           error?: string
-        }>('/api/settings', {
-          section,
-          settings: sectionSettings,
-        })
+        }>(
+          '/api/settings',
+          {
+            section,
+            settings: sectionSettings,
+          },
+          { suppressGlobalToast: true }
+        )
 
         const data = response.data
 

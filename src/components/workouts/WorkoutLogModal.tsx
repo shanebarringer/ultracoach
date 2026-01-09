@@ -196,7 +196,6 @@ export default function WorkoutLogModal({
       } else {
         // For 'planned' status, use optimistic update pattern
         const previousWorkout = { ...workout }
-        let rolledBack = false
 
         // Optimistically update the workouts atom immediately
         setWorkouts(prev =>
@@ -218,25 +217,16 @@ export default function WorkoutLogModal({
         )
 
         try {
-          const response = await api.patch<{ workout?: Workout } | Workout>(
-            `/api/workouts/${workout.id}`,
-            { ...payload, status: 'planned' }
-          )
+          const response = await api.patch<{ workout: Workout }>(`/api/workouts/${workout.id}`, {
+            ...payload,
+            status: 'planned',
+          })
 
-          // Update with server response - handle both response shapes
-          const responseData = response.data
-          const updatedWorkout: Workout =
-            'workout' in responseData && responseData.workout
-              ? responseData.workout
-              : (responseData as Workout)
-
-          setWorkouts(prev => prev.map(w => (w.id === workout.id ? updatedWorkout : w)))
+          // Update with server response
+          setWorkouts(prev => prev.map(w => (w.id === workout.id ? response.data.workout : w)))
         } catch (error) {
           // Rollback on error
-          if (!rolledBack) {
-            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
-            rolledBack = true
-          }
+          setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
           throw error
         }
       }

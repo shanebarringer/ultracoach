@@ -65,10 +65,14 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
     setConnectingIds((prev: Set<string>) => new Set(prev).add(runnerId))
 
     try {
-      await api.post('/api/coach-runners', {
-        target_user_id: runnerId,
-        relationship_type: 'standard',
-      })
+      await api.post(
+        '/api/coach-runners',
+        {
+          target_user_id: runnerId,
+          relationship_type: 'standard',
+        },
+        { suppressGlobalToast: true }
+      )
 
       logger.info('Connection request sent successfully', { runnerId })
       toast.success('Connection request sent to runner!')

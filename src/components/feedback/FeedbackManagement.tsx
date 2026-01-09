@@ -136,11 +136,15 @@ export default function FeedbackManagement() {
 
   const updateFeedbackStatus = async (feedbackId: string, status: string, notes?: string) => {
     try {
-      await api.patch('/api/admin/feedback', {
-        feedbackId,
-        status,
-        admin_notes: notes,
-      })
+      await api.patch(
+        '/api/admin/feedback',
+        {
+          feedbackId,
+          status,
+          admin_notes: notes,
+        },
+        { suppressGlobalToast: true }
+      )
 
       toast.success('✅ Updated', 'Feedback status updated successfully.')
       await fetchFeedback()

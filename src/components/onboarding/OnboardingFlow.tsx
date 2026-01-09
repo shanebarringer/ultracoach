@@ -87,7 +87,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
         onboarding: OnboardingProgress
         steps: OnboardingStep[]
         currentStepData: OnboardingStep
-      }>('/api/onboarding')
+      }>('/api/onboarding', { suppressGlobalToast: true })
 
       const data = response.data
       setOnboarding(data.onboarding)
@@ -119,11 +119,15 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await api.post<{ onboarding: OnboardingProgress }>('/api/onboarding', {
-        stepNumber: currentStepData.step_number,
-        stepData,
-        completed: false,
-      })
+      const response = await api.post<{ onboarding: OnboardingProgress }>(
+        '/api/onboarding',
+        {
+          stepNumber: currentStepData.step_number,
+          stepData,
+          completed: false,
+        },
+        { suppressGlobalToast: true }
+      )
 
       const result = response.data
 
@@ -167,11 +171,15 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      await api.post('/api/onboarding', {
-        stepNumber: onboarding.current_step,
-        stepData: stepAnswers,
-        completed: true,
-      })
+      await api.post(
+        '/api/onboarding',
+        {
+          stepNumber: onboarding.current_step,
+          stepData: stepAnswers,
+          completed: true,
+        },
+        { suppressGlobalToast: true }
+      )
 
       toast.success(
         '🎉 Welcome to UltraCoach!',
@@ -192,7 +200,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      await api.patch('/api/onboarding')
+      await api.patch('/api/onboarding', undefined, { suppressGlobalToast: true })
 
       toast.success('⏭️ Onboarding Skipped', 'You can always complete setup later in your profile.')
 

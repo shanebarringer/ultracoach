@@ -161,12 +161,10 @@ export function useTypingStatus(recipientId: string) {
       }
 
       try {
-        const response = await api.get<{ isTyping: boolean }>(
-          `/api/typing?recipientId=${recipientId}`,
-          {
-            suppressGlobalToast: true,
-          }
-        )
+        const response = await api.get<{ isTyping: boolean }>('/api/typing', {
+          params: { recipientId },
+          suppressGlobalToast: true,
+        })
         const data = response.data
 
         if (data.isTyping !== isRecipientTyping) {

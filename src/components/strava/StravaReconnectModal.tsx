@@ -138,7 +138,9 @@ const StravaReconnectModal = memo(
         setConnectionProgress(25)
 
         // Test basic connection
-        const response = await api.get<{ connected: boolean }>('/api/strava/status')
+        const response = await api.get<{ connected: boolean }>('/api/strava/status', {
+          suppressGlobalToast: true,
+        })
         setConnectionProgress(50)
 
         const statusData = response.data

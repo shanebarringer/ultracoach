@@ -42,10 +42,13 @@ export default function NotificationPreferences() {
 
   const fetchPreferences = async () => {
     try {
-      const response = await api.get<{ preferences: NotificationPrefs }>(
-        '/api/user/notification-preferences'
+      const response = await api.get<{ preferences: NotificationPrefs | null }>(
+        '/api/user/notification-preferences',
+        { suppressGlobalToast: true }
       )
-      setPreferences(response.data.preferences)
+      if (response.data.preferences) {
+        setPreferences(response.data.preferences)
+      }
     } catch (error) {
       logger.error('Error fetching notification preferences:', error)
     } finally {

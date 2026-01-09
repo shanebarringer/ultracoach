@@ -59,7 +59,9 @@ export default function StravaActivityList() {
 
   const fetchActivities = async () => {
     try {
-      const response = await api.get<StravaActivitiesData>('/api/strava/activities')
+      const response = await api.get<StravaActivitiesData>('/api/strava/activities', {
+        suppressGlobalToast: true,
+      })
       setData(response.data)
       logger.info('Fetched Strava activities', {
         count: response.data.activities.length,
@@ -79,10 +81,14 @@ export default function StravaActivityList() {
     }))
 
     try {
-      const response = await api.post<{ workout_id: string }>('/api/strava/sync', {
-        activity_id: activity.id,
-        sync_as_workout: true,
-      })
+      const response = await api.post<{ workout_id: string }>(
+        '/api/strava/sync',
+        {
+          activity_id: activity.id,
+          sync_as_workout: true,
+        },
+        { suppressGlobalToast: true }
+      )
 
       setSyncedActivities(prev => ({
         ...prev,

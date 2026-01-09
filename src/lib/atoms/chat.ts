@@ -1,4 +1,5 @@
 // Chat and messaging atoms
+import { isAxiosError } from 'axios'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
@@ -264,12 +265,7 @@ export const sendMessageActionAtom = atom(
       set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))
 
       // Handle 401 specifically - session expired
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        (error as { response?: { status?: number } }).response?.status === 401
-      ) {
+      if (isAxiosError(error) && error.response?.status === 401) {
         set(sessionAtom, null)
         throw new Error('Session expired. Please sign in again.')
       }

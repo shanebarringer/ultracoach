@@ -149,18 +149,10 @@ export default function NextStepWrapper({ children }: NextStepWrapperProps) {
       logger.info('Tour skipped', { tourName, step })
       skipTour()
 
-      // Persist skip action to database (fire-and-forget for UI responsiveness)
-      api
-        .post('/api/tours', {
-          tourId: tourName,
-          action: 'skip',
-          metadata: { stoppedAtStep: step },
-        })
-        .catch(error => {
-          logger.error('Failed to persist tour skip', { tourName, step, error })
-        })
+      // Persist skip action to database using existing helper (fire-and-forget)
+      persistTourAction(tourName as TourId, 'skip', { stoppedAtStep: step })
     },
-    [skipTour]
+    [skipTour, persistTourAction]
   )
 
   return (
