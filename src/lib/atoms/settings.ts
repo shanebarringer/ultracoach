@@ -1,6 +1,7 @@
 // User settings management atoms
 import { atom } from 'jotai'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -113,29 +114,21 @@ export const asyncUserSettingsAtom = atom(
 
     try {
       logger.debug('Fetching user settings...')
-      const response = await fetch('/api/settings', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-      })
+      const response = await api.get<{ success: boolean; settings: UserSettings; error?: string }>(
+        '/api/settings',
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
+        }
+      )
 
-      if (!response.ok) {
-        const errorMessage = `Failed to fetch user settings: ${response.status} ${response.statusText}`
-        logger.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-
-      if (!data.success) {
-        const errorMessage = data.error || 'Failed to fetch user settings'
+      if (!response.data.success) {
+        const errorMessage = response.data.error || 'Failed to fetch user settings'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
 
       logger.info('User settings fetched successfully')
-      return data.settings as UserSettings
+      return response.data.settings
     } catch (error) {
       // Re-throw to let Suspense boundary handle it
       logger.error('Error fetching user settings:', error)
@@ -159,31 +152,22 @@ export const updateUserSettingsAtom = atom(
   async (get, set, settingsUpdate: Partial<UserSettings>) => {
     try {
       logger.debug('Updating user settings...')
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(settingsUpdate),
-      })
+      const response = await api.put<{ success: boolean; settings: UserSettings; error?: string }>(
+        '/api/settings',
+        settingsUpdate,
+        {
+          suppressGlobalToast: true, // Atom handles its own toast notifications
+        }
+      )
 
-      if (!response.ok) {
-        const errorMessage = `Failed to update user settings: ${response.status} ${response.statusText}`
-        logger.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-
-      if (!data.success) {
-        const errorMessage = data.error || 'Failed to update user settings'
+      if (!response.data.success) {
+        const errorMessage = response.data.error || 'Failed to update user settings'
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
 
       // Update the cached settings
-      set(userSettingsAtom, data.settings)
+      set(userSettingsAtom, response.data.settings)
       set(userSettingsErrorAtom, null)
 
       logger.info('User settings updated successfully')
@@ -209,31 +193,26 @@ export const updateUserSettingsSectionAtom = atom(
 
     try {
       logger.debug(`Updating user settings section: ${section}...`)
-      const response = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ section, settings }),
-      })
+      const response = await api.patch<{
+        success: boolean
+        settings: UserSettings
+        error?: string
+      }>(
+        '/api/settings',
+        { section, settings },
+        {
+          suppressGlobalToast: true, // Atom handles its own toast notifications
+        }
+      )
 
-      if (!response.ok) {
-        const errorMessage = `Failed to update ${section}: ${response.status} ${response.statusText}`
-        logger.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-
-      if (!data.success) {
-        const errorMessage = data.error || `Failed to update ${section}`
+      if (!response.data.success) {
+        const errorMessage = response.data.error || `Failed to update ${section}`
         logger.error(errorMessage)
         throw new Error(errorMessage)
       }
 
       // Update the cached settings
-      set(userSettingsAtom, data.settings)
+      set(userSettingsAtom, response.data.settings)
       set(userSettingsErrorAtom, null)
 
       logger.info(`User settings section ${section} updated successfully`)

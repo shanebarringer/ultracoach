@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { api } from '@/lib/api-client'
 import {
   completeWorkoutAtom,
   logWorkoutDetailsAtom,
@@ -217,31 +218,24 @@ export default function WorkoutLogModal({
         )
 
         try {
-          const response = await fetch(`/api/workouts/${workout.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({ ...payload, status: 'planned' }),
-          })
-
-          if (!response.ok) {
-            // Rollback on error
-            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
-            rolledBack = true
-            throw new Error('Failed to update workout')
-          }
-
-          // Update with server response
-          const updatedWorkout = await response.json()
-          setWorkouts(prev =>
-            prev.map(w => (w.id === workout.id ? updatedWorkout.workout || updatedWorkout : w))
+          const response = await api.patch<{ workout?: Workout } | Workout>(
+            `/api/workouts/${workout.id}`,
+            { ...payload, status: 'planned' }
           )
+
+          // Update with server response - handle both response shapes
+          const responseData = response.data
+          const updatedWorkout: Workout =
+            'workout' in responseData && responseData.workout
+              ? responseData.workout
+              : (responseData as Workout)
+
+          setWorkouts(prev => prev.map(w => (w.id === workout.id ? updatedWorkout : w)))
         } catch (error) {
-          // Rollback if not already done (e.g., network/JSON errors)
+          // Rollback on error
           if (!rolledBack) {
             setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
+            rolledBack = true
           }
           throw error
         }

@@ -15,6 +15,7 @@ import {
   tourKeyToTourId,
   tourMetadata,
 } from '@/components/tours/tours/metadata'
+import { api } from '@/lib/api-client'
 import {
   type TourState,
   hydrateTourStateAtom,
@@ -84,31 +85,16 @@ export default function ToursSettingsPanel() {
       resetTour(fullTourId)
 
       // Call API to persist the reset
-      const response = await fetch('/api/tours', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ tourId: fullTourId, action: 'reset' }),
-      })
-
-      if (response.ok) {
-        toast.success('Tour reset successfully', 'You can now restart the guided tour.')
-      } else {
-        throw new Error('Failed to reset tour')
-      }
+      await api.post('/api/tours', { tourId: fullTourId, action: 'reset' })
+      toast.success('Tour reset successfully', 'You can now restart the guided tour.')
     } catch (error) {
       logger.error('Failed to reset tour', { tourId, error })
       toast.error('Reset failed', 'Could not reset the tour. Please try again.')
 
       // Rollback: Refetch tour state from server to restore correct state
       try {
-        const response = await fetch('/api/tours', {
-          credentials: 'same-origin',
-        })
-        if (response.ok) {
-          const data: Partial<TourState> = await response.json()
-          hydrateTourState(data)
-        }
+        const response = await api.get<Partial<TourState>>('/api/tours')
+        hydrateTourState(response.data)
       } catch (refetchError) {
         logger.warn('Failed to refetch tour state after error', { refetchError })
       }

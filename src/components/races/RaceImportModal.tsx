@@ -15,12 +15,14 @@ import {
   Tabs,
 } from '@heroui/react'
 import { parseGPX } from '@we-gold/gpxjs'
+import { isAxiosError } from 'axios'
 import { useAtom, useSetAtom } from 'jotai'
 import { FileIcon, MapIcon, TableIcon, UploadIcon } from 'lucide-react'
 import Papa from 'papaparse'
 
 import { useCallback, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { raceImportErrorsAtom, raceImportProgressAtom } from '@/lib/atoms/races'
 import { createLogger } from '@/lib/logger'
 import { retryWithBackoff } from '@/lib/rate-limiter'
@@ -821,6 +823,14 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
   const handleImport = useCallback(async () => {
     if (parsedRaces.length === 0) return
 
+    interface BulkImportResponse {
+      summary: {
+        successful: number
+        duplicates: number
+        errors: number
+      }
+    }
+
     interface ErrorResponse {
       error?: string
       retryAfter?: number
@@ -842,57 +852,29 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       if (parsedRaces.length > 1) {
         const response = await retryWithBackoff(
           async () => {
-            const controller = new AbortController()
-            const timeout = setTimeout(() => controller.abort(), 20000)
-            try {
-              return await fetch('/api/races/bulk-import', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ races: parsedRaces }),
-                signal: controller.signal,
-              })
-            } finally {
-              clearTimeout(timeout)
-            }
+            return await api.post<BulkImportResponse>(
+              '/api/races/bulk-import',
+              { races: parsedRaces },
+              { timeout: 20000 }
+            )
           },
           2, // max 2 retries for bulk import
           2000, // 2 second base delay
           error => {
             // Only retry on network errors, not rate limits or validation errors
-            return error instanceof TypeError || (error as Error)?.name === 'NetworkError'
+            if (isAxiosError(error)) {
+              return !error.response // Network error (no response)
+            }
+            return false
           }
         )
 
-        setUploadProgress(50) // Show progress during API call
-
-        if (!response.ok) {
-          let errorData: ErrorResponse = {}
-          try {
-            errorData = await response.json()
-          } catch {
-            const text = await response.text().catch(() => '')
-            errorData = { error: text || 'Unknown error' }
-          }
-          // Handle rate limiting specially
-          if (response.status === 429) {
-            const retryAfter = Math.ceil((errorData.retryAfter || 900) / 60)
-            throw new Error(
-              `Rate limit exceeded. Too many bulk imports. Please try again in ${retryAfter} minute${retryAfter > 1 ? 's' : ''}.`
-            )
-          }
-          throw new Error(errorData.error || 'Failed to bulk import races')
-        }
-
-        const result = await response.json()
         setUploadProgress(100)
 
-        logger.info('Bulk import completed', result.summary)
+        logger.info('Bulk import completed', response.data.summary)
 
         // Show detailed results
-        const { summary } = result
+        const { summary } = response.data
         if (summary.successful > 0) {
           toast.success(
             'Bulk import completed',
@@ -916,63 +898,22 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       } else {
         // Single race import using original API
         const race = parsedRaces[0]
-        const response = await retryWithBackoff(
+        await retryWithBackoff(
           async () => {
-            const controller = new AbortController()
-            const timeout = setTimeout(() => controller.abort(), 15000)
-            try {
-              return await fetch('/api/races/import', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(race),
-                signal: controller.signal,
-              })
-            } finally {
-              clearTimeout(timeout)
-            }
+            return await api.post('/api/races/import', race, { timeout: 15000 })
           },
           3, // max 3 retries for single import
           1000, // 1 second base delay
           error => {
             // Only retry on network errors, not rate limits or validation errors
-            return error instanceof TypeError || (error as Error)?.name === 'NetworkError'
+            if (isAxiosError(error)) {
+              return !error.response // Network error (no response)
+            }
+            return false
           }
         )
 
-        if (!response.ok) {
-          let errorData: ErrorResponse = {}
-          try {
-            errorData = await response.json()
-          } catch {
-            const text = await response.text().catch(() => '')
-            errorData = { error: text || 'Unknown error' }
-          }
-
-          // Handle specific error cases
-          if (response.status === 409) {
-            logger.warn('Duplicate race detected during import', {
-              raceName: race.name,
-              existingRaces: errorData.existingRaces,
-            })
-            toast.warning(
-              'Duplicate race detected',
-              `${race.name}: ${errorData.details || 'A similar race may already exist'}`
-            )
-          } else if (response.status === 429) {
-            const retryAfter = Math.ceil((errorData.retryAfter || 300) / 60)
-            throw new Error(
-              `Rate limit exceeded. Too many imports. Please try again in ${retryAfter} minute${retryAfter > 1 ? 's' : ''}.`
-            )
-          } else {
-            throw new Error(errorData.error || 'Failed to import race')
-          }
-        } else {
-          toast.success('Import successful', `Successfully imported "${race.name}"`)
-        }
-
+        toast.success('Import successful', `Successfully imported "${race.name}"`)
         setUploadProgress(100)
       }
 
@@ -984,13 +925,39 @@ export default function RaceImportModal({ isOpen, onClose, onSuccess }: RaceImpo
       logger.error('Error importing races:', error)
 
       // Provide more helpful error messages based on error type
-      let errorMessage = `Import failed: ${error}`
+      let errorMessage = 'Import failed'
 
-      if (error instanceof TypeError || (error as Error)?.name === 'NetworkError') {
+      if (isAxiosError(error) && error.response) {
+        const status = error.response.status
+        const errorData = error.response.data as ErrorResponse
+
+        if (status === 429) {
+          const retryAfter = Math.ceil((errorData.retryAfter || 300) / 60)
+          errorMessage = `Rate limit exceeded. Too many imports. Please try again in ${retryAfter} minute${retryAfter > 1 ? 's' : ''}.`
+        } else if (status === 409) {
+          // Duplicate race - show warning instead of error
+          const race = parsedRaces[0]
+          logger.warn('Duplicate race detected during import', {
+            raceName: race?.name,
+            existingRaces: errorData.existingRaces,
+          })
+          toast.warning(
+            'Duplicate race detected',
+            `${race?.name}: ${errorData.details || 'A similar race may already exist'}`
+          )
+          // Still close modal on duplicate
+          setParsedRaces([])
+          setSelectedTab('upload')
+          onClose()
+          return
+        } else {
+          errorMessage = errorData.error || 'Failed to import race'
+        }
+      } else if (isAxiosError(error) && !error.response) {
         errorMessage =
           'Import failed due to network error. Please check your connection and try again.'
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = (error as Error).message
+      } else if (error instanceof Error) {
+        errorMessage = error.message
       }
 
       toast.error('Import failed', errorMessage)

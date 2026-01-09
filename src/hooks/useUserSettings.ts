@@ -1,7 +1,10 @@
 'use client'
 
+import { isAxiosError } from 'axios'
+
 import { useCallback, useEffect, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -122,13 +125,12 @@ export function useUserSettings(): UseUserSettingsReturn {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/settings')
+      const response = await api.get<{ success: boolean; settings: UserSettings; error?: string }>(
+        '/api/settings',
+        { suppressGlobalToast: true }
+      )
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch user settings')
-      }
-
-      const data = await response.json()
+      const data = response.data
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch user settings')
@@ -137,10 +139,14 @@ export function useUserSettings(): UseUserSettingsReturn {
       setSettings(data.settings)
       logger.info('User settings fetched successfully')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error occurred'
+      const message = isAxiosError(err)
+        ? err.response?.data?.error || err.message
+        : err instanceof Error
+          ? err.message
+          : 'Unknown error occurred'
       logger.error('Error fetching user settings:', err)
       setError(message)
-      toast.error('❌ Settings Error', 'Failed to load your settings.')
+      toast.error('Settings Error', 'Failed to load your settings.')
     } finally {
       setLoading(false)
     }
@@ -156,19 +162,13 @@ export function useUserSettings(): UseUserSettingsReturn {
       try {
         setError(null)
 
-        const response = await fetch('/api/settings', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(settingsUpdate),
-        })
+        const response = await api.put<{
+          success: boolean
+          settings: UserSettings
+          error?: string
+        }>('/api/settings', settingsUpdate)
 
-        if (!response.ok) {
-          throw new Error('Failed to update user settings')
-        }
-
-        const data = await response.json()
+        const data = response.data
 
         if (!data.success) {
           throw new Error(data.error || 'Failed to update user settings')
@@ -180,7 +180,11 @@ export function useUserSettings(): UseUserSettingsReturn {
 
         return true
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error occurred'
+        const message = isAxiosError(err)
+          ? err.response?.data?.error || err.message
+          : err instanceof Error
+            ? err.message
+            : 'Unknown error occurred'
         logger.error('Error updating user settings:', err)
         setError(message)
         toast.error('❌ Update Failed', 'Failed to save your settings. Please try again.')
@@ -199,22 +203,16 @@ export function useUserSettings(): UseUserSettingsReturn {
       try {
         setError(null)
 
-        const response = await fetch('/api/settings', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            section,
-            settings: sectionSettings,
-          }),
+        const response = await api.patch<{
+          success: boolean
+          settings: UserSettings
+          error?: string
+        }>('/api/settings', {
+          section,
+          settings: sectionSettings,
         })
 
-        if (!response.ok) {
-          throw new Error(`Failed to update ${section}`)
-        }
-
-        const data = await response.json()
+        const data = response.data
 
         if (!data.success) {
           throw new Error(data.error || `Failed to update ${section}`)
@@ -226,7 +224,11 @@ export function useUserSettings(): UseUserSettingsReturn {
 
         return true
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error occurred'
+        const message = isAxiosError(err)
+          ? err.response?.data?.error || err.message
+          : err instanceof Error
+            ? err.message
+            : 'Unknown error occurred'
         logger.error(`Error updating user settings section ${section}:`, err)
         setError(message)
         toast.error('❌ Update Failed', `Failed to save ${section}. Please try again.`)

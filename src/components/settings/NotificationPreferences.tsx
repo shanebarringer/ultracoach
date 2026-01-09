@@ -5,6 +5,7 @@ import { BellIcon, MailIcon, MessageSquareIcon, SaveIcon } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -41,13 +42,10 @@ export default function NotificationPreferences() {
 
   const fetchPreferences = async () => {
     try {
-      const response = await fetch('/api/user/notification-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        setPreferences(data.preferences)
-      } else {
-        logger.error('Failed to fetch notification preferences')
-      }
+      const response = await api.get<{ preferences: NotificationPrefs }>(
+        '/api/user/notification-preferences'
+      )
+      setPreferences(response.data.preferences)
     } catch (error) {
       logger.error('Error fetching notification preferences:', error)
     } finally {
@@ -58,19 +56,8 @@ export default function NotificationPreferences() {
   const savePreferences = async () => {
     setSaving(true)
     try {
-      const response = await fetch('/api/user/notification-preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ preferences }),
-      })
-
-      if (response.ok) {
-        toast.success('✅ Preferences Saved', 'Your notification preferences have been updated.')
-      } else {
-        throw new Error('Failed to save preferences')
-      }
+      await api.put('/api/user/notification-preferences', { preferences })
+      toast.success('✅ Preferences Saved', 'Your notification preferences have been updated.')
     } catch (error) {
       logger.error('Error saving notification preferences:', error)
       toast.error('❌ Save Failed', 'Failed to save notification preferences. Please try again.')

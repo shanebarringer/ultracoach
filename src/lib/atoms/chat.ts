@@ -2,6 +2,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { api } from '@/lib/api-client'
 import type { OptimisticMessage, Workout } from '@/lib/supabase'
 import type { Conversation } from '@/types/chat'
 
@@ -24,22 +25,17 @@ export const messagesLoadingAtom = atom(false)
 
 // Async chat atoms with suspense support
 export const asyncConversationsAtom = atom(async () => {
-  // SSR-safe fetch for conversations
+  // SSR-safe: return empty array during server-side rendering
+  if (typeof window === 'undefined') {
+    return []
+  }
+
   try {
-    const response = await fetch('/api/conversations', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'same-origin',
-      cache: 'no-store', // Ensure fresh data for SSR
+    const response = await api.get<{ conversations: Conversation[] }>('/api/conversations', {
+      suppressGlobalToast: true, // Atom handles its own error handling
     })
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch conversations: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
+    const data = response.data
 
     // Validate and type-check the response
     if (!Array.isArray(data.conversations)) {
@@ -217,40 +213,28 @@ export const sendMessageActionAtom = atom(
     set(messagesAtom, prev => [...prev, optimisticMessage])
 
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 10000)
-      const response = await fetch('/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await api.post<{ message: OptimisticMessage } | OptimisticMessage>(
+        '/api/messages',
+        {
           content: payload.content,
           recipientId: payload.recipientId,
           workoutId: payload.workoutId,
-        }),
-        credentials: 'same-origin',
-        signal: controller.signal,
-      }).finally(() => clearTimeout(timeout))
-
-      if (!response.ok) {
-        // Handle 401 specifically - session expired
-        if (response.status === 401) {
-          set(sessionAtom, null)
-          throw new Error('Session expired. Please sign in again.')
+        },
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
+          timeout: 10000, // 10 second timeout
         }
-        throw new Error('Failed to send message')
-      }
+      )
 
       let messageWithSender
       if (response.status === 204) {
         // Handle 204 No Content - fall back to optimistic message, now finalized
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { tempId, ...finalizedMessage } = optimisticMessage
+        const { tempId: _tempId, ...finalizedMessage } = optimisticMessage
         messageWithSender = { ...finalizedMessage, optimistic: false }
       } else {
-        const data = await response.json()
-        const realMessage = data.message || data
+        const data = response.data
+        const realMessage = 'message' in data ? data.message : data
 
         // Ensure the real message has sender data and sender_id for compatibility
         messageWithSender = {
@@ -278,6 +262,18 @@ export const sendMessageActionAtom = atom(
     } catch (error) {
       // Remove optimistic message on failure
       set(messagesAtom, prev => prev.filter(msg => msg.tempId !== tempId))
+
+      // Handle 401 specifically - session expired
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        (error as { response?: { status?: number } }).response?.status === 401
+      ) {
+        set(sessionAtom, null)
+        throw new Error('Session expired. Please sign in again.')
+      }
+
       throw error
     }
   }

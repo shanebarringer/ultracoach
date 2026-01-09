@@ -23,6 +23,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -82,13 +83,13 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
     try {
       setLoading(true)
-      const response = await fetch('/api/onboarding')
+      const response = await api.get<{
+        onboarding: OnboardingProgress
+        steps: OnboardingStep[]
+        currentStepData: OnboardingStep
+      }>('/api/onboarding')
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch onboarding data')
-      }
-
-      const data = await response.json()
+      const data = response.data
       setOnboarding(data.onboarding)
       setSteps(data.steps || [])
       setCurrentStepData(data.currentStepData)
@@ -96,7 +97,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       // Load existing answers for current step
       if (data.onboarding?.step_data) {
         const currentStepKey = `step_${data.onboarding.current_step}`
-        setStepAnswers(data.onboarding.step_data[currentStepKey] || {})
+        setStepAnswers((data.onboarding.step_data[currentStepKey] || {}) as Record<string, unknown>)
       }
     } catch (error) {
       logger.error('Error fetching onboarding data:', error)
@@ -118,23 +119,13 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          stepNumber: currentStepData.step_number,
-          stepData,
-          completed: false,
-        }),
+      const response = await api.post<{ onboarding: OnboardingProgress }>('/api/onboarding', {
+        stepNumber: currentStepData.step_number,
+        stepData,
+        completed: false,
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to save step progress')
-      }
-
-      const result = await response.json()
+      const result = response.data
 
       if (moveToNext) {
         // Check if we're on the last step - if so, complete onboarding
@@ -176,21 +167,11 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          stepNumber: onboarding.current_step,
-          stepData: stepAnswers,
-          completed: true,
-        }),
+      await api.post('/api/onboarding', {
+        stepNumber: onboarding.current_step,
+        stepData: stepAnswers,
+        completed: true,
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to complete onboarding')
-      }
 
       toast.success(
         '🎉 Welcome to UltraCoach!',
@@ -211,13 +192,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'PATCH',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to skip onboarding')
-      }
+      await api.patch('/api/onboarding')
 
       toast.success('⏭️ Onboarding Skipped', 'You can always complete setup later in your profile.')
 

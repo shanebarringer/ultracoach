@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { api } from '@/lib/api-client'
 import { chatUiStateAtom, conversationsAtom, loadingStatesAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Message } from '@/lib/supabase'
@@ -40,22 +41,19 @@ export function useConversations() {
       }
 
       try {
-        const response = await fetch('/api/conversations')
-
-        if (!response.ok) {
-          logger.error('Error fetching conversations:', response.statusText)
-          return
-        }
-
-        const data = await response.json()
-        const fetchedConversations = data.conversations || []
         // Map API response to ConversationWithUser structure
         type ApiConversation = {
           user: User
           lastMessage?: Message
           unreadCount: number
         }
-        const mappedConversations = (fetchedConversations as ApiConversation[]).map(conv => ({
+
+        const response = await api.get<{ conversations: ApiConversation[] }>('/api/conversations', {
+          suppressGlobalToast: true,
+        })
+
+        const fetchedConversations = response.data.conversations || []
+        const mappedConversations = fetchedConversations.map(conv => ({
           id: conv.lastMessage?.conversation_id || '',
           sender: {
             id: session.user.id,
@@ -151,26 +149,24 @@ export function useConversations() {
       if (!session?.user?.id) return
 
       try {
-        const response = await fetch('/api/messages/mark-read', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        await api.patch(
+          '/api/messages/mark-read',
+          {
             senderId: userId,
             recipientId: session.user.id,
-          }),
-        })
+          },
+          {
+            suppressGlobalToast: true,
+          }
+        )
 
-        if (response.ok) {
-          // Update local conversation state
-          setConversations(prev =>
-            prev.map(conv => {
-              const otherUser = conv.sender.id === session.user.id ? conv.recipient : conv.sender
-              return otherUser.id === userId ? { ...conv, unreadCount: 0 } : conv
-            })
-          )
-        }
+        // Update local conversation state
+        setConversations(prev =>
+          prev.map(conv => {
+            const otherUser = conv.sender.id === session.user.id ? conv.recipient : conv.sender
+            return otherUser.id === userId ? { ...conv, unreadCount: 0 } : conv
+          })
+        )
       } catch (error) {
         logger.error('Error marking conversation as read:', error)
       }

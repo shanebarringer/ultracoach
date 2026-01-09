@@ -7,10 +7,12 @@ import { toast } from 'sonner'
 
 import { useMemo, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { availableCoachesAtom, relationshipsAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 import type { User as DatabaseUser } from '@/lib/supabase'
+import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('AsyncCoachSelector')
 
@@ -35,11 +37,8 @@ export function AsyncCoachSelector({ onRelationshipCreated }: AsyncCoachSelector
   // Refresh function for relationships
   const refreshRelationshipData = async () => {
     try {
-      const response = await fetch('/api/coach-runners', { credentials: 'same-origin' })
-      if (response.ok) {
-        const data = await response.json()
-        setRelationships(data.relationships || [])
-      }
+      const response = await api.get<{ relationships: RelationshipData[] }>('/api/coach-runners')
+      setRelationships(response.data.relationships || [])
     } catch (error) {
       logger.error('Failed to refresh relationships:', error)
     }
@@ -58,22 +57,10 @@ export function AsyncCoachSelector({ onRelationshipCreated }: AsyncCoachSelector
     setConnectingIds(prev => new Set(prev).add(coachId))
 
     try {
-      const response = await fetch('/api/coach-runners', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          target_user_id: coachId,
-          relationship_type: 'standard',
-        }),
+      await api.post('/api/coach-runners', {
+        target_user_id: coachId,
+        relationship_type: 'standard',
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to connect to coach')
-      }
 
       toast.success('Connection request sent to coach!')
 

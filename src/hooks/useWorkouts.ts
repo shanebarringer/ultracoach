@@ -5,6 +5,7 @@ import { useHydrateAtoms } from 'jotai/utils'
 
 import { useCallback } from 'react'
 
+import { api } from '@/lib/api-client'
 import {
   asyncWorkoutsAtom,
   completedWorkoutsAtom,
@@ -64,20 +65,12 @@ export function useWorkouts() {
       }
 
       // Get fresh data directly from the API (similar to asyncWorkoutsAtom)
-      const response = await fetch('/api/workouts', {
+      const response = await api.get<{ workouts?: Workout[] }>('/api/workouts', {
         headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
-        cache: 'no-store',
+        suppressGlobalToast: true,
       })
 
-      if (!response.ok) {
-        const errorMessage = `Failed to fetch workouts: ${response.status} ${response.statusText}`
-        logger.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      const data: unknown = await response.json()
-      const freshWorkouts = (data as { workouts?: Workout[] })?.workouts ?? []
+      const freshWorkouts = response.data?.workouts ?? []
 
       // Update both the sync atom and trigger async atom refresh
       setWorkouts(freshWorkouts)
@@ -94,20 +87,13 @@ export function useWorkouts() {
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
       try {
-        const response = await fetch(`/api/workouts/${workoutId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify(updates),
-        })
+        const response = await api.put<{ workout: Workout } | Workout>(
+          `/api/workouts/${workoutId}`,
+          updates,
+          { suppressGlobalToast: true }
+        )
 
-        if (!response.ok) {
-          throw new Error('Failed to update workout')
-        }
-
-        const json: unknown = await response.json()
+        const json = response.data
         const updated: Workout =
           typeof json === 'object' && json !== null && 'workout' in json
             ? (json as { workout: Workout }).workout
@@ -131,14 +117,7 @@ export function useWorkouts() {
   const deleteWorkout = useCallback(
     async (workoutId: string) => {
       try {
-        const response = await fetch(`/api/workouts/${workoutId}`, {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to delete workout')
-        }
+        await api.delete(`/api/workouts/${workoutId}`, { suppressGlobalToast: true })
 
         // Update local state and trigger refresh
         setWorkouts(prev => prev.filter(workout => workout.id !== workoutId))

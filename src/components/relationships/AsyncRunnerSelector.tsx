@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { useMemo } from 'react'
 
+import { api } from '@/lib/api-client'
 import {
   availableRunnersAtom,
   connectedRunnersAtom,
@@ -64,29 +65,10 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
     setConnectingIds((prev: Set<string>) => new Set(prev).add(runnerId))
 
     try {
-      const response = await fetch('/api/coach-runners', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin', // Ensure cookies are sent with the request
-        body: JSON.stringify({
-          target_user_id: runnerId,
-          relationship_type: 'standard',
-        }),
+      await api.post('/api/coach-runners', {
+        target_user_id: runnerId,
+        relationship_type: 'standard',
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        logger.error('Failed to connect to runner:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: error,
-          runnerId,
-          requestUrl: '/api/coach-runners',
-        })
-        throw new Error(error.error || 'Failed to connect to runner')
-      }
 
       logger.info('Connection request sent successfully', { runnerId })
       toast.success('Connection request sent to runner!')

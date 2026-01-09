@@ -332,6 +332,7 @@ export const completeWorkoutAtom = atom(
   async (get, set, { workoutId, data }: { workoutId: string; data?: WorkoutCompletionData }) => {
     const { createLogger } = await import('@/lib/logger')
     const { authClient } = await import('@/lib/better-auth-client')
+    const { api } = await import('@/lib/api-client')
     const logger = createLogger('CompleteWorkoutAtom')
 
     try {
@@ -341,36 +342,15 @@ export const completeWorkoutAtom = atom(
         throw new Error('Not authenticated')
       }
 
-      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(data || {}),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        logger.error('Failed to complete workout', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-        })
-        throw new Error(`Failed to complete workout: ${response.status} ${errorText}`)
-      }
-
-      let updatedWorkout: Workout
-      if (response.status === 204) {
-        // Handle 204 No Content - find existing workout and mark as completed
-        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
-        if (!existingWorkout) {
-          logger.error('Workout not found in local state after completion', { workoutId })
-          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      const response = await api.post<Workout | { workout: Workout }>(
+        `/api/workouts/${workoutId}/complete`,
+        data || {},
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
         }
-        updatedWorkout = { ...existingWorkout, status: 'completed', ...data }
-      } else {
-        const json: unknown = await response.json()
-        updatedWorkout = unwrapWorkout(json)
-      }
+      )
+
+      const updatedWorkout = unwrapWorkout(response.data)
 
       logger.debug('Workout completion response received', {
         workoutId,
@@ -426,6 +406,7 @@ export const logWorkoutDetailsAtom = atom(
   async (get, set, { workoutId, data }: { workoutId: string; data: WorkoutDetails }) => {
     const { createLogger } = await import('@/lib/logger')
     const { authClient } = await import('@/lib/better-auth-client')
+    const { api } = await import('@/lib/api-client')
     const logger = createLogger('LogWorkoutDetailsAtom')
 
     try {
@@ -435,36 +416,15 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error('Not authenticated')
       }
 
-      const response = await fetch(`/api/workouts/${workoutId}/log`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        logger.error('Failed to log workout details', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-        })
-        throw new Error(`Failed to log workout details: ${response.status} ${errorText}`)
-      }
-
-      let updatedWorkout: Workout
-      if (response.status === 204) {
-        // Handle 204 No Content - find existing workout and apply updates
-        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
-        if (!existingWorkout) {
-          logger.error('Workout not found in local state during logging', { workoutId })
-          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      const response = await api.put<Workout | { workout: Workout }>(
+        `/api/workouts/${workoutId}/log`,
+        data,
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
         }
-        updatedWorkout = { ...existingWorkout, ...data } as Workout
-      } else {
-        const json: unknown = await response.json()
-        updatedWorkout = unwrapWorkout(json)
-      }
+      )
+
+      const updatedWorkout = unwrapWorkout(response.data)
 
       logger.debug('Workout details logged successfully', {
         workoutId,
@@ -501,6 +461,7 @@ export const logWorkoutDetailsAtom = atom(
 export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) => {
   const { createLogger } = await import('@/lib/logger')
   const { authClient } = await import('@/lib/better-auth-client')
+  const { api } = await import('@/lib/api-client')
   const logger = createLogger('SkipWorkoutAtom')
 
   try {
@@ -510,20 +471,12 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       throw new Error('Not authenticated')
     }
 
-    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
-      method: 'DELETE',
-      credentials: 'same-origin',
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      logger.error('Failed to skip workout', {
-        status: response.status,
-        statusText: response.statusText,
-        errorText,
-      })
-      throw new Error(`Failed to skip workout: ${response.status} ${errorText}`)
-    }
+    const response = await api.delete<Workout | { workout: Workout }>(
+      `/api/workouts/${workoutId}/complete`,
+      {
+        suppressGlobalToast: true, // Atom handles its own error handling
+      }
+    )
 
     let updatedWorkout: Workout
     if (response.status === 204) {
@@ -535,8 +488,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       }
       updatedWorkout = { ...existingWorkout, status: 'skipped' }
     } else {
-      const json: unknown = await response.json()
-      updatedWorkout = unwrapWorkout(json)
+      updatedWorkout = unwrapWorkout(response.data)
     }
 
     logger.debug('Workout skipped successfully', {

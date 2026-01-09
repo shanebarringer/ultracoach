@@ -28,6 +28,7 @@ import {
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
@@ -137,14 +138,10 @@ const StravaReconnectModal = memo(
         setConnectionProgress(25)
 
         // Test basic connection
-        const statusResponse = await fetch('/api/strava/status')
+        const response = await api.get<{ connected: boolean }>('/api/strava/status')
         setConnectionProgress(50)
 
-        if (!statusResponse.ok) {
-          throw new Error('Connection test failed')
-        }
-
-        const statusData = await statusResponse.json()
+        const statusData = response.data
         setConnectionProgress(75)
 
         // Test activity access if connected

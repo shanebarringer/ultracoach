@@ -6,6 +6,7 @@ import { CheckCircleIcon, ClockIcon, XCircleIcon } from 'lucide-react'
 import { memo, useTransition } from 'react'
 
 import { useOptimisticUpdates } from '@/hooks/useOptimisticUpdates'
+import { api } from '@/lib/api-client'
 import type { OptimisticWorkout, Workout } from '@/lib/supabase'
 
 interface OptimisticWorkoutCardProps {
@@ -42,17 +43,10 @@ const OptimisticWorkoutCard = memo(function OptimisticWorkoutCard({
   const handleQuickStatusUpdate = (newStatus: 'completed' | 'skipped') => {
     startTransition(() => {
       updateWorkoutOptimistic(workout.id, { status: newStatus }, async () => {
-        const response = await fetch(`/api/workouts/${workout.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
+        const response = await api.patch<Workout>(`/api/workouts/${workout.id}`, {
+          status: newStatus,
         })
-
-        if (!response.ok) {
-          throw new Error('Failed to update workout status')
-        }
-
-        return response.json()
+        return response.data
       })
     })
   }

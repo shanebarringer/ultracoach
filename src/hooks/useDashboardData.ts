@@ -3,6 +3,7 @@ import { useAtom, useAtomValue } from 'jotai'
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import {
   completedWorkoutsAtom,
   loadingStatesAtom,
@@ -43,11 +44,13 @@ export function useDashboardData() {
 
     try {
       // Fetch training plans
-      const plansResponse = await fetch('/api/training-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        setTrainingPlans(plansData.trainingPlans || [])
-      }
+      const plansResponse = await api.get<{ trainingPlans: TrainingPlan[] }>(
+        '/api/training-plans',
+        {
+          suppressGlobalToast: true,
+        }
+      )
+      setTrainingPlans(plansResponse.data.trainingPlans || [])
 
       // Workouts are now handled by asyncWorkoutsAtom in WorkoutsHydrator
       // Don't trigger refresh here to avoid loops

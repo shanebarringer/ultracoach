@@ -42,6 +42,7 @@ import Layout from '@/components/layout/Layout'
 import RaceImportModal from '@/components/races/RaceImportModal'
 import RaceTrainingPlansModal from '@/components/races/RaceTrainingPlansModal'
 import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { api } from '@/lib/api-client'
 import {
   asyncRacesAtom,
   raceDistanceFilterAtom,
@@ -141,13 +142,8 @@ function RacesContent() {
       // Fetch counts for each race in parallel
       const countPromises = racesArray.map(async (race: Race) => {
         try {
-          const response = await fetch(`/api/races/${race.id}/training-plans`, {
-            credentials: 'same-origin',
-          })
-          if (response.ok) {
-            const data = await response.json()
-            counts[race.id] = data.count || 0
-          }
+          const response = await api.get<{ count?: number }>(`/api/races/${race.id}/training-plans`)
+          counts[race.id] = response.data.count || 0
         } catch (error) {
           logger.warn(`Failed to fetch training plan count for race ${race.id}:`, error)
           counts[race.id] = 0
@@ -217,28 +213,21 @@ function RacesContent() {
 
     try {
       const url = selectedRace ? `/api/races/${selectedRace.id}` : '/api/races'
-      const method = selectedRace ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          ...formData,
-          distance_miles: parseFloat(formData.distance_miles),
-          elevation_gain_feet: parseInt(formData.elevation_gain_feet) || 0,
-        }),
-      })
-
-      if (response.ok) {
-        refresh() // Trigger refresh of races
-        handleCloseModal()
-        logger.info(`Race ${selectedRace ? 'updated' : 'created'} successfully`)
-      } else {
-        logger.error('Failed to save race:', response.statusText)
+      const payload = {
+        ...formData,
+        distance_miles: parseFloat(formData.distance_miles),
+        elevation_gain_feet: parseInt(formData.elevation_gain_feet) || 0,
       }
+
+      if (selectedRace) {
+        await api.put(url, payload)
+      } else {
+        await api.post(url, payload)
+      }
+
+      refresh() // Trigger refresh of races
+      handleCloseModal()
+      logger.info(`Race ${selectedRace ? 'updated' : 'created'} successfully`)
     } catch (error) {
       logger.error('Error saving race:', error)
     } finally {
@@ -250,17 +239,9 @@ function RacesContent() {
     if (!confirm('Are you sure you want to delete this race?')) return
 
     try {
-      const response = await fetch(`/api/races/${raceId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      })
-
-      if (response.ok) {
-        refresh() // Trigger refresh of races
-        logger.info('Race deleted successfully', { raceId })
-      } else {
-        logger.error('Failed to delete race:', response.statusText)
-      }
+      await api.delete(`/api/races/${raceId}`)
+      refresh() // Trigger refresh of races
+      logger.info('Race deleted successfully', { raceId })
     } catch (error) {
       logger.error('Error deleting race:', error)
     }

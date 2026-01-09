@@ -6,6 +6,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, UsersIcon } from 'lucide-
 
 import { Suspense, memo, useEffect, useMemo, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { connectedRunnersAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { User, Workout } from '@/lib/supabase'
@@ -80,21 +81,13 @@ function InnerWeeklyWorkoutOverview({
           endDate: weekEnd.toISOString().split('T')[0],
         })
 
-        const response = await fetch(`/api/workouts?${params}`, {
-          credentials: 'same-origin',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch workouts')
-        }
-
-        const data = await response.json()
-        setWeeklyWorkouts(data.workouts || [])
+        const response = await api.get<{ workouts?: Workout[] }>(`/api/workouts?${params}`)
+        setWeeklyWorkouts(response.data.workouts || [])
 
         logger.debug('Fetched weekly workouts', {
           weekStart: weekStart.toISOString(),
           weekEnd: weekEnd.toISOString(),
-          workoutsCount: data.workouts?.length || 0,
+          workoutsCount: response.data.workouts?.length || 0,
         })
       } catch (error) {
         logger.error('Failed to fetch weekly workouts', error)

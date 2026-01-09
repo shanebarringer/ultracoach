@@ -5,6 +5,7 @@ import { Activity, Calendar, MapPin, Timer, TrendingUp } from 'lucide-react'
 
 import { useEffect, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 import { formatDateConsistent } from '@/lib/utils/date'
@@ -58,24 +59,14 @@ export default function StravaActivityList() {
 
   const fetchActivities = async () => {
     try {
-      const response = await fetch('/api/strava/activities', {
-        credentials: 'same-origin',
+      const response = await api.get<StravaActivitiesData>('/api/strava/activities')
+      setData(response.data)
+      logger.info('Fetched Strava activities', {
+        count: response.data.activities.length,
       })
-
-      if (response.ok) {
-        const activitiesData = await response.json()
-        setData(activitiesData)
-        logger.info('Fetched Strava activities', {
-          count: activitiesData.activities.length,
-        })
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to load activities')
-        logger.error('Failed to fetch Strava activities:', errorData)
-      }
     } catch (error) {
       logger.error('Error fetching Strava activities:', error)
-      setError('Network error. Please try again.')
+      setError('Failed to load activities. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -88,54 +79,34 @@ export default function StravaActivityList() {
     }))
 
     try {
-      const response = await fetch('/api/strava/sync', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          activity_id: activity.id,
-          sync_as_workout: true,
-        }),
+      const response = await api.post<{ workout_id: string }>('/api/strava/sync', {
+        activity_id: activity.id,
+        sync_as_workout: true,
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        setSyncedActivities(prev => ({
-          ...prev,
-          [activity.id]: {
-            syncing: false,
-            synced: true,
-            workout_id: result.workout_id,
-          },
-        }))
-        toast.success('Activity synced!', `${activity.name} has been added to your workouts`)
-        logger.info('Successfully synced activity', {
-          activityId: activity.id,
-          workoutId: result.workout_id,
-        })
-      } else {
-        const errorData = await response.json()
-        setSyncedActivities(prev => ({
-          ...prev,
-          [activity.id]: {
-            syncing: false,
-            synced: false,
-            error: errorData.error,
-          },
-        }))
-        toast.error('Sync failed', errorData.error || 'Could not sync activity')
-        logger.error('Failed to sync activity:', errorData)
-      }
+      setSyncedActivities(prev => ({
+        ...prev,
+        [activity.id]: {
+          syncing: false,
+          synced: true,
+          workout_id: response.data.workout_id,
+        },
+      }))
+      toast.success('Activity synced!', `${activity.name} has been added to your workouts`)
+      logger.info('Successfully synced activity', {
+        activityId: activity.id,
+        workoutId: response.data.workout_id,
+      })
     } catch (error) {
       setSyncedActivities(prev => ({
         ...prev,
         [activity.id]: {
           syncing: false,
           synced: false,
-          error: 'Network error',
+          error: 'Failed to sync activity',
         },
       }))
-      toast.error('Network error', 'Please try again')
+      toast.error('Sync failed', 'Could not sync activity')
       logger.error('Error syncing activity:', error)
     }
   }
