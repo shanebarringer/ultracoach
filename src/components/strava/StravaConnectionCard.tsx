@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
 import { useStravaOAuthReturn } from '@/hooks/useStravaOAuthReturn'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { api } from '@/lib/api-client'
 import { userAtom } from '@/lib/atoms'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -44,17 +45,8 @@ export default function StravaConnectionCard() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('/api/strava/status', {
-        credentials: 'same-origin',
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setStatus(data)
-      } else {
-        logger.error('Failed to fetch Strava status:', response.statusText)
-        setStatus({ connected: false, enabled: false, error: 'Failed to load status' })
-      }
+      const response = await api.get<StravaStatus>('/api/strava/status')
+      setStatus(response.data)
     } catch (error) {
       logger.error('Error fetching Strava status:', error)
       setStatus({ connected: false, enabled: false, error: 'Network error' })
@@ -95,29 +87,19 @@ export default function StravaConnectionCard() {
   const handleDisconnect = async () => {
     setDisconnecting(true)
     try {
-      const response = await fetch('/api/strava/disconnect', {
-        method: 'POST',
-        credentials: 'same-origin',
-      })
+      await api.post('/api/strava/disconnect')
+      logger.info('Successfully disconnected from Strava')
 
-      if (response.ok) {
-        logger.info('Successfully disconnected from Strava')
-
-        // Track Strava disconnection (type-safe) - only if user is authenticated
-        if (user?.id) {
-          trackEvent(ANALYTICS_EVENTS.STRAVA_DISCONNECTED, {
-            source: 'connection_card',
-            userId: user.id,
-          })
-        }
-
-        toast.success('Strava account disconnected successfully')
-        await fetchStatus() // Refresh status
-      } else {
-        const errorData = await response.json()
-        logger.error('Failed to disconnect from Strava:', errorData)
-        toast.error('Failed to disconnect from Strava. Please try again.')
+      // Track Strava disconnection (type-safe) - only if user is authenticated
+      if (user?.id) {
+        trackEvent(ANALYTICS_EVENTS.STRAVA_DISCONNECTED, {
+          source: 'connection_card',
+          userId: user.id,
+        })
       }
+
+      toast.success('Strava account disconnected successfully')
+      await fetchStatus() // Refresh status
     } catch (error) {
       logger.error('Error disconnecting from Strava:', error)
       toast.error('Network error. Please try again.')

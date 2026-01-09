@@ -23,6 +23,7 @@ import {
 
 import { useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -127,40 +128,29 @@ export default function FeedbackModal({ isOpen, onClose, defaultType }: Feedback
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }
 
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...form,
-          browser_info: browserInfo,
-          page_url: window.location.href,
-        }),
+      const response = await api.post<{ feedback: { id: string } }>('/api/feedback', {
+        ...form,
+        browser_info: browserInfo,
+        page_url: window.location.href,
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(
-          '✅ Feedback Submitted',
-          `Thank you for your feedback! We'll review it and get back to you soon.`
-        )
+      toast.success(
+        '✅ Feedback Submitted',
+        `Thank you for your feedback! We'll review it and get back to you soon.`
+      )
 
-        logger.info('Feedback submitted successfully:', data.feedback.id)
+      logger.info('Feedback submitted successfully:', response.data.feedback.id)
 
-        // Reset form and close modal
-        setForm({
-          feedback_type: 'general_feedback',
-          category: '',
-          title: '',
-          description: '',
-          priority: 'medium',
-          user_email: '',
-        })
-        onClose()
-      } else {
-        throw new Error('Failed to submit feedback')
-      }
+      // Reset form and close modal
+      setForm({
+        feedback_type: 'general_feedback',
+        category: '',
+        title: '',
+        description: '',
+        priority: 'medium',
+        user_email: '',
+      })
+      onClose()
     } catch (error) {
       logger.error('Error submitting feedback:', error)
       toast.error('❌ Submission Failed', 'Failed to submit feedback. Please try again.')

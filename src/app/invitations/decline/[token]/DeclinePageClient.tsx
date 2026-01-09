@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react'
 
 import Link from 'next/link'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -27,39 +28,11 @@ export default function DeclinePageClient({ token }: DeclinePageClientProps) {
     setState('declining')
 
     try {
-      const response = await fetch(`/api/invitations/decline/${token}`, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason: reason.trim() || undefined }),
-      })
-
-      // Check for server errors first - provide friendlier message
-      if (!response.ok && response.status >= 500) {
-        setErrorMessage('Server error. Please try again later.')
-        setState('error')
-        return
-      }
-
-      // Handle other non-OK responses gracefully
-      if (!response.ok) {
-        let errorMsg = `Request failed with status ${response.status}`
-        try {
-          const errorData = await response.json()
-          errorMsg = errorData.message || errorMsg
-        } catch {
-          // Response wasn't JSON, try text
-          const errorText = await response.text().catch(() => '')
-          if (errorText) errorMsg = errorText
-        }
-        setErrorMessage(errorMsg)
-        setState('error')
-        return
-      }
-
-      const data = await response.json()
+      const response = await api.post<{ success: boolean; message?: string }>(
+        `/api/invitations/decline/${token}`,
+        { reason: reason.trim() || undefined }
+      )
+      const data = response.data
 
       if (data.success) {
         setState('declined')

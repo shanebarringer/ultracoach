@@ -42,6 +42,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useTypedPostHogEvent } from '@/hooks/usePostHogIdentify'
 import type { TerrainType, WorkoutType } from '@/lib/analytics/event-types'
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { api } from '@/lib/api-client'
 import { stravaStateAtom, userAtom, workoutLogFormAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -373,50 +374,33 @@ const EnhancedWorkoutLogModal = memo(
 
           logger.info('Submitting enhanced workout log update:', { workoutId: workout.id, payload })
 
-          const response = await fetch(`/api/workouts/${workout.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-          })
+          await api.patch(`/api/workouts/${workout.id}`, payload, { suppressGlobalToast: true })
 
-          if (response.ok) {
-            logger.info('Enhanced workout updated successfully')
+          logger.info('Enhanced workout updated successfully')
 
-            // Track workout completion event in PostHog (type-safe)
-            // Only emit event if user is authenticated (don't track with empty userId)
-            if (user?.id) {
-              trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
-                workoutId: workout.id,
-                status: data.status as 'planned' | 'completed' | 'skipped',
-                workoutType: normalizeWorkoutType(data.actualType || workout.planned_type),
-                distance: data.actualDistance ?? undefined,
-                duration: data.actualDuration ?? undefined,
-                // Perceived effort from the dedicated slider (1-10 scale)
-                effort: data.effort ?? undefined,
-                terrainType: normalizeTerrainType(data.terrain),
-                elevationGain: data.elevationGain ?? undefined,
-                userId: user.id,
-              })
-            } else {
-              logger.warn('Skipping WORKOUT_LOGGED event - user not authenticated')
-            }
-
-            setFormState(prev => ({ ...prev, loading: false, error: '' }))
-            reset()
-            onSuccess()
-            onClose()
+          // Track workout completion event in PostHog (type-safe)
+          // Only emit event if user is authenticated (don't track with empty userId)
+          if (user?.id) {
+            trackEvent(ANALYTICS_EVENTS.WORKOUT_LOGGED, {
+              workoutId: workout.id,
+              status: data.status as 'planned' | 'completed' | 'skipped',
+              workoutType: normalizeWorkoutType(data.actualType || workout.planned_type),
+              distance: data.actualDistance ?? undefined,
+              duration: data.actualDuration ?? undefined,
+              // Perceived effort from the dedicated slider (1-10 scale)
+              effort: data.effort ?? undefined,
+              terrainType: normalizeTerrainType(data.terrain),
+              elevationGain: data.elevationGain ?? undefined,
+              userId: user.id,
+            })
           } else {
-            const errorData = await response.json()
-            logger.error('Failed to update enhanced workout:', errorData)
-            setFormState(prev => ({
-              ...prev,
-              loading: false,
-              error: errorData.error || 'Failed to update workout',
-            }))
+            logger.warn('Skipping WORKOUT_LOGGED event - user not authenticated')
           }
+
+          setFormState(prev => ({ ...prev, loading: false, error: '' }))
+          reset()
+          onSuccess()
+          onClose()
         } catch (error) {
           logger.error('Error updating enhanced workout:', error)
           setFormState(prev => ({

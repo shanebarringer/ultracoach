@@ -10,9 +10,11 @@ import { InvitationsList } from '@/components/relationships/InvitationsList'
 import { InviteRunnerModal } from '@/components/relationships/InviteRunnerModal'
 import { RelationshipsList } from '@/components/relationships/RelationshipsList'
 import { RunnerSelector } from '@/components/relationships/RunnerSelector'
+import { api } from '@/lib/api-client'
 import { relationshipsAtom } from '@/lib/atoms/index'
 import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
+import type { RelationshipData } from '@/types/relationships'
 
 const logger = createLogger('RelationshipsPageContent')
 
@@ -33,13 +35,8 @@ export function RelationshipsPageContent({ user }: RelationshipsPageContentProps
    */
   const handleRelationshipChange = useCallback(async () => {
     try {
-      const response = await fetch('/api/coach-runners', {
-        credentials: 'same-origin',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setRelationships(data.relationships || [])
-      }
+      const response = await api.get<{ relationships?: RelationshipData[] }>('/api/coach-runners')
+      setRelationships(response.data.relationships || [])
     } catch (error) {
       logger.error('Failed to refresh relationships:', error)
     }

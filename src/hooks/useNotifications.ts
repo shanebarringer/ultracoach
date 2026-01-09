@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { api } from '@/lib/api-client'
 import { notificationsAtom, unreadNotificationsCountAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -31,19 +32,12 @@ export function useNotifications() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/notifications', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await api.get<{ notifications: Notification[]; unreadCount: number }>(
+        '/api/notifications',
+        { suppressGlobalToast: true }
+      )
 
-      if (!response.ok) {
-        logger.error('Error fetching notifications:', response.statusText)
-        return
-      }
-
-      const data = await response.json()
+      const data = response.data
       setNotifications(data.notifications || [])
       setUnreadCount(data.unreadCount || 0)
     } catch (error) {
@@ -56,11 +50,11 @@ export function useNotifications() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/user/notification-preferences')
-      if (response.ok) {
-        const data = await response.json()
-        setPreferences(data.preferences)
-      }
+      const response = await api.get<{ preferences: typeof preferences }>(
+        '/api/user/notification-preferences',
+        { suppressGlobalToast: true }
+      )
+      setPreferences(response.data.preferences)
     } catch (error) {
       logger.error('Error fetching notification preferences:', error)
       // Set default preferences if fetch fails
@@ -161,21 +155,14 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.patch(
+        '/api/notifications',
+        {
           notificationIds: [notificationId],
           read: true,
-        }),
-      })
-
-      if (!response.ok) {
-        logger.error('Error marking notification as read:', response.statusText)
-        return
-      }
+        },
+        { suppressGlobalToast: true }
+      )
 
       setNotifications(prev => {
         const updated = prev.map(notif =>
@@ -195,21 +182,14 @@ export function useNotifications() {
 
       if (unreadIds.length === 0) return
 
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.patch(
+        '/api/notifications',
+        {
           notificationIds: unreadIds,
           read: true,
-        }),
-      })
-
-      if (!response.ok) {
-        logger.error('Error marking all notifications as read:', response.statusText)
-        return
-      }
+        },
+        { suppressGlobalToast: true }
+      )
 
       setNotifications(prev => {
         const updated = prev.map(notif => ({ ...notif, read: true }))
@@ -223,22 +203,16 @@ export function useNotifications() {
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'created_at'>) => {
     try {
-      const response = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.post(
+        '/api/notifications',
+        {
           userId: notification.user_id,
           title: notification.title,
           message: notification.message,
           type: notification.type,
-        }),
-      })
-
-      if (!response.ok) {
-        logger.error('Error creating notification:', response.statusText)
-      }
+        },
+        { suppressGlobalToast: true }
+      )
     } catch (error) {
       logger.error('Error creating notification:', error)
     }

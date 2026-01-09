@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 
 import { useMemo, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { relationshipsAsyncAtom, relationshipsAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { RelationshipData } from '@/types/relationships'
@@ -41,11 +42,8 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
   // Refresh relationships function
   const refreshRelationships = async () => {
     try {
-      const response = await fetch('/api/coach-runners', { credentials: 'same-origin' })
-      if (response.ok) {
-        const data = await response.json()
-        setRelationships(data.relationships || [])
-      }
+      const response = await api.get<{ relationships: RelationshipData[] }>('/api/coach-runners')
+      setRelationships(response.data.relationships || [])
     } catch (error) {
       logger.error('Failed to refresh relationships:', error)
     }
@@ -58,21 +56,9 @@ export function AsyncRelationshipsList({ onRelationshipUpdated }: AsyncRelations
     setUpdatingIds(prev => new Set(prev).add(relationshipId))
 
     try {
-      const response = await fetch(`/api/coach-runners/${relationshipId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          status: newStatus,
-        }),
+      await api.put(`/api/coach-runners/${relationshipId}`, {
+        status: newStatus,
       })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update relationship')
-      }
 
       // Refresh the relationships atom to get updated data
       refreshRelationships()

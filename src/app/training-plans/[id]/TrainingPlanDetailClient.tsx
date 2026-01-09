@@ -21,6 +21,7 @@ import Layout from '@/components/layout/Layout'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import AddWorkoutModal from '@/components/workouts/AddWorkoutModal'
 import WorkoutLogModal from '@/components/workouts/WorkoutLogModal'
+import { api } from '@/lib/api-client'
 import { refreshWorkoutsAtom, workoutsAtom } from '@/lib/atoms/index'
 import { asyncTrainingPlansAtom } from '@/lib/atoms/training-plans'
 import { createLogger } from '@/lib/logger'
@@ -251,76 +252,45 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
 
     try {
       // Fetch plan phases
-      const phasesResponse = await fetch(`/api/training-plans/${planId}/phases`, {
-        credentials: 'same-origin',
-      })
+      const phasesResponse = await api.get<PhasesResponse>(`/api/training-plans/${planId}/phases`)
 
       // Guard: Don't update state if user navigated to a different plan
       if (activePlanRef.current !== fetchPlanId) return
 
-      if (phasesResponse.ok) {
-        const phasesData: PhasesResponse = await phasesResponse.json()
-        if (activePlanRef.current !== fetchPlanId) return
-        setExtendedPlanData(prev => ({
-          ...prev,
-          plan_phases: phasesData.plan_phases || [],
-        }))
-      } else {
-        logger.error('Failed to fetch plan phases', {
-          status: phasesResponse.status,
-          statusText: phasesResponse.statusText,
-        })
-        if (activePlanRef.current !== fetchPlanId) return
-        // Set empty array to avoid stale data and show user-facing error
-        setExtendedPlanData(prev => ({
-          ...prev,
-          plan_phases: [],
-        }))
-        commonToasts.trainingPlanError(
-          'Failed to load training phases. Please try refreshing the page.'
-        )
-      }
+      setExtendedPlanData(prev => ({
+        ...prev,
+        plan_phases: phasesResponse.data.plan_phases || [],
+      }))
 
       // Fetch previous and next plans if they exist
       if (trainingPlan.previous_plan_id) {
-        const prevPlanResponse = await fetch(
-          `/api/training-plans/${trainingPlan.previous_plan_id}`,
-          { credentials: 'same-origin' }
-        )
-        if (activePlanRef.current !== fetchPlanId) return
-        if (prevPlanResponse.ok) {
-          const prevPlanData: TrainingPlanResponse = await prevPlanResponse.json()
+        try {
+          const prevPlanResponse = await api.get<TrainingPlanResponse>(
+            `/api/training-plans/${trainingPlan.previous_plan_id}`
+          )
           if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
-            previous_plan: prevPlanData.trainingPlan,
+            previous_plan: prevPlanResponse.data.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch previous plan', {
-            status: prevPlanResponse.status,
-            statusText: prevPlanResponse.statusText,
-          })
+        } catch (error) {
+          logger.error('Failed to fetch previous plan', { error })
           // Silent failure for linked plans - not critical for main view
         }
       }
 
       if (trainingPlan.next_plan_id) {
-        const nextPlanResponse = await fetch(`/api/training-plans/${trainingPlan.next_plan_id}`, {
-          credentials: 'same-origin',
-        })
-        if (activePlanRef.current !== fetchPlanId) return
-        if (nextPlanResponse.ok) {
-          const nextPlanData: TrainingPlanResponse = await nextPlanResponse.json()
+        try {
+          const nextPlanResponse = await api.get<TrainingPlanResponse>(
+            `/api/training-plans/${trainingPlan.next_plan_id}`
+          )
           if (activePlanRef.current !== fetchPlanId) return
           setExtendedPlanData(prev => ({
             ...prev,
-            next_plan: nextPlanData.trainingPlan,
+            next_plan: nextPlanResponse.data.trainingPlan,
           }))
-        } else {
-          logger.error('Failed to fetch next plan', {
-            status: nextPlanResponse.status,
-            statusText: nextPlanResponse.statusText,
-          })
+        } catch (error) {
+          logger.error('Failed to fetch next plan', { error })
           // Silent failure for linked plans - not critical for main view
         }
       }
@@ -328,6 +298,11 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
       // Guard: Don't show toast if user navigated away
       if (activePlanRef.current !== fetchPlanId) return
       logger.error('Error fetching extended plan data', { error })
+      // Set empty array to avoid stale data and show user-facing error
+      setExtendedPlanData(prev => ({
+        ...prev,
+        plan_phases: [],
+      }))
       commonToasts.trainingPlanError('Failed to load plan details. Please try refreshing the page.')
     }
   }, [user?.id, planId, trainingPlan])
@@ -386,38 +361,9 @@ export default function TrainingPlanDetailClient({ user, planId }: TrainingPlanD
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/training-plans/${planId}`, {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      })
-      if (response.ok) {
-        commonToasts.trainingPlanDeleted()
-        router.push('/training-plans')
-      } else {
-        // Safe JSON parsing - response may be HTML or plain text on server errors
-        let errorMessage = 'Failed to delete training plan'
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData?.error || errorMessage
-        } catch {
-          // JSON parse failed, try reading as text
-          try {
-            const errorText = await response.text()
-            errorMessage = errorText || response.statusText || errorMessage
-          } catch {
-            // Fall back to statusText if text() also fails
-            errorMessage = response.statusText || errorMessage
-          }
-        }
-        // Log error for PostHog capture (capture_console_errors is enabled)
-        logger.error('Failed to delete training plan', {
-          status: response.status,
-          statusText: response.statusText,
-          errorMessage,
-          planId,
-        })
-        commonToasts.trainingPlanError(errorMessage)
-      }
+      await api.delete(`/api/training-plans/${planId}`)
+      commonToasts.trainingPlanDeleted()
+      router.push('/training-plans')
     } catch (error) {
       logger.error('Error deleting training plan', { error, planId })
       commonToasts.trainingPlanError('Failed to delete training plan')

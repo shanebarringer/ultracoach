@@ -190,34 +190,56 @@ export default async function Page() {
 - Server Components can access database/services directly
 - Cleaner separation of concerns: Server = auth + direct data, Client = API calls + state
 
-### ✅ Client Component Patterns
+### ✅ Client Component Patterns - Use api-client (REQUIRED)
 
-**Always use `credentials: 'same-origin'` for internal API calls:**
+**ALL internal API calls MUST use the axios api-client:**
 
 ```typescript
-// ✅ CORRECT - For all /api/... endpoints in Client Components
+import { api } from '@/lib/api-client'
+
+// GET request
+const response = await api.get<ResponseType>('/api/workouts')
+const data = response.data
+
+// POST request
+const response = await api.post<ResponseType>('/api/workouts', payload)
+
+// PUT/PATCH/DELETE
+const response = await api.put('/api/workouts/123', payload)
+const response = await api.patch('/api/workouts/123', payload)
+const response = await api.delete('/api/workouts/123')
+
+// For hooks/atoms - suppress global error toasts
+const response = await api.get('/api/workouts', {
+  suppressGlobalToast: true,
+})
+```
+
+**Why api-client is required:**
+
+- Automatically handles `credentials: 'same-origin'` via interceptor
+- Structured error logging with tslog
+- Global error toasts (suppressible per-request)
+- Request timeouts (30s dev, 10s prod)
+- Consistent error handling patterns
+
+```typescript
+// ❌ WRONG - Never use raw fetch for internal APIs
 const response = await fetch('/api/workouts', {
-  credentials: 'same-origin', // Default and recommended for same-domain
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  credentials: 'same-origin',
 })
 
-// ❌ WRONG - Never use 'include' for internal APIs
-const response = await fetch('/api/workouts', {
-  credentials: 'include', // Overkill and unnecessary for same-domain
-})
+// ✅ CORRECT - Always use api-client
+const response = await api.get('/api/workouts')
 ```
 
 ### Key Principles:
 
 - **Server Components**: Call database/services directly, handle auth and redirects
-- **Client Components**: Use fetch with relative URLs for API calls
-- **same-origin**: Use for all UltraCoach internal APIs (`/api/...`)
-- **include**: Only for cross-origin requests (external APIs like Strava)
-- **omit**: For public APIs that don't require authentication
-- **Relative URLs**: Always prefer `/api/...` over absolute URLs for internal calls
-- **Jotai Atoms**: Handle browser detection automatically with `if (typeof window === 'undefined') return []`
+- **Client Components**: Use `api` client from `@/lib/api-client` for all `/api/...` calls
+- **Hooks/Atoms**: Add `suppressGlobalToast: true` when custom error handling exists
+- **Components**: Let global error toasts work (don't suppress)
+- **Jotai Atoms**: Handle browser detection with `if (typeof window === 'undefined') return []`
 
 ## 🗄️ Database Connection (IMPORTANT)
 
