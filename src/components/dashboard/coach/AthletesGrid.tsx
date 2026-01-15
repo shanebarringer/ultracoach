@@ -23,6 +23,7 @@ import {
   athleteStatusCountsAtom,
   athleteStatusFilterAtom,
   athleteViewModeAtom,
+  coachDashboardStateAtom,
   paginatedAthletesAtom,
 } from '@/lib/atoms/dashboard'
 
@@ -39,8 +40,9 @@ function AthletesGridComponent() {
   const [currentPage, setCurrentPage] = useAtom(athleteCurrentPageAtom)
   const statusCounts = useAtomValue(athleteStatusCountsAtom)
   const paginatedData = useAtomValue(paginatedAthletesAtom)
+  const { athletesPerPage } = useAtomValue(coachDashboardStateAtom)
 
-  // Debounced search handler
+  // Search handler - updates search term immediately (atom handles page reset)
   const handleSearchChange = useCallback(
     (value: string) => {
       // Simple immediate update - the atom handles page reset
@@ -231,8 +233,8 @@ function AthletesGridComponent() {
             {paginatedData.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-divider">
                 <p className="text-sm text-foreground-500">
-                  Showing {(currentPage - 1) * 8 + 1}-
-                  {Math.min(currentPage * 8, paginatedData.totalCount)} of{' '}
+                  Showing {(currentPage - 1) * athletesPerPage + 1}-
+                  {Math.min(currentPage * athletesPerPage, paginatedData.totalCount)} of{' '}
                   {paginatedData.totalCount}
                 </p>
 
