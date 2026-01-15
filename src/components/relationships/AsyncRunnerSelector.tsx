@@ -19,6 +19,24 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncRunnerSelector')
 
+// Define Runner type at module level for reuse and better type safety
+interface AvailableRunner {
+  id: string
+  name?: string
+  fullName?: string
+  email?: string
+}
+
+// Type guard to validate runner objects from API responses
+function isValidRunner(obj: unknown): obj is AvailableRunner {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    typeof (obj as AvailableRunner).id === 'string'
+  )
+}
+
 interface AsyncRunnerSelectorProps {
   onRelationshipCreated?: () => void
   user: User
@@ -37,18 +55,18 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
   const refreshAvailableRunners = useSetAtom(availableRunnersAtom)
 
   // Filter runners based on search term using useMemo for performance
-  const filteredRunners = useMemo(() => {
+  // Uses type guard for safe runtime validation of API response data
+  // Note: availableRunnersAtom returns User[] but API response has different shape
+  const filteredRunners = useMemo((): AvailableRunner[] => {
     if (!Array.isArray(availableRunners)) return []
 
-    interface Runner {
-      id: string
-      name?: string
-      fullName?: string
-      email?: string
-    }
+    // Cast to unknown first to bypass strict type checking, then validate with type guard
+    // This is safe because isValidRunner performs runtime validation
+    const runners = (availableRunners as unknown[]).filter(isValidRunner)
 
-    return (availableRunners as Runner[]).filter(
-      (runner: Runner) =>
+    // Apply search filter on validated runners
+    return runners.filter(
+      runner =>
         runner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         runner.email?.toLowerCase().includes(searchTerm.toLowerCase())

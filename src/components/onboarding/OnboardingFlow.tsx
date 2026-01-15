@@ -94,10 +94,16 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       setSteps(data.steps || [])
       setCurrentStepData(data.currentStepData)
 
-      // Load existing answers for current step
+      // Load existing answers for current step with safe type checking
       if (data.onboarding?.step_data) {
         const currentStepKey = `step_${data.onboarding.current_step}`
-        setStepAnswers((data.onboarding.step_data[currentStepKey] || {}) as Record<string, unknown>)
+        const stepData = data.onboarding.step_data[currentStepKey]
+        // Validate that stepData is actually a plain object before using it
+        if (stepData && typeof stepData === 'object' && !Array.isArray(stepData)) {
+          setStepAnswers(stepData as Record<string, unknown>)
+        } else {
+          setStepAnswers({})
+        }
       }
     } catch (error) {
       logger.error('Error fetching onboarding data:', error)
