@@ -6,23 +6,9 @@ import { db } from '@/lib/database'
 import { createLogger } from '@/lib/logger'
 import { coach_runners, user } from '@/lib/schema'
 import { getServerSession } from '@/lib/server-auth'
+import type { RunnerWithStats } from '@/types/api-responses'
 
 const logger = createLogger('api-runners')
-
-interface RunnerWithStats {
-  id: string
-  email: string
-  full_name: string | null
-  role: string
-  created_at: string
-  stats?: {
-    trainingPlans: number
-    completedWorkouts: number
-    upcomingWorkouts: number
-  }
-  relationship_status: 'pending' | 'active' | 'inactive'
-  connected_at: string | null
-}
 
 export async function GET(request: NextRequest) {
   try {

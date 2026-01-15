@@ -6,21 +6,7 @@ import { auth } from '@/lib/better-auth'
 import type { User } from '@/lib/better-auth'
 import { db } from '@/lib/database'
 import { coach_runners, user } from '@/lib/schema'
-
-interface CoachWithStats {
-  id: string
-  email: string
-  full_name: string | null
-  role: string
-  created_at: string
-  stats?: {
-    trainingPlans: number
-    completedWorkouts: number
-    upcomingWorkouts: number
-  }
-  relationship_status: 'pending' | 'active' | 'inactive'
-  connected_at: string | null
-}
+import type { CoachWithStats } from '@/types/api-responses'
 
 export async function GET(request: NextRequest) {
   try {
