@@ -2,7 +2,7 @@
 
 import { useAtom } from 'jotai'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
@@ -19,8 +19,8 @@ export function useConversations() {
   const [loadingStates, setLoadingStates] = useAtom(loadingStatesAtom)
   const [chatUiState, setChatUiState] = useAtom(chatUiStateAtom)
 
-  // Debounce fetch to prevent race conditions
-  const [lastFetchTime, setLastFetchTime] = useState(0)
+  // Debounce fetch to prevent race conditions - useRef avoids stale closure issues
+  const lastFetchTimeRef = useRef(0)
 
   const fetchConversations = useCallback(
     async (isInitialLoad = false) => {
@@ -28,11 +28,11 @@ export function useConversations() {
 
       // Debounce: prevent multiple fetches within 2 seconds
       const now = Date.now()
-      if (!isInitialLoad && now - lastFetchTime < 2000) {
+      if (!isInitialLoad && now - lastFetchTimeRef.current < 2000) {
         logger.debug('Skipping fetch due to debouncing')
         return
       }
-      setLastFetchTime(now)
+      lastFetchTimeRef.current = now
 
       // Only show loading spinner on initial load, not on background updates
       if (isInitialLoad) {
@@ -98,7 +98,8 @@ export function useConversations() {
       session?.user?.email,
       session?.user?.name,
       session?.user?.role,
-      // Intentionally omitting lastFetchTime, setLastFetchTime, and Jotai setters to prevent infinite loops
+      // Intentionally omitting Jotai setters to prevent infinite loops
+      // lastFetchTimeRef is a ref and doesn't need to be in deps
     ]
   )
 

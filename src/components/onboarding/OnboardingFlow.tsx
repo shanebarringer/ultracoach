@@ -93,10 +93,16 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       setSteps(data.steps || [])
       setCurrentStepData(data.currentStepData)
 
-      // Load existing answers for current step
+      // Load existing answers for current step with type validation
       if (data.onboarding?.step_data) {
         const currentStepKey = `step_${data.onboarding.current_step}`
-        setStepAnswers(data.onboarding.step_data[currentStepKey] || {})
+        const stepDataValue = data.onboarding.step_data[currentStepKey]
+        // Validate that stepDataValue is a non-null object (not string, array, etc.)
+        if (stepDataValue && typeof stepDataValue === 'object' && !Array.isArray(stepDataValue)) {
+          setStepAnswers(stepDataValue as Record<string, unknown>)
+        } else {
+          setStepAnswers({})
+        }
       }
     } catch (error) {
       logger.error('Error fetching onboarding data:', error)
@@ -234,11 +240,24 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     if (prevStep) {
       setCurrentStepData(prevStep)
 
-      // Load previous step answers
+      // Load previous step answers with type validation
       const prevStepKey = `step_${prevStepNumber}`
-      const prevStepData = (onboarding.step_data as Record<string, unknown>) || {}
-      const prevAnswers = (prevStepData[prevStepKey] as Record<string, unknown>) || {}
-      setStepAnswers(prevAnswers)
+      const prevStepData = onboarding.step_data
+      if (prevStepData && typeof prevStepData === 'object' && !Array.isArray(prevStepData)) {
+        const prevAnswersValue = (prevStepData as Record<string, unknown>)[prevStepKey]
+        // Validate that prevAnswersValue is a non-null object
+        if (
+          prevAnswersValue &&
+          typeof prevAnswersValue === 'object' &&
+          !Array.isArray(prevAnswersValue)
+        ) {
+          setStepAnswers(prevAnswersValue as Record<string, unknown>)
+        } else {
+          setStepAnswers({})
+        }
+      } else {
+        setStepAnswers({})
+      }
     }
   }
 

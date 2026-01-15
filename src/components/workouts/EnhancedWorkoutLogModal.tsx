@@ -325,10 +325,13 @@ const EnhancedWorkoutLogModal = memo(
           }
         } catch (error) {
           logger.error('Error updating enhanced workout:', error)
+          // Preserve error details from the exception
+          const errorMessage =
+            error instanceof Error ? error.message : 'An error occurred. Please try again.'
           setFormState(prev => ({
             ...prev,
             loading: false,
-            error: 'An error occurred. Please try again.',
+            error: errorMessage,
           }))
         }
       },

@@ -116,7 +116,9 @@ export default function FeedbackManagement() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/admin/feedback')
+      const response = await fetch('/api/admin/feedback', {
+        credentials: 'same-origin',
+      })
       if (response.ok) {
         const data = await response.json()
         setFeedback(data.feedback || [])
@@ -145,6 +147,7 @@ export default function FeedbackManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
           feedbackId,
           status,

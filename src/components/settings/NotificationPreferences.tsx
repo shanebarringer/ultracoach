@@ -41,7 +41,9 @@ export default function NotificationPreferences() {
 
   const fetchPreferences = async () => {
     try {
-      const response = await fetch('/api/user/notification-preferences')
+      const response = await fetch('/api/user/notification-preferences', {
+        credentials: 'same-origin',
+      })
       if (response.ok) {
         const data = await response.json()
         setPreferences(data.preferences)
@@ -63,6 +65,7 @@ export default function NotificationPreferences() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'same-origin',
         body: JSON.stringify({ preferences }),
       })
 

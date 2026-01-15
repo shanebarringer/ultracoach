@@ -133,6 +133,56 @@ apiClient.interceptors.response.use(
   }
 )
 
+/**
+ * Extract a user-friendly error message from an API error.
+ * Handles axios errors, fetch errors, and generic Error objects.
+ * Prioritizes server-provided error messages over generic fallbacks.
+ *
+ * @param error - The error to extract a message from
+ * @param fallbackMessage - A fallback message if no specific message can be extracted
+ * @returns A user-friendly error message string
+ */
+export function getApiErrorMessage(error: unknown, fallbackMessage = 'An error occurred'): string {
+  // Handle axios errors with response data
+  if (isAxiosError(error)) {
+    const responseData = error.response?.data as Record<string, unknown> | undefined
+    // Prioritize server-provided error messages
+    if (responseData) {
+      if (typeof responseData.error === 'string' && responseData.error) {
+        return responseData.error
+      }
+      if (typeof responseData.message === 'string' && responseData.message) {
+        return responseData.message
+      }
+      if (typeof responseData.details === 'string' && responseData.details) {
+        return responseData.details
+      }
+    }
+    // Fall back to axios message or status text
+    if (
+      error.message &&
+      error.message !== 'Request failed with status code ' + error.response?.status
+    ) {
+      return error.message
+    }
+    if (error.response?.statusText) {
+      return error.response.statusText
+    }
+  }
+
+  // Handle standard Error objects
+  if (error instanceof Error) {
+    return error.message || fallbackMessage
+  }
+
+  // Handle string errors
+  if (typeof error === 'string' && error) {
+    return error
+  }
+
+  return fallbackMessage
+}
+
 export const api = {
   get: <T = unknown>(url: string, config?: ApiRequestConfig) => apiClient.get<T>(url, config),
   post: <T = unknown>(url: string, data?: unknown, config?: ApiRequestConfig) =>
