@@ -46,12 +46,15 @@ const EnhancedWorkoutName = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <h3 className="text-lg font-bold text-foreground leading-tight">{workoutType}</h3>
+        <h3 className="text-lg font-bold text-foreground leading-tight" data-testid="workout-type">
+          {workoutType}
+        </h3>
         <Badge
           color={getCategoryColor(workoutCategory)}
           variant="flat"
           size="sm"
           className="text-xs"
+          data-testid="workout-category"
         >
           {workoutCategory}
         </Badge>
@@ -75,9 +78,15 @@ const EnhancedWorkoutStatus = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom 
   const statusConfig = getStatusConfig(status)
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-testid="workout-status">
       <statusConfig.icon className={`h-5 w-5 ${statusConfig.iconColor}`} strokeWidth={2} />
-      <Badge color={statusConfig.badgeColor} variant="flat" size="sm" className="font-medium">
+      <Badge
+        color={statusConfig.badgeColor}
+        variant="flat"
+        size="sm"
+        className="font-medium"
+        data-testid="workout-status-badge"
+      >
         {statusConfig.label}
       </Badge>
     </div>
@@ -111,7 +120,7 @@ const EnhancedWorkoutDate = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom })
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-testid="workout-date">
       <Calendar className="h-4 w-4 text-foreground-400" />
       <div className="flex flex-col">
         <span className={`text-sm font-medium ${getDateColor()}`}>{getDateLabel()}</span>
@@ -138,9 +147,9 @@ const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
   const intensity = workout.intensity
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-3" data-testid="workout-metrics">
       {distance && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" data-testid="workout-distance">
           <MapPin className="h-4 w-4 text-primary" />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">{distance}</span>
@@ -150,7 +159,7 @@ const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
       )}
 
       {duration && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" data-testid="workout-duration">
           <Clock className="h-4 w-4 text-secondary" />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">{duration}</span>
@@ -160,7 +169,7 @@ const WorkoutMetrics = memo(({ workoutAtom }: { workoutAtom: WorkoutAtom }) => {
       )}
 
       {intensity && (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" data-testid="workout-intensity">
           <Target className="h-4 w-4 text-warning" />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">{intensity}/10</span>
@@ -379,7 +388,11 @@ const EnhancedWorkoutCard = memo(
         : 'w-full hover:shadow-lg hover:scale-[1.02] transition-all duration-200'
 
     return (
-      <Card className={cardStyles}>
+      <Card
+        className={cardStyles}
+        data-testid="workout-card"
+        data-status={workout.status || 'planned'}
+      >
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start w-full">
             <div className="flex-1 min-w-0">
@@ -413,6 +426,7 @@ const EnhancedWorkoutCard = memo(
                 variant="bordered"
                 onPress={() => onEdit(workout)}
                 className="flex-1"
+                data-testid="button-edit-workout"
               >
                 Edit
               </Button>
@@ -424,6 +438,7 @@ const EnhancedWorkoutCard = memo(
                 onPress={() => onLog(workout)}
                 className="flex-1"
                 startContent={<CheckCircle2 className="h-4 w-4" />}
+                data-testid="button-mark-complete"
               >
                 Mark Complete
               </Button>
@@ -435,6 +450,7 @@ const EnhancedWorkoutCard = memo(
                 onPress={() => onLog(workout)}
                 className="flex-1"
                 startContent={<TrendingUp className="h-4 w-4" />}
+                data-testid="button-view-details"
               >
                 View Details
               </Button>

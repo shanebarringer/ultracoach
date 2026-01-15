@@ -96,11 +96,13 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto p-6 space-y-6" data-testid="settings-page">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-          <p className="text-foreground-600">
+          <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="page-title">
+            Settings
+          </h1>
+          <p className="text-foreground-600" data-testid="page-subtitle">
             Customize your UltraCoach experience with these preferences and controls.
           </p>
         </div>
@@ -108,7 +110,7 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Tabs - Mobile: Horizontal, Desktop: Vertical */}
-          <div className="lg:w-64">
+          <div className="lg:w-64" data-testid="settings-sidebar">
             <Card className="sticky top-6">
               <CardBody className="p-2">
                 <Tabs
@@ -120,6 +122,7 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
                     tab: 'justify-start h-12 px-4',
                     tabContent: 'group-data-[selected=true]:text-primary',
                   }}
+                  data-testid="settings-tabs"
                 >
                   {settingsTabs.map(tab => (
                     <Tab
@@ -130,6 +133,7 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
                           <span>{tab.title}</span>
                         </div>
                       }
+                      data-testid={`tab-${tab.key}`}
                     />
                   ))}
                 </Tabs>
@@ -138,16 +142,20 @@ export default function SettingsPageClient({ user: _user }: SettingsPageClientPr
           </div>
 
           {/* Settings Panel */}
-          <div className="flex-1">
+          <div className="flex-1" data-testid="settings-content">
             <Card>
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
                   {activeTabData?.icon}
-                  <h2 className="text-2xl font-semibold">{activeTabData?.title} Settings</h2>
+                  <h2 className="text-2xl font-semibold" data-testid="settings-panel-title">
+                    {activeTabData?.title} Settings
+                  </h2>
                 </div>
               </CardHeader>
               <Divider />
-              <CardBody className="pt-6">{activeTabData?.component}</CardBody>
+              <CardBody className="pt-6" data-testid={`panel-${activeTab}`}>
+                {activeTabData?.component}
+              </CardBody>
             </Card>
           </div>
         </div>

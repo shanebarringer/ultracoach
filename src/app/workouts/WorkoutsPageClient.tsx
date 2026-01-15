@@ -179,7 +179,7 @@ function WorkoutsPageClientInner({ user }: Props) {
   return (
     <Layout>
       <ModernErrorBoundary>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="workouts-page">
           <div className="flex flex-col gap-6 mb-8">
             {/* Header */}
             <div className="flex justify-between items-center">
@@ -191,7 +191,7 @@ function WorkoutsPageClientInner({ user }: Props) {
                   <Mountain className="w-8 h-8 text-primary" />
                   Training Log
                 </h1>
-                <p className="text-foreground-600 mt-2 text-lg">
+                <p className="text-foreground-600 mt-2 text-lg" data-testid="page-subtitle">
                   {user.userType === 'coach'
                     ? 'Guide your athletes to their summit'
                     : 'Track your ascent to peak performance'}
@@ -206,6 +206,7 @@ function WorkoutsPageClientInner({ user }: Props) {
                     color="primary"
                     onPress={() => setUiState(prev => ({ ...prev, isAddWorkoutModalOpen: true }))}
                     startContent={<Plus className="h-4 w-4" />}
+                    data-testid="button-new-workout"
                   >
                     New Workout
                   </Button>
@@ -216,6 +217,7 @@ function WorkoutsPageClientInner({ user }: Props) {
                   onPress={handleToggleStravaPanel}
                   startContent={<Activity className="h-4 w-4" />}
                   className="hidden sm:flex"
+                  data-testid="button-strava-sync"
                 >
                   Strava Sync
                 </Button>
@@ -224,7 +226,10 @@ function WorkoutsPageClientInner({ user }: Props) {
 
             {/* Coach Controls */}
             {isCoach && (
-              <div className="bg-content1 border border-divider rounded-xl p-4">
+              <div
+                className="bg-content1 border border-divider rounded-xl p-4"
+                data-testid="coach-controls"
+              >
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                   {/* Runner Selection */}
                   <div className="flex-1 max-w-xs">
@@ -234,6 +239,7 @@ function WorkoutsPageClientInner({ user }: Props) {
                       selectedKeys={selectedRunnerId ? [selectedRunnerId] : ['']}
                       onSelectionChange={handleRunnerSelectionChange}
                       startContent={<Users className="h-4 w-4 text-foreground-500" />}
+                      data-testid="select-athlete"
                       items={[
                         {
                           id: '',

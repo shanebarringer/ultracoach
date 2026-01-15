@@ -147,21 +147,26 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
     <Card
       className={`hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-l-4 ${plan.archived ? 'border-l-default-300 opacity-60' : 'border-l-primary'} min-h-[320px]`}
       isPressable={false}
+      data-testid="training-plan-card"
+      data-status={plan.archived ? 'archived' : 'active'}
     >
       <CardHeader className="flex justify-between items-start pb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-bold text-foreground mb-1">🏔️ {plan.title}</h3>
+          <h3 className="text-xl font-bold text-foreground mb-1" data-testid="plan-title">
+            🏔️ {plan.title}
+          </h3>
           {plan.description && (
             <p className="text-sm text-foreground/70 mb-2 line-clamp-2">{plan.description}</p>
           )}
 
           {/* Status and Phase Row */}
-          <div className="flex items-center flex-wrap gap-2 mt-2">
+          <div className="flex items-center flex-wrap gap-2 mt-2" data-testid="plan-badges">
             <Chip
               color={getStatusColor(plan.archived)}
               size="sm"
               variant="flat"
               className="capitalize"
+              data-testid="plan-status-badge"
             >
               {plan.archived ? 'Archived' : 'Active'}
             </Chip>
@@ -172,6 +177,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 variant="dot"
                 className="capitalize"
                 startContent={<TrendingUpIcon className="w-3 h-3" />}
+                data-testid="plan-phase-badge"
               >
                 {plan.current_phase}
               </Chip>
@@ -183,6 +189,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 variant="flat"
                 className="capitalize"
                 startContent={<Target className="w-3 h-3" />}
+                data-testid="plan-goal-badge"
               >
                 {plan.goal_type.split('_').join(' ')}
               </Chip>
@@ -200,6 +207,7 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
                 className="hover:bg-default-100"
                 aria-label="Training plan actions"
                 aria-haspopup="menu"
+                data-testid="button-plan-menu"
               >
                 <EllipsisVerticalIcon className="w-4 h-4" />
               </Button>
@@ -234,12 +242,17 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
         <div className="space-y-4">
           {/* Prominent Race Information */}
           {plan.race ? (
-            <Card className="border border-success/20 bg-success/5">
+            <Card className="border border-success/20 bg-success/5" data-testid="plan-race-info">
               <CardBody className="p-3">
                 <div className="flex items-center gap-3">
                   <FlagIcon className="w-5 h-5 text-success shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground mb-1 truncate">{plan.race.name}</p>
+                    <p
+                      className="font-semibold text-foreground mb-1 truncate"
+                      data-testid="plan-race-name"
+                    >
+                      {plan.race.name}
+                    </p>
                     <div className="flex items-center gap-3 text-xs text-foreground/70">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-3 h-3" />
@@ -271,10 +284,12 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
 
           {/* Progress Bar */}
           {plan.progress != null && (
-            <div className="space-y-2">
+            <div className="space-y-2" data-testid="plan-progress">
               <div className="flex justify-between text-sm">
                 <span className="text-foreground/60">Training Progress</span>
-                <span className="font-semibold">{Math.round(progressPct ?? 0)}% Complete</span>
+                <span className="font-semibold" data-testid="plan-progress-value">
+                  {Math.round(progressPct ?? 0)}% Complete
+                </span>
               </div>
               <Progress
                 value={progressPct ?? 0}
@@ -334,10 +349,14 @@ function TrainingPlanCard({ plan, userRole, onArchiveChange }: TrainingPlanCardP
             size="md"
             className="font-medium w-full sm:w-auto"
             startContent={<CalendarIcon className="w-4 h-4" />}
+            data-testid="button-view-plan"
           >
             View Training Plan
           </Button>
-          <div className="text-xs text-foreground/50 text-center sm:text-right">
+          <div
+            className="text-xs text-foreground/50 text-center sm:text-right"
+            data-testid="plan-weeks-remaining"
+          >
             {typeof plan.weeks_remaining === 'number'
               ? plan.weeks_remaining === 0
                 ? 'Completed'

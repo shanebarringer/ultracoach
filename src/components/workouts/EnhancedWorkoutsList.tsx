@@ -248,7 +248,7 @@ const EnhancedWorkoutsList = memo(
 
     if (workouts.length === 0) {
       return (
-        <Card className="py-12">
+        <Card className="py-12" data-testid="workouts-empty-state">
           <CardBody className="text-center">
             <Calendar className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -270,9 +270,12 @@ const EnhancedWorkoutsList = memo(
         : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="workouts-list-container">
         {/* Streamlined Toolbar */}
-        <div className="bg-content1 rounded-xl border border-divider p-4 space-y-4">
+        <div
+          className="bg-content1 rounded-xl border border-divider p-4 space-y-4"
+          data-testid="workouts-toolbar"
+        >
           {/* Top Row: Search and View Controls */}
           <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
             {/* Search Bar */}
@@ -285,6 +288,7 @@ const EnhancedWorkoutsList = memo(
                 isClearable
                 variant="bordered"
                 className="w-full"
+                data-testid="input-search-workouts"
               />
             </div>
 
@@ -297,6 +301,7 @@ const EnhancedWorkoutsList = memo(
                 size="sm"
                 onPress={() => setViewMode('grid')}
                 aria-label="Grid view"
+                data-testid="button-view-grid"
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
@@ -307,6 +312,7 @@ const EnhancedWorkoutsList = memo(
                 size="sm"
                 onPress={() => setViewMode('list')}
                 aria-label="List view"
+                data-testid="button-view-list"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -320,6 +326,7 @@ const EnhancedWorkoutsList = memo(
               color={quickFilter === 'today' ? 'primary' : 'default'}
               className="cursor-pointer transition-all hover:scale-105"
               onClick={() => handleQuickFilter('today')}
+              data-testid="filter-today"
             >
               Today
             </Chip>
@@ -328,6 +335,7 @@ const EnhancedWorkoutsList = memo(
               color={quickFilter === 'this-week' ? 'primary' : 'default'}
               className="cursor-pointer transition-all hover:scale-105"
               onClick={() => handleQuickFilter('this-week')}
+              data-testid="filter-this-week"
             >
               This Week
             </Chip>
@@ -336,6 +344,7 @@ const EnhancedWorkoutsList = memo(
               color={quickFilter === 'completed' ? 'success' : 'default'}
               className="cursor-pointer transition-all hover:scale-105"
               onClick={() => handleQuickFilter('completed')}
+              data-testid="filter-completed"
             >
               Completed
             </Chip>
@@ -344,6 +353,7 @@ const EnhancedWorkoutsList = memo(
               color={quickFilter === 'planned' ? 'warning' : 'default'}
               className="cursor-pointer transition-all hover:scale-105"
               onClick={() => handleQuickFilter('planned')}
+              data-testid="filter-planned"
             >
               Planned
             </Chip>
@@ -355,6 +365,7 @@ const EnhancedWorkoutsList = memo(
                 isSelected={showAdvancedFilters}
                 onValueChange={setShowAdvancedFilters}
                 color="primary"
+                data-testid="toggle-advanced-filters"
               >
                 <span className="text-sm text-foreground-600">Advanced</span>
               </Switch>
@@ -363,12 +374,16 @@ const EnhancedWorkoutsList = memo(
 
           {/* Advanced Filters (Collapsible) */}
           {showAdvancedFilters && (
-            <div className="flex flex-wrap gap-3 pt-2 border-t border-divider">
+            <div
+              className="flex flex-wrap gap-3 pt-2 border-t border-divider"
+              data-testid="advanced-filters"
+            >
               <Select
                 placeholder="Workout Type"
                 selectedKeys={typeFilter === 'all' ? [] : [typeFilter]}
                 onSelectionChange={keys => setTypeFilter((Array.from(keys)[0] as string) || 'all')}
                 className="min-w-[150px]"
+                data-testid="select-workout-type"
               >
                 <SelectItem key="all">All Types</SelectItem>
                 <SelectItem key="Long Run">Long Run</SelectItem>
@@ -387,6 +402,7 @@ const EnhancedWorkoutsList = memo(
                   setStatusFilter((Array.from(keys)[0] as string) || 'all')
                 }
                 className="min-w-[120px]"
+                data-testid="select-status"
               >
                 <SelectItem key="all">All Status</SelectItem>
                 <SelectItem key="planned">Planned</SelectItem>
@@ -399,6 +415,7 @@ const EnhancedWorkoutsList = memo(
                 selectedKeys={[sortBy]}
                 onSelectionChange={keys => setSortBy(Array.from(keys)[0] as SortOption)}
                 className="min-w-[130px]"
+                data-testid="select-sort"
               >
                 <SelectItem key="date-desc">
                   <div className="flex items-center gap-2">
@@ -420,8 +437,11 @@ const EnhancedWorkoutsList = memo(
           )}
 
           {/* Status Bar */}
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-foreground-600">
+          <div
+            className="flex justify-between items-center text-sm"
+            data-testid="workouts-status-bar"
+          >
+            <span className="text-foreground-600" data-testid="workouts-count">
               Showing {processedWorkouts.length} of {workouts.length} workouts
             </span>
             <div className="flex items-center gap-2">
@@ -436,6 +456,7 @@ const EnhancedWorkoutsList = memo(
                     onPress={clearFilters}
                     startContent={<X className="h-3 w-3" />}
                     className="text-xs"
+                    data-testid="button-clear-filters"
                   >
                     Clear All
                   </Button>
@@ -447,7 +468,7 @@ const EnhancedWorkoutsList = memo(
 
         {/* Workouts Grid/List */}
         {processedWorkouts.length === 0 ? (
-          <Card className="py-12">
+          <Card className="py-12" data-testid="workouts-no-results">
             <CardBody className="text-center">
               <Search className="mx-auto h-12 w-12 text-foreground-400 mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -456,7 +477,11 @@ const EnhancedWorkoutsList = memo(
               <p className="text-foreground-600 mb-4">
                 Try adjusting your search or filter criteria.
               </p>
-              <Button variant="flat" onPress={clearFilters}>
+              <Button
+                variant="flat"
+                onPress={clearFilters}
+                data-testid="button-clear-filters-empty"
+              >
                 Clear All Filters
               </Button>
             </CardBody>
@@ -464,6 +489,7 @@ const EnhancedWorkoutsList = memo(
         ) : (
           <div
             className={viewMode === 'grid' ? `grid ${gridColumns} gap-6` : 'flex flex-col gap-4'}
+            data-testid="workouts-grid"
           >
             {processedWorkouts.map(workout => (
               <EnhancedWorkoutCard

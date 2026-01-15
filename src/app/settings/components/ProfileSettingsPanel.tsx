@@ -53,8 +53,8 @@ export default function ProfileSettingsPanel() {
     profileData.email !== (session?.user?.email || '')
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6" data-testid="profile-settings-panel">
+      <Card data-testid="basic-info-section">
         <CardHeader>
           <div className="flex items-center gap-2">
             <UserIcon className="w-5 h-5 text-primary" />
@@ -70,6 +70,7 @@ export default function ProfileSettingsPanel() {
               onValueChange={value => setProfileData(prev => ({ ...prev, fullName: value }))}
               startContent={<UserIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="Enter your full name"
+              data-testid="input-full-name"
             />
 
             <Input
@@ -80,6 +81,7 @@ export default function ProfileSettingsPanel() {
               startContent={<MailIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="your@email.com"
               description="Used for account access and notifications"
+              data-testid="input-email"
             />
           </div>
 
@@ -91,6 +93,7 @@ export default function ProfileSettingsPanel() {
               startContent={<MapPinIcon className="w-4 h-4 text-foreground-400" />}
               placeholder="City, State/Country"
               description="Help others find training partners nearby"
+              data-testid="input-location"
             />
 
             <Select
@@ -101,6 +104,7 @@ export default function ProfileSettingsPanel() {
                 setProfileData(prev => ({ ...prev, timeZone: value || '' }))
               }}
               placeholder="Select your time zone"
+              data-testid="select-timezone"
             >
               <SelectItem key="Pacific/Honolulu">Hawaii (HST)</SelectItem>
               <SelectItem key="America/Anchorage">Alaska (AKST)</SelectItem>
@@ -119,11 +123,12 @@ export default function ProfileSettingsPanel() {
             description="This helps coaches and other runners connect with you"
             minRows={3}
             maxLength={500}
+            data-testid="textarea-bio"
           />
         </CardBody>
       </Card>
 
-      <Card className="bg-info-50 border-info-200">
+      <Card className="bg-info-50 border-info-200" data-testid="security-section">
         <CardHeader>
           <h3 className="text-lg font-semibold text-info-800">Account Security</h3>
         </CardHeader>
@@ -137,7 +142,7 @@ export default function ProfileSettingsPanel() {
                   Update your password to keep your account secure
                 </p>
               </div>
-              <Button variant="flat" color="primary" size="sm">
+              <Button variant="flat" color="primary" size="sm" data-testid="button-change-password">
                 Change Password
               </Button>
             </div>
@@ -149,7 +154,7 @@ export default function ProfileSettingsPanel() {
                   Add an extra layer of security to your account
                 </p>
               </div>
-              <Button variant="flat" color="secondary" size="sm">
+              <Button variant="flat" color="secondary" size="sm" data-testid="button-enable-2fa">
                 Enable 2FA
               </Button>
             </div>
@@ -159,7 +164,12 @@ export default function ProfileSettingsPanel() {
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button color="primary" onPress={handleSave} isLoading={saving}>
+          <Button
+            color="primary"
+            onPress={handleSave}
+            isLoading={saving}
+            data-testid="button-save-profile"
+          >
             {saving ? 'Saving...' : 'Save Profile'}
           </Button>
         </div>

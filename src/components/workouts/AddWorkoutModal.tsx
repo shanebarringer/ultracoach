@@ -166,9 +166,9 @@ export default function AddWorkoutModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" data-testid="add-workout-modal">
       <ModalContent>
-        <ModalHeader>Add Workout</ModalHeader>
+        <ModalHeader data-testid="modal-title">Add Workout</ModalHeader>
         <form onSubmit={handleSubmit}>
           <ModalBody className="space-y-4">
             {error && (
@@ -184,6 +184,7 @@ export default function AddWorkoutModal({
               required
               value={formData.date}
               onChange={handleChange}
+              data-testid="input-date"
             />
 
             <Select
@@ -199,6 +200,7 @@ export default function AddWorkoutModal({
                 }
               }}
               placeholder="Select type..."
+              data-testid="select-workout-type"
               items={[
                 { id: 'Easy Run', name: 'Easy Run' },
                 { id: 'Long Run', name: 'Long Run' },
@@ -309,6 +311,7 @@ export default function AddWorkoutModal({
               value={formData.plannedDistance}
               onChange={handleChange}
               placeholder="e.g., 5.5"
+              data-testid="input-distance"
             />
 
             <Input
@@ -319,6 +322,7 @@ export default function AddWorkoutModal({
               value={formData.plannedDuration}
               onChange={handleChange}
               placeholder="e.g., 60"
+              data-testid="input-duration"
             />
 
             <Textarea
@@ -328,13 +332,19 @@ export default function AddWorkoutModal({
               value={formData.notes}
               onChange={handleChange}
               placeholder="Additional workout instructions or notes..."
+              data-testid="textarea-notes"
             />
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onClick={onClose}>
+            <Button variant="light" onClick={onClose} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={loading}>
+            <Button
+              type="submit"
+              color="primary"
+              disabled={loading}
+              data-testid="button-add-workout"
+            >
               {loading ? 'Adding...' : 'Add Workout'}
             </Button>
           </ModalFooter>

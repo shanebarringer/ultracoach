@@ -207,9 +207,9 @@ export default function WorkoutLogModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={onClose} size="2xl" data-testid="workout-log-modal">
       <ModalContent>
-        <ModalHeader>Log Workout</ModalHeader>
+        <ModalHeader data-testid="modal-title">Log Workout</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalBody className="space-y-4">
             <div className="p-3 bg-gray-50 rounded-lg">
@@ -478,10 +478,15 @@ export default function WorkoutLogModal({
             />
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onClick={onClose}>
+            <Button variant="light" onClick={onClose} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
+            <Button
+              type="submit"
+              color="primary"
+              disabled={isSubmitting || formState.loading}
+              data-testid="button-save-workout"
+            >
               {isSubmitting || formState.loading ? 'Saving...' : 'Save Workout'}
             </Button>
           </ModalFooter>

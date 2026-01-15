@@ -75,10 +75,16 @@ function TrainingPlansContent({ user }: Props) {
             <div className="flex items-center gap-3">
               <Mountain className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                <h1
+                  className="text-2xl lg:text-3xl font-bold text-foreground"
+                  data-testid="page-title"
+                >
                   🏔️ Training Expeditions
                 </h1>
-                <p className="text-foreground/70 mt-1 text-base lg:text-lg">
+                <p
+                  className="text-foreground/70 mt-1 text-base lg:text-lg"
+                  data-testid="page-subtitle"
+                >
                   {user.userType === 'coach'
                     ? 'Design summit quests for your athletes'
                     : 'Your personalized path to peak performance'}
@@ -94,6 +100,7 @@ function TrainingPlansContent({ user }: Props) {
                 classNames={{
                   label: 'text-sm text-foreground/70',
                 }}
+                data-testid="checkbox-show-archived"
               >
                 Show archived
               </Checkbox>
@@ -105,6 +112,7 @@ function TrainingPlansContent({ user }: Props) {
                 isIconOnly
                 aria-label="Refresh training plans"
                 className="border-primary/20 hover:border-primary/40"
+                data-testid="button-refresh"
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
@@ -115,6 +123,7 @@ function TrainingPlansContent({ user }: Props) {
                   onPress={handleCreatePlanClick}
                   startContent={<Plus className="h-4 w-4" />}
                   className="bg-primary font-medium"
+                  data-testid="button-create-plan"
                 >
                   <span className="hidden sm:inline">Create Your First Expedition</span>
                   <span className="sm:hidden">Create Plan</span>
@@ -127,9 +136,15 @@ function TrainingPlansContent({ user }: Props) {
 
       {/* Training Plans Display - Suspense handles loading automatically */}
       {filteredPlans.length === 0 ? (
-        <Card className="border-dashed border-2 border-primary/20">
+        <Card
+          className="border-dashed border-2 border-primary/20"
+          data-testid="training-plans-empty-state"
+        >
           <CardBody className="text-center py-16">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div
+              className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6"
+              data-testid="empty-state-icon"
+            >
               <Calendar className="w-10 h-10 text-primary" />
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -149,6 +164,7 @@ function TrainingPlansContent({ user }: Props) {
                 onPress={handleCreatePlanClick}
                 startContent={<Plus className="h-5 w-5" />}
                 className="bg-primary font-medium"
+                data-testid="button-create-first-plan"
               >
                 Create Your First Expedition
               </Button>
@@ -156,7 +172,10 @@ function TrainingPlansContent({ user }: Props) {
           </CardBody>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch"
+          data-testid="training-plans-grid"
+        >
           {filteredPlans.map((plan: TrainingPlan) => (
             <TrainingPlanCard
               key={plan.id}
@@ -192,7 +211,10 @@ export default function TrainingPlansPageClient({ user }: Props) {
     <Layout>
       <Suspense fallback={<TrainingPlansPageSkeleton />}>
         <ModernErrorBoundary>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+            data-testid="training-plans-page"
+          >
             <TrainingPlansContent user={user} />
           </div>
         </ModernErrorBoundary>

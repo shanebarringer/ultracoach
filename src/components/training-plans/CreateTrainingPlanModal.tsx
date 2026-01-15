@@ -214,9 +214,15 @@ export default function CreateTrainingPlanModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="2xl"
+      scrollBehavior="inside"
+      data-testid="create-training-plan-modal"
+    >
       <ModalContent>
-        <ModalHeader>Create Training Plan</ModalHeader>
+        <ModalHeader data-testid="modal-title">Create Training Plan</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalBody className="space-y-4 max-h-[70svh] sm:max-h-[75svh] overflow-y-auto">
             {formState.error && (
@@ -444,10 +450,15 @@ export default function CreateTrainingPlanModal({
             </Select>
           </ModalBody>
           <ModalFooter>
-            <Button variant="light" onClick={onClose}>
+            <Button variant="light" onClick={onClose} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button type="submit" color="primary" disabled={isSubmitting || formState.loading}>
+            <Button
+              type="submit"
+              color="primary"
+              disabled={isSubmitting || formState.loading}
+              data-testid="button-create-plan"
+            >
               {isSubmitting || formState.loading ? 'Creating...' : 'Create Plan'}
             </Button>
           </ModalFooter>
