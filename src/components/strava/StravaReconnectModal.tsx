@@ -14,6 +14,7 @@ import {
   Progress,
   Spinner,
 } from '@heroui/react'
+import { isAxiosError } from 'axios'
 import { useAtom } from 'jotai'
 import {
   Activity,
@@ -28,7 +29,7 @@ import {
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { api } from '@/lib/api-client'
+import { api, getApiErrorMessage } from '@/lib/api-client'
 import {
   stravaActivitiesRefreshableAtom,
   stravaConnectionStatusAtom,
@@ -160,7 +161,12 @@ const StravaReconnectModal = memo(
           setRetryCount(0)
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        // Use isAxiosError for enhanced error extraction with server-provided messages
+        const errorMessage = isAxiosError(error)
+          ? getApiErrorMessage(error, 'Connection test failed')
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error'
         logger.error('Connection test failed:', error)
         setLastError(errorMessage)
 

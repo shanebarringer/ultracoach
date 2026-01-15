@@ -13,8 +13,10 @@ interface RunnerWithStats {
   id: string
   email: string
   full_name: string | null
-  role: string
+  userType: 'runner' | 'coach' // Primary field matching User interface
+  role: string // Kept for backward compatibility
   created_at: string
+  updated_at: string // Added to match User interface
   stats?: {
     trainingPlans: number
     completedWorkouts: number
@@ -74,8 +76,10 @@ export async function GET(request: NextRequest) {
       id: rel.runner.id,
       email: rel.runner.email,
       full_name: rel.runner.full_name,
-      role: rel.runner.role,
+      userType: rel.runner.role as 'runner' | 'coach', // Primary field for User interface
+      role: rel.runner.role, // Kept for backward compatibility
       created_at: rel.runner.created_at?.toISOString() || '',
+      updated_at: rel.runner.created_at?.toISOString() || '', // Use created_at as fallback
       relationship_status: rel.status,
       connected_at: rel.created_at?.toISOString() || null,
       // TODO: Add actual stats calculation in future enhancement

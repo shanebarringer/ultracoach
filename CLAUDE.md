@@ -241,6 +241,36 @@ const response = await api.get('/api/workouts')
 - **Components**: Let global error toasts work (don't suppress)
 - **Jotai Atoms**: Handle browser detection with `if (typeof window === 'undefined') return []`
 
+### Error Handling Pattern
+
+Always use `isAxiosError` guard for granular error handling and `getApiErrorMessage` for consistent error extraction:
+
+```typescript
+import { isAxiosError } from 'axios'
+
+import { api, getApiErrorMessage } from '@/lib/api-client'
+
+try {
+  await api.post('/api/endpoint', data)
+} catch (error) {
+  // Handle specific status codes when needed
+  if (isAxiosError(error) && error.response?.status === 404) {
+    // Handle not found case specifically
+  }
+
+  // Extract user-friendly error message (prioritizes server-provided messages)
+  const message = getApiErrorMessage(error, 'Operation failed')
+  logger.error('API call failed', { error: message })
+  toast.error('Error', message)
+}
+```
+
+### Response Type Convention
+
+- `api.get<ResponseType>()` - Always specify response type
+- `api.post<ResponseType>()` - Specify response type unless void
+- `api.delete<void>()` - Use explicit void for no-content responses
+
 ## 🗄️ Database Connection (IMPORTANT)
 
 **Always use the proper database scripts - NEVER try to connect directly as local user!**

@@ -136,6 +136,30 @@ apiClient.interceptors.response.use(
   }
 )
 
+/**
+ * Extract a user-friendly error message from an axios error or generic error.
+ * Prioritizes server-provided error messages over generic ones.
+ *
+ * @param error - The caught error (unknown type)
+ * @param fallback - Default message if no specific error can be extracted
+ * @returns A user-friendly error message string
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'An error occurred'): string {
+  if (isAxiosError(error)) {
+    // Try to extract server-provided error message from response data
+    const data = error.response?.data as Record<string, unknown> | undefined
+    if (data) {
+      if (typeof data.error === 'string') return data.error
+      if (typeof data.message === 'string') return data.message
+    }
+    // Fall back to axios error message
+    if (error.message) return error.message
+  }
+  // Handle generic Error instances
+  if (error instanceof Error) return error.message
+  return fallback
+}
+
 export const api = {
   get: <T = unknown>(url: string, config?: ApiRequestConfig) => apiClient.get<T>(url, config),
   post: <T = unknown>(url: string, data?: unknown, config?: ApiRequestConfig) =>

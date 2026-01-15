@@ -65,13 +65,16 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
     setConnectingIds((prev: Set<string>) => new Set(prev).add(runnerId))
 
     try {
+      // Use environment-based timeout: 30s dev, 10s prod
+      const timeout = process.env.NODE_ENV === 'development' ? 30000 : 10000
+
       await api.post(
         '/api/coach-runners',
         {
           target_user_id: runnerId,
           relationship_type: 'standard',
         },
-        { suppressGlobalToast: true }
+        { suppressGlobalToast: true, timeout }
       )
 
       logger.info('Connection request sent successfully', { runnerId })

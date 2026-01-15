@@ -171,7 +171,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      await api.post(
+      await api.post<void>(
         '/api/onboarding',
         {
           stepNumber: onboarding.current_step,
@@ -200,7 +200,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      await api.patch('/api/onboarding', undefined, { suppressGlobalToast: true })
+      await api.patch<void>('/api/onboarding', undefined, { suppressGlobalToast: true })
 
       toast.success('⏭️ Onboarding Skipped', 'You can always complete setup later in your profile.')
 
