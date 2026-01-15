@@ -5,6 +5,9 @@
   "private": true,
   "packageManager": "pnpm@10.13.1",
   "scripts": {
+    "env:validate": "tsx scripts/validate-env.ts",
+    "env:validate:prod": "tsx scripts/validate-env.ts --prod",
+    "env:validate:ci": "tsx scripts/validate-env.ts --ci",
     "db:validate:schema": "bash supabase/scripts/validate_schema.sh --verbose",
     "db:validate:schema:fix": "bash supabase/scripts/validate_schema.sh --verbose --fix",
     "dev": "next dev -p 3001",
