@@ -8,6 +8,7 @@ import Layout from '@/components/layout/Layout'
 import ModernErrorBoundary from '@/components/layout/ModernErrorBoundary'
 import TourTrigger from '@/components/tours/TourTrigger'
 import { CoachDashboardSkeleton, RunnerDashboardSkeleton } from '@/components/ui/LoadingSkeletons'
+import { useHydrateRelationships } from '@/hooks/useHydrateRelationships'
 import { useHydrateWorkouts } from '@/hooks/useWorkouts'
 import { createLogger } from '@/lib/logger'
 import type { ServerSession } from '@/utils/auth-server'
@@ -27,6 +28,12 @@ interface Props {
 // Internal component to handle workout hydration inside Suspense boundary
 function WorkoutsHydrator() {
   useHydrateWorkouts()
+  return null // Invisible component that just handles hydration
+}
+
+// Internal component to handle relationships hydration inside Suspense boundary
+function RelationshipsHydrator() {
+  useHydrateRelationships()
   return null // Invisible component that just handles hydration
 }
 
@@ -50,6 +57,7 @@ export default function DashboardRouter({ user }: Props) {
             </div>
             <Suspense fallback={<RunnerDashboardSkeleton />}>
               <WorkoutsHydrator />
+              <RelationshipsHydrator />
               <RunnerDashboard />
             </Suspense>
           </div>
@@ -72,6 +80,7 @@ export default function DashboardRouter({ user }: Props) {
             }
           >
             <WorkoutsHydrator />
+            <RelationshipsHydrator />
             {user.userType === 'coach' ? <CoachDashboard /> : <RunnerDashboard />}
           </Suspense>
         </div>

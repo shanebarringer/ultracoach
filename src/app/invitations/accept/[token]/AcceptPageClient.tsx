@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { api } from '@/lib/api-client'
 import { authClient } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
@@ -55,10 +56,10 @@ export default function AcceptPageClient({ token }: AcceptPageClientProps) {
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const response = await fetch(`/api/invitations/accept/${token}`, {
-          credentials: 'same-origin',
-        })
-        const data: ValidateInvitationResponse = await response.json()
+        const response = await api.get<ValidateInvitationResponse>(
+          `/api/invitations/accept/${token}`
+        )
+        const data = response.data
 
         if (data.valid) {
           setInvitation(data.invitation)
@@ -90,12 +91,8 @@ export default function AcceptPageClient({ token }: AcceptPageClientProps) {
     setState('accepting')
 
     try {
-      const response = await fetch(`/api/invitations/accept/${token}`, {
-        method: 'POST',
-        credentials: 'same-origin',
-      })
-
-      const data: AcceptInvitationResponse = await response.json()
+      const response = await api.post<AcceptInvitationResponse>(`/api/invitations/accept/${token}`)
+      const data = response.data
 
       if (data.success) {
         setState('accepted')

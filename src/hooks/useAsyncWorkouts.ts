@@ -4,6 +4,7 @@ import { useAtom } from 'jotai'
 
 import { useCallback } from 'react'
 
+import { api } from '@/lib/api-client'
 import { asyncWorkoutsAtom, workoutsAtom, workoutsRefreshTriggerAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 import type { Workout } from '@/lib/supabase'
@@ -23,20 +24,13 @@ export function useAsyncWorkouts() {
   const updateWorkout = useCallback(
     async (workoutId: string, updates: Partial<Workout>) => {
       try {
-        const response = await fetch(`/api/workouts/${workoutId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updates),
-        })
+        const response = await api.patch<{ workout: Workout }>(
+          `/api/workouts/${workoutId}`,
+          updates,
+          { suppressGlobalToast: true }
+        )
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || 'Failed to update workout')
-        }
-
-        const data = await response.json()
+        const data = response.data
 
         // Update both async and sync atoms
         setWorkouts(prev =>
@@ -58,14 +52,7 @@ export function useAsyncWorkouts() {
   const deleteWorkout = useCallback(
     async (workoutId: string) => {
       try {
-        const response = await fetch(`/api/workouts/${workoutId}`, {
-          method: 'DELETE',
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || 'Failed to delete workout')
-        }
+        await api.delete(`/api/workouts/${workoutId}`, { suppressGlobalToast: true })
 
         // Update both async and sync atoms
         setWorkouts(prev => prev.filter(workout => workout.id !== workoutId))

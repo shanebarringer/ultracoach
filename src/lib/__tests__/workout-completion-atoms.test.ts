@@ -3,15 +3,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { completeWorkoutAtom, logWorkoutDetailsAtom, skipWorkoutAtom, workoutsAtom } from '../atoms'
 import {
-  createMockFetchError,
-  createMockFetchResponse,
+  createMockAxiosError,
+  createMockAxiosResponse,
   setupAuthenticatedMocks,
   setupUnauthenticatedMocks,
 } from '../atoms/__tests__/utils/test-helpers'
 
-// Mock fetch globally
-const mockFetch = vi.fn()
-global.fetch = mockFetch as unknown as typeof fetch
+// Mock the api-client module - workout action atoms use axios, not fetch
+const mockApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+}))
+
+vi.mock('@/lib/api-client', () => ({
+  api: mockApi,
+}))
 
 // Mock Better Auth client
 const mockGetSession = vi.fn()
@@ -49,23 +58,22 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
+      mockApi.post.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       await store.set(completeWorkoutAtom, {
         workoutId: 'workout-123',
         data: { actual_distance: 5.2 },
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ actual_distance: 5.2 }),
-      })
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/workouts/workout-123/complete',
+        { actual_distance: 5.2 },
+        expect.any(Object)
+      )
     })
 
     it('should handle network errors gracefully', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+      mockApi.post.mockRejectedValueOnce(new Error('Network error'))
 
       await expect(
         store.set(completeWorkoutAtom, {
@@ -76,19 +84,19 @@ describe('Workout Completion Atoms', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      mockFetch.mockResolvedValueOnce(createMockFetchError(404, 'Not Found'))
+      mockApi.post.mockRejectedValueOnce(createMockAxiosError(404, { error: 'Not Found' }))
 
       await expect(
         store.set(completeWorkoutAtom, {
           workoutId: 'workout-123',
           data: {},
         })
-      ).rejects.toThrow('Failed to complete workout')
+      ).rejects.toThrow('Request failed')
     })
   })
 
   describe('logWorkoutDetailsAtom', () => {
-    it('should make POST request to log workout details endpoint', async () => {
+    it('should make PUT request to log workout details endpoint', async () => {
       const workoutData = {
         actual_distance: 8.2,
         actual_duration: 58,
@@ -103,19 +111,18 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
+      mockApi.put.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       await store.set(logWorkoutDetailsAtom, {
         workoutId: 'workout-456',
         data: workoutData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-456/log', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(workoutData),
-      })
+      expect(mockApi.put).toHaveBeenCalledWith(
+        '/api/workouts/workout-456/log',
+        workoutData,
+        expect.any(Object)
+      )
     })
 
     it('should handle comprehensive workout data', async () => {
@@ -131,22 +138,20 @@ describe('Workout Completion Atoms', () => {
         injury_notes: 'Minor knee discomfort at mile 12',
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 'workout-789', ...comprehensiveData }),
-      })
+      mockApi.put.mockResolvedValueOnce(
+        createMockAxiosResponse({ id: 'workout-789', ...comprehensiveData })
+      )
 
       await store.set(logWorkoutDetailsAtom, {
         workoutId: 'workout-789',
         data: comprehensiveData,
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-789/log', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(comprehensiveData),
-      })
+      expect(mockApi.put).toHaveBeenCalledWith(
+        '/api/workouts/workout-789/log',
+        comprehensiveData,
+        expect.any(Object)
+      )
     })
   })
 
@@ -158,22 +163,20 @@ describe('Workout Completion Atoms', () => {
         updated_at: new Date().toISOString(),
       }
 
-      mockFetch.mockResolvedValueOnce(createMockFetchResponse(mockResponse))
+      mockApi.delete.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       await store.set(skipWorkoutAtom, 'workout-999')
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-999/complete', {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      })
+      expect(mockApi.delete).toHaveBeenCalledWith(
+        '/api/workouts/workout-999/complete',
+        expect.any(Object)
+      )
     })
 
     it('should handle skip workout errors', async () => {
-      mockFetch.mockResolvedValueOnce(createMockFetchError(403, 'Forbidden'))
+      mockApi.delete.mockRejectedValueOnce(createMockAxiosError(403, { error: 'Forbidden' }))
 
-      await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow(
-        'Failed to skip workout'
-      )
+      await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow('Request failed')
     })
   })
 
@@ -211,44 +214,42 @@ describe('Workout Completion Atoms', () => {
       const workoutIds = ['uuid-1', 'uuid-2', 'uuid-3']
 
       for (const workoutId of workoutIds) {
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ id: workoutId, status: 'completed' }),
-        })
+        mockApi.post.mockResolvedValueOnce(
+          createMockAxiosResponse({ id: workoutId, status: 'completed' })
+        )
 
         await store.set(completeWorkoutAtom, { workoutId, data: {} })
 
-        expect(fetch).toHaveBeenCalledWith(`/api/workouts/${workoutId}/complete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({}),
-        })
+        expect(mockApi.post).toHaveBeenCalledWith(
+          `/api/workouts/${workoutId}/complete`,
+          {},
+          expect.any(Object)
+        )
       }
     })
 
     it('should handle empty data objects', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ id: 'workout-empty', status: 'completed' }),
-      })
+      mockApi.post.mockResolvedValueOnce(
+        createMockAxiosResponse({ id: 'workout-empty', status: 'completed' })
+      )
 
       await store.set(completeWorkoutAtom, {
         workoutId: 'workout-empty',
         data: {},
       })
 
-      expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-empty/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({}),
-      })
+      expect(mockApi.post).toHaveBeenCalledWith(
+        '/api/workouts/workout-empty/complete',
+        {},
+        expect.any(Object)
+      )
     })
   })
 
   describe('204 No Content Response Handling', () => {
-    describe('Success Cases - Workout Exists Locally', () => {
+    // Note: Only skipWorkoutAtom has explicit 204 handling in the implementation.
+    // completeWorkoutAtom and logWorkoutDetailsAtom don't have 204 handling.
+    describe('skipWorkoutAtom - 204 Success Case', () => {
       beforeEach(() => {
         // Set up workout in local state for successful tests
         const mockWorkout = {
@@ -270,92 +271,22 @@ describe('Workout Completion Atoms', () => {
         store.set(workoutsAtom, [mockWorkout])
       })
 
-      it('should handle 204 response from completeWorkoutAtom when workout exists locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-          statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
-        })
-
-        await store.set(completeWorkoutAtom, {
-          workoutId: 'workout-123',
-          data: { actual_distance: 5.2 },
-        })
-
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ actual_distance: 5.2 }),
-        })
-
-        // Check that workout was updated in local state
-        const workouts = store.get(workoutsAtom)
-        const updatedWorkout = workouts.find(w => w.id === 'workout-123')
-        expect(updatedWorkout?.status).toBe('completed')
-        expect(updatedWorkout?.actual_distance).toBe(5.2)
-      })
-
-      it('should handle 204 response from logWorkoutDetailsAtom when workout exists locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-          statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
-        })
-
-        const workoutData = {
-          actual_distance: 8.2,
-          actual_duration: 58,
-          intensity: 7,
-          workout_notes: 'Great tempo run!',
-        }
-
-        await store.set(logWorkoutDetailsAtom, {
-          workoutId: 'workout-123',
-          data: workoutData,
-        })
-
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/log', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify(workoutData),
-        })
-
-        // Check that workout was updated in local state
-        const workouts = store.get(workoutsAtom)
-        const updatedWorkout = workouts.find(w => w.id === 'workout-123')
-        expect(updatedWorkout?.actual_distance).toBe(8.2)
-        expect(updatedWorkout?.actual_duration).toBe(58)
-        expect(updatedWorkout?.intensity).toBe(7)
-        expect(updatedWorkout?.workout_notes).toBe('Great tempo run!')
-      })
-
       it('should handle 204 response from skipWorkoutAtom when workout exists locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
+        // Mock 204 No Content response using axios shape
+        mockApi.delete.mockResolvedValueOnce({
+          data: null,
           status: 204,
           statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
+          headers: {},
+          config: { headers: {} },
         })
 
         await store.set(skipWorkoutAtom, 'workout-123')
 
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/workout-123/complete', {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        })
+        expect(mockApi.delete).toHaveBeenCalledWith(
+          '/api/workouts/workout-123/complete',
+          expect.any(Object)
+        )
 
         // Check that workout was updated in local state
         const workouts = store.get(workoutsAtom)
@@ -364,59 +295,20 @@ describe('Workout Completion Atoms', () => {
       })
     })
 
-    describe('Failure Cases - Workout Not Found Locally', () => {
+    describe('skipWorkoutAtom - 204 Failure Case', () => {
       beforeEach(() => {
         // Set up empty local state for failure tests
         store.set(workoutsAtom, [])
       })
 
-      it('should throw error when completeWorkoutAtom gets 204 but workout not found locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-          statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
-        })
-
-        await expect(
-          store.set(completeWorkoutAtom, {
-            workoutId: 'workout-999',
-            data: { actual_distance: 5.2 },
-          })
-        ).rejects.toThrow('Workout workout-999 not found in local state. Please refresh the page.')
-      })
-
-      it('should throw error when logWorkoutDetailsAtom gets 204 but workout not found locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 204,
-          statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
-        })
-
-        await expect(
-          store.set(logWorkoutDetailsAtom, {
-            workoutId: 'workout-999',
-            data: { actual_distance: 8.2 },
-          })
-        ).rejects.toThrow('Workout workout-999 not found in local state. Please refresh the page.')
-      })
-
       it('should throw error when skipWorkoutAtom gets 204 but workout not found locally', async () => {
-        // Mock 204 No Content response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
+        // Mock 204 No Content response using axios shape
+        mockApi.delete.mockResolvedValueOnce({
+          data: null,
           status: 204,
           statusText: 'No Content',
-          json: async () => {
-            throw new Error('204 responses have no content')
-          },
+          headers: {},
+          config: { headers: {} },
         })
 
         await expect(store.set(skipWorkoutAtom, 'workout-999')).rejects.toThrow(

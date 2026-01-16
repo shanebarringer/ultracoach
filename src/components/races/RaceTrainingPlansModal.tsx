@@ -17,6 +17,7 @@ import { FlagIcon } from 'lucide-react'
 
 import { useCallback, useEffect, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 import { formatDateConsistent } from '@/lib/utils/date'
@@ -52,19 +53,13 @@ export default function RaceTrainingPlansModal({
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/races/${race.id}/training-plans`, {
-        credentials: 'same-origin',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch training plans')
-      }
-
-      const data = await response.json()
-      setTrainingPlans(data.training_plans || [])
+      const response = await api.get<{ training_plans?: TrainingPlanForRace[] }>(
+        `/api/races/${race.id}/training-plans`
+      )
+      setTrainingPlans(response.data.training_plans || [])
       logger.info('Training plans for race fetched', {
         raceId: race.id,
-        count: data.training_plans?.length || 0,
+        count: response.data.training_plans?.length || 0,
       })
     } catch (error) {
       logger.error('Error fetching training plans for race:', error)

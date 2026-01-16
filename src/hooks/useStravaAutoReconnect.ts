@@ -8,10 +8,12 @@
  * - User-configurable reconnection preferences
  * - Integration with existing Jotai atoms
  */
+import { isAxiosError } from 'axios'
 import { useAtom } from 'jotai'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { api } from '@/lib/api-client'
 import { stravaConnectionStatusAtom, stravaStateAtom } from '@/lib/atoms/index'
 import { createLogger } from '@/lib/logger'
 
@@ -88,18 +90,16 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
     try {
       logger.debug('Testing Strava connection health')
 
-      const response = await fetch('/api/strava/status', {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
+      const response = await api.get<{
+        connected: boolean
+        token_expired?: boolean
+        has_activity_scope?: boolean
+      }>('/api/strava/status', {
+        headers: { 'Cache-Control': 'no-cache' },
+        suppressGlobalToast: true,
       })
 
-      if (!response.ok) {
-        throw new Error(`Status check failed: ${response.status}`)
-      }
-
-      const statusData = await response.json()
+      const statusData = response.data
 
       // Check various health indicators
       if (!statusData.connected) {
@@ -115,15 +115,21 @@ export function useStravaAutoReconnect(options: AutoReconnectOptions = {}) {
       }
 
       // Test actual activity access
-      const activitiesResponse = await fetch('/api/strava/activities?limit=1')
-      if (!activitiesResponse.ok) {
-        if (activitiesResponse.status === 401) {
-          return { isHealthy: false, reason: 'expired' }
+      try {
+        await api.get('/api/strava/activities?limit=1', {
+          suppressGlobalToast: true,
+        })
+      } catch (activitiesError) {
+        if (isAxiosError(activitiesError) && activitiesError.response) {
+          if (activitiesError.response.status === 401) {
+            return { isHealthy: false, reason: 'expired' }
+          }
+          if (activitiesError.response.status === 403) {
+            return { isHealthy: false, reason: 'permissions' }
+          }
+          throw new Error(`Activities test failed: ${activitiesError.response.status}`)
         }
-        if (activitiesResponse.status === 403) {
-          return { isHealthy: false, reason: 'permissions' }
-        }
-        throw new Error(`Activities test failed: ${activitiesResponse.status}`)
+        throw activitiesError
       }
 
       logger.debug('Connection health check passed')

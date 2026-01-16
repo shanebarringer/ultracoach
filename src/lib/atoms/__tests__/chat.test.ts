@@ -30,20 +30,35 @@ import {
 } from '@/lib/atoms/chat'
 
 import {
+  createMockAxiosError,
+  createMockAxiosResponse,
   createMockConversation,
   createMockMessage,
   createMockSession,
   createTestStore,
   getAtomValue,
-  mockFetch,
   setAtomValue,
   setupCommonMocks,
 } from './utils/test-helpers'
 
+// Mock the api-client module - sendMessageActionAtom uses axios, not fetch
+// Note: vi.mock is hoisted, so we can't use variables defined in this file
+// We use vi.hoisted() to create the mock object at hoist time
+const mockApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+}))
+
+vi.mock('@/lib/api-client', () => ({
+  api: mockApi,
+}))
+
 describe('Chat Atoms', () => {
   let store: ReturnType<typeof createStore>
   let cleanup: () => void
-  let fetchMock: ReturnType<typeof mockFetch>
 
   beforeEach(() => {
     const mocks = setupCommonMocks()
@@ -53,6 +68,9 @@ describe('Chat Atoms', () => {
     // Set up mock session for authenticated tests
     const mockSession = createMockSession()
     setAtomValue(store, sessionAtom, mockSession)
+
+    // Reset all api mocks before each test
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -119,24 +137,15 @@ describe('Chat Atoms', () => {
 
   describe('sendMessageActionAtom', () => {
     beforeEach(() => {
-      // Set up fetch mock for sending messages
-      fetchMock = mockFetch(
-        new Map([
-          [
-            '/api/messages',
-            {
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  message: createMockMessage({
-                    id: 'msg-sent',
-                    content: 'Test message',
-                    sender_id: 'test-user-id',
-                  }),
-                }),
-            },
-          ],
-        ])
+      // Set up axios mock for sending messages
+      mockApi.post.mockResolvedValue(
+        createMockAxiosResponse({
+          message: createMockMessage({
+            id: 'msg-sent',
+            content: 'Test message',
+            sender_id: 'test-user-id',
+          }),
+        })
       )
     })
 
@@ -150,17 +159,17 @@ describe('Chat Atoms', () => {
       // Send message
       await store.set(sendMessageActionAtom, payload)
 
-      // Check that optimistic message was added and then replaced
-      expect(fetchMock).toHaveBeenCalledWith(
+      // Check that api.post was called with correct arguments
+      expect(mockApi.post).toHaveBeenCalledWith(
         '/api/messages',
+        {
+          content: payload.content,
+          recipientId: payload.recipientId,
+          workoutId: undefined,
+        },
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: payload.content,
-            recipientId: payload.recipientId,
-            workoutId: undefined,
-          }),
+          suppressGlobalToast: true,
+          timeout: 10000,
         })
       )
     })
@@ -192,18 +201,8 @@ describe('Chat Atoms', () => {
     })
 
     it('should handle send failure and remove optimistic message', async () => {
-      // Mock failed API call
-      fetchMock = mockFetch(
-        new Map([
-          [
-            '/api/messages',
-            {
-              ok: false,
-              json: () => Promise.resolve({ error: 'Failed to send' }),
-            },
-          ],
-        ])
-      )
+      // Mock failed API call using axios error
+      mockApi.post.mockRejectedValue(createMockAxiosError(500, { error: 'Failed to send' }))
 
       const payload = {
         recipientId: 'recipient-id',
@@ -389,23 +388,14 @@ describe('Chat Atoms', () => {
 
   describe('204 No Content Response Handling', () => {
     it('should handle 204 response and finalize optimistic message', async () => {
-      // Mock 204 No Content response
-      fetchMock = mockFetch(
-        new Map([
-          [
-            '/api/messages',
-            {
-              ok: true,
-              status: 204,
-              statusText: 'No Content',
-              json: async () => {
-                throw new Error('204 responses have no content')
-              },
-              text: async () => '',
-            },
-          ],
-        ])
-      )
+      // Mock 204 No Content response using axios response shape
+      mockApi.post.mockResolvedValue({
+        data: null,
+        status: 204,
+        statusText: 'No Content',
+        headers: {},
+        config: { headers: {} },
+      })
 
       const payload = {
         recipientId: 'recipient-id',

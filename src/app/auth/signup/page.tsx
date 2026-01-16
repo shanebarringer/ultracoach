@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { useBetterAuth } from '@/hooks/useBetterAuth'
+import { api } from '@/lib/api-client'
 import { signUpFormAtom } from '@/lib/atoms/index'
 import { shouldStartTourAtom } from '@/lib/atoms/tours'
 import { createLogger } from '@/lib/logger'
@@ -52,10 +53,10 @@ export default function SignUp() {
       if (!invitationToken) return
 
       try {
-        const response = await fetch(`/api/invitations/accept/${invitationToken}`, {
-          credentials: 'same-origin',
-        })
-        const data: ValidateInvitationResponse = await response.json()
+        const response = await api.get<ValidateInvitationResponse>(
+          `/api/invitations/accept/${invitationToken}`
+        )
+        const data = response.data
 
         if (data.valid) {
           setInvitation(data.invitation)
@@ -133,11 +134,12 @@ export default function SignUp() {
         if (invitationToken) {
           try {
             logger.info('Accepting invitation after signup')
-            const acceptResponse = await fetch(`/api/invitations/accept/${invitationToken}`, {
-              method: 'POST',
-              credentials: 'same-origin',
-            })
-            const acceptData = await acceptResponse.json()
+            const acceptResponse = await api.post<{
+              success: boolean
+              redirectUrl?: string
+              message?: string
+            }>(`/api/invitations/accept/${invitationToken}`)
+            const acceptData = acceptResponse.data
 
             if (acceptData.success) {
               logger.info('Invitation accepted successfully')

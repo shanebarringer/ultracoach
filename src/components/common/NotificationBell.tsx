@@ -17,6 +17,8 @@ import { BellIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import { useNotifications } from '@/hooks/useNotifications'
+import { api } from '@/lib/api-client'
+import { createLogger } from '@/lib/logger'
 import type { Notification } from '@/types/notifications'
 import {
   isAchievementNotification,
@@ -25,6 +27,8 @@ import {
   isTrainingPlanNotification,
   isWorkoutNotification,
 } from '@/types/notifications'
+
+const logger = createLogger('NotificationBell')
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
@@ -92,23 +96,17 @@ export default function NotificationBell() {
         const senderName = nameMatch[1].trim()
         try {
           // Query users API to find sender by name
-          const response = await fetch('/api/users', {
-            credentials: 'same-origin',
-          })
-          if (response.ok) {
-            const users = await response.json()
-            const sender = users.find(
-              (u: { name?: string; fullName?: string }) =>
-                u.fullName === senderName || u.name === senderName
-            )
-            if (sender?.id) {
-              router.push(`/chat/${sender.id}`)
-              return
-            }
+          const response =
+            await api.get<Array<{ id?: string; name?: string; fullName?: string }>>('/api/users')
+          const users = response.data
+          const sender = users.find(u => u.fullName === senderName || u.name === senderName)
+          if (sender?.id) {
+            router.push(`/chat/${sender.id}`)
+            return
           }
         } catch (error) {
           // If lookup fails, fall through to default /chat navigation
-          console.error('Failed to lookup sender for legacy notification:', error)
+          logger.error('Failed to lookup sender for legacy notification', { error })
         }
       }
       // If we couldn't find the sender, navigate to general chat page

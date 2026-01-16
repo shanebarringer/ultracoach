@@ -12,23 +12,36 @@ import { isAuthenticatedAtom, sessionAtom } from '@/lib/atoms/auth'
 import { chatUiStateAtom, messagesAtom, sendMessageActionAtom } from '@/lib/atoms/chat'
 
 import {
+  createMockAxiosResponse,
   createMockSession,
   createTestStore,
   getAtomValue,
-  mockFetch,
   setAtomValue,
   setupCommonMocks,
 } from '../utils/test-helpers'
 
+// Mock the api-client module - sendMessageActionAtom uses axios, not fetch
+const mockApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+}))
+
+vi.mock('@/lib/api-client', () => ({
+  api: mockApi,
+}))
+
 describe('Auth-Chat Integration', () => {
   let store: ReturnType<typeof createStore>
   let cleanup: () => void
-  let fetchMock: ReturnType<typeof mockFetch>
 
   beforeEach(() => {
     const mocks = setupCommonMocks()
     cleanup = mocks.cleanup
     store = createTestStore()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -66,26 +79,17 @@ describe('Auth-Chat Integration', () => {
       setAtomValue(store, sessionAtom, mockSession)
       expect(getAtomValue(store, isAuthenticatedAtom)).toBe(true)
 
-      // Mock successful API call
-      fetchMock = mockFetch(
-        new Map([
-          [
-            '/api/messages',
-            {
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  message: {
-                    id: 'msg-1',
-                    sender_id: 'user-123',
-                    recipient_id: 'recipient-id',
-                    content: 'Hello',
-                    created_at: new Date().toISOString(),
-                  },
-                }),
-            },
-          ],
-        ])
+      // Mock successful API call using axios mock
+      mockApi.post.mockResolvedValue(
+        createMockAxiosResponse({
+          message: {
+            id: 'msg-1',
+            sender_id: 'user-123',
+            recipient_id: 'recipient-id',
+            content: 'Hello',
+            created_at: new Date().toISOString(),
+          },
+        })
       )
 
       // Send message
@@ -98,7 +102,7 @@ describe('Auth-Chat Integration', () => {
 
       // Verify message was sent with correct user context
       expect(result.sender_id).toBe('user-123')
-      expect(fetchMock).toHaveBeenCalled()
+      expect(mockApi.post).toHaveBeenCalled()
     })
 
     it('should use correct user context in optimistic updates', async () => {
@@ -113,26 +117,17 @@ describe('Auth-Chat Integration', () => {
       })
       setAtomValue(store, sessionAtom, coachSession)
 
-      // Mock API call with immediate response
-      fetchMock = mockFetch(
-        new Map([
-          [
-            '/api/messages',
-            {
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  message: {
-                    id: 'final-msg',
-                    sender_id: 'coach-456',
-                    recipient_id: 'runner-id',
-                    content: 'Coaching message',
-                    created_at: new Date().toISOString(),
-                  },
-                }),
-            },
-          ],
-        ])
+      // Mock API call using axios mock
+      mockApi.post.mockResolvedValue(
+        createMockAxiosResponse({
+          message: {
+            id: 'final-msg',
+            sender_id: 'coach-456',
+            recipient_id: 'runner-id',
+            content: 'Coaching message',
+            created_at: new Date().toISOString(),
+          },
+        })
       )
 
       // Clear existing messages
@@ -146,13 +141,12 @@ describe('Auth-Chat Integration', () => {
 
       // Verify the message was sent with correct user context
       expect(result.sender_id).toBe('coach-456')
-      expect(fetchMock).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         '/api/messages',
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.stringContaining('runner-id'),
-        })
+          recipientId: 'runner-id',
+        }),
+        expect.any(Object)
       )
     }, 10000)
   })

@@ -6,6 +6,7 @@ import { Loader2, Wifi, WifiOff } from 'lucide-react'
 
 import { useEffect } from 'react'
 
+import { api } from '@/lib/api-client'
 import { uiStateAtom } from '@/lib/atoms/index'
 
 export default function ConnectionStatus() {
@@ -22,19 +23,14 @@ export default function ConnectionStatus() {
       try {
         setUiState(prev => ({ ...prev, connectionStatus: 'reconnecting' }))
 
-        // Test API connectivity
-        const response = await fetch('/api/health', {
-          method: 'HEAD',
-          cache: 'no-cache',
-          signal: AbortSignal.timeout(5000),
+        // Test API connectivity using HEAD request
+        await api.get('/api/health', {
+          timeout: 5000,
+          headers: { 'Cache-Control': 'no-cache' },
         })
 
-        if (response.ok) {
-          setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
-          retryCount = 0
-        } else {
-          throw new Error('API not responding')
-        }
+        setUiState(prev => ({ ...prev, connectionStatus: 'connected' }))
+        retryCount = 0
       } catch {
         retryCount++
         if (retryCount < maxRetries) {

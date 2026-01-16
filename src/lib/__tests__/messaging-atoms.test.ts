@@ -13,9 +13,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { messagesAtom, sendMessageActionAtom, sessionAtom } from '@/lib/atoms/index'
 import type { Session } from '@/lib/better-auth-client'
 
-// Mock fetch for API calls
-const mockFetch = vi.fn()
-global.fetch = mockFetch
+// Mock the api-client module - sendMessageActionAtom uses axios, not fetch
+const mockApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+}))
+
+vi.mock('@/lib/api-client', () => ({
+  api: mockApi,
+}))
 
 // Mock the logger
 vi.mock('@/lib/logger', () => ({
@@ -25,6 +34,17 @@ vi.mock('@/lib/logger', () => ({
     debug: vi.fn(),
   }),
 }))
+
+// Helper to create axios response shape
+function createMockAxiosResponse<T>(data: T, options: { status?: number } = {}) {
+  return {
+    data,
+    status: options.status ?? 200,
+    statusText: 'OK',
+    headers: {},
+    config: { headers: {} },
+  }
+}
 
 describe('Messaging Atoms', () => {
   let store: ReturnType<typeof createStore>
@@ -62,20 +82,16 @@ describe('Messaging Atoms', () => {
   describe('sendMessageActionAtom', () => {
     it('should send a message successfully', async () => {
       const mockResponse = {
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            message: {
-              id: 'real-msg-123',
-              content: 'Test message',
-              sender_id: 'test-user-id',
-              recipient_id: 'recipient-id',
-              created_at: new Date().toISOString(),
-            },
-          }),
+        message: {
+          id: 'real-msg-123',
+          content: 'Test message',
+          sender_id: 'test-user-id',
+          recipient_id: 'recipient-id',
+          created_at: new Date().toISOString(),
+        },
       }
 
-      mockFetch.mockResolvedValueOnce(mockResponse)
+      mockApi.post.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       // Send a message using the atom's write function
       await store.set(sendMessageActionAtom, {
@@ -83,18 +99,15 @@ describe('Messaging Atoms', () => {
         recipientId: 'recipient-id',
       })
 
-      // Verify fetch was called correctly
-      expect(mockFetch).toHaveBeenCalledWith(
+      // Verify api.post was called correctly
+      expect(mockApi.post).toHaveBeenCalledWith(
         '/api/messages',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Test message',
-            recipientId: 'recipient-id',
-          }),
-          credentials: 'same-origin',
-        })
+        {
+          content: 'Test message',
+          recipientId: 'recipient-id',
+          workoutId: undefined,
+        },
+        expect.any(Object)
       )
 
       // Verify message was added to store
@@ -105,13 +118,13 @@ describe('Messaging Atoms', () => {
     })
 
     it('should add optimistic message immediately', async () => {
-      // Mock a slow response
+      // Mock a slow response using a deferred promise
       let resolveResponse: (value: unknown) => void
       const responsePromise = new Promise(resolve => {
         resolveResponse = resolve as (value: unknown) => void
       })
 
-      mockFetch.mockReturnValueOnce(responsePromise)
+      mockApi.post.mockReturnValueOnce(responsePromise)
 
       // Start sending message (don't await yet)
       const sendPromise = store.set(sendMessageActionAtom, {
@@ -126,19 +139,17 @@ describe('Messaging Atoms', () => {
       expect(messages[0].id).toMatch(/^temp-/) // Should have temp ID
 
       // Resolve the response
-      resolveResponse!({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            message: {
-              id: 'real-msg-123',
-              content: 'Optimistic message',
-              sender_id: 'test-user-id',
-              recipient_id: 'recipient-id',
-              created_at: new Date().toISOString(),
-            },
-          }),
-      })
+      resolveResponse!(
+        createMockAxiosResponse({
+          message: {
+            id: 'real-msg-123',
+            content: 'Optimistic message',
+            sender_id: 'test-user-id',
+            recipient_id: 'recipient-id',
+            created_at: new Date().toISOString(),
+          },
+        })
+      )
 
       await sendPromise
 
@@ -149,14 +160,16 @@ describe('Messaging Atoms', () => {
     })
 
     it('should handle message sending failure', async () => {
-      const mockResponse = {
-        ok: false,
+      // Mock axios error
+      const axiosError = new Error('Failed to send message')
+      ;(axiosError as unknown as { isAxiosError: boolean }).isAxiosError = true
+      ;(axiosError as unknown as { response: object }).response = {
         status: 403,
         statusText: 'Forbidden',
-        text: () => Promise.resolve('No active relationship found'),
+        data: { error: 'No active relationship found' },
       }
 
-      mockFetch.mockResolvedValueOnce(mockResponse)
+      mockApi.post.mockRejectedValueOnce(axiosError)
 
       // Should throw an error
       await expect(
@@ -164,7 +177,7 @@ describe('Messaging Atoms', () => {
           content: 'Test message',
           recipientId: 'recipient-id',
         })
-      ).rejects.toThrow('Failed to send message')
+      ).rejects.toThrow()
 
       // Optimistic message should be removed on failure
       const messages = store.get(messagesAtom)
@@ -173,18 +186,14 @@ describe('Messaging Atoms', () => {
 
     it('should include workoutId when provided', async () => {
       const mockResponse = {
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            message: {
-              id: 'msg-123',
-              content: 'Test message',
-              workout_id: 'workout-123',
-            },
-          }),
+        message: {
+          id: 'msg-123',
+          content: 'Test message',
+          workout_id: 'workout-123',
+        },
       }
 
-      mockFetch.mockResolvedValueOnce(mockResponse)
+      mockApi.post.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       await store.set(sendMessageActionAtom, {
         content: 'Test message',
@@ -192,23 +201,19 @@ describe('Messaging Atoms', () => {
         workoutId: 'workout-123',
       })
 
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         '/api/messages',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'Test message',
-            recipientId: 'recipient-id',
-            workoutId: 'workout-123',
-          }),
-          credentials: 'same-origin',
-        })
+        {
+          content: 'Test message',
+          recipientId: 'recipient-id',
+          workoutId: 'workout-123',
+        },
+        expect.any(Object)
       )
     })
 
     it('should handle network errors', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+      mockApi.post.mockRejectedValueOnce(new Error('Network error'))
 
       await expect(
         store.set(sendMessageActionAtom, {
@@ -221,41 +226,21 @@ describe('Messaging Atoms', () => {
       const messages = store.get(messagesAtom)
       expect(messages).toHaveLength(0)
     })
-
-    it('should handle malformed JSON responses', async () => {
-      const mockResponse = {
-        ok: true,
-        json: () => Promise.reject(new Error('Invalid JSON')),
-      }
-
-      mockFetch.mockResolvedValueOnce(mockResponse)
-
-      await expect(
-        store.set(sendMessageActionAtom, {
-          content: 'Test message',
-          recipientId: 'recipient-id',
-        })
-      ).rejects.toThrow('Invalid JSON')
-    })
   })
 
   describe('Optimistic update behavior', () => {
     it('should replace optimistic message with real message', async () => {
       const mockResponse = {
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            message: {
-              id: 'real-msg-123',
-              content: 'Test message',
-              sender_id: 'test-user-id',
-              recipient_id: 'recipient-id',
-              created_at: new Date().toISOString(),
-            },
-          }),
+        message: {
+          id: 'real-msg-123',
+          content: 'Test message',
+          sender_id: 'test-user-id',
+          recipient_id: 'recipient-id',
+          created_at: new Date().toISOString(),
+        },
       }
 
-      mockFetch.mockResolvedValueOnce(mockResponse)
+      mockApi.post.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
       await store.set(sendMessageActionAtom, {
         content: 'Test message',

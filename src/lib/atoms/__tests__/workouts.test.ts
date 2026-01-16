@@ -3,11 +3,17 @@
  * Workouts Atoms Unit Tests
  *
  * Tests the workout-related atoms from the actual implementation
+ *
+ * NOTE: Mocks for @/lib/api-client, @/lib/logger, and @/lib/better-auth-client
+ * are defined globally in src/test/setup.ts to ensure they're registered before
+ * any dynamic imports occur. This is critical because the workout action atoms
+ * use dynamic imports (`await import('@/lib/api-client')`).
  */
 import { addDays, format } from 'date-fns'
 import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { api } from '@/lib/api-client'
 import { completedWorkoutsAtom, thisWeeksWorkoutsAtom, todaysWorkoutsAtom } from '@/lib/atoms/index'
 import {
   completeWorkoutAtom,
@@ -34,31 +40,23 @@ import {
 import { getWeekRange } from '@/lib/utils/date'
 
 import {
+  createMockAxiosResponse,
   createMockWorkout,
   createTestStore,
   getAtomValue,
   setAtomValue,
 } from './utils/test-helpers'
 
-// Mock fetch globally
-const mockFetch = vi.fn()
-global.fetch = mockFetch as unknown as typeof fetch
+// Get reference to the mocked api from the global setup
+// The api-client mock is defined in src/test/setup.ts to handle dynamic imports properly
+const mockApi = vi.mocked(api)
 
-// Mock Better Auth client
+// Mock Better Auth client - defined locally since it doesn't have dynamic import issues
 const mockGetSession = vi.fn()
 vi.mock('@/lib/better-auth-client', () => ({
   authClient: {
     getSession: mockGetSession,
   },
-}))
-
-// Mock logger
-vi.mock('@/lib/logger', () => ({
-  createLogger: () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn(),
-  }),
 }))
 
 describe('Workouts Atoms', () => {
@@ -357,10 +355,8 @@ describe('Workouts Atoms', () => {
           completed_at: new Date().toISOString(),
         }
 
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockResponse,
-        })
+        // Mock axios post for complete workout
+        mockApi.post.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
         const result = await store.set(completeWorkoutAtom, {
           workoutId: 'w1',
@@ -371,16 +367,15 @@ describe('Workouts Atoms', () => {
           },
         })
 
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/complete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({
+        expect(mockApi.post).toHaveBeenCalledWith(
+          '/api/workouts/w1/complete',
+          {
             actual_distance: 10.5,
             actual_duration: 65,
             notes: 'Felt good!',
-          }),
-        })
+          },
+          expect.any(Object)
+        )
 
         expect(result.status).toBe('completed')
 
@@ -389,12 +384,11 @@ describe('Workouts Atoms', () => {
       })
 
       it('should handle completion errors', async () => {
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-          statusText: 'Not Found',
-          text: async () => 'Not Found',
-        })
+        // Mock axios error for failed completion
+        const axiosError = new Error('Failed to complete workout')
+        ;(axiosError as any).isAxiosError = true
+        ;(axiosError as any).response = { status: 404, statusText: 'Not Found' }
+        mockApi.post.mockRejectedValueOnce(axiosError)
 
         await expect(store.set(completeWorkoutAtom, { workoutId: 'w1' })).rejects.toThrow(
           'Failed to complete workout'
@@ -418,22 +412,19 @@ describe('Workouts Atoms', () => {
           notes: 'Great workout!',
         }
 
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockResponse,
-        })
+        // Mock axios put for log workout details
+        mockApi.put.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
         const result = await store.set(logWorkoutDetailsAtom, {
           workoutId: 'w1',
           data: workoutData,
         })
 
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/log', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify(workoutData),
-        })
+        expect(mockApi.put).toHaveBeenCalledWith(
+          '/api/workouts/w1/log',
+          workoutData,
+          expect.any(Object)
+        )
 
         expect(result.actual_distance).toBe(12)
 
@@ -449,17 +440,12 @@ describe('Workouts Atoms', () => {
           status: 'skipped',
         }
 
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockResponse,
-        })
+        // Mock axios delete for skip workout
+        mockApi.delete.mockResolvedValueOnce(createMockAxiosResponse(mockResponse))
 
         const result = await store.set(skipWorkoutAtom, 'w1')
 
-        expect(fetch).toHaveBeenCalledWith('/api/workouts/w1/complete', {
-          method: 'DELETE',
-          credentials: 'same-origin',
-        })
+        expect(mockApi.delete).toHaveBeenCalledWith('/api/workouts/w1/complete', expect.any(Object))
 
         expect(result.status).toBe('skipped')
 

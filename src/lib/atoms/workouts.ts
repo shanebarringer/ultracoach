@@ -1,4 +1,5 @@
 // Workout management atoms
+import { isAxiosError } from 'axios'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
@@ -64,10 +65,32 @@ import { withDebugLabel } from './utils'
  */
 
 // Helper function to unwrap API response shapes
+/**
+ * Safely unwraps workout data from API response.
+ * Handles both direct Workout responses and wrapped { workout: Workout } responses.
+ * Throws if response is empty (e.g., 204 No Content) to prevent silent state corruption.
+ */
 function unwrapWorkout(json: unknown): Workout {
-  return typeof json === 'object' && json !== null && 'workout' in json
-    ? (json as { workout: Workout }).workout
-    : (json as Workout)
+  // Guard against empty responses (e.g., 204 No Content)
+  if (json === null || json === undefined || json === '') {
+    throw new Error('Empty response from server - workout data expected')
+  }
+
+  // Handle wrapped response shape: { workout: Workout }
+  if (typeof json === 'object' && 'workout' in json) {
+    const wrapped = json as { workout: Workout }
+    if (!wrapped.workout) {
+      throw new Error('Invalid response: workout property is empty')
+    }
+    return wrapped.workout
+  }
+
+  // Handle direct Workout response
+  const workout = json as Workout
+  if (!workout.id) {
+    throw new Error('Invalid workout response: missing id field')
+  }
+  return workout
 }
 
 // Core workout atoms with initial value from async fetch
@@ -112,15 +135,15 @@ export const asyncWorkoutsAtom = atom(async get => {
 
     return workouts as Workout[]
   } catch (error) {
-    // Axios errors have structured response data
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status?: number } }
-      if (axiosError.response?.status === 401) {
+    // Use proper isAxiosError guard for type-safe error handling
+    if (isAxiosError(error)) {
+      if (error.response?.status === 401) {
         logger.debug('Unauthorized - user session expired or invalid')
         return []
       }
       logger.error('HTTP error fetching workouts', {
-        status: axiosError.response?.status,
+        status: error.response?.status,
+        message: error.message,
       })
       return []
     }
@@ -332,6 +355,7 @@ export const completeWorkoutAtom = atom(
   async (get, set, { workoutId, data }: { workoutId: string; data?: WorkoutCompletionData }) => {
     const { createLogger } = await import('@/lib/logger')
     const { authClient } = await import('@/lib/better-auth-client')
+    const { api } = await import('@/lib/api-client')
     const logger = createLogger('CompleteWorkoutAtom')
 
     try {
@@ -341,36 +365,15 @@ export const completeWorkoutAtom = atom(
         throw new Error('Not authenticated')
       }
 
-      const response = await fetch(`/api/workouts/${workoutId}/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(data || {}),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        logger.error('Failed to complete workout', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-        })
-        throw new Error(`Failed to complete workout: ${response.status} ${errorText}`)
-      }
-
-      let updatedWorkout: Workout
-      if (response.status === 204) {
-        // Handle 204 No Content - find existing workout and mark as completed
-        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
-        if (!existingWorkout) {
-          logger.error('Workout not found in local state after completion', { workoutId })
-          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      const response = await api.post<Workout | { workout: Workout }>(
+        `/api/workouts/${workoutId}/complete`,
+        data || {},
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
         }
-        updatedWorkout = { ...existingWorkout, status: 'completed', ...data }
-      } else {
-        const json: unknown = await response.json()
-        updatedWorkout = unwrapWorkout(json)
-      }
+      )
+
+      const updatedWorkout = unwrapWorkout(response.data)
 
       logger.debug('Workout completion response received', {
         workoutId,
@@ -426,6 +429,7 @@ export const logWorkoutDetailsAtom = atom(
   async (get, set, { workoutId, data }: { workoutId: string; data: WorkoutDetails }) => {
     const { createLogger } = await import('@/lib/logger')
     const { authClient } = await import('@/lib/better-auth-client')
+    const { api } = await import('@/lib/api-client')
     const logger = createLogger('LogWorkoutDetailsAtom')
 
     try {
@@ -435,36 +439,15 @@ export const logWorkoutDetailsAtom = atom(
         throw new Error('Not authenticated')
       }
 
-      const response = await fetch(`/api/workouts/${workoutId}/log`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        logger.error('Failed to log workout details', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-        })
-        throw new Error(`Failed to log workout details: ${response.status} ${errorText}`)
-      }
-
-      let updatedWorkout: Workout
-      if (response.status === 204) {
-        // Handle 204 No Content - find existing workout and apply updates
-        const existingWorkout = get(workoutsAtom).find(w => w.id === workoutId)
-        if (!existingWorkout) {
-          logger.error('Workout not found in local state during logging', { workoutId })
-          throw new Error(`Workout ${workoutId} not found in local state. Please refresh the page.`)
+      const response = await api.put<Workout | { workout: Workout }>(
+        `/api/workouts/${workoutId}/log`,
+        data,
+        {
+          suppressGlobalToast: true, // Atom handles its own error handling
         }
-        updatedWorkout = { ...existingWorkout, ...data } as Workout
-      } else {
-        const json: unknown = await response.json()
-        updatedWorkout = unwrapWorkout(json)
-      }
+      )
+
+      const updatedWorkout = unwrapWorkout(response.data)
 
       logger.debug('Workout details logged successfully', {
         workoutId,
@@ -501,6 +484,7 @@ export const logWorkoutDetailsAtom = atom(
 export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) => {
   const { createLogger } = await import('@/lib/logger')
   const { authClient } = await import('@/lib/better-auth-client')
+  const { api } = await import('@/lib/api-client')
   const logger = createLogger('SkipWorkoutAtom')
 
   try {
@@ -510,20 +494,12 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       throw new Error('Not authenticated')
     }
 
-    const response = await fetch(`/api/workouts/${workoutId}/complete`, {
-      method: 'DELETE',
-      credentials: 'same-origin',
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      logger.error('Failed to skip workout', {
-        status: response.status,
-        statusText: response.statusText,
-        errorText,
-      })
-      throw new Error(`Failed to skip workout: ${response.status} ${errorText}`)
-    }
+    const response = await api.delete<Workout | { workout: Workout }>(
+      `/api/workouts/${workoutId}/complete`,
+      {
+        suppressGlobalToast: true, // Atom handles its own error handling
+      }
+    )
 
     let updatedWorkout: Workout
     if (response.status === 204) {
@@ -535,8 +511,7 @@ export const skipWorkoutAtom = atom(null, async (get, set, workoutId: string) =>
       }
       updatedWorkout = { ...existingWorkout, status: 'skipped' }
     } else {
-      const json: unknown = await response.json()
-      updatedWorkout = unwrapWorkout(json)
+      updatedWorkout = unwrapWorkout(response.data)
     }
 
     logger.debug('Workout skipped successfully', {

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime'
+import { api } from '@/lib/api-client'
 import {
   chatUiStateAtom,
   currentConversationIdAtom,
@@ -66,17 +67,12 @@ export function useMessages(recipientId?: string) {
       }
 
       try {
-        const response = await fetch(`/api/messages?recipientId=${targetId}`, {
-          credentials: 'same-origin',
-        })
+        const response = await api.get<{ messages: MessageWithUser[] }>(
+          `/api/messages?recipientId=${targetId}`,
+          { suppressGlobalToast: true }
+        )
 
-        if (!response.ok) {
-          logger.error('Error fetching messages:', response.statusText)
-          return
-        }
-
-        const data = await response.json()
-        const fetchedMessages = data.messages || []
+        const fetchedMessages = response.data.messages || []
 
         // Enhanced message deduplication and sorting
         setMessages(prev => {
@@ -93,21 +89,14 @@ export function useMessages(recipientId?: string) {
         // Mark messages as read - call directly to avoid circular dependency
         if (targetId) {
           try {
-            const readResponse = await fetch('/api/messages/mark-read', {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'same-origin',
-              body: JSON.stringify({
+            await api.patch(
+              '/api/messages/mark-read',
+              {
                 senderId: targetId,
                 recipientId: session.user.id,
-              }),
-            })
-
-            if (!readResponse.ok) {
-              logger.error('Error marking messages as read:', readResponse.statusText)
-            }
+              },
+              { suppressGlobalToast: true }
+            )
           } catch (error) {
             logger.error('Error marking messages as read:', error)
           }
@@ -148,21 +137,14 @@ export function useMessages(recipientId?: string) {
       if (!session?.user?.id || !targetId) return
 
       try {
-        const response = await fetch('/api/messages/mark-read', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify({
+        await api.patch(
+          '/api/messages/mark-read',
+          {
             senderId: targetId,
             recipientId: session.user.id,
-          }),
-        })
-
-        if (!response.ok) {
-          logger.error('Error marking messages as read:', response.statusText)
-        }
+          },
+          { suppressGlobalToast: true }
+        )
       } catch (error) {
         logger.error('Error marking messages as read:', error)
       }
@@ -207,10 +189,11 @@ export function useMessages(recipientId?: string) {
         if (!isRelevantMessage) return
 
         // Fetch the sender info for the new message
-        fetch(`/api/users/${newMessage.sender_id}`, {
-          credentials: 'same-origin',
-        })
-          .then(response => response.json())
+        api
+          .get<{ user: MessageWithUser['sender'] }>(`/api/users/${newMessage.sender_id}`, {
+            suppressGlobalToast: true,
+          })
+          .then(response => response.data)
           .then(({ user: sender }) => {
             if (sender) {
               const messageWithUser: MessageWithUser = {

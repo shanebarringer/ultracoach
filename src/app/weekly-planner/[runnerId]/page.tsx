@@ -1,8 +1,12 @@
+import { and, eq } from 'drizzle-orm'
+
 import { Suspense } from 'react'
 
 import { redirect } from 'next/navigation'
 
 import { WeeklyPlannerRunnerSkeleton } from '@/components/ui/LoadingSkeletons'
+import { db } from '@/lib/database'
+import { coach_runners } from '@/lib/schema'
 import { requireAuth } from '@/utils/auth-server'
 
 import WeeklyPlannerRunnerClient from './WeeklyPlannerRunnerClient'
@@ -39,6 +43,26 @@ export default async function WeeklyPlannerRunnerPage({ params }: Props) {
   // If runner, ensure they can only view their own training
   if (session.user.userType === 'runner' && session.user.id !== runnerId) {
     redirect(`/weekly-planner/${session.user.id}`)
+  }
+
+  // If coach viewing another user's schedule, verify active relationship exists
+  if (session.user.userType === 'coach' && session.user.id !== runnerId) {
+    const relationship = await db
+      .select({ id: coach_runners.id })
+      .from(coach_runners)
+      .where(
+        and(
+          eq(coach_runners.coach_id, session.user.id),
+          eq(coach_runners.runner_id, runnerId),
+          eq(coach_runners.status, 'active')
+        )
+      )
+      .limit(1)
+
+    if (relationship.length === 0) {
+      // Coach doesn't have an active relationship with this runner
+      redirect('/runners?error=no_relationship')
+    }
   }
 
   // Pass authenticated user data and runnerId to Client Component wrapped in Suspense

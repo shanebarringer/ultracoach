@@ -56,7 +56,70 @@ export async function waitForAtom<T>(
 }
 
 /**
+ * Create a mock API client for testing axios-based code.
+ * Returns an object with mocked get/post/put/patch/delete methods.
+ * Use this instead of mockFetch when testing code that uses the api-client.
+ */
+export function createMockApiClient() {
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+  }
+}
+
+/**
+ * Create a mock axios response object for testing.
+ * Matches the structure returned by axios api calls.
+ */
+export function createMockAxiosResponse<T>(
+  data: T,
+  options: { status?: number; statusText?: string } = {}
+) {
+  const { status = 200, statusText = 'OK' } = options
+  return {
+    data,
+    status,
+    statusText,
+    headers: {},
+    config: { headers: {} as unknown },
+  }
+}
+
+/**
+ * Create a mock axios error for testing error scenarios.
+ * Matches the structure of AxiosError.
+ */
+export function createMockAxiosError(
+  status: number,
+  data?: Record<string, unknown>,
+  message = 'Request failed'
+) {
+  const error = new Error(message) as Error & {
+    isAxiosError: boolean
+    response?: {
+      status: number
+      statusText: string
+      data: Record<string, unknown>
+    }
+    config: Record<string, unknown>
+  }
+  error.name = 'AxiosError'
+  ;(error as unknown as { isAxiosError: boolean }).isAxiosError = true
+  error.response = {
+    status,
+    statusText: status >= 500 ? 'Internal Server Error' : 'Bad Request',
+    data: data || { error: message },
+  }
+  error.config = {}
+  return error
+}
+
+/**
  * Mock fetch for API calls
+ * @deprecated Use createMockApiClient() for axios-based code
  */
 export function mockFetch(responses: Map<string, MockFetchResponse>) {
   const fetchMock = vi.fn((url: string | Request | URL) => {

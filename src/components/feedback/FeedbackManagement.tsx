@@ -33,6 +33,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -116,13 +117,8 @@ export default function FeedbackManagement() {
     if (!session?.user?.id) return
 
     try {
-      const response = await fetch('/api/admin/feedback')
-      if (response.ok) {
-        const data = await response.json()
-        setFeedback(data.feedback || [])
-      } else {
-        logger.error('Failed to fetch feedback')
-      }
+      const response = await api.get<{ feedback: Feedback[] }>('/api/admin/feedback')
+      setFeedback(response.data.feedback || [])
     } catch (error) {
       logger.error('Error fetching feedback:', error)
     } finally {
@@ -140,25 +136,19 @@ export default function FeedbackManagement() {
 
   const updateFeedbackStatus = async (feedbackId: string, status: string, notes?: string) => {
     try {
-      const response = await fetch('/api/admin/feedback', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.patch(
+        '/api/admin/feedback',
+        {
           feedbackId,
           status,
           admin_notes: notes,
-        }),
-      })
+        },
+        { suppressGlobalToast: true }
+      )
 
-      if (response.ok) {
-        toast.success('✅ Updated', 'Feedback status updated successfully.')
-        await fetchFeedback()
-        setSelectedFeedback(null)
-      } else {
-        throw new Error('Failed to update feedback')
-      }
+      toast.success('✅ Updated', 'Feedback status updated successfully.')
+      await fetchFeedback()
+      setSelectedFeedback(null)
     } catch (error) {
       logger.error('Error updating feedback:', error)
       toast.error('❌ Update Failed', 'Failed to update feedback status.')

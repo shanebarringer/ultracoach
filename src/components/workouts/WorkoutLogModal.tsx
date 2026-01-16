@@ -20,6 +20,7 @@ import { z } from 'zod'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
+import { api } from '@/lib/api-client'
 import {
   completeWorkoutAtom,
   logWorkoutDetailsAtom,
@@ -195,7 +196,6 @@ export default function WorkoutLogModal({
       } else {
         // For 'planned' status, use optimistic update pattern
         const previousWorkout = { ...workout }
-        let rolledBack = false
 
         // Optimistically update the workouts atom immediately
         setWorkouts(prev =>
@@ -217,32 +217,16 @@ export default function WorkoutLogModal({
         )
 
         try {
-          const response = await fetch(`/api/workouts/${workout.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify({ ...payload, status: 'planned' }),
+          const response = await api.patch<{ workout: Workout }>(`/api/workouts/${workout.id}`, {
+            ...payload,
+            status: 'planned',
           })
 
-          if (!response.ok) {
-            // Rollback on error
-            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
-            rolledBack = true
-            throw new Error('Failed to update workout')
-          }
-
           // Update with server response
-          const updatedWorkout = await response.json()
-          setWorkouts(prev =>
-            prev.map(w => (w.id === workout.id ? updatedWorkout.workout || updatedWorkout : w))
-          )
+          setWorkouts(prev => prev.map(w => (w.id === workout.id ? response.data.workout : w)))
         } catch (error) {
-          // Rollback if not already done (e.g., network/JSON errors)
-          if (!rolledBack) {
-            setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
-          }
+          // Rollback on error
+          setWorkouts(prev => prev.map(w => (w.id === workout.id ? previousWorkout : w)))
           throw error
         }
       }

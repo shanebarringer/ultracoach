@@ -1,7 +1,9 @@
 // Strava integration atoms
+import { isAxiosError } from 'axios'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { api } from '@/lib/api-client'
 import type { Workout } from '@/lib/supabase'
 import type { StravaActivity, StravaAthlete, StravaConnection } from '@/types/strava'
 
@@ -40,19 +42,19 @@ export const stravaActivitiesRefreshableAtom = atom(null, async (_get, set) => {
 
   // Fetch fresh activities from the API
   try {
-    const response = await fetch('/api/strava/activities', { credentials: 'same-origin' })
-    if (!response.ok) {
-      set(
-        stravaErrorAtom,
-        `Failed to refresh Strava activities: ${response.status} ${response.statusText}`
-      )
-      set(stravaActivitiesAtom, [])
-      return
-    }
-    const data = await response.json()
-    set(stravaActivitiesAtom, data.activities || [])
+    const response = await api.get<{ activities: StravaActivity[] }>('/api/strava/activities', {
+      suppressGlobalToast: true, // Atom handles its own error handling
+    })
+    set(stravaActivitiesAtom, response.data.activities || [])
   } catch (error) {
-    set(stravaErrorAtom, (error as Error)?.message ?? 'Failed to refresh Strava activities')
+    // Extract error message from axios error or fallback to generic message
+    const errorMessage =
+      isAxiosError(error) && error.response
+        ? `Failed to refresh Strava activities: ${error.response.status} ${error.response.statusText}`
+        : error instanceof Error
+          ? error.message
+          : 'Failed to refresh Strava activities'
+    set(stravaErrorAtom, errorMessage)
     set(stravaActivitiesAtom, [])
   }
 })

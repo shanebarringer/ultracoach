@@ -5,6 +5,7 @@ import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { api } from '@/lib/api-client'
 import {
   sendTypingTimeoutRefsAtom,
   typingStatusAtom,
@@ -60,22 +61,14 @@ export function useTypingStatus(recipientId: string) {
       logger.debug('Sending typing status:', { typing, recipientId })
 
       try {
-        const response = await fetch('/api/typing', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            recipientId,
-            isTyping: typing,
-          }),
-        })
-
-        if (!response.ok) {
-          logger.error('Failed to send typing status:', response.statusText)
-        } else {
-          logger.debug('Typing status sent successfully')
-        }
+        await api.post(
+          '/api/typing',
+          { recipientId, isTyping: typing },
+          {
+            suppressGlobalToast: true,
+          }
+        )
+        logger.debug('Typing status sent successfully')
       } catch (error) {
         logger.error('Error sending typing status:', error)
       }
@@ -168,51 +161,52 @@ export function useTypingStatus(recipientId: string) {
       }
 
       try {
-        const response = await fetch(`/api/typing?recipientId=${recipientId}`)
-        if (response.ok) {
-          const data = await response.json()
+        const response = await api.get<{ isTyping: boolean }>('/api/typing', {
+          params: { recipientId },
+          suppressGlobalToast: true,
+        })
+        const data = response.data
 
-          if (data.isTyping !== isRecipientTyping) {
-            // Reset interval on activity
-            currentInterval = 3000
-            consecutiveEmptyChecks = 0
+        if (data.isTyping !== isRecipientTyping) {
+          // Reset interval on activity
+          currentInterval = 3000
+          consecutiveEmptyChecks = 0
 
-            setTypingStatuses(prev => ({
-              ...prev,
-              [recipientId]: {
-                ...prev[recipientId],
-                isRecipientTyping: data.isTyping,
-                lastTypingUpdate: Date.now(),
-              },
-            }))
+          setTypingStatuses(prev => ({
+            ...prev,
+            [recipientId]: {
+              ...prev[recipientId],
+              isRecipientTyping: data.isTyping,
+              lastTypingUpdate: Date.now(),
+            },
+          }))
 
-            // Auto-clear after 5 seconds
-            if (data.isTyping) {
-              const existingTypingTimeout = getTypingTimeout(recipientId)
-              if (existingTypingTimeout) {
-                clearTimeout(existingTypingTimeout)
+          // Auto-clear after 5 seconds
+          if (data.isTyping) {
+            const existingTypingTimeout = getTypingTimeout(recipientId)
+            if (existingTypingTimeout) {
+              clearTimeout(existingTypingTimeout)
+            }
+            const newTypingTimeout = setTimeout(() => {
+              const currentTypingTimeout = getTypingTimeout(recipientId)
+              if (currentTypingTimeout) {
+                setTypingStatuses(prev => ({
+                  ...prev,
+                  [recipientId]: {
+                    ...prev[recipientId],
+                    isRecipientTyping: false,
+                    lastTypingUpdate: Date.now(),
+                  },
+                }))
               }
-              const newTypingTimeout = setTimeout(() => {
-                const currentTypingTimeout = getTypingTimeout(recipientId)
-                if (currentTypingTimeout) {
-                  setTypingStatuses(prev => ({
-                    ...prev,
-                    [recipientId]: {
-                      ...prev[recipientId],
-                      isRecipientTyping: false,
-                      lastTypingUpdate: Date.now(),
-                    },
-                  }))
-                }
-              }, 5000)
-              setTypingTimeout(recipientId, newTypingTimeout)
-            }
-          } else {
-            // No change detected - implement exponential backoff
-            consecutiveEmptyChecks++
-            if (consecutiveEmptyChecks >= 3) {
-              currentInterval = Math.min(currentInterval * 1.5, 10000) // Max 10 seconds
-            }
+            }, 5000)
+            setTypingTimeout(recipientId, newTypingTimeout)
+          }
+        } else {
+          // No change detected - implement exponential backoff
+          consecutiveEmptyChecks++
+          if (consecutiveEmptyChecks >= 3) {
+            currentInterval = Math.min(currentInterval * 1.5, 10000) // Max 10 seconds
           }
         }
       } catch (error) {

@@ -2,6 +2,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
+import { api } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import type { Race } from '@/lib/supabase'
 
@@ -20,25 +21,19 @@ export const asyncRacesAtom = atom(
   async get => {
     get(racesRefreshTriggerAtom) // Subscribe to refresh trigger
 
+    // SSR-safe: return empty array during server-side rendering
+    if (typeof window === 'undefined') {
+      return []
+    }
+
     try {
       logger.debug('Fetching races...')
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
-      const response = await fetch(`${baseUrl}/api/races`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin',
+      const response = await api.get<Race[]>('/api/races', {
+        suppressGlobalToast: true, // Atom handles its own error handling
       })
 
-      if (!response.ok) {
-        const errorMessage = `Failed to fetch races: ${response.status} ${response.statusText}`
-        logger.error(errorMessage)
-        throw new Error(errorMessage)
-      }
-
-      const data = await response.json()
-      logger.info('Races fetched successfully', { count: data.length || 0 })
+      const data = response.data
+      logger.info('Races fetched successfully', { count: data?.length || 0 })
       return data || []
     } catch (error) {
       // Re-throw to let Suspense boundary handle it

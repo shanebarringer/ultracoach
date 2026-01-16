@@ -23,6 +23,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
+import { api, getApiErrorMessage } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -82,25 +83,36 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
     try {
       setLoading(true)
-      const response = await fetch('/api/onboarding')
+      const response = await api.get<{
+        onboarding: OnboardingProgress
+        steps: OnboardingStep[]
+        currentStepData: OnboardingStep
+      }>('/api/onboarding', { suppressGlobalToast: true })
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch onboarding data')
-      }
-
-      const data = await response.json()
+      const data = response.data
       setOnboarding(data.onboarding)
       setSteps(data.steps || [])
       setCurrentStepData(data.currentStepData)
 
-      // Load existing answers for current step
+      // Load existing answers for current step with safe type checking
+      // Always reset stepAnswers to prevent stale data from previous sessions
       if (data.onboarding?.step_data) {
         const currentStepKey = `step_${data.onboarding.current_step}`
-        setStepAnswers(data.onboarding.step_data[currentStepKey] || {})
+        const stepData = data.onboarding.step_data[currentStepKey]
+        // Validate that stepData is actually a plain object before using it
+        if (stepData && typeof stepData === 'object' && !Array.isArray(stepData)) {
+          setStepAnswers(stepData as Record<string, unknown>)
+        } else {
+          setStepAnswers({})
+        }
+      } else {
+        // Reset to empty if no step_data exists to prevent stale answers
+        setStepAnswers({})
       }
     } catch (error) {
-      logger.error('Error fetching onboarding data:', error)
-      toast.error('❌ Loading Failed', 'Failed to load onboarding data.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to load onboarding data.')
+      logger.error('Error fetching onboarding data:', { error: errorMessage })
+      toast.error('❌ Loading Failed', errorMessage)
     } finally {
       setLoading(false)
     }
@@ -118,23 +130,17 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await api.post<{ onboarding: OnboardingProgress }>(
+        '/api/onboarding',
+        {
           stepNumber: currentStepData.step_number,
           stepData,
           completed: false,
-        }),
-      })
+        },
+        { suppressGlobalToast: true }
+      )
 
-      if (!response.ok) {
-        throw new Error('Failed to save step progress')
-      }
-
-      const result = await response.json()
+      const result = response.data
 
       if (moveToNext) {
         // Check if we're on the last step - if so, complete onboarding
@@ -163,8 +169,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
       toast.success('✅ Progress Saved', 'Your progress has been saved.')
     } catch (error) {
-      logger.error('Error saving step progress:', error)
-      toast.error('❌ Save Failed', 'Failed to save progress. Please try again.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to save progress. Please try again.')
+      logger.error('Error saving step progress:', { error: errorMessage })
+      toast.error('❌ Save Failed', errorMessage)
     } finally {
       setSaving(false)
     }
@@ -176,21 +183,15 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.post<void>(
+        '/api/onboarding',
+        {
           stepNumber: onboarding.current_step,
           stepData: stepAnswers,
           completed: true,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to complete onboarding')
-      }
+        },
+        { suppressGlobalToast: true }
+      )
 
       toast.success(
         '🎉 Welcome to UltraCoach!',
@@ -200,8 +201,12 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       logger.info('Onboarding completed successfully')
       onComplete()
     } catch (error) {
-      logger.error('Error completing onboarding:', error)
-      toast.error('❌ Completion Failed', 'Failed to complete onboarding. Please try again.')
+      const errorMessage = getApiErrorMessage(
+        error,
+        'Failed to complete onboarding. Please try again.'
+      )
+      logger.error('Error completing onboarding:', { error: errorMessage })
+      toast.error('❌ Completion Failed', errorMessage)
     } finally {
       setSaving(false)
     }
@@ -211,13 +216,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
     setSaving(true)
 
     try {
-      const response = await fetch('/api/onboarding', {
-        method: 'PATCH',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to skip onboarding')
-      }
+      await api.patch<void>('/api/onboarding', undefined, { suppressGlobalToast: true })
 
       toast.success('⏭️ Onboarding Skipped', 'You can always complete setup later in your profile.')
 
@@ -225,8 +224,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       setShowSkipConfirm(false)
       onComplete()
     } catch (error) {
-      logger.error('Error skipping onboarding:', error)
-      toast.error('❌ Skip Failed', 'Failed to skip onboarding. Please try again.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to skip onboarding. Please try again.')
+      logger.error('Error skipping onboarding:', { error: errorMessage })
+      toast.error('❌ Skip Failed', errorMessage)
     } finally {
       setSaving(false)
     }

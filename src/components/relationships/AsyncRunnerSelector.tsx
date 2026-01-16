@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { useMemo } from 'react'
 
+import { api, getApiErrorMessage } from '@/lib/api-client'
 import {
   availableRunnersAtom,
   connectedRunnersAtom,
@@ -17,6 +18,30 @@ import type { User } from '@/lib/better-auth-client'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AsyncRunnerSelector')
+
+// Define Runner type at module level for reuse and better type safety
+interface AvailableRunner {
+  id: string
+  name?: string
+  fullName?: string
+  email?: string
+}
+
+// Type guard to validate runner objects from API responses
+// Validates id is a string and optional fields are strings or undefined
+function isValidRunner(obj: unknown): obj is AvailableRunner {
+  if (typeof obj !== 'object' || obj === null || !('id' in obj)) {
+    return false
+  }
+  const runner = obj as Record<string, unknown>
+  // id must be a string
+  if (typeof runner.id !== 'string') return false
+  // Optional fields must be strings or undefined (for safe toLowerCase calls)
+  if (runner.name !== undefined && typeof runner.name !== 'string') return false
+  if (runner.fullName !== undefined && typeof runner.fullName !== 'string') return false
+  if (runner.email !== undefined && typeof runner.email !== 'string') return false
+  return true
+}
 
 interface AsyncRunnerSelectorProps {
   onRelationshipCreated?: () => void
@@ -36,21 +61,23 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
   const refreshAvailableRunners = useSetAtom(availableRunnersAtom)
 
   // Filter runners based on search term using useMemo for performance
-  const filteredRunners = useMemo(() => {
+  // Uses type guard for safe runtime validation of API response data
+  // Note: availableRunnersAtom returns User[] but API response has different shape
+  const filteredRunners = useMemo((): AvailableRunner[] => {
     if (!Array.isArray(availableRunners)) return []
 
-    interface Runner {
-      id: string
-      name?: string
-      fullName?: string
-      email?: string
-    }
+    // Cast to unknown first to bypass strict type checking, then validate with type guard
+    // This is safe because isValidRunner performs runtime validation
+    const runners = (availableRunners as unknown[]).filter(isValidRunner)
 
-    return (availableRunners as Runner[]).filter(
-      (runner: Runner) =>
-        runner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Apply search filter on validated runners
+    // Hoist toLowerCase() to avoid redundant string operations per runner
+    const term = searchTerm.toLowerCase()
+    return runners.filter(
+      runner =>
+        runner.name?.toLowerCase().includes(term) ||
+        runner.fullName?.toLowerCase().includes(term) ||
+        runner.email?.toLowerCase().includes(term)
     )
   }, [availableRunners, searchTerm])
 
@@ -64,29 +91,17 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
     setConnectingIds((prev: Set<string>) => new Set(prev).add(runnerId))
 
     try {
-      const response = await fetch('/api/coach-runners', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'same-origin', // Ensure cookies are sent with the request
-        body: JSON.stringify({
+      // Use environment-based timeout: 30s dev, 10s prod
+      const timeout = process.env.NODE_ENV === 'development' ? 30000 : 10000
+
+      await api.post(
+        '/api/coach-runners',
+        {
           target_user_id: runnerId,
           relationship_type: 'standard',
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        logger.error('Failed to connect to runner:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: error,
-          runnerId,
-          requestUrl: '/api/coach-runners',
-        })
-        throw new Error(error.error || 'Failed to connect to runner')
-      }
+        },
+        { suppressGlobalToast: true, timeout }
+      )
 
       logger.info('Connection request sent successfully', { runnerId })
       toast.success('Connection request sent to runner!')
@@ -100,8 +115,10 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
       // Notify parent component to refresh connected runners
       onRelationshipCreated?.()
     } catch (error) {
-      logger.error('Error connecting to runner:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to connect to runner')
+      const errorMessage = getApiErrorMessage(error, 'Failed to connect to runner')
+      // Include full error object for debugging (stack trace, response details)
+      logger.error('Error connecting to runner', { message: errorMessage, error, runnerId })
+      toast.error(errorMessage)
     } finally {
       setConnectingIds((prev: Set<string>) => {
         const newSet = new Set(prev)
