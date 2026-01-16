@@ -71,11 +71,13 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
     const runners = (availableRunners as unknown[]).filter(isValidRunner)
 
     // Apply search filter on validated runners
+    // Hoist toLowerCase() to avoid redundant string operations per runner
+    const term = searchTerm.toLowerCase()
     return runners.filter(
       runner =>
-        runner.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        runner.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        runner.name?.toLowerCase().includes(term) ||
+        runner.fullName?.toLowerCase().includes(term) ||
+        runner.email?.toLowerCase().includes(term)
     )
   }, [availableRunners, searchTerm])
 
@@ -114,7 +116,8 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
       onRelationshipCreated?.()
     } catch (error) {
       const errorMessage = getApiErrorMessage(error, 'Failed to connect to runner')
-      logger.error('Error connecting to runner:', { error: errorMessage })
+      // Include full error object for debugging (stack trace, response details)
+      logger.error('Error connecting to runner', { message: errorMessage, error, runnerId })
       toast.error(errorMessage)
     } finally {
       setConnectingIds((prev: Set<string>) => {
