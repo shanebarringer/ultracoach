@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 
 import { useMemo } from 'react'
 
-import { api } from '@/lib/api-client'
+import { api, getApiErrorMessage } from '@/lib/api-client'
 import {
   availableRunnersAtom,
   connectedRunnersAtom,
@@ -107,8 +107,9 @@ export function AsyncRunnerSelector({ onRelationshipCreated, user }: AsyncRunner
       // Notify parent component to refresh connected runners
       onRelationshipCreated?.()
     } catch (error) {
-      logger.error('Error connecting to runner:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to connect to runner')
+      const errorMessage = getApiErrorMessage(error, 'Failed to connect to runner')
+      logger.error('Error connecting to runner:', { error: errorMessage })
+      toast.error(errorMessage)
     } finally {
       setConnectingIds((prev: Set<string>) => {
         const newSet = new Set(prev)

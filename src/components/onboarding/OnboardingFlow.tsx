@@ -23,7 +23,7 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import { useSession } from '@/hooks/useBetterSession'
-import { api } from '@/lib/api-client'
+import { api, getApiErrorMessage } from '@/lib/api-client'
 import { createLogger } from '@/lib/logger'
 import { toast } from '@/lib/toast'
 
@@ -106,8 +106,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
         }
       }
     } catch (error) {
-      logger.error('Error fetching onboarding data:', error)
-      toast.error('❌ Loading Failed', 'Failed to load onboarding data.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to load onboarding data.')
+      logger.error('Error fetching onboarding data:', { error: errorMessage })
+      toast.error('❌ Loading Failed', errorMessage)
     } finally {
       setLoading(false)
     }
@@ -164,8 +165,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
 
       toast.success('✅ Progress Saved', 'Your progress has been saved.')
     } catch (error) {
-      logger.error('Error saving step progress:', error)
-      toast.error('❌ Save Failed', 'Failed to save progress. Please try again.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to save progress. Please try again.')
+      logger.error('Error saving step progress:', { error: errorMessage })
+      toast.error('❌ Save Failed', errorMessage)
     } finally {
       setSaving(false)
     }
@@ -195,8 +197,12 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       logger.info('Onboarding completed successfully')
       onComplete()
     } catch (error) {
-      logger.error('Error completing onboarding:', error)
-      toast.error('❌ Completion Failed', 'Failed to complete onboarding. Please try again.')
+      const errorMessage = getApiErrorMessage(
+        error,
+        'Failed to complete onboarding. Please try again.'
+      )
+      logger.error('Error completing onboarding:', { error: errorMessage })
+      toast.error('❌ Completion Failed', errorMessage)
     } finally {
       setSaving(false)
     }
@@ -214,8 +220,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       setShowSkipConfirm(false)
       onComplete()
     } catch (error) {
-      logger.error('Error skipping onboarding:', error)
-      toast.error('❌ Skip Failed', 'Failed to skip onboarding. Please try again.')
+      const errorMessage = getApiErrorMessage(error, 'Failed to skip onboarding. Please try again.')
+      logger.error('Error skipping onboarding:', { error: errorMessage })
+      toast.error('❌ Skip Failed', errorMessage)
     } finally {
       setSaving(false)
     }

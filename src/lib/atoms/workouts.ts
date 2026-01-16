@@ -1,4 +1,5 @@
 // Workout management atoms
+import { isAxiosError } from 'axios'
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
@@ -64,10 +65,32 @@ import { withDebugLabel } from './utils'
  */
 
 // Helper function to unwrap API response shapes
+/**
+ * Safely unwraps workout data from API response.
+ * Handles both direct Workout responses and wrapped { workout: Workout } responses.
+ * Throws if response is empty (e.g., 204 No Content) to prevent silent state corruption.
+ */
 function unwrapWorkout(json: unknown): Workout {
-  return typeof json === 'object' && json !== null && 'workout' in json
-    ? (json as { workout: Workout }).workout
-    : (json as Workout)
+  // Guard against empty responses (e.g., 204 No Content)
+  if (json === null || json === undefined || json === '') {
+    throw new Error('Empty response from server - workout data expected')
+  }
+
+  // Handle wrapped response shape: { workout: Workout }
+  if (typeof json === 'object' && 'workout' in json) {
+    const wrapped = json as { workout: Workout }
+    if (!wrapped.workout) {
+      throw new Error('Invalid response: workout property is empty')
+    }
+    return wrapped.workout
+  }
+
+  // Handle direct Workout response
+  const workout = json as Workout
+  if (!workout.id) {
+    throw new Error('Invalid workout response: missing id field')
+  }
+  return workout
 }
 
 // Core workout atoms with initial value from async fetch
@@ -112,15 +135,15 @@ export const asyncWorkoutsAtom = atom(async get => {
 
     return workouts as Workout[]
   } catch (error) {
-    // Axios errors have structured response data
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status?: number } }
-      if (axiosError.response?.status === 401) {
+    // Use proper isAxiosError guard for type-safe error handling
+    if (isAxiosError(error)) {
+      if (error.response?.status === 401) {
         logger.debug('Unauthorized - user session expired or invalid')
         return []
       }
       logger.error('HTTP error fetching workouts', {
-        status: axiosError.response?.status,
+        status: error.response?.status,
+        message: error.message,
       })
       return []
     }
