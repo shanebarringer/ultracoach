@@ -28,13 +28,19 @@ interface AvailableRunner {
 }
 
 // Type guard to validate runner objects from API responses
+// Validates id is a string and optional fields are strings or undefined
 function isValidRunner(obj: unknown): obj is AvailableRunner {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    typeof (obj as AvailableRunner).id === 'string'
-  )
+  if (typeof obj !== 'object' || obj === null || !('id' in obj)) {
+    return false
+  }
+  const runner = obj as Record<string, unknown>
+  // id must be a string
+  if (typeof runner.id !== 'string') return false
+  // Optional fields must be strings or undefined (for safe toLowerCase calls)
+  if (runner.name !== undefined && typeof runner.name !== 'string') return false
+  if (runner.fullName !== undefined && typeof runner.fullName !== 'string') return false
+  if (runner.email !== undefined && typeof runner.email !== 'string') return false
+  return true
 }
 
 interface AsyncRunnerSelectorProps {

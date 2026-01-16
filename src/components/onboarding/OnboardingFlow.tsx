@@ -95,6 +95,7 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
       setCurrentStepData(data.currentStepData)
 
       // Load existing answers for current step with safe type checking
+      // Always reset stepAnswers to prevent stale data from previous sessions
       if (data.onboarding?.step_data) {
         const currentStepKey = `step_${data.onboarding.current_step}`
         const stepData = data.onboarding.step_data[currentStepKey]
@@ -104,6 +105,9 @@ export default function OnboardingFlow({ isOpen, onClose, onComplete }: Onboardi
         } else {
           setStepAnswers({})
         }
+      } else {
+        // Reset to empty if no step_data exists to prevent stale answers
+        setStepAnswers({})
       }
     } catch (error) {
       const errorMessage = getApiErrorMessage(error, 'Failed to load onboarding data.')
