@@ -26,7 +26,10 @@ export default function TypingIndicator({ isTyping, userName }: TypingIndicatorP
   if (!isTyping) return null
 
   return (
-    <div className="flex items-center justify-start mb-2 animate-in fade-in duration-200">
+    <div
+      data-testid="typing-indicator"
+      className="flex items-center justify-start mb-2 animate-in fade-in duration-200"
+    >
       <div className="max-w-xs lg:max-w-md xl:max-w-lg">
         <div className="px-4 py-2 rounded-lg bg-content2 border border-divider shadow-sm">
           <div className="flex items-center space-x-2">

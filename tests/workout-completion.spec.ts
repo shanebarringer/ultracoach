@@ -1,6 +1,15 @@
 import { expect, test } from '@playwright/test'
 
-test.describe.skip('Workout Completion Flow', () => {
+test.describe('Workout Completion Flow', () => {
+  // CI-only quarantine: These tests require test data reset API and complex UI interactions
+  // They pass locally but have timing issues in CI - see ULT-148 for proper fix
+  test.beforeAll(async () => {
+    test.skip(
+      !!process.env.CI,
+      'Quarantined in CI: workout completion tests need API/timing fixes - see ULT-148'
+    )
+  })
+
   test.beforeEach(async ({ page }) => {
     // Reset Alex Rivera's workouts to planned status before each test
     // Use email instead of hard-coded UUID for CI compatibility
@@ -9,12 +18,13 @@ test.describe.skip('Workout Completion Flow', () => {
     })
 
     if (!response.ok()) {
+      throw new Error(`Workout reset failed: ${response.status()} ${response.statusText()}`)
     }
 
     // Navigate directly to the runner dashboard (authentication is handled by setup)
     await page.goto('/dashboard/runner')
-    // Wait for dashboard to load
-    await expect(page.locator('text=Alex Rivera')).toBeVisible()
+    // Wait for dashboard to load using data-testid selector (avoids strict mode violations)
+    await expect(page.getByTestId('runner-dashboard-content')).toBeVisible()
   })
 
   test('should complete workout with basic completion', async ({ page }) => {
@@ -22,8 +32,8 @@ test.describe.skip('Workout Completion Flow', () => {
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Workouts Track your training' }).click()
 
-    // Wait for workouts to load
-    await expect(page.locator('text=Training Log')).toBeVisible()
+    // Wait for workouts page to load using data-testid selector
+    await expect(page.getByTestId('page-title')).toBeVisible()
 
     // Find and click Mark Complete on first planned workout
     const markCompleteButton = page.getByRole('button', { name: 'Mark Complete' }).first()
@@ -128,11 +138,12 @@ test.describe.skip('Workout Completion Flow', () => {
     await page.getByRole('button', { name: 'Open menu' }).click()
     await page.getByRole('link', { name: 'Dashboard Overview and metrics' }).click()
 
-    // Wait for dashboard to load and check for completion rate updates
-    await expect(page.locator('text=Base Camp Dashboard')).toBeVisible()
+    // Wait for dashboard to load using data-testid selector
+    await expect(page.getByTestId('runner-dashboard-content')).toBeVisible()
 
     // The completion rate should no longer be 0% after completing a workout
-    // Note: This might take a moment for the statistics to update
-    await page.waitForTimeout(1000) // Brief wait for state updates
+    // Use assertion-based wait instead of waitForTimeout
+    // Check that some progress indicator is visible (e.g., percentage or progress stat)
+    await expect(page.getByText(/\d+%/).first()).toBeVisible({ timeout: 5000 })
   })
 })
